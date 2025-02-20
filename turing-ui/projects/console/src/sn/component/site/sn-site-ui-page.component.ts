@@ -8,8 +8,6 @@ import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';
 import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
-import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
-import { TurNLPInstanceService } from '../../../nlp/service/nlp-instance.service';
 
 @Component({
     selector: 'sn-site-page',
@@ -20,17 +18,14 @@ export class TurSNSiteUIPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
-  private turNLPInstances: Observable<TurNLPInstance[]>;
 
   constructor(private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
     private turSEInstanceService: TurSEInstanceService,
-    private turNLPInstanceService: TurNLPInstanceService,
     private route: ActivatedRoute) {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
-    this.turNLPInstances = turNLPInstanceService.query();
     let id = this.route.parent?.snapshot.paramMap.get('id') || "";
     this.turSNSite = this.turSNSiteService.get(id);
 
@@ -58,11 +53,6 @@ export class TurSNSiteUIPageComponent implements OnInit {
     return ["ALPHABETICAL", "COUNT"];
   }
   ngOnInit(): void {
-  }
-
-  getTurNLPInstances(): Observable<TurNLPInstance[]> {
-
-    return this.turNLPInstances;
   }
 
   public saveSite(_turSNSite: TurSNSite) {

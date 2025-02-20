@@ -44,22 +44,6 @@
       </p>
     </div>
   </div>
-  <div class="form-group">
-    <div class="form-group-header">
-      <label>NLP Vendor</label>
-    </div>
-    <div class="form-group-body">
-      <select [(ngModel)]="snSite.turNLPVendor" [compareWith]="compareNLPVendor" class="form-select" style="width: 100%;">
-        <option [ngValue]=null >-- No NLP Vendor --</option>
-        <option *ngFor="let nlpVendor of (getTurNLPVendors() | async)" [ngValue]="nlpVendor">
-          {{nlpVendor.title}}
-        </option>
-      </select>
-      <p class="note">
-        NLP vendor that will be used.
-      </p>
-    </div>
-  </div>
 </div>
 <ng-template #loading>
   <span>Loading</span><span class="AnimatedEllipsis"></span>

@@ -32,7 +32,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The persistent class for the vigNLPSolutions database table.
+ * The persistent class for the TurWCConfigVar database table.
  * 
  */
 @Setter

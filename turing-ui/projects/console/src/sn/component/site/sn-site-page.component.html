@@ -79,10 +79,22 @@
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'locale']"
         [routerLinkActive]="['selected']"><span octicon="typography" [size]=16 class="mr-1"></span>
         Multi Languages</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'field']"
+         [routerLinkActive]="['selected']">
+        <span octicon="rows" [size]=16 class="mr-1"></span>
+        Fields</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'ui']"
-        [routerLinkActive]="['selected']">
+         [routerLinkActive]="['selected']">
         <span octicon="law" [size]=16 class="mr-1"></span>
         Behavior</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'facet-ordering']"
+         [routerLinkActive]="['selected']">
+        <span octicon="filter" [size]=16 class="mr-1"></span>
+        Facet Ordering</a>
+      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'ai']"
+         [routerLinkActive]="['selected']">
+        <span octicon="cpu" [size]=16 class="mr-1"></span>
+        Generative AI</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'ranking-expression']"
          [routerLinkActive]="['selected']">
         <span octicon="number" [size]=16 class="mr-1"></span>
@@ -91,14 +103,6 @@
         [routerLinkActive]="['selected']">
         <span octicon="git-merge" [size]=16 class="mr-1"></span>
         Merge Providers</a>
-      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'field']"
-        [routerLinkActive]="['selected']">
-        <span octicon="rows" [size]=16 class="mr-1"></span>
-        Fields</a>
-      <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'facet-ordering']"
-         [routerLinkActive]="['selected']">
-        <span octicon="filter" [size]=16 class="mr-1"></span>
-        Facet Ordering</a>
       <a *ngIf="!isNewObject()" class="menu-item" [routerLink]="['/sn/site',getId() , 'spotlight']"
         [routerLinkActive]="['selected']"><span octicon="megaphone" [size]=16 class="mr-1"></span> Spotlight</a>
     </nav>

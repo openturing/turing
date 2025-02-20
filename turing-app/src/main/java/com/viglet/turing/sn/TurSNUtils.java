@@ -53,6 +53,7 @@ public class TurSNUtils {
         throw new IllegalStateException("SN Utility class");
     }
 
+
     public static boolean hasCorrectedText(TurSESpellCheckResult turSESpellCheckResult) {
         return turSESpellCheckResult.isCorrected() && !StringUtils.isEmpty(turSESpellCheckResult.getCorrectedText());
     }

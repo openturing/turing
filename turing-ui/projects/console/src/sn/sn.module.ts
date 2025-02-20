@@ -14,7 +14,6 @@ import {TurSNSiteDetailPageComponent} from './component/site/sn-site-detail-page
 import {TurSNSiteUIPageComponent} from './component/site/sn-site-ui-page.component';
 import {TurLocaleService} from '../locale/service/locale.service';
 import {TurSEInstanceService} from '../se/service/se-instance.service';
-import {TurNLPInstanceService} from '../nlp/service/nlp-instance.service';
 import {TurSNFieldTypeService} from './service/sn-field-type.service';
 import {TurSNSiteSpotlightService} from './service/sn-site-spotlight.service';
 import {TurSNSiteFieldRootPageComponent} from './component/site/field/sn-site-field-root-page.component';
@@ -27,7 +26,6 @@ import {TurSNSiteLocaleService} from './service/sn-site-locale.service';
 import {TurSNSiteLocalePageComponent} from './component/site/locale/sn-site-locale-page.component';
 import {TurSNSiteLocaleRootPageComponent} from './component/site/locale/sn-site-locale-root-page.component';
 import {TurSNSiteLocaleListPageComponent} from './component/site/locale/sn-site-locale-list-page.component';
-import {TurNLPVendorService} from '../nlp/service/nlp-vendor.service';
 import {TurSNSiteMergeListPageComponent} from './component/site/merge/sn-site-merge-list-page.component';
 import {TurSNSiteMergePageComponent} from './component/site/merge/sn-site-merge-page.component';
 import {TurSNSiteMergeRootPageComponent} from './component/site/merge/sn-site-merge-root-page.component';
@@ -50,7 +48,9 @@ import {TurSNSearchService} from "../../../sn/src/search/service/sn-search.servi
 import {TurSNFacetOrderingListPageComponent} from "./component/site/facet/sn-facet-ordering-list-page.component";
 import {TurSNFacetOrderingRootPageComponent} from "./component/site/facet/sn-facet-ordering-root-page.component";
 import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
-
+import {TurLLMInstanceService} from "../llm/service/llm-instance.service";
+import {TurStoreInstanceService} from "../store/service/store-instance.service";
+import {TurSNSiteGenAiPageComponent} from "./component/site/genai/sn-site-genai-page.component";
 @NgModule({
   declarations: [
     TurSNRootPageComponent,
@@ -77,7 +77,8 @@ import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
     TurSNSiteMetricsTopTermsPageComponent,
     TurSNRankingExpressionRootPageComponent,
     TurSNRankingExpressionListPageComponent,
-    TurSNRankingExpressionPageComponent
+    TurSNRankingExpressionPageComponent,
+    TurSNSiteGenAiPageComponent
   ],
   imports: [
     CdkDropListGroup, CdkDropList, CdkDrag,
@@ -88,13 +89,13 @@ import {CdkDrag, CdkDropList, CdkDropListGroup} from "@angular/cdk/drag-drop";
     TurSNRoutingModule,
     TurCommonsModule,
     RouterModule,
-    MomentModule
+    MomentModule,
   ],
   providers: [
     TurSNSiteService,
     TurSEInstanceService,
-    TurNLPInstanceService,
-    TurNLPVendorService,
+    TurLLMInstanceService,
+    TurStoreInstanceService,
     TurLocaleService,
     TurSNFieldTypeService,
     TurSNSiteSpotlightService,

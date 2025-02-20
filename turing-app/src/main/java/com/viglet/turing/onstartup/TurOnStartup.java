@@ -24,8 +24,9 @@ import com.google.inject.Inject;
 import com.viglet.turing.onstartup.auth.TurGroupOnStartup;
 import com.viglet.turing.onstartup.auth.TurRoleOnStartup;
 import com.viglet.turing.onstartup.auth.TurUserOnStartup;
-import com.viglet.turing.onstartup.nlp.*;
+import com.viglet.turing.onstartup.llm.TurLLMVendorOnStartup;
 import com.viglet.turing.onstartup.se.TurSEVendorOnStartup;
+import com.viglet.turing.onstartup.store.TurStoreVendorOnStartup;
 import com.viglet.turing.onstartup.system.TurConfigVarOnStartup;
 import com.viglet.turing.onstartup.system.TurLocaleOnStartup;
 import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
@@ -44,12 +45,9 @@ public class TurOnStartup implements ApplicationRunner {
 	public static final int PASSWORD_MINIMUM_SIZE = 6;
 	private final TurConfigVarRepository turConfigVarRepository;
 	private final TurLocaleOnStartup turLocaleOnStartup;
-	private final TurNLPVendorOnStartup turNLPVendorOnStartup;
-	private final TurNLPEntityOnStartup turNLPEntityOnStartup;
-	private final TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup;
-	private final TurNLPFeatureOnStartup turNLPFeatureOnStartup;
-	private final TurNLPInstanceOnStartup turNLPInstanceOnStartup;
 	private final TurSEVendorOnStartup turSEVendorOnStartup;
+	private final TurLLMVendorOnStartup turLLMVendorOnStartup;
+	private final TurStoreVendorOnStartup turStoreVendorOnStartup;
 	private final TurConfigVarOnStartup turConfigVarOnStartup;
 	private final TurUserOnStartup turUserOnStartup;
 	private final TurGroupOnStartup turGroupOnStartup;
@@ -57,26 +55,19 @@ public class TurOnStartup implements ApplicationRunner {
 
 	@Inject
 	public TurOnStartup(TurConfigVarRepository turConfigVarRepository,
-						TurLocaleOnStartup turLocaleOnStartup,
-						TurNLPVendorOnStartup turNLPVendorOnStartup,
-						TurNLPEntityOnStartup turNLPEntityOnStartup,
-						TurNLPVendorEntityOnStartup turNLPVendorEntityOnStartup,
-						TurNLPFeatureOnStartup turNLPFeatureOnStartup,
-						TurNLPInstanceOnStartup turNLPInstanceOnStartup,
-						TurSEVendorOnStartup turSEVendorOnStartup,
-						TurConfigVarOnStartup turConfigVarOnStartup,
-						TurUserOnStartup turUserOnStartup,
-						TurGroupOnStartup turGroupOnStartup,
-						TurRoleOnStartup turRoleOnStartup) {
+                        TurLocaleOnStartup turLocaleOnStartup,
+                        TurSEVendorOnStartup turSEVendorOnStartup,
+						TurLLMVendorOnStartup turLLMVendorOnStartup, TurStoreVendorOnStartup turStoreVendorOnStartup,
+                        TurConfigVarOnStartup turConfigVarOnStartup,
+                        TurUserOnStartup turUserOnStartup,
+                        TurGroupOnStartup turGroupOnStartup,
+                        TurRoleOnStartup turRoleOnStartup) {
 		this.turConfigVarRepository = turConfigVarRepository;
 		this.turLocaleOnStartup = turLocaleOnStartup;
-		this.turNLPVendorOnStartup = turNLPVendorOnStartup;
-		this.turNLPEntityOnStartup = turNLPEntityOnStartup;
-		this.turNLPVendorEntityOnStartup = turNLPVendorEntityOnStartup;
-		this.turNLPFeatureOnStartup = turNLPFeatureOnStartup;
-		this.turNLPInstanceOnStartup = turNLPInstanceOnStartup;
 		this.turSEVendorOnStartup = turSEVendorOnStartup;
-		this.turConfigVarOnStartup = turConfigVarOnStartup;
+        this.turLLMVendorOnStartup = turLLMVendorOnStartup;
+        this.turStoreVendorOnStartup = turStoreVendorOnStartup;
+        this.turConfigVarOnStartup = turConfigVarOnStartup;
 		this.turUserOnStartup = turUserOnStartup;
 		this.turGroupOnStartup = turGroupOnStartup;
 		this.turRoleOnStartup = turRoleOnStartup;
@@ -94,13 +85,9 @@ public class TurOnStartup implements ApplicationRunner {
 				turRoleOnStartup.createDefaultRows();
 				turGroupOnStartup.createDefaultRows();
 				turUserOnStartup.createDefaultRows(turAdminPassword);
-				turNLPFeatureOnStartup.createDefaultRows();
-				turNLPVendorOnStartup.createDefaultRows();
 				turSEVendorOnStartup.createDefaultRows();
-
-				turNLPEntityOnStartup.createDefaultRows();
-				turNLPVendorEntityOnStartup.createDefaultRows();
-				turNLPInstanceOnStartup.createDefaultRows();
+				turLLMVendorOnStartup.createDefaultRows();
+				turStoreVendorOnStartup.createDefaultRows();
 
 				turConfigVarOnStartup.createDefaultRows();
 

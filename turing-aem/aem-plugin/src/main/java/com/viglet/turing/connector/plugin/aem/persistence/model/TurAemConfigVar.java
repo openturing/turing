@@ -26,7 +26,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * The persistent class for the vigNLPSolutions database table.
+ * The persistent class for the TurAemConfigVar database table.
  */
 @Setter
 @Getter

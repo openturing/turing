@@ -34,7 +34,7 @@ public class SwaggerConfig {
 	public OpenAPI apiInfo() {
 		return new OpenAPI()
 				.info(new Info().title("Turing ES")
-						.description("Semantic Navigation, Chatbot using Search Engine and Many NLP Vendors.")
+						.description("Semantic Navigation, Chatbot using Search Engine.")
 						.version("v2.0")
 						.license(new License().name("Apache 2.0").url("http://viglet.com/turing")))
 				.externalDocs(new ExternalDocumentation()

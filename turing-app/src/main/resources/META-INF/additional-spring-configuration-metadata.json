@@ -28,5 +28,10 @@
     "name": "turing.openai.key",
     "type": "java.lang.String",
     "description": "A description for 'turing.openai.key'."
+  },
+  {
+    "name": "turing.ai.enabled",
+    "type": "java.lang.Boolean",
+    "description": "turing.ai.enabled."
   }
 ]}

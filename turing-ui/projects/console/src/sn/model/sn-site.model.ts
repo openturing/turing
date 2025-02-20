@@ -1,8 +1,9 @@
-import { TurNLPVendor } from "../../nlp/model/nlp-vendor.model";
 import { TurSEInstance } from "../../se/model/se-instance.model";
 import { TurSNSiteLocale } from "./sn-site-locale.model";
 import { TurSNSiteFacetEnum} from "./sn-site-facet.enum";
 import {TurSNSiteFacetSortEnum} from "./sn-site-facet-sort.enum";
+import {TurSNSiteGenAi} from "./sn-site-genai.model";
+
 export interface TurSNSite {
   id: string;
   name: string;
@@ -23,7 +24,6 @@ export interface TurSNSite {
   mlt: number;
   thesaurus: number;
   turSEInstance: TurSEInstance;
-  turNLPVendor: TurNLPVendor;
   turSNSiteLocales: TurSNSiteLocale[];
   rowsPerPage: number;
   spellCheck: number;
@@ -35,4 +35,5 @@ export interface TurSNSite {
   wildcardNoResults: number;
   wildcardAlways: number;
   exactMatch: number;
+  turSNSiteGenAi: TurSNSiteGenAi;
 }

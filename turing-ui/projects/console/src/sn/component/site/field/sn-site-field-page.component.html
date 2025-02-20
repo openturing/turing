@@ -152,16 +152,6 @@
       If this field is required during indexing.
     </p>
   </div>
-  <div class="form-checkbox">
-    <label>
-      <input [(ngModel)]="snSiteField.nlp" type="checkbox" [ngModelOptions]="{standalone: true}"
-             (ngModelChange)="snSiteField.nlp = $event ? 1 : 0" aria-describedby="sn-field-nlp-tip"/>
-      NLP
-    </label>
-    <p class="note" id="sn-field-nlp-tip">
-      If the text of this field will be processed by NLP that was configured in semantic navigation site.
-    </p>
-  </div>
   <div class="form-group">
     <div class="form-group-header">
       <label>Default Value</label>

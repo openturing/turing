@@ -1,19 +1,21 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationExtras, Params, Router, RouterModule } from '@angular/router';
-import { Location, LocationStrategy, PathLocationStrategy, PlatformLocation } from '@angular/common';
-import { Observable } from 'rxjs';
-import { TurSNSearch } from '../../model/sn-search.model';
-import { TurSNSearchService } from '../../service/sn-search.service';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, NavigationExtras, Params, Router, RouterModule} from '@angular/router';
+import {Location, LocationStrategy, PathLocationStrategy, PlatformLocation} from '@angular/common';
+import {Observable} from 'rxjs';
+import {TurSNSearch} from '../../model/sn-search.model';
+import {TurSNSearchService} from '../../service/sn-search.service';
+import {TurSNChat} from "../../model/sn-chat.model";
 
 @Component({
-    selector: 'search-root-page',
-    providers: [Location, { provide: LocationStrategy, useClass: PathLocationStrategy }],
-    templateUrl: './search-root-page.component.html',
-    standalone: false
+  selector: 'search-root-page',
+  providers: [Location, {provide: LocationStrategy, useClass: PathLocationStrategy}],
+  templateUrl: './search-root-page.component.html',
+  standalone: false
 })
 
 export class TurSNSearchRootPageComponent implements OnInit {
   private turSNSearchItems: Observable<TurSNSearch>;
+  public chat!: Observable<TurSNChat>;
   public turSiteName!: string;
   public turQuery!: string;
   private turPage!: string;
@@ -35,6 +37,10 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.sortOptions.set("oldest", "Oldest");
     this.updateParameters(platformLocation.pathname);
 
+    this.chat = turSNSearchService.chat(
+      this.turSiteName,
+      this.turQuery,
+      this.turLocale);
     this.turSNSearchItems = turSNSearchService.query(
       this.turSiteName,
       this.turQuery,
@@ -50,11 +56,13 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.turPage = "1";
 
     return TurSNSearchService.generateQueryString(this.turQuery, this.turPage, this.turLocale, this.turSort,
-        this.turFilterQuery, this.turTargetingRule, this.turAutoCorrectionDisabled);
+      this.turFilterQuery, this.turTargetingRule, this.turAutoCorrectionDisabled);
   }
+
   getTurSNSearchItems(): Observable<TurSNSearch> {
     return this.turSNSearchItems;
   }
+
   retrieveAutoComplete(): void {
     this.autoCompleteList = this.turSNSearchService.autoComplete(
       this.turSiteName,
@@ -67,9 +75,14 @@ export class TurSNSearchRootPageComponent implements OnInit {
       this.turAutoCorrectionDisabled);
   }
 
+  getChat(): Observable<TurSNChat> {
+    return this.chat;
+  }
+
   getAutoComplete(): Observable<string[]> {
     return this.autoCompleteList;
   }
+
   updateParameters(turPath: string) {
     if (turPath.endsWith("/")) {
       turPath = turPath.substring(0, turPath.length - 1);
@@ -79,8 +92,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     let turForceSiteName = this.activatedRoute.snapshot.queryParams["_setsite"];
     if (turForceSiteName != null) {
       this.turSiteName = turForceSiteName;
-    }
-    else {
+    } else {
       this.turSiteName = turSiteNameSplit[turSiteNameSplit.length - 1];
     }
     this.turQuery = this.activatedRoute.snapshot.queryParams["q"] || "*";
@@ -96,6 +108,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
     this.turQuery = "*";
     this.turRedirect("?" + this.generateQueryString());
   }
+
   turRedirect(href: string) {
     let result: { [key: string]: string[] } = {};
 
@@ -103,8 +116,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
       console.log(key);
       if (result.hasOwnProperty(key)) {
         result[key].splice(0, 0, value);
-      }
-      else {
+      } else {
         result[key] = [value];
       }
     });
@@ -116,6 +128,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
       window.location.reload();
     });
   }
+
   changeOrderBy(orderBy: string) {
     this.turSort = orderBy;
     this.searchIt();
@@ -140,6 +153,7 @@ export class TurSNSearchRootPageComponent implements OnInit {
   currentDate(): number {
     return (new Date()).getFullYear();
   }
+
   ngOnInit(): void {
   }
 

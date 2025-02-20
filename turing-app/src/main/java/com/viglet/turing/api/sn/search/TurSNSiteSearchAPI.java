@@ -32,7 +32,6 @@ import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,17 +59,14 @@ public class TurSNSiteSearchAPI {
     private boolean searchCacheEnabled;
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
-    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
 
     @Inject
     public TurSNSiteSearchAPI(TurSNSearchProcess turSNSearchProcess,
                               TurSNSiteRepository turSNSiteRepository,
-                              TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                               TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteRepository = turSNSiteRepository;
-        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
     }
 
@@ -92,7 +88,7 @@ public class TurSNSiteSearchAPI {
             @RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest,
             HttpServletRequest request) {
         Locale locale = LocaleUtils.toLocale(localeRequest);
-        if (existsByTurSNSiteAndLanguage(siteName, locale)) {
+        if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
             TurSEFilterQueryParameters turSEFilterQueryParameters = new TurSEFilterQueryParameters(filterQueriesDefault,
                     filterQueriesAnd, filterQueriesOr, fqOperator);
             TurSEParameters turSEParameters = new TurSEParameters(q, turSEFilterQueryParameters, currentPage, sort,
@@ -111,11 +107,6 @@ public class TurSNSiteSearchAPI {
         }
     }
 
-
-    private boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
-        return turSNSiteRepository.findByName(siteName).map(turSNSite ->
-                turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(turSNSite, locale)).orElse(false);
-    }
 
     @PostMapping
     public ResponseEntity<TurSNSiteSearchBean> turSNSiteSearchSelectPost(
@@ -140,7 +131,7 @@ public class TurSNSiteSearchAPI {
             Locale locale = LocaleUtils.toLocale(StringUtils.isNotBlank(turSNSitePostParamsBean.getLocale()) ?
                     turSNSitePostParamsBean.getLocale() :
                     localeRequest);
-            if (existsByTurSNSiteAndLanguage(siteName, locale)) {
+            if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
                 turSNSitePostParamsBean.setTargetingRules(
                         turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
                 return new ResponseEntity<>(turSNSearchProcess.search(new TurSNSiteSearchContext(siteName,

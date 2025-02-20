@@ -8,8 +8,6 @@ import { TurSNSiteLocale } from '../../../model/sn-site-locale.model';
 import { TurSNSiteLocaleService } from '../../../service/sn-site-locale.service';
 import { TurLocale } from 'projects/console/src/locale/model/locale.model';
 import { TurLocaleService } from 'projects/console/src/locale/service/locale.service';
-import { TurNLPInstanceService } from 'projects/console/src/nlp/service/nlp-instance.service';
-import { TurNLPInstance } from 'projects/console/src/nlp/model/nlp-instance.model';
 
 @Component({
     selector: 'sn-site-locale-page',
@@ -21,7 +19,6 @@ export class TurSNSiteLocalePageComponent implements OnInit {
   modalDelete!: ElementRef;
   private turSNSite: Observable<TurSNSite>;
   private turSNSiteLocale: Observable<TurSNSiteLocale>;
-  private turNLPInstances: Observable<TurNLPInstance[]>;
   private turLocales: Observable<TurLocale[]>;
   private siteId: string;
   private newObject: boolean = false;
@@ -29,13 +26,11 @@ export class TurSNSiteLocalePageComponent implements OnInit {
   constructor(
     private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
-    private turNLPInstanceService: TurNLPInstanceService,
     private turLocaleService: TurLocaleService,
     private turSNSiteLocaleService: TurSNSiteLocaleService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     this.turLocales = turLocaleService.query();
-    this.turNLPInstances = turNLPInstanceService.query();
     this.siteId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
     let localeId = this.activatedRoute.snapshot.paramMap.get('localeId') || "";
     this.newObject = (localeId.toLowerCase() === 'new');
@@ -60,11 +55,6 @@ export class TurSNSiteLocalePageComponent implements OnInit {
   getTurLocales(): Observable<TurLocale[]> {
 
     return this.turLocales;
-  }
-
-  geTurNLPInstances(): Observable<TurNLPInstance[]> {
-
-    return this.turNLPInstances;
   }
 
   isNewObject(): boolean {
@@ -108,9 +98,5 @@ export class TurSNSiteLocalePageComponent implements OnInit {
       () => {
         // The POST observable is now completed.
       });
-  }
-
-  public compareNLPInstance(n1: TurNLPInstance, n2: TurNLPInstance): boolean {
-    return n1 && n2 ? n1.id === n2.id : n1 === n2;
   }
 }
