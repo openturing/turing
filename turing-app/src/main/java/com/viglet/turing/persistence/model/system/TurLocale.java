@@ -30,7 +30,7 @@ import java.io.Serializable;
 import java.util.Locale;
 
 /**
- * The persistent class for the vigNLPSolutions database table.
+ * The persistent class for the TurLocale database table.
  * 
  */
 @Setter

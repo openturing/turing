@@ -21,7 +21,6 @@
 package com.viglet.turing.api.sn.console;
 
 import com.google.inject.Inject;
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -82,10 +81,6 @@ public class TurSNSiteLocaleAPI {
 		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
 			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
 			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
-			if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
-				turSNSiteLocale.setTurNLPInstance(null);
-			}
-			turSNSiteLocaleEdit.setTurNLPInstance(turSNSiteLocale.getTurNLPInstance());
 			turSNSiteLocaleEdit.setTurSNSite(turSNSiteLocale.getTurSNSite());
 
 			turSNSiteLocaleRepository.save(turSNSiteLocaleEdit);
@@ -106,9 +101,6 @@ public class TurSNSiteLocaleAPI {
 	@PostMapping
 	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal,
 											  @PathVariable String ignoredSnSiteId) {
-		if (turSNSiteLocale.getTurNLPInstance() != null && turSNSiteLocale.getTurNLPInstance().getId() == null) {
-			turSNSiteLocale.setTurNLPInstance(null);
-		}
 		turSNSiteLocale.setCore(turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName()));
 		turSNSiteLocaleRepository.save(turSNSiteLocale);
 		
@@ -121,7 +113,6 @@ public class TurSNSiteLocaleAPI {
 		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 			turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
-			turSNSiteLocale.setTurNLPInstance(new TurNLPInstance());
 			turSNSiteLocale.setTurSNSite(turSNSite);
 			return turSNSiteLocale;
 		}).orElse(new TurSNSiteLocale());

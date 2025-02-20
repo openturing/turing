@@ -8,8 +8,6 @@ import { TurLocale } from '../../../locale/model/locale.model';
 import { TurLocaleService } from '../../../locale/service/locale.service';
 import { TurSEInstance } from '../../../se/model/se-instance.model';
 import { TurSEInstanceService } from '../../../se/service/se-instance.service';
-import { TurNLPInstance } from '../../../nlp/model/nlp-instance.model';
-import { TurNLPInstanceService } from '../../../nlp/service/nlp-instance.service';
 import { TurSNSiteStatus } from '../../model/sn-site-monitoring.model';
 
 @Component({
@@ -24,7 +22,6 @@ export class TurSNSitePageComponent implements OnInit {
   private turSNSiteStatus: Observable<TurSNSiteStatus>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
-  private turNLPInstances: Observable<TurNLPInstance[]>;
   private id: string;
   private newObject: boolean = false;
 
@@ -32,12 +29,10 @@ export class TurSNSitePageComponent implements OnInit {
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
     private turSEInstanceService: TurSEInstanceService,
-    private turNLPInstanceService: TurNLPInstanceService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     this.turLocales = turLocaleService.query();
     this.turSEInstances = turSEInstanceService.query();
-    this.turNLPInstances = turNLPInstanceService.query();
 
     this.id= this.activatedRoute.snapshot.paramMap.get('id') || "";
     this.newObject = (this.id.toLowerCase() === 'new');

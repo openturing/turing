@@ -41,8 +41,6 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepositor
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.sn.TurSNNLPProcess;
-import com.viglet.turing.sn.TurSNThesaurusProcess;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrFieldAction;
@@ -72,8 +70,6 @@ public class TurSNProcessQueue {
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     private final TurSNSpotlightProcess turSNSpotlightProcess;
-    private final TurSNNLPProcess turSNNLPProcess;
-    private final TurSNThesaurusProcess turSNThesaurusProcess;
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
@@ -84,7 +80,6 @@ public class TurSNProcessQueue {
                              TurSolrInstanceProcess turSolrInstanceProcess,
                              TurSNMergeProvidersProcess turSNMergeProvidersProcess,
                              TurSNSpotlightProcess turSNSpotlightProcess,
-                             TurSNNLPProcess turSNNLPProcess, TurSNThesaurusProcess turSNThesaurusProcess,
                              TurSNSiteFieldRepository turSNSiteFieldRepository,
                              TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                              TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
@@ -95,8 +90,6 @@ public class TurSNProcessQueue {
         this.turSolrInstanceProcess = turSolrInstanceProcess;
         this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
         this.turSNSpotlightProcess = turSNSpotlightProcess;
-        this.turSNNLPProcess = turSNNLPProcess;
-        this.turSNThesaurusProcess = turSNThesaurusProcess;
         this.turSNSiteFieldRepository = turSNSiteFieldRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
@@ -302,9 +295,6 @@ public class TurSNProcessQueue {
                         consolidateResults.put(key, value);
                     });
                 }));
-
-        turSNNLPProcess.processNLP(turSNJobItem, turSNSite, consolidateResults);
-        turSNThesaurusProcess.processThesaurus(turSNJobItem, turSNSite, consolidateResults);
         return consolidateResults;
     }
 
@@ -329,9 +319,9 @@ public class TurSNProcessQueue {
 
     private void removeDuplicateTermsFromMultiValue(Map<String, Object> attributesWithUniqueTerms,
                                                     Entry<String, Object> attribute) {
-        List<?> nlpAttributeArray = (ArrayList<?>) attribute.getValue();
-        if (!nlpAttributeArray.isEmpty()) {
-            List<String> list = TurCommonsUtils.cloneListOfTermsAsString(nlpAttributeArray);
+        List<?> attributeArray = (ArrayList<?>) attribute.getValue();
+        if (!attributeArray.isEmpty()) {
+            List<String> list = TurCommonsUtils.cloneListOfTermsAsString(attributeArray);
             Set<String> termsUnique = new HashSet<>(list);
             List<Object> arrayValue = new ArrayList<>(termsUnique);
             attributesWithUniqueTerms.put(attribute.getKey(), arrayValue);

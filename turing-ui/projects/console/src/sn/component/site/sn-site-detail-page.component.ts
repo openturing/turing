@@ -8,8 +8,6 @@ import {TurLocale} from '../../../locale/model/locale.model';
 import {TurLocaleService} from '../../../locale/service/locale.service';
 import {TurSEInstance} from '../../../se/model/se-instance.model';
 import {TurSEInstanceService} from '../../../se/service/se-instance.service';
-import {TurNLPVendor} from 'projects/console/src/nlp/model/nlp-vendor.model';
-import {TurNLPVendorService} from 'projects/console/src/nlp/service/nlp-vendor.service';
 
 @Component({
   selector: 'sn-site-page',
@@ -20,7 +18,6 @@ export class TurSNSiteDetailPageComponent implements OnInit {
   private turSNSite: Observable<TurSNSite>;
   private turLocales: Observable<TurLocale[]>;
   private turSEInstances: Observable<TurSEInstance[]>;
-  private turNLPVendors: Observable<TurNLPVendor[]>;
   private newObject: boolean = false;
 
   constructor(
@@ -28,15 +25,11 @@ export class TurSNSiteDetailPageComponent implements OnInit {
     private turSNSiteService: TurSNSiteService,
     private turLocaleService: TurLocaleService,
     private turSEInstanceService: TurSEInstanceService,
-    private turNLPVendorService: TurNLPVendorService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
     this.turLocales = turLocaleService.query();
 
     this.turSEInstances = turSEInstanceService.query();
-
-    this.turNLPVendors = turNLPVendorService.query();
-
 
     let id: string = this.activatedRoute.parent?.snapshot.paramMap.get('id') || "";
 
@@ -70,10 +63,6 @@ export class TurSNSiteDetailPageComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  getTurNLPVendors(): Observable<TurNLPVendor[]> {
-    return this.turNLPVendors;
-  }
-
   public save(_turSNSite: TurSNSite) {
     this.turSNSiteService.save(_turSNSite, this.newObject).subscribe(
       (turSNSite: TurSNSite) => {
@@ -92,9 +81,5 @@ export class TurSNSiteDetailPageComponent implements OnInit {
         // console.log('The POST observable is now completed.');
       });
 
-  }
-
-  public compareNLPVendor(n1: TurNLPVendor, n2: TurNLPVendor): boolean {
-    return n1 && n2 ? n1.id === n2.id : n1 === n2;
   }
 }

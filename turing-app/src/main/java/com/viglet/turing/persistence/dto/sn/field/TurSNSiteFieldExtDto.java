@@ -28,17 +28,12 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.sn.TurSNFieldType;
-import jakarta.persistence.Column;
 import lombok.*;
 import lombok.experimental.Tolerate;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-/**
- * The persistent class for the turSNSiteFieldExt database table.
- */
 
 @Builder(toBuilder = true)
 @AllArgsConstructor
@@ -66,7 +61,6 @@ public class TurSNSiteFieldExtDto {
     private int enabled;
     private int required;
     private String defaultValue;
-    private int nlp;
     private TurSNSite turSNSite;
 
     @Tolerate
@@ -95,7 +89,6 @@ public class TurSNSiteFieldExtDto {
         this.enabled = turSNSiteFieldExt.getEnabled();
         this.required = turSNSiteFieldExt.getRequired();
         this.defaultValue = turSNSiteFieldExt.getDefaultValue();
-        this.nlp = turSNSiteFieldExt.getNlp();
         this.turSNSite = turSNSiteFieldExt.getTurSNSite();
     }
 

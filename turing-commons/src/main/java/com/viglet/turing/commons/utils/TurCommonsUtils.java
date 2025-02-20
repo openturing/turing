@@ -161,12 +161,8 @@ public class TurCommonsUtils {
         return text.trim();
     }
 
-    public static List<String> cloneListOfTermsAsString(List<?> nlpAttributeArray) {
-        List<String> list = new ArrayList<>();
-        for (Object nlpAttributeItem : nlpAttributeArray) {
-            list.add((String) nlpAttributeItem);
-        }
-        return list;
+    public static List<String> cloneListOfTermsAsString(List<?> attributeArray) {
+        return attributeArray.stream().map(attributeItem -> (String) attributeItem).collect(Collectors.toList());
     }
 
     public static String stripAccents(String s) {

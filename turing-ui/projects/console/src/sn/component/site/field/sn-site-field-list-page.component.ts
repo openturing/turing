@@ -16,11 +16,9 @@ import {TurSNFieldCheck} from "../../../model/sn-field-check.model";
 export class TurSNSiteFieldListPageComponent implements OnInit {
   private readonly turSNSite: Observable<TurSNSite>;
   private readonly turSNSiteSEFields: Observable<TurSNSiteField[]>;
-  private readonly turSNSiteNLPFields: Observable<TurSNSiteField[]>;
   private readonly turSNSiteStatusFields: Observable<TurSNStatusFields>;
   private readonly siteId: string;
   filterCustomField: string;
-  filterNLPField: string;
   protected readonly turSNFieldCheckEmpty!: TurSNFieldCheck;
 
   constructor(private readonly notifier: NotifierService,
@@ -28,11 +26,9 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
               private route: ActivatedRoute) {
     this.siteId = this.route.parent?.parent?.snapshot.paramMap.get('id') || "";
     this.turSNSiteSEFields = turSNSiteService.getFieldsByType(this.siteId, "se");
-    this.turSNSiteNLPFields = turSNSiteService.getFieldsByType(this.siteId, "ner");
     this.turSNSiteStatusFields = turSNSiteService.getStatusFields(this.siteId);
     this.turSNSite = this.turSNSiteService.get(this.siteId);
     this.filterCustomField = "";
-    this.filterNLPField = "";
   }
 
   getTurSNSite(): Observable<TurSNSite> {
@@ -41,10 +37,6 @@ export class TurSNSiteFieldListPageComponent implements OnInit {
 
   getTurSNSiteSEFields(): Observable<TurSNSiteField[]> {
     return this.turSNSiteSEFields;
-  }
-
-  getTurSNSiteNLPFields(): Observable<TurSNSiteField[]> {
-    return this.turSNSiteNLPFields;
   }
 
   getTurSNSiteStatusFields(): Observable<TurSNStatusFields> {

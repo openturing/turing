@@ -14,7 +14,6 @@ import {TurSNSiteDetailPageComponent} from './component/site/sn-site-detail-page
 import {TurSNSiteUIPageComponent} from './component/site/sn-site-ui-page.component';
 import {TurLocaleService} from '../locale/service/locale.service';
 import {TurSEInstanceService} from '../se/service/se-instance.service';
-import {TurNLPInstanceService} from '../nlp/service/nlp-instance.service';
 import {TurSNFieldTypeService} from './service/sn-field-type.service';
 import {TurSNSiteSpotlightService} from './service/sn-site-spotlight.service';
 import {TurSNSiteFieldRootPageComponent} from './component/site/field/sn-site-field-root-page.component';
@@ -27,7 +26,6 @@ import {TurSNSiteLocaleService} from './service/sn-site-locale.service';
 import {TurSNSiteLocalePageComponent} from './component/site/locale/sn-site-locale-page.component';
 import {TurSNSiteLocaleRootPageComponent} from './component/site/locale/sn-site-locale-root-page.component';
 import {TurSNSiteLocaleListPageComponent} from './component/site/locale/sn-site-locale-list-page.component';
-import {TurNLPVendorService} from '../nlp/service/nlp-vendor.service';
 import {TurSNSiteMergeListPageComponent} from './component/site/merge/sn-site-merge-list-page.component';
 import {TurSNSiteMergePageComponent} from './component/site/merge/sn-site-merge-page.component';
 import {TurSNSiteMergeRootPageComponent} from './component/site/merge/sn-site-merge-root-page.component';
@@ -98,8 +96,6 @@ import {TurSNSiteGenAiPageComponent} from "./component/site/genai/sn-site-genai-
     TurSEInstanceService,
     TurLLMInstanceService,
     TurStoreInstanceService,
-    TurNLPInstanceService,
-    TurNLPVendorService,
     TurLocaleService,
     TurSNFieldTypeService,
     TurSNSiteSpotlightService,

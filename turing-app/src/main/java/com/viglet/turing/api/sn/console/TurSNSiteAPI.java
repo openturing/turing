@@ -24,7 +24,6 @@ package com.viglet.turing.api.sn.console;
 import com.google.inject.Inject;
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
@@ -110,7 +109,6 @@ public class TurSNSiteAPI {
         turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
         turSNSite.setFacetType(TurSNSiteFacetFieldEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
-        turSNSite.setTurNLPVendor(new TurNLPVendor());
         turSNSite.setTurSNSiteGenAi(new TurSNSiteGenAi());
         return turSNSite;
     }
@@ -128,7 +126,6 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
             turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
-            turSNSiteEdit.setTurNLPVendor(turSNSite.getTurNLPVendor());
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
             turSNSiteEdit.setFacet(turSNSite.getFacet());
             turSNSiteEdit.setFacetType(turSNSite.getFacetType());

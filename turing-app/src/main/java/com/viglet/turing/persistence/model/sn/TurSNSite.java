@@ -21,8 +21,6 @@
 package com.viglet.turing.persistence.model.sn;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.nlp.TurNLPVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
@@ -32,7 +30,6 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.spring.security.TurAuditable;
 import jakarta.persistence.*;
 import jakarta.persistence.Entity;
@@ -156,10 +153,6 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
-
-	@ManyToOne
-	@JoinColumn(name = "nlp_vendor_id")
-	private TurNLPVendor turNLPVendor;
 
 	@OneToOne
 	private TurSNSiteGenAi turSNSiteGenAi;

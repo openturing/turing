@@ -106,8 +106,6 @@ public class TurSNSiteFieldExt implements Serializable {
     private int required;
     @Column(length = 50)
     private String defaultValue;
-    @Column
-    private int nlp;
 
 
     // bi-directional many-to-one association to TurSNSite

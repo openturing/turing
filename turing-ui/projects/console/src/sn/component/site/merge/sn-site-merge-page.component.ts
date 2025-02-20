@@ -6,8 +6,6 @@ import { TurSNSiteService } from '../../../service/sn-site.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TurSNSiteMerge } from '../../../model/sn-site-merge.model';
 import { TurSNSiteMergeService } from '../../../service/sn-site-merge.service';
-import { TurNLPInstanceService } from 'projects/console/src/nlp/service/nlp-instance.service';
-import { TurNLPInstance } from 'projects/console/src/nlp/model/nlp-instance.model';
 import { TurSNSiteMergeField } from '../../../model/sn-site-merge-field.model';
 
 @Component({
@@ -24,18 +22,15 @@ export class TurSNSiteMergePageComponent implements OnInit {
 
   private turSNSite: Observable<TurSNSite>;
   private turSNSiteMerge: Observable<TurSNSiteMerge>;
-  private turNLPInstances: Observable<TurNLPInstance[]>;
   private siteId: string;
   private newObject: boolean = false;
 
   constructor(
     private readonly notifier: NotifierService,
     private turSNSiteService: TurSNSiteService,
-    private turNLPInstanceService: TurNLPInstanceService,
     private turSNSiteMergeService: TurSNSiteMergeService,
     private activatedRoute: ActivatedRoute,
     private router: Router) {
-    this.turNLPInstances = turNLPInstanceService.query();
     this.siteId = this.activatedRoute.parent?.parent?.snapshot.paramMap.get('id') || "";
     let mergeId = this.activatedRoute.snapshot.paramMap.get('mergeId') || "";
     this.newObject = (mergeId.toLowerCase() === 'new');
@@ -54,11 +49,6 @@ export class TurSNSiteMergePageComponent implements OnInit {
 
   getTurSNSiteMerge(): Observable<TurSNSiteMerge> {
     return this.turSNSiteMerge;
-  }
-
-  geTurNLPInstances(): Observable<TurNLPInstance[]> {
-
-    return this.turNLPInstances;
   }
 
   isNewObject(): boolean {

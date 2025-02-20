@@ -48,7 +48,7 @@ public class TurLLMInstanceAPI {
 
     @Operation(summary = "Large Language Model structure")
     @GetMapping("/structure")
-    public TurLLMInstance turNLPInstanceStructure() {
+    public TurLLMInstance turLLMInstanceStructure() {
         TurLLMInstance turLLMInstance = new TurLLMInstance();
         turLLMInstance.setTurLLMVendor(new TurLLMVendor());
         return turLLMInstance;

@@ -22,7 +22,6 @@ export interface TurSNSiteField {
   showAllFacetItems: boolean;
   mlt: number;
   multiValued: number;
-  nlp: number;
   required: number;
   snType: string;
   type: string;

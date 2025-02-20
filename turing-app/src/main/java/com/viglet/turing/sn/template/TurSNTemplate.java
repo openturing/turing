@@ -29,7 +29,6 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.persistence.repository.nlp.TurNLPInstanceRepository;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
@@ -61,7 +60,6 @@ public class TurSNTemplate {
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
-    private final TurNLPInstanceRepository turNLPInstanceRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
     private final TurConfigProperties turConfigProperties;
@@ -70,7 +68,6 @@ public class TurSNTemplate {
                          TurSNSiteFieldRepository turSNSiteFieldRepository,
                          TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                          TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
-                         TurNLPInstanceRepository turNLPInstanceRepository,
                          TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                          TurSEInstanceRepository turSEInstanceRepository,
                          TurConfigProperties turConfigProperties) {
@@ -78,7 +75,6 @@ public class TurSNTemplate {
         this.turSNSiteFieldRepository = turSNSiteFieldRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
-        this.turNLPInstanceRepository = turNLPInstanceRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSEInstanceRepository = turSEInstanceRepository;
         this.turConfigProperties = turConfigProperties;
@@ -235,7 +231,6 @@ public class TurSNTemplate {
     public void createLocale(TurSNSite turSNSite, String username, Locale locale) {
         TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
         turSNSiteLocale.setLanguage(locale);
-        turSNSiteLocale.setTurNLPInstance(turNLPInstanceRepository.findAll().getFirst());
         turSNSiteLocale.setTurSNSite(turSNSite);
         turSNSiteLocale.setCore(createSolrCore(turSNSiteLocale, username));
         turSNSiteLocaleRepository.save(turSNSiteLocale);

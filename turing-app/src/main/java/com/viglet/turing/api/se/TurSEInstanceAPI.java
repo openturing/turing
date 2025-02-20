@@ -66,7 +66,7 @@ public class TurSEInstanceAPI {
 
     @Operation(summary = "Search Engine structure")
     @GetMapping("/structure")
-    public TurSEInstance turNLPInstanceStructure() {
+    public TurSEInstance turSearchEngineStructure() {
         TurSEInstance turSEInstance = new TurSEInstance();
         turSEInstance.setTurSEVendor(new TurSEVendor());
         return turSEInstance;

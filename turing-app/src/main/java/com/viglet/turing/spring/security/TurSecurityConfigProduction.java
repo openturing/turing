@@ -86,7 +86,6 @@ public class TurSecurityConfigProduction {
                                 mvc.pattern("/api/sn/**"),
                                 mvc.pattern(ERROR_PATH),
                                 mvc.pattern("/logout"),
-                                mvc.pattern("/api/nlp/**"),
                                 mvc.pattern("/api/ocr/**"),
                                 mvc.pattern("/api/genai/**"),
                                 mvc.pattern("/api/v2/guest/**"),

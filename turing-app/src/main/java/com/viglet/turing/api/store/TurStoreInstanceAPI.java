@@ -51,7 +51,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Embedding Store structure")
     @GetMapping("/structure")
-    public TurStoreInstance turNLPInstanceStructure() {
+    public TurStoreInstance turEmbeddingStoreInstanceStructure() {
         TurStoreInstance turStoreInstance = new TurStoreInstance();
         turStoreInstance.setTurStoreVendor(new TurStoreVendor());
         return turStoreInstance;

@@ -21,7 +21,6 @@
 
 package com.viglet.turing.persistence.model.sn.locale;
 
-import com.viglet.turing.persistence.model.nlp.TurNLPInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -56,11 +55,6 @@ public class TurSNSiteLocale implements Serializable {
 
 	@Column(nullable = false, length = 50)
 	private String core;
-
-	// bi-directional many-to-one association to TurNLPInstance
-	@ManyToOne
-	@JoinColumn(name = "nlp_instance_id", nullable = true)
-	private TurNLPInstance turNLPInstance;
 
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne

@@ -16,9 +16,6 @@
           Core
         </div>
         <div class="d-table-cell col-4">
-          NLP Instance
-        </div>
-        <div class="d-table-cell col-4">
         </div>
       </div>
     </div>
@@ -31,14 +28,6 @@
         </div>
         <div class="d-table-cell col-2">
           {{turSNSiteLocale.core}}
-        </div>
-        <div class="d-table-cell col-4">
-          <span *ngIf="turSNSiteLocale.turNLPInstance">
-            {{turSNSiteLocale.turNLPInstance.title}}
-          </span>
-          <span *ngIf="turSNSiteLocale.turNLPInstance == null">
-            --
-          </span>
         </div>
         <div class="d-table-cell col-4" style="text-align: right;">
           <a target="_blank" href="/sn/{{turSNSiteLocale.turSNSite.name}}?_setlocale={{turSNSiteLocale.language}}"

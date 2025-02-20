@@ -25,9 +25,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
+@Setter
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteExchange {
@@ -72,8 +74,6 @@ public class TurSNSiteExchange {
 
 	private String turSEInstance;
 
-	private String turNLPInstance;
-
 	private Set<TurSNSiteField> turSNSiteFields;
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
@@ -100,96 +100,7 @@ public class TurSNSiteExchange {
 		this.setTurSNSiteFields(turSNSite.getTurSNSiteFields());
 	}
 
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public void setCore(String core) {
-		this.core = core;
-	}
-
-	public void setRowsPerPage(int rowsPerPage) {
-		this.rowsPerPage = rowsPerPage;
-	}
-
-	public void setFacet(boolean facet) {
-		this.facet = facet;
-	}
-
-	public void setItemsPerFacet(int itemsPerFacet) {
-		this.itemsPerFacet = itemsPerFacet;
-	}
-
-	public boolean getHl() {
+    public boolean getHl() {
 		return hl;
 	}
-
-	public void setHl(boolean hl) {
-		this.hl = hl;
-	}
-
-	public void setHlPre(String hlPre) {
-		this.hlPre = hlPre;
-	}
-
-	public void setHlPost(String hlPost) {
-		this.hlPost = hlPost;
-	}
-
-	public void setMlt(boolean mlt) {
-		this.mlt = mlt;
-	}
-
-	public void setThesaurus(boolean thesaurus) {
-		this.thesaurus = thesaurus;
-	}
-
-	public void setDefaultTitleField(String defaultTitleField) {
-		this.defaultTitleField = defaultTitleField;
-	}
-
-	public void setDefaultTextField(String defaultTextField) {
-		this.defaultTextField = defaultTextField;
-	}
-
-	public void setDefaultDescriptionField(String defaultDescriptionField) {
-		this.defaultDescriptionField = defaultDescriptionField;
-	}
-
-	public void setDefaultDateField(String defaultDateField) {
-		this.defaultDateField = defaultDateField;
-	}
-
-	public void setDefaultImageField(String defaultImageField) {
-		this.defaultImageField = defaultImageField;
-	}
-
-	public void setDefaultURLField(String defaultURLField) {
-		this.defaultURLField = defaultURLField;
-	}
-
-	public void setTurSEInstance(String turSEInstance) {
-		this.turSEInstance = turSEInstance;
-	}
-
-	public void setTurNLPInstance(String turNLPInstance) {
-		this.turNLPInstance = turNLPInstance;
-	}
-
-	public void setTurSNSiteFields(Set<TurSNSiteField> turSNSiteFields) {
-		this.turSNSiteFields = turSNSiteFields;
-	}
-
 }
