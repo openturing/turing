@@ -43,7 +43,7 @@ class TuringTests {
 	private MockMvc mockMvc;
 
 	@BeforeAll
-	public void setup() {
+	void setup() {
 		mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 	}
 

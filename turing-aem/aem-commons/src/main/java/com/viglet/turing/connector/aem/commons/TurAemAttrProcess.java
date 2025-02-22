@@ -40,15 +40,11 @@ import org.json.JSONObject;
 
 import java.util.*;
 
+import static com.viglet.turing.connector.aem.commons.TurAemConstants.*;
+
 @Slf4j
 public class TurAemAttrProcess {
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String CQ_TAGS = "cq:tags";
-    public static final String DEFAULT = "default";
-    public static final String TEXT = "text";
-    public static final String JCR = "jcr:";
-    public static final String JSON = ".json";
-    public static final String SLING = "sling:";
+
 
     public static boolean hasCustomClass(TurAemTargetAttr targetAttr) {
         return targetAttr.getSourceAttrs() == null

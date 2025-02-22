@@ -163,26 +163,6 @@ public class TurSNSiteFieldExtAPI {
                 .turSNSite(turSNSite).build());
     }
 
-    private void addTurSNSiteFieldExt(TurSNFieldType turSNFieldType, TurSNSite turSNSite,
-                                      List<TurSNSiteFieldExt> turSNSiteFieldExtList) {
-        turSNSiteFieldExtList.add(turSNSiteFieldExtRepository.save(TurSNSiteFieldExt.builder()
-                .enabled(0)
-                .facet(0)
-                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
-                .facetType(TurSNSiteFacetFieldEnum.DEFAULT)
-                .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
-                .facetSort(TurSNSiteFacetFieldSortEnum.COUNT)
-                .secondaryFacet(false)
-                .showAllFacetItems(false)
-                .hl(0)
-                .multiValued(1)
-                .facetPosition(0)
-                .mlt(0)
-                .snType(turSNFieldType)
-                .type(TurSEFieldType.STRING)
-                .turSNSite(turSNSite).build()));
-    }
-
     @Operation(summary = "Show a Semantic Navigation Site Field Ext")
     @GetMapping("/{id}")
     public TurSNSiteFieldExt turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {

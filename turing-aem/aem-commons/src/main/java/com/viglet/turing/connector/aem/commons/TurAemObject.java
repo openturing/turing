@@ -27,18 +27,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static com.viglet.turing.connector.aem.commons.TurAemConstants.*;
+import static com.viglet.turing.connector.aem.commons.TurAemConstants.JCR_CONTENT;
 import static java.time.ZoneOffset.UTC;
 import static org.apache.jackrabbit.JcrConstants.*;
 
 @Getter
 @Slf4j
 public class TurAemObject {
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    public static final String HTML = ".html";
-    public static final String ACTIVATE = "Activate";
-    public static final String CQ_LAST_REPLICATED_PUBLISH = "cq:lastReplicated_publish";
-    public static final String CQ_LAST_REPLICATED = "cq:lastReplicated";
     private Calendar lastModified;
     private Calendar createdDate;
     private Calendar publicationDate;
@@ -53,16 +49,6 @@ public class TurAemObject {
     private String template;
     private String model;
     private final Map<String, Object> attributes = new HashMap<>();
-
-    public static final String CONTENT_FRAGMENT = "contentFragment";
-    public static final String CQ_LAST_REPLICATION_ACTION = "cq:lastReplicationAction";
-    public static final String CQ_LAST_REPLICATION_ACTION_PUBLISH = "cq:lastReplicationAction_publish";
-    public static final String CQ_LAST_MODIFIED = "cq:lastModified";
-    public static final String CQ_MODEL = "cq:model";
-    public static final String CQ_TEMPLATE = "cq:template";
-    public static final String DATA_FOLDER = "data";
-    public static final String DATE_JSON_FORMAT = "E MMM dd yyyy HH:mm:ss 'GMT'Z";
-    public static final String EMPTY_VALUE = "";
     public final SimpleDateFormat aemJsonDateFormat = new SimpleDateFormat(DATE_JSON_FORMAT, Locale.ENGLISH);
 
     public TurAemObject(String nodePath, JSONObject jcrNode) {
@@ -72,40 +58,68 @@ public class TurAemObject {
         this.type = jcrNode.has(JCR_PRIMARYTYPE) ? jcrNode.getString(JCR_PRIMARYTYPE) : EMPTY_VALUE;
         try {
             if (jcrNode.has(JCR_CONTENT)) {
-                this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
-                this.template = jcrContentNode.has(CQ_TEMPLATE) ? this.jcrContentNode.getString(CQ_TEMPLATE) : EMPTY_VALUE;
-                this.delivered = isActivated(CQ_LAST_REPLICATION_ACTION)
-                        && isActivated(CQ_LAST_REPLICATION_ACTION_PUBLISH);
-                this.title = jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
-                if (TurAemCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT)) {
-                    this.contentFragment = this.jcrContentNode.getBoolean(CONTENT_FRAGMENT);
-                }
-                getDataFolder(jcrContentNode);
-                Calendar lastModifiedCalendar = Calendar.getInstance();
-                if (this.jcrContentNode.has(JCR_LASTMODIFIED)) {
-                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(JCR_LASTMODIFIED)));
-                    this.lastModified = lastModifiedCalendar;
-                } else if (this.jcrContentNode.has(CQ_LAST_MODIFIED)) {
-                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_MODIFIED)));
-                    this.lastModified = lastModifiedCalendar;
-                }
-                Calendar publicationDateCalendar = Calendar.getInstance();
-                if (this.jcrContentNode.has(CQ_LAST_REPLICATED_PUBLISH)) {
-                    publicationDateCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_REPLICATED_PUBLISH)));
-                    this.publicationDate = publicationDateCalendar;
-                } else if (this.jcrContentNode.has(CQ_LAST_REPLICATED)) {
-                    lastModifiedCalendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(CQ_LAST_REPLICATED)));
-                    this.publicationDate = publicationDateCalendar;
-                }
+                processJcrContent(jcrNode);
             }
             if (jcrNode.has(JCR_CREATED)) {
-                Calendar createdDateCalendar = Calendar.getInstance();
-                createdDateCalendar.setTime(aemJsonDateFormat.parse(jcrNode.getString(JCR_CREATED)));
-                this.createdDate = createdDateCalendar;
+                processJcrCreated(jcrNode);
             }
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    private void processJcrCreated(JSONObject jcrNode) throws ParseException {
+        Calendar createdDateCalendar = Calendar.getInstance();
+        createdDateCalendar.setTime(aemJsonDateFormat.parse(jcrNode.getString(JCR_CREATED)));
+        this.createdDate = createdDateCalendar;
+    }
+
+    private void processJcrContent(JSONObject jcrNode) throws ParseException {
+        this.jcrContentNode = jcrNode.getJSONObject(JCR_CONTENT);
+        this.template = getJcrTemplate();
+        this.delivered = getJcrDelivered();
+        this.title = getJcrTitle();
+        this.contentFragment = isJcrContentFragment();
+        getDataFolder(jcrContentNode);
+        this.lastModified = getJcrLastModified();
+        this.publicationDate = getJcrPublicationDate();
+    }
+
+    private boolean isJcrContentFragment() {
+        return TurAemCommonsUtils.hasProperty(this.jcrContentNode, CONTENT_FRAGMENT) ?
+                this.jcrContentNode.getBoolean(CONTENT_FRAGMENT) :
+                (this.contentFragment = false);
+    }
+
+    private boolean getJcrDelivered() {
+        return isActivated(CQ_LAST_REPLICATION_ACTION)
+                && isActivated(CQ_LAST_REPLICATION_ACTION_PUBLISH);
+    }
+
+    private String getJcrTemplate() {
+        return jcrContentNode.has(CQ_TEMPLATE) ? this.jcrContentNode.getString(CQ_TEMPLATE) : EMPTY_VALUE;
+    }
+
+    private String getJcrTitle() {
+        return jcrContentNode.has(JCR_TITLE) ? this.jcrContentNode.getString(JCR_TITLE) : EMPTY_VALUE;
+    }
+
+    private Calendar getJcrPublicationDate() throws ParseException {
+        return getCalendar(CQ_LAST_REPLICATED_PUBLISH, CQ_LAST_REPLICATED);
+    }
+
+    private Calendar getCalendar(String cqLastReplicatedPublish, String cqLastReplicated) throws ParseException {
+        Calendar calendar = Calendar.getInstance();
+        if (this.jcrContentNode.has(cqLastReplicatedPublish)) {
+            calendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(cqLastReplicatedPublish)));
+        } else if (this.jcrContentNode.has(cqLastReplicated)) {
+            calendar.setTime(aemJsonDateFormat.parse(this.jcrContentNode.getString(cqLastReplicated)));
+        }
+        return calendar;
+    }
+
+    private Calendar getJcrLastModified() throws ParseException {
+        return getCalendar(JCR_LASTMODIFIED, CQ_LAST_MODIFIED);
     }
 
     private boolean isActivated(String attribute) {

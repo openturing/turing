@@ -196,7 +196,7 @@ public class TurSNProcessQueue {
         log.debug("Index");
         Map<String, Object> attributes = this.removeDuplicateTerms(
                 turSNMergeProvidersProcess.mergeDocuments(turSNSite,
-                        getConsolidateResults(turSNJobItem, turSNSite),
+                        getConsolidateResults(turSNJobItem),
                         turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
         return turSolrInstanceProcess.initSolrInstance(turSNSite.getName(),
@@ -285,7 +285,7 @@ public class TurSNProcessQueue {
         return TurSolrUtils.existsField(turSNSite.getTurSEInstance(), coreName, name);
     }
 
-    private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
+    private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem) {
         Map<String, Object> consolidateResults = new HashMap<>();
         Optional.ofNullable(turSNJobItem.getAttributes()).ifPresent(attributes ->
                 attributes.forEach((key, value1) -> {
