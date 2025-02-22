@@ -67,7 +67,6 @@ com.viglet.turing.connector.db.sample.ext
 com.viglet.turing.connector.filesystem
 com.viglet.turing.connector.filesystem.commons
 com.viglet.turing.connector.impl
-com.viglet.turing.connector.nutch.index.writer
 com.viglet.turing.connector.onstartup
 com.viglet.turing.connector.persistence.model
 com.viglet.turing.connector.persistence.repository
@@ -117,7 +116,6 @@ com.viglet.turing.exchange
 com.viglet.turing.exchange.sn
 com.viglet.turing.genai
 com.viglet.turing.jpa
-com.viglet.turing.nutch.commons
 com.viglet.turing.onstartup
 com.viglet.turing.onstartup.auth
 com.viglet.turing.onstartup.llm
@@ -161,7 +159,6 @@ com.viglet.turing.persistence.repository.store
 com.viglet.turing.persistence.repository.system
 com.viglet.turing.persistence.utils
 com.viglet.turing.properties
-com.viglet.turing.proxy
 com.viglet.turing.se
 com.viglet.turing.se.facet
 com.viglet.turing.se.result
