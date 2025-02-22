@@ -56,6 +56,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.viglet.turing.connector.aem.commons.TurAemConstants.*;
+
 @Slf4j
 public class TurAemCommonsUtils {
     private TurAemCommonsUtils() {
@@ -69,10 +71,7 @@ public class TurAemCommonsUtils {
             return size() > MAX_CACHE_SIZE;
         }
     };
-    public static final String JCR_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String JCR_CONTENT = "jcr:content";
-    public static final String JCR_TITLE = "jcr:title";
-    public static final String ONCE = "once";
+
 
     public static boolean isTypeEqualContentType(JSONObject jsonObject, TurAemSourceContext turAemSourceContext) {
         return jsonObject.has(JCR_PRIMARY_TYPE) &&
@@ -231,10 +230,10 @@ public class TurAemCommonsUtils {
 
     public static Optional<JSONObject> getInfinityJson(String url, TurAemSourceContext turAemSourceContext,
                                                        boolean cached) {
-        String infinityJsonUrl = String.format(url.endsWith(TurAemAttrProcess.JSON) ? "%s%s" : "%s%s.infinity.json",
+        String infinityJsonUrl = String.format(url.endsWith(JSON) ? "%s%s" : "%s%s.infinity.json",
                 turAemSourceContext.getUrl(), url);
         return getResponseBody(infinityJsonUrl, turAemSourceContext, cached).map(responseBody -> {
-            if (isResponseBodyJSONArray(responseBody) && !url.endsWith(TurAemAttrProcess.JSON)) {
+            if (isResponseBodyJSONArray(responseBody) && !url.endsWith(JSON)) {
                 return getInfinityJson(new JSONArray(responseBody).toList().getFirst().toString(),
                         turAemSourceContext, cached);
             } else if (isResponseBodyJSONObject(responseBody)) {
@@ -334,15 +333,15 @@ public class TurAemCommonsUtils {
     }
 
     public static void getJsonNodeToComponent(JSONObject jsonObject, StringBuilder components) {
-        if (jsonObject.has(TurAemAttrProcess.JCR_TITLE) && jsonObject.get(TurAemAttrProcess.JCR_TITLE)
+        if (jsonObject.has(JCR_TITLE) && jsonObject.get(JCR_TITLE)
                 instanceof String title) {
             components.append(title);
-        } else if (jsonObject.has(TurAemAttrProcess.TEXT) && jsonObject.get(TurAemAttrProcess.TEXT)
+        } else if (jsonObject.has(TEXT) && jsonObject.get(TEXT)
                 instanceof String text) {
             components.append(text);
         }
         jsonObject.toMap().forEach((key, value) -> {
-            if (!key.startsWith(TurAemAttrProcess.JCR) && !key.startsWith(TurAemAttrProcess.SLING)
+            if (!key.startsWith(JCR) && !key.startsWith(SLING)
                     && (jsonObject.get(key) instanceof JSONObject jsonObjectNode)) {
                 getJsonNodeToComponent(jsonObjectNode, components);
             }

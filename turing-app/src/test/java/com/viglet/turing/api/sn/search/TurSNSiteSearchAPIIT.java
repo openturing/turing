@@ -50,7 +50,7 @@ class TurSNSiteSearchAPIIT {
     private static final String SEARCH_ALL_TERM = "*";
 
     @BeforeAll
-    public void setup() {
+    void setup() {
         log.debug("TurSNSiteSearchAPIIT Setup");
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         mockPrincipal = Mockito.mock(Principal.class);

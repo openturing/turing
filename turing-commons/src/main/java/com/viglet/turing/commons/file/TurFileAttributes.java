@@ -42,7 +42,10 @@ public class TurFileAttributes {
 	private String name;
 	private String title;
 	private String extension;
+	@Builder.Default
 	private TurFileSize size = new TurFileSize();
+	@Builder.Default
 	private Date lastModified = new Date();
+	@Builder.Default
 	private Map<String, String> metadata = new HashMap<>();
 }

@@ -45,7 +45,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.BreakIterator;
-import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -162,17 +161,7 @@ public class TurCommonsUtils {
     }
 
     public static List<String> cloneListOfTermsAsString(List<?> attributeArray) {
-        return attributeArray.stream().map(attributeItem -> (String) attributeItem).collect(Collectors.toList());
-    }
-
-    public static String stripAccents(String s) {
-        s = Normalizer.normalize(s, Normalizer.Form.NFD);
-        s = s.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
-        return s;
-    }
-
-    public static String removeDuplicateWhiteSpaces(String s) {
-        return s.replaceAll("\\s+", " ").trim();
+        return attributeArray.stream().map(String.class::cast).collect(Collectors.toList());
     }
 
     /**

@@ -46,11 +46,18 @@
                             <finalName>connector-sample</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
-
                                 <includes>
                                     <include>com.viglet.turing.connector:*</include>
                                 </includes>
                             </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>

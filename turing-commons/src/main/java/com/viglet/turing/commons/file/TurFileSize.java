@@ -27,6 +27,7 @@ import java.math.RoundingMode;
  * @author Alexandre Oliveira
  * @since 0.3.9
  **/
+@Builder
 @Setter
 @Getter
 @AllArgsConstructor
