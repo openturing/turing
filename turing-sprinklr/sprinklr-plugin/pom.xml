@@ -5,7 +5,7 @@
     <parent>
         <artifactId>turing-sprinklr</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
-        <version>2025.1.4</version>
+        <version>2025.1.5</version>
     </parent>
 
 
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-spring</artifactId>
-            <version>2025.1.4</version>
+            <version>2025.1.5</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>com.viglet.turing.connector</groupId>
             <artifactId>sprinklr-commons</artifactId>
-            <version>2025.1.4</version>
+            <version>2025.1.5</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
