@@ -30,7 +30,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 18.10.0
-
       - name: Install Angular Cli
         run: npm i -g @angular/cli
 
@@ -40,13 +39,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Increment Version
-        run: |
-          mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
-          git config user.name alexandre.oliveira
-          git config user.email alexandre.oliveira@gmail.com
-          git commit -m "Updated version in pom.xml" -a
-          git push
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
         with:
@@ -65,31 +57,3 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=turing-app
-      - name: Deploy Version
-        env:
-            GH_TOKEN: ${{ github.token }}
-        run: |
-          mvn install package
-          export TAG_NAME=v2025.1
-          gh release upload ${TAG_NAME} turing-aem/aem-cli-indexer/target/turing-aem-cli.jar --clobber
-          gh release upload ${TAG_NAME} turing-aem/aem-plugin/target/aem-plugin.jar --clobber
-          gh release upload ${TAG_NAME} turing-app/target/viglet-turing.jar --clobber
-          gh release upload ${TAG_NAME} turing-connector/connector-app/target/turing-connector.jar --clobber
-          gh release upload ${TAG_NAME} turing-db/db-app/target/turing-db.jar --clobber
-          gh release upload ${TAG_NAME} turing-filesystem/fs-connector/target/turing-filesystem.jar --clobber
-          gh release upload ${TAG_NAME} turing-sprinklr/sprinklr-plugin/target/sprinklr-plugin.jar --clobber
-          gh release upload ${TAG_NAME} turing-web-crawler/wc-plugin/target/web-crawler-plugin.jar --clobber
-          gh release upload ${TAG_NAME} turing-java-sdk/target/turing-java-sdk.jar --clobber
-          gh release upload ${TAG_NAME} turing-commons/target/turing-commons.jar --clobber
-          gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --clobber
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy JavaDoc 🚀
-        uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          javadoc-branch: javadoc
-          java-version: 21
-          target-folder: docs/0.3.10/javadoc
-          javadoc-source-folder: target/reports/apidocs

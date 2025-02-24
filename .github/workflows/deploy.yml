@@ -1,0 +1,78 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+# This workflow uses actions that GitHub does not certify.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Deploy
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+      types: [ opened, synchronize, reopened ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Use Node.js 18.10.0
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.10.0
+
+      - name: Install Angular Cli
+        run: npm i -g @angular/cli
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Increment Version
+        run: |
+          mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
+          git config user.name alexandre.oliveira
+          git config user.email alexandre.oliveira@gmail.com
+          git commit -m "Updated version in pom.xml" -a
+          git push
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Deploy Version
+        env:
+            GH_TOKEN: ${{ github.token }}
+        run: |
+          mvn install package
+          export TAG_NAME=v2025.1
+          gh release upload ${TAG_NAME} turing-aem/aem-cli-indexer/target/turing-aem-cli.jar --clobber
+          gh release upload ${TAG_NAME} turing-aem/aem-plugin/target/aem-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-app/target/viglet-turing.jar --clobber
+          gh release upload ${TAG_NAME} turing-connector/connector-app/target/turing-connector.jar --clobber
+          gh release upload ${TAG_NAME} turing-db/db-app/target/turing-db.jar --clobber
+          gh release upload ${TAG_NAME} turing-filesystem/fs-connector/target/turing-filesystem.jar --clobber
+          gh release upload ${TAG_NAME} turing-sprinklr/sprinklr-plugin/target/sprinklr-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-web-crawler/wc-plugin/target/web-crawler-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-java-sdk/target/turing-java-sdk.jar --clobber
+          gh release upload ${TAG_NAME} turing-commons/target/turing-commons.jar --clobber
+          gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --clobber
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy JavaDoc 🚀
+        uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          javadoc-branch: javadoc
+          java-version: 21
+          target-folder: docs/latest/javadoc
+          javadoc-source-folder: target/reports/apidocs
