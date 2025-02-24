@@ -10,7 +10,7 @@ name: Java CI with Maven and SonarCloud
 
 on:
   push:
-    branches: [ "master", "2025.1" ]
+    branches: [ "2025.1" ]
   pull_request:
       types: [ opened, synchronize, reopened ]
 jobs:
