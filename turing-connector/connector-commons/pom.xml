@@ -4,7 +4,7 @@
     <parent>
         <artifactId>turing-connector</artifactId>
         <groupId>com.viglet.turing.connector</groupId>
-        <version>2025.1.2</version>
+        <version>2025.1.3</version>
     </parent>
 
     <artifactId>connector-commons</artifactId>
