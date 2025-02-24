@@ -5,12 +5,12 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>2025.1.12</version>
+        <version>2025.1.13</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>com.viglet.turing.connector</groupId>
     <artifactId>turing-connector</artifactId>
-    <version>2025.1.12</version>
+    <version>2025.1.13</version>
     <name>Turing Connector</name>
     <description>Turing Connector</description>
     <packaging>pom</packaging>

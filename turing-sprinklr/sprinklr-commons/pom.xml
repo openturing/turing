@@ -4,7 +4,7 @@
   <parent>
     <artifactId>turing-sprinklr</artifactId>
     <groupId>com.viglet.turing.connector</groupId>
-    <version>2025.1.12</version>
+    <version>2025.1.13</version>
   </parent>
 
   <artifactId>sprinklr-commons</artifactId>
