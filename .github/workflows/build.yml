@@ -45,7 +45,7 @@ jobs:
           mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
           git config user.name alexandre.oliveira
           git config user.email alexandre.oliveira@gmail.com
-          git commit -m "Updated version in pom.xml"
+          git commit -m "Updated version in pom.xml" -a
           git push
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
