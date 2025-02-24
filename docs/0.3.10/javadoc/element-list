@@ -57,8 +57,6 @@ com.viglet.turing.connector.aem.commons.context
 com.viglet.turing.connector.aem.commons.deserializer
 com.viglet.turing.connector.aem.commons.ext
 com.viglet.turing.connector.aem.commons.mappers
-com.viglet.turing.connector.aem.sample.beans
-com.viglet.turing.connector.aem.sample.ext
 com.viglet.turing.connector.commons.plugin
 com.viglet.turing.connector.db
 com.viglet.turing.connector.db.ext
@@ -105,10 +103,8 @@ com.viglet.turing.connector.sprinklr.commons.kb.request
 com.viglet.turing.connector.sprinklr.commons.kb.response
 com.viglet.turing.connector.sprinklr.commons.plugins
 com.viglet.turing.connector.sprinklr.commons.tools
-com.viglet.turing.connector.sprinklr.sample.ext
 com.viglet.turing.connector.webcrawler.commons
 com.viglet.turing.connector.webcrawler.commons.ext
-com.viglet.turing.connector.webcrawler.sample.ext
 com.viglet.turing.console
 com.viglet.turing.console.encrypt
 com.viglet.turing.encrypt
