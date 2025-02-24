@@ -65,7 +65,22 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=turing-app
-
+      - name: Deploy Version
+        run: |
+          mvn install package
+          export TAG_NAME=v2025.1
+          gh release upload ${TAG_NAME} turing-aem\aem-cli-indexer\target\turing-aem-cli.jar --clobber
+          gh release upload ${TAG_NAME} turing-aem\aem-plugin\target\aem-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-app\target\viglet-turing.jar --clobber
+          gh release upload ${TAG_NAME} turing-connector\connector-app\target\turing-connector.jar --clobber
+          gh release upload ${TAG_NAME} turing-db\db-app\target\turing-db.jar --clobber
+          gh release upload ${TAG_NAME} turing-filesystem\fs-connector\target\turing-filesystem.jar --clobber
+          gh release upload ${TAG_NAME} turing-sprinklr\sprinklr-plugin\target\sprinklr-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-web-crawler\wc-plugin\target\web-crawler-plugin.jar --clobber
+          gh release upload ${TAG_NAME} turing-java-sdk\target\turing-java-sdk.jar --clobber
+          gh release upload ${TAG_NAME} turing-nutch\nutch1_20\target\turing-nutch120.jar --clobber
+          gh release upload ${TAG_NAME} turing-commons\target\turing-commons.jar --clobber
+          gh release upload ${TAG_NAME} turing-utils\target\turing-utils.zip --clobber
   publish:
     runs-on: ubuntu-latest
     steps:
