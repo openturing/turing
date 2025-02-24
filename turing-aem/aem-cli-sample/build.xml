@@ -18,6 +18,6 @@
             <fileset dir="scripts/commons/env-publish/"/>
         </copy>
         <copy file="target/aem-cli-sample.jar" todir="dist/prod/libs/"/>
-        <get src="https://github.com/openturing/turing/releases/download/v0.3.10/turing-aem.jar" dest="dist/prod/libs/"/>
+        <get src="https://github.com/openturing/turing/releases/download/v2025.1/turing-aem.jar" dest="dist/prod/libs/"/>
     </target>
 </project>

@@ -1,7 +1,7 @@
-set TAG_NAME=v0.3.10
+set TAG_NAME=v2025.1
 mvn build-helper:parse-version versions:set -DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${parsedVersion.nextBuildNumber} versions:commit
 mvn clean package
-rem gh release create v0.3.10.1 --generate-notes
+rem gh release create v2025.1 --generate-notes
 gh release upload %TAG_NAME% turing-aem\aem-cli-indexer\target\turing-aem-cli.jar --clobber
 gh release upload %TAG_NAME% turing-aem\aem-plugin\target\aem-plugin.jar --clobber
 gh release upload %TAG_NAME% turing-app\target\viglet-turing.jar --clobber

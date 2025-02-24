@@ -6,7 +6,7 @@
     <groupId>com.viglet.turing</groupId>
     <artifactId>turing</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.10.1</version>
+    <version>2025.1.2</version>
     <name>Turing ES Master</name>
     <description>Viglet Turing ES</description>
 

@@ -9,7 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "0.3.10"
+    target-branch: "2025.1"
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "org.apache.nutch:nutch"
@@ -23,7 +23,7 @@ updates:
     directory: "/turing-ui" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "0.3.10"
+    target-branch: "2025.1"
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"
