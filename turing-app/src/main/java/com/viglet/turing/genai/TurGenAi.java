@@ -21,6 +21,7 @@ package com.viglet.turing.genai;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import dev.langchain4j.data.document.DefaultDocument;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
@@ -97,7 +98,7 @@ public class TurGenAi {
         variables.put(INFORMATION, information);
 
         Prompt prompt = promptTemplate.apply(variables);
-        AiMessage aiMessage =  context.getChatLanguageModel().generate(prompt.toUserMessage()).content();
+        AiMessage aiMessage =  context.getChatLanguageModel().chat(prompt.toUserMessage()).aiMessage();
         return TurChatMessage.builder()
                 .text(aiMessage.text())
                 .enabled(true)
@@ -118,7 +119,7 @@ public class TurGenAi {
     }
 
     private void addDocument(TurGenAiContext context, String text, Metadata metadata) {
-        Document document = new Document(text, metadata);
+        Document document = new DefaultDocument(text, metadata);
         DocumentByCharacterSplitter documentByCharacterSplitter =
                 new DocumentByCharacterSplitter(1024, 0);
         EmbeddingStoreIngestor embeddingStoreIngestor = EmbeddingStoreIngestor.builder()

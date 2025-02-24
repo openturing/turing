@@ -128,7 +128,6 @@
                 <module>turing-db</module>
                 <module>turing-aem</module>
                 <module>turing-web-crawler</module>
-                <module>turing-sprinklr</module>
                 <module>turing-app</module>
             </modules>
         </profile>
@@ -144,7 +143,6 @@
                 <module>turing-java-sdk</module>
                 <module>turing-db</module>
                 <module>turing-aem</module>
-                <module>turing-sprinklr</module>
                 <module>turing-web-crawler</module>
             </modules>
         </profile>

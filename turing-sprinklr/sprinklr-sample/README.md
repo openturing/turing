@@ -1,1 +1,0 @@
-## Sprinklr Sample
