@@ -77,12 +77,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Publish package
-        run: |
-          export JITPACK=true
-          mvn --batch-mode -P jitpack deploy
-        env:
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy JavaDoc 🚀
         uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
         with:
@@ -91,3 +85,10 @@ jobs:
           java-version: 21
           target-folder: docs/latest/javadoc
           javadoc-source-folder: target/reports/apidocs
+      - name: Publish package
+        run: |
+          export JITPACK=true
+          mvn --batch-mode -P jitpack deploy
+        env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
