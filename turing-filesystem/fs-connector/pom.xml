@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing-filesystem</artifactId>
-        <version>2025.1.7</version>
+        <version>2025.1.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>fs-connector</artifactId>
