@@ -80,7 +80,7 @@ jobs:
       - name: Publish package
         run: |
           export JITPACK=true
-          mvn --batch-mode deploy
+          mvn --batch-mode -P jitpack deploy
         env:
            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy JavaDoc 🚀
