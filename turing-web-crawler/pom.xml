@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.viglet.turing</groupId>
         <artifactId>turing</artifactId>
-        <version>2025.1.2</version>
+        <version>2025.1.12</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -39,7 +39,6 @@
             </activation>
             <modules>
                 <module>wc-commons</module>
-                <module>wc-sample</module>
                 <module>wc-plugin</module>
             </modules>
         </profile>

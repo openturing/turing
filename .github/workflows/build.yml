@@ -10,7 +10,7 @@ name: Java CI with Maven and SonarCloud
 
 on:
   push:
-    branches: [ "master", "2025.1" ]
+    branches: [ "2025.1" ]
   pull_request:
       types: [ opened, synchronize, reopened ]
 jobs:
@@ -30,7 +30,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 18.10.0
-
       - name: Install Angular Cli
         run: npm i -g @angular/cli
 
@@ -40,13 +39,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Increment Version
-        run: |
-          ./mvnw build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
-          git config user.name alexandre.oliveira
-          git config user.email alexandre.oliveira@gmail.com
-          git commit -m "Updated version in pom.xml"
-          git push
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
         with:
@@ -62,18 +54,6 @@ jobs:
 
       - name: Build and analyze
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=turing-app
-
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy JavaDoc 🚀
-        uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          javadoc-branch: javadoc
-          java-version: 21
-          target-folder: docs/0.3.10/javadoc
-          javadoc-source-folder: target/reports/apidocs
