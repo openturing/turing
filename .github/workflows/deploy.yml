@@ -67,7 +67,22 @@ jobs:
           gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --clobber
   publish:
     runs-on: ubuntu-latest
+    permissions:
+        contents: read
+        packages: write
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Publish package
+        run: |
+          export JITPACK=true
+          mvn --batch-mode deploy
+        env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy JavaDoc 🚀
         uses: MathieuSoysal/Javadoc-publisher.yml@v2.5.0
         with:
