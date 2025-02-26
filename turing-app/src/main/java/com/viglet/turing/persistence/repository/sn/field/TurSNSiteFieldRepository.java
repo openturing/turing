@@ -42,7 +42,6 @@ public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, 
 	@Cacheable("turSNSiteFieldfindByTurSNSite")
 	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
 
-	@SuppressWarnings("unchecked")
 	@CacheEvict(value = { "turSNSiteFieldfindById", "turSNSiteFieldfindByTurSNSite" }, allEntries = true)
 	@NotNull
 	TurSNSiteField save(@NotNull TurSNSiteField turSNSiteField);
