@@ -1,0 +1,77 @@
+import { useState } from "react"
+import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
+import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar"
+import { type ChatMessage, formatFileSize } from "../chat.types"
+
+interface ChatMessageListProps {
+  messages: ChatMessage[]
+  loading: boolean
+  assistantName: string
+  endRef: React.RefObject<HTMLDivElement | null>
+}
+
+export function ChatMessageList({ messages, loading, assistantName, endRef }: ChatMessageListProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  const handleCopy = (id: string, content: string) => {
+    navigator.clipboard.writeText(content)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId((prev) => prev === id ? null : prev), 2000)
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
+      {messages.map((message) => (
+        <div key={message.id} className="flex gap-3">
+          <div className="shrink-0 pt-0.5">
+            <GradientAvatar className="size-7">
+              <GradientAvatarFallback variant={message.role === "assistant" ? "info" : "secondary"}>
+                {message.role === "assistant" ? <IconCpu2 className="size-4" /> : <IconUser className="size-4" />}
+              </GradientAvatarFallback>
+            </GradientAvatar>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+              <span>{message.role === "assistant" ? assistantName : "You"}</span>
+              {message.role === "assistant" && loading && message === messages.at(-1) && (
+                <IconLoader2 className="size-3 animate-spin" />
+              )}
+            </div>
+            {message.attachments && message.attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {message.attachments.map((att, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 rounded-lg border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
+                    <IconFile className="size-3.5 shrink-0" />
+                    <span className="truncate max-w-[150px]">{att.name}</span>
+                    <span className="text-muted-foreground/60">{formatFileSize(att.size)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {message.role === "assistant" ? (
+              <div className="relative group/msg text-sm leading-relaxed prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(message.id, message.content)}
+                  title="Copy to clipboard"
+                  className={`not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all ${copiedId === message.id ? "opacity-100 text-emerald-500" : "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground"}`}
+                >
+                  {copiedId === message.id ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}
+                </button>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>
+            )}
+          </div>
+        </div>
+      ))}
+      <div ref={endRef} />
+    </div>
+  )
+}

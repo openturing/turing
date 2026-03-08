@@ -49,6 +49,13 @@ public class TurCodeInterpreterToolService {
             seaborn, scipy, openpyxl, requests, Pillow.
             - If a library is not available, the error will tell you. Try an alternative.
 
+            CHART STYLING (mandatory for all charts):
+            - Always start chart code with: plt.style.use('seaborn-v0_8-darkgrid')
+            - Remove top and right spines: ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+            - Use colorblind-friendly palette: ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9', '#E69F00']
+            - Set figure background to transparent or white: fig.patch.set_facecolor('white')
+            - Use tight_layout() before savefig for clean margins.
+
             DISPLAYING GENERATED FILES:
             - The tool returns file URLs starting with /api/v2/code-interpreter/...
             - To display an image, use EXACTLY the URL returned, with NO prefix. \
