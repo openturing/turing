@@ -49,6 +49,12 @@ public class TurCodeInterpreterToolService {
             seaborn, scipy, openpyxl, requests, Pillow.
             - If a library is not available, the error will tell you. Try an alternative.
 
+            DISPLAYING GENERATED FILES:
+            - The tool returns file URLs starting with /api/v2/code-interpreter/...
+            - To display an image, use EXACTLY the URL returned, with NO prefix. \
+            Example: ![Chart](/api/v2/code-interpreter/abc123/output.png)
+            - NEVER add "sandbox:" or any other prefix to the URL.
+
             Args:
                 code (str): Python code to execute. Required.
             Returns:
@@ -142,7 +148,8 @@ public class TurCodeInterpreterToolService {
                     String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName();
                     result.append("- ").append(f.getName())
                             .append(" (").append(formatFileSize(f.length())).append(")")
-                            .append(" -> ").append(fileUrl).append("\n");
+                            .append("\n  URL: ").append(fileUrl)
+                            .append("\n  Markdown: ![").append(f.getName()).append("](").append(fileUrl).append(")\n");
                 }
             }
 

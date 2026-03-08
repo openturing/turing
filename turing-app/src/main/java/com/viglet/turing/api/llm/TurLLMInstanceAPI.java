@@ -106,6 +106,7 @@ public class TurLLMInstanceAPI {
             turLLMInstanceEdit.setTimeout(turLLMInstance.getTimeout());
             turLLMInstanceEdit.setMaxRetries(turLLMInstance.getMaxRetries());
             turLLMInstanceEdit.setProviderOptionsJson(turLLMInstance.getProviderOptionsJson());
+            turLLMInstanceEdit.setToolsEnabled(turLLMInstance.isToolsEnabled());
             if (StringUtils.hasText(apiKey)) {
                 turLLMInstanceEdit.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey));
             }

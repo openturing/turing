@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026.1.16-add-tools-enabled
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: tools_enabled
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: tools_enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false

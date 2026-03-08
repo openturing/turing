@@ -21,6 +21,7 @@ export interface TurLLMInstance {
   timeout: string;
   maxRetries: number;
   contextWindow: number;
+  toolsEnabled: boolean;
   apiKey?: string;
   providerOptionsJson?: string;
 }

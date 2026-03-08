@@ -819,6 +819,29 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="toolsEnabled"
+                      render={({ field }) => (
+                        <FormItemTwoColumns>
+                          <FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Label>Tools Enabled</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
+                              Enable tool calling (web search, weather, code execution). Disable for models that do not support function calling.
+                            </FormItemTwoColumns.Description>
+                          </FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Right>
+                            <FormControl>
+                              <GradientSwitch
+                                checked={field.value === true}
+                                onCheckedChange={(checked) => field.onChange(checked)}
+                              />
+                            </FormControl>
+                          </FormItemTwoColumns.Right>
+                          <FormMessage />
+                        </FormItemTwoColumns>
+                      )}
+                    />
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

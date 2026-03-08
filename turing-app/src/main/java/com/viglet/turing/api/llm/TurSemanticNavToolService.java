@@ -103,7 +103,9 @@ public class TurSemanticNavToolService {
                                 .append(field.getDescription() != null ? field.getDescription() : "")
                                 .append("\n");
                     }
-                    return sb.toString();
+                    String result = sb.toString();
+                    log.info("[SemanticNav Tool] get_site_fields output ({} chars):\n{}", result.length(), result);
+                    return result;
                 })
                 .orElse("Site not found: " + siteName);
     }
@@ -175,7 +177,7 @@ public class TurSemanticNavToolService {
                 sb.append("\n");
             }
             String result = sb.toString();
-            log.debug("[SemanticNav Tool] search_site result:\n{}", result);
+            log.info("[SemanticNav Tool] search_site output ({} chars):\n{}", result.length(), result);
             return result;
         } catch (Exception e) {
             log.error("[SemanticNav Tool] search_site failed: {}", e.getMessage(), e);

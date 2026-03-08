@@ -173,20 +173,26 @@ public class TurLLMChatAPI {
         springMessages.add(new SystemMessage(SYSTEM_PROMPT));
         springMessages.addAll(buildMessages(request.messages(), files));
 
-        ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
-                .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
-                        codeInterpreterToolService)
-                .build()
-                .getToolCallbacks();
+        Prompt prompt;
+        if (turLLMInstance.isToolsEnabled()) {
+            ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
+                    .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
+                            codeInterpreterToolService)
+                    .build()
+                    .getToolCallbacks();
 
-        log.info("[Chat] Registered {} tool callbacks for LLM instance {}", toolCallbacks.length, id);
+            log.info("[Chat] Registered {} tool callbacks for LLM instance {}", toolCallbacks.length, id);
 
-        var chatOptions = DefaultToolCallingChatOptions.builder()
-                .toolCallbacks(toolCallbacks)
-                .internalToolExecutionEnabled(true)
-                .build();
+            var chatOptions = DefaultToolCallingChatOptions.builder()
+                    .toolCallbacks(toolCallbacks)
+                    .internalToolExecutionEnabled(true)
+                    .build();
 
-        Prompt prompt = new Prompt(springMessages, chatOptions);
+            prompt = new Prompt(springMessages, chatOptions);
+        } else {
+            log.info("[Chat] Tools disabled for LLM instance {}", id);
+            prompt = new Prompt(springMessages);
+        }
 
         // Use call() instead of stream() to ensure tool calling works reliably.
         // Spring AI's stream() + internalToolExecutionEnabled(true) does not execute

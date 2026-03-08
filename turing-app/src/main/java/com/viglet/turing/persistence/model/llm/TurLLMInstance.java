@@ -114,6 +114,9 @@ public class TurLLMInstance implements Serializable {
 	@Column
 	private String providerOptionsJson;
 
+	@Column(name = "tools_enabled", nullable = false)
+	private boolean toolsEnabled = true;
+
 	@Column
 	@JsonIgnore
 	private String apiKeyEncrypted;

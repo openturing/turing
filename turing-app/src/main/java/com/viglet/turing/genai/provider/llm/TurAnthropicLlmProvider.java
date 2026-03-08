@@ -1,9 +1,13 @@
 package com.viglet.turing.genai.provider.llm;
 
+import java.io.IOException;
 import java.util.Map;
 
+import org.apache.hc.client5.http.HttpRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.TimeValue;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
@@ -40,8 +44,31 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
 
         var httpClient = HttpClients.custom()
-                .setRetryStrategy(new DefaultHttpRequestRetryStrategy(
-                        3, TimeValue.ofSeconds(2)))
+                .setRetryStrategy(new HttpRequestRetryStrategy() {
+                    @Override
+                    public boolean retryRequest(HttpRequest request, IOException exception,
+                            int execCount, HttpContext context) {
+                        return execCount <= 2; // retry up to 2 times on I/O errors
+                    }
+
+                    @Override
+                    public boolean retryRequest(HttpResponse response, int execCount,
+                            HttpContext context) {
+                        return false; // never retry on HTTP errors (429, 500, etc.)
+                    }
+
+                    @Override
+                    public TimeValue getRetryInterval(HttpResponse response, int execCount,
+                            HttpContext context) {
+                        return TimeValue.ofSeconds(1);
+                    }
+
+                    @Override
+                    public TimeValue getRetryInterval(HttpRequest request, IOException exception,
+                            int execCount, HttpContext context) {
+                        return TimeValue.ofSeconds(1);
+                    }
+                })
                 .build();
         var requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
         var restClientBuilder = RestClient.builder().requestFactory(requestFactory);
