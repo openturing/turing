@@ -194,17 +194,26 @@ public class TurSemanticNavToolService {
     @Tool(name = "search_site", description = """
             Searches for content on a site. Returns compact results (ID, title, URL, snippet).
             Use get_document_details to read the full content of a specific result.
-            ACTION REQUIRED: If the user asks to search, call this tool IMMEDIATELY.
 
-            CRITICAL RULES FOR FILTERING (filterQueries):
-            1. DO NOT invent or guess values for filters. Call get_valid_filter_values first.
-            2. If the user asks for a general topic (e.g., "educaction", "Machine Learning"), put it in 'query'!
-            3. ONLY use filterQueries with EXACT values confirmed by get_valid_filter_values.
+            MANDATORY WORKFLOW — follow these steps IN ORDER:
+            1. FIRST call 'discover_facet_values' (phrase) or 'lookup_facet_value' (single word)
+               to check which words match existing facet values.
+            2. THEN call 'search_site' using the results:
+               - Words that MATCHED a facet → put ONLY in 'filterQueries' (with exact value from facet)
+               - Words that DID NOT match any facet → put in 'query'
+               - If ALL words matched facets → use query='*'
+            3. NEVER put the same word in BOTH 'query' and 'filterQueries'. This causes redundant
+               filtering and returns poor results.
+            4. NEVER invent filter values. ONLY use exact values returned by the facet lookup tools.
+
+            Example: User says "graduação tecnologia"
+              → discover_facet_values finds: graduação→programas:Graduação, tecnologia→area-de-conhecimento:Tecnologia
+              → search_site(query='*', filterQueries='programas:Graduação|area-de-conhecimento:Tecnologia')
 
             Args:
                 siteName (str): Required. Use 'educaction-stage-publish' as default if unknown.
                 locale (str): Required. Use 'pt_BR' or 'en'.
-                query (str): Required. The main search text. Put all general keywords here.
+                query (str): Required. Use '*' when all user terms are covered by filterQueries.
                 rows (int): Optional. Number of results. Defaults to 10.
                 page (int): Optional. Defaults to 1.
                 filterQueries (str): Optional. Format: field_name:VALUE. Separate with pipe (|).
@@ -985,6 +994,9 @@ public class TurSemanticNavToolService {
             Uses word-stem matching so inflected forms (plurals, conjugations) also match.
             CRITICAL: Call this BEFORE using 'filterQueries' in 'search_site' when you know a single keyword
             but not the exact database value (e.g., 'docente', 'inovacao', 'silva').
+            IMPORTANT RULE: If the term matches a facet value, use it in 'filterQueries' and DO NOT repeat
+            the same term in the 'query' parameter of 'search_site'. Only use 'query' for words that did
+            not match any facet. This avoids redundant filtering and improves search precision.
             For multi-word user phrases, prefer 'discover_facet_values' instead.
             Args:
                 siteName (str): Required. The site name.
@@ -1011,6 +1023,9 @@ public class TurSemanticNavToolService {
             CRITICAL USE CASE: When the user asks to filter by a phrase like 'cursos de engenharia' or
             'professores de matemática', call this tool to discover which facet fields and values exist
             for EACH word in the phrase. This prevents hallucinating filter values.
+            IMPORTANT RULE: Words that match a facet value MUST be used in 'filterQueries' and MUST NOT
+            be repeated in the 'query' parameter of 'search_site'. Only words that did NOT match any facet
+            should remain in the 'query'. This avoids redundant filtering and improves search precision.
             For a single keyword, you may use 'lookup_facet_value' instead.
             Args:
                 siteName (str): Required. The site name.
@@ -1046,20 +1061,35 @@ public class TurSemanticNavToolService {
             sb.append("Facet discovery for phrase: '").append(text).append("'\n");
             sb.append("Words analyzed: ").append(String.join(", ", meaningfulWords)).append("\n\n");
 
-            boolean foundAny = false;
+            List<String> matchedWords = new java.util.ArrayList<>();
+            List<String> unmatchedWords = new java.util.ArrayList<>();
+
             for (String word : meaningfulWords) {
                 String wordResult = matchTermAgainstFacets(word, facetFields);
                 if (!wordResult.startsWith("No facet values")) {
                     sb.append("--- Results for '").append(word).append("' ---\n");
                     sb.append(wordResult).append("\n");
-                    foundAny = true;
+                    matchedWords.add(word);
+                } else {
+                    unmatchedWords.add(word);
                 }
             }
 
-            if (!foundAny) {
+            if (matchedWords.isEmpty()) {
                 return "No facet values found for any word in '" + text
                         + "'. Do NOT use these terms as filters. Put them in the main 'query' parameter instead.";
             }
+
+            sb.append("=== SEARCH STRATEGY ===\n");
+            sb.append("Words matched to facets (use in 'filterQueries' ONLY, remove from 'query'): ")
+                    .append(String.join(", ", matchedWords)).append("\n");
+            if (!unmatchedWords.isEmpty()) {
+                sb.append("Words with no facet match (use in 'query'): ")
+                        .append(String.join(", ", unmatchedWords)).append("\n");
+            } else {
+                sb.append("All words matched facets. Use 'query' = '*' or a broader search term.\n");
+            }
+            sb.append("IMPORTANT: NEVER repeat a facet-matched word in both 'filterQueries' and 'query'.");
 
             String result = sb.toString();
             log.info("[SemanticNav Tool] discover_facet_values result:\n{}", result);
@@ -1122,17 +1152,16 @@ public class TurSemanticNavToolService {
 
         sb.append("INSTRUCTION: Use the Field name and one of the Valid Values (inside quotes) ")
                 .append("to build your 'filterQueries' in 'search_site'. ")
-                .append("Format: field_name:exact_value");
+                .append("Format: field_name:exact_value\n")
+                .append("IMPORTANT: Do NOT repeat matched terms in the 'query' parameter. ")
+                .append("Terms used in 'filterQueries' must be removed from 'query' to avoid redundancy.");
         return sb.toString();
     }
 
     private boolean matchesByStem(String label, String stemmedTerm) {
         String labelLower = label.toLowerCase();
-        if (labelLower.contains(stemmedTerm)) {
-            return true;
-        }
         for (String word : labelLower.split("[\\s,;/|&()\\[\\]{}\"']+")) {
-            if (!word.isEmpty() && stemWord(word).contains(stemmedTerm)) {
+            if (!word.isEmpty() && (word.startsWith(stemmedTerm) || stemWord(word).startsWith(stemmedTerm))) {
                 return true;
             }
         }
@@ -1150,17 +1179,42 @@ public class TurSemanticNavToolService {
     }
 
     private static final List<StemRule> STEM_RULES = List.of(
-            new StemRule("ções", 5, "ção"),
-            new StemRule("ões", 4, "ão"),
-            new StemRule("ães", 4, "ão"),
-            new StemRule("ais", 4, "l"),
-            new StemRule("éis", 4, "el"),
-            new StemRule("óis", 4, "ol"),
-            new StemRule("eis", 4, "l"),
-            new StemRule("is", 5, "i"),
-            new StemRule("res", 6, "r"),
-            new StemRule("es", 5, "e"),
-            new StemRule("ns", 4, "m"),
+            // Verbal / nominal suffixes (longest first to avoid partial matches)
+            new StemRule("ações", 6, ""),
+            new StemRule("ições", 6, ""),
+            new StemRule("ções", 5, ""),
+            new StemRule("ância", 6, ""),
+            new StemRule("ência", 6, ""),
+            new StemRule("mente", 6, ""),
+            new StemRule("amento", 7, ""),
+            new StemRule("imento", 7, ""),
+            new StemRule("adora", 6, ""),
+            new StemRule("ador", 5, ""),
+            new StemRule("ável", 5, ""),
+            new StemRule("ível", 5, ""),
+            new StemRule("ação", 5, ""),
+            new StemRule("ição", 5, ""),
+            new StemRule("ção", 4, ""),
+            new StemRule("dade", 5, ""),
+            new StemRule("ante", 5, ""),
+            new StemRule("ente", 5, ""),
+            new StemRule("ista", 5, ""),
+            new StemRule("ismo", 5, ""),
+            new StemRule("oso", 4, ""),
+            new StemRule("osa", 4, ""),
+            new StemRule("ivo", 4, ""),
+            new StemRule("iva", 4, ""),
+            // Plurals
+            new StemRule("ões", 4, ""),
+            new StemRule("ães", 4, ""),
+            new StemRule("ais", 4, ""),
+            new StemRule("éis", 4, ""),
+            new StemRule("óis", 4, ""),
+            new StemRule("eis", 4, ""),
+            new StemRule("res", 5, ""),
+            new StemRule("ns", 4, ""),
+            new StemRule("is", 4, ""),
+            new StemRule("es", 4, ""),
             new StemRule("s", 4, "")
     );
 
