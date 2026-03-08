@@ -13,6 +13,7 @@ export interface ChatSession {
   modelName?: string
   messages: (ChatMessageItem & { id: string; attachments?: { name: string; type: string; size: number }[] })[]
   createdAt: number
+  updatedAt: number
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -40,14 +41,27 @@ export async function saveSession(session: ChatSession): Promise<void> {
   })
 }
 
+export async function getSession(id: string): Promise<ChatSession | undefined> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly")
+    const request = tx.objectStore(STORE_NAME).get(id)
+    request.onsuccess = () => resolve(request.result as ChatSession | undefined)
+    request.onerror = () => reject(request.error)
+  })
+}
+
 export async function getAllSessions(): Promise<ChatSession[]> {
   const db = await openDB()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly")
     const store = tx.objectStore(STORE_NAME)
-    const index = store.index("createdAt")
-    const request = index.getAll()
-    request.onsuccess = () => resolve((request.result as ChatSession[]).reverse())
+    const request = store.getAll()
+    request.onsuccess = () => {
+      const sessions = (request.result as ChatSession[])
+        .sort((a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt))
+      resolve(sessions)
+    }
     request.onerror = () => reject(request.error)
   })
 }

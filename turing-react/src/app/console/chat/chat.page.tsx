@@ -20,7 +20,7 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { ModeToggle } from "@/components/mode-toggle"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import { type ChatMessageItem, TurChatService } from "@/services/chat/chat.service"
-import { type ChatSession, saveSession, getAllSessions, deleteSession } from "@/services/chat/chat-session.service"
+import { type ChatSession, saveSession, getSession, getAllSessions, deleteSession } from "@/services/chat/chat-session.service"
 
 const turChatService = new TurChatService()
 
@@ -185,6 +185,11 @@ export default function ChatPage() {
 
   // ── Session save helpers ──
 
+  const chatMessagesRef = useRef(chatMessages)
+  chatMessagesRef.current = chatMessages
+  const semMessagesRef = useRef(semMessages)
+  semMessagesRef.current = semMessages
+
   const generateAITitle = useCallback(async (msgs: ChatMessage[], llmId: string): Promise<string> => {
     const text = msgs.slice(0, 4).map((m) => `${m.role}: ${m.content}`).join("\n")
     return new Promise<string>((resolve) => {
@@ -208,30 +213,55 @@ export default function ChatPage() {
     })
   }, [])
 
-  const saveCurrentSession = useCallback(async (tab: "chat" | "semantic", msgs: ChatMessage[], llmId: string) => {
+  const saveAfterResponse = useCallback(async (tab: "chat" | "semantic", msgs: ChatMessage[], llmId: string) => {
     if (msgs.length === 0) return
 
-    let title: string
-    try {
-      title = await generateAITitle(msgs, llmId)
-    } catch {
-      title = generateFallbackTitle(msgs)
-    }
-
     const instance = llmInstances.find((i) => i.id === llmId)
-    const session: ChatSession = {
-      id: activeSessionId ?? generateId(),
-      title,
-      tab,
-      llmId,
-      llmTitle: instance?.title,
-      modelName: instance?.modelName,
-      messages: msgs,
-      createdAt: Date.now(),
+    const isNewSession = !activeSessionId
+    const sessionId = activeSessionId ?? generateId()
+
+    if (isNewSession) {
+      // First interaction: save immediately with fallback title, then generate AI title in background
+      const session: ChatSession = {
+        id: sessionId,
+        title: generateFallbackTitle(msgs),
+        tab,
+        llmId,
+        llmTitle: instance?.title,
+        modelName: instance?.modelName,
+        messages: msgs,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }
+      await saveSession(session)
+      setActiveSessionId(sessionId)
+      await loadSessions()
+
+      // Generate AI title in background and update
+      generateAITitle(msgs, llmId).then(async (aiTitle) => {
+        const updated: ChatSession = { ...session, title: aiTitle }
+        await saveSession(updated)
+        await loadSessions()
+      }).catch(() => { /* fallback title already saved */ })
+    } else {
+      // Subsequent interaction: update messages only, keep existing title
+      const existing = await getSession(sessionId)
+      const session: ChatSession = {
+        id: sessionId,
+        title: existing?.title ?? generateFallbackTitle(msgs),
+        tab,
+        llmId,
+        llmTitle: instance?.title,
+        modelName: instance?.modelName,
+        messages: msgs,
+        createdAt: existing?.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+      }
+      await saveSession(session)
+      await loadSessions()
     }
-    await saveSession(session)
-    await loadSessions()
   }, [activeSessionId, generateAITitle, loadSessions, llmInstances])
+
 
   // ── Chat tab handlers ──
 
@@ -264,11 +294,16 @@ export default function ChatPage() {
 
     const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
 
+    const llmId = selectedLlmId
     await turChatService.sendStream(
-      selectedLlmId,
+      llmId,
       apiMessages,
       (token) => setChatMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
-      () => setChatLoading(false),
+      () => {
+        setChatLoading(false)
+        // Save session after LLM finishes responding
+        setTimeout(() => saveAfterResponse("chat", chatMessagesRef.current, llmId), 0)
+      },
       (error) => {
         console.error(error)
         toast.error("Failed to get a response. Please check your LLM configuration.")
@@ -317,11 +352,15 @@ export default function ChatPage() {
 
     const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
 
+    const llmId = selectedLlmId
     await turChatService.sendSemanticStream(
-      selectedLlmId,
+      llmId,
       apiMessages,
       (token) => setSemMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
-      () => setSemLoading(false),
+      () => {
+        setSemLoading(false)
+        setTimeout(() => saveAfterResponse("semantic", semMessagesRef.current, llmId), 0)
+      },
       (error) => {
         console.error(error)
         toast.error("Failed to get a response. Please check your LLM configuration.")
@@ -355,26 +394,19 @@ export default function ChatPage() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendFn() }
   }
 
-  const handleNewChat = async () => {
-    if (activeTab === "chat" && chatMessages.length > 0) {
-      await saveCurrentSession("chat", chatMessages, selectedLlmId)
+  const handleNewChat = () => {
+    // Sessions are already auto-saved after each LLM response, just clear state
+    if (activeTab === "chat") {
       setChatMessages([]); setChatInput(""); setAttachedFiles([])
-    } else if (activeTab === "semantic" && semMessages.length > 0) {
-      await saveCurrentSession("semantic", semMessages, selectedLlmId)
+    } else {
       setSemMessages([]); setSemInput("")
     }
     setActiveSessionId(null)
     setSidebarOpen(true)
   }
 
-  const handleModelChange = async (v: string) => {
-    // Save current sessions before switching
-    if (chatMessages.length > 0) {
-      await saveCurrentSession("chat", chatMessages, selectedLlmId)
-    }
-    if (semMessages.length > 0) {
-      await saveCurrentSession("semantic", semMessages, selectedLlmId)
-    }
+  const handleModelChange = (v: string) => {
+    // Sessions are already auto-saved after each LLM response
     setSelectedLlmId(v)
     localStorage.setItem(LLM_STORAGE_KEY, v)
     setChatMessages([]); setChatInput(""); setAttachedFiles([])
@@ -515,7 +547,7 @@ export default function ChatPage() {
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{session.title}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {formatRelativeTime(session.createdAt)} &middot; {session.messages.length} msgs
+                      {formatRelativeTime(session.updatedAt ?? session.createdAt)} &middot; {session.messages.length} msgs
                     </div>
                     {session.llmTitle && (
                       <div className="text-xs text-muted-foreground/70 mt-0.5 truncate">
