@@ -8,16 +8,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/v2026.1.11.yaml
   - include:
-      file: db/changelog/v2026.1.11_genai_spring_ai.yaml
-  - include:
-      file: db/changelog/v2026.1.11_llm_vendor_new_providers.yaml
-  - include:
-      file: db/changelog/v2026.1.12_llm_context_window.yaml
-  - include:
-      file: db/changelog/v2026.1.13_llm_description_nullable.yaml
-  - include:
-      file: db/changelog/v2026.1.14_gemini_split_providers.yaml
-  - include:
-      file: db/changelog/v2026.1.15_llm_token_usage.yaml
-  - include:
-      file: db/changelog/v2026.1.16_llm_tools_enabled.yaml
+      file: db/changelog/v2026.1.11.1.yaml

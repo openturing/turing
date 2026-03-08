@@ -77,7 +77,11 @@ public class TurLLMChatAPI {
             call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
             Do NOT call plt.show(). Always use print() for output.
             - search_images — ONLY when the user asks to see, show, or find a photo, picture, or image \
-            of something. After getting results, display images using markdown: ![description](image_url).
+            of something. Before calling this tool, act as a Prompt Engineer: transform the user's simple \
+            request into an optimized English super-query by enriching the subject with texture/color/state \
+            adjectives, placing it in a specific scene, and appending photography terms (shallow depth of field, \
+            8k, volumetric lighting, sharp focus, cinematic style). Pass ONLY the optimized English query. \
+            After getting results, display images using markdown: ![description](image_url).
 
             IMPORTANT RULES:
             1. DEFAULT BEHAVIOR: Respond conversationally. Most messages do NOT need tools.
