@@ -28,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
@@ -495,10 +496,10 @@ class TurSolrUtilsTest {
         });
 
         server.start();
-        try {
+        try (InputStream zipContent = new ByteArrayInputStream("zip-content".getBytes(StandardCharsets.UTF_8))) {
             TurSolrUtils.createCore(solrUrl, "coreA", "_default");
             TurSolrUtils.createCollection(solrUrl, "coreA",
-                    new ByteArrayInputStream("zip-content".getBytes(StandardCharsets.UTF_8)), 2);
+                    zipContent, 2);
 
             assertThat(coresCalls.get()).isGreaterThanOrEqualTo(1);
             assertThat(configCalls.get()).isEqualTo(1);
@@ -584,7 +585,7 @@ class TurSolrUtilsTest {
     }
 
     @Test
-    void testNetworkFailuresDoNotThrow() throws Exception {
+    void testNetworkFailuresDoNotThrow() {
         TurSEInstance instance = mock(TurSEInstance.class);
         when(instance.getHost()).thenReturn("localhost");
         when(instance.getPort()).thenReturn(1);

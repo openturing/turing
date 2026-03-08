@@ -8,8 +8,8 @@ class TurSNFilterQueryOperatorTest {
 
     @Test
     void shouldExposeExpectedOperatorStrings() {
-        assertThat(TurSNFilterQueryOperator.AND.toString()).isEqualTo("AND");
-        assertThat(TurSNFilterQueryOperator.OR.toString()).isEqualTo("OR");
-        assertThat(TurSNFilterQueryOperator.NONE.toString()).isEqualTo("NONE");
+        assertThat(TurSNFilterQueryOperator.AND).hasToString("AND");
+        assertThat(TurSNFilterQueryOperator.OR).hasToString("OR");
+        assertThat(TurSNFilterQueryOperator.NONE).hasToString("NONE");
     }
 }

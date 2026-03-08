@@ -483,8 +483,8 @@ class TurSolrQueryBuilderTest {
                 TurSEParameters parameters = new TurSEParameters(searchParams, post);
                 TurSESpellCheckResult spell = new TurSESpellCheckResult(false, "");
 
-                when(turSNTargetingRules.ruleExpression(eq(com.viglet.turing.sn.tr.TurSNTargetingRuleMethod.AND),
-                                eq(List.of("segment:vip"))))
+                when(turSNTargetingRules.ruleExpression(com.viglet.turing.sn.tr.TurSNTargetingRuleMethod.AND,
+                                List.of("segment:vip")))
                                 .thenReturn("segment:\"vip\"");
 
                 SolrQuery query = builder().prepareSolrQuery(contextFrom(parameters, post), site,
