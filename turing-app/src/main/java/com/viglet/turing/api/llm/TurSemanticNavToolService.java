@@ -980,75 +980,199 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "find_matching_facet_values", description = """
-            Searches across ALL available facets (filters) for values that match or are similar to a specific term.
-            CRITICAL USE CASE: Call this tool BEFORE using 'filterQueries' in 'search_site' whenever the user asks
-            to filter by a category, tag, author, or attribute, but you DO NOT know the EXACT string value in the database.
-            This tool prevents search errors by returning the exact field names and valid values you MUST use.
+    @Tool(name = "lookup_facet_value", description = """
+            Looks up a SINGLE term across all available facets to find exact filter values in the database.
+            Uses word-stem matching so inflected forms (plurals, conjugations) also match.
+            CRITICAL: Call this BEFORE using 'filterQueries' in 'search_site' when you know a single keyword
+            but not the exact database value (e.g., 'docente', 'inovacao', 'silva').
+            For multi-word user phrases, prefer 'discover_facet_values' instead.
             Args:
                 siteName (str): Required. The site name.
                 locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
-                term (str): Required. The partial word, name, or concept to look for inside facet values
-                    (e.g., 'tech', 'eng', 'silva', 'inovacao').""")
-    public String findMatchingFacetValues(String siteName, String locale, String term) {
-        log.info("[SemanticNav Tool] find_matching_facet_values called: siteName={}, locale={}, term='{}'",
+                term (str): Required. A single word or short term to look for inside facet values.""")
+    public String lookupFacetValue(String siteName, String locale, String term) {
+        log.info("[SemanticNav Tool] lookup_facet_value called: siteName={}, locale={}, term='{}'",
                 siteName, locale, term);
         try {
-            HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
-                    siteName, LocaleUtils.toLocale(locale));
+            TurSNFacetFieldList facetFields = fetchFacetFields(siteName, locale);
+            if (facetFields == null) {
+                return "No facets found for site: " + siteName;
+            }
+            return matchTermAgainstFacets(term, facetFields);
+        } catch (Exception e) {
+            log.error("[SemanticNav Tool] lookup_facet_value failed", e);
+            return "Error retrieving facet values. Check if the site name is correct.";
+        }
+    }
 
-            TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery("*");
-            turSNQuery.setRows(1);
-            turSNQuery.setPageNumber(1);
-
-            QueryTurSNResponse response = turSNServer.query(turSNQuery);
-            TurSNFacetFieldList facetFields = response.getFacetFields();
-
-            if (facetFields == null || !facetFields.iterator().hasNext()) {
+    @Tool(name = "discover_facet_values", description = """
+            Splits a user phrase into individual words and searches ALL facets for values matching each word.
+            Uses word-stem matching for better recall (e.g., 'docentes' matches 'Docente').
+            CRITICAL USE CASE: When the user asks to filter by a phrase like 'cursos de engenharia' or
+            'professores de matemática', call this tool to discover which facet fields and values exist
+            for EACH word in the phrase. This prevents hallucinating filter values.
+            For a single keyword, you may use 'lookup_facet_value' instead.
+            Args:
+                siteName (str): Required. The site name.
+                locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
+                text (str): Required. A phrase or sentence whose words will be searched individually
+                    (e.g., 'cursos engenharia computação', 'professores matemática').""")
+    public String discoverFacetValues(String siteName, String locale, String text) {
+        log.info("[SemanticNav Tool] discover_facet_values called: siteName={}, locale={}, text='{}'",
+                siteName, locale, text);
+        try {
+            TurSNFacetFieldList facetFields = fetchFacetFields(siteName, locale);
+            if (facetFields == null) {
                 return "No facets found for site: " + siteName;
             }
 
-            String searchTermLower = term.toLowerCase();
+            String[] words = text.trim().toLowerCase().split("\\s+");
+            Set<String> stopWords = Set.of(
+                    "de", "do", "da", "dos", "das", "em", "no", "na", "nos", "nas",
+                    "o", "a", "os", "as", "um", "uma", "uns", "umas",
+                    "e", "ou", "com", "por", "para", "que", "se",
+                    "the", "of", "in", "and", "or", "for", "to", "an", "is", "on", "at", "by", "with");
+
+            List<String> meaningfulWords = java.util.Arrays.stream(words)
+                    .filter(w -> w.length() > 2 && !stopWords.contains(w))
+                    .distinct()
+                    .toList();
+
+            if (meaningfulWords.isEmpty()) {
+                return "No meaningful words found in: '" + text + "'. Provide more specific terms.";
+            }
+
             StringBuilder sb = new StringBuilder();
-            sb.append("Exact facet values matching '").append(term).append("':\n\n");
+            sb.append("Facet discovery for phrase: '").append(text).append("'\n");
+            sb.append("Words analyzed: ").append(String.join(", ", meaningfulWords)).append("\n\n");
 
             boolean foundAny = false;
-
-            for (TurSNFacetField facet : facetFields) {
-                List<TurSNFacetFieldValue> values = facet.getValues().getTurSNFacetFieldValues();
-                if (values == null || values.isEmpty()) {
-                    continue;
-                }
-
-                String matchedValues = values.stream()
-                        .filter(v -> v.getLabel() != null
-                                && v.getLabel().toLowerCase().contains(searchTermLower))
-                        .map(v -> "'" + v.getLabel() + "' (" + v.getCount() + " items)")
-                        .collect(Collectors.joining(", "));
-
-                if (!matchedValues.isEmpty()) {
-                    sb.append("Field: '").append(facet.getName()).append("'\n");
-                    sb.append("  Valid Values: ").append(matchedValues).append("\n\n");
+            for (String word : meaningfulWords) {
+                String wordResult = matchTermAgainstFacets(word, facetFields);
+                if (!wordResult.startsWith("No facet values")) {
+                    sb.append("--- Results for '").append(word).append("' ---\n");
+                    sb.append(wordResult).append("\n");
                     foundAny = true;
                 }
             }
 
             if (!foundAny) {
-                return "No facet values found matching '" + term
-                        + "'. Do NOT use this term as a filter. Put it in the main 'query' parameter instead.";
+                return "No facet values found for any word in '" + text
+                        + "'. Do NOT use these terms as filters. Put them in the main 'query' parameter instead.";
             }
 
-            sb.append("INSTRUCTION: Use the Field name and one of the Valid Values (inside quotes) ")
-                    .append("to build your 'filterQueries' in 'search_site'. ")
-                    .append("Format: field_name:exact_value");
             String result = sb.toString();
-            log.info("[SemanticNav Tool] find_matching_facet_values result:\n{}", result);
+            log.info("[SemanticNav Tool] discover_facet_values result:\n{}", result);
             return result;
         } catch (Exception e) {
-            log.error("[SemanticNav Tool] find_matching_facet_values failed", e);
+            log.error("[SemanticNav Tool] discover_facet_values failed", e);
             return "Error retrieving facet values. Check if the site name is correct.";
         }
+    }
+
+    private TurSNFacetFieldList fetchFacetFields(String siteName, String locale) {
+        HttpTurSNServer turSNServer = new HttpTurSNServer(
+                URI.create("http://localhost:" + serverPort),
+                siteName, LocaleUtils.toLocale(locale));
+
+        TurSNQuery turSNQuery = new TurSNQuery();
+        turSNQuery.setQuery("*");
+        turSNQuery.setRows(1);
+        turSNQuery.setPageNumber(1);
+
+        QueryTurSNResponse response = turSNServer.query(turSNQuery);
+        TurSNFacetFieldList facetFields = response.getFacetFields();
+        if (facetFields == null || !facetFields.iterator().hasNext()) {
+            return null;
+        }
+        return facetFields;
+    }
+
+    private String matchTermAgainstFacets(String term, TurSNFacetFieldList facetFields) {
+        String searchTermLower = term.toLowerCase();
+        String stemmedTerm = stemWord(searchTermLower);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Facet values matching '").append(term).append("' (stem: '")
+                .append(stemmedTerm).append("'):\n\n");
+
+        boolean foundAny = false;
+
+        for (TurSNFacetField facet : facetFields) {
+            List<TurSNFacetFieldValue> values = facet.getValues().getTurSNFacetFieldValues();
+            if (values == null || values.isEmpty()) {
+                continue;
+            }
+
+            String matchedValues = values.stream()
+                    .filter(v -> v.getLabel() != null && matchesByStem(v.getLabel(), stemmedTerm))
+                    .map(v -> "'" + v.getLabel() + "' (" + v.getCount() + " items)")
+                    .collect(Collectors.joining(", "));
+
+            if (!matchedValues.isEmpty()) {
+                sb.append("Field: '").append(facet.getName()).append("'\n");
+                sb.append("  Valid Values: ").append(matchedValues).append("\n\n");
+                foundAny = true;
+            }
+        }
+
+        if (!foundAny) {
+            return "No facet values found matching '" + term + "' (stem: '" + stemmedTerm
+                    + "'). Do NOT use this term as a filter. Put it in the main 'query' parameter instead.";
+        }
+
+        sb.append("INSTRUCTION: Use the Field name and one of the Valid Values (inside quotes) ")
+                .append("to build your 'filterQueries' in 'search_site'. ")
+                .append("Format: field_name:exact_value");
+        return sb.toString();
+    }
+
+    private boolean matchesByStem(String label, String stemmedTerm) {
+        String labelLower = label.toLowerCase();
+        if (labelLower.contains(stemmedTerm)) {
+            return true;
+        }
+        for (String word : labelLower.split("[\\s,;/|&()\\[\\]{}\"']+")) {
+            if (!word.isEmpty() && stemWord(word).contains(stemmedTerm)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private record StemRule(String suffix, int minLength, String replacement) {
+        boolean matches(String word) {
+            return word.length() >= minLength && word.endsWith(suffix);
+        }
+
+        String apply(String word) {
+            return word.substring(0, word.length() - suffix.length()) + replacement;
+        }
+    }
+
+    private static final List<StemRule> STEM_RULES = List.of(
+            new StemRule("ções", 5, "ção"),
+            new StemRule("ões", 4, "ão"),
+            new StemRule("ães", 4, "ão"),
+            new StemRule("ais", 4, "l"),
+            new StemRule("éis", 4, "el"),
+            new StemRule("óis", 4, "ol"),
+            new StemRule("eis", 4, "l"),
+            new StemRule("is", 5, "i"),
+            new StemRule("res", 6, "r"),
+            new StemRule("es", 5, "e"),
+            new StemRule("ns", 4, "m"),
+            new StemRule("s", 4, "")
+    );
+
+    private String stemWord(String word) {
+        if (word == null || word.length() <= 3) {
+            return word;
+        }
+        String s = word.toLowerCase();
+        return STEM_RULES.stream()
+                .filter(rule -> rule.matches(s))
+                .findFirst()
+                .map(rule -> rule.apply(s))
+                .orElse(s);
     }
 }
