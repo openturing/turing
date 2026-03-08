@@ -43,12 +43,10 @@ public class TurSemanticNavToolService {
     }
 
     @Tool(name = "list_sites", description = """
-            Lists all Semantic Navigation sites available in Turing.
-            Returns site name, description, and available locales (_setlocale values) for each site.
-            Use this tool first to discover which sites and locales are available before searching.
-            IMPORTANT: Only the locales listed here can be used as _setlocale when searching.
+            Lists available Semantic Navigation sites.
+            ONLY use this if you do not know the siteName or need to verify available locales.
             Args:
-                filterName (str): Optional. Filter sites by name (partial match). Use empty string to list all.""")
+                filterName (str): Optional. Filter sites by name. Use empty string for all.""")
     public String listSites(String filterName) {
         log.info("[SemanticNav Tool] list_sites called with filterName={}", filterName);
         List<TurSNSite> sites = turSNSiteRepository.findAll(Sort.by("name"));
@@ -78,12 +76,11 @@ public class TurSemanticNavToolService {
     }
 
     @Tool(name = "get_site_fields", description = """
-            Retrieves the field mappings for a Semantic Navigation site.
-            Returns field name, type, whether it is a facet, and description.
-            Use this tool to discover facet fields that can be used as filterQueries in search_site.
-            When a user asks about a specific subject/topic, look for matching facet fields to filter results.
+            Retrieves valid facet fields for filtering a specific site.
+            ONLY call this if the user asks for specific filters (e.g., 'by author', 'only news')
+            and you need to know the exact field name to use in search_site.
             Args:
-                siteName: Name of the site (e.g., 'samplesite'). Use list_sites to find available sites.""")
+                siteName (str): Name of the site.""")
     public String getSiteFields(String siteName) {
         log.info("[SemanticNav Tool] get_site_fields called with siteName={}", siteName);
         return turSNSiteRepository.findByName(siteName)
@@ -111,22 +108,27 @@ public class TurSemanticNavToolService {
     }
 
     @Tool(name = "search_site", description = """
-            Executes a search query against a Turing Semantic Navigation site.
+            Searches for content on a site.
+            ACTION REQUIRED: If the user asks to search, call this tool IMMEDIATELY using their search terms in the 'query' parameter.
+
+            CRITICAL RULES FOR FILTERING (filterQueries):
+            1. DO NOT invent or guess values for filters.
+            2. If the user asks for a general topic (e.g., "Insper", "Machine Learning"), put it in the 'query' parameter! DO NOT use it as a filter.
+            3. ONLY use filterQueries if you are 100% absolutely sure of the EXACT string value registered in the database (e.g., from a previous search result).
+
             Args:
-                siteName (str): Name of the site to search. Required. Use list_sites to find available sites.
-                _setlocale (str): Locale code for the search. Required. Must be the EXACT locale string \
-            returned by list_sites (e.g., 'en', 'pt', 'en_US'). Do NOT guess or modify the locale — copy it exactly.
-                query (str): Search query string. Example: 'machine learning'.
-                rows (int): Number of results per page. Default: 10.
-                page (int): Page number (1-based). Default: 1.
-                filterQueries (str): Comma-separated filter queries in field:value format. Use get_site_fields \
-            to discover facet fields, then filter by subject/topic. Example: 'type:article,category:technology'.
-            Returns:
-                Search results with document fields and metadata.""")
+                siteName (str): Required. Use 'insper-stage-publish' as default if unknown.
+                locale (str): Required. Use 'pt_BR' or 'en'.
+                query (str): Required. The main search text. Put all general keywords here.
+                rows (int): Optional. Number of results. Defaults to 10.
+                page (int): Optional. Defaults to 1.
+                filterQueries (str): Optional. Format: field_name:VALUE. Separate with pipe (|).
+            """)
     public String searchSite(String siteName, String locale, String query,
             int rows, int page, String filterQueries) {
-        log.info("[SemanticNav Tool] search_site called: siteName={}, locale={}, query='{}', rows={}, page={}, fq={}",
-                siteName, locale, query, rows, page, filterQueries);
+
+        log.info("[SemanticNav Tool] search_site called: siteName={}, locale={}, query='{}', fq={}",
+                siteName, locale, query, filterQueries);
 
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
@@ -134,29 +136,25 @@ public class TurSemanticNavToolService {
                     siteName, LocaleUtils.toLocale(locale));
 
             TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery(query != null ? query : "*");
+            turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
+
+            // Melhoria: Usar pipe (|) em vez de vírgula para evitar quebra em datas ou
+            // textos com vírgula
             if (filterQueries != null && !filterQueries.isBlank()) {
-                String[] fqs = filterQueries.split(",");
+                String[] fqs = filterQueries.split("\\|");
                 turSNQuery.addFilterQuery(fqs);
             }
+
             turSNQuery.setRows(rows > 0 ? rows : 10);
             turSNQuery.setPageNumber(page > 0 ? page : 1);
             turSNQuery.setSortField(TurSNQuery.Order.asc);
 
-            log.info("[SemanticNav Tool] search_site: querying http://localhost:{}/api/sn/{}/search?q={}&_setlocale={}",
-                    serverPort, siteName, turSNQuery.getQuery(), locale);
-
             QueryTurSNResponse response = turSNServer.query(turSNQuery);
             TurSNDocumentList results = response.getResults();
 
-            if (results == null || results.getTurSNDocuments() == null
-                    || results.getTurSNDocuments().isEmpty()) {
-                log.warn("[SemanticNav Tool] search_site: No results found for query '{}' on site '{}' _setlocale '{}'",
-                        query, siteName, locale);
-                return "No results found for query: " + query;
+            if (results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty()) {
+                return "No results found for query: " + query + ". Try modifying your search terms or filters.";
             }
-
-            log.info("[SemanticNav Tool] search_site: found {} documents", results.getTurSNDocuments().size());
 
             StringBuilder sb = new StringBuilder();
             sb.append("Found ").append(results.getQueryContext() != null
@@ -169,19 +167,26 @@ public class TurSemanticNavToolService {
                 idx++;
                 sb.append("--- Result ").append(idx).append(" ---\n");
                 if (doc.getContent() != null && doc.getContent().getFields() != null) {
-                    doc.getContent().getFields()
-                            .forEach((key, value) -> sb.append(key).append(": ").append(value).append("\n"));
-                } else {
-                    log.warn("[SemanticNav Tool] search_site: doc #{} has null content or fields", idx);
+                    // Sugestão de Melhoria (Token Management):
+                    // Limitar o tamanho dos campos longos (ex: RichText, Text) para não estourar a
+                    // memória do LLM.
+                    doc.getContent().getFields().forEach((key, value) -> {
+                        String valStr = value != null ? value.toString() : "";
+                        if (valStr.length() > 500) {
+                            valStr = valStr.substring(0, 500) + "... [TRUNCATED]";
+                        }
+                        // Opcional: Filtrar apenas campos úteis se a lista for muito grande
+                        // if(List.of("title", "url", "description",
+                        // "date").contains(key.toLowerCase())) { ... }
+                        sb.append(key).append(": ").append(valStr).append("\n");
+                    });
                 }
                 sb.append("\n");
             }
-            String result = sb.toString();
-            log.info("[SemanticNav Tool] search_site output ({} chars):\n{}", result.length(), result);
-            return result;
+            return sb.toString();
         } catch (Exception e) {
-            log.error("[SemanticNav Tool] search_site failed: {}", e.getMessage(), e);
-            return "Error executing search: " + e.getMessage();
+            log.error("[SemanticNav Tool] search_site failed", e);
+            return "Error executing search. Suggest to the user to try again.";
         }
     }
 }
