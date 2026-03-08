@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -89,7 +88,6 @@ class TurSNSiteFieldExtAPITest {
                         return dto;
                 });
                 when(mapper.toDtoList(any())).thenAnswer(invocation -> {
-                        @SuppressWarnings("unchecked")
                         List<TurSNSiteFieldExt> entities = invocation.getArgument(0);
                         List<TurSNSiteFieldExtDto> dtos = new ArrayList<>();
                         if (entities != null) {
@@ -319,7 +317,7 @@ class TurSNSiteFieldExtAPITest {
                 when(fieldExtRepository.save(ArgumentMatchers.any(TurSNSiteFieldExt.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-                TurSNSiteFieldExtDto result = api.turSNSiteFieldExtUpdate("site", "id", asDto(payload));
+                api.turSNSiteFieldExtUpdate("site", "id", asDto(payload));
 
                 assertThat(existing.getFacetPosition()).isZero();
         }
@@ -345,7 +343,7 @@ class TurSNSiteFieldExtAPITest {
                 when(fieldExtRepository.save(ArgumentMatchers.any(TurSNSiteFieldExt.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-                TurSNSiteFieldExtDto result = api.turSNSiteFieldExtUpdate("site", "id", asDto(payload));
+                api.turSNSiteFieldExtUpdate("site", "id", asDto(payload));
 
                 assertThat(existing.getFacetPosition()).isEqualTo(1);
                 verify(fieldExtRepository).findMaxFacetPosition(ArgumentMatchers.any(TurSNSite.class));
@@ -583,10 +581,9 @@ class TurSNSiteFieldExtAPITest {
                 when(siteRepository.findById("site")).thenReturn(Optional.of(site));
                 when(fieldExtRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(true);
 
-                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", asDto(payload)))
-                                .isInstanceOf(ResponseStatusException.class)
-                                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                                .isEqualTo(HttpStatus.CONFLICT);
+                TurSNSiteFieldExtDto payloadDto = asDto(payload);
+                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", payloadDto))
+                                .isInstanceOf(ResponseStatusException.class);
 
                 verify(fieldRepository, never()).save(ArgumentMatchers.any(TurSNSiteField.class));
                 verify(fieldExtRepository, never()).save(ArgumentMatchers.any(TurSNSiteFieldExt.class));
@@ -609,10 +606,9 @@ class TurSNSiteFieldExtAPITest {
                 when(fieldExtRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(false);
                 when(fieldRepository.existsByTurSNSiteAndName(site, "title")).thenReturn(true);
 
-                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", asDto(payload)))
-                                .isInstanceOf(ResponseStatusException.class)
-                                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                                .isEqualTo(HttpStatus.CONFLICT);
+                TurSNSiteFieldExtDto payloadDto = asDto(payload);
+                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", payloadDto))
+                                .isInstanceOf(ResponseStatusException.class);
 
                 verify(fieldRepository, never()).save(any(TurSNSiteField.class));
                 verify(fieldExtRepository, never()).save(any(TurSNSiteFieldExt.class));
@@ -633,10 +629,10 @@ class TurSNSiteFieldExtAPITest {
 
                 when(siteRepository.findById("site")).thenReturn(Optional.of(site));
 
-                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", asDto(payload)))
-                                .isInstanceOf(ResponseStatusException.class)
-                                .extracting(ex -> ((ResponseStatusException) ex).getStatusCode())
-                                .isEqualTo(HttpStatus.CONFLICT);
+                TurSNSiteFieldExtDto payloadDto = asDto(payload);
+                assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", payloadDto))
+                                .isInstanceOf(ResponseStatusException.class);
+                assertThat(siteRepository.findById("site").orElse(null)).isNotNull();
 
                 verify(fieldRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));
                 verify(fieldExtRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));

@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.client.sn.HttpTurSNServer;
+import com.viglet.turing.client.sn.TurSNDocument;
 import com.viglet.turing.client.sn.TurSNDocumentList;
 import com.viglet.turing.client.sn.TurSNQuery;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
@@ -47,8 +48,24 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class TurSemanticNavToolService {
 
+    private static final String TIP_USE_GET_DOCUMENT_DETAILS_WITH_A_DOCUMENT_ID_TO_READ_FULL_CONTENT = "TIP: Use get_document_details with a document ID to read full content.";
+
+    private static final String FOUND = "Found ";
+
+    private static final String SEPARATORSTRING = " ---\n";
+
+    private static final String HTTP_LOCALHOST = "http://localhost:";
+
+    private static final String DESCRIPTION = "description";
+
+    private static final String TITLE = "title";
+
+    private static final String ID_QUERY_PREFIX = "id:\"";
+
+    private static final String QUERY_PREFIX = "Query: '";
+
     private static final Set<String> SUMMARY_FIELDS = Set.of(
-            "id", "title", "url", "description", "date", "type",
+            "id", TITLE, "url", DESCRIPTION, "date", "type",
             "modification_date", "publication_date", "author", "source_apps");
 
     private final TurSNSiteRepository turSNSiteRepository;
@@ -144,7 +161,7 @@ public class TurSemanticNavToolService {
                 siteName, locale, fieldName);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
             TurSNQuery turSNQuery = new TurSNQuery();
@@ -226,73 +243,107 @@ public class TurSemanticNavToolService {
 
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
-            TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
-
-            if (filterQueries != null && !filterQueries.isBlank()) {
-                String[] fqs = filterQueries.split("\\|");
-                turSNQuery.addFilterQuery(fqs);
-            }
-
-            turSNQuery.setRows(rows != null && rows > 0 ? rows : 10);
-            turSNQuery.setPageNumber(page != null && page > 0 ? page : 1);
-            turSNQuery.setSortField(TurSNQuery.Order.asc);
-
-            QueryTurSNResponse response = turSNServer.query(turSNQuery);
+            QueryTurSNResponse response = executeSearchQuery(turSNServer, query, rows, page, filterQueries);
             TurSNDocumentList results = response.getResults();
 
-            if (results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty()) {
-                String noResultMsg = "No results found for query: " + query
-                        + ". Try calling get_search_suggestions to check for spelling errors.";
-                if (filterQueries != null && !filterQueries.isBlank()) {
-                    noResultMsg += " Also verify filter values with get_valid_filter_values.";
-                }
-                return noResultMsg;
+            if (isEmptyResults(results)) {
+                return buildNoResultsMessage(query, filterQueries);
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Found ").append(results.getQueryContext() != null
-                    ? results.getQueryContext().getCount()
-                    : results.getTurSNDocuments().size())
-                    .append(" results for query: ").append(query).append("\n\n");
-
-            int idx = 0;
-            for (var doc : results.getTurSNDocuments()) {
-                idx++;
-                sb.append("--- Result ").append(idx).append(" ---\n");
-                if (doc.getContent() != null && doc.getContent().getFields() != null) {
-                    Map<String, Object> fields = doc.getContent().getFields();
-                    for (String key : SUMMARY_FIELDS) {
-                        Object value = fields.get(key);
-                        if (value != null) {
-                            String valStr = value.toString();
-                            if (valStr.length() > 300) {
-                                valStr = valStr.substring(0, 300) + "...";
-                            }
-                            sb.append(key).append(": ").append(valStr).append("\n");
-                        }
-                    }
-                    for (Map.Entry<String, Object> entry : fields.entrySet()) {
-                        if (!SUMMARY_FIELDS.contains(entry.getKey()) && entry.getValue() != null) {
-                            String valStr = entry.getValue().toString();
-                            if (!valStr.isBlank() && valStr.length() <= 150) {
-                                sb.append(entry.getKey()).append(": ").append(valStr).append("\n");
-                            }
-                        }
-                    }
-                }
-                sb.append("\n");
-            }
-
-            sb.append("TIP: Use get_document_details with a document ID to read full content.");
-            return sb.toString();
+            return formatSearchResults(results, query);
         } catch (Exception e) {
             log.error("[SemanticNav Tool] search_site failed", e);
             return "Error executing search. Suggest to the user to try again.";
         }
+    }
+
+    private QueryTurSNResponse executeSearchQuery(HttpTurSNServer turSNServer, String query,
+            Integer rows, Integer page, String filterQueries) {
+        TurSNQuery turSNQuery = new TurSNQuery();
+        turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
+
+        if (filterQueries != null && !filterQueries.isBlank()) {
+            String[] fqs = filterQueries.split("\\|");
+            turSNQuery.addFilterQuery(fqs);
+        }
+
+        turSNQuery.setRows(rows != null && rows > 0 ? rows : 10);
+        turSNQuery.setPageNumber(page != null && page > 0 ? page : 1);
+        turSNQuery.setSortField(TurSNQuery.Order.asc);
+
+        return turSNServer.query(turSNQuery);
+    }
+
+    private boolean isEmptyResults(TurSNDocumentList results) {
+        return results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty();
+    }
+
+    private String buildNoResultsMessage(String query, String filterQueries) {
+        String msg = "No results found for query: " + query
+                + ". Try calling get_search_suggestions to check for spelling errors.";
+        if (filterQueries != null && !filterQueries.isBlank()) {
+            msg += " Also verify filter values with get_valid_filter_values.";
+        }
+        return msg;
+    }
+
+    private String formatSearchResults(TurSNDocumentList results, String query) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(FOUND).append(results.getQueryContext() != null
+                ? results.getQueryContext().getCount()
+                : results.getTurSNDocuments().size())
+                .append(" results for query: ").append(query).append("\n\n");
+
+        int idx = 0;
+        for (var doc : results.getTurSNDocuments()) {
+            idx++;
+            if (doc instanceof TurSNDocument turSNDoc
+                    && turSNDoc.getContent() != null && turSNDoc.getContent().getFields() != null) {
+                formatDocumentResult(sb, doc, idx);
+            }
+        }
+
+        sb.append(TIP_USE_GET_DOCUMENT_DETAILS_WITH_A_DOCUMENT_ID_TO_READ_FULL_CONTENT);
+        return sb.toString();
+    }
+
+    private void formatDocumentResult(StringBuilder sb, Object doc, int idx) {
+        sb.append("--- Result ").append(idx).append(SEPARATORSTRING);
+        if (doc instanceof TurSNDocument turSNDoc
+                && turSNDoc.getContent() != null && turSNDoc.getContent().getFields() != null) {
+            Map<String, Object> fields = turSNDoc.getContent().getFields();
+            appendSummaryFields(sb, fields);
+            appendAdditionalFields(sb, fields);
+        }
+        sb.append("\n");
+    }
+
+    private void appendSummaryFields(StringBuilder sb, Map<String, Object> fields) {
+        for (String key : SUMMARY_FIELDS) {
+            Object value = fields.get(key);
+            if (value != null) {
+                String valStr = truncateValue(value.toString(), 300);
+                sb.append(key).append(": ").append(valStr).append("\n");
+            }
+        }
+    }
+
+    private void appendAdditionalFields(StringBuilder sb, Map<String, Object> fields) {
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            if (!SUMMARY_FIELDS.contains(entry.getKey()) && entry.getValue() != null) {
+                String valStr = entry.getValue().toString();
+                if (!valStr.isBlank() && valStr.length() <= 150) {
+                    sb.append(entry.getKey()).append(": ").append(valStr).append("\n");
+                }
+            }
+        }
+    }
+
+    private String truncateValue(String value, int maxLength) {
+        return value.length() > maxLength ? value.substring(0, maxLength) + "..." : value;
     }
 
     @Tool(name = "get_document_details", description = """
@@ -308,11 +359,11 @@ public class TurSemanticNavToolService {
                 siteName, locale, documentId);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
             TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery("id:\"" + documentId + "\"");
+            turSNQuery.setQuery(ID_QUERY_PREFIX + documentId + "\"");
             turSNQuery.setRows(1);
             turSNQuery.setPageNumber(1);
 
@@ -359,7 +410,7 @@ public class TurSemanticNavToolService {
         try {
             Locale parsedLocale = LocaleUtils.toLocale(locale);
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, parsedLocale);
 
             StringBuilder sb = new StringBuilder();
@@ -420,7 +471,7 @@ public class TurSemanticNavToolService {
             // so we make a direct HTTP call to the search API and parse the raw response.
             String searchUrl = String.format("http://localhost:%d/api/sn/%s/search", serverPort, siteName);
             URIBuilder uriBuilder = new URIBuilder(searchUrl)
-                    .addParameter(TurSNParamType.QUERY, "id:\"" + documentId + "\"")
+                    .addParameter(TurSNParamType.QUERY, ID_QUERY_PREFIX + documentId + "\"")
                     .addParameter(TurSNParamType.LOCALE, locale)
                     .addParameter(TurSNParamType.ROWS, "1")
                     .addParameter(TurSNParamType.PAGE, "1");
@@ -451,13 +502,13 @@ public class TurSemanticNavToolService {
 
             List<TurSESimilarResult> similarResults = searchBean.getWidget().getSimilar();
             StringBuilder sb = new StringBuilder();
-            sb.append("Found ").append(similarResults.size())
+            sb.append(FOUND).append(similarResults.size())
                     .append(" similar documents for ID: ").append(documentId).append("\n\n");
 
             int idx = 0;
             for (TurSESimilarResult similar : similarResults) {
                 idx++;
-                sb.append("--- Similar ").append(idx).append(" ---\n");
+                sb.append("--- Similar ").append(idx).append(SEPARATORSTRING);
                 if (similar.getId() != null)
                     sb.append("id: ").append(similar.getId()).append("\n");
                 if (similar.getTitle() != null)
@@ -469,7 +520,7 @@ public class TurSemanticNavToolService {
                 sb.append("\n");
             }
 
-            sb.append("TIP: Use get_document_details with a document ID to read full content.");
+            sb.append(TIP_USE_GET_DOCUMENT_DETAILS_WITH_A_DOCUMENT_ID_TO_READ_FULL_CONTENT);
             return sb.toString();
         } catch (Exception e) {
             log.error("[SemanticNav Tool] find_similar_documents failed", e);
@@ -495,66 +546,93 @@ public class TurSemanticNavToolService {
                 siteName, locale, query, facetField, filterQueries);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
-            TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
-            turSNQuery.setRows(1);
-            turSNQuery.setPageNumber(1);
-
-            if (filterQueries != null && !filterQueries.isBlank()) {
-                String[] fqs = filterQueries.split("\\|");
-                turSNQuery.addFilterQuery(fqs);
-            }
-
-            QueryTurSNResponse response = turSNServer.query(turSNQuery);
-
-            long totalCount = 0;
-            if (response.getResults() != null && response.getResults().getQueryContext() != null) {
-                totalCount = response.getResults().getQueryContext().getCount();
-            }
+            QueryTurSNResponse response = executeAggregationQuery(turSNServer, query, filterQueries);
+            long totalCount = extractTotalCount(response);
 
             TurSNFacetFieldList facetFields = response.getFacetFields();
             if (facetFields == null) {
                 return "No facet data available. Total documents matching query '" + query + "': " + totalCount;
             }
 
-            for (TurSNFacetField ff : facetFields) {
-                if (ff.getName() != null && ff.getName().equalsIgnoreCase(facetField)) {
-                    List<TurSNFacetFieldValue> values = ff.getValues().getTurSNFacetFieldValues();
-                    if (values == null || values.isEmpty()) {
-                        return "No aggregation data for field '" + facetField
-                                + "'. Total documents matching query '" + query + "': " + totalCount;
-                    }
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("=== Aggregated Stats ===\n");
-                    sb.append("Query: '").append(query).append("'\n");
-                    sb.append("Total matching documents: ").append(totalCount).append("\n");
-                    sb.append("Distribution by '").append(facetField).append("':\n\n");
-                    sb.append("category;count\n");
-                    for (TurSNFacetFieldValue value : values) {
-                        sb.append(value.getLabel()).append(";").append(value.getCount()).append("\n");
-                    }
-                    String result = sb.toString();
-                    log.info("[SemanticNav Tool] get_aggregated_stats result:\n{}", result);
-                    return result;
-                }
+            String aggregationResult = findAndFormatFacetAggregation(facetFields, facetField, query, totalCount);
+            if (aggregationResult != null) {
+                return aggregationResult;
             }
 
-            StringBuilder availableFacets = new StringBuilder();
-            availableFacets.append("Field '").append(facetField)
-                    .append("' is not a valid facet. Available facet fields for aggregation: ");
-            for (TurSNFacetField ff : facetFields) {
-                availableFacets.append(ff.getName()).append(", ");
-            }
-            availableFacets.append("\nTotal documents matching query '").append(query).append("': ").append(totalCount);
-            return availableFacets.toString();
+            return buildAvailableFacetsMessage(facetFields, facetField, query, totalCount);
         } catch (Exception e) {
             log.error("[SemanticNav Tool] get_aggregated_stats failed", e);
             return "Error calculating aggregated stats. Check if the site name and facet field are correct.";
         }
+    }
+
+    private QueryTurSNResponse executeAggregationQuery(HttpTurSNServer turSNServer, String query,
+            String filterQueries) {
+        TurSNQuery turSNQuery = new TurSNQuery();
+        turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
+        turSNQuery.setRows(1);
+        turSNQuery.setPageNumber(1);
+
+        if (filterQueries != null && !filterQueries.isBlank()) {
+            String[] fqs = filterQueries.split("\\|");
+            turSNQuery.addFilterQuery(fqs);
+        }
+
+        return turSNServer.query(turSNQuery);
+    }
+
+    private long extractTotalCount(QueryTurSNResponse response) {
+        if (response.getResults() != null && response.getResults().getQueryContext() != null) {
+            return response.getResults().getQueryContext().getCount();
+        }
+        return 0;
+    }
+
+    private String findAndFormatFacetAggregation(TurSNFacetFieldList facetFields, String facetField,
+            String query, long totalCount) {
+        for (TurSNFacetField ff : facetFields) {
+            if (ff.getName() != null && ff.getName().equalsIgnoreCase(facetField)) {
+                List<TurSNFacetFieldValue> values = ff.getValues().getTurSNFacetFieldValues();
+                if (values == null || values.isEmpty()) {
+                    return "No aggregation data for field '" + facetField
+                            + "'. Total documents matching query '" + query + "': " + totalCount;
+                }
+
+                String result = buildAggregationStats(query, facetField, totalCount, values);
+                log.info("[SemanticNav Tool] get_aggregated_stats result:\n{}", result);
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private String buildAggregationStats(String query, String facetField, long totalCount,
+            List<TurSNFacetFieldValue> values) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Aggregated Stats ===\n");
+        sb.append(QUERY_PREFIX).append(query).append("'\n");
+        sb.append("Total matching documents: ").append(totalCount).append("\n");
+        sb.append("Distribution by '").append(facetField).append("':\n\n");
+        sb.append("category;count\n");
+        for (TurSNFacetFieldValue value : values) {
+            sb.append(value.getLabel()).append(";").append(value.getCount()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private String buildAvailableFacetsMessage(TurSNFacetFieldList facetFields, String facetField,
+            String query, long totalCount) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Field '").append(facetField)
+                .append("' is not a valid facet. Available facet fields for aggregation: ");
+        for (TurSNFacetField ff : facetFields) {
+            sb.append(ff.getName()).append(", ");
+        }
+        sb.append("\nTotal documents matching query '").append(query).append("': ").append(totalCount);
+        return sb.toString();
     }
 
     @Tool(name = "get_document_highlights", description = """
@@ -572,13 +650,29 @@ public class TurSemanticNavToolService {
         log.info("[SemanticNav Tool] get_document_highlights called: siteName={}, locale={}, docId={}, terms='{}'",
                 siteName, locale, documentId, termsToHighlight);
         try {
-            // Search with the highlight terms as query and filter by document ID.
-            // The search engine returns fields with highlighted passages (HL tags applied).
+            String jsonResponse = fetchHighlightResponse(siteName, locale, documentId, termsToHighlight);
+            if (jsonResponse == null || jsonResponse.isBlank()) {
+                return "No response from search API for document ID: " + documentId;
+            }
+
+            TurSNSiteSearchBean searchBean = new ObjectMapper()
+                    .readValue(jsonResponse, TurSNSiteSearchBean.class);
+
+            return formatHighlightedDocument(searchBean, documentId, termsToHighlight);
+        } catch (Exception e) {
+            log.error("[SemanticNav Tool] get_document_highlights failed", e);
+            return "Error extracting highlights. Check if the document ID and site name are correct.";
+        }
+    }
+
+    private String fetchHighlightResponse(String siteName, String locale,
+            String documentId, String termsToHighlight) {
+        try {
             String searchUrl = String.format("http://localhost:%d/api/sn/%s/search", serverPort, siteName);
             URIBuilder uriBuilder = new URIBuilder(searchUrl)
                     .addParameter(TurSNParamType.QUERY, termsToHighlight)
                     .addParameter(TurSNParamType.LOCALE, locale)
-                    .addParameter(TurSNParamType.FILTER_QUERIES_DEFAULT, "id:\"" + documentId + "\"")
+                    .addParameter(TurSNParamType.FILTER_QUERIES_DEFAULT, ID_QUERY_PREFIX + documentId + "\"")
                     .addParameter(TurSNParamType.ROWS, "1")
                     .addParameter(TurSNParamType.PAGE, "1");
 
@@ -587,71 +681,71 @@ public class TurSemanticNavToolService {
             httpGet.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
             httpGet.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
 
-            String jsonResponse;
             try (CloseableHttpClient client = HttpClients.createDefault()) {
-                jsonResponse = client.execute(httpGet,
+                return client.execute(httpGet,
                         response -> EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
             }
-
-            if (jsonResponse == null || jsonResponse.isBlank()) {
-                return "No response from search API for document ID: " + documentId;
-            }
-
-            TurSNSiteSearchBean searchBean = new ObjectMapper()
-                    .readValue(jsonResponse, TurSNSiteSearchBean.class);
-
-            if (searchBean.getResults() == null || searchBean.getResults().getDocument() == null
-                    || searchBean.getResults().getDocument().isEmpty()) {
-                return "Document not found with ID: " + documentId
-                        + " or the terms '" + termsToHighlight + "' do not appear in this document.";
-            }
-
-            var docBean = searchBean.getResults().getDocument().getFirst();
-            if (docBean.getFields() == null) {
-                return "Document found but has no content fields.";
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Highlighted Passages ===\n");
-            sb.append("Document ID: ").append(documentId).append("\n");
-            sb.append("Search terms: '").append(termsToHighlight).append("'\n\n");
-
-            boolean foundHighlight = false;
-            for (Map.Entry<String, Object> entry : docBean.getFields().entrySet()) {
-                if (entry.getValue() == null)
-                    continue;
-                String valStr = entry.getValue().toString();
-                // Check if the field contains highlighting tags (em, b, strong, mark)
-                if (valStr.contains("<em>") || valStr.contains("<b>")
-                        || valStr.contains("<strong>") || valStr.contains("<mark>")) {
-                    foundHighlight = true;
-                    if (valStr.length() > 3000) {
-                        valStr = valStr.substring(0, 3000) + "... [TRUNCATED]";
-                    }
-                    sb.append("[").append(entry.getKey()).append("]: ").append(valStr).append("\n\n");
-                }
-            }
-
-            if (!foundHighlight) {
-                // Fallback: return title + description even without HL tags
-                sb.append("No highlighted passages found (highlighting may not be enabled on this site).\n");
-                sb.append("Returning key fields instead:\n\n");
-                for (String key : List.of("title", "description", "text", "abstract")) {
-                    Object val = docBean.getFields().get(key);
-                    if (val != null) {
-                        String valStr = val.toString();
-                        if (valStr.length() > 2000) {
-                            valStr = valStr.substring(0, 2000) + "... [TRUNCATED]";
-                        }
-                        sb.append("[").append(key).append("]: ").append(valStr).append("\n\n");
-                    }
-                }
-            }
-
-            return sb.toString();
         } catch (Exception e) {
-            log.error("[SemanticNav Tool] get_document_highlights failed", e);
-            return "Error extracting highlights. Check if the document ID and site name are correct.";
+            log.error("[SemanticNav Tool] fetchHighlightResponse failed", e);
+            return null;
+        }
+    }
+
+    private String formatHighlightedDocument(TurSNSiteSearchBean searchBean,
+            String documentId, String termsToHighlight) {
+        if (searchBean.getResults() == null || searchBean.getResults().getDocument() == null
+                || searchBean.getResults().getDocument().isEmpty()) {
+            return "Document not found with ID: " + documentId
+                    + " or the terms '" + termsToHighlight + "' do not appear in this document.";
+        }
+
+        var docBean = searchBean.getResults().getDocument().getFirst();
+        if (docBean.getFields() == null) {
+            return "Document found but has no content fields.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Highlighted Passages ===\n");
+        sb.append("Document ID: ").append(documentId).append("\n");
+        sb.append("Search terms: '").append(termsToHighlight).append("'\n\n");
+
+        if (!appendHighlightedFields(sb, docBean.getFields())) {
+            appendFallbackFields(sb, docBean.getFields());
+        }
+
+        return sb.toString();
+    }
+
+    private boolean appendHighlightedFields(StringBuilder sb, Map<String, Object> fields) {
+        boolean foundHighlight = false;
+        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+            if (entry.getValue() == null)
+                continue;
+            String valStr = entry.getValue().toString();
+            if (containsHighlightTags(valStr)) {
+                foundHighlight = true;
+                String truncated = valStr.length() > 3000 ? valStr.substring(0, 3000) + "... [TRUNCATED]" : valStr;
+                sb.append("[").append(entry.getKey()).append("]: ").append(truncated).append("\n\n");
+            }
+        }
+        return foundHighlight;
+    }
+
+    private boolean containsHighlightTags(String value) {
+        return value.contains("<em>") || value.contains("<b>")
+                || value.contains("<strong>") || value.contains("<mark>");
+    }
+
+    private void appendFallbackFields(StringBuilder sb, Map<String, Object> fields) {
+        sb.append("No highlighted passages found (highlighting may not be enabled on this site).\n");
+        sb.append("Returning key fields instead:\n\n");
+        for (String key : List.of(TITLE, DESCRIPTION, "text", "abstract")) {
+            Object val = fields.get(key);
+            if (val != null) {
+                String valStr = val.toString();
+                String truncated = valStr.length() > 2000 ? valStr.substring(0, 2000) + "... [TRUNCATED]" : valStr;
+                sb.append("[").append(key).append("]: ").append(truncated).append("\n\n");
+            }
         }
     }
 
@@ -678,90 +772,115 @@ public class TurSemanticNavToolService {
             }
 
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
-            // Fetch each document
-            Map<String, Map<String, String>> documentsData = new LinkedHashMap<>();
-            for (String id : ids) {
-                String trimmedId = id.trim();
-                TurSNQuery turSNQuery = new TurSNQuery();
-                turSNQuery.setQuery("id:\"" + trimmedId + "\"");
-                turSNQuery.setRows(1);
-                turSNQuery.setPageNumber(1);
-
-                QueryTurSNResponse response = turSNServer.query(turSNQuery);
-                TurSNDocumentList results = response.getResults();
-
-                Map<String, String> fieldValues = new LinkedHashMap<>();
-                if (results != null && results.getTurSNDocuments() != null
-                        && !results.getTurSNDocuments().isEmpty()) {
-                    var doc = results.getTurSNDocuments().getFirst();
-                    if (doc.getContent() != null && doc.getContent().getFields() != null) {
-                        Map<String, Object> fields = doc.getContent().getFields();
-                        for (String fieldName : fieldNames) {
-                            String fn = fieldName.trim();
-                            Object val = fields.get(fn);
-                            String valStr = val != null ? val.toString() : "(not available)";
-                            if (valStr.length() > 500) {
-                                valStr = valStr.substring(0, 500) + "...";
-                            }
-                            fieldValues.put(fn, valStr);
-                        }
-                    }
-                } else {
-                    for (String fieldName : fieldNames) {
-                        fieldValues.put(fieldName.trim(), "(document not found)");
-                    }
-                }
-                documentsData.put(trimmedId, fieldValues);
-            }
-
-            // Build side-by-side comparison
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Document Comparison ===\n\n");
-
-            List<String> docIds = documentsData.keySet().stream().toList();
-
-            // Header: get titles for column labels
-            sb.append("| Field |");
-            for (int i = 0; i < docIds.size(); i++) {
-                String docId = docIds.get(i);
-                Map<String, String> fields = documentsData.get(docId);
-                String title = fields.getOrDefault("title", "Doc " + (i + 1));
-                if (title.length() > 40) {
-                    title = title.substring(0, 40) + "...";
-                }
-                sb.append(" ").append(title).append(" |");
-            }
-            sb.append("\n");
-
-            // Separator
-            sb.append("|-------|");
-            for (int i = 0; i < docIds.size(); i++) {
-                sb.append("-------|");
-            }
-            sb.append("\n");
-
-            // Data rows
-            for (String fieldName : fieldNames) {
-                String fn = fieldName.trim();
-                sb.append("| **").append(fn).append("** |");
-                for (String docId : docIds) {
-                    String val = documentsData.get(docId).getOrDefault(fn, "(n/a)");
-                    if (val.length() > 200) {
-                        val = val.substring(0, 200) + "...";
-                    }
-                    val = val.replace("|", "/").replace("\n", " ");
-                    sb.append(" ").append(val).append(" |");
-                }
-                sb.append("\n");
-            }
-
-            return sb.toString();
+            Map<String, Map<String, String>> documentsData = fetchDocumentsForComparison(turSNServer, ids, fieldNames);
+            return buildComparisonTable(documentsData, fieldNames);
         } catch (Exception e) {
             log.error("[SemanticNav Tool] compare_items failed", e);
             return "Error comparing documents. Check if the document IDs are correct.";
+        }
+    }
+
+    private Map<String, Map<String, String>> fetchDocumentsForComparison(HttpTurSNServer turSNServer,
+            String[] ids, String[] fieldNames) {
+        Map<String, Map<String, String>> documentsData = new LinkedHashMap<>();
+        for (String id : ids) {
+            String trimmedId = id.trim();
+            documentsData.put(trimmedId, fetchDocumentFields(turSNServer, trimmedId, fieldNames));
+        }
+        return documentsData;
+    }
+
+    private Map<String, String> fetchDocumentFields(HttpTurSNServer turSNServer,
+            String documentId, String[] fieldNames) {
+        TurSNQuery turSNQuery = new TurSNQuery();
+        turSNQuery.setQuery(ID_QUERY_PREFIX + documentId + "\"");
+        turSNQuery.setRows(1);
+        turSNQuery.setPageNumber(1);
+
+        QueryTurSNResponse response = turSNServer.query(turSNQuery);
+        TurSNDocumentList results = response.getResults();
+
+        Map<String, String> fieldValues = new LinkedHashMap<>();
+        if (results != null && results.getTurSNDocuments() != null
+                && !results.getTurSNDocuments().isEmpty()) {
+            var doc = results.getTurSNDocuments().getFirst();
+            if (doc.getContent() != null && doc.getContent().getFields() != null) {
+                extractFieldValues(doc.getContent().getFields(), fieldNames, fieldValues);
+            }
+        } else {
+            fillMissingFields(fieldNames, fieldValues);
+        }
+        return fieldValues;
+    }
+
+    private void extractFieldValues(Map<String, Object> docFields, String[] fieldNames,
+            Map<String, String> fieldValues) {
+        for (String fieldName : fieldNames) {
+            String fn = fieldName.trim();
+            Object val = docFields.get(fn);
+            String valStr = val != null ? val.toString() : "(not available)";
+            if (valStr.length() > 500) {
+                valStr = valStr.substring(0, 500) + "...";
+            }
+            fieldValues.put(fn, valStr);
+        }
+    }
+
+    private void fillMissingFields(String[] fieldNames, Map<String, String> fieldValues) {
+        for (String fieldName : fieldNames) {
+            fieldValues.put(fieldName.trim(), "(document not found)");
+        }
+    }
+
+    private String buildComparisonTable(Map<String, Map<String, String>> documentsData,
+            String[] fieldNames) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Document Comparison ===\n\n");
+
+        List<String> docIds = documentsData.keySet().stream().toList();
+
+        appendTableHeader(sb, documentsData, docIds);
+        appendTableRows(sb, documentsData, docIds, fieldNames);
+
+        return sb.toString();
+    }
+
+    private void appendTableHeader(StringBuilder sb, Map<String, Map<String, String>> documentsData,
+            List<String> docIds) {
+        sb.append("| Field |");
+        for (int i = 0; i < docIds.size(); i++) {
+            String docId = docIds.get(i);
+            Map<String, String> fields = documentsData.get(docId);
+            String title = fields.getOrDefault(TITLE, "Doc " + (i + 1));
+            if (title.length() > 40) {
+                title = title.substring(0, 40) + "...";
+            }
+            sb.append(" ").append(title).append(" |");
+        }
+        sb.append("\n|-------|");
+        for (int i = 0; i < docIds.size(); i++) {
+            sb.append("-------|");
+        }
+        sb.append("\n");
+    }
+
+    private void appendTableRows(StringBuilder sb, Map<String, Map<String, String>> documentsData,
+            List<String> docIds, String[] fieldNames) {
+        for (String fieldName : fieldNames) {
+            String fn = fieldName.trim();
+            sb.append("| **").append(fn).append("** |");
+            for (String docId : docIds) {
+                String val = documentsData.get(docId).getOrDefault(fn, "(n/a)");
+                if (val.length() > 200) {
+                    val = val.substring(0, 200) + "...";
+                }
+                val = val.replace("|", "/").replace("\n", " ");
+                sb.append(" ").append(val).append(" |");
+            }
+            sb.append("\n");
         }
     }
 
@@ -782,7 +901,7 @@ public class TurSemanticNavToolService {
                 siteName, locale, query, rows, filterQueries);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
             TurSNQuery turSNQuery = new TurSNQuery();
@@ -797,46 +916,59 @@ public class TurSemanticNavToolService {
             }
 
             QueryTurSNResponse response = turSNServer.query(turSNQuery);
-            TurSNDocumentList results = response.getResults();
-
-            if (results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty()) {
-                return "No recent content found for query: " + query;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Latest Content ===\n");
-            sb.append("Found ").append(results.getQueryContext() != null
-                    ? results.getQueryContext().getCount()
-                    : results.getTurSNDocuments().size())
-                    .append(" total results. Showing ").append(results.getTurSNDocuments().size())
-                    .append(" most recent:\n\n");
-
-            int idx = 0;
-            for (var doc : results.getTurSNDocuments()) {
-                idx++;
-                sb.append("--- ").append(idx).append(" ---\n");
-                if (doc.getContent() != null && doc.getContent().getFields() != null) {
-                    Map<String, Object> fields = doc.getContent().getFields();
-                    for (String key : List.of("id", "title", "url", "date",
-                            "modification_date", "publication_date", "type", "description")) {
-                        Object value = fields.get(key);
-                        if (value != null) {
-                            String valStr = value.toString();
-                            if (valStr.length() > 300) {
-                                valStr = valStr.substring(0, 300) + "...";
-                            }
-                            sb.append(key).append(": ").append(valStr).append("\n");
-                        }
-                    }
-                }
-                sb.append("\n");
-            }
-
-            sb.append("TIP: Use get_document_details with a document ID to read full content.");
-            return sb.toString();
+            return formatRecentUpdatesResponse(response, query);
         } catch (Exception e) {
             log.error("[SemanticNav Tool] search_recent_updates failed", e);
             return "Error searching for recent content. Suggest to the user to try again.";
+        }
+    }
+
+    private String formatRecentUpdatesResponse(QueryTurSNResponse response, String query) {
+        TurSNDocumentList results = response.getResults();
+
+        if (results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty()) {
+            return "No recent content found for query: " + query;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Latest Content ===\n");
+        sb.append(FOUND).append(results.getQueryContext() != null
+                ? results.getQueryContext().getCount()
+                : results.getTurSNDocuments().size())
+                .append(" total results. Showing ").append(results.getTurSNDocuments().size())
+                .append(" most recent:\n\n");
+
+        int idx = 0;
+        for (var doc : results.getTurSNDocuments()) {
+            idx++;
+            formatRecentDocument(sb, doc, idx);
+        }
+
+        sb.append(TIP_USE_GET_DOCUMENT_DETAILS_WITH_A_DOCUMENT_ID_TO_READ_FULL_CONTENT);
+        return sb.toString();
+    }
+
+    private void formatRecentDocument(StringBuilder sb, Object doc, int idx) {
+        sb.append("--- ").append(idx).append(SEPARATORSTRING);
+        if (doc instanceof TurSNDocument turSNDoc
+                && turSNDoc.getContent() != null && turSNDoc.getContent().getFields() != null) {
+            Map<String, Object> fields = turSNDoc.getContent().getFields();
+            for (String key : List.of("id", TITLE, "url", "date",
+                    "modification_date", "publication_date", "type", DESCRIPTION)) {
+                appendFieldIfPresent(sb, fields, key);
+            }
+        }
+        sb.append("\n");
+    }
+
+    private void appendFieldIfPresent(StringBuilder sb, Map<String, Object> fields, String key) {
+        Object value = fields.get(key);
+        if (value != null) {
+            String valStr = value.toString();
+            if (valStr.length() > 300) {
+                valStr = valStr.substring(0, 300) + "...";
+            }
+            sb.append(key).append(": ").append(valStr).append("\n");
         }
     }
 
@@ -854,7 +986,7 @@ public class TurSemanticNavToolService {
                 siteName, locale, query);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
             TurSNQuery turSNQuery = new TurSNQuery();
@@ -864,10 +996,7 @@ public class TurSemanticNavToolService {
 
             QueryTurSNResponse response = turSNServer.query(turSNQuery);
 
-            long totalCount = 0;
-            if (response.getResults() != null && response.getResults().getQueryContext() != null) {
-                totalCount = response.getResults().getQueryContext().getCount();
-            }
+            long totalCount = extractTotalCount(response);
 
             TurSNFacetFieldList facetFields = response.getFacetFields();
             if (facetFields == null || !facetFields.iterator().hasNext()) {
@@ -877,27 +1006,10 @@ public class TurSemanticNavToolService {
 
             StringBuilder sb = new StringBuilder();
             sb.append("=== Site Content Summary ===\n");
-            sb.append("Query: '").append(query).append("'\n");
+            sb.append(QUERY_PREFIX).append(query).append("'\n");
             sb.append("Total matching documents: ").append(totalCount).append("\n\n");
 
-            for (TurSNFacetField ff : facetFields) {
-                sb.append(">> ").append(ff.getName());
-                if (ff.getLabel() != null) {
-                    sb.append(" (").append(ff.getLabel()).append(")");
-                }
-                sb.append(":\n");
-
-                List<TurSNFacetFieldValue> values = ff.getValues().getTurSNFacetFieldValues();
-                if (values != null && !values.isEmpty()) {
-                    for (TurSNFacetFieldValue value : values) {
-                        sb.append("   - ").append(value.getLabel())
-                                .append(" (").append(value.getCount()).append(")\n");
-                    }
-                } else {
-                    sb.append("   (no values)\n");
-                }
-                sb.append("\n");
-            }
+            appendFacetFieldsSummary(sb, facetFields);
 
             sb.append("TIP: Use get_valid_filter_values to see ALL values for a specific facet field.");
             String result = sb.toString();
@@ -906,6 +1018,31 @@ public class TurSemanticNavToolService {
         } catch (Exception e) {
             log.error("[SemanticNav Tool] get_facet_summary failed", e);
             return "Error retrieving facet summary. Check if the site name is correct.";
+        }
+    }
+
+    private void appendFacetFieldsSummary(StringBuilder sb, TurSNFacetFieldList facetFields) {
+        for (TurSNFacetField ff : facetFields) {
+            sb.append(">> ").append(ff.getName());
+            if (ff.getLabel() != null) {
+                sb.append(" (").append(ff.getLabel()).append(")");
+            }
+            sb.append(":\n");
+
+            List<TurSNFacetFieldValue> values = ff.getValues().getTurSNFacetFieldValues();
+            appendFacetValues(sb, values);
+            sb.append("\n");
+        }
+    }
+
+    private void appendFacetValues(StringBuilder sb, List<TurSNFacetFieldValue> values) {
+        if (values != null && !values.isEmpty()) {
+            for (TurSNFacetFieldValue value : values) {
+                sb.append("   - ").append(value.getLabel())
+                        .append(" (").append(value.getCount()).append(")\n");
+            }
+        } else {
+            sb.append("   (no values)\n");
         }
     }
 
@@ -930,21 +1067,11 @@ public class TurSemanticNavToolService {
                 siteName, locale, query, dateFieldName, startDate, endDate, rows);
         try {
             HttpTurSNServer turSNServer = new HttpTurSNServer(
-                    URI.create("http://localhost:" + serverPort),
+                    URI.create(HTTP_LOCALHOST + serverPort),
                     siteName, LocaleUtils.toLocale(locale));
 
-            TurSNQuery turSNQuery = new TurSNQuery();
-            turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
-            turSNQuery.setRows(rows != null && rows > 0 ? rows : 10);
-            turSNQuery.setPageNumber(1);
-            turSNQuery.setSortField(TurSNQuery.Order.desc);
-
-            // Build safe date filter query: fieldName:[startDateT00:00:00Z TO
-            // endDateT23:59:59Z]
-            String dateFilter = dateFieldName + ":[" + startDate + "T00:00:00Z TO " + endDate + "T23:59:59Z]";
-            turSNQuery.addFilterQuery(dateFilter);
-
-            QueryTurSNResponse response = turSNServer.query(turSNQuery);
+            QueryTurSNResponse response = executeDateRangeQuery(turSNServer, query, rows, dateFieldName, startDate,
+                    endDate);
             TurSNDocumentList results = response.getResults();
 
             if (results == null || results.getTurSNDocuments() == null || results.getTurSNDocuments().isEmpty()) {
@@ -952,40 +1079,68 @@ public class TurSemanticNavToolService {
                         + ". Try expanding the date range or changing the search terms.";
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Date Range Search ===\n");
-            sb.append("Query: '").append(query).append("'\n");
-            sb.append("Period: ").append(startDate).append(" to ").append(endDate).append("\n");
-            sb.append("Found ").append(results.getQueryContext() != null
-                    ? results.getQueryContext().getCount()
-                    : results.getTurSNDocuments().size())
-                    .append(" results (showing ").append(results.getTurSNDocuments().size()).append("):\n\n");
-
-            int idx = 0;
-            for (var doc : results.getTurSNDocuments()) {
-                idx++;
-                sb.append("--- ").append(idx).append(" ---\n");
-                if (doc.getContent() != null && doc.getContent().getFields() != null) {
-                    Map<String, Object> fields = doc.getContent().getFields();
-                    for (String key : List.of("id", "title", "url", dateFieldName, "type", "description")) {
-                        Object value = fields.get(key);
-                        if (value != null) {
-                            String valStr = value.toString();
-                            if (valStr.length() > 300) {
-                                valStr = valStr.substring(0, 300) + "...";
-                            }
-                            sb.append(key).append(": ").append(valStr).append("\n");
-                        }
-                    }
-                }
-                sb.append("\n");
-            }
-
-            sb.append("TIP: Use get_document_details with a document ID to read full content.");
-            return sb.toString();
+            return formatDateRangeResults(results, query, startDate, endDate, dateFieldName);
         } catch (Exception e) {
             log.error("[SemanticNav Tool] search_by_date_range failed", e);
             return "Error executing date range search. Verify the date format (YYYY-MM-DD) and field name.";
+        }
+    }
+
+    private QueryTurSNResponse executeDateRangeQuery(HttpTurSNServer turSNServer, String query,
+            Integer rows, String dateFieldName, String startDate, String endDate) {
+        TurSNQuery turSNQuery = new TurSNQuery();
+        turSNQuery.setQuery((query != null && !query.isBlank()) ? query : "*");
+        turSNQuery.setRows(rows != null && rows > 0 ? rows : 10);
+        turSNQuery.setPageNumber(1);
+        turSNQuery.setSortField(TurSNQuery.Order.desc);
+
+        String dateFilter = dateFieldName + ":[" + startDate + "T00:00:00Z TO " + endDate + "T23:59:59Z]";
+        turSNQuery.addFilterQuery(dateFilter);
+
+        return turSNServer.query(turSNQuery);
+    }
+
+    private String formatDateRangeResults(TurSNDocumentList results, String query,
+            String startDate, String endDate, String dateFieldName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Date Range Search ===\n");
+        sb.append(QUERY_PREFIX).append(query).append("'\n");
+        sb.append("Period: ").append(startDate).append(" to ").append(endDate).append("\n");
+        sb.append(FOUND).append(results.getQueryContext() != null
+                ? results.getQueryContext().getCount()
+                : results.getTurSNDocuments().size())
+                .append(" results (showing ").append(results.getTurSNDocuments().size()).append("):\n\n");
+
+        int idx = 0;
+        for (var doc : results.getTurSNDocuments()) {
+            idx++;
+            appendDateRangeDocument(sb, doc, idx, dateFieldName);
+        }
+
+        sb.append(TIP_USE_GET_DOCUMENT_DETAILS_WITH_A_DOCUMENT_ID_TO_READ_FULL_CONTENT);
+        return sb.toString();
+    }
+
+    private void appendDateRangeDocument(StringBuilder sb, Object doc, int idx, String dateFieldName) {
+        sb.append("--- ").append(idx).append(SEPARATORSTRING);
+        if (doc instanceof TurSNDocument turSNDoc
+                && turSNDoc.getContent() != null && turSNDoc.getContent().getFields() != null) {
+            appendDateRangeFields(sb, turSNDoc.getContent().getFields(), dateFieldName);
+        }
+        sb.append("\n");
+    }
+
+    private void appendDateRangeFields(StringBuilder sb, Map<String, Object> fields, String dateFieldName) {
+        for (String key : List.of("id", TITLE, "url", dateFieldName, "type", DESCRIPTION)) {
+            Object value = fields.get(key);
+            if (value != null) {
+                String valStr = value.toString();
+                if (valStr.length() <= 300) {
+                    sb.append(key).append(": ").append(valStr).append("\n");
+                } else {
+                    sb.append(key).append(": ").append(valStr.substring(0, 300)).append("...\n");
+                }
+            }
         }
     }
 
@@ -1102,7 +1257,7 @@ public class TurSemanticNavToolService {
 
     private TurSNFacetFieldList fetchFacetFields(String siteName, String locale) {
         HttpTurSNServer turSNServer = new HttpTurSNServer(
-                URI.create("http://localhost:" + serverPort),
+                URI.create(HTTP_LOCALHOST + serverPort),
                 siteName, LocaleUtils.toLocale(locale));
 
         TurSNQuery turSNQuery = new TurSNQuery();

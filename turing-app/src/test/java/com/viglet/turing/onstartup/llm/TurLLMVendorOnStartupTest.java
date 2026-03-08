@@ -33,13 +33,15 @@ class TurLLMVendorOnStartupTest {
         turLLMVendorOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurLLMVendor> captor = ArgumentCaptor.forClass(TurLLMVendor.class);
-        verify(turLLMVendorRepository, org.mockito.Mockito.times(5)).save(captor.capture());
+        verify(turLLMVendorRepository, org.mockito.Mockito.times(6)).save(captor.capture());
         List<TurLLMVendor> vendors = captor.getAllValues();
         assertEquals("OPENAI", vendors.get(0).getId());
         assertEquals("OLLAMA", vendors.get(1).getId());
         assertEquals("ANTHROPIC", vendors.get(2).getId());
         assertEquals("GEMINI", vendors.get(3).getId());
-        assertEquals("AZURE_OPENAI", vendors.get(4).getId());
+        assertEquals("GEMINI_OPENAI", vendors.get(4).getId());
+        assertEquals("AZURE_OPENAI", vendors.get(5).getId());
+
     }
 
     @Test

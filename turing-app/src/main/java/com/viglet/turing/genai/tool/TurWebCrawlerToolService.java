@@ -51,23 +51,7 @@ public class TurWebCrawlerToolService {
             sb.append(bodyText);
 
             if ("yes".equalsIgnoreCase(includeLinks)) {
-                sb.append("\n\n--- Links found on page ---\n");
-                Elements links = doc.select("a[href]");
-                int count = 0;
-                for (Element link : links) {
-                    String href = link.absUrl("href");
-                    String text = link.text().strip();
-                    if (href.isEmpty() || href.startsWith("javascript:"))
-                        continue;
-                    if (text.isEmpty())
-                        text = href;
-                    sb.append("- ").append(text).append(" -> ").append(href).append("\n");
-                    count++;
-                    if (count >= MAX_LINKS) {
-                        sb.append("... [more links truncated]\n");
-                        break;
-                    }
-                }
+                appendLinksToContent(sb, doc);
             }
 
             String result = sb.toString();
@@ -77,6 +61,43 @@ public class TurWebCrawlerToolService {
             log.error("[WebCrawler Tool] fetch_webpage failed for {}: {}", url, e.getMessage());
             return "Error fetching URL " + url + ": " + e.getMessage();
         }
+    }
+
+    private void appendLinksToContent(StringBuilder sb, Document doc) {
+        sb.append("\n\n--- Links found on page ---\n");
+        Elements links = doc.select("a[href]");
+        int count = 0;
+        for (Element link : links) {
+            if (count >= MAX_LINKS) {
+                sb.append("... [more links truncated]\n");
+                break;
+            }
+            if (isValidLink(link)) {
+                String href = link.absUrl("href");
+                String text = link.text().strip();
+                if (text.isEmpty())
+                    text = href;
+                sb.append("- ").append(text).append(" -> ").append(href).append("\n");
+                count++;
+            }
+        }
+    }
+
+    private boolean isValidLink(Element link) {
+        String href = link.absUrl("href");
+        return !href.isEmpty() && !href.startsWith("javascript:");
+    }
+
+    private boolean isValidExtractLink(Element link, String filterKeyword) {
+        String href = link.absUrl("href");
+        if (href.isEmpty() || href.startsWith("javascript:")) {
+            return false;
+        }
+        if (filterKeyword == null) {
+            return true;
+        }
+        String text = link.text().strip().toLowerCase();
+        return text.contains(filterKeyword) || href.toLowerCase().contains(filterKeyword);
     }
 
     @Tool(name = "extract_links", description = """
@@ -107,24 +128,18 @@ public class TurWebCrawlerToolService {
 
             int count = 0;
             for (Element link : links) {
-                String href = link.absUrl("href");
-                String text = link.text().strip();
-                if (href.isEmpty() || href.startsWith("javascript:") || href.startsWith("mailto:"))
-                    continue;
-                if (text.isEmpty())
-                    text = href;
-
-                if (filter != null
-                        && !text.toLowerCase().contains(filter)
-                        && !href.toLowerCase().contains(filter)) {
-                    continue;
-                }
-
-                sb.append("- ").append(text).append("\n  ").append(href).append("\n");
-                count++;
                 if (count >= MAX_LINKS * 2) {
                     sb.append("... [more links truncated]\n");
                     break;
+                }
+                if (isValidExtractLink(link, filter)) {
+                    String href = link.absUrl("href");
+                    String text = link.text().strip();
+                    if (text.isEmpty())
+                        text = href;
+
+                    sb.append("- ").append(text).append("\n  ").append(href).append("\n");
+                    count++;
                 }
             }
 

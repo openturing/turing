@@ -612,17 +612,25 @@ public class TurSNSiteImport {
 		if (turSNSiteExchange.getTurSNSiteSpotlights() != null) {
 			for (TurSNSiteSpotlight spotlight : turSNSiteExchange.getTurSNSiteSpotlights()) {
 				spotlight.setTurSNSite(turSNSite);
-				if (spotlight.getTurSNSiteSpotlightTerms() != null) {
-					for (TurSNSiteSpotlightTerm term : spotlight.getTurSNSiteSpotlightTerms()) {
-						term.setTurSNSiteSpotlight(spotlight);
-					}
-				}
-				if (spotlight.getTurSNSiteSpotlightDocuments() != null) {
-					for (TurSNSiteSpotlightDocument doc : spotlight.getTurSNSiteSpotlightDocuments()) {
-						doc.setTurSNSiteSpotlight(spotlight);
-					}
-				}
+				saveSpotlightTerms(spotlight);
+				saveSpotlightDocuments(spotlight);
 				turSNSiteSpotlightRepository.save(spotlight);
+			}
+		}
+	}
+
+	private void saveSpotlightTerms(TurSNSiteSpotlight spotlight) {
+		if (spotlight.getTurSNSiteSpotlightTerms() != null) {
+			for (TurSNSiteSpotlightTerm term : spotlight.getTurSNSiteSpotlightTerms()) {
+				term.setTurSNSiteSpotlight(spotlight);
+			}
+		}
+	}
+
+	private void saveSpotlightDocuments(TurSNSiteSpotlight spotlight) {
+		if (spotlight.getTurSNSiteSpotlightDocuments() != null) {
+			for (TurSNSiteSpotlightDocument doc : spotlight.getTurSNSiteSpotlightDocuments()) {
+				doc.setTurSNSiteSpotlight(spotlight);
 			}
 		}
 	}

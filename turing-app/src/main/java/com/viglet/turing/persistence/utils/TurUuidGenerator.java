@@ -42,6 +42,8 @@ public class TurUuidGenerator
         implements BeforeExecutionGenerator, AnnotationBasedGenerator<TurAssignableUuidGenerator> {
 
     public TurUuidGenerator() {
+        // Required by Hibernate for reflection-based instantiation of generator
+        // implementations
     }
 
     @Override

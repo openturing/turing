@@ -8,6 +8,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -315,7 +316,7 @@ public class TurLLMChatAPI {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(file.getBytes())) {
             BodyContentHandler handler = new BodyContentHandler(-1);
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.CONTENT_TYPE, file.getContentType());
+            metadata.set(HttpHeaders.CONTENT_TYPE, file.getContentType());
             new AutoDetectParser().parse(inputStream, handler, metadata, new ParseContext());
             return handler.toString().strip();
         } catch (IOException | TikaException | SAXException e) {

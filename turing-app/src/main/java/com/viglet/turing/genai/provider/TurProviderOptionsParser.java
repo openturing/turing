@@ -3,7 +3,6 @@ package com.viglet.turing.genai.provider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -92,7 +91,7 @@ public class TurProviderOptionsParser {
             return list.stream()
                     .filter(item -> item != null && StringUtils.hasText(String.valueOf(item)))
                     .map(item -> String.valueOf(item).trim())
-                    .collect(Collectors.toList());
+                    .toList();
         }
         String raw = String.valueOf(value);
         if (!StringUtils.hasText(raw)) {

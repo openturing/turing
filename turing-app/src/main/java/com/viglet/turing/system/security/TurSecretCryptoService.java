@@ -106,6 +106,6 @@ public class TurSecretCryptoService {
 
     private boolean isProductionProfileActive() {
         return Arrays.stream(environment.getActiveProfiles())
-                .anyMatch(profile -> "production".equalsIgnoreCase(profile));
+                .anyMatch("production"::equalsIgnoreCase);
     }
 }

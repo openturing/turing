@@ -13,6 +13,8 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -80,54 +82,23 @@ class TurIntegrationAPITest {
         verifyNoInteractions(proxyHttpClient);
     }
 
-    @Test
-    void testProxy_InvalidPath_DirectoryTraversal() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+        "/api/v2/integration/1/../../secret, Forbidden proxy path",
+        "/api/v1/integration/1/something, Forbidden proxy path",
+        "http://malicious.com/api/v2/integration/1/something, Forbidden proxy target"
+    })
+    void testProxy_InvalidPaths(String requestUri, String expectedError) throws Exception {
         TurIntegrationInstance instance = new TurIntegrationInstance();
         instance.setId("1");
         instance.setEndpoint("http://example.com");
 
-        request.setRequestURI("/api/v2/integration/1/../../secret");
+        request.setRequestURI(requestUri);
         request.setMethod("GET");
 
         invokeProxy(turIntegrationAPI, instance, request, response);
 
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        assertEquals("{\"error\": \"Forbidden proxy path\"}", response.getContentAsString());
-    }
-
-    @Test
-    void testProxy_InvalidPath_NotApiV2() throws Exception {
-        TurIntegrationInstance instance = new TurIntegrationInstance();
-        instance.setId("1");
-        instance.setEndpoint("http://example.com");
-
-        request.setRequestURI("/api/v1/integration/1/something");
-        request.setMethod("GET");
-
-        invokeProxy(turIntegrationAPI, instance, request, response);
-
-        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        assertEquals("{\"error\": \"Forbidden proxy path\"}", response.getContentAsString());
-    }
-
-    @Test
-    void testProxy_DifferentHost() throws Exception {
-        TurIntegrationInstance instance = new TurIntegrationInstance();
-        instance.setId("1");
-        // baseUri
-        instance.setEndpoint("http://example.com");
-
-        // Request URI changes the host if manipulated, but here baseUri is used to
-        // resolve.
-        // Actually the code tests baseUri vs fullUri. fullUri is
-        // baseUri.resolve(relativePath)
-        // If relativePath is an absolute URL, it could overwrite host.
-        request.setRequestURI("http://malicious.com/api/v2/integration/1/something");
-        request.setMethod("GET");
-
-        invokeProxy(turIntegrationAPI, instance, request, response);
-
-        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
-        assertEquals("{\"error\": \"Forbidden proxy target\"}", response.getContentAsString());
+        assertEquals("{\"error\": \"" + expectedError + "\"}", response.getContentAsString());
     }
 }

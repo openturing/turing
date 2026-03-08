@@ -26,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
 
+    private static final String BASE_URL = "baseUrl";
+    private static final String MODEL = "model";
     private final TurProviderOptionsParser optionsParser;
 
     public TurOllamaLlmProvider(TurProviderOptionsParser optionsParser) {
@@ -41,14 +43,14 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String modelName = firstNonBlank(
-                optionsParser.stringValue(options, "model"),
+                optionsParser.stringValue(options, MODEL),
                 turLLMInstance.getModelName());
         if (!StringUtils.hasText(modelName)) {
             throw new IllegalStateException("Missing model name for Ollama instance: " + turLLMInstance.getId());
         }
 
         OllamaApi ollamaApi = OllamaApi.builder()
-                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turLLMInstance.getUrl()))
+                .baseUrl(firstNonBlank(optionsParser.stringValue(options, BASE_URL), turLLMInstance.getUrl()))
                 .build();
 
         OllamaChatOptions.Builder optionsBuilder = OllamaChatOptions.builder()
@@ -101,7 +103,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         String modelName = firstNonBlank(
                 optionsParser.stringValue(options, "embeddingModel"),
-                optionsParser.stringValue(options, "model"),
+                optionsParser.stringValue(options, MODEL),
                 turLLMInstance.getModelName());
         if (!StringUtils.hasText(modelName)) {
             throw new IllegalStateException(
@@ -109,7 +111,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
         }
 
         OllamaApi ollamaApi = OllamaApi.builder()
-                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turLLMInstance.getUrl()))
+                .baseUrl(firstNonBlank(optionsParser.stringValue(options, BASE_URL), turLLMInstance.getUrl()))
                 .build();
 
         OllamaEmbeddingOptions embeddingOptions = OllamaEmbeddingOptions.builder()
@@ -125,9 +127,9 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
     @Override
     public OptionalInt fetchContextWindow(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        String baseUrl = firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turLLMInstance.getUrl());
+        String baseUrl = firstNonBlank(optionsParser.stringValue(options, BASE_URL), turLLMInstance.getUrl());
         String modelName = firstNonBlank(
-                optionsParser.stringValue(options, "model"),
+                optionsParser.stringValue(options, MODEL),
                 turLLMInstance.getModelName());
 
         if (!StringUtils.hasText(baseUrl) || !StringUtils.hasText(modelName)) {
@@ -137,7 +139,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
         RestClient client = RestClient.create(baseUrl);
 
         // 1) Try /api/ps — returns the effective context_length for running models
-        //    (reflects Ollama Settings override like num_ctx)
+        // (reflects Ollama Settings override like num_ctx)
         OptionalInt fromPs = fetchFromRunningModels(client, modelName);
         if (fromPs.isPresent()) {
             return fromPs;
@@ -158,21 +160,29 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
             if (body != null && body.get("models") instanceof List<?> models) {
                 for (Object item : models) {
                     if (item instanceof Map<?, ?> model) {
-                        String name = String.valueOf(model.get("name"));
-                        // Match by model name (with or without :tag suffix)
-                        if (name.equals(modelName)
-                                || name.startsWith(modelName + ":")
-                                || modelName.equals(String.valueOf(model.get("model")))) {
-                            Object ctxLen = model.get("context_length");
-                            if (ctxLen instanceof Number num && num.intValue() > 0) {
-                                return OptionalInt.of(num.intValue());
-                            }
+                        OptionalInt result = extractContextLength(model, modelName);
+                        if (result.isPresent()) {
+                            return result;
                         }
                     }
                 }
             }
         } catch (Exception e) {
             log.debug("Could not query Ollama /api/ps: {}", e.getMessage());
+        }
+        return OptionalInt.empty();
+    }
+
+    private OptionalInt extractContextLength(Map<?, ?> model, String modelName) {
+        String name = String.valueOf(model.get("name"));
+        // Match by model name (with or without :tag suffix)
+        if (name.equals(modelName)
+                || name.startsWith(modelName + ":")
+                || modelName.equals(String.valueOf(model.get(MODEL)))) {
+            Object ctxLen = model.get("context_length");
+            if (ctxLen instanceof Number num && num.intValue() > 0) {
+                return OptionalInt.of(num.intValue());
+            }
         }
         return OptionalInt.empty();
     }

@@ -19,9 +19,9 @@ package com.viglet.turing.api.sn.graphql;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class GraphQLConfig implements RuntimeWiringConfigurer {
 
-    private static final Pattern GRAPHQL_FIELD_NAME_PATTERN = Pattern.compile("^[_A-Za-z][_0-9A-Za-z]*$");
+    private static final Pattern GRAPHQL_FIELD_NAME_PATTERN = Pattern.compile("^[_A-Za-z]\\w*$");
     private static final Set<String> STATIC_FIELDS = Set.of(
             "id", "title", "text", "url", "date", "description", "image");
 
@@ -93,7 +93,7 @@ public class GraphQLConfig implements RuntimeWiringConfigurer {
         List<TurSNSite> sites = turSNSiteRepository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase()));
         List<String> siteNames = sites.stream().map(TurSNSite::getName)
                 .filter(StringUtils::isNotBlank).toList();
-        LinkedHashMap<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
+        Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
                 .buildEnumToSiteNameMap(siteNames);
 
         if (enumToSiteName.isEmpty()) {

@@ -34,6 +34,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 class TurCsrfCookieFilter extends OncePerRequestFilter {
 
+    private static final String EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -42,11 +44,11 @@ class TurCsrfCookieFilter extends OncePerRequestFilter {
         String token = csrfToken.getToken();
         response.setHeader(csrfToken.getHeaderName(), token);
 
-        String exposeHeaders = response.getHeader("Access-Control-Expose-Headers");
+        String exposeHeaders = response.getHeader(EXPOSE_HEADERS);
         if (!StringUtils.hasText(exposeHeaders)) {
-            response.setHeader("Access-Control-Expose-Headers", csrfToken.getHeaderName());
+            response.setHeader(EXPOSE_HEADERS, csrfToken.getHeaderName());
         } else if (!exposeHeaders.contains(csrfToken.getHeaderName())) {
-            response.setHeader("Access-Control-Expose-Headers", exposeHeaders + ", " + csrfToken.getHeaderName());
+            response.setHeader(EXPOSE_HEADERS, exposeHeaders + ", " + csrfToken.getHeaderName());
         }
 
         filterChain.doFilter(request, response);

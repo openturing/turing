@@ -209,7 +209,7 @@ public class TurUserAPI {
 
     @PostMapping("/{username}/avatar")
     public ResponseEntity<Void> uploadAvatar(@PathVariable String username,
-                                              @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -268,7 +268,11 @@ public class TurUserAPI {
         File[] existing = avatarsDir.listFiles((dir, name) -> name.startsWith(username + "."));
         if (existing != null) {
             for (File f : existing) {
-                f.delete();
+                try {
+                    Files.delete(f.toPath());
+                } catch (IOException e) {
+                    log.warn("Failed to delete existing avatar file {}: {}", f.getName(), e.getMessage());
+                }
             }
         }
     }

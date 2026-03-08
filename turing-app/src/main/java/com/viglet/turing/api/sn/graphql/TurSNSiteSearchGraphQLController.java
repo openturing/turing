@@ -22,15 +22,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -147,11 +148,11 @@ public class TurSNSiteSearchGraphQLController {
                 .map(TurSNSite::getName)
                 .filter(StringUtils::isNotBlank)
                 .toList();
-        LinkedHashMap<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
+        Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
                 .buildEnumToSiteNameMap(siteNames);
         String resolved = TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument(siteName,
                 enumToSiteName);
-        if (!StringUtils.equals(resolved, siteName)) {
+        if (!Objects.equals(resolved, siteName)) {
             return resolved;
         }
 

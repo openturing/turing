@@ -74,30 +74,43 @@ public class TurImportExchange {
 				extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE))) {
 
 			TurExchange turExchange = mapper.readValue(fis, TurExchange.class);
-
-			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
-				for (TurSNSiteExchange site : turExchange.getSnSites()) {
-					log.info(
-							"Deserialized SN Site '{}': fields={}, fieldExts={}, locales={}, spotlights={}, rankings={}",
-							site.getName(),
-							site.getTurSNSiteFields() != null ? site.getTurSNSiteFields().size() : "null",
-							site.getTurSNSiteFieldExts() != null ? site.getTurSNSiteFieldExts().size() : "null",
-							site.getTurSNSiteLocales() != null ? site.getTurSNSiteLocales().size() : "null",
-							site.getTurSNSiteSpotlights() != null ? site.getTurSNSiteSpotlights().size() : "null",
-							site.getTurSNRankingExpressions() != null ? site.getTurSNRankingExpressions().size()
-									: "null");
-				}
-				turSNSiteImport.importSNSite(turExchange);
-			} else {
-				log.warn("No SN Sites found in export file");
-			}
-
-			FileUtils.deleteDirectory(extractFolder);
-			if (parentExtractFolder != null) {
-				FileUtils.deleteDirectory(parentExtractFolder);
-			}
+			processTurExchange(turExchange);
+			cleanupDirectories(extractFolder, parentExtractFolder);
 		} catch (Exception e) {
 			log.error("Error importing SN Site: {}", e.getMessage(), e);
+		}
+	}
+
+	private void processTurExchange(TurExchange turExchange) {
+		if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
+			logSNSites(turExchange.getSnSites());
+			turSNSiteImport.importSNSite(turExchange);
+		} else {
+			log.warn("No SN Sites found in export file");
+		}
+	}
+
+	private void logSNSites(java.util.List<TurSNSiteExchange> sites) {
+		for (TurSNSiteExchange site : sites) {
+			log.info(
+					"Deserialized SN Site '{}': fields={}, fieldExts={}, locales={}, spotlights={}, rankings={}",
+					site.getName(),
+					formatSize(site.getTurSNSiteFields()),
+					formatSize(site.getTurSNSiteFieldExts()),
+					formatSize(site.getTurSNSiteLocales()),
+					formatSize(site.getTurSNSiteSpotlights()),
+					formatSize(site.getTurSNRankingExpressions()));
+		}
+	}
+
+	private String formatSize(java.util.Collection<?> collection) {
+		return collection != null ? String.valueOf(collection.size()) : "null";
+	}
+
+	private void cleanupDirectories(File extractFolder, File parentExtractFolder) throws IOException {
+		FileUtils.deleteDirectory(extractFolder);
+		if (parentExtractFolder != null) {
+			FileUtils.deleteDirectory(parentExtractFolder);
 		}
 	}
 

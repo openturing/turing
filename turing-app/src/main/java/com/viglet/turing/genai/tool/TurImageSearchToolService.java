@@ -100,30 +100,43 @@ public class TurImageSearchToolService {
                     .get();
 
             // DuckDuckGo lite: extract links with image extensions
-            Elements links = doc.select("a[href]");
-            for (Element link : links) {
-                String href = link.absUrl("href");
-                if (isImageUrl(href) && results.size() < maxResults) {
-                    results.add(new ImageResult(link.text().strip(), href, null));
-                }
-            }
+            Elements elements = doc.select("a[href]");
+            extractFromLinks(results, elements, maxResults);
 
             // Also try img tags with src
             if (results.isEmpty()) {
                 Elements imgs = doc.select("img[src]");
-                for (Element img : imgs) {
-                    String src = img.absUrl("src");
-                    if (isImageUrl(src) && !src.contains("logo") && !src.contains("icon")
-                            && results.size() < maxResults) {
-                        String alt = img.attr("alt");
-                        results.add(new ImageResult(alt.isBlank() ? query : alt, src, null));
-                    }
-                }
+                extractFromImages(results, imgs, query, maxResults);
             }
         } catch (Exception e) {
             log.debug("[ImageSearch Tool] DuckDuckGo search failed: {}", e.getMessage());
         }
         return results;
+    }
+
+    private void extractFromLinks(List<ImageResult> results, Elements links, int maxResults) {
+        for (Element link : links) {
+            if (results.size() >= maxResults) {
+                break;
+            }
+            String href = link.absUrl("href");
+            if (isImageUrl(href)) {
+                results.add(new ImageResult(link.text().strip(), href, null));
+            }
+        }
+    }
+
+    private void extractFromImages(List<ImageResult> results, Elements imgs, String query, int maxResults) {
+        for (Element img : imgs) {
+            if (results.size() >= maxResults) {
+                break;
+            }
+            String src = img.absUrl("src");
+            if (isImageUrl(src) && !src.contains("logo") && !src.contains("icon")) {
+                String alt = img.attr("alt");
+                results.add(new ImageResult(alt.isBlank() ? query : alt, src, null));
+            }
+        }
     }
 
     private List<ImageResult> searchBing(String query, int maxResults) {
@@ -141,31 +154,34 @@ public class TurImageSearchToolService {
 
             // Bing image results: look for img tags within result containers
             Elements imgElements = doc.select("img.mimg, img[data-src], a.iusc img");
-            for (Element img : imgElements) {
-                String src = img.hasAttr("data-src") ? img.attr("data-src") : img.absUrl("src");
-                if (src.isEmpty())
-                    src = img.absUrl("src");
-
-                if (!src.isBlank() && src.startsWith("http") && results.size() < maxResults) {
-                    String alt = img.attr("alt");
-                    results.add(new ImageResult(alt.isBlank() ? query : alt, src, null));
-                }
-            }
+            extractBingImages(results, imgElements, query, maxResults);
 
             // Fallback: any image link with image extensions
             if (results.isEmpty()) {
                 Elements links = doc.select("a[href]");
-                for (Element link : links) {
-                    String href = link.absUrl("href");
-                    if (isImageUrl(href) && results.size() < maxResults) {
-                        results.add(new ImageResult(link.text().strip(), href, null));
-                    }
-                }
+                extractFromLinks(results, links, maxResults);
             }
         } catch (Exception e) {
             log.debug("[ImageSearch Tool] Bing search failed: {}", e.getMessage());
         }
         return results;
+    }
+
+    private void extractBingImages(List<ImageResult> results, Elements imgElements, String query, int maxResults) {
+        for (Element img : imgElements) {
+            if (results.size() >= maxResults) {
+                break;
+            }
+            String src = img.hasAttr("data-src") ? img.attr("data-src") : img.absUrl("src");
+            if (src.isEmpty()) {
+                src = img.absUrl("src");
+            }
+
+            if (!src.isBlank() && src.startsWith("http")) {
+                String alt = img.attr("alt");
+                results.add(new ImageResult(alt.isBlank() ? query : alt, src, null));
+            }
+        }
     }
 
     private boolean isImageUrl(String url) {

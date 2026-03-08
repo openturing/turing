@@ -3,6 +3,7 @@ package com.viglet.turing.api.sn.graphql;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -15,8 +16,8 @@ public final class TurSNSiteGraphQLNameUtils {
     private TurSNSiteGraphQLNameUtils() {
     }
 
-    public static LinkedHashMap<String, String> buildEnumToSiteNameMap(List<String> siteNames) {
-        LinkedHashMap<String, String> enumToSiteName = new LinkedHashMap<>();
+    public static Map<String, String> buildEnumToSiteNameMap(List<String> siteNames) {
+        Map<String, String> enumToSiteName = new LinkedHashMap<>();
         Set<String> usedEnumValues = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
         if (siteNames == null || siteNames.isEmpty()) {
@@ -43,7 +44,7 @@ public final class TurSNSiteGraphQLNameUtils {
     }
 
     public static String resolveGraphQLSiteArgument(String siteArgument,
-            LinkedHashMap<String, String> enumToSiteName) {
+            Map<String, String> enumToSiteName) {
         if (StringUtils.isBlank(siteArgument)) {
             return siteArgument;
         }

@@ -93,7 +93,10 @@ public class TurLLMTokenUsageAPI {
         }
 
         List<MonthlySummaryRow> summary = new ArrayList<>();
-        long totalInput = 0, totalOutput = 0, totalAll = 0, totalReqs = 0;
+        long totalInput = 0;
+        long totalOutput = 0;
+        long totalAll = 0;
+        long totalReqs = 0;
         for (Object[] row : summaryRows) {
             long input = ((Number) row[4]).longValue();
             long output = ((Number) row[5]).longValue();

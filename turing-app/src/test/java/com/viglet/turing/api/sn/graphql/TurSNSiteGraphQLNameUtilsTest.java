@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +23,7 @@ class TurSNSiteGraphQLNameUtilsTest {
     @Test
     void testBuildEnumToSiteNameMap_validNames() {
         List<String> siteNames = Arrays.asList("Sample Site", "Sample Site", "unknown", "123 Site");
-        LinkedHashMap<String, String> map = TurSNSiteGraphQLNameUtils.buildEnumToSiteNameMap(siteNames);
+        Map<String, String> map = TurSNSiteGraphQLNameUtils.buildEnumToSiteNameMap(siteNames);
 
         assertEquals(4, map.size());
         assertEquals("Sample Site", map.get("SAMPLE_SITE"));
@@ -32,7 +34,7 @@ class TurSNSiteGraphQLNameUtilsTest {
 
     @Test
     void testResolveGraphQLSiteArgument() {
-        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        HashMap<String, String> map = new LinkedHashMap<>();
         map.put("SAMPLE_SITE", "Sample Site");
 
         assertEquals("argument", TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument("argument", null));
