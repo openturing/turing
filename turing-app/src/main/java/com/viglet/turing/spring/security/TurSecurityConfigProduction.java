@@ -81,7 +81,7 @@ public class TurSecurityConfigProduction {
                         TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
                         TurLogoutHandler turLogoutHandler,
                         TurConfigProperties turConfigProperties,
-                        TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
+                        TurAuthenticationEntryPoint turAuthenticationEntryPoint) {
 
                 http.headers(header -> header.frameOptions(
                                 frameOptions -> frameOptions.disable()

@@ -29,8 +29,10 @@ export class TurUserService {
     await axios.delete(`/v2/user/${username}/avatar`);
   }
 
-  getAvatarUrl(username: string): string {
-    const baseURL = axios.defaults.baseURL ?? "";
-    return `${baseURL}/v2/user/${username}/avatar`;
+  async getAvatarUrl(username: string): Promise<string> {
+    const response = await axios.get(`/v2/user/${username}/avatar`, {
+      responseType: "blob",
+    });
+    return URL.createObjectURL(response.data);
   }
 }

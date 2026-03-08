@@ -1,5 +1,5 @@
 import { IconCamera, IconDeviceFloppy, IconLoader2, IconLock, IconTrash } from "@tabler/icons-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { MD5 } from "crypto-js"
 
@@ -53,9 +53,30 @@ export default function UserAccountPage() {
     ? `https://www.gravatar.com/avatar/${MD5(email.trim().toLowerCase()).toString()}?d=404`
     : ""
 
-  const avatarUrl = user && hasAvatar
-    ? `${turUserService.getAvatarUrl(user.username)}?v=${avatarKey}`
-    : ""
+  const [avatarUrl, setAvatarUrl] = useState("")
+
+  useEffect(() => {
+    let revoked = false;
+    let objectUrl: string | null = null;
+
+    if (user && hasAvatar) {
+      turUserService.getAvatarUrl(user.username).then((url) => {
+        if (!revoked) {
+          objectUrl = url;
+          setAvatarUrl(url);
+        } else {
+          URL.revokeObjectURL(url);
+        }
+      }).catch(() => setAvatarUrl(""));
+    } else {
+      setAvatarUrl("");
+    }
+
+    return () => {
+      revoked = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [user, hasAvatar, avatarKey])
 
   const handleAvatarUpload = useCallback(async (file: File) => {
     if (!user) return

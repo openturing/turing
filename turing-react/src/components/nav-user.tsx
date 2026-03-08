@@ -57,15 +57,34 @@ export function NavUser({
     );
   }, [user]);
 
-  const avatarSrc = React.useMemo(() => {
+  const [avatarSrc, setAvatarSrc] = React.useState('');
+
+  React.useEffect(() => {
+    let revoked = false;
+    let objectUrl: string | null = null;
+
     if (user?.hasAvatar && user?.username) {
       const svc = new TurUserService();
-      return svc.getAvatarUrl(user.username);
+      svc.getAvatarUrl(user.username).then((url) => {
+        if (!revoked) {
+          objectUrl = url;
+          setAvatarSrc(url);
+        } else {
+          URL.revokeObjectURL(url);
+        }
+      }).catch(() => setAvatarSrc(''));
+    } else if (user?.email) {
+      const cleanEmail = user.email.trim().toLowerCase();
+      const hash = MD5(cleanEmail).toString();
+      setAvatarSrc(`https://www.gravatar.com/avatar/${hash}?d=404`);
+    } else {
+      setAvatarSrc('');
     }
-    if (!user?.email) return '';
-    const cleanEmail = user.email.trim().toLowerCase();
-    const hash = MD5(cleanEmail).toString();
-    return `https://www.gravatar.com/avatar/${hash}?d=404`;
+
+    return () => {
+      revoked = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
   }, [user]);
   return (
     <SidebarMenu>
