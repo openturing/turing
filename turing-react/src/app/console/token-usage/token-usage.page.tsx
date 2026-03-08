@@ -1,4 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { ROUTES } from "@/app/routes.const";
+import { BlankSlate } from "@/components/blank-slate";
+import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardContent,
@@ -7,6 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,22 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import type {
-  TurUsageReport,
   TurDailyUsageRow,
   TurMonthlySummaryRow,
+  TurUsageReport,
 } from "@/models/llm/llm-token-usage.model";
 import { TurLLMTokenUsageService } from "@/services/llm/llm-token-usage.service";
+import { TurLLMInstanceService } from "@/services/llm/llm.service";
+import { IconArrowLeft, IconArrowRight, IconChartBar } from "@tabler/icons-react";
+import { useCallback, useEffect, useState } from "react";
 
 const service = new TurLLMTokenUsageService();
+const llmService = new TurLLMInstanceService();
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -57,6 +62,13 @@ export default function TokenUsagePage() {
   const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
   const [report, setReport] = useState<TurUsageReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasEnabledLlm, setHasEnabledLlm] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    llmService.query().then((instances) => {
+      setHasEnabledLlm(instances.some((i) => i.enabled === 1));
+    });
+  }, []);
 
   const load = useCallback((month: string) => {
     setLoading(true);
@@ -82,6 +94,21 @@ export default function TokenUsagePage() {
   };
 
   const currentIdx = monthOptions.findIndex((o) => o.value === selectedMonth);
+
+  if (hasEnabledLlm === false) {
+    return (
+      <>
+        <PageHeader turIcon={IconChartBar} title={"Token Usage"} />
+        <BlankSlate
+          icon={IconChartBar}
+          title="No Language Model Available"
+          description="To view token usage, create and enable at least one LLM instance."
+          buttonText="Create LLM Instance"
+          urlNew={ROUTES.LLM_INSTANCE + "/new"}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

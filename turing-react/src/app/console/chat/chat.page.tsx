@@ -3,8 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import "./chat-highlight.css"
 
+import { ROUTES } from "@/app/routes.const"
+import { BlankSlate } from "@/components/blank-slate"
+import { PageHeader } from "@/components/page-header"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
+import { IconMessageChatbot } from "@tabler/icons-react"
 import { type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
 import { ChatHeader } from "./components/chat-header"
@@ -41,7 +45,7 @@ export default function ChatPage() {
   semMessagesRef.current = semMessages
 
   // Hooks
-  const { llmInstances, selectedLlmId, selectedInstance, contextWindow, selectLlm, turChatService } = useLlmInstances()
+  const { llmInstances, loaded, selectedLlmId, selectedInstance, contextWindow, selectLlm, turChatService } = useLlmInstances()
 
   const getLlmTitle = useCallback((llmId: string) => {
     const inst = llmInstances.find((i) => i.id === llmId)
@@ -226,6 +230,21 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0
   const assistantName = selectedInstance?.title ?? "Assistant"
   const modelLabel = selectedInstance ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}` : "No model selected"
+
+  if (loaded && llmInstances.length === 0) {
+    return (
+      <>
+        <PageHeader turIcon={IconMessageChatbot} title={"Chat"} />
+        <BlankSlate
+          icon={IconMessageChatbot}
+          title="No Language Model Available"
+          description="To use the chat, create and enable at least one LLM instance."
+          buttonText="Create LLM Instance"
+          urlNew={ROUTES.LLM_INSTANCE + "/new"}
+        />
+      </>
+    )
+  }
 
   return (
     <div className="flex h-[calc(100vh-2rem)] max-h-screen">

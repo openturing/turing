@@ -10,6 +10,7 @@ export function useLlmInstances() {
   const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([])
   const [selectedLlmId, setSelectedLlmId] = useState<string>(() => localStorage.getItem(LLM_STORAGE_KEY) ?? "")
   const [fetchedContextWindow, setFetchedContextWindow] = useState<number | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     turChatService.queryLLMInstances().then((instances) => {
@@ -23,7 +24,7 @@ export function useLlmInstances() {
           localStorage.setItem(LLM_STORAGE_KEY, enabled[0].id)
         }
       }
-    })
+    }).finally(() => setLoaded(true))
   }, [])
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export function useLlmInstances() {
 
   return {
     llmInstances,
+    loaded,
     selectedLlmId,
     selectedInstance,
     contextWindow,
