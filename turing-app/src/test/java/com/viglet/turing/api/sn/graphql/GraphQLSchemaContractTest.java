@@ -5,7 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
 
@@ -21,78 +22,65 @@ import graphql.schema.idl.TypeRuntimeWiring;
 
 class GraphQLSchemaContractTest {
 
-    @Test
-    void testFieldsSubSelectionSucceeds() throws Exception {
-        GraphQL graphQL = createGraphQL();
-
-        ExecutionResult result = graphQL.execute("""
-                query {
-                  siteSearch(siteName: UNKNOWN, searchParams: {}, locale: "en") {
-                    results {
-                      document {
-                        fields {
-                          title
-                          url
-                        }
-                      }
-                    }
+  @ParameterizedTest
+  @ValueSource(strings = {
+      """
+          query {
+            siteSearch(siteName: UNKNOWN, searchParams: {}, locale: "en") {
+              results {
+                document {
+                  fields {
+                    title
+                    url
                   }
                 }
-                """);
-
-        assertTrue(result.getErrors().isEmpty());
-    }
-
-    @Test
-    void testSearchParamsAcceptsFl() throws Exception {
-        GraphQL graphQL = createGraphQL();
-
-        ExecutionResult result = graphQL.execute("""
-                query {
-                  siteSearch(siteName: UNKNOWN, searchParams: { fl: [\"title\", \"url\"] }, locale: "en") {
-                    results {
-                      document {
-                        fields {
-                          title
-                        }
-                      }
-                    }
+              }
+            }
+          }
+          """,
+      """
+          query {
+            siteSearch(siteName: UNKNOWN, searchParams: { fl: ["title", "url"] }, locale: "en") {
+              results {
+                document {
+                  fields {
+                    title
                   }
                 }
-                """);
+              }
+            }
+          }
+          """,
+      """
+          query {
+            siteNames
+          }
+          """
+  })
+  void testGraphQLQueries(String query) throws Exception {
+    GraphQL graphQL = createGraphQL();
 
-        assertTrue(result.getErrors().isEmpty());
-    }
+    ExecutionResult result = graphQL.execute(query);
 
-    @Test
-    void testSiteNamesQueryExists() throws Exception {
-        GraphQL graphQL = createGraphQL();
+    assertTrue(result.getErrors().isEmpty());
+  }
 
-        ExecutionResult result = graphQL.execute("""
-                query {
-                  siteNames
-                }
-                """);
+  private GraphQL createGraphQL() throws Exception {
+    String schemaSdl = StreamUtils.copyToString(
+        new ClassPathResource("graphql/schema.graphqls").getInputStream(),
+        StandardCharsets.UTF_8);
 
-        assertTrue(result.getErrors().isEmpty());
-    }
+    TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(schemaSdl);
+    RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+        .scalar(ExtendedScalars.Json)
+        .type(TypeRuntimeWiring.newTypeWiring("Query")
+            .dataFetcher("siteNames", env -> java.util.List.of())
+            .dataFetcher("siteSearch", env -> Map.of()))
+        .build();
 
-    private GraphQL createGraphQL() throws Exception {
-        String schemaSdl = StreamUtils.copyToString(
-                new ClassPathResource("graphql/schema.graphqls").getInputStream(),
-                StandardCharsets.UTF_8);
+    GraphQLSchema graphQLSchema = new SchemaGenerator()
+        .makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
 
-        TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(schemaSdl);
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .scalar(ExtendedScalars.Json)
-                .type(TypeRuntimeWiring.newTypeWiring("Query")
-                        .dataFetcher("siteNames", env -> java.util.List.of())
-                        .dataFetcher("siteSearch", env -> Map.of()))
-                .build();
-
-        GraphQLSchema graphQLSchema = new SchemaGenerator()
-                .makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
-
-        return GraphQL.newGraphQL(graphQLSchema).build();
-    }
+    return GraphQL.newGraphQL(graphQLSchema).build();
+  }
 }

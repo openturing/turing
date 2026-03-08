@@ -8,11 +8,11 @@ class TurSNPaginationTypeTest {
 
     @Test
     void shouldExposeExpectedTypeStrings() {
-        assertThat(TurSNPaginationType.FIRST.toString()).isEqualTo("FIRST");
-        assertThat(TurSNPaginationType.LAST.toString()).isEqualTo("LAST");
-        assertThat(TurSNPaginationType.PREVIOUS.toString()).isEqualTo("PREVIOUS");
-        assertThat(TurSNPaginationType.NEXT.toString()).isEqualTo("NEXT");
-        assertThat(TurSNPaginationType.CURRENT.toString()).isEqualTo("CURRENT");
-        assertThat(TurSNPaginationType.PAGE.toString()).isEqualTo("PAGE");
+        assertThat(TurSNPaginationType.FIRST).hasToString("FIRST");
+        assertThat(TurSNPaginationType.LAST).hasToString("LAST");
+        assertThat(TurSNPaginationType.PREVIOUS).hasToString("PREVIOUS");
+        assertThat(TurSNPaginationType.NEXT).hasToString("NEXT");
+        assertThat(TurSNPaginationType.CURRENT).hasToString("CURRENT");
+        assertThat(TurSNPaginationType.PAGE).hasToString("PAGE");
     }
 }

@@ -34,7 +34,7 @@ class TurSEParametersTest {
         assertThat(parameters.getSort()).isEqualTo("newest");
         assertThat(parameters.getRows()).isEqualTo(20);
         assertThat(parameters.getGroup()).isEqualTo("type");
-        assertThat(parameters.getAutoCorrectionDisabled()).isEqualTo(0);
+        assertThat(parameters.getAutoCorrectionDisabled()).isZero();
         assertThat(parameters.getFieldList()).containsExactly("title", "url");
         assertThat(parameters.getTurSNFilterParams().getDefaultValues()).containsExactly("type:article");
         assertThat(parameters.getTurSNFilterParams().getAnd()).containsExactly("lang:en");

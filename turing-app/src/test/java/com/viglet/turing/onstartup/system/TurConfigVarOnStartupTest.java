@@ -38,12 +38,12 @@ class TurConfigVarOnStartupTest {
         verify(turConfigVarRepository, org.mockito.Mockito.times(2)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
-        assertTrue(savedVars.stream().anyMatch(var -> "FIRST_TIME".equals(var.getId())
-                && "/system".equals(var.getPath())
-                && "true".equals(var.getValue())));
-        assertTrue(savedVars.stream().anyMatch(var -> "GLOBAL_DECIMAL_SEPARATOR".equals(var.getId())
-                && "/system/global".equals(var.getPath())
-                && "DOT".equals(var.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
+                && "/system".equals(configVar.getPath())
+                && "true".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DECIMAL_SEPARATOR".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "DOT".equals(configVar.getValue())));
     }
 
     @Test

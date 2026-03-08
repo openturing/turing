@@ -30,6 +30,8 @@ class TurSNQueueControlServiceTest {
 
     @BeforeEach
     void setUp() {
+        // No setup needed - @InjectMocks automatically initializes the service with
+        // mocked dependencies
     }
 
     @Test

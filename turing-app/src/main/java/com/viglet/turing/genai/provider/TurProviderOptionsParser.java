@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -71,6 +72,7 @@ public class TurProviderOptionsParser {
         }
     }
 
+    @Nullable
     public Boolean booleanValue(Map<String, Object> options, String key) {
         if (options == null || !options.containsKey(key) || options.get(key) == null) {
             return null;

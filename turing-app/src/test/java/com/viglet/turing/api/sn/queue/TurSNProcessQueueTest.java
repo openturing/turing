@@ -110,7 +110,7 @@ class TurSNProcessQueueTest {
         when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US))).thenReturn(attrs);
 
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance(eq("site1"), eq(Locale.US))).thenReturn(Optional.of(solrInstance));
+        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
         when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
 
         processQueue.receiveIndexingQueue(jobItems);
@@ -138,7 +138,7 @@ class TurSNProcessQueueTest {
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
 
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance(eq("site1"), eq(Locale.US))).thenReturn(Optional.of(solrInstance));
+        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
 
         processQueue.receiveIndexingQueue(jobItems);
 
@@ -163,7 +163,7 @@ class TurSNProcessQueueTest {
         when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
 
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance(eq("site1"), eq(Locale.US))).thenReturn(Optional.of(solrInstance));
+        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
 
         processQueue.receiveIndexingQueue(jobItems);
 
@@ -248,7 +248,7 @@ class TurSNProcessQueueTest {
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
 
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance(eq("site1"), eq(Locale.US))).thenReturn(Optional.of(solrInstance));
+        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
 
         processQueue.receiveIndexingQueue(jobItems);
 
@@ -269,7 +269,7 @@ class TurSNProcessQueueTest {
         TurSNSite site = new TurSNSite();
         site.setName("site1");
         when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
-        when(turSolrInstanceProcess.initSolrInstance(eq("site1"), eq(Locale.US))).thenReturn(Optional.empty());
+        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.empty());
 
         processQueue.receiveIndexingQueue(jobItems);
 

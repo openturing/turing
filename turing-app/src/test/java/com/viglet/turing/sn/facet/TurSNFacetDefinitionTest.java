@@ -71,7 +71,7 @@ class TurSNFacetDefinitionTest {
 
     private TurSNSiteFieldExt baseField() {
         TurSNSite site = new TurSNSite();
-        TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
+        return TurSNSiteFieldExt.builder()
                 .id("field-1")
                 .name("price")
                 .snType(TurSNFieldType.SE)
@@ -80,7 +80,6 @@ class TurSNFacetDefinitionTest {
                 .showAllFacetItems(false)
                 .turSNSite(site)
                 .build();
-        return fieldExt;
     }
 
     private static class StubFacetDefinition implements TurSNFacetDefinition {

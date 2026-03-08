@@ -15,8 +15,9 @@ class TurSecretCryptoServiceTest {
 
         String encrypted = service.encrypt("secret-value");
 
-        assertThat(encrypted).isNotBlank();
-        assertThat(encrypted).isNotEqualTo("secret-value");
+        assertThat(encrypted)
+            .isNotBlank()
+            .isNotEqualTo("secret-value");
         assertThat(service.decrypt(encrypted)).isEqualTo("secret-value");
     }
 

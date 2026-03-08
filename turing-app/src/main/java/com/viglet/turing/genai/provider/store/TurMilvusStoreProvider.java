@@ -64,6 +64,9 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
                 optionsParser.stringValue(options, "collectionName"),
                 turStoreInstance.getCollectionName(),
                 DEFAULT_COLLECTION);
+        if (collectionName == null) {
+            collectionName = DEFAULT_COLLECTION;
+        }
         boolean initializeSchema = Boolean.TRUE
                 .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
 

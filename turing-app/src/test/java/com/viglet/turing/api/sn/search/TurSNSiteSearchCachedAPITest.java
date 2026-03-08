@@ -1,5 +1,6 @@
 package com.viglet.turing.api.sn.search;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,9 +40,7 @@ class TurSNSiteSearchCachedAPITest {
 
     @Test
     void testCleanSearchCache() {
-        api.cleanSearchCache();
-        // Since it just logs, we verify no exceptions are thrown.
-        // It's mostly an annotation-driven method.
+        assertDoesNotThrow(() -> api.cleanSearchCache());
     }
 
     @Test
@@ -60,7 +59,7 @@ class TurSNSiteSearchCachedAPITest {
 
     @Test
     void testPurgeMongoDBLogs_Disabled() {
-        api.purgeMongoDBLogs();
+        assertDoesNotThrow(() -> api.purgeMongoDBLogs());
         // Should return early due to enabled = false
         // Static MongoClients.create won't be called, throwing no exceptions.
     }

@@ -449,10 +449,14 @@ class TurSolrQueryBuilderTest {
                                 contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
                                 seParameters, new TurSESpellCheckResult(false, ""));
 
-                assertThat(query.getFilterQueries()).hasSize(1);
-                assertThat(query.getFilterQueries()[0]).contains(" OR ");
-                assertThat(query.getFilterQueries()[0]).contains("id:[1 TO 10]");
-                assertThat(query.getFilterQueries()[0]).contains("id:[11 TO 20]");
+                assertThat(query.getFilterQueries())
+                                .hasSize(1)
+                                .as("Filter query should contain OR operator")
+                                .allMatch(fq -> fq.contains(" OR "))
+                                .as("Filter query should contain range 1 TO 10")
+                                .allMatch(fq -> fq.contains("id:[1 TO 10]"))
+                                .as("Filter query should contain range 11 TO 20")
+                                .allMatch(fq -> fq.contains("id:[11 TO 20]"));
         }
 
         @Test
@@ -655,9 +659,10 @@ class TurSolrQueryBuilderTest {
 
                 assertThat(query.getFilterQueries()).hasSize(1);
                 String fq = query.getFilterQueries()[0];
-                assertThat(fq).contains("publishDate:[ 2024-01-01T00:00:00Z TO ");
-                assertThat(fq).contains("category:\"books\"");
-                assertThat(fq).contains("other:\"value\"");
+                assertThat(fq)
+                                .contains("publishDate:[ 2024-01-01T00:00:00Z TO ")
+                                .contains("category:\"books\"")
+                                .contains("other:\"value\"");
         }
 
         @Test

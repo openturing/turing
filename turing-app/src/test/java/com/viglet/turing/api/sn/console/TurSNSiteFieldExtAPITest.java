@@ -632,7 +632,7 @@ class TurSNSiteFieldExtAPITest {
                 TurSNSiteFieldExtDto payloadDto = asDto(payload);
                 assertThatThrownBy(() -> api.turSNSiteFieldExtAdd("site", payloadDto))
                                 .isInstanceOf(ResponseStatusException.class);
-                assertThat(siteRepository.findById("site").orElse(null)).isNotNull();
+                assertThat(siteRepository.findById("site")).isPresent();
 
                 verify(fieldRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));
                 verify(fieldExtRepository, never()).existsByTurSNSiteAndName(any(TurSNSite.class), any(String.class));

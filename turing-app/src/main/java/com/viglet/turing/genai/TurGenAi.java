@@ -90,7 +90,7 @@ public class TurGenAi {
                 .similarityThreshold(0.7)
                 .build();
         List<Document> relevantDocuments = context.getVectorStore().similaritySearch(embeddingSearchRequest);
-        if (relevantDocuments == null) {
+        if (relevantDocuments.isEmpty()) {
             relevantDocuments = Collections.emptyList();
         }
 

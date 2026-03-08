@@ -1,7 +1,6 @@
 package com.viglet.turing.api.store;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -165,7 +164,7 @@ class TurStoreInstanceAPITest {
                                   "credential": "plain-store-credential"
                                 }
                                 """;
-                when(turSecretCryptoService.encrypt(eq("plain-store-credential")))
+                when(turSecretCryptoService.encrypt("plain-store-credential"))
                                 .thenReturn("encrypted-store-credential");
 
                 mockMvc.perform(post("/api/store")

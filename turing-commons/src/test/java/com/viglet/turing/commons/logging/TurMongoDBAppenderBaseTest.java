@@ -1,9 +1,10 @@
 package com.viglet.turing.commons.logging;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
+import static org.assertj.core.api.Assertions.assertThatCode;
+
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 
 class TurMongoDBAppenderBaseTest {
 
@@ -22,6 +23,8 @@ class TurMongoDBAppenderBaseTest {
     private static class TestAppender extends TurMongoDBAppenderBase {
         @Override
         protected void append(ILoggingEvent iLoggingEvent) {
+            // Test stub: no-op implementation since this test only validates
+            // that the appender can start and stop safely, not actual logging behavior
         }
     }
 }

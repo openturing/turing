@@ -14,73 +14,75 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 
 class TurSNFacetDefinitionFactoryTest {
 
-    private final TurSNFacetDefinitionFactory factory = new TurSNFacetDefinitionFactory();
+        private final TurSNFacetDefinitionFactory factory = new TurSNFacetDefinitionFactory();
 
-    @Test
-    void shouldReturnEmptyWhenFieldsListIsNull() {
-        List<TurSNFacetDefinition> result = factory.fromFields(null, Locale.US);
+        @Test
+        void shouldReturnEmptyWhenFieldsListIsNull() {
+                List<TurSNFacetDefinition> result = factory.fromFields(null, Locale.US);
 
-        assertThat(result).isEmpty();
-    }
+                assertThat(result).isEmpty();
+        }
 
-    @Test
-    void shouldCreateFieldAndCustomFacetDefinitionsFromField() {
-        TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
-                .id("custom-1")
-                .name("price_range")
-                .build();
-        TurSNSiteFieldExtFacet localeFacet = TurSNSiteFieldExtFacet.builder().label("Price").build();
-        TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
-                .id("field-1")
-                .name("price")
-                .facet(1)
-                .customFacets(Set.of(customFacet))
-                .build();
+        @Test
+        void shouldCreateFieldAndCustomFacetDefinitionsFromField() {
+                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
+                                .id("custom-1")
+                                .name("price_range")
+                                .build();
+                TurSNSiteFieldExtFacet localeFacet = TurSNSiteFieldExtFacet.builder().label("Price").build();
+                TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
+                                .id("field-1")
+                                .name("price")
+                                .facet(1)
+                                .customFacets(Set.of(customFacet))
+                                .build();
 
-        List<TurSNFacetDefinition> definitions = factory.fromField(fieldExt, Locale.US, Set.of(localeFacet));
+                List<TurSNFacetDefinition> definitions = factory.fromField(fieldExt, Locale.US, Set.of(localeFacet));
 
-        assertThat(definitions).hasSize(2);
-        assertThat(definitions).anyMatch(def -> def instanceof TurSNFieldFacetDefinition);
-        assertThat(definitions).anyMatch(def -> def instanceof TurSNCustomFacetDefinition);
-    }
+                assertThat(definitions)
+                                .hasSize(2)
+                                .anyMatch(TurSNFieldFacetDefinition.class::isInstance)
+                                .anyMatch(TurSNCustomFacetDefinition.class::isInstance);
+        }
 
-    @Test
-    void shouldUseProvidedFacetLocaleProvider() {
-        TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
-                .id("field-1")
-                .name("price")
-                .facet(1)
-                .build();
-        TurSNSiteFieldExtFacet providedFacet = TurSNSiteFieldExtFacet.builder().label("Provided").build();
+        @Test
+        void shouldUseProvidedFacetLocaleProvider() {
+                TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
+                                .id("field-1")
+                                .name("price")
+                                .facet(1)
+                                .build();
+                TurSNSiteFieldExtFacet providedFacet = TurSNSiteFieldExtFacet.builder().label("Provided").build();
 
-        List<TurSNFacetDefinition> definitions = factory.fromFields(
-                List.of(fieldExt),
-                Locale.US,
-                ignored -> Set.of(providedFacet));
+                List<TurSNFacetDefinition> definitions = factory.fromFields(
+                                List.of(fieldExt),
+                                Locale.US,
+                                ignored -> Set.of(providedFacet));
 
-        TurSNFacetDefinition fieldDefinition = definitions.stream()
-                .filter(def -> def instanceof TurSNFieldFacetDefinition)
-                .findFirst()
-                .orElseThrow();
+                TurSNFacetDefinition fieldDefinition = definitions.stream()
+                                .filter(TurSNFieldFacetDefinition.class::isInstance)
+                                .findFirst()
+                                .orElseThrow();
 
-        assertThat(fieldDefinition.getFacetLocales()).containsExactly(providedFacet);
-    }
+                assertThat(fieldDefinition.getFacetLocales()).containsExactly(providedFacet);
+        }
 
-    @Test
-    void shouldUseFieldFacetLocalesByDefault() {
-        TurSNSiteFieldExtFacet fieldLocaleFacet = TurSNSiteFieldExtFacet.builder().label("Field Locale").build();
-        TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
-                .id("field-1")
-                .name("price")
-                .facet(1)
-                .facetLocales(Set.of(fieldLocaleFacet))
-                .build();
+        @Test
+        void shouldUseFieldFacetLocalesByDefault() {
+                TurSNSiteFieldExtFacet fieldLocaleFacet = TurSNSiteFieldExtFacet.builder().label("Field Locale")
+                                .build();
+                TurSNSiteFieldExt fieldExt = TurSNSiteFieldExt.builder()
+                                .id("field-1")
+                                .name("price")
+                                .facet(1)
+                                .facetLocales(Set.of(fieldLocaleFacet))
+                                .build();
 
-        List<TurSNFacetDefinition> definitions = factory.fromFields(List.of(fieldExt), Locale.US);
+                List<TurSNFacetDefinition> definitions = factory.fromFields(List.of(fieldExt), Locale.US);
 
-        assertThat(definitions)
-                .filteredOn(def -> def instanceof TurSNFieldFacetDefinition)
-                .singleElement()
-                .satisfies(def -> assertThat(def.getFacetLocales()).containsExactly(fieldLocaleFacet));
-    }
+                assertThat(definitions)
+                                .filteredOn(TurSNFieldFacetDefinition.class::isInstance)
+                                .singleElement()
+                                .satisfies(def -> assertThat(def.getFacetLocales()).containsExactly(fieldLocaleFacet));
+        }
 }

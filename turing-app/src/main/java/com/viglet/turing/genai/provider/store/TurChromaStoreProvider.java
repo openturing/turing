@@ -38,7 +38,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
 
         ChromaApi chromaApi = ChromaApi.builder()
-                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl()))
+                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl(),
+                        "http://localhost:8000"))
                 .build();
 
         if (StringUtils.hasText(decryptedCredential)) {
@@ -69,7 +70,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 DEFAULT_COLLECTION);
         String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
         String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
-        boolean initializeSchema = firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE);
+        boolean initializeSchema = Boolean.TRUE
+                .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
 
         return ChromaVectorStore.builder(chromaApi, embeddingModel)
                 .collectionName(collectionName)
@@ -95,6 +97,6 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 return value;
             }
         }
-        return null;
+        return "";
     }
 }
