@@ -177,8 +177,8 @@ databaseChangeLog:
         onFail: MARK_RAN
         not:
           - sqlCheck:
-              expectedResult: "1"
-              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'ANTHROPIC'"
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
       changes:
         - insert:
             tableName: llm_vendor
@@ -206,8 +206,8 @@ databaseChangeLog:
         onFail: MARK_RAN
         not:
           - sqlCheck:
-              expectedResult: "1"
-              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'GEMINI'"
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
       changes:
         - insert:
             tableName: llm_vendor
@@ -235,8 +235,8 @@ databaseChangeLog:
         onFail: MARK_RAN
         not:
           - sqlCheck:
-              expectedResult: "1"
-              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'AZURE_OPENAI'"
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
       changes:
         - insert:
             tableName: llm_vendor
@@ -265,8 +265,8 @@ databaseChangeLog:
         onFail: MARK_RAN
         not:
           - sqlCheck:
-              expectedResult: "1"
-              sql: "SELECT COUNT(*) FROM llm_vendor WHERE id = 'GEMINI_OPENAI'"
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
       changes:
         - insert:
             tableName: llm_vendor
@@ -287,23 +287,10 @@ databaseChangeLog:
                   name: website
                   value: "https://ai.google.dev"
 
-  - changeSet:
-      id: v2026.1.14-02-migrate-existing-gemini-instances
-      author: viglet-team
-      preConditions:
-        onFail: MARK_RAN
-        not:
-          - sqlCheck:
-              expectedResult: "0"
-              sql: "SELECT COUNT(*) FROM llm_instance WHERE llm_vendor_id = 'GEMINI'"
-      changes:
-        - sql:
-            sql: "UPDATE llm_instance SET llm_vendor_id = 'GEMINI_OPENAI' WHERE llm_vendor_id = 'GEMINI'"
-
   # --- llm_instance additional columns ---
   - changeSet:
       id: add-context-window-to-llm-instance
-      author: claude
+      author: viglet-team
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -321,7 +308,7 @@ databaseChangeLog:
 
   - changeSet:
       id: 2026.1.13-1
-      author: claude
+      author: viglet-team
       preconditions:
         - onFail: MARK_RAN
         - columnExists:

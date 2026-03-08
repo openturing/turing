@@ -65,11 +65,19 @@ public class TurLLMVendorOnStartup {
 
 			TurLLMVendor gemini = new TurLLMVendor();
 			gemini.setId("GEMINI");
-			gemini.setDescription("Google Gemini");
+			gemini.setDescription("Google Gemini (native GenAI SDK)");
 			gemini.setPlugin("gemini");
 			gemini.setTitle("Google Gemini");
 			gemini.setWebsite("https://ai.google.dev");
 			turLLMVendorRepository.save(gemini);
+
+			TurLLMVendor geminiOpenAI = new TurLLMVendor();
+			geminiOpenAI.setId("GEMINI_OPENAI");
+			geminiOpenAI.setDescription("Google Gemini via OpenAI-compatible endpoint");
+			geminiOpenAI.setPlugin("gemini-openai");
+			geminiOpenAI.setTitle("Google Gemini (OpenAI Compatible)");
+			geminiOpenAI.setWebsite("https://ai.google.dev");
+			turLLMVendorRepository.save(geminiOpenAI);
 
 			TurLLMVendor azureOpenai = new TurLLMVendor();
 			azureOpenai.setId("AZURE_OPENAI");
@@ -78,6 +86,7 @@ public class TurLLMVendorOnStartup {
 			azureOpenai.setTitle("Azure OpenAI");
 			azureOpenai.setWebsite("https://azure.microsoft.com/products/ai-services/openai-service");
 			turLLMVendorRepository.save(azureOpenai);
+
 		}
 	}
 }

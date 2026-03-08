@@ -39,6 +39,7 @@ import org.xml.sax.SAXException;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
+import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
@@ -81,13 +82,18 @@ public class TurLLMChatAPI {
             remove top/right spines (ax.spines['top'].set_visible(False), ax.spines['right'].set_visible(False)), \
             use colorblind-friendly palette ['#0072B2','#D55E00','#009E73','#CC79A7','#F0E442','#56B4E9','#E69F00'], \
             call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
-            Do NOT call plt.show(). Always use print() for output.
+            Do NOT call plt.show(). Always use print() for output. \
+            If the code produces errors or warnings, analyze the issue, fix the code, and call \
+            execute_python again with the corrected version (up to 3 retries).
             - search_images — ONLY when the user asks to see, show, or find a photo, picture, or image \
             of something. Before calling this tool, act as a Prompt Engineer: transform the user's simple \
             request into an optimized English super-query by enriching the subject with texture/color/state \
             adjectives, placing it in a specific scene, and appending photography terms (shallow depth of field, \
             8k, volumetric lighting, sharp focus, cinematic style). Pass ONLY the optimized English query. \
             After getting results, display images using markdown: ![description](image_url).
+            - get_current_time — ONLY when the user asks what time it is, the current date, or the \
+            date/time in a specific city or timezone. Map city names to IANA timezone identifiers \
+            (e.g., 'São Paulo' → 'America/Sao_Paulo', 'Tokyo' → 'Asia/Tokyo'). Use 'UTC' as default.
 
             IMPORTANT RULES:
             1. DEFAULT BEHAVIOR: Respond conversationally. Most messages do NOT need tools.
@@ -106,6 +112,7 @@ public class TurLLMChatAPI {
     private final TurFinanceToolService financeToolService;
     private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final TurImageSearchToolService imageSearchToolService;
+    private final TurDateTimeToolService dateTimeToolService;
     private final TurLLMTokenUsageService tokenUsageService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
@@ -116,6 +123,7 @@ public class TurLLMChatAPI {
             TurFinanceToolService financeToolService,
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurImageSearchToolService imageSearchToolService,
+            TurDateTimeToolService dateTimeToolService,
             TurLLMTokenUsageService tokenUsageService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
@@ -125,6 +133,7 @@ public class TurLLMChatAPI {
         this.financeToolService = financeToolService;
         this.codeInterpreterToolService = codeInterpreterToolService;
         this.imageSearchToolService = imageSearchToolService;
+        this.dateTimeToolService = dateTimeToolService;
         this.tokenUsageService = tokenUsageService;
     }
 
@@ -193,7 +202,7 @@ public class TurLLMChatAPI {
         if (turLLMInstance.isToolsEnabled()) {
             ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
                     .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
-                            codeInterpreterToolService, imageSearchToolService)
+                            codeInterpreterToolService, imageSearchToolService, dateTimeToolService)
                     .build()
                     .getToolCallbacks();
 

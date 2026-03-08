@@ -24,6 +24,8 @@ import {
   Textarea
 } from "@/components/ui/textarea"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
+import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
+import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { useEffect, useState } from "react"
 import {
@@ -36,6 +38,7 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 const turLLMInstanceService = new TurLLMInstanceService();
+const turLLMVendorService = new TurLLMVendorService();
 const urlBase = ROUTES.LLM_INSTANCE
 interface Props {
   value: TurLLMInstance;
@@ -171,11 +174,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   });
 
   const [open, setOpen] = useState(false);
+  const [vendors, setVendors] = useState<TurLLMVendor[]>([]);
   const [llmProviderOptionsDraft, setLlmProviderOptionsDraft] = useState<LlmProviderOptionsDraft>(
     emptyLlmProviderOptionsDraft()
   )
   const selectedVendorId = form.watch("turLLMVendor.id");
   const navigate = useNavigate()
+
+  useEffect(() => {
+    turLLMVendorService.query().then(setVendors);
+  }, [])
 
   useEffect(() => {
     form.reset({
@@ -303,7 +311,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     const rawProviderOptions = parseJsonObject(rawProviderOptionsJson)
     const mergedProviderOptions = {
       ...visualProviderOptions,
-      ...(rawProviderOptions ?? {})
+      ...(rawProviderOptions)
     }
     const providerOptionsJson = Object.keys(mergedProviderOptions).length > 0
       ? JSON.stringify(mergedProviderOptions, null, 2)
@@ -441,12 +449,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                     <SelectValue placeholder="Choose..." />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem key="ANTHROPIC" value="ANTHROPIC">Anthropic (Claude)</SelectItem>
-                                    <SelectItem key="AZURE_OPENAI" value="AZURE_OPENAI">Azure OpenAI (Copilot)</SelectItem>
-                                    <SelectItem key="GEMINI" value="GEMINI">Google Gemini</SelectItem>
-                                    <SelectItem key="GEMINI_OPENAI" value="GEMINI_OPENAI">Google Gemini (OpenAI Compatible)</SelectItem>
-                                    <SelectItem key="OLLAMA" value="OLLAMA">Ollama</SelectItem>
-                                    <SelectItem key="OPENAI" value="OPENAI">OpenAI</SelectItem>
+                                    {vendors.map((vendor) => (
+                                      <SelectItem key={vendor.id} value={vendor.id}>{vendor.title}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </FormControl>
@@ -608,24 +613,24 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     </div>
                     {/* Seed — OLLAMA, OPENAI, AZURE_OPENAI */}
                     {(selectedVendorId === "OLLAMA" || selectedVendorId === "OPENAI" || selectedVendorId === "AZURE_OPENAI") && (
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="seed"
-                        render={({ field }) => (
-                          <FormItem className="w-full">
-                            <FormLabel>Seed</FormLabel>
-                            <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Random seed for reproducibility.
-                            </div>
-                            <FormControl>
-                              <Input placeholder="e.g., 42" type="number" className="w-full" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      <div className="w-full">
+                        <FormField
+                          control={form.control}
+                          name="seed"
+                          render={({ field }) => (
+                            <FormItem className="w-full">
+                              <FormLabel>Seed</FormLabel>
+                              <div className="text-muted-foreground text-sm font-normal mt-1">
+                                Random seed for reproducibility.
+                              </div>
+                              <FormControl>
+                                <Input placeholder="e.g., 42" type="number" className="w-full" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     )}
                   </AccordionContent>
                 </AccordionItem>
