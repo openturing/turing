@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -1215,8 +1215,7 @@ public class TurSemanticNavToolService {
             new StemRule("ns", 4, ""),
             new StemRule("is", 4, ""),
             new StemRule("es", 4, ""),
-            new StemRule("s", 4, "")
-    );
+            new StemRule("s", 4, ""));
 
     private String stemWord(String word) {
         if (word == null || word.length() <= 3) {

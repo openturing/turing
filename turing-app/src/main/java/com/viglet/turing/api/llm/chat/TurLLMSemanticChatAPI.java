@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.api.llm.chat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,19 +13,20 @@ import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.tool.TurSemanticNavToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
+import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -89,8 +90,7 @@ public class TurLLMSemanticChatAPI {
     public record ChatResponse(String role, String content) {
     }
 
-    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE,
-                 consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public Flux<ChatResponse> chat(
             @PathVariable String id,
             @org.springframework.web.bind.annotation.RequestBody ChatRequest request) {
@@ -132,19 +132,19 @@ public class TurLLMSemanticChatAPI {
         Prompt prompt = new Prompt(messages, chatOptions);
 
         return Mono.fromCallable(() -> {
-                    log.info("[SemanticChat] Calling LLM for instance {}", id);
-                    var response = chatModel.call(prompt);
+            log.info("[SemanticChat] Calling LLM for instance {}", id);
+            var response = chatModel.call(prompt);
 
-                    tokenUsageService.recordUsage(turLLMInstance, response, username);
+            tokenUsageService.recordUsage(turLLMInstance, response, username);
 
-                    String text = response.getResult() != null
-                            && response.getResult().getOutput() != null
-                            && response.getResult().getOutput().getText() != null
-                                    ? response.getResult().getOutput().getText()
-                                    : "";
-                    log.info("[SemanticChat] LLM response: {} chars for instance {}", text.length(), id);
-                    return new ChatResponse("assistant", text);
-                })
+            String text = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText()
+                            : "";
+            log.info("[SemanticChat] LLM response: {} chars for instance {}", text.length(), id);
+            return new ChatResponse("assistant", text);
+        })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[SemanticChat] Call error: {}", err.getMessage(), err))
                 .filter(response -> !response.content().isEmpty())

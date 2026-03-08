@@ -1,6 +1,5 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
-import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -144,7 +143,8 @@ public class TurImageSearchToolService {
             Elements imgElements = doc.select("img.mimg, img[data-src], a.iusc img");
             for (Element img : imgElements) {
                 String src = img.hasAttr("data-src") ? img.attr("data-src") : img.absUrl("src");
-                if (src.isEmpty()) src = img.absUrl("src");
+                if (src.isEmpty())
+                    src = img.absUrl("src");
 
                 if (!src.isBlank() && src.startsWith("http") && results.size() < maxResults) {
                     String alt = img.attr("alt");
@@ -169,12 +169,14 @@ public class TurImageSearchToolService {
     }
 
     private boolean isImageUrl(String url) {
-        if (url == null || url.isBlank()) return false;
+        if (url == null || url.isBlank())
+            return false;
         String lower = url.toLowerCase();
         return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")
                 || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".svg")
                 || lower.contains("/image") || lower.contains("img=");
     }
 
-    private record ImageResult(String title, String imageUrl, String sourceUrl) {}
+    private record ImageResult(String title, String imageUrl, String sourceUrl) {
+    }
 }

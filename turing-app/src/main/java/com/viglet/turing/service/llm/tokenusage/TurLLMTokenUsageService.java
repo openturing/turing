@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.service.llm.tokenusage;
 
 import java.time.LocalDateTime;
 
@@ -40,22 +40,23 @@ public class TurLLMTokenUsageService {
                 return;
             }
 
-            TurLLMTokenUsage record = new TurLLMTokenUsage();
-            record.setTurLLMInstance(instance);
-            record.setVendorId(instance.getTurLLMVendor() != null
-                    ? instance.getTurLLMVendor().getId() : "unknown");
-            record.setModelName(instance.getModelName());
-            record.setUsername(username);
-            record.setInputTokens(inputTokens);
-            record.setOutputTokens(outputTokens);
-            record.setTotalTokens(totalTokens > 0 ? totalTokens : inputTokens + outputTokens);
-            record.setCreatedAt(LocalDateTime.now());
+            TurLLMTokenUsage turLLMTokenUsage = new TurLLMTokenUsage();
+            turLLMTokenUsage.setTurLLMInstance(instance);
+            turLLMTokenUsage.setVendorId(instance.getTurLLMVendor() != null
+                    ? instance.getTurLLMVendor().getId()
+                    : "unknown");
+            turLLMTokenUsage.setModelName(instance.getModelName());
+            turLLMTokenUsage.setUsername(username);
+            turLLMTokenUsage.setInputTokens(inputTokens);
+            turLLMTokenUsage.setOutputTokens(outputTokens);
+            turLLMTokenUsage.setTotalTokens(totalTokens > 0 ? totalTokens : inputTokens + outputTokens);
+            turLLMTokenUsage.setCreatedAt(LocalDateTime.now());
 
-            tokenUsageRepository.save(record);
+            tokenUsageRepository.save(turLLMTokenUsage);
 
             log.info("[TokenUsage] Recorded: instance={}, model={}, input={}, output={}, total={}, user={}",
                     instance.getId(), instance.getModelName(),
-                    inputTokens, outputTokens, record.getTotalTokens(), username);
+                    inputTokens, outputTokens, turLLMTokenUsage.getTotalTokens(), username);
         } catch (Exception e) {
             log.warn("[TokenUsage] Failed to record token usage: {}", e.getMessage());
         }

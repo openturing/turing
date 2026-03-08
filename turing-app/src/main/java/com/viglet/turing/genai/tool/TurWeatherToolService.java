@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -45,8 +45,7 @@ public class TurWeatherToolService {
             Map.entry(82, "Violent rain showers"),
             Map.entry(95, "Thunderstorm"),
             Map.entry(96, "Thunderstorm with slight hail"),
-            Map.entry(99, "Thunderstorm with heavy hail")
-    );
+            Map.entry(99, "Thunderstorm with heavy hail"));
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(TIMEOUT)
@@ -65,7 +64,8 @@ public class TurWeatherToolService {
             wind speed, and weather description.""")
     public String getWeather(String location, int days) {
         log.info("[Weather Tool] get_weather called: location={}, days={}", location, days);
-        if (days < 1 || days > 7) days = 3;
+        if (days < 1 || days > 7)
+            days = 3;
 
         try {
             // Step 1: Geocode the location
@@ -110,13 +110,16 @@ public class TurWeatherToolService {
                     .GET()
                     .build();
 
-            HttpResponse<String> weatherResponse = httpClient.send(weatherRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> weatherResponse = httpClient.send(weatherRequest,
+                    HttpResponse.BodyHandlers.ofString());
             JSONObject weatherJson = new JSONObject(weatherResponse.body());
 
             StringBuilder sb = new StringBuilder();
             String fullLocation = name;
-            if (!admin.isEmpty()) fullLocation += ", " + admin;
-            if (!country.isEmpty()) fullLocation += ", " + country;
+            if (!admin.isEmpty())
+                fullLocation += ", " + admin;
+            if (!country.isEmpty())
+                fullLocation += ", " + country;
             sb.append("Weather for: ").append(fullLocation).append("\n");
             sb.append("Coordinates: ").append(lat).append(", ").append(lon).append("\n");
 

@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
 import java.io.File;
 import java.io.IOException;
@@ -176,8 +176,10 @@ public class TurCodeInterpreterToolService {
     }
 
     private String formatFileSize(long bytes) {
-        if (bytes >= 1_048_576) return String.format("%.1f MB", bytes / 1_048_576.0);
-        if (bytes >= 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes >= 1_048_576)
+            return String.format("%.1f MB", bytes / 1_048_576.0);
+        if (bytes >= 1024)
+            return String.format("%.1f KB", bytes / 1024.0);
         return bytes + " bytes";
     }
 }

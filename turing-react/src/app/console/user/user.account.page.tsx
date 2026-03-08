@@ -1,13 +1,13 @@
 import { IconCamera, IconDeviceFloppy, IconLoader2, IconLock, IconTrash } from "@tabler/icons-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { toast } from "sonner"
 import { MD5 } from "crypto-js"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import type { TurUser } from "@/models/auth/user"
 import { TurUserService } from "@/services/auth/user.service"
 
@@ -61,11 +61,11 @@ export default function UserAccountPage() {
 
     if (user && hasAvatar) {
       turUserService.getAvatarUrl(user.username).then((url) => {
-        if (!revoked) {
+        if (revoked) {
+          URL.revokeObjectURL(url);
+        } else {
           objectUrl = url;
           setAvatarUrl(url);
-        } else {
-          URL.revokeObjectURL(url);
         }
       }).catch(() => setAvatarUrl(""));
     } else {

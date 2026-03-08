@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.api.llm.tokenusage;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

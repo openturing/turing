@@ -1,7 +1,6 @@
 package com.viglet.turing.api.llm;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -205,7 +204,7 @@ class TurLLMInstanceAPITest {
                                   "turLLMVendor": { "id": "OPENAI" }
                                 }
                                 """;
-                when(turSecretCryptoService.encrypt(eq("plain-api-key"))).thenReturn("encrypted-api-key");
+                when(turSecretCryptoService.encrypt("plain-api-key")).thenReturn("encrypted-api-key");
 
                 mockMvc.perform(post("/api/llm")
                                 .contentType(MediaType.APPLICATION_JSON)

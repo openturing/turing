@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.api.llm.chat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,6 +24,8 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MimeType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,14 +34,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.xml.sax.SAXException;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
+import com.viglet.turing.genai.tool.TurFinanceToolService;
+import com.viglet.turing.genai.tool.TurImageSearchToolService;
+import com.viglet.turing.genai.tool.TurWeatherToolService;
+import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
+import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -134,8 +140,7 @@ public class TurLLMChatAPI {
     public record ContextInfoResponse(int contextWindow, String source) {
     }
 
-    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE,
-                 consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Flux<ChatResponse> chat(
             @PathVariable String id,
             @RequestPart("request") ChatRequest request,
@@ -143,8 +148,7 @@ public class TurLLMChatAPI {
         return doChat(id, request, files);
     }
 
-    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE,
-                 consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public Flux<ChatResponse> chatJson(
             @PathVariable String id,
             @org.springframework.web.bind.annotation.RequestBody ChatRequest request) {
@@ -208,21 +212,22 @@ public class TurLLMChatAPI {
 
         // Use call() instead of stream() to ensure tool calling works reliably.
         // Spring AI's stream() + internalToolExecutionEnabled(true) does not execute
-        // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
+        // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP
+        // issue).
         return Mono.fromCallable(() -> {
-                    log.info("[Chat] Calling LLM with tool support for instance {}", id);
-                    var response = chatModel.call(prompt);
+            log.info("[Chat] Calling LLM with tool support for instance {}", id);
+            var response = chatModel.call(prompt);
 
-                    tokenUsageService.recordUsage(turLLMInstance, response, username);
+            tokenUsageService.recordUsage(turLLMInstance, response, username);
 
-                    String text = response.getResult() != null
-                            && response.getResult().getOutput() != null
-                            && response.getResult().getOutput().getText() != null
-                                    ? response.getResult().getOutput().getText()
-                                    : "";
-                    log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
-                    return new ChatResponse("assistant", text);
-                })
+            String text = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText()
+                            : "";
+            log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
+            return new ChatResponse("assistant", text);
+        })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[Chat] Call error: {}", err.getMessage(), err))
                 .filter(response -> !response.content().isEmpty())
@@ -258,7 +263,8 @@ public class TurLLMChatAPI {
 
         for (MultipartFile file : files) {
             String contentType = file.getContentType() != null
-                    ? file.getContentType() : "application/octet-stream";
+                    ? file.getContentType()
+                    : "application/octet-stream";
 
             // Always extract text from all files (works for PDF, DOCX, and images via OCR)
             String content = extractTextFromFile(file);

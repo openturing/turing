@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.api.llm.chat;
 
 import java.io.File;
 import java.io.IOException;

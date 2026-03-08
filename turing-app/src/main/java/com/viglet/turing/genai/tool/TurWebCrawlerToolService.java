@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
 import java.io.IOException;
 
@@ -57,8 +57,10 @@ public class TurWebCrawlerToolService {
                 for (Element link : links) {
                     String href = link.absUrl("href");
                     String text = link.text().strip();
-                    if (href.isEmpty() || href.startsWith("javascript:")) continue;
-                    if (text.isEmpty()) text = href;
+                    if (href.isEmpty() || href.startsWith("javascript:"))
+                        continue;
+                    if (text.isEmpty())
+                        text = href;
                     sb.append("- ").append(text).append(" -> ").append(href).append("\n");
                     count++;
                     if (count >= MAX_LINKS) {
@@ -100,14 +102,17 @@ public class TurWebCrawlerToolService {
             sb.append("Links from: ").append(url).append("\n\n");
 
             String filter = (filterKeyword != null && !filterKeyword.isBlank())
-                    ? filterKeyword.toLowerCase() : null;
+                    ? filterKeyword.toLowerCase()
+                    : null;
 
             int count = 0;
             for (Element link : links) {
                 String href = link.absUrl("href");
                 String text = link.text().strip();
-                if (href.isEmpty() || href.startsWith("javascript:") || href.startsWith("mailto:")) continue;
-                if (text.isEmpty()) text = href;
+                if (href.isEmpty() || href.startsWith("javascript:") || href.startsWith("mailto:"))
+                    continue;
+                if (text.isEmpty())
+                    text = href;
 
                 if (filter != null
                         && !text.toLowerCase().contains(filter)
@@ -125,7 +130,8 @@ public class TurWebCrawlerToolService {
 
             if (count == 0) {
                 sb.append("No links found");
-                if (filter != null) sb.append(" matching '").append(filterKeyword).append("'");
+                if (filter != null)
+                    sb.append(" matching '").append(filterKeyword).append("'");
                 sb.append(".");
             } else {
                 sb.append("\nTotal: ").append(count).append(" links");

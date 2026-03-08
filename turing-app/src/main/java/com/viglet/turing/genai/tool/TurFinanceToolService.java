@@ -1,4 +1,4 @@
-package com.viglet.turing.api.llm;
+package com.viglet.turing.genai.tool;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -46,7 +46,8 @@ public class TurFinanceToolService {
                 Current price, change, volume, and recent price history.""")
     public String getStockQuote(String symbol, String range) {
         log.info("[Finance Tool] get_stock_quote called: symbol={}, range={}", symbol, range);
-        if (range == null || range.isBlank()) range = "5d";
+        if (range == null || range.isBlank())
+            range = "5d";
 
         try {
             String interval = switch (range) {
@@ -104,12 +105,15 @@ public class TurFinanceToolService {
 
             StringBuilder sb = new StringBuilder();
             sb.append("Symbol: ").append(symbol);
-            if (!shortName.equals(symbol)) sb.append(" (").append(shortName).append(")");
+            if (!shortName.equals(symbol))
+                sb.append(" (").append(shortName).append(")");
             sb.append("\n");
-            if (!exchangeName.isEmpty()) sb.append("Exchange: ").append(exchangeName).append("\n");
+            if (!exchangeName.isEmpty())
+                sb.append("Exchange: ").append(exchangeName).append("\n");
             sb.append("Currency: ").append(currency).append("\n");
             sb.append("\n--- Current Quote ---\n");
-            sb.append("Price: ").append(String.format("%.2f", regularMarketPrice)).append(" ").append(currency).append("\n");
+            sb.append("Price: ").append(String.format("%.2f", regularMarketPrice)).append(" ").append(currency)
+                    .append("\n");
             sb.append("Previous Close: ").append(String.format("%.2f", previousClose)).append("\n");
             sb.append("Change: ").append(String.format("%+.2f", change))
                     .append(" (").append(String.format("%+.2f%%", changePct)).append(")\n");
@@ -117,7 +121,8 @@ public class TurFinanceToolService {
             // Market hours info
             long regularMarketTime = meta.optLong("regularMarketTime", 0);
             if (regularMarketTime > 0) {
-                sb.append("Last Update: ").append(DATE_FMT.format(Instant.ofEpochSecond(regularMarketTime))).append("\n");
+                sb.append("Last Update: ").append(DATE_FMT.format(Instant.ofEpochSecond(regularMarketTime)))
+                        .append("\n");
             }
 
             // Historical data
@@ -139,13 +144,17 @@ public class TurFinanceToolService {
                     long ts = timestamps.getLong(i);
                     String date = DATE_FMT.format(Instant.ofEpochSecond(ts));
                     String close = closes != null && !closes.isNull(i)
-                            ? String.format("%.2f", closes.getDouble(i)) : "N/A";
+                            ? String.format("%.2f", closes.getDouble(i))
+                            : "N/A";
                     String high = highs != null && !highs.isNull(i)
-                            ? String.format("%.2f", highs.getDouble(i)) : "N/A";
+                            ? String.format("%.2f", highs.getDouble(i))
+                            : "N/A";
                     String low = lows != null && !lows.isNull(i)
-                            ? String.format("%.2f", lows.getDouble(i)) : "N/A";
+                            ? String.format("%.2f", lows.getDouble(i))
+                            : "N/A";
                     String vol = volumes != null && !volumes.isNull(i)
-                            ? formatVolume(volumes.getLong(i)) : "N/A";
+                            ? formatVolume(volumes.getLong(i))
+                            : "N/A";
                     sb.append(date).append(" | ").append(close).append(" | ")
                             .append(high).append(" | ").append(low).append(" | ").append(vol).append("\n");
                 }
@@ -216,9 +225,12 @@ public class TurFinanceToolService {
     }
 
     private String formatVolume(long volume) {
-        if (volume >= 1_000_000_000) return String.format("%.1fB", volume / 1_000_000_000.0);
-        if (volume >= 1_000_000) return String.format("%.1fM", volume / 1_000_000.0);
-        if (volume >= 1_000) return String.format("%.1fK", volume / 1_000.0);
+        if (volume >= 1_000_000_000)
+            return String.format("%.1fB", volume / 1_000_000_000.0);
+        if (volume >= 1_000_000)
+            return String.format("%.1fM", volume / 1_000_000.0);
+        if (volume >= 1_000)
+            return String.format("%.1fK", volume / 1_000.0);
         return String.valueOf(volume);
     }
 }
