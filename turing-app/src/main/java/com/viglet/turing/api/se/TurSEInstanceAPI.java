@@ -44,6 +44,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
+import com.viglet.turing.solr.bean.TurSECoreSiteUsage;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -135,8 +136,12 @@ public class TurSEInstanceAPI {
                         List<TurSECoreInfo> cores = TurSolrUtils.listCores(turSEInstance).stream()
                                         .map(core -> new TurSECoreInfo(core.name(), core.numDocs(),
                                                         turSNSiteLocaleRepository.findByCore(core.name()).stream()
-                                                                        .map(locale -> locale.getTurSNSite().getName())
-                                                                        .distinct().sorted().toList()))
+                                                                        .map(locale -> new TurSECoreSiteUsage(
+                                                                                        locale.getTurSNSite().getId(),
+                                                                                        locale.getTurSNSite().getName(),
+                                                                                        locale.getId(),
+                                                                                        locale.getLanguage().toString()))
+                                                                        .toList()))
                                         .toList();
                         return ResponseEntity.ok(cores);
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());

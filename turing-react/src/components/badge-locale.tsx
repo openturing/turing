@@ -55,30 +55,30 @@ const COUNTRY_OVERRIDES: Record<string, string> = {
     UK: "GB",
 };
 
+export function getLocaleCountryCode(locale: string): string {
+    if (!locale) return "";
+
+    const normalizedLocale = locale.trim().replaceAll("-", "_").toUpperCase();
+    const localeParts = normalizedLocale.split("_");
+
+    if (localeParts.length > 1 && localeParts[1].length === 2) {
+        const regionCode = localeParts[1];
+        return (COUNTRY_OVERRIDES[regionCode] || regionCode).toLowerCase();
+    }
+
+    const languageCode = localeParts[0];
+    const countryByLanguage = LANGUAGE_TO_COUNTRY[languageCode];
+    if (countryByLanguage) {
+        return countryByLanguage.toLowerCase();
+    }
+
+    return (COUNTRY_OVERRIDES[languageCode] || languageCode).toLowerCase();
+}
+
 export const BadgeLocale: React.FC<BadgeLocaleProps> = ({ locale, className }) => {
     const [imgError, setImgError] = useState(false);
 
-    const getCountryCode = (): string => {
-        if (!locale) return "";
-
-        const normalizedLocale = locale.trim().replaceAll("-", "_").toUpperCase();
-        const localeParts = normalizedLocale.split("_");
-
-        if (localeParts.length > 1 && localeParts[1].length === 2) {
-            const regionCode = localeParts[1];
-            return (COUNTRY_OVERRIDES[regionCode] || regionCode).toLowerCase();
-        }
-
-        const languageCode = localeParts[0];
-        const countryByLanguage = LANGUAGE_TO_COUNTRY[languageCode];
-        if (countryByLanguage) {
-            return countryByLanguage.toLowerCase();
-        }
-
-        return (COUNTRY_OVERRIDES[languageCode] || languageCode).toLowerCase();
-    };
-
-    const countryCode = getCountryCode();
+    const countryCode = getLocaleCountryCode(locale);
 
     useEffect(() => {
         setImgError(false);

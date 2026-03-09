@@ -1,6 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
-import { BadgeLocale } from "@/components/badge-locale";
+import { BadgeColorful } from "@/components/badge-colorful";
+import { BadgeLocale, getLocaleCountryCode } from "@/components/badge-locale";
 import { DialogDelete } from "@/components/dialog.delete";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
@@ -18,7 +19,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
 
@@ -76,11 +77,34 @@ interface LocaleRowProps {
 function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowProps>) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 pl-10 bg-muted/20">
       <BadgeLocale locale={locale} />
       <span className="text-sm text-muted-foreground flex-1 font-mono">{coreInfo.name}</span>
+      {coreInfo.usedBySites.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {coreInfo.usedBySites.map((usage) => {
+            const countryCode = getLocaleCountryCode(usage.language);
+            return (
+              <BadgeColorful
+                key={usage.localeId}
+                text={usage.siteName}
+                href={`${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
+                onClick={navigate}
+                prefix={countryCode ? (
+                  <img
+                    src={`https://flagcdn.com/w40/${countryCode}.png`}
+                    alt={usage.language}
+                    className="w-4 h-3 object-cover rounded-sm"
+                  />
+                ) : undefined}
+              />
+            );
+          })}
+        </div>
+      )}
       <span className="text-xs text-muted-foreground tabular-nums">
         {formatNumDocs(coreInfo.numDocs)} docs
       </span>
@@ -130,6 +154,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
   const [open, setOpen] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const navigate = useNavigate();
   const hasLocales = group.locales.length > 0;
   const localeCount = group.locales.length;
   const totalDocs = group.locales.reduce((sum, { coreInfo }) => sum + coreInfo.numDocs, 0);
@@ -160,6 +185,28 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
           <>
             <IconServer className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-semibold flex-1">{group.base}</span>
+            {group.coreInfo && group.coreInfo.usedBySites.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {group.coreInfo.usedBySites.map((usage) => {
+                  const countryCode = getLocaleCountryCode(usage.language);
+                  return (
+                    <BadgeColorful
+                      key={usage.localeId}
+                      text={usage.siteName}
+                      href={`${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
+                      onClick={navigate}
+                      prefix={countryCode ? (
+                        <img
+                          src={`https://flagcdn.com/w40/${countryCode}.png`}
+                          alt={usage.language}
+                          className="w-4 h-3 object-cover rounded-sm"
+                        />
+                      ) : undefined}
+                    />
+                  );
+                })}
+              </div>
+            )}
             {group.coreInfo && (
               <span className="text-xs text-muted-foreground tabular-nums">
                 {formatNumDocs(group.coreInfo.numDocs)} docs

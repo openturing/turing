@@ -1,5 +1,10 @@
+import { ROUTES } from "@/app/routes.const";
+import type { TurSECoreSiteUsage } from "@/models/se/se-core-site-usage.model";
 import { IconTrash } from "@tabler/icons-react";
 import React, { type Dispatch, type SetStateAction } from "react";
+import { useNavigate } from "react-router-dom";
+import { BadgeColorful } from "./badge-colorful";
+import { getLocaleCountryCode } from "./badge-locale";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { GradientButton } from "./ui/gradient-button";
 
@@ -13,7 +18,7 @@ interface Props {
   title?: string;
   description?: string;
   confirmLabel?: string;
-  blockedBy?: string[];
+  blockedBy?: TurSECoreSiteUsage[];
 }
 export const DialogDelete: React.FC<Props> = ({
   feature, name, onDelete, open, setOpen,
@@ -24,6 +29,7 @@ export const DialogDelete: React.FC<Props> = ({
   blockedBy,
 }) => {
   const isBlocked = blockedBy && blockedBy.length > 0;
+  const navigate = useNavigate();
 
   const defaultTrigger = (
     <GradientButton variant={"ghost"} size={"icon-sm"}><IconTrash className="size-5!" /></GradientButton>
@@ -45,13 +51,28 @@ export const DialogDelete: React.FC<Props> = ({
             </DialogDescription>
           </DialogHeader>
           {isBlocked ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-sm">The following Semantic Navigation sites are using this {feature}:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                {blockedBy.map((site) => (
-                  <li key={site} className="text-sm font-semibold">{site}</li>
-                ))}
-              </ul>
+              <div className="flex flex-wrap gap-2">
+                {blockedBy.map((usage) => {
+                  const countryCode = getLocaleCountryCode(usage.language);
+                  return (
+                    <BadgeColorful
+                      key={usage.localeId}
+                      text={usage.siteName}
+                      href={`${ROUTES.SN_INSTANCE}/${usage.siteId}/locale/${usage.localeId}`}
+                      onClick={(href) => { setOpen(false); navigate(href); }}
+                      prefix={countryCode ? (
+                        <img
+                          src={`https://flagcdn.com/w40/${countryCode}.png`}
+                          alt={usage.language}
+                          className="w-4 h-3 object-cover rounded-sm"
+                        />
+                      ) : undefined}
+                    />
+                  );
+                })}
+              </div>
               <p className="text-sm text-muted-foreground">Remove this {feature} from those sites before deleting it.</p>
             </div>
           ) : (
