@@ -18,7 +18,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
 
@@ -220,8 +220,10 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
 
 export default function SEInstanceCoresPage() {
   const { id } = useParams() as { id: string };
+  const [searchParams] = useSearchParams();
   const [cores, setCores] = useState<TurSECoreInfo[]>();
   const [error, setError] = useState<string | null>(null);
+
 
   const loadCores = () => {
     turSEInstanceService.getCores(id)
@@ -245,7 +247,7 @@ export default function SEInstanceCoresPage() {
       .catch(() => setError(`Failed to remove documents from: ${coreName}`));
   };
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const allGroups = useMemo(() => (cores ? groupCores(cores) : []), [cores]);
 
   const groups = useMemo(() => {

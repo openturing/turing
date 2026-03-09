@@ -1,6 +1,8 @@
 "use client"
+import { ROUTES } from "@/app/routes.const"
 import { LanguageSelect } from "@/components/language-select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -20,6 +22,7 @@ import type { TurLocale } from "@/models/locale/locale.model"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
+import { IconExternalLink } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import {
   useForm
@@ -172,22 +175,42 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
                 <FormField
                   control={form.control}
                   name="core"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Core</FormLabel>
-                      <FormDescription>
-                        The core name will appear in the semantic navigation site locale list.
-                      </FormDescription>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Enter core name"
-                          type="text"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const seId = snLocale.turSNSite?.turSEInstance?.id;
+                    const searchSuffix = field.value ? `?search=${encodeURIComponent(field.value)}` : "";
+                    const coresUrl = seId
+                      ? `${ROUTES.SE_INSTANCE}/${seId}/cores${searchSuffix}`
+                      : undefined;
+                    return (
+                      <FormItem>
+                        <FormLabel>Core</FormLabel>
+                        <FormDescription>
+                          The core name will appear in the semantic navigation site locale list.
+                        </FormDescription>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input
+                              {...field}
+                              placeholder="Enter core name"
+                              type="text"
+                            />
+                            {coresUrl && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                title="View in Search Engine cores"
+                                onClick={() => navigate(coresUrl)}
+                              >
+                                <IconExternalLink className="size-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               )}
             </AccordionContent>
