@@ -27,7 +27,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +50,7 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.solr.bean.TurSolrFieldBean;
 
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +69,16 @@ public class TurSolrUtils {
 
     public static void deleteCore(TurSEInstance turSEInstance, String coreName) {
         TurSolrUtils.deleteCore(getSolrUrl(turSEInstance), coreName);
+    }
+
+    public static void clearCore(TurSEInstance turSEInstance, String coreName) {
+        String json = "{\"delete\":{\"query\":\"*:*\"}}";
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/solr/%s/update?commit=true",
+                        getSolrUrl(turSEInstance), coreName)))
+                .POST(BodyPublishers.ofString(json))
+                .build();
+        executeRequest(request, "Failed to clear core: " + coreName);
     }
 
     private static String getSolrUrl(TurSEInstance turSEInstance) {
@@ -355,7 +365,7 @@ public class TurSolrUtils {
         return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
     }
 
-    public static List<String> listCores(TurSEInstance turSEInstance) {
+    public static List<TurSECoreInfo> listCores(TurSEInstance turSEInstance) {
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(String.format("%s/api/cores", getSolrUrl(turSEInstance))))
                 .GET()
@@ -369,12 +379,17 @@ public class TurSolrUtils {
                     DocumentContext jsonContext = JsonPath.parse(body, configuration);
                     Object statusObj = jsonContext.read("$.status");
                     if (statusObj instanceof Map<?, ?> statusMap) {
-                        return new ArrayList<>(statusMap.keySet().stream()
+                        return statusMap.keySet().stream()
                                 .map(Object::toString)
                                 .sorted()
-                                .toList());
+                                .map(name -> {
+                                    Number numDocsRaw = jsonContext.read("$.status." + name + ".index.numDocs");
+                                    long numDocs = numDocsRaw != null ? numDocsRaw.longValue() : 0L;
+                                    return new TurSECoreInfo(name, numDocs);
+                                })
+                                .toList();
                     }
-                    return Collections.<String>emptyList();
+                    return Collections.<TurSECoreInfo>emptyList();
                 })
                 .orElse(Collections.emptyList());
     }

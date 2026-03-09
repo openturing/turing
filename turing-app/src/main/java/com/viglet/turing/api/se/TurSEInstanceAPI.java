@@ -42,6 +42,7 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -125,10 +126,28 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "List Solr cores/collections for a Search Engine")
         @GetMapping("/{id}/cores")
-        public ResponseEntity<List<String>> turSEInstanceCores(@PathVariable String id) {
+        public ResponseEntity<List<TurSECoreInfo>> turSEInstanceCores(@PathVariable String id) {
                 return turSEInstanceRepository.findById(id)
                                 .map(turSEInstance -> ResponseEntity.ok(TurSolrUtils.listCores(turSEInstance)))
                                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        }
+
+        @Operation(summary = "Delete a Solr core/collection from a Search Engine")
+        @DeleteMapping("/{id}/cores/{core}")
+        public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        TurSolrUtils.deleteCore(turSEInstance, core);
+                        return ResponseEntity.noContent().<Void>build();
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
+        }
+
+        @Operation(summary = "Remove all documents from a Solr core/collection")
+        @DeleteMapping("/{id}/cores/{core}/documents")
+        public ResponseEntity<Void> turSEInstanceClearCore(@PathVariable String id, @PathVariable String core) {
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        TurSolrUtils.clearCore(turSEInstance, core);
+                        return ResponseEntity.noContent().<Void>build();
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
         }
 
         @GetMapping("/{id}/{core}/select")
