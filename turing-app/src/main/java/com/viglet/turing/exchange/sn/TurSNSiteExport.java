@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,27 +21,22 @@
 
 package com.viglet.turing.exchange.sn;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
 
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
@@ -51,84 +46,75 @@ import lombok.extern.log4j.Log4j2;
 public class TurSNSiteExport {
 
 	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
+	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
+	private final TurSNSiteExportFileService exportFileService;
 
-	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository) {
+	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository,
+			TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
+			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
+			TurSNSiteExportFileService exportFileService) {
 		this.turSNSiteRepository = turSNSiteRepository;
+		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
+		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
+		this.exportFileService = exportFileService;
 	}
 
-	public StreamingResponseBody exportObject(HttpServletResponse response) {
-		String folderName = UUID.randomUUID().toString();
-		File userDir = new File(System.getProperty("user.dir"));
-		if (userDir.exists() && userDir.isDirectory()) {
-			File tmpDir = new File(userDir.getAbsolutePath().concat(File.separator + "store" + File.separator + "tmp"));
-			try {
-				Files.createDirectories(tmpDir.toPath());
-			} catch (IOException e) {
-				log.error(e.getMessage(), e);
-			}
+	public StreamingResponseBody exportAll(HttpServletResponse response) {
+		List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
+		turSNSites.forEach(this::hydrateExportCollections);
 
-			List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
+		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all");
+	}
 
-			List<TurSNSiteExchange> shSiteExchanges = new ArrayList<>();
-
-			for (TurSNSite turSNSite : turSNSites) {
-				shSiteExchanges.add(this.exportSNSite(turSNSite));
-			}
-
-			File exportDir = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName));
-			try {
-				Files.createDirectories(tmpDir.toPath());
-			} catch (IOException e) {
-				log.error(e.getMessage(), e);
-			}
-
-			TurExchange turExchange = new TurExchange();
-			if (!shSiteExchanges.isEmpty()) {
-				turExchange.setSnSites(shSiteExchanges);
-			}
-			// Object to JSON in file
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				mapper.writerWithDefaultPrettyPrinter().writeValue(
-						new File(exportDir.getAbsolutePath().concat(File.separator + "export.json")), turExchange);
-
-				File zipFile = new File(tmpDir.getAbsolutePath().concat(File.separator + folderName + ".zip"));
-
-				TurCommonsUtils.addFilesToZip(exportDir, zipFile);
-
-				String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
-				String zipFileName = "SNSite_" + strDate + ".zip";
-
-				response.addHeader("Content-disposition", "attachment;filename=" + zipFileName);
-				response.setContentType("application/octet-stream");
-				response.setStatus(HttpServletResponse.SC_OK);
-
-				return new StreamingResponseBody() {
-					@Override
-					public void writeTo(@NotNull OutputStream output) throws IOException {
-
-						try {
-							java.nio.file.Path path = Paths.get(zipFile.getAbsolutePath());
-							byte[] data = Files.readAllBytes(path);
-							output.write(data);
-							output.flush();
-
-							FileUtils.deleteDirectory(exportDir);
-							FileUtils.deleteQuietly(zipFile);
-
-						} catch (Exception e) {
-							log.error(e.getMessage(), e);
-						}
-					}
-				};
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-			}
+	public StreamingResponseBody exportBySiteId(String siteId, HttpServletResponse response) {
+		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
+		if (turSNSites.isEmpty()) {
+			return null;
 		}
-		return null;
+		turSNSites.forEach(this::hydrateExportCollections);
+		return createSNSiteZipResponse(response, turSNSites, "sn-site-" + turSNSites.get(0).getName());
 	}
 
-	public TurSNSiteExchange exportSNSite(TurSNSite turSNSite) {
-		return new TurSNSiteExchange(turSNSite);
+	private void hydrateExportCollections(TurSNSite turSNSite) {
+		var spotlights = turSNSiteSpotlightRepository
+				.findByTurSNSite(Sort.by(Sort.Order.asc("name").ignoreCase()), turSNSite);
+		turSNSite.setTurSNSiteSpotlights(new HashSet<>(spotlights));
+
+		var mergeProviders = turSNSiteMergeProvidersRepository.findByTurSNSite(turSNSite);
+		mergeProviders.forEach(mergeProvider -> mergeProvider.getOverwrittenFields().size());
+		turSNSite.setTurSNSiteMergeProviders(new HashSet<>(mergeProviders));
 	}
+
+	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,
+			String prefixZipFileName) {
+		try {
+			String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
+			String zipFileName = prefixZipFileName + "_" + strDate + ".zip";
+			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites);
+
+			response.addHeader("Content-disposition", "attachment;filename=" + zipFileName);
+			response.setContentType("application/octet-stream");
+			response.setStatus(HttpServletResponse.SC_OK);
+
+			return output -> {
+				try {
+					Files.copy(zipFilePath, output);
+					output.flush();
+				} catch (IOException e) {
+					log.error("Error streaming SNSite export zip: {}", e.getMessage(), e);
+				} finally {
+					try {
+						Files.deleteIfExists(zipFilePath);
+					} catch (IOException e) {
+						log.warn("Could not delete temporary export file: {}", zipFilePath);
+					}
+				}
+			};
+		} catch (Exception e) {
+			log.error("Error exporting SNSites: {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
 }

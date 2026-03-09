@@ -88,7 +88,6 @@ public class TurOnStartup implements ApplicationRunner {
 				turSEVendorOnStartup.createDefaultRows();
 				turLLMVendorOnStartup.createDefaultRows();
 				turStoreVendorOnStartup.createDefaultRows();
-
 				turConfigVarOnStartup.createDefaultRows();
 
 				log.info("Configuration finished.");

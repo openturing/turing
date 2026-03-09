@@ -16,24 +16,30 @@
  */
 package com.viglet.turing.elasticsearch;
 
-import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch.core.SearchRequest;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jetbrains.annotations.UnknownNullability;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.UnknownNullability;
-import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.*;
-import java.util.stream.Collectors;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Elasticsearch search operations
@@ -57,7 +63,7 @@ public class TurElasticsearch {
                 .flatMap(turSNSite -> {
                     try {
                         TurSEParameters turSEParameters = context.getTurSEParameters();
-                        
+
                         // Build Elasticsearch query
                         SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                                 .index(elasticsearchInstance.getIndex())
@@ -66,7 +72,7 @@ public class TurElasticsearch {
                                 .size(turSEParameters.getRows());
 
                         // Add sorting if specified
-                        if (turSEParameters.getSort() != null && !turSEParameters.getSort().isEmpty()) {
+                        if (StringUtils.hasText(turSEParameters.getSort())) {
                             addSorting(searchBuilder, turSEParameters.getSort());
                         }
 
@@ -84,18 +90,18 @@ public class TurElasticsearch {
 
     public Optional<TurSEResults> retrieveFacetElasticsearchFromSN(
             TurElasticsearchInstance elasticsearchInstance,
-            TurSNSiteSearchContext context){
+            TurSNSiteSearchContext context) {
         // Simplified facet implementation - can be enhanced later
         return retrieveElasticsearchFromSN(elasticsearchInstance, context);
     }
 
     private Query buildQuery(TurSEParameters turSEParameters) {
         String queryString = turSEParameters.getQuery();
-        if (queryString == null || queryString.trim().isEmpty() || "*".equals(queryString.trim())) {
+        if (!StringUtils.hasText(queryString) || "*".equals(queryString.trim())) {
             // Match all query
             return Query.of(q -> q.matchAll(m -> m));
         }
-        
+
         // Simple query string query
         return Query.of(q -> q.queryString(qs -> qs
                 .query(queryString)
@@ -115,20 +121,21 @@ public class TurElasticsearch {
             SortOrder order = sortParts.length > 1 && "desc".equalsIgnoreCase(sortParts[1])
                     ? SortOrder.Desc
                     : SortOrder.Asc;
-            
+
             searchBuilder.sort(s -> s.field(f -> f.field(field).order(order)));
         }
     }
 
-    private TurSEResults buildTurSEResults(@UnknownNullability SearchResponse<Map<String, Object>> response, TurSEParameters turSEParameters) {
-        long numFound = response.hits().total() != null ? response.hits().total().value() : 0;
+    private TurSEResults buildTurSEResults(@UnknownNullability SearchResponse<Map<String, Object>> response,
+            TurSEParameters turSEParameters) {
+        long numFound = response.hits().total() != null ? response.hits().total().value() : 0L;
         int rows = turSEParameters.getRows();
         int pageCount = (int) Math.ceil((double) numFound / rows);
-        
+
         List<TurSEResult> results = response.hits()
                 .hits()
                 .stream().map(Hit::source)
-                .filter(Objects::nonNull).map(source -> TurSEResult.builder().fields(source).build()).collect(Collectors.toList());
+                .filter(Objects::nonNull).map(source -> TurSEResult.builder().fields(source).build()).toList();
 
         return TurSEResults.builder()
                 .numFound(numFound)

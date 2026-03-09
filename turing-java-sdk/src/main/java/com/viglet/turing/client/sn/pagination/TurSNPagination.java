@@ -17,11 +17,10 @@
 package com.viglet.turing.client.sn.pagination;
 
 import java.util.List;
-
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
-
 import java.util.Objects;
 import java.util.Optional;
+
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
 
 /**
  * Class to interact with current pagination.
@@ -48,15 +47,13 @@ public class TurSNPagination {
 	}
 
 	public Optional<TurSNPaginationItem> findByType(String type) {
-		TurSNSiteSearchPaginationBean turSNSiteSearchPaginationBean = paginationList.stream()
+		return paginationList.stream()
 				.filter(Objects::nonNull)
 				.filter(paginationItem -> Objects.nonNull(paginationItem.getType()))
 				.filter(paginationItem -> paginationItem.getType().toString()
-						.equalsIgnoreCase(type)).findFirst()
-				.orElse(null);
-
-		return turSNSiteSearchPaginationBean == null ? Optional.empty()
-				: Optional.of(new TurSNPaginationItem(turSNSiteSearchPaginationBean));
+						.equalsIgnoreCase(type))
+				.findFirst()
+				.map(TurSNPaginationItem::new);
 
 	}
 
@@ -83,8 +80,11 @@ public class TurSNPagination {
 	}
 
 	public TurSNPaginationItem findByPageNumber(int pageNumber) {
-		return new TurSNPaginationItem(paginationList.stream()
-				.filter(paginationItem -> paginationItem.getPage() == pageNumber).findFirst().orElse(null));
+		return paginationList.stream()
+				.filter(paginationItem -> paginationItem.getPage() == pageNumber)
+				.findFirst()
+				.map(TurSNPaginationItem::new)
+				.orElse(null);
 	}
 
 	public List<Integer> getPageNumberList() {

@@ -2,7 +2,7 @@ import { GridList } from "@/components/grid.list";
 
 const gridItemList = [{
   id: "1",
-  name: "Server",
+  name: "Turing ES Server",
   description: "Logging server instance",
   url: "/admin/logging/instance/server",
 }, {
@@ -11,7 +11,7 @@ const gridItemList = [{
   description: "Indexing service instance",
   url: "/admin/logging/instance/indexing",
 }, {
-  id: "2",
+  id: "3",
   name: "AEM",
   description: "AEM service instance",
   url: "/admin/logging/instance/aem",

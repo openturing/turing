@@ -49,6 +49,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -254,7 +255,7 @@ public class TurFileUtils {
         String host = url.getHost();
         String protocol = url.getProtocol();
 
-        if (host == null || host.isEmpty() || protocol == null) {
+        if (!StringUtils.hasText(host) || !StringUtils.hasText(protocol)) {
             return false;
         }
 
@@ -264,7 +265,7 @@ public class TurFileUtils {
 
         try {
             InetAddress inetAddress = InetAddress.getByName(host);
-            if (isSafe(inetAddress)) {
+            if (!isSafe(inetAddress)) {
                 return false;
             }
         } catch (UnknownHostException e) {
@@ -344,21 +345,18 @@ public class TurFileUtils {
     }
 
     public static boolean isSafe(InetAddress address) {
-        if (address.isLoopbackAddress())
+        if (address.isLoopbackAddress() ||
+                address.isSiteLocalAddress() ||
+                address.isLinkLocalAddress() ||
+                address.isAnyLocalAddress() ||
+                address.isMulticastAddress()) {
             return false;
+        }
 
-        if (address.isSiteLocalAddress())
-            return false;
+        return isSafeInet4Address(address);
+    }
 
-        if (address.isLinkLocalAddress())
-            return false;
-
-        if (address.isAnyLocalAddress())
-            return false;
-
-        if (address.isMulticastAddress())
-            return false;
-
+    private static boolean isSafeInet4Address(InetAddress address) {
         if (address instanceof Inet4Address) {
             byte[] addr = address.getAddress();
             int firstOctet = addr[0] & 0xFF;
@@ -380,7 +378,6 @@ public class TurFileUtils {
             if (firstOctet == 100 && (secondOctet >= 64 && secondOctet <= 127))
                 return false;
         }
-
         return true;
     }
 

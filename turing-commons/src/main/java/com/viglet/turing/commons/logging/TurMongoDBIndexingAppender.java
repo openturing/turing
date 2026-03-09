@@ -18,8 +18,7 @@ public class TurMongoDBIndexingAppender extends TurMongoDBAppenderBase {
         if (!enabled || collection == null) {
             return;
         }
-        Arrays.stream(eventObject.getArgumentArray()).forEach(object -> {
-            collection.insertOne(Document.parse(new ObjectMapper().writeValueAsString(object)));
-        });
+        Arrays.stream(eventObject.getArgumentArray())
+                .forEach(object -> collection.insertOne(Document.parse(new ObjectMapper().writeValueAsString(object))));
     }
 }

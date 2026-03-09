@@ -20,15 +20,23 @@
  */
 package com.viglet.turing.persistence.model.auth;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
+
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The persistent class for the TurRole database table.
@@ -43,12 +51,11 @@ public class TurRole implements Serializable {
 
 	@Setter
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@GeneratedValue(generator = "UUID")
 
 	@Column(updatable = false, nullable = false)
 	private String id;
-
 
 	@Setter
 	@Column(nullable = false, length = 50)
@@ -62,14 +69,13 @@ public class TurRole implements Serializable {
 	private Collection<TurGroup> turGroups = new HashSet<>();
 
 	@ManyToMany
-	@JoinTable(name = "auth_roles_privileges",
-			joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
-			inverseJoinColumns = @JoinColumn(name = "privilege_id", referencedColumnName = "id"))
+	@JoinTable(name = "auth_roles_privileges", joinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "privilege_id", referencedColumnName = "id"))
 	private Collection<TurPrivilege> turPrivileges = new HashSet<>();
 
 	public TurRole() {
 		super();
 	}
+
 	public TurRole(String name) {
 		this.name = name;
 	}

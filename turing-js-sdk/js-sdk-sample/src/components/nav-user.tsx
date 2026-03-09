@@ -6,6 +6,7 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react"
 
+import { ROUTES } from "@/app/routes.const"
 import {
   Avatar,
   AvatarFallback,
@@ -26,8 +27,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { NavLink } from "react-router-dom"
-import { ROUTES } from "@/app/routes.const"
+
 
 export function NavUser({
   user,
@@ -39,10 +39,8 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const handleClick = () => {
-    console.log('NavLink clicked!');
-    localStorage.removeItem('restInfo');
-    localStorage.removeItem('user');
+  const handleLogout = () => {
+    globalThis.location.href = ROUTES.LOGOUT;
   };
 
   return (
@@ -56,7 +54,7 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">Tu</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -77,7 +75,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">Tu</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -103,11 +101,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <NavLink to={ROUTES.LOGOUT}
-                onClick={handleClick}>
-                <IconLogout />
-                Log out</NavLink>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <IconLogout />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

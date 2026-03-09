@@ -29,9 +29,9 @@ import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -59,7 +59,7 @@ public class TurSNSiteMergeProviders implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

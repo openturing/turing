@@ -23,7 +23,7 @@ package com.viglet.turing.api.sn.console;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Objects;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -79,74 +79,95 @@ public class TurSNSiteFieldCheckAPI {
 
         private List<TurSolrFieldStatus> fieldsCheck(TurSNSite turSNSite) {
                 List<TurSolrFieldStatus> fieldsExist = new ArrayList<>();
+                TurSEInstance turSEInstance = turSNSite.getTurSEInstance();
+                List<TurSNSiteLocale> siteLocales = turSNSiteLocaleRepository.findByTurSNSite(turSNSite);
+
                 turSNSiteFieldExtRepository
                                 .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite)
                                 .forEach(turSNSiteFieldExt -> {
-                                        AtomicBoolean correct = new AtomicBoolean(true);
-                                        TurSEInstance turSEInstance = turSNSite.getTurSEInstance();
-                                        List<TurSolrFieldCore> turSolrFieldCores = new ArrayList<>();
-                                        turSNSiteLocaleRepository.findByTurSNSite(turSNSite)
-                                                        .forEach(turSNSiteLocale -> {
-                                                                if (fieldExists(turSNSiteFieldExt, turSNSiteLocale,
-                                                                                turSEInstance)) {
-                                                                        TurSolrFieldBean turSolrFieldBean = TurSolrUtils
-                                                                                        .getField(turSEInstance,
-                                                                                                        turSNSiteLocale.getCore(),
-                                                                                                        turSNSiteFieldExt
-                                                                                                                        .getName());
-                                                                        boolean isMultiValued = (turSNSiteFieldExt
-                                                                                        .getMultiValued() == 1);
-                                                                        boolean multiValuedIsCorrect = (isMultiValued
-                                                                                        && turSolrFieldBean
-                                                                                                        .isMultiValued())
-                                                                                        ||
-                                                                                        (!isMultiValued && !turSolrFieldBean
-                                                                                                        .isMultiValued());
-                                                                        boolean typeIsCorrect = turSolrFieldBean
-                                                                                        .getType()
-                                                                                        .equals(TurSolrUtils
-                                                                                                        .getSolrFieldType(
-                                                                                                                        turSNSiteFieldExt
-                                                                                                                                        .getType()));
-                                                                        if (correct.get() && (!multiValuedIsCorrect
-                                                                                        || !typeIsCorrect))
-                                                                                correct.set(false);
-                                                                        turSolrFieldCores.add(TurSolrFieldCore.builder()
-                                                                                        .name(turSNSiteLocale.getCore())
-                                                                                        .exists(true)
-                                                                                        .type(turSolrFieldBean
-                                                                                                        .getType())
-                                                                                        .typeIsCorrect(typeIsCorrect)
-                                                                                        .multiValued(turSolrFieldBean
-                                                                                                        .isMultiValued())
-                                                                                        .multiValuedIsCorrect(
-                                                                                                        multiValuedIsCorrect)
-                                                                                        .correct(typeIsCorrect
-                                                                                                        && multiValuedIsCorrect)
-                                                                                        .build());
-                                                                } else {
-                                                                        correct.set(false);
-                                                                        turSolrFieldCores.add(TurSolrFieldCore.builder()
-                                                                                        .name(turSNSiteLocale.getCore())
-                                                                                        .exists(false)
-                                                                                        .typeIsCorrect(false)
-                                                                                        .multiValuedIsCorrect(false)
-                                                                                        .correct(false)
-                                                                                        .build());
-                                                                }
-                                                        });
-                                        fieldsExist.add(TurSolrFieldStatus.builder()
-                                                        .id(turSNSiteFieldExt.getId())
-                                                        .externalId(turSNSiteFieldExt.getExternalId())
-                                                        .name(turSNSiteFieldExt.getName())
-                                                        .facetIsCorrect(turSNSiteFieldExt.getFacet() != 1
-                                                                        || !turSNSiteFieldExt.getType()
-                                                                                        .equals(TurSEFieldType.TEXT))
-                                                        .cores(turSolrFieldCores)
-                                                        .correct(correct.get())
-                                                        .build());
+                                        TurSolrFieldStatus fieldStatus = validateField(turSNSiteFieldExt, turSEInstance,
+                                                        siteLocales);
+                                        fieldsExist.add(fieldStatus);
                                 });
+
                 return fieldsExist;
+        }
+
+        private TurSolrFieldStatus validateField(TurSNSiteFieldExt turSNSiteFieldExt,
+                        TurSEInstance turSEInstance, List<TurSNSiteLocale> siteLocales) {
+                List<TurSolrFieldCore> cores = new ArrayList<>();
+                boolean allCoresValid = true;
+
+                for (TurSNSiteLocale locale : siteLocales) {
+                        TurSolrFieldCore coreStatus = validateFieldInCore(turSNSiteFieldExt, locale, turSEInstance);
+                        cores.add(coreStatus);
+                        if (!coreStatus.isCorrect()) {
+                                allCoresValid = false;
+                        }
+                }
+
+                return TurSolrFieldStatus.builder()
+                                .id(turSNSiteFieldExt.getId())
+                                .externalId(turSNSiteFieldExt.getExternalId())
+                                .name(turSNSiteFieldExt.getName())
+                                .facetIsCorrect(isFacetConfigValid(turSNSiteFieldExt))
+                                .cores(cores)
+                                .correct(allCoresValid)
+                                .build();
+        }
+
+        private TurSolrFieldCore validateFieldInCore(TurSNSiteFieldExt turSNSiteFieldExt,
+                        TurSNSiteLocale locale, TurSEInstance turSEInstance) {
+                String coreName = locale.getCore();
+
+                if (!fieldExists(turSNSiteFieldExt, locale, turSEInstance)) {
+                        return buildMissingFieldCore(coreName);
+                }
+
+                TurSolrFieldBean solrField = TurSolrUtils.getField(turSEInstance, coreName,
+                                turSNSiteFieldExt.getName());
+                return buildFieldCore(coreName, turSNSiteFieldExt, solrField);
+        }
+
+        private TurSolrFieldCore buildFieldCore(String coreName, TurSNSiteFieldExt turSNSiteFieldExt,
+                        TurSolrFieldBean solrField) {
+                boolean multiValuedIsCorrect = validateMultiValued(turSNSiteFieldExt, solrField);
+                boolean typeIsCorrect = validateType(turSNSiteFieldExt, solrField);
+                boolean isCorrect = multiValuedIsCorrect && typeIsCorrect;
+
+                return TurSolrFieldCore.builder()
+                                .name(coreName)
+                                .exists(true)
+                                .type(solrField.getType())
+                                .typeIsCorrect(typeIsCorrect)
+                                .multiValued(solrField.isMultiValued())
+                                .multiValuedIsCorrect(multiValuedIsCorrect)
+                                .correct(isCorrect)
+                                .build();
+        }
+
+        private TurSolrFieldCore buildMissingFieldCore(String coreName) {
+                return TurSolrFieldCore.builder()
+                                .name(coreName)
+                                .exists(false)
+                                .typeIsCorrect(false)
+                                .multiValuedIsCorrect(false)
+                                .correct(false)
+                                .build();
+        }
+
+        private boolean validateMultiValued(TurSNSiteFieldExt turSNSiteFieldExt, TurSolrFieldBean solrField) {
+                boolean isMultiValued = (turSNSiteFieldExt.getMultiValued() == 1);
+                return (isMultiValued && solrField.isMultiValued()) || (!isMultiValued && !solrField.isMultiValued());
+        }
+
+        private boolean validateType(TurSNSiteFieldExt turSNSiteFieldExt, TurSolrFieldBean solrField) {
+                String expectedSolrType = TurSolrUtils.getSolrFieldType(turSNSiteFieldExt.getType());
+                return Objects.equals(solrField.getType(), expectedSolrType);
+        }
+
+        private boolean isFacetConfigValid(TurSNSiteFieldExt turSNSiteFieldExt) {
+                return turSNSiteFieldExt.getFacet() != 1 || !turSNSiteFieldExt.getType().equals(TurSEFieldType.TEXT);
         }
 
         private static boolean fieldExists(TurSNSiteFieldExt turSNSiteFieldExt, TurSNSiteLocale turSNSiteLocale,

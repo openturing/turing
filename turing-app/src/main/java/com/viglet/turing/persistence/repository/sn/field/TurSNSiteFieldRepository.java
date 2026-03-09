@@ -36,12 +36,15 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 
 public interface TurSNSiteFieldRepository extends JpaRepository<TurSNSiteField, String> {
 
+	@Override
 	@Cacheable("turSNSiteFieldfindById")
 	@NotNull
 	Optional<TurSNSiteField> findById(@NotNull String id);
 
 	@Cacheable("turSNSiteFieldfindByTurSNSite")
 	List<TurSNSiteField> findByTurSNSite(TurSNSite turSNSite);
+
+	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
 	@CacheEvict(value = { "turSNSiteFieldfindById", "turSNSiteFieldfindByTurSNSite" }, allEntries = true)
 	@NotNull

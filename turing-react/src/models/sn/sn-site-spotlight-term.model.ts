@@ -1,4 +1,4 @@
 export type TurSNSiteSpotlightTerm = {
-  id: string;
+  id?: string;
   name: string;
-}
+};

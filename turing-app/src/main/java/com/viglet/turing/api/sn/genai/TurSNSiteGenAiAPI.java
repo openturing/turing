@@ -34,6 +34,7 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.genai.TurChatMessage;
 import com.viglet.turing.genai.TurGenAi;
 import com.viglet.turing.genai.TurGenAiContext;
+import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,10 +45,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSNSiteGenAiAPI {
 	private final TurSNSearchProcess turSNSearchProcess;
 	private final TurGenAi turGenAi;
+	private final TurGenAiContextFactory turGenAiContextFactory;
 
-	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess, TurGenAi turGenAi) {
+	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
+			TurGenAi turGenAi,
+			TurGenAiContextFactory turGenAiContextFactory) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
+		this.turGenAiContextFactory = turGenAiContextFactory;
 	}
 
 	@GetMapping
@@ -63,7 +68,7 @@ public class TurSNSiteGenAiAPI {
 							.text("Language Model is not enabled for this site.")
 							.build();
 				}
-				TurGenAiContext turGenAiContext = new TurGenAiContext(turSNSiteGenAI);
+				TurGenAiContext turGenAiContext = turGenAiContextFactory.build(turSNSiteGenAI);
 				return turGenAi.assistant(turGenAiContext, q);
 			}).orElse(TurChatMessage.builder().text("Couldn't find site name.").build());
 		}

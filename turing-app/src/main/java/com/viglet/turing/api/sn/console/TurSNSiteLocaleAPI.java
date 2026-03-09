@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.sn.locale.TurSNSiteLocaleDto;
+import com.viglet.turing.persistence.mapper.sn.locale.TurSNSiteLocaleMapper;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -57,42 +60,47 @@ public class TurSNSiteLocaleAPI {
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	private final TurSNTemplate turSNTemplate;
+	private final TurSNSiteLocaleMapper turSNSiteLocaleMapper;
 
 	public TurSNSiteLocaleAPI(TurSNSiteRepository turSNSiteRepository,
 			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-			TurSNTemplate turSNTemplate) {
+			TurSNTemplate turSNTemplate,
+			TurSNSiteLocaleMapper turSNSiteLocaleMapper) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 		this.turSNTemplate = turSNTemplate;
+		this.turSNSiteLocaleMapper = turSNSiteLocaleMapper;
 	}
 
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
-	public List<TurSNSiteLocale> turSNSiteLocaleList(@PathVariable String snSiteId) {
-		return turSNSiteRepository.findById(snSiteId).map(site -> this.turSNSiteLocaleRepository
-				.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site))
+	public List<TurSNSiteLocaleDto> turSNSiteLocaleList(@PathVariable String snSiteId) {
+		return turSNSiteRepository.findById(snSiteId)
+				.map(site -> turSNSiteLocaleMapper.toDtoList(this.turSNSiteLocaleRepository
+						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site)))
 				.orElse(Collections.emptyList());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Locale")
 	@GetMapping("/{id}")
-	public TurSNSiteLocale turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
-		return turSNSiteLocaleRepository.findById(id).orElse(new TurSNSiteLocale());
+	public TurSNSiteLocaleDto turSNSiteFieldExtGet(@PathVariable String snSiteId, @PathVariable String id) {
+		return turSNSiteLocaleMapper.toDto(turSNSiteLocaleRepository.findById(id).orElse(new TurSNSiteLocale()));
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Locale")
 	@PutMapping("/{id}")
-	public TurSNSiteLocale turSNSiteLocaleUpdate(@PathVariable String id,
-			@RequestBody TurSNSiteLocale turSNSiteLocale,
+	public TurSNSiteLocaleDto turSNSiteLocaleUpdate(@PathVariable String id,
+			@RequestBody TurSNSiteLocaleDto turSNSiteLocaleDto,
 			@PathVariable String snSiteId) {
+		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleMapper.toEntity(turSNSiteLocaleDto);
 		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
 			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
 			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
 			turSNSiteLocaleEdit.setTurSNSite(turSNSiteLocale.getTurSNSite());
 
 			turSNSiteLocaleRepository.save(turSNSiteLocaleEdit);
-			return turSNSiteLocaleEdit;
-		}).orElse(new TurSNSiteLocale());
+			return turSNSiteLocaleMapper.toDto(turSNSiteLocaleEdit);
+		}).orElse(new TurSNSiteLocaleDto());
 
 	}
 
@@ -108,24 +116,30 @@ public class TurSNSiteLocaleAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site Locale")
 	@PostMapping
-	public TurSNSiteLocale turSNSiteLocaleAdd(@RequestBody TurSNSiteLocale turSNSiteLocale, Principal principal,
+	public TurSNSiteLocaleDto turSNSiteLocaleAdd(@RequestBody TurSNSiteLocaleDto turSNSiteLocaleDto,
+			Principal principal,
 			@PathVariable String snSiteId) {
+		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleMapper.toEntity(turSNSiteLocaleDto);
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			turSNSiteLocale.setTurSNSite(turSNSite);
-			turSNSiteLocale.setCore(turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName()));
+			if (!StringUtils.hasText(turSNSiteLocale.getCore())) {
+				turSNSiteLocale.setCore(turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName()));
+			} else {
+				turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName());
+			}
 			turSNSiteLocaleRepository.save(turSNSiteLocale);
-			return turSNSiteLocale;
-		}).orElse(new TurSNSiteLocale());
+			return turSNSiteLocaleMapper.toDto(turSNSiteLocale);
+		}).orElse(new TurSNSiteLocaleDto());
 	}
 
 	@Operation(summary = "Semantic Navigation Site Locale structure")
 	@GetMapping("structure")
-	public TurSNSiteLocale turSNSiteLocaleStructure(@PathVariable String snSiteId) {
+	public TurSNSiteLocaleDto turSNSiteLocaleStructure(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			TurSNSiteLocale turSNSiteLocale = new TurSNSiteLocale();
 			turSNSiteLocale.setLanguage(DEFAULT_LANGUAGE);
 			turSNSiteLocale.setTurSNSite(turSNSite);
-			return turSNSiteLocale;
-		}).orElse(new TurSNSiteLocale());
+			return turSNSiteLocaleMapper.toDto(turSNSiteLocale);
+		}).orElse(new TurSNSiteLocaleDto());
 	}
 }

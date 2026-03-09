@@ -31,7 +31,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.auth.TurRole;
+import com.viglet.turing.persistence.dto.auth.TurRoleDto;
+import com.viglet.turing.persistence.mapper.auth.TurRoleMapper;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,25 +44,29 @@ import jakarta.transaction.Transactional;
 public class TurRoleAPI {
 
 	private final TurRoleRepository turRoleRepository;
+	private final TurRoleMapper turRoleMapper;
 
-	public TurRoleAPI(TurRoleRepository turRoleRepository) {
+	public TurRoleAPI(TurRoleRepository turRoleRepository, TurRoleMapper turRoleMapper) {
 		this.turRoleRepository = turRoleRepository;
+		this.turRoleMapper = turRoleMapper;
 	}
 
 	@GetMapping
-	public List<TurRole> turRoleList() {
-		return turRoleRepository.findAll();
+	public List<TurRoleDto> turRoleList() {
+		return turRoleMapper.toDtoList(turRoleRepository.findAll());
 	}
 
 	@GetMapping("/{id}")
-	public TurRole turRoleEdit(@PathVariable String id) {
-		return turRoleRepository.findById(id).orElse(new TurRole());
+	public TurRoleDto turRoleEdit(@PathVariable String id) {
+		return turRoleMapper
+				.toDto(turRoleRepository.findById(id).orElse(new com.viglet.turing.persistence.model.auth.TurRole()));
 	}
 
 	@PutMapping("/{id}")
-	public TurRole turRoleUpdate(@PathVariable String id, @RequestBody TurRole turRole) {
+	public TurRoleDto turRoleUpdate(@PathVariable String id, @RequestBody TurRoleDto turRoleDto) {
+		com.viglet.turing.persistence.model.auth.TurRole turRole = turRoleMapper.toEntity(turRoleDto);
 		turRoleRepository.save(turRole);
-		return turRole;
+		return turRoleMapper.toDto(turRole);
 	}
 
 	@Transactional
@@ -72,16 +77,17 @@ public class TurRoleAPI {
 	}
 
 	@PostMapping
-	public TurRole turRoleAdd(@RequestBody TurRole turRole) {
+	public TurRoleDto turRoleAdd(@RequestBody TurRoleDto turRoleDto) {
+		com.viglet.turing.persistence.model.auth.TurRole turRole = turRoleMapper.toEntity(turRoleDto);
 
 		turRoleRepository.save(turRole);
 
-		return turRole;
+		return turRoleMapper.toDto(turRole);
 	}
 
 	@GetMapping("/model")
-	public TurRole turRoleStructure() {
-		return new TurRole();
+	public TurRoleDto turRoleStructure() {
+		return new TurRoleDto();
 
 	}
 

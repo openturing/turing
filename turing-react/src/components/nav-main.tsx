@@ -12,10 +12,10 @@ import { NavLink, useLocation } from "react-router-dom"
 export function NavMain({
   items,
 }: {
-  items: {
-    title: string
-    url: string
-    icon?: Icon
+  readonly items: readonly {
+    readonly title: string
+    readonly url: string
+    readonly icon?: Icon
   }[]
 }) {
   const location = useLocation();
@@ -28,7 +28,7 @@ export function NavMain({
             <SidebarMenuItem key={item.title} >
               <SidebarMenuButton tooltip={item.title} isActive={pathname.startsWith(item.url)} asChild>
                 <NavLink to={item.url}>
-                  {item.icon && <item.icon />}
+                  {item.icon && <item.icon className="size-6!" />}
                   <span>{item.title}</span>
                 </NavLink>
               </SidebarMenuButton>

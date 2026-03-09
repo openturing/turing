@@ -1,39 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="MONGO_GENERAL" class="com.viglet.turing.commons.logging.TurMongoDBAppender">
+    <appender name="MONGO_GENERAL_SYNC" class="com.viglet.turing.commons.logging.TurMongoDBAppender">
         <enabled>true</enabled>
         <connectionString>mongodb://localhost:27017</connectionString>
         <databaseName>turingLog</databaseName>
         <collectionName>server</collectionName>
     </appender>
-    <appender name="MONGO_STATUS" class="com.viglet.turing.commons.logging.TurMongoDBIndexingAppender">
+
+    <appender name="MONGO_STATUS_SYNC" class="com.viglet.turing.commons.logging.TurMongoDBIndexingAppender">
         <enabled>true</enabled>
         <connectionString>mongodb://localhost:27017</connectionString>
         <databaseName>turingLog</databaseName>
         <collectionName>indexing</collectionName>
     </appender>
+
+    <appender name="ASYNC_MONGO_GENERAL" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="MONGO_GENERAL_SYNC" />
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_MONGO_STATUS" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="MONGO_STATUS_SYNC" />
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <Pattern>
-                %msg%n
-            </Pattern>
+            <Pattern>%msg%n</Pattern>
         </encoder>
     </appender>
+
     <logger name="org.mongodb.driver" level="OFF" />
     <logger name="com.hazelcast.internal.diagnostics.HealthMonitor" level="OFF" />
+
     <logger name="com.viglet.turing.commons.logging.TurLoggingIndexingLog" level="info" additivity="false">
-        <appender-ref ref="MONGO_STATUS" />
+        <appender-ref ref="ASYNC_MONGO_STATUS" />
     </logger>
+
     <logger name="com.viglet.turing.TuringES" level="info" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
+
     <logger name="com.viglet.turing.onstartup" level="info" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
+
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}/}spring.log}"/>
     <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+
     <root level="INFO">
-        <appender-ref ref="MONGO_GENERAL"/>
+        <appender-ref ref="ASYNC_MONGO_GENERAL"/>
     </root>
 </configuration>

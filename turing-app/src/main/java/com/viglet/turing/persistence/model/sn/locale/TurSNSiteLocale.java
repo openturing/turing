@@ -21,15 +21,21 @@
 
 package com.viglet.turing.persistence.model.sn.locale;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Locale;
+
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The persistent class for the turSNSiteLocale database table.
@@ -46,7 +52,7 @@ public class TurSNSiteLocale implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

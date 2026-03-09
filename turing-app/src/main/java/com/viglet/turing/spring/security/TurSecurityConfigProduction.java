@@ -29,18 +29,24 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -55,131 +61,162 @@ import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 @EnableMethodSecurity(securedEnabled = true)
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction {
-    public static final String ERROR_PATH = "/error/**";
+        private static final String LOGIN_PATH = "/api/login";
+        private static final String LOGOUT_PATH = "/logout";
+        public static final String ERROR_PATH = "/error/**";
+        private final UserDetailsService userDetailsService;
 
-    private final UserDetailsService userDetailsService;
+        private final PasswordEncoder passwordEncoder;
+        @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:''}")
+        private String issuerUri;
+        @Value("${spring.security.oauth2.client.registration.keycloak.client-id:''}")
+        private String clientId;
+        @Value("${turing.url:'http://localhost:2700'}")
+        private String turingUrl;
+        PathPatternRequestMatcher.Builder mvc = PathPatternRequestMatcher.withDefaults();
 
-    private final PasswordEncoder passwordEncoder;
-    @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri:''}")
-    private String issuerUri;
-    @Value("${spring.security.oauth2.client.registration.keycloak.client-id:''}")
-    private String clientId;
-    @Value("${turing.url:'http://localhost:2700'}")
-    private String turingUrl;
-    PathPatternRequestMatcher.Builder mvc = PathPatternRequestMatcher.withDefaults();
-
-    public TurSecurityConfigProduction(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    @Bean
-    SecurityFilterChain filterChain(HttpSecurity http,
-            TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
-            TurLogoutHandler turLogoutHandler,
-            TurConfigProperties turConfigProperties,
-            TurAuthenticationEntryPoint turAuthenticationEntryPoint) throws Exception {
-
-        http.headers(header -> header.frameOptions(
-                frameOptions -> frameOptions.disable().cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
-        http.cors(Customizer.withDefaults());
-        http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
-        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
-        http.csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(new TurSpaCsrfTokenRequestHandler())
-                .ignoringRequestMatchers(
-                        mvc.matcher("/api/genai/chat"),
-                        mvc.matcher("/api/v2/integration/**"),
-                        mvc.matcher("/api/sn/**"),
-                        mvc.matcher(ERROR_PATH),
-                        mvc.matcher("/logout"),
-                        mvc.matcher("/api/ocr/**"),
-                        mvc.matcher("/api/genai/**"),
-                        mvc.matcher("/api/v2/guest/**"),
-                        mvc.matcher("/h2/**")))
-                .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
-        if (turConfigProperties.isKeycloak()) {
-            String keycloakUrlFormat = String.format(
-                    "%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
-                    issuerUri, clientId, turingUrl);
-            http.oauth2Login(withDefaults());
-            http.authorizeHttpRequests(authorizeRequests -> {
-                authorizeRequests.requestMatchers(
-                        mvc.matcher(ERROR_PATH),
-                        mvc.matcher("/api/discovery"),
-                        mvc.matcher("/assets/**"),
-                        mvc.matcher("/favicon.ico"),
-                        mvc.matcher("/*.png"),
-                        mvc.matcher("/manifest.json"),
-                        mvc.matcher("/swagger-resources/**"),
-                        mvc.matcher("/browserconfig.xml"),
-                        mvc.matcher("/api/sn/*/ac"),
-                        mvc.matcher("/api/sn/*/search"),
-                        mvc.matcher("/api/sn/*/search/**"),
-                        mvc.matcher("/api/sn/*/query"),
-                        mvc.matcher("/api/sn/*/query/**"),
-                        mvc.matcher("/api/sn/*/chat"),
-                        mvc.matcher("/api/sn/*/chat/**"),
-                        mvc.matcher("/api/sn/*/*/spell-check")).permitAll();
-                authorizeRequests.anyRequest().authenticated();
-            });
-            http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
-                    .logoutSuccessUrl(keycloakUrlFormat));
-        } else {
-            http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
-                    .authorizeHttpRequests(authorizeRequests -> {
-                        authorizeRequests.requestMatchers(
-                                mvc.matcher(ERROR_PATH),
-                                mvc.matcher("/api/discovery"),
-                                mvc.matcher("/logout"),
-                                mvc.matcher("/index.html"),
-                                mvc.matcher("/welcome/**"),
-                                mvc.matcher("/login/**"),
-                                mvc.matcher("/admin/**"),
-                                mvc.matcher("/"),
-                                mvc.matcher("/assets/**"),
-                                mvc.matcher("/swagger-resources/**"),
-                                mvc.matcher("/sn/**"),
-                                mvc.matcher("/fonts/**"),
-                                mvc.matcher("/api/sn/*/ac"),
-                                mvc.matcher("/api/sn/*/search"),
-                                mvc.matcher("/api/sn/*/search/**"),
-                                mvc.matcher("/api/sn/*/query"),
-                                mvc.matcher("/api/sn/*/query/**"),
-                                mvc.matcher("/api/sn/*/chat"),
-                                mvc.matcher("/api/sn/*/chat/**"),
-                                mvc.matcher("/api/sn/*/*/spell-check"),
-                                mvc.matcher("/favicon.ico"),
-                                mvc.matcher("/*.png"),
-                                mvc.matcher("/manifest.json"),
-                                mvc.matcher("/browserconfig.xml"),
-                                mvc.matcher("/console/**"),
-                                mvc.matcher("/api/v2/guest/**")).permitAll();
-                        authorizeRequests.anyRequest().authenticated();
-
-                    });
-            http.logout(logout -> logout.addLogoutHandler(turLogoutHandler).logoutSuccessUrl("/"));
+        public TurSecurityConfigProduction(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+                this.userDetailsService = userDetailsService;
+                this.passwordEncoder = passwordEncoder;
         }
-        return http.build();
-    }
 
-    @Bean
-    WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring()
-                .requestMatchers(mvc.matcher("/h2/**"));
-    }
+        @Bean
+        @SuppressWarnings("java:S4502")
+        SecurityFilterChain filterChain(HttpSecurity http,
+                        TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
+                        TurLogoutHandler turLogoutHandler,
+                        TurConfigProperties turConfigProperties,
+                        TurAuthenticationEntryPoint turAuthenticationEntryPoint) {
 
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
-    }
+                http.headers(header -> header.frameOptions(
+                                frameOptions -> frameOptions.disable()
+                                                .cacheControl(HeadersConfigurer.CacheControlConfig::disable)));
+                http.cors(Customizer.withDefaults());
+                http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
+                http.userDetailsService(userDetailsService);
+                http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+                http.securityContext(securityContext -> securityContext
+                                .securityContextRepository(new HttpSessionSecurityContextRepository()));
+                http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
-    @Bean
-    HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
-        // Allow double slash in URL
-        StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowUrlEncodedSlash(true);
-        return firewall;
-    }
+                CookieCsrfTokenRepository csrfTokenRepository = new CookieCsrfTokenRepository();
+
+                http.csrf(csrf -> csrf
+                                .csrfTokenRepository(csrfTokenRepository)
+                                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                                .ignoringRequestMatchers(
+                                                mvc.matcher("/api/genai/chat"),
+                                                mvc.matcher("/api/v2/integration/**"),
+                                                mvc.matcher("/api/sn/**"),
+                                                mvc.matcher("/graphql"),
+                                                mvc.matcher(ERROR_PATH),
+                                                mvc.matcher(LOGOUT_PATH),
+                                                mvc.matcher("/api/ocr/**"),
+                                                mvc.matcher("/api/genai/**"),
+                                                mvc.matcher("/api/v2/guest/**"),
+                                                mvc.matcher("/h2/**"),
+                                                mvc.matcher(LOGIN_PATH)))
+                                .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
+                if (turConfigProperties.isKeycloak()) {
+                        String keycloakUrlFormat = String.format(
+                                        "%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
+                                        issuerUri, clientId, turingUrl);
+                        http.oauth2Login(withDefaults());
+                        http.authorizeHttpRequests(authorizeRequests -> {
+                                authorizeRequests.requestMatchers(
+                                                mvc.matcher(ERROR_PATH),
+                                                mvc.matcher("/api/discovery"),
+                                                mvc.matcher("/api/csrf"),
+                                                mvc.matcher("/assets/**"),
+                                                mvc.matcher("/favicon.ico"),
+                                                mvc.matcher("/*.png"),
+                                                mvc.matcher("/manifest.json"),
+                                                mvc.matcher("/swagger-resources/**"),
+                                                mvc.matcher("/browserconfig.xml"),
+                                                mvc.matcher("/api/sn/*/ac"),
+                                                mvc.matcher("/api/sn/*/search"),
+                                                mvc.matcher("/api/sn/*/search/**"),
+                                                mvc.matcher("/api/sn/*/query"),
+                                                mvc.matcher("/api/sn/*/query/**"),
+                                                mvc.matcher("/api/sn/*/chat"),
+                                                mvc.matcher("/api/sn/*/chat/**"),
+                                                mvc.matcher("/api/sn/*/*/spell-check"),
+                                                mvc.matcher(LOGIN_PATH)).permitAll();
+                                authorizeRequests.anyRequest().authenticated();
+                        });
+                        http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
+                                        .logoutSuccessUrl(keycloakUrlFormat));
+                } else {
+                        http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
+                                        .authorizeHttpRequests(authorizeRequests -> {
+                                                authorizeRequests.requestMatchers(
+                                                                mvc.matcher(ERROR_PATH),
+                                                                mvc.matcher("/api/discovery"),
+                                                                mvc.matcher("/api/csrf"),
+                                                                mvc.matcher(LOGOUT_PATH),
+                                                                mvc.matcher("/index.html"),
+                                                                mvc.matcher("/welcome/**"),
+                                                                mvc.matcher("/login/**"),
+                                                                mvc.matcher("/admin/**"),
+                                                                mvc.matcher("/"),
+                                                                mvc.matcher("/assets/**"),
+                                                                mvc.matcher("/swagger-resources/**"),
+                                                                mvc.matcher("/sn/**"),
+                                                                mvc.matcher("/fonts/**"),
+                                                                mvc.matcher("/api/sn/*/ac"),
+                                                                mvc.matcher("/api/sn/*/search"),
+                                                                mvc.matcher("/api/sn/*/search/**"),
+                                                                mvc.matcher("/api/sn/*/query"),
+                                                                mvc.matcher("/api/sn/*/query/**"),
+                                                                mvc.matcher("/api/sn/*/chat"),
+                                                                mvc.matcher("/api/sn/*/chat/**"),
+                                                                mvc.matcher("/api/sn/*/*/spell-check"),
+                                                                mvc.matcher("/favicon.ico"),
+                                                                mvc.matcher("/*.png"),
+                                                                mvc.matcher("/manifest.json"),
+                                                                mvc.matcher("/browserconfig.xml"),
+                                                                mvc.matcher("/console/**"),
+                                                                mvc.matcher("/api/v2/guest/**"),
+                                                                mvc.matcher(LOGIN_PATH)).permitAll();
+                                                authorizeRequests.anyRequest().authenticated();
+
+                                        });
+                        http.logout(logout -> logout
+                                        .logoutRequestMatcher(mvc.matcher(HttpMethod.GET, LOGOUT_PATH))
+                                        .addLogoutHandler(turLogoutHandler)
+                                        .invalidateHttpSession(true)
+                                        .clearAuthentication(true)
+                                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                                        .logoutSuccessUrl("/login"));
+                }
+                return http.build();
+        }
+
+        @Bean
+        WebSecurityCustomizer webSecurityCustomizer() {
+                return web -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring()
+                                .requestMatchers(mvc.matcher("/h2/**"));
+        }
+
+        @Bean
+        AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) {
+                try {
+                        return authenticationConfiguration.getAuthenticationManager();
+                } catch (Exception e) {
+                        throw new IllegalStateException("Failed to get AuthenticationManager", e);
+                }
+        }
+
+        @Autowired
+        public void configureGlobal(AuthenticationManagerBuilder auth) {
+                auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
+        }
+
+        @Bean
+        HttpFirewall allowUrlEncodedSlaturHttpFirewall() {
+                // Allow double slash in URL
+                StrictHttpFirewall firewall = new StrictHttpFirewall();
+                firewall.setAllowUrlEncodedSlash(true);
+                return firewall;
+        }
 }

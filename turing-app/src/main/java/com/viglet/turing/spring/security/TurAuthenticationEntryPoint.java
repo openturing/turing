@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,21 +20,25 @@
  */
 package com.viglet.turing.spring.security;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import java.io.IOException;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-@Slf4j
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 @Component
-public class TurAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
+public class TurAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	@Override
-	public void afterPropertiesSet() {
-		this.setRealmName("Turing");
-		try {
-			super.afterPropertiesSet();
-		} catch (Exception e) {
-			log.error("afterPropertiesSet: ", e);
-		}
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException {
+		response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		response.getWriter().write("{\"error\":\"Unauthorized\"}");
 	}
 }

@@ -1,10 +1,6 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import {
-  Button
-} from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   Form,
   FormControl,
@@ -28,6 +24,9 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { DialogDelete } from "../dialog.delete"
+import { GradientButton } from "../ui/gradient-button"
+import { TooltipProvider } from "../ui/tooltip"
 const turTokenInstanceService = new TurTokenInstanceService();
 interface Props {
   value: TurTokenInstance;
@@ -101,105 +100,86 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   };
   return (
     <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} API Token</CardTitle>
-          <CardAction>
-            {!isNew &&
-              <Dialog open={open} onOpenChange={setOpen}>
-                <form>
-                  <DialogTrigger asChild>
-                    <Button variant={"outline"}>Delete</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-112.5">
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        Unexpected bad things will happen if you don't read this!
-                      </DialogDescription>
-                    </DialogHeader>
-                    <p className="grid gap-4">
-                      This action cannot be undone. This will permanently delete the {value.title} api token.
-                    </p>
-                    <DialogFooter>
-                      <Button onClick={onDelete} variant="destructive">I understand the consequences, delete this api token</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </form>
-              </Dialog>
-            }
-          </CardAction>
-          <CardDescription>
-            API Token settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Title"
-                        type="text"
-                      />
-                    </FormControl>
-                    <FormDescription>API Token title will appear on API Token list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Description"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>API Token description will appear on API Token list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!isNew && <FormField
-                control={form.control}
-                name="token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>API Token</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
+      <TooltipProvider>
+        <Card className="mx-auto max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">{isNew && (<span>New</span>)} API Token</CardTitle>
+            <CardAction>
+              {!isNew && <DialogDelete feature="API token" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            </CardAction>
+            <CardDescription>
+              API Token settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  rules={{ required: "Title is required." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
                         <Input
-                          placeholder="API Token"
+                          {...field}
+                          placeholder="Title"
                           type="text"
-                          readOnly
-                          {...field} />
-                        <Button type="button" onClick={handleCopy}>Copy</Button>
-                      </div>
-                    </FormControl>
-                    <FormDescription>API Token instance host will be connected.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />}
-              <Button type="submit">Save</Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+                        />
+                      </FormControl>
+                      <FormDescription>API Token title will appear on API Token list.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Description"
+                          className="resize-none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>API Token description will appear on API Token list.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {!isNew && <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Token</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            placeholder="API Token"
+                            type="text"
+                            readOnly
+                            {...field} />
+                          <GradientButton type="button" onClick={handleCopy}>Copy</GradientButton>
+                        </div>
+                      </FormControl>
+                      <FormDescription>API Token instance host will be connected.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />}
+                <GradientButton type="submit">Save</GradientButton>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TooltipProvider >
+    </div >
   )
 }
 

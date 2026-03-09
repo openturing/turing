@@ -274,24 +274,24 @@
     </analyzer>
   </fieldType>
   <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
-			<analyzer type="index">
-				<tokenizer class="solr.WhitespaceTokenizerFactory" />
-        <filter class="solr.ElisionFilterFactory" articles="lang/contractions_ca.txt" ignoreCase="true" />
-				<filter class="solr.LowerCaseFilterFactory" />
-				<filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_ca.txt" ignoreCase="true" />
-				<filter class="solr.WordDelimiterFilterFactory" preserveOriginal="1" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
-				<filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="1" maxPosQuestion="0" />
-        <filter class="solr.SnowballPorterFilterFactory" language="Catalan" />
-			</analyzer>
-			<analyzer type="query">
-				<tokenizer class="solr.WhitespaceTokenizerFactory" />
-				<filter class="solr.SynonymGraphFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
-        <filter class="solr.ElisionFilterFactory" articles="lang/contractions_ca.txt" ignoreCase="true" />
-				<filter class="solr.LowerCaseFilterFactory" />
-				<filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_ca.txt" ignoreCase="true" />
-				<filter class="solr.SnowballPorterFilterFactory" language="Catalan" />
-			</analyzer>
-	</fieldType>
+    <analyzer type="index">
+      <tokenizer class="solr.WhitespaceTokenizerFactory" />
+      <filter class="solr.ElisionFilterFactory" articles="lang/contractions_ca.txt" ignoreCase="true" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_ca.txt" ignoreCase="true" />
+      <filter class="solr.WordDelimiterFilterFactory" preserveOriginal="1" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+      <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="1" maxPosQuestion="0" />
+      <filter class="solr.SnowballPorterFilterFactory" language="Catalan" />
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.WhitespaceTokenizerFactory" />
+      <filter class="solr.SynonymGraphFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+      <filter class="solr.ElisionFilterFactory" articles="lang/contractions_ca.txt" ignoreCase="true" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_ca.txt" ignoreCase="true" />
+      <filter class="solr.SnowballPorterFilterFactory" language="Catalan" />
+    </analyzer>
+  </fieldType>
   <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
     <analyzer type="index">
       <tokenizer class="solr.StandardTokenizerFactory" />
@@ -485,6 +485,11 @@
       <filter class="solr.TrimFilterFactory" />
     </analyzer>
   </fieldType>
+  <!-- Currency Fields -->
+  <dynamicField name="*_l_ns" type="plong" indexed="true" stored="false" docValues="true" />
+  <dynamicField name="*_s_ns" type="string" indexed="true" stored="false" docValues="true" />
+  <fieldType name="currency" class="solr.CurrencyFieldType" currencyConfig="currency.xml" amountLongSuffix="_l_ns" codeStrSuffix="_s_ns" defaultCurrency="USD"/>
+  <!-- End Currency Fields -->
   <field name="_nest_path_" type="_nest_path_" />
   <field name="_root_" type="string" docValues="false" indexed="true" stored="false" />
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false" />

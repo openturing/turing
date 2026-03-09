@@ -28,4 +28,6 @@ public class TurCurrentUser {
 	private String lastName;
 	private boolean admin;
 	private String email;
+	private boolean hasAvatar;
+	private String avatarUrl;
 }

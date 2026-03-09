@@ -16,19 +16,23 @@ public class TurSNFacetFieldList implements Iterable<TurSNFacetField> {
 	public TurSNFacetFieldList(List<TurSNSiteSearchFacetBean> facets, TurSNSiteSearchFacetBean facetToRemove) {
 
 		if (facetToRemove != null) {
-			
+
 			TurSNFacetFieldValueList turSNFacetToRemoveFieldValues = new TurSNFacetFieldValueList(
 					facetToRemove.getFacets());
 			turSNFacetToRemove = new TurSNFacetField();
 			turSNFacetToRemove.setValues(turSNFacetToRemoveFieldValues);
-			turSNFacetToRemove.setLabel(facetToRemove.getLabel().getText());
+			turSNFacetToRemove.setLabel(facetToRemove.getLabel() != null ? facetToRemove.getLabel().getText() : null);
+			turSNFacetToRemove.setName(facetToRemove.getName());
+			turSNFacetToRemove.setDescription(facetToRemove.getDescription());
+			turSNFacetToRemove.setMultiValued(facetToRemove.isMultiValued());
+			turSNFacetToRemove.setType(facetToRemove.getType());
 		}
-		
+
 		if (facets != null) {
 			for (TurSNSiteSearchFacetBean facet : facets) {
 				TurSNFacetFieldValueList turSNFacetFieldValues = new TurSNFacetFieldValueList(facet.getFacets());
 				TurSNFacetField turSNFacetField = new TurSNFacetField();
-				turSNFacetField.setLabel(facet.getLabel().getText());
+				turSNFacetField.setLabel(facet.getLabel() != null ? facet.getLabel().getText() : null);
 				turSNFacetField.setName(facet.getName());
 				turSNFacetField.setDescription(facet.getDescription());
 				turSNFacetField.setMultiValued(facet.isMultiValued());

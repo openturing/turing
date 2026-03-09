@@ -3,9 +3,11 @@ package com.viglet.turing.api.sn.console;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Locale;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -13,17 +15,17 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.viglet.turing.TuringES;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
@@ -31,11 +33,11 @@ import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
 import com.viglet.turing.utils.TurUtils;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(properties = "spring.jmx.enabled=true")
+@SpringBootTest(classes = TuringES.class, properties = "spring.jmx.enabled=true")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TurSNSiteMergeProvidersAPITests {
@@ -80,8 +82,7 @@ class TurSNSiteMergeProvidersAPITests {
     void stage01MergeProvidersAdd() {
         turSNSiteRepository.findByName(SN_SITE_NAME).ifPresent(turSNSite -> {
             try {
-                String mergeRequestBody =
-                        TurCommonsUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
+                String mergeRequestBody = TurCommonsUtils.asJsonString(getTurSNSiteMergeProviders(turSNSite));
                 RequestBuilder requestBuilder = MockMvcRequestBuilders.post(SERVICE_URL)
                         .principal(mockPrincipal).accept(MediaType.APPLICATION_JSON)
                         .content(mergeRequestBody).contentType(MediaType.APPLICATION_JSON);

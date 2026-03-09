@@ -46,6 +46,7 @@ public interface TurSNRankingConditionRepository extends JpaRepository<TurSNRank
 	@Override
 	<S extends TurSNRankingCondition> S save(@NotNull S entity);
 
+	@Override
 	@CacheEvict(value = { FIND_BY_TUR_SN_RANKING_EXPRESSION }, allEntries = true)
 	void delete(@NotNull TurSNRankingCondition turSNRankingCondition);
 }

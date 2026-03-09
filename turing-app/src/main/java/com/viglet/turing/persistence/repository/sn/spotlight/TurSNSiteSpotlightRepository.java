@@ -64,6 +64,7 @@ public interface TurSNSiteSpotlightRepository extends JpaRepository<TurSNSiteSpo
 	@Override
 	<S extends TurSNSiteSpotlight> S save(@NotNull S entity);
 
+	@Override
 	@CacheEvict(value = { FIND_BY_UNMANAGED_ID_AND_TUR_SN_SITE_AND_LANGUAGE, FIND_BY_TUR_SN_SITE_AND_LANGUAGE,
 			FIND_BY_TUR_SN_SITE, FIND_BY_PROVIDER }, allEntries = true)
 	void delete(@NotNull TurSNSiteSpotlight turSNSiteSpotlight);

@@ -1,12 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { LanguageSelect } from '@/components/language-select';
+import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import type { TurLocale } from '@/models/locale/locale.model';
 import type { TurSNSiteField } from '@/models/sn/sn-site-field.model';
 import { TurLocaleService } from '@/services/locale/locale.service';
@@ -20,7 +14,7 @@ interface DynamicLanguageFieldsProps {
     fieldName: keyof TurSNSiteField;
 }
 const turLocaleService = new TurLocaleService();
-export function DynamicLanguageFields({ control, register, fieldName }: DynamicLanguageFieldsProps) {
+export function DynamicLanguageFields({ control, register, fieldName }: Readonly<DynamicLanguageFieldsProps>) {
     const { fields, append, remove } = useFieldArray({
         control,
         name: fieldName,
@@ -35,37 +29,28 @@ export function DynamicLanguageFields({ control, register, fieldName }: DynamicL
     };
 
     return (
-        <div className="flex flex-col gap-4 w-full max-w-2xl">
+        <div className="flex flex-col gap-4 w-full">
             {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
+                <div key={field.id} className="flex items-center gap-4">
                     <Controller
                         control={control}
                         name={`${fieldName}.${index}.locale`}
                         render={({ field: controllerField }) => (
-                            <Select
+                            <LanguageSelect
+                                value={controllerField.value}
                                 onValueChange={controllerField.onChange}
-                                defaultValue={controllerField.value}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Choose the language" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {locales.map((option) => (
-                                        <SelectItem key={option.initials} value={option.initials}>
-                                            {option.en} ({option.initials})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                locales={locales}
+                                className="w-full"
+                            />
                         )}
                     />
 
                     <Input
-                        className="grow"
+                        className="grow w-full"
                         placeholder="Facet Name..."
                         {...register(`${fieldName}.${index}.label`)}
                     />
-                    <Button
+                    <GradientButton
                         variant="ghost"
                         size="icon"
                         onClick={() => remove(index)}
@@ -73,15 +58,15 @@ export function DynamicLanguageFields({ control, register, fieldName }: DynamicL
                         type="button"
                     >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    </GradientButton>
                 </div>
             ))}
 
             <div className="mt-2">
-                <Button variant="outline" onClick={handleAddField} type="button">
+                <GradientButton variant="outline" onClick={handleAddField} type="button">
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Add
-                </Button>
+                </GradientButton>
             </div>
         </div>
     );

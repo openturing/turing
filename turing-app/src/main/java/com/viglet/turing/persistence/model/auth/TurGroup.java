@@ -20,15 +20,20 @@
  */
 package com.viglet.turing.persistence.model.auth;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
+
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The persistent class for the TurGroup database table.
@@ -44,7 +49,7 @@ public class TurGroup implements Serializable {
 
 	@Setter
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(updatable = false, nullable = false)
 	private String id;
 
@@ -66,6 +71,7 @@ public class TurGroup implements Serializable {
 			this.turUsers.addAll(turUsers);
 		}
 	}
+
 	public void setTurRoles(Collection<TurRole> turRoles) {
 		this.turRoles.clear();
 		if (turRoles != null) {

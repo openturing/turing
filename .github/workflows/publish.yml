@@ -30,9 +30,6 @@ jobs:
           node-version: 24.12.0
           registry-url: "https://registry.npmjs.org"
           scope: "@viglet"
-      - name: Install Angular Cli
-        run: npm i -g @angular/cli
-
       - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
@@ -64,7 +61,7 @@ jobs:
           git commit -m "Updated version in pom.xml" -a
           git push
       - name: Configure Maven Settings
-        uses: s4u/maven-settings-action@v3.0.0
+        uses: s4u/maven-settings-action@894661b3ddae382f1ae8edbeab60987e08cf0788 # v4.0.0
         with:
           servers: |
             [{
@@ -94,7 +91,7 @@ jobs:
           gh release upload ${TAG_NAME} turing-app/target/viglet-turing.jar --clobber
           gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --clobber
       - name: Deploy JavaDoc 🚀
-        uses: MathieuSoysal/Javadoc-publisher.yml@v3.0.2
+        uses: MathieuSoysal/Javadoc-publisher.yml@fda475b197081ba1eca7a1dfadf0c017080a1623 # v3.0.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           javadoc-branch: javadoc

@@ -15,6 +15,7 @@
  */
 package com.viglet.turing.commons.sn.bean.spellcheck;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
@@ -41,6 +42,7 @@ public class TurSNSiteSpellCheckBean implements Serializable {
 	private TurSNSiteSpellCheckText original;
 	private TurSNSiteSpellCheckText corrected;
 
+	@JsonCreator
 	public TurSNSiteSpellCheckBean() {
 		super();
 	}

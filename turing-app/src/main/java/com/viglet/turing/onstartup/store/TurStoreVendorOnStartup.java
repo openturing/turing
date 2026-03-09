@@ -42,7 +42,7 @@ public class TurStoreVendorOnStartup {
 			TurStoreVendor chroma = new TurStoreVendor();
 			chroma.setId("CHROMA");
 			chroma.setDescription("Chroma");
-			chroma.setPlugin("");
+			chroma.setPlugin("chroma");
 			chroma.setTitle("Chroma");
 			chroma.setWebsite("https://www.trychroma.com/");
 			turStoreVendorRepository.save(chroma);
@@ -50,7 +50,7 @@ public class TurStoreVendorOnStartup {
 			TurStoreVendor milvus = new TurStoreVendor();
 			milvus.setId("MILVUS");
 			milvus.setDescription("Milvus");
-			milvus.setPlugin("");
+			milvus.setPlugin("milvus");
 			milvus.setTitle("Milvus");
 			milvus.setWebsite("https://milvus.io/");
 			turStoreVendorRepository.save(milvus);

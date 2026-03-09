@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/v2025.3_baseline.yaml
+  - include:
+      file: db/changelog/v2026.1_update.yaml
+  - include:
+      file: db/changelog/v2026.1_type_enum_fix.yaml
+  - include:
+      file: db/changelog/v2026.1.11.yaml
+  - include:
+      file: db/changelog/v2026.1.11.1.yaml

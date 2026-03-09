@@ -1,0 +1,514 @@
+databaseChangeLog:
+  # --- llm_instance: Spring AI columns (individual, idempotent) ---
+  - changeSet:
+      id: v2026.1.11-02a-llm-provider-options-json-if-missing
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          or:
+            - columnExists:
+                tableName: llm_instance
+                columnName: providerOptionsJson
+            - columnExists:
+                tableName: llm_instance
+                columnName: provider_options_json
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: providerOptionsJson
+                  type: TEXT
+
+  - changeSet:
+      id: v2026.1.11-02b-llm-api-key-encrypted-if-missing
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          or:
+            - columnExists:
+                tableName: llm_instance
+                columnName: apiKeyEncrypted
+            - columnExists:
+                tableName: llm_instance
+                columnName: api_key_encrypted
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: apiKeyEncrypted
+                  type: VARCHAR(4096)
+
+  # --- store_instance: Spring AI columns (individual, idempotent) ---
+  - changeSet:
+      id: v2026.1.11-02c-store-collection-name-if-missing
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          or:
+            - columnExists:
+                tableName: store_instance
+                columnName: collectionName
+            - columnExists:
+                tableName: store_instance
+                columnName: collection_name
+      changes:
+        - addColumn:
+            tableName: store_instance
+            columns:
+              - column:
+                  name: collectionName
+                  type: VARCHAR(255)
+
+  - changeSet:
+      id: v2026.1.11-02d-store-provider-options-json-if-missing
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          or:
+            - columnExists:
+                tableName: store_instance
+                columnName: providerOptionsJson
+            - columnExists:
+                tableName: store_instance
+                columnName: provider_options_json
+      changes:
+        - addColumn:
+            tableName: store_instance
+            columns:
+              - column:
+                  name: providerOptionsJson
+                  type: TEXT
+
+  - changeSet:
+      id: v2026.1.11-02e-store-credential-encrypted-if-missing
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          or:
+            - columnExists:
+                tableName: store_instance
+                columnName: credentialEncrypted
+            - columnExists:
+                tableName: store_instance
+                columnName: credential_encrypted
+      changes:
+        - addColumn:
+            tableName: store_instance
+            columns:
+              - column:
+                  name: credentialEncrypted
+                  type: VARCHAR(4096)
+
+  # --- Vendor plugin updates ---
+  - changeSet:
+      id: v2026.1.11-03-update-llm-vendor-plugin
+      author: viglet-team
+      changes:
+        - update:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: plugin
+                  value: openai
+            where: id = 'OPENAI'
+        - update:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: plugin
+                  value: ollama
+            where: id = 'OLLAMA'
+
+  - changeSet:
+      id: v2026.1.11-04-update-store-vendor-plugin
+      author: viglet-team
+      changes:
+        - update:
+            tableName: store_vendor
+            columns:
+              - column:
+                  name: plugin
+                  value: chroma
+            where: id = 'CHROMA'
+        - update:
+            tableName: store_vendor
+            columns:
+              - column:
+                  name: plugin
+                  value: milvus
+            where: id = 'MILVUS'
+
+  # --- Widen vendor ID columns for longer codes (e.g. AZURE_OPENAI, GEMINI_OPENAI) ---
+  - changeSet:
+      id: v2026.1.11-05-widen-llm-vendor-id
+      author: viglet-team
+      changes:
+        - modifyDataType:
+            tableName: llm_vendor
+            columnName: id
+            newDataType: VARCHAR(20)
+
+  - changeSet:
+      id: v2026.1.14-00-widen-llm-instance-vendor-id
+      author: viglet-team
+      changes:
+        - modifyDataType:
+            tableName: llm_instance
+            columnName: llm_vendor_id
+            newDataType: VARCHAR(20)
+
+  # --- New LLM vendors ---
+  - changeSet:
+      id: v2026.1.11-06-add-anthropic-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: ANTHROPIC
+              - column:
+                  name: description
+                  value: "Anthropic (Claude)"
+              - column:
+                  name: plugin
+                  value: anthropic
+              - column:
+                  name: title
+                  value: Anthropic
+              - column:
+                  name: website
+                  value: "https://anthropic.com"
+
+  - changeSet:
+      id: v2026.1.11-07-add-gemini-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: GEMINI
+              - column:
+                  name: description
+                  value: "Google Gemini (native GenAI SDK)"
+              - column:
+                  name: plugin
+                  value: gemini
+              - column:
+                  name: title
+                  value: Google Gemini
+              - column:
+                  name: website
+                  value: "https://ai.google.dev"
+
+  - changeSet:
+      id: v2026.1.11-08-add-azure-openai-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: AZURE_OPENAI
+              - column:
+                  name: description
+                  value: "Azure OpenAI (Copilot)"
+              - column:
+                  name: plugin
+                  value: azure-openai
+              - column:
+                  name: title
+                  value: Azure OpenAI
+              - column:
+                  name: website
+                  value: "https://azure.microsoft.com/products/ai-services/openai-service"
+
+  # --- Gemini provider split: add OpenAI-compat variant, migrate existing instances ---
+  - changeSet:
+      id: v2026.1.14-01-add-gemini-openai-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM llm_vendor"
+      changes:
+        - insert:
+            tableName: llm_vendor
+            columns:
+              - column:
+                  name: id
+                  value: GEMINI_OPENAI
+              - column:
+                  name: description
+                  value: "Google Gemini via OpenAI-compatible endpoint"
+              - column:
+                  name: plugin
+                  value: gemini-openai
+              - column:
+                  name: title
+                  value: "Google Gemini (OpenAI Compatible)"
+              - column:
+                  name: website
+                  value: "https://ai.google.dev"
+
+  # --- llm_instance additional columns ---
+  - changeSet:
+      id: add-context-window-to-llm-instance
+      author: viglet-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: context_window
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: context_window
+                  type: INT
+                  defaultValueNumeric: 128000
+
+  - changeSet:
+      id: 2026.1.13-1
+      author: viglet-team
+      preconditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: llm_instance
+            columnName: description
+      changes:
+        - dropNotNullConstraint:
+            tableName: llm_instance
+            columnName: description
+            columnDataType: VARCHAR(100)
+
+  - changeSet:
+      id: 2026.1.16-add-tools-enabled
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: llm_instance
+                columnName: tools_enabled
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: tools_enabled
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+
+  # --- Token usage tracking ---
+  - changeSet:
+      id: v2026.1.15-00-create-llm-token-usage-table
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - tableExists:
+              tableName: llm_token_usage
+      changes:
+        - createTable:
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: llm_instance_id
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendor_id
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: model_name
+                  type: VARCHAR(100)
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: input_tokens
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: output_tokens
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_tokens
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: llm_token_usage
+            baseColumnNames: llm_instance_id
+            referencedTableName: llm_instance
+            referencedColumnNames: id
+            constraintName: fk_token_usage_llm_instance
+        - createIndex:
+            indexName: idx_token_usage_instance_date
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: llm_instance_id
+              - column:
+                  name: created_at
+        - createIndex:
+            indexName: idx_token_usage_created_at
+            tableName: llm_token_usage
+            columns:
+              - column:
+                  name: created_at
+
+  # --- auth_user: avatar URL ---
+  - changeSet:
+      id: v2026.1-add-avatar-url-to-auth-user
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - columnExists:
+              tableName: auth_user
+              columnName: avatarUrl
+      changes:
+        - addColumn:
+            tableName: auth_user
+            columns:
+              - column:
+                  name: avatarUrl
+                  type: VARCHAR(1024)
+
+  # --- se_instance: migrate host/port to endpoint_url ---
+  - changeSet:
+      id: se-instance-add-endpoint-url
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            columnExists:
+              tableName: se_instance
+              columnName: endpoint_url
+      changes:
+        - addColumn:
+            tableName: se_instance
+            columns:
+              - column:
+                  name: endpoint_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: se-instance-migrate-host-port-to-endpoint-url
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: host
+      changes:
+        - sql:
+            sql: >-
+              UPDATE se_instance
+              SET endpoint_url = CONCAT('http://', host, ':', port, '/solr')
+              WHERE endpoint_url IS NULL
+
+  - changeSet:
+      id: se-instance-endpoint-url-not-null
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: endpoint_url
+      changes:
+        - addNotNullConstraint:
+            tableName: se_instance
+            columnName: endpoint_url
+            columnDataType: VARCHAR(255)
+            defaultNullValue: "http://localhost:8983/solr"
+
+  - changeSet:
+      id: se-instance-drop-host
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: host
+      changes:
+        - dropColumn:
+            tableName: se_instance
+            columnName: host
+
+  - changeSet:
+      id: se-instance-drop-port
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: port
+      changes:
+        - dropColumn:
+            tableName: se_instance
+            columnName: port

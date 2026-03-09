@@ -22,6 +22,7 @@
 package com.viglet.turing.spring.security;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -58,10 +59,11 @@ public class TurCustomUserDetailsService implements UserDetailsService {
         if (null == turUser) {
             throw new UsernameNotFoundException("No user present with username: " + username);
         } else {
-            List<TurUser> users = new ArrayList<>();
-            users.add(turUser);
-            Set<TurGroup> turGroups = turGroupRepository.findByTurUsersIn(users);
-            Set<TurRole> turRoles = turRoleRepository.findByTurGroupsIn(turGroups);
+            Set<TurGroup> turGroups = turGroupRepository.findByTurUsersContaining(turUser);
+            Set<TurRole> turRoles = new HashSet<>();
+            for (TurGroup turGroup : turGroups) {
+                turRoles.addAll(turRoleRepository.findByTurGroupsContaining(turGroup));
+            }
 
             List<String> roles = new ArrayList<>();
             for (TurRole turRole : turRoles) {

@@ -27,7 +27,6 @@ import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -37,9 +36,11 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
 
 import jakarta.persistence.CascadeType;
@@ -65,7 +66,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "sn_site")
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
-		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions" })
+		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions", "turSNSiteMergeProviders" })
 @EntityListeners(AuditingEntityListener.class)
 public class TurSNSite extends TurAuditable<String> implements Serializable {
 
@@ -73,14 +74,14 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String description;
 
 	/**
@@ -191,4 +192,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNRankingExpression> turSNRankingExpressions = new HashSet<>();
+
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteMergeProviders> turSNSiteMergeProviders = new HashSet<>();
+
 }

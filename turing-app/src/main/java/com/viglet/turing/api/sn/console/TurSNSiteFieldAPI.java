@@ -34,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldDto;
+import com.viglet.turing.persistence.mapper.sn.field.TurSNSiteFieldMapper;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
@@ -47,39 +49,45 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSNSiteFieldAPI {
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteFieldRepository turSNSiteFieldRepository;
+	private final TurSNSiteFieldMapper turSNSiteFieldMapper;
 
 	public TurSNSiteFieldAPI(TurSNSiteRepository turSNSiteRepository,
-			TurSNSiteFieldRepository turSNSiteFieldRepository) {
+			TurSNSiteFieldRepository turSNSiteFieldRepository,
+			TurSNSiteFieldMapper turSNSiteFieldMapper) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteFieldRepository = turSNSiteFieldRepository;
+		this.turSNSiteFieldMapper = turSNSiteFieldMapper;
 	}
 
 	@Operation(summary = "Semantic Navigation Site Field List")
 	@GetMapping
-	public List<TurSNSiteField> turSNSiteFieldList(@PathVariable String snSiteId) {
+	public List<TurSNSiteFieldDto> turSNSiteFieldList(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId)
-				.map(this.turSNSiteFieldRepository::findByTurSNSite).orElse(new ArrayList<>());
+				.map(turSNSite -> turSNSiteFieldMapper
+						.toDtoList(this.turSNSiteFieldRepository.findByTurSNSite(turSNSite)))
+				.orElse(new ArrayList<>());
 
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Field")
 	@GetMapping("/{id}")
-	public TurSNSiteField turSNSiteFieldGet(@PathVariable String snSiteId, @PathVariable String id) {
-		return this.turSNSiteFieldRepository.findById(id).orElse(new TurSNSiteField());
+	public TurSNSiteFieldDto turSNSiteFieldGet(@PathVariable String snSiteId, @PathVariable String id) {
+		return turSNSiteFieldMapper.toDto(this.turSNSiteFieldRepository.findById(id).orElse(new TurSNSiteField()));
 	}
 
 	@Operation(summary = "Update a Semantic Navigation Site Field")
 	@PutMapping("/{id}")
-	public TurSNSiteField turSNSiteFieldUpdate(@PathVariable String snSiteId, @PathVariable String id,
-			@RequestBody TurSNSiteField turSNSiteField) {
+	public TurSNSiteFieldDto turSNSiteFieldUpdate(@PathVariable String snSiteId, @PathVariable String id,
+			@RequestBody TurSNSiteFieldDto turSNSiteFieldDto) {
+		TurSNSiteField turSNSiteField = turSNSiteFieldMapper.toEntity(turSNSiteFieldDto);
 		return this.turSNSiteFieldRepository.findById(id).map(turSNSiteFieldEdit -> {
 			turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
 			turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
 			turSNSiteFieldEdit.setName(turSNSiteField.getName());
 			turSNSiteFieldEdit.setType(turSNSiteField.getType());
 			this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
-			return turSNSiteFieldEdit;
-		}).orElse(new TurSNSiteField());
+			return turSNSiteFieldMapper.toDto(turSNSiteFieldEdit);
+		}).orElse(new TurSNSiteFieldDto());
 
 	}
 
@@ -93,11 +101,13 @@ public class TurSNSiteFieldAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site Field")
 	@PostMapping
-	public TurSNSiteField turSNSiteFieldAdd(@PathVariable String snSiteId, @RequestBody TurSNSiteField turSNSiteField) {
+	public TurSNSiteFieldDto turSNSiteFieldAdd(@PathVariable String snSiteId,
+			@RequestBody TurSNSiteFieldDto turSNSiteFieldDto) {
+		TurSNSiteField turSNSiteField = turSNSiteFieldMapper.toEntity(turSNSiteFieldDto);
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			turSNSiteField.setTurSNSite(turSNSite);
 			this.turSNSiteFieldRepository.save(turSNSiteField);
-			return turSNSiteField;
-		}).orElse(new TurSNSiteField());
+			return turSNSiteFieldMapper.toDto(turSNSiteField);
+		}).orElse(new TurSNSiteFieldDto());
 	}
 }

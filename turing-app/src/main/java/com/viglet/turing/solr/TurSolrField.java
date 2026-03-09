@@ -27,7 +27,7 @@ public class TurSolrField {
 	public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	public static final String GMT = "GMT";
 
-	private TurSolrField() {
+	TurSolrField() {
 		throw new IllegalStateException("TurSolrField class");
 	}
 
@@ -49,9 +49,7 @@ public class TurSolrField {
 				return objectArrayToString(objectValue).trim();
 			}
 			case Date dateValue -> {
-				SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FORMAT);
-				simpleDateFormat.setTimeZone(TimeZone.getTimeZone(GMT));
-				return simpleDateFormat.format(dateValue);
+				return getSimpleDateFormat(dateValue);
 			}
 			default -> {
 				return attrValue.toString().trim();
@@ -67,10 +65,16 @@ public class TurSolrField {
 		} else if (arrAttrValue[0] instanceof Long longValue) {
 			return longValue.toString();
 		} else if (arrAttrValue[0] instanceof Date dateValue) {
-			return dateValue.toString();
+			return getSimpleDateFormat(dateValue);
 		} else {
 			return arrAttrValue[0].toString().trim();
 		}
+	}
+
+	private static String getSimpleDateFormat(Date dateValue) {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FORMAT);
+		simpleDateFormat.setTimeZone(TimeZone.getTimeZone(GMT));
+		return simpleDateFormat.format(dateValue);
 	}
 
 	private static String arrayListToString(ArrayList<?> arrAttValue) {
@@ -78,26 +82,24 @@ public class TurSolrField {
 			return EMPTY_STRING;
 		}
 		Object firstElement = arrAttValue.getFirst();
-        switch (firstElement) {
-            case null -> {
-                return EMPTY_STRING;
-            }
-            case String stringValue -> {
-                return stringValue.trim();
-            }
-            case Long longValue -> {
-                return longValue.toString();
-            }
-            case Date dateValue -> {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FORMAT);
-                simpleDateFormat.setTimeZone(TimeZone.getTimeZone(GMT));
-                return simpleDateFormat.format(dateValue);
-            }
-            default -> {
-                return firstElement.toString().trim();
-            }
-        }
-    }
+		switch (firstElement) {
+			case null -> {
+				return EMPTY_STRING;
+			}
+			case String stringValue -> {
+				return stringValue.trim();
+			}
+			case Long longValue -> {
+				return longValue.toString();
+			}
+			case Date dateValue -> {
+				return getSimpleDateFormat(dateValue);
+			}
+			default -> {
+				return firstElement.toString().trim();
+			}
+		}
+	}
 
 	private static String longToString(Long longValue) {
 		return longValue.toString();

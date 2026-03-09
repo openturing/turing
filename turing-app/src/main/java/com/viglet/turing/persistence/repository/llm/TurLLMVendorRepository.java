@@ -35,10 +35,12 @@ import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 
 public interface TurLLMVendorRepository extends JpaRepository<TurLLMVendor, String> {
 
+	@Override
 	@Cacheable("turLLMVendorfindAll")
 	@NotNull
 	List<TurLLMVendor> findAll();
 
+	@Override
 	@Cacheable("turLLMVendorfindById")
 	@NotNull
 	Optional<TurLLMVendor> findById(@NotNull String id);

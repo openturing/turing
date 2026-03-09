@@ -14,24 +14,28 @@ spring:
       settings:
         web-allow-others: true
   datasource:
-    url: jdbc:h2:file:./store/db/turingDB
+    url: jdbc:h2:file:./store/db/turingDB;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=true
     username: sa
     password: ""
     driver-class-name: org.h2.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
+    default-schema: PUBLIC
   jpa:
     properties:
       hibernate:
-        globally_quoted_identifiers: true
-        format_sql: false
-        enable_lazy_load_no_trans: true
-        generate_statistics: false
-      jakarta.persistence.sharedCache.mode: ALL
+        "[globally_quoted_identifiers]": true
+        "[format_sql]": false
+        "[enable_lazy_load_no_trans]": true
+        "[generate_statistics]": false
+      "[jakarta.persistence.sharedCache.mode]": ALL
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
   jackson:
     mapper:
-      DEFAULT_VIEW_INCLUSION: true
+      "[DEFAULT_VIEW_INCLUSION]": true
   thymeleaf:
     mode: HTML
     check-template: true
@@ -92,11 +96,13 @@ server:
     maxHttpResponseHeaderSize: 800KB
 
 turing:
+  ai.crypto.key: sample-key-for-crypto
   allowedOrigins: http://localhost:4200,http://localhost:5173
   multi-tenant: false
   keycloak: false
   url: http://localhost:2700
   open-browser: true
+  jms.concurrency: 1-1
   solr:
     timeout: 30000
     cloud: false
@@ -108,7 +114,7 @@ turing:
   search:
     engine:
       type: solr
-    metrics.enabled: false
+    metrics.enabled: true
     cache:
       ttl:
         seconds: 86400000

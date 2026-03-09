@@ -1,0 +1,180 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1770767340033-168
+      author: viglet-team
+      changes:
+        - createTable:
+            tableName: sn_site_custom_facet
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_sn_site_custom_facet
+              - column:
+                  name: field_ext_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 1770767340033-169
+      author: viglet-team
+      changes:
+        - createTable:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_sn_site_custom_facet_item
+              - column:
+                  name: custom_facet_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: range_start
+                  type: DECIMAL(19,6)
+              - column:
+                  name: range_end
+                  type: DECIMAL(19,6)
+  - changeSet:
+      id: 1770767340033-170
+      author: viglet-team
+      changes:
+        - createTable:
+            tableName: sn_site_custom_facet_label
+            columns:
+              - column:
+                  name: custom_facet_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locale
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: sn_site_custom_facet_label
+            columnNames: custom_facet_id, locale
+            constraintName: pk_sn_site_custom_facet_label
+  - changeSet:
+      id: 1770767340033-171
+      author: viglet-team
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_facet
+            baseColumnNames: field_ext_id
+            referencedTableName: sn_site_field_ext
+            referencedColumnNames: id
+            constraintName: fk_sn_site_custom_facet_field_ext
+            onDelete: CASCADE
+  - changeSet:
+      id: 1770767340033-172
+      author: viglet-team
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_facet_item
+            baseColumnNames: custom_facet_id
+            referencedTableName: sn_site_custom_facet
+            referencedColumnNames: id
+            constraintName: fk_sn_site_custom_facet_item_custom_facet
+            onDelete: CASCADE
+  - changeSet:
+      id: 1770767340033-173
+      author: viglet-team
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_facet_label
+            baseColumnNames: custom_facet_id
+            referencedTableName: sn_site_custom_facet
+            referencedColumnNames: id
+            constraintName: fk_sn_site_custom_facet_label_custom_facet
+            onDelete: CASCADE
+  - changeSet:
+      id: 1770767340033-174
+      author: viglet-team
+      changes:
+        - createIndex:
+            tableName: sn_site_custom_facet
+            indexName: idx_sn_site_custom_facet_name
+            columns:
+              - column:
+                  name: name
+  - changeSet:
+      id: 1770767340033-175
+      author: viglet-team
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet
+            columns:
+              - column:
+                  name: facet_position
+                  type: INT
+  - changeSet:
+      id: 1770767340033-176
+      author: viglet-team
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: facet_item_position
+                  type: INT
+  - changeSet:
+      id: v2026.1.14-01-add-default-label-to-custom-facet
+      author: viglet-team
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet
+            columns:
+              - column:
+                  name: default_label
+                  type: VARCHAR(255)
+  - changeSet:
+      id: v2026.1.15-01-add-date-range-columns-to-custom-facet-item
+      author: viglet-team
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: range_start_date
+                  type: DATETIME
+              - column:
+                  name: range_end_date
+                  type: DATETIME
+  - changeSet:
+      id: v2026.1.16-01-add-facet-operators-to-custom-facet
+      author: viglet-team
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet
+            columns:
+              - column:
+                  name: facet_type
+                  type: TINYINT
+              - column:
+                  name: facet_item_type
+                  type: TINYINT

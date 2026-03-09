@@ -17,10 +17,30 @@
 
 package com.viglet.turing.api.sn.graphql;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.graphql.autoconfigure.GraphQlSourceBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Sort;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.idl.RuntimeWiring;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * GraphQL Configuration for Turing Semantic Navigation.
@@ -28,13 +48,102 @@ import graphql.schema.idl.RuntimeWiring;
  * @author Alexandre Oliveira
  * @since 0.3.6
  */
+@Slf4j
 @Configuration
 public class GraphQLConfig implements RuntimeWiringConfigurer {
 
+    private static final Pattern GRAPHQL_FIELD_NAME_PATTERN = Pattern.compile("^[_A-Za-z]\\w*$");
+    private static final Set<String> STATIC_FIELDS = Set.of(
+            "id", "title", "text", "url", "date", "description", "image");
+
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+
+    public GraphQLConfig(TurSNSiteRepository turSNSiteRepository,
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+    }
+
     @Override
     public void configure(RuntimeWiring.Builder builder) {
-        // Additional runtime wiring configuration can be added here if needed
-        // For now, the default Spring Boot GraphQL configuration is sufficient
-        builder.build();
+        builder.scalar(ExtendedScalars.Json);
+    }
+
+    @Bean
+    public GraphQlSourceBuilderCustomizer dynamicSearchDocumentFieldsCustomizer() {
+        return builder -> {
+            String dynamicSchema = buildDynamicGraphQLSchema();
+            if (StringUtils.isBlank(dynamicSchema)) {
+                return;
+            }
+            builder.schemaResources(
+                    new ByteArrayResource(dynamicSchema.getBytes(StandardCharsets.UTF_8)));
+        };
+    }
+
+    private String buildDynamicGraphQLSchema() {
+        StringBuilder schemaBuilder = new StringBuilder();
+        appendDynamicSiteNamesEnum(schemaBuilder);
+        appendDynamicSearchDocumentFields(schemaBuilder);
+        return schemaBuilder.toString();
+    }
+
+    private void appendDynamicSiteNamesEnum(StringBuilder schemaBuilder) {
+        List<TurSNSite> sites = turSNSiteRepository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase()));
+        List<String> siteNames = sites.stream().map(TurSNSite::getName)
+                .filter(StringUtils::isNotBlank).toList();
+        Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
+                .buildEnumToSiteNameMap(siteNames);
+
+        if (enumToSiteName.isEmpty()) {
+            return;
+        }
+
+        schemaBuilder.append("extend enum TurSNSiteName {\n");
+        enumToSiteName.keySet().forEach(enumValue -> schemaBuilder
+                .append("  ")
+                .append(enumValue)
+                .append("\n"));
+        schemaBuilder.append("}\n");
+
+        log.info("Loaded {} dynamic GraphQL site names.", enumToSiteName.size());
+    }
+
+    private void appendDynamicSearchDocumentFields(StringBuilder schemaBuilder) {
+        List<TurSNSiteFieldExt> siteFields = turSNSiteFieldExtRepository.findAll();
+        if (siteFields == null || siteFields.isEmpty()) {
+            return;
+        }
+
+        LinkedHashSet<String> dynamicFieldNames = siteFields.stream()
+                .map(TurSNSiteFieldExt::getName)
+                .filter(StringUtils::isNotBlank)
+                .map(String::trim)
+                .filter(this::isValidGraphQLFieldName)
+                .filter(fieldName -> !STATIC_FIELDS.contains(fieldName))
+                .sorted(Comparator.comparing(String::toLowerCase))
+                .collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
+
+        if (dynamicFieldNames.isEmpty()) {
+            return;
+        }
+
+        schemaBuilder.append("extend type SearchDocumentFields {\n");
+        dynamicFieldNames.forEach(fieldName -> schemaBuilder
+                .append("  ")
+                .append(fieldName)
+                .append(": JSON\n"));
+        schemaBuilder.append("}\n");
+
+        log.info("Loaded {} dynamic GraphQL search fields from site configuration.",
+                dynamicFieldNames.size());
+    }
+
+    private boolean isValidGraphQLFieldName(String fieldName) {
+        if (fieldName.startsWith("__")) {
+            return false;
+        }
+        return GRAPHQL_FIELD_NAME_PATTERN.matcher(fieldName).matches();
     }
 }

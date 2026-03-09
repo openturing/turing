@@ -34,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.dev.token.TurDevTokenDto;
+import com.viglet.turing.persistence.mapper.dev.token.TurDevTokenMapper;
 import com.viglet.turing.persistence.model.dev.token.TurDevToken;
 import com.viglet.turing.persistence.repository.dev.token.TurDevTokenRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -47,32 +49,36 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurDevTokenAPI {
 
 	private final TurDevTokenRepository turDevTokenRepository;
+	private final TurDevTokenMapper turDevTokenMapper;
 
-	public TurDevTokenAPI(TurDevTokenRepository turDevTokenRepository) {
+	public TurDevTokenAPI(TurDevTokenRepository turDevTokenRepository, TurDevTokenMapper turDevTokenMapper) {
 		this.turDevTokenRepository = turDevTokenRepository;
+		this.turDevTokenMapper = turDevTokenMapper;
 	}
 
 	@Operation(summary = "Developer Token List")
 	@GetMapping
-	public List<TurDevToken> turDevTokenList() {
-		return this.turDevTokenRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
+	public List<TurDevTokenDto> turDevTokenList() {
+		return turDevTokenMapper
+				.toDtoList(this.turDevTokenRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
 	}
 
 	@Operation(summary = "Show a Developer Token")
 	@GetMapping("/{id}")
-	public TurDevToken turDevTokenGet(@PathVariable String id) {
-		return this.turDevTokenRepository.findById(id).orElse(new TurDevToken());
+	public TurDevTokenDto turDevTokenGet(@PathVariable String id) {
+		return turDevTokenMapper.toDto(this.turDevTokenRepository.findById(id).orElse(new TurDevToken()));
 	}
 
 	@Operation(summary = "Update a Developer Token")
 	@PutMapping("/{id}")
-	public TurDevToken turDevTokenUpdate(@PathVariable String id, @RequestBody TurDevToken turDevToken) {
+	public TurDevTokenDto turDevTokenUpdate(@PathVariable String id, @RequestBody TurDevTokenDto turDevTokenDto) {
+		TurDevToken turDevToken = turDevTokenMapper.toEntity(turDevTokenDto);
 		return this.turDevTokenRepository.findById(id).map(turDevTokenEdit -> {
 			turDevTokenEdit.setDescription(turDevToken.getDescription());
 			turDevTokenEdit.setTitle(turDevToken.getTitle());
 			this.turDevTokenRepository.save(turDevTokenEdit);
-			return turDevTokenEdit;
-		}).orElse(new TurDevToken());
+			return turDevTokenMapper.toDto(turDevTokenEdit);
+		}).orElse(new TurDevTokenDto());
 
 	}
 
@@ -86,10 +92,11 @@ public class TurDevTokenAPI {
 
 	@Operation(summary = "Create a Developer Token")
 	@PostMapping
-	public TurDevToken turDevTokenAdd(@RequestBody TurDevToken turDevToken) {
+	public TurDevTokenDto turDevTokenAdd(@RequestBody TurDevTokenDto turDevTokenDto) {
+		TurDevToken turDevToken = turDevTokenMapper.toEntity(turDevTokenDto);
 		turDevToken.setToken(UUID.randomUUID().toString().replace("-", "").substring(0, 25));
 		this.turDevTokenRepository.save(turDevToken);
-		return turDevToken;
+		return turDevTokenMapper.toDto(turDevToken);
 
 	}
 }

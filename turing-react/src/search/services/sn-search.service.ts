@@ -1,45 +1,67 @@
-import axios from 'axios';
-import type { TurSNSearch } from '../models/sn-search.model';
-import type { TurSNChat } from '../models/sn-chat.model';
+import axios from "axios";
+import type { TurSNChat } from "../models/sn-chat.model";
+import type { TurSNSearch } from "../models/sn-search.model";
+
+interface QueryOptions {
+  q: string;
+  p?: string;
+  _setlocale?: string;
+  sort?: string;
+  fq?: string[];
+  tr?: string[];
+  nfpr?: string;
+}
 
 export class TurSNSearchService {
-  
   static query(
     turSiteName: string,
-    q: string,
-    p: string,
-    _setlocale: string,
-    sort: string,
-    fq: string[],
-    tr: string[],
-    nfpr: string
+    options: QueryOptions,
   ): Promise<TurSNSearch> {
-    const queryString = this.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);
+    const queryString = this.generateQueryString(
+      options.q,
+      options.p || "",
+      options._setlocale || "",
+      options.sort || "",
+      options.fq || [],
+      options.tr || [],
+      options.nfpr || "",
+    );
     return axios
-      .get<TurSNSearch>(`/api/sn/${turSiteName}/search?${queryString}`)
-      .then(response => response.data);
+      .get<TurSNSearch>(`/sn/${turSiteName}/search?${queryString}`)
+      .then((response) => response.data);
   }
 
-  static chat(turSiteName: string, q: string, _setlocale: string): Promise<TurSNChat> {
+  static chat(turSiteName: string, options: QueryOptions): Promise<TurSNChat> {
+    const queryString = this.generateQueryString(
+      options.q,
+      options.p || "",
+      options._setlocale || "",
+      options.sort || "",
+      options.fq || [],
+      options.tr || [],
+      options.nfpr || "",
+    );
     return axios
-      .get<TurSNChat>(`/api/sn/${turSiteName}/chat?q=${q}&_setlocale=${_setlocale}`)
-      .then(response => response.data);
+      .get<TurSNChat>(`/sn/${turSiteName}/chat?${queryString}`)
+      .then((response) => response.data);
   }
 
   static autoComplete(
     turSiteName: string,
-    q: string,
-    p: string,
-    _setlocale: string,
-    sort: string,
-    fq: string[],
-    tr: string[],
-    nfpr: string
+    options: QueryOptions,
   ): Promise<string[]> {
-    const queryString = this.generateQueryString(q, p, _setlocale, sort, fq, tr, nfpr);
+    const queryString = this.generateQueryString(
+      options.q,
+      options.p || "",
+      options._setlocale || "",
+      options.sort || "",
+      options.fq || [],
+      options.tr || [],
+      options.nfpr || "",
+    );
     return axios
-      .get<string[]>(`/api/sn/${turSiteName}/ac?${queryString}`)
-      .then(response => response.data);
+      .get<string[]>(`/sn/${turSiteName}/ac?${queryString}`)
+      .then((response) => response.data);
   }
 
   static generateQueryString(
@@ -49,56 +71,37 @@ export class TurSNSearchService {
     sort: string,
     fq: string[],
     tr: string[],
-    nfpr: string
+    nfpr: string,
   ): string {
-    let queryString = "";
+    const params = new URLSearchParams();
 
-    if (q) {
-      queryString += `q=${encodeURIComponent(q)}`;
-    } else {
-      queryString += `q=*`;
-    }
-
-    if (p) {
-      queryString += `&p=${p}`;
-    } else {
-      queryString += `&p=1`;
-    }
+    params.append("q", q || "*");
+    params.append("p", p || "1");
 
     if (_setlocale) {
-      queryString += `&_setlocale=${_setlocale}`;
+      params.append("_setlocale", _setlocale);
     }
 
-    if (sort) {
-      queryString += `&sort=${sort}`;
-    } else {
-      queryString += `&sort=relevance`;
-    }
+    params.append("sort", sort || "relevance");
 
-    if (fq) {
-      if (Array.isArray(fq)) {
-        fq.forEach(function (fqItem) {
-          queryString += `&fq[]=${encodeURIComponent(fqItem)}`;
-        });
-      } else {
-        queryString += `&fq[]=${encodeURIComponent(fq)}`;
-      }
-    }
-
-    if (tr) {
-      if (Array.isArray(tr)) {
-        tr.forEach(function (trItem) {
-          queryString += `&tr[]=${encodeURIComponent(trItem)}`;
-        });
-      } else {
-        queryString += `&tr[]=${encodeURIComponent(tr)}`;
-      }
-    }
+    this.appendArrayParam(params, "fq", fq);
+    this.appendArrayParam(params, "tr", tr);
 
     if (nfpr) {
-      queryString += `&nfpr=${encodeURIComponent(nfpr)}`;
+      params.append("nfpr", nfpr);
     }
 
-    return queryString;
+    return params.toString().replaceAll("%5B%5D", "[]");
+  }
+
+  private static appendArrayParam(
+    params: URLSearchParams,
+    key: string,
+    value: string | string[],
+  ): void {
+    if (!value) return;
+
+    const items = Array.isArray(value) ? value : [value];
+    items.forEach((item) => params.append(`${key}[]`, item));
   }
 }

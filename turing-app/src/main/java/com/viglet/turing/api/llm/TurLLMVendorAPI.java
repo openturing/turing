@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.llm.TurLLMVendorDto;
+import com.viglet.turing.persistence.mapper.llm.TurLLMVendorMapper;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -41,34 +43,38 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Large Language Model Vendor", description = "Large Language Model Vendor API")
 public class TurLLMVendorAPI {
 	private final TurLLMVendorRepository turLLMVendorRepository;
+	private final TurLLMVendorMapper turLLMVendorMapper;
 
-	public TurLLMVendorAPI(TurLLMVendorRepository turLLMVendorRepository) {
+	public TurLLMVendorAPI(TurLLMVendorRepository turLLMVendorRepository, TurLLMVendorMapper turLLMVendorMapper) {
 		this.turLLMVendorRepository = turLLMVendorRepository;
+		this.turLLMVendorMapper = turLLMVendorMapper;
 	}
 
 	@Operation(summary = "Large Language Model Vendor List")
 	@GetMapping
-	public List<TurLLMVendor> turLLMVendorList() {
-		return this.turLLMVendorRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
+	public List<TurLLMVendorDto> turLLMVendorList() {
+		return turLLMVendorMapper
+				.toDtoList(this.turLLMVendorRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
 	}
 
 	@Operation(summary = "Show a Large Language Model Vendor")
 	@GetMapping("/{id}")
-	public TurLLMVendor turLLMVendorGet(@PathVariable String id) {
-		return this.turLLMVendorRepository.findById(id).orElse(new TurLLMVendor());
+	public TurLLMVendorDto turLLMVendorGet(@PathVariable String id) {
+		return turLLMVendorMapper.toDto(this.turLLMVendorRepository.findById(id).orElse(new TurLLMVendor()));
 	}
 
 	@Operation(summary = "Update a Large Language Model Vendor")
 	@PutMapping("/{id}")
-	public TurLLMVendor turLLMVendorUpdate(@PathVariable String id, @RequestBody TurLLMVendor turLLMVendor) {
+	public TurLLMVendorDto turLLMVendorUpdate(@PathVariable String id, @RequestBody TurLLMVendorDto turLLMVendorDto) {
+		TurLLMVendor turLLMVendor = turLLMVendorMapper.toEntity(turLLMVendorDto);
 		return this.turLLMVendorRepository.findById(id).map(turLLMVendorEdit -> {
 			turLLMVendorEdit.setDescription(turLLMVendor.getDescription());
 			turLLMVendorEdit.setPlugin(turLLMVendor.getPlugin());
 			turLLMVendorEdit.setTitle(turLLMVendor.getTitle());
 			turLLMVendorEdit.setWebsite(turLLMVendor.getWebsite());
 			this.turLLMVendorRepository.save(turLLMVendorEdit);
-			return turLLMVendorEdit;
-		}).orElse(new TurLLMVendor());
+			return turLLMVendorMapper.toDto(turLLMVendorEdit);
+		}).orElse(new TurLLMVendorDto());
 
 	}
 
@@ -82,9 +88,10 @@ public class TurLLMVendorAPI {
 
 	@Operation(summary = "Create a Large Language Model Vendor")
 	@PostMapping
-	public TurLLMVendor turLLMVendorAdd(@RequestBody TurLLMVendor turLLMVendor) {
+	public TurLLMVendorDto turLLMVendorAdd(@RequestBody TurLLMVendorDto turLLMVendorDto) {
+		TurLLMVendor turLLMVendor = turLLMVendorMapper.toEntity(turLLMVendorDto);
 		this.turLLMVendorRepository.save(turLLMVendor);
-		return turLLMVendor;
+		return turLLMVendorMapper.toDto(turLLMVendor);
 
 	}
 }

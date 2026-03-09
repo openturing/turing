@@ -37,7 +37,6 @@ import tools.jackson.datatype.hibernate7.Hibernate7Module;
 @EnableScheduling
 public class TuringES {
     public static final String UTF_8 = "UTF-8";
-    public static final String CONSOLE = "console";
 
     public static void main(String... args) {
         SpringApplication.run(TuringES.class, args);

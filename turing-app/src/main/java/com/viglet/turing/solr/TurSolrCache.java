@@ -20,15 +20,17 @@
  */
 package com.viglet.turing.solr;
 
-import com.viglet.turing.commons.utils.TurCommonsUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+
+import org.springframework.stereotype.Component;
+
+import com.viglet.turing.commons.utils.TurCommonsUtils;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Alexandre Oliveira
@@ -39,10 +41,10 @@ import java.net.URL;
 public class TurSolrCache {
     public static final String SELECT = "/select";
 
-    public boolean isSolrCoreExists(String urlString) {
+    public boolean isSolrCoreExists(String solrBase, String core) {
 
         try {
-            return isValidResponse(URI.create(urlString.concat(SELECT)).toURL());
+            return isValidResponse(URI.create(solrBase.concat("/").concat(core).concat(SELECT)).toURL());
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
         }
@@ -51,8 +53,8 @@ public class TurSolrCache {
 
     private static boolean isValidResponse(URL url) {
         try {
-        return TurCommonsUtils.isValidUrl(url) &&
-                ((HttpURLConnection) url.openConnection()).getResponseCode() == 200;
+            return TurCommonsUtils.isValidUrl(url) &&
+                    ((HttpURLConnection) url.openConnection()).getResponseCode() == 200;
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

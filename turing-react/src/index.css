@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -8,6 +9,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Accordion animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -117,4 +123,58 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+[data-slot="sidebar-menu-button"][data-active="true"] {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--color-blue-600), transparent 88%),
+    color-mix(in srgb, var(--color-indigo-600), transparent 96%)
+  );
+
+  color: var(--color-blue-600);
+  font-weight: 700;
+
+  border-right: none;
+
+  border-radius: var(--radius-md);
+
+  position: relative;
+  transition: all 0.25s ease-in-out;
+}
+
+.dark [data-slot="sidebar-menu-button"][data-active="true"] {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--color-blue-500), transparent 85%),
+    transparent
+  );
+  color: var(--color-blue-400);
+}
+
+[data-slot="sidebar-menu-button"][data-active="true"] svg {
+  color: var(--color-blue-600) !important;
+  stroke-width: 2.5px;
+}
+
+.dark [data-slot="sidebar-menu-button"][data-active="true"] svg {
+  color: var(--color-blue-400) !important;
 }

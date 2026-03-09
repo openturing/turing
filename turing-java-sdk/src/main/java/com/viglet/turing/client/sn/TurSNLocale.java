@@ -15,6 +15,8 @@
  */
 package com.viglet.turing.client.sn;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Locale of Turing ES Semantic Navigation response.
  * 
@@ -43,7 +45,8 @@ public class TurSNLocale {
 		this.link = link;
 	}
 
-	public String toString() {
+	@Override
+	public @NotNull String toString() {
 		return String.format("%s: %s", getLocale(), getLink());
 	}
 }

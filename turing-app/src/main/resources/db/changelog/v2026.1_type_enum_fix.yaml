@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1770767340033-168
+      author: copilot
+      changes:
+        - modifyDataType:
+            tableName: sn_site_field
+            columnName: type
+            newDataType: VARCHAR(50)
+        - modifyDataType:
+            tableName: sn_site_field_ext
+            columnName: type
+            newDataType: VARCHAR(50)
+        - sql:
+            sql: |
+              UPDATE sn_site_field
+              SET type = CASE type
+                  WHEN '0' THEN 'INT'
+                  WHEN '1' THEN 'LONG'
+                  WHEN '2' THEN 'STRING'
+                  WHEN '3' THEN 'TEXT'
+                  WHEN '4' THEN 'ARRAY'
+                  WHEN '5' THEN 'DATE'
+                  WHEN '6' THEN 'BOOL'
+                  WHEN '7' THEN 'FLOAT'
+                  WHEN '8' THEN 'DOUBLE'
+                  WHEN '9' THEN 'CURRENCY'
+                  ELSE type
+              END;
+        - sql:
+            sql: |
+              UPDATE sn_site_field_ext
+              SET type = CASE type
+                  WHEN '0' THEN 'INT'
+                  WHEN '1' THEN 'LONG'
+                  WHEN '2' THEN 'STRING'
+                  WHEN '3' THEN 'TEXT'
+                  WHEN '4' THEN 'ARRAY'
+                  WHEN '5' THEN 'DATE'
+                  WHEN '6' THEN 'BOOL'
+                  WHEN '7' THEN 'FLOAT'
+                  WHEN '8' THEN 'DOUBLE'
+                  WHEN '9' THEN 'CURRENCY'
+                  ELSE type
+              END;

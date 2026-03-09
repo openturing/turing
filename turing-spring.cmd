@@ -1,2 +1,2 @@
-:: call mvn spring-boot:run -am -pl turing-app -Dskip.npm
-call mvn spring-boot:run -pl turing-app -Dskip.npm -Dspring-boot.run.arguments="--turing.mongodb.enabled=false --logging.config=classpath:logback-spring.xml"
+set TURING_ADMIN_PASSWORD=turing
+call mvn spring-boot:run -pl turing-app -Dskip.npm "-Dspring-boot.run.arguments=--spring.h2.console.enabled=true"

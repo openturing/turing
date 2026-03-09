@@ -28,9 +28,9 @@ import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
 
 import jakarta.persistence.CascadeType;
@@ -62,7 +62,7 @@ public class TurSNRankingExpression extends TurAuditable<String> implements Seri
 
 	@Setter
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
@@ -89,7 +89,10 @@ public class TurSNRankingExpression extends TurAuditable<String> implements Seri
 	public void setTurSNRankingConditions(Set<TurSNRankingCondition> turSNRankingConditions) {
 		this.turSNRankingConditions.clear();
 		if (turSNRankingConditions != null) {
-			this.turSNRankingConditions.addAll(turSNRankingConditions);
+			for (TurSNRankingCondition turSNRankingCondition : turSNRankingConditions) {
+				turSNRankingCondition.setTurSNRankingExpression(this);
+				this.turSNRankingConditions.add(turSNRankingCondition);
+			}
 		}
 	}
 }

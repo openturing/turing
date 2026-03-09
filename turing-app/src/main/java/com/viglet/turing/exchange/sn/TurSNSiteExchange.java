@@ -21,60 +21,66 @@
 
 package com.viglet.turing.exchange.sn;
 
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
-import lombok.Getter;
-import lombok.Setter;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
+import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
+import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
-import java.util.Set;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Setter
 @Getter
+@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteExchange {
 
 	private String id;
-
 	private String name;
-
 	private String description;
-
-	private String language;
-
-	private String core;
-
-	private int rowsPerPage;
-
+	private Integer rowsPerPage;
+	private Integer wildcardNoResults;
+	private Integer wildcardAlways;
+	private Integer exactMatch;
 	private boolean facet;
-
-	private int itemsPerFacet;
-
+	private Integer itemsPerFacet;
 	private boolean hl;
-
 	private String hlPre;
-
 	private String hlPost;
-
 	private boolean mlt;
-
+	private TurSNSiteFacetFieldEnum facetType;
+	private TurSNSiteFacetFieldEnum facetItemType;
+	private TurSNSiteFacetSortEnum facetSort;
 	private boolean thesaurus;
-
+	private String defaultField;
+	private String exactMatchField;
 	private String defaultTitleField;
-
 	private String defaultTextField;
-
 	private String defaultDescriptionField;
-
 	private String defaultDateField;
-
 	private String defaultImageField;
-
 	private String defaultURLField;
-
+	private Integer spellCheck;
+	private Integer spellCheckFixes;
+	private Integer spotlightWithResults;
 	private String turSEInstance;
-
+	private TurSNSiteGenAiExchange turSNSiteGenAi;
 	private Set<TurSNSiteField> turSNSiteFields;
+	private Set<TurSNSiteFieldExt> turSNSiteFieldExts;
+	private Set<TurSNSiteSpotlight> turSNSiteSpotlights;
+	private Set<TurSNSiteLocale> turSNSiteLocales;
+	private Set<TurSNRankingExpression> turSNRankingExpressions;
+	private Set<TurSNSiteMergeProviders> turSNSiteMergeProviders;
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
 		this.setDefaultDateField(turSNSite.getDefaultDateField());
@@ -94,13 +100,47 @@ public class TurSNSiteExchange {
 		this.setName(turSNSite.getName());
 		this.setRowsPerPage(turSNSite.getRowsPerPage());
 		this.setThesaurus(turSNSite.getThesaurus() == 1);
+		this.setWildcardNoResults(turSNSite.getWildcardNoResults());
+		this.setWildcardAlways(turSNSite.getWildcardAlways());
+		this.setExactMatch(turSNSite.getExactMatch());
+		this.setFacetType(turSNSite.getFacetType());
+		this.setFacetItemType(turSNSite.getFacetItemType());
+		this.setFacetSort(turSNSite.getFacetSort());
+		this.setDefaultField(turSNSite.getDefaultField());
+		this.setExactMatchField(turSNSite.getExactMatchField());
+		this.setSpellCheck(turSNSite.getSpellCheck());
+		this.setSpellCheckFixes(turSNSite.getSpellCheckFixes());
+		this.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
 		if (turSNSite.getTurSEInstance() != null) {
 			this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
 		}
+		this.setTurSNSiteGenAi(this.toReferenceGenAi(turSNSite.getTurSNSiteGenAi()));
 		this.setTurSNSiteFields(turSNSite.getTurSNSiteFields());
+		this.setTurSNSiteFieldExts(turSNSite.getTurSNSiteFieldExts());
+		this.setTurSNSiteSpotlights(turSNSite.getTurSNSiteSpotlights());
+		this.setTurSNSiteLocales(turSNSite.getTurSNSiteLocales());
+		this.setTurSNRankingExpressions(turSNSite.getTurSNRankingExpressions());
+		this.setTurSNSiteMergeProviders(turSNSite.getTurSNSiteMergeProviders());
 	}
 
-    public boolean getHl() {
+	private TurSNSiteGenAiExchange toReferenceGenAi(TurSNSiteGenAi source) {
+		if (source == null) {
+			return null;
+		}
+		TurSNSiteGenAiExchange referenceGenAi = new TurSNSiteGenAiExchange();
+		referenceGenAi.setId(source.getId());
+		referenceGenAi.setEnabled(source.isEnabled());
+		referenceGenAi.setSystemPrompt(source.getSystemPrompt());
+		if (source.getTurLLMInstance() != null && source.getTurLLMInstance().getId() != null) {
+			referenceGenAi.setTurLLMInstance(source.getTurLLMInstance().getId());
+		}
+		if (source.getTurStoreInstance() != null && source.getTurStoreInstance().getId() != null) {
+			referenceGenAi.setTurStoreInstance(source.getTurStoreInstance().getId());
+		}
+		return referenceGenAi;
+	}
+
+	public boolean getHl() {
 		return hl;
 	}
 }

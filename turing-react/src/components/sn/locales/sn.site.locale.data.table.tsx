@@ -1,11 +1,11 @@
 import { columns } from "@/components/sn/locales/sn.site.locale.coldef.tsx";
-import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
@@ -54,7 +54,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data }) => {
         },
     })
     return (
-        <div className="pr-5">
+        <div className="px-6">
             <div className="flex items-center py-4">
                 <Input
                     placeholder="Filter languages..."
@@ -67,9 +67,9 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data }) => {
                 <div className="ml-auto">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
+                            <GradientButton variant="outline" size={"sm"}>
                                 <IconColumns3Filled /> Columns <ChevronDown />
-                            </Button>
+                            </GradientButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             {table
@@ -149,22 +149,22 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data }) => {
                     {table.getFilteredRowModel().rows.length} row(s) selected.
                 </div>
                 <div className="space-x-2">
-                    <Button
+                    <GradientButton
                         variant="outline"
                         size="sm"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
                         Previous
-                    </Button>
-                    <Button
+                    </GradientButton>
+                    <GradientButton
                         variant="outline"
                         size="sm"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
                         Next
-                    </Button>
+                    </GradientButton>
                 </div>
             </div>
         </div>

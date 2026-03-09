@@ -20,56 +20,26 @@
  */
 package com.viglet.turing.solr;
 
-import java.io.IOException;
 import java.net.URL;
 
-import jakarta.annotation.PreDestroy;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpJdkSolrClient;
 
 @Slf4j
 @Getter
 @Setter
 public class TurSolrInstance {
 
-    private HttpJdkSolrClient httpJdkSolrClient;
     private SolrClient solrClient;
-    private String core;
     private URL solrUrl;
+    private String core;
 
-    @PreDestroy
-    public void destroy() {
-        if (log.isDebugEnabled()) {
-            log.debug("TurSolrInstance destroyed");
-        }
-        this.close();
-    }
-
-    public void close() {
-        try {
-            if (solrClient != null) {
-                solrClient.close();
-                solrClient = null;
-            }
-            if (httpJdkSolrClient != null) {
-                httpJdkSolrClient.close();
-                httpJdkSolrClient = null;
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
-    public TurSolrInstance(HttpJdkSolrClient httpJdkSolrClient, URL solrUrl,
-                           String core) {
-        super();
-        this.httpJdkSolrClient = httpJdkSolrClient;
-        this.solrClient = new HttpJdkSolrClient.Builder(solrUrl.toString()).build();
+    public TurSolrInstance(HttpJdkSolrClient solrClient, URL solrUrl, String core) {
+        this.solrClient = solrClient;
         this.solrUrl = solrUrl;
         this.core = core;
     }

@@ -20,13 +20,23 @@
  */
 package com.viglet.turing.persistence.model.llm;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
-
 import java.io.Serial;
 import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * The persistent class for the TurLLMInstance database table.
@@ -41,14 +51,14 @@ public class TurLLMInstance implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
 	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = true, length = 100)
 	private String description;
 
 	@Column(nullable = false)
@@ -96,4 +106,22 @@ public class TurLLMInstance implements Serializable {
 
 	@Column
 	private Integer maxRetries;
+
+	@Column(name = "context_window")
+	private Integer contextWindow;
+
+	@Lob
+	@Column
+	private String providerOptionsJson;
+
+	@Column(name = "tools_enabled", nullable = false)
+	private boolean toolsEnabled = true;
+
+	@Column
+	@JsonIgnore
+	private String apiKeyEncrypted;
+
+	@Transient
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	private String apiKey;
 }

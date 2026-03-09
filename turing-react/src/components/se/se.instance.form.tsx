@@ -1,8 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import {
-  Button
-} from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
@@ -34,7 +31,10 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { DialogDelete } from "../dialog.delete"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { GradientButton } from "../ui/gradient-button"
 const turSEInstanceService = new TurSEInstanceService();
 interface Props {
   value: TurSEInstance;
@@ -101,138 +101,152 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         <CardHeader>
           <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Search Engine</CardTitle>
           <CardAction>
-            {!isNew &&
-              <Dialog open={open} onOpenChange={setOpen}>
-                <form>
-                  <DialogTrigger asChild>
-                    <Button variant={"outline"}>Delete</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-112.5">
-                    <DialogHeader>
-                      <DialogTitle>Are you absolutely sure?</DialogTitle>
-                      <DialogDescription>
-                        Unexpected bad things will happen if you don't read this!
-                      </DialogDescription>
-                    </DialogHeader>
-                    <p className="grid gap-4">
-                      This action cannot be undone. This will permanently delete the {value.title} search engine.
-                    </p>
-                    <DialogFooter>
-                      <Button onClick={onDelete} variant="destructive">I understand the consequences, delete this search engine</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </form>
-              </Dialog>
-            }
+            {!isNew && <DialogDelete feature="Search Engine" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
           <CardDescription>
             Search engine settings.
           </CardDescription>
-        </CardHeader>
+        </CardHeader >
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-              <FormField
-                control={control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Title"
-                        type="text"
-                      />
-                    </FormControl>
-                    <FormDescription>Search engine instance title will appear on list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Accordion
+                type="multiple"
+                defaultValue={["general", "connection"]}
+                className="w-full space-y-4"
+              >
+                {/* General Section */}
+                <AccordionItem value="general" className="border rounded-lg px-6">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold">General Information</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                    <FormField
+                      control={control}
+                      name="title"
+                      rules={{ required: "Title is required." }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
+                          <FormDescription>
+                            Enter a unique, descriptive name for this search engine instance.
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="e.g. Enterprise Search"
+                              type="text"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormDescription>
+                            Briefly describe the purpose or scope of this search engine.
+                          </FormDescription>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Add a description"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-              <FormField
-                control={control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Description"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Search engine instance description will appear on list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                {/* Connection Section */}
+                <AccordionItem value="connection" className="border rounded-lg px-6">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold">Connection Settings</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                    <FormField
+                      control={control}
+                      name="turSEVendor.id"
+                      rules={{ required: "Vendor is required." }}
+                      render={({ field }) => (
+                        <FormItemTwoColumns>
+                          <FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Label>Vendor</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Description>
+                              Choose the backend technology powering this search engine.
+                            </FormItemTwoColumns.Description>
+                          </FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Right>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select vendor..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem key="SOLR" value="SOLR">Apache Solr</SelectItem>
+                                  <SelectItem key="LUCENE" value="LUCENE">Apache Lucene</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItemTwoColumns.Right>
+                          <FormMessage />
+                        </FormItemTwoColumns>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="endpointUrl"
+                      rules={{ required: "Endpoint URL is required." }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Endpoint URL</FormLabel>
+                          <FormDescription>
+                            Enter the full URL of the search engine (e.g., <code>http://localhost:8983/solr</code>).
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. http://localhost:8983/solr"
+                              type="url"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
-              <FormField
-                control={control}
-                name="turSEVendor.id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vendor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem key="SOLR" value="SOLR">Apache Solr</SelectItem>
-                        <SelectItem key="LUCENE" value="LUCENE">Apache Lucene</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>Search engine vendor that will be used.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="host"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Host</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Host"
-                        type="text"
-                        {...field} />
-                    </FormControl>
-                    <FormDescription>Search engine instance host will be connected.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={control}
-                name="port"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Port</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Port"
-                        type="number"
-                        {...field} />
-                    </FormControl>
-                    <FormDescription>Search engine instance port will be connected.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Save</Button>
+              {/* Action Footer */}
+              <div className="flex justify-end gap-3 pt-8">
+                <GradientButton
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(ROUTES.SE_INSTANCE)}
+                >
+                  Cancel
+                </GradientButton>
+                <GradientButton type="submit">
+                  Save Changes
+                </GradientButton>
+              </div>
             </form>
           </Form>
         </CardContent>
-      </Card>
-    </div>
+      </Card >
+    </div >
   )
 }
 

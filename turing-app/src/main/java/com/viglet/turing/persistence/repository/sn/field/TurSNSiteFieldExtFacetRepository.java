@@ -47,6 +47,7 @@ public interface TurSNSiteFieldExtFacetRepository extends JpaRepository<TurSNSit
     @Override
     <S extends TurSNSiteFieldExtFacet> S save(@NotNull S entity);
 
+    @Override
     @CacheEvict(value = { FIND_BY_TUR_SN_SITE_FIELD_EXT, FIND_BY_TUR_SN_SITE_FIELD_EXT_AND_LOCALE }, allEntries = true)
     void delete(@NotNull TurSNSiteFieldExtFacet turSNSiteFieldExtFacet);
 }

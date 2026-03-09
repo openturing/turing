@@ -21,7 +21,6 @@
 
 package com.viglet.turing.persistence.repository.auth;
 
-import java.util.Collection;
 import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,9 +29,9 @@ import org.springframework.stereotype.Repository;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurRole;
 
-
 @Repository
 public interface TurRoleRepository extends JpaRepository<TurRole, String> {
-	Set<TurRole> findByTurGroupsIn(Collection<TurGroup> turGroup);
+	Set<TurRole> findByTurGroupsContaining(TurGroup turGroup);
+
 	TurRole findByName(String name);
 }

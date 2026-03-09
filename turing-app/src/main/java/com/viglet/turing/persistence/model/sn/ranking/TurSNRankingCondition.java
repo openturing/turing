@@ -21,16 +21,22 @@
 
 package com.viglet.turing.persistence.model.sn.ranking;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.spring.security.TurAuditable;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.UuidGenerator;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * The persistent class for the turSNRankingExpression database table.
@@ -44,12 +50,12 @@ import java.io.Serializable;
 @ToString
 @Table(name = "sn_ranking_condition")
 @JsonIgnoreProperties({ "turSNRankingExpression" })
-public class TurSNRankingCondition extends TurAuditable<String>  implements Serializable {
+public class TurSNRankingCondition extends TurAuditable<String> implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

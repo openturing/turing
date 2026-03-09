@@ -17,11 +17,18 @@
 
 package com.viglet.turing.api.sn.graphql;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -33,9 +40,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
@@ -71,8 +82,10 @@ public class TurSNSiteSearchGraphQLController {
             @Argument TurSNSearchParamsInput searchParams,
             @Argument String locale) {
 
+        String resolvedSiteName = resolveSiteName(siteName);
+
         log.debug("GraphQL siteSearch called with siteName: {}, params: {}, locale: {}",
-                siteName, searchParams, locale);
+                resolvedSiteName, searchParams, locale);
 
         // Convert GraphQL input to internal search params
         TurSNSearchParams turSNSearchParams = convertToTurSNSearchParams(searchParams, locale);
@@ -83,12 +96,13 @@ public class TurSNSiteSearchGraphQLController {
         Locale localeObj = LocaleUtils.toLocale(localeToUse);
 
         // Check if site exists and has the specified language
-        if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, localeObj)) {
-            log.warn("Site {} with locale {} not found or not supported", siteName, localeToUse);
+        if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(resolvedSiteName, localeObj)) {
+            log.warn("Site {} (resolved from {}) with locale {} not found or not supported",
+                    resolvedSiteName, siteName, localeToUse);
             return new TurSNSiteSearchBean();
         }
 
-        return turSNSiteRepository.findByName(siteName)
+        return turSNSiteRepository.findByName(resolvedSiteName)
                 .map(site -> {
                     // Get the current HTTP request to create proper search context
                     ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder
@@ -103,11 +117,164 @@ public class TurSNSiteSearchGraphQLController {
                     }
 
                     TurSNSiteSearchContext turSNSiteSearchContext = getTurSNSiteSearchContext(
-                            siteName, turSNSearchParams, request, site);
+                            resolvedSiteName, turSNSearchParams, request, site);
 
-                    return turSNSearchProcess.search(turSNSiteSearchContext);
+                    TurSNSiteSearchBean searchResponse = turSNSearchProcess.search(turSNSiteSearchContext);
+                    enrichDynamicFieldsBySite(searchResponse, site, turSNSearchParams.getFl());
+                    return searchResponse;
                 })
                 .orElse(new TurSNSiteSearchBean());
+    }
+
+    @QueryMapping
+    public List<String> siteNames() {
+        return turSNSiteRepository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase())).stream()
+                .map(TurSNSite::getName)
+                .filter(StringUtils::isNotBlank)
+                .toList();
+    }
+
+    private String resolveSiteName(String siteName) {
+        if (StringUtils.isBlank(siteName)) {
+            return siteName;
+        }
+        if (turSNSiteRepository.findByName(siteName).isPresent()) {
+            return siteName;
+        }
+
+        List<String> siteNames = turSNSiteRepository
+                .findAll(Sort.by(Sort.Order.asc("name").ignoreCase()))
+                .stream()
+                .map(TurSNSite::getName)
+                .filter(StringUtils::isNotBlank)
+                .toList();
+        Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
+                .buildEnumToSiteNameMap(siteNames);
+        String resolved = TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument(siteName,
+                enumToSiteName);
+        if (!Objects.equals(resolved, siteName)) {
+            return resolved;
+        }
+
+        String hyphenCandidate = siteName.toLowerCase(Locale.ROOT).replace('_', '-');
+        if (turSNSiteRepository.findByName(hyphenCandidate).isPresent()) {
+            return hyphenCandidate;
+        }
+
+        return siteNames.stream()
+                .filter(candidate -> TurSNSiteGraphQLNameUtils
+                        .toGraphQLEnumValue(candidate)
+                        .equalsIgnoreCase(siteName))
+                .findFirst()
+                .orElse(siteName);
+    }
+
+    private void enrichDynamicFieldsBySite(TurSNSiteSearchBean searchResponse, TurSNSite site,
+            List<String> selectedFields) {
+        if (searchResponse == null || site == null) {
+            return;
+        }
+
+        List<TurSNSiteFieldExt> siteFieldExtList = turSNSiteFieldExtRepository.findByTurSNSite(
+                Sort.by(Sort.Order.asc("name").ignoreCase()), site);
+        if (siteFieldExtList == null) {
+            siteFieldExtList = List.of();
+        }
+
+        LinkedHashSet<String> fieldNames = new LinkedHashSet<>();
+        Map<String, String> externalIdToName = new LinkedHashMap<>();
+        siteFieldExtList.forEach(siteFieldExt -> {
+            if (StringUtils.isNotBlank(siteFieldExt.getName())) {
+                fieldNames.add(siteFieldExt.getName());
+            }
+            if (StringUtils.isNotBlank(siteFieldExt.getExternalId())
+                    && StringUtils.isNotBlank(siteFieldExt.getName())) {
+                externalIdToName.putIfAbsent(siteFieldExt.getExternalId(), siteFieldExt.getName());
+            }
+        });
+
+        LinkedHashSet<String> selectedFieldNames = resolveSelectedFieldNames(selectedFields,
+                fieldNames, externalIdToName);
+
+        normalizeResultsDocuments(searchResponse.getResults(), fieldNames, externalIdToName,
+                selectedFieldNames);
+        if (!CollectionUtils.isEmpty(searchResponse.getGroups())) {
+            searchResponse.getGroups().stream().map(TurSNSiteSearchGroupBean::getResults)
+                    .forEach(groupResults -> normalizeResultsDocuments(groupResults,
+                            fieldNames, externalIdToName, selectedFieldNames));
+        }
+    }
+
+    private LinkedHashSet<String> resolveSelectedFieldNames(List<String> selectedFields,
+            LinkedHashSet<String> fieldNames,
+            Map<String, String> externalIdToName) {
+        if (CollectionUtils.isEmpty(selectedFields)) {
+            return new LinkedHashSet<>();
+        }
+
+        LinkedHashSet<String> selectedFieldNames = new LinkedHashSet<>();
+        selectedFields.stream().filter(StringUtils::isNotBlank).map(String::trim)
+                .forEach(field -> {
+                    if (fieldNames.contains(field)) {
+                        selectedFieldNames.add(field);
+                    } else if (externalIdToName.containsKey(field)) {
+                        selectedFieldNames.add(externalIdToName.get(field));
+                    } else {
+                        selectedFieldNames.add(field);
+                    }
+                });
+        return selectedFieldNames;
+    }
+
+    private void normalizeResultsDocuments(TurSNSiteSearchResultsBean results,
+            LinkedHashSet<String> fieldNames,
+            Map<String, String> externalIdToName,
+            LinkedHashSet<String> selectedFieldNames) {
+        if (results == null || CollectionUtils.isEmpty(results.getDocument())) {
+            return;
+        }
+
+        results.getDocument().forEach(document -> document
+                .setFields(normalizeDocumentFields(document, fieldNames, externalIdToName,
+                        selectedFieldNames)));
+    }
+
+    private Map<String, Object> normalizeDocumentFields(TurSNSiteSearchDocumentBean document,
+            LinkedHashSet<String> fieldNames,
+            Map<String, String> externalIdToName,
+            LinkedHashSet<String> selectedFieldNames) {
+        Map<String, Object> normalizedFields = new LinkedHashMap<>();
+        Set<String> baseFields = CollectionUtils.isEmpty(selectedFieldNames)
+                ? fieldNames
+                : selectedFieldNames;
+        baseFields.forEach(fieldName -> normalizedFields.put(fieldName, null));
+
+        if (document == null || CollectionUtils.isEmpty(document.getFields())) {
+            return normalizedFields;
+        }
+
+        document.getFields().forEach((rawKey, value) -> {
+            if (StringUtils.isBlank(rawKey)) {
+                return;
+            }
+
+            String fieldName = resolveFieldName(rawKey, fieldNames, externalIdToName);
+            if (!CollectionUtils.isEmpty(selectedFieldNames)
+                    && !selectedFieldNames.contains(fieldName)) {
+                return;
+            }
+            normalizedFields.put(fieldName, value);
+        });
+        return normalizedFields;
+    }
+
+    private String resolveFieldName(String rawKey,
+            LinkedHashSet<String> fieldNames,
+            Map<String, String> externalIdToName) {
+        if (fieldNames.contains(rawKey)) {
+            return rawKey;
+        }
+        return externalIdToName.getOrDefault(rawKey, rawKey);
     }
 
     private static @NonNull String getLocale(String locale, TurSNSearchParams turSNSearchParams) {

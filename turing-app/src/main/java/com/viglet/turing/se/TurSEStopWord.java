@@ -63,7 +63,7 @@ public class TurSEStopWord {
     private static final String WORDS_ATTRIBUTE = "words";
     private static final String DEFAULT_STOP_WORD_FILE = "classpath:/solr/conf/lang/stopwords.txt";
     private static final String APPLICATION_OCTET_STREAM_UTF8 = "application/octet-stream;charset=utf-8";
-    private static final String ADMIN_FILE_URL = "%s/admin/file?contentType=%s&file=%s";
+    private static final String ADMIN_FILE_URL = "%s/%s/admin/file?contentType=%s&file=%s";
 
     public List<String> getStopWords(TurSolrInstance turSolrInstance) {
         return Optional.ofNullable(Objects
@@ -114,7 +114,7 @@ public class TurSEStopWord {
         SchemaRequest.FieldType fieldTypeRequest = new SchemaRequest.FieldType(TEXT_GENERAL);
         try {
             SchemaResponse.FieldTypeResponse initialFieldTypeResponse = fieldTypeRequest
-                    .process(turSolrInstance.getSolrClient());
+                    .process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
             if (initialFieldTypeResponse.getFieldType().getAnalyzer() != null) {
                 AnalyzerDefinition analyzer = initialFieldTypeResponse.getFieldType().getAnalyzer();
                 stopwordsStream = getStopWord(turSolrInstance, analyzer);
@@ -131,20 +131,33 @@ public class TurSEStopWord {
         return Optional.ofNullable(stopwordsStream);
     }
 
-    private InputStream getStopWord(TurSolrInstance turSolrInstance,
-            AnalyzerDefinition analyzer) {
-        InputStream stopwordsStream = null;
-        if (analyzer.getFilters() != null && !analyzer.getFilters().isEmpty())
-            for (Map<String, Object> fieldTypeMap : analyzer.getFilters()) {
-                if (fieldTypeMap.get(CLASS_FILTER).equals(STOP_WORD_CLASS_FILTER)) {
-                    String url = String.format(ADMIN_FILE_URL, turSolrInstance.getSolrUrl().toString(),
-                            APPLICATION_OCTET_STREAM_UTF8, fieldTypeMap.get(WORDS_ATTRIBUTE));
-                    ResponseEntity<String> response = new RestTemplate().getForEntity(url, String.class);
-                    stopwordsStream = IOUtils.toInputStream(Objects.requireNonNull(response.getBody()),
-                            StandardCharsets.UTF_8);
+    private InputStream getStopWord(TurSolrInstance turSolrInstance, AnalyzerDefinition analyzer) {
+        if (analyzer.getFilters() == null || analyzer.getFilters().isEmpty()) {
+            return null;
+        }
+        for (Map<String, Object> fieldTypeMap : analyzer.getFilters()) {
+            if (STOP_WORD_CLASS_FILTER.equals(fieldTypeMap.get(CLASS_FILTER))) {
+                Object wordsObj = fieldTypeMap.get(WORDS_ATTRIBUTE);
+                if (wordsObj == null) {
+                    log.warn("No stopwords file specified in analyzer filter.");
+                    continue;
                 }
-
+                String url = String.format(ADMIN_FILE_URL,
+                        turSolrInstance.getSolrUrl().toString(), turSolrInstance.getCore(),
+                        APPLICATION_OCTET_STREAM_UTF8, wordsObj);
+                try {
+                    ResponseEntity<String> response = new RestTemplate().getForEntity(url, String.class);
+                    String body = response.getBody();
+                    if (body != null) {
+                        return IOUtils.toInputStream(body, StandardCharsets.UTF_8);
+                    } else {
+                        log.warn("Stopwords file response body is null from Solr: {}", url);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to fetch stopwords file from Solr: {}", url, e);
+                }
             }
-        return stopwordsStream;
+        }
+        return null;
     }
 }

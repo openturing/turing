@@ -30,9 +30,9 @@ import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -61,7 +61,7 @@ public class TurSNSiteSpotlight implements Serializable {
 
     @Setter
     @Id
-    @UuidGenerator
+    @TurAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 

@@ -42,7 +42,7 @@ public class TurLLMVendorOnStartup {
 			TurLLMVendor openai = new TurLLMVendor();
 			openai.setId("OPENAI");
 			openai.setDescription("Open AI");
-			openai.setPlugin("");
+			openai.setPlugin("openai");
 			openai.setTitle("Open AI");
 			openai.setWebsite("https://openai.com");
 			turLLMVendorRepository.save(openai);
@@ -50,10 +50,43 @@ public class TurLLMVendorOnStartup {
 			TurLLMVendor ollama = new TurLLMVendor();
 			ollama.setId("OLLAMA");
 			ollama.setDescription("Ollama");
-			ollama.setPlugin("");
+			ollama.setPlugin("ollama");
 			ollama.setTitle("Ollama");
 			ollama.setWebsite("https://ollama.com");
 			turLLMVendorRepository.save(ollama);
+
+			TurLLMVendor anthropic = new TurLLMVendor();
+			anthropic.setId("ANTHROPIC");
+			anthropic.setDescription("Anthropic (Claude)");
+			anthropic.setPlugin("anthropic");
+			anthropic.setTitle("Anthropic");
+			anthropic.setWebsite("https://anthropic.com");
+			turLLMVendorRepository.save(anthropic);
+
+			TurLLMVendor gemini = new TurLLMVendor();
+			gemini.setId("GEMINI");
+			gemini.setDescription("Google Gemini (native GenAI SDK)");
+			gemini.setPlugin("gemini");
+			gemini.setTitle("Google Gemini");
+			gemini.setWebsite("https://ai.google.dev");
+			turLLMVendorRepository.save(gemini);
+
+			TurLLMVendor geminiOpenAI = new TurLLMVendor();
+			geminiOpenAI.setId("GEMINI_OPENAI");
+			geminiOpenAI.setDescription("Google Gemini via OpenAI-compatible endpoint");
+			geminiOpenAI.setPlugin("gemini-openai");
+			geminiOpenAI.setTitle("Google Gemini (OpenAI Compatible)");
+			geminiOpenAI.setWebsite("https://ai.google.dev");
+			turLLMVendorRepository.save(geminiOpenAI);
+
+			TurLLMVendor azureOpenai = new TurLLMVendor();
+			azureOpenai.setId("AZURE_OPENAI");
+			azureOpenai.setDescription("Azure OpenAI (Copilot)");
+			azureOpenai.setPlugin("azure-openai");
+			azureOpenai.setTitle("Azure OpenAI");
+			azureOpenai.setWebsite("https://azure.microsoft.com/products/ai-services/openai-service");
+			turLLMVendorRepository.save(azureOpenai);
+
 		}
 	}
 }

@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
+import { GradientButton } from '../ui/gradient-button';
 
 interface DynamicIndexingRuleFieldsProps {
     control: Control<any>;
@@ -9,14 +9,18 @@ interface DynamicIndexingRuleFieldsProps {
     fieldName: string;
 }
 
-export function DynamicIndexingRuleFields({ control, register, fieldName }: DynamicIndexingRuleFieldsProps) {
+export function DynamicIndexingRuleFields({
+    control,
+    register,
+    fieldName
+}: Readonly<DynamicIndexingRuleFieldsProps>) {
     const { fields, append, remove } = useFieldArray({
         control,
         name: fieldName,
     });
 
     const handleAddField = () => {
-        append('');
+        append({ value: '' });
     };
 
     return (
@@ -26,9 +30,9 @@ export function DynamicIndexingRuleFields({ control, register, fieldName }: Dyna
                     <Input
                         className="grow"
                         placeholder="Value"
-                        {...register(`${fieldName}.${index}`)}
+                        {...register(`${fieldName}.${index}.value`)}
                     />
-                    <Button
+                    <GradientButton
                         variant="ghost"
                         size="icon"
                         onClick={() => remove(index)}
@@ -36,15 +40,15 @@ export function DynamicIndexingRuleFields({ control, register, fieldName }: Dyna
                         type="button"
                     >
                         <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    </GradientButton>
                 </div>
             ))}
 
             <div className="mt-2">
-                <Button variant="outline" onClick={handleAddField} type="button">
+                <GradientButton variant="outline" onClick={handleAddField} type="button">
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Add
-                </Button>
+                </GradientButton>
             </div>
         </div>
     );

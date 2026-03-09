@@ -20,6 +20,26 @@
  */
 package com.viglet.turing.solr;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.apache.commons.collections4.KeyValue;
+import org.apache.http.HttpHeaders;
+import org.apache.solr.common.SolrDocument;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.springframework.http.MediaType;
+
 import com.google.gson.Gson;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -30,25 +50,11 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.se.result.TurSEResult;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.solr.bean.TurSolrFieldBean;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.KeyValue;
-import org.apache.http.HttpHeaders;
-import org.apache.solr.common.SolrDocument;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
-import org.springframework.http.MediaType;
-import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 public class TurSolrUtils {
@@ -64,126 +70,155 @@ public class TurSolrUtils {
         TurSolrUtils.deleteCore(getSolrUrl(turSEInstance), coreName);
     }
 
+    public static void clearCore(TurSEInstance turSEInstance, String coreName) {
+        String json = "{\"delete\":{\"query\":\"*:*\"}}";
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/solr/%s/update?commit=true",
+                        getSolrUrl(turSEInstance), coreName)))
+                .POST(BodyPublishers.ofString(json))
+                .build();
+        executeRequest(request, "Failed to clear core: " + coreName);
+    }
+
     private static String getSolrUrl(TurSEInstance turSEInstance) {
-        return String.format("http://%s:%s",
-                turSEInstance.getHost(),
-                turSEInstance.getPort());
+        try {
+            URI uri = URI.create(turSEInstance.getEndpointUrl());
+            return uri.getScheme() + "://" + uri.getAuthority();
+        } catch (Exception e) {
+            return turSEInstance.getEndpointUrl();
+        }
     }
 
     public static void deleteCore(String solrUrl, String name) {
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format(
-                            "%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
-                            solrUrl, name)))
-                    .GET().build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        }
+        String uri = String.format(
+                "%s/api/cores?action=UNLOAD&core=%s&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true",
+                solrUrl, name);
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(uri))
+                .GET()
+                .build();
+        executeRequest(request, "Failed to delete core: " + name);
     }
 
     public static TurSolrFieldBean getField(TurSEInstance turSEInstance, String coreName, String fieldName) {
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format("%s/solr/%s/schema/fields/%s",
-                            getSolrUrl(turSEInstance), coreName, fieldName)))
-                    .build();
-            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (httpResponse.statusCode() == 200) {
-                JSONObject jsonObject = new JSONObject(httpResponse.body());
-                if (jsonObject.has("field")) {
-                    return new Gson().fromJson(jsonObject.getJSONObject("field").toString(), TurSolrFieldBean.class);
-                }
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        }
-        return TurSolrFieldBean.builder().build();
+        URI uri = getFieldUri(turSEInstance, coreName, fieldName);
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(uri)
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to get field: " + fieldName)
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(JSONObject::new)
+                .filter(json -> json.has("field"))
+                .map(json -> new Gson().fromJson(json.getJSONObject("field").toString(), TurSolrFieldBean.class))
+                .orElse(TurSolrFieldBean.builder().build());
+    }
+
+    private static URI getFieldUri(TurSEInstance turSEInstance, String coreName, String fieldName) {
+        return URI.create(String.format("%s/solr/%s/schema/fields/%s",
+                getSolrUrl(turSEInstance), coreName, fieldName));
     }
 
     public static boolean existsField(TurSEInstance turSEInstance, String coreName, String fieldName) {
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format("%s/solr/%s/schema/fields/%s",
-                            getSolrUrl(turSEInstance), coreName, fieldName)))
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode() == 200;
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-            return false;
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-            return false;
-        }
+        URI uri = getFieldUri(turSEInstance, coreName, fieldName);
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(uri)
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to check field existence: " + fieldName)
+                .map(response -> response.statusCode() == 200)
+                .orElse(false);
     }
 
     public static void addOrUpdateField(TurSolrFieldAction turSolrFieldAction, TurSEInstance turSEInstance,
-                                        String coreName, String fieldName, TurSEFieldType turSEFieldType,
-                                        boolean stored, boolean multiValued) {
+            String coreName, String fieldName, TurSEFieldType turSEFieldType,
+            boolean stored, boolean multiValued) {
+        ensureCurrencyFieldTypeByCore(turSEInstance, coreName, turSEFieldType);
+
         Map<String, Object> fieldDetails = Map.of(
                 "name", fieldName,
                 "type", getSolrFieldType(turSEFieldType),
                 "stored", stored,
-                "multiValued", multiValued
-        );
+                "multiValued", multiValued);
 
-        Map<String, Object> root = Map.of(turSolrFieldAction.getSolrAction(), fieldDetails);
-        String json = new ObjectMapper().writeValueAsString(root);
-        try (HttpClient client = getHttpClient()) {
-            client.send(getHttpRequestSchemaApi(turSEInstance, coreName, json), HttpResponse.BodyHandlers.ofString());
-            if (isCreateCopyFieldByCore(turSEInstance, coreName, fieldName, turSEFieldType)) {
-                createCopyFieldByCore(turSEInstance, coreName, fieldName, multiValued);
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
+        executeSchemaAction(turSEInstance, coreName, turSolrFieldAction.getSolrAction(), fieldDetails);
+
+        if (isCreateCopyFieldByCore(turSEInstance, coreName, fieldName, turSEFieldType)) {
+            createCopyFieldByCore(turSEInstance, coreName, fieldName, multiValued);
+        }
+    }
+
+    private static void ensureCurrencyFieldTypeByCore(TurSEInstance turSEInstance,
+            String coreName, TurSEFieldType turSEFieldType) {
+        if (turSEFieldType != TurSEFieldType.CURRENCY) {
+            return;
+        }
+
+        Map<String, Object> currencyFieldTypeDetails = new LinkedHashMap<>();
+        currencyFieldTypeDetails.put("name", "currency");
+        currencyFieldTypeDetails.put("class", "solr.CurrencyFieldType");
+        currencyFieldTypeDetails.put("amountLongSuffix", "_l_ns");
+        currencyFieldTypeDetails.put("codeStrSuffix", "_s_ns");
+        currencyFieldTypeDetails.put("defaultCurrency", "USD");
+        currencyFieldTypeDetails.put("currencyConfig", "currency.xml");
+
+        executeSchemaAction(turSEInstance, coreName, "add-field-type", currencyFieldTypeDetails);
+    }
+
+    public static void deleteField(TurSEInstance turSEInstance,
+            String coreName, String fieldName, TurSEFieldType turSEFieldType) {
+        Map<String, Object> fieldDetails = Map.of("name", fieldName);
+
+        executeSchemaAction(turSEInstance, coreName, TurSolrFieldAction.DELETE.getSolrAction(), fieldDetails);
+
+        if (isDeleteCopyFieldByCore(turSEInstance, coreName, fieldName, turSEFieldType)) {
+            deleteCopyFieldByCore(turSEInstance, coreName, fieldName);
         }
     }
 
     public static boolean isCreateCopyFieldByCore(TurSEInstance turSEInstance, String coreName,
-                                                  String fieldName, TurSEFieldType turSEFieldType) {
+            String fieldName, TurSEFieldType turSEFieldType) {
         return turSEFieldType.equals(TurSEFieldType.TEXT)
                 && !fieldName.endsWith(STR_SUFFIX)
                 && !existsField(turSEInstance, coreName, fieldName.concat(STR_SUFFIX));
     }
 
+    public static boolean isDeleteCopyFieldByCore(TurSEInstance turSEInstance, String coreName,
+            String fieldName, TurSEFieldType turSEFieldType) {
+        return turSEFieldType.equals(TurSEFieldType.TEXT)
+                && !fieldName.endsWith(STR_SUFFIX)
+                && existsField(turSEInstance, coreName, fieldName.concat(STR_SUFFIX));
+    }
+
+    public static void deleteCopyFieldByCore(TurSEInstance turSEInstance,
+            String coreName, String fieldName) {
+        Map<String, Object> copyFieldDetails = createCopyFieldDetails(fieldName);
+        executeSchemaAction(turSEInstance, coreName, TurSolrFieldAction.DELETE_COPY.getSolrAction(), copyFieldDetails);
+    }
+
     public static void createCopyFieldByCore(TurSEInstance turSEInstance,
-                                             String coreName, String fieldName,
-                                             boolean multiValued) {
-        addOrUpdateField(TurSolrFieldAction.ADD, turSEInstance, coreName, fieldName.concat(STR_SUFFIX),
+            String coreName, String fieldName,
+            boolean multiValued) {
+        String stringFieldName = fieldName.concat(STR_SUFFIX);
+        addOrUpdateField(TurSolrFieldAction.ADD, turSEInstance, coreName, stringFieldName,
                 TurSEFieldType.STRING, true, multiValued);
+
+        Map<String, Object> copyFieldDetails = createCopyFieldDetails(fieldName);
+        executeSchemaAction(turSEInstance, coreName, TurSolrFieldAction.ADD_COPY.getSolrAction(), copyFieldDetails);
+    }
+
+    private static Map<String, Object> createCopyFieldDetails(String fieldName) {
         List<String> destinations = List.of(fieldName.concat(STR_SUFFIX));
-        Map<String, Object> copyFieldDetails = Map.of(
+        return Map.of(
                 "source", fieldName,
-                "dest", destinations
-        );
-        Map<String, Object> root = Map.of("add-copy-field", copyFieldDetails);
-
-        String json = new ObjectMapper().writeValueAsString(root);
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestSchemaApi(turSEInstance, coreName, json);
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        }
-
+                "dest", destinations);
     }
 
     private static HttpRequest getHttpRequestSchemaApi(TurSEInstance turSEInstance, String coreName,
-                                                       String publisher) {
+            String publisher) {
         return getHttpRequestBuilderJson()
                 .uri(getSchemaUri(turSEInstance, coreName))
                 .POST(BodyPublishers.ofString(publisher)).build();
@@ -205,6 +240,9 @@ public class TurSolrUtils {
             case DATE -> "pdate";
             case LONG -> "plong";
             case ARRAY -> "strings";
+            case FLOAT -> "pfloat";
+            case DOUBLE -> "pdouble";
+            case CURRENCY -> "currency";
         };
     }
 
@@ -223,63 +261,64 @@ public class TurSolrUtils {
         Map<String, String> coreDetails = Map.of(
                 "name", coreName,
                 "instanceDir", coreName,
-                "configSet", configSet
-        );
+                "configSet", configSet);
         List<Map<String, String>> createList = List.of(coreDetails);
         Map<String, Object> root = Map.of("create", createList);
         String json = new ObjectMapper().writeValueAsString(root);
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format("%s/api/cores", solrUrl)))
-                    .POST(BodyPublishers.ofString(json))
-                    .build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        }
+
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/cores", solrUrl)))
+                .POST(BodyPublishers.ofString(json))
+                .build();
+
+        executeRequest(request, "Failed to create core: " + coreName);
     }
 
     public static void createCollection(String solrUrl, String coreName, InputStream inputStream, int shards) {
-        try (HttpClient client = getHttpClient()) {
-            HttpRequest configSetRequest = HttpRequest.newBuilder()
-                    .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .uri(
-                            URI.create(String.format("%s/api/cluster/configs/%s", solrUrl, coreName)))
-                    .PUT(BodyPublishers.ofByteArray(inputStream.readAllBytes()))
-                    .build();
-            client.send(configSetRequest, HttpResponse.BodyHandlers.ofString());
-            Map<String, Object> root = Map.of(
-                    "name", coreName,
-                    "config", coreName,
-                    "numShards", shards
-            );
-            String json = new ObjectMapper().writeValueAsString(root);
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format("%s/api/collections", solrUrl)))
-                    .POST(BodyPublishers.ofString(json))
-                    .build();
-            client.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            uploadConfigSet(solrUrl, coreName, inputStream);
+            createCollectionFromConfig(solrUrl, coreName, shards);
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-            Thread.currentThread().interrupt();
+            log.error("Failed to create collection: {}", coreName, e);
         }
     }
 
+    private static void uploadConfigSet(String solrUrl, String coreName, InputStream inputStream) throws IOException {
+        HttpRequest configSetRequest = HttpRequest.newBuilder()
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                .uri(URI.create(String.format("%s/api/cluster/configs/%s", solrUrl, coreName)))
+                .PUT(BodyPublishers.ofByteArray(inputStream.readAllBytes()))
+                .build();
+
+        executeRequest(configSetRequest, "Failed to upload config set: " + coreName);
+    }
+
+    private static void createCollectionFromConfig(String solrUrl, String coreName, int shards) {
+        Map<String, Object> root = Map.of(
+                "name", coreName,
+                "config", coreName,
+                "numShards", shards);
+        String json = new ObjectMapper().writeValueAsString(root);
+
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/collections", solrUrl)))
+                .POST(BodyPublishers.ofString(json))
+                .build();
+
+        executeRequest(request, "Failed to create collection from config: " + coreName);
+    }
 
     public static String getValueFromQuery(String q) {
         return TurCommonsUtils.getKeyValueFromColon(q).map(KeyValue::getValue).orElse(q);
     }
 
     public static TurSEResult createTurSEResultFromDocument(SolrDocument document) {
-        TurSEResult turSEResult = TurSEResult.builder().build();
+        Map<String, Object> fields = new java.util.HashMap<>();
         document.getFieldNames()
-                .forEach(attribute -> turSEResult.getFields().put(attribute, document.getFieldValue(attribute)));
-        return turSEResult;
+                .forEach(attribute -> fields.put(attribute, document.getFieldValue(attribute)));
+        return TurSEResult.builder()
+                .fields(fields)
+                .build();
     }
 
     public static int firstRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
@@ -290,24 +329,75 @@ public class TurSolrUtils {
         return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
     }
 
+    public static List<TurSECoreInfo> listCores(TurSEInstance turSEInstance) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/cores", getSolrUrl(turSEInstance))))
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to list cores")
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(body -> {
+                    Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL)
+                            .build();
+                    DocumentContext jsonContext = JsonPath.parse(body, configuration);
+                    Object statusObj = jsonContext.read("$.status");
+                    if (statusObj instanceof Map<?, ?> statusMap) {
+                        return statusMap.keySet().stream()
+                                .map(Object::toString)
+                                .sorted()
+                                .map(name -> {
+                                    Number numDocsRaw = jsonContext.read("$.status." + name + ".index.numDocs");
+                                    long numDocs = numDocsRaw != null ? numDocsRaw.longValue() : 0L;
+                                    return new TurSECoreInfo(name, numDocs, Collections.emptyList());
+                                })
+                                .toList();
+                    }
+                    return Collections.<TurSECoreInfo>emptyList();
+                })
+                .orElse(Collections.emptyList());
+    }
+
     public static boolean coreExists(TurSEInstance turSEInstance, String core) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/cores/%s",
+                        getSolrUrl(turSEInstance), core)))
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to check core existence: " + core)
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(body -> parseCoreStatus(body, core))
+                .orElse(false);
+    }
+
+    private static boolean parseCoreStatus(String body, String core) {
+        Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL).build();
+        DocumentContext jsonContext = JsonPath.parse(body, configuration);
+        return jsonContext.read("$.status." + core + ".name") != null;
+    }
+
+    private static void executeSchemaAction(TurSEInstance turSEInstance, String coreName,
+            String action, Map<String, Object> details) {
+        Map<String, Object> root = Map.of(action, details);
+        String json = new ObjectMapper().writeValueAsString(root);
+        HttpRequest request = getHttpRequestSchemaApi(turSEInstance, coreName, json);
+        executeRequest(request, "Failed to execute schema action: " + action);
+    }
+
+    private static Optional<HttpResponse<String>> executeRequest(HttpRequest request, String errorMessage) {
         try (HttpClient client = getHttpClient()) {
-            HttpRequest request = getHttpRequestBuilderJson()
-                    .uri(URI.create(String.format("%s/api/cores/%s",
-                            getSolrUrl(turSEInstance), core)))
-                    .build();
-            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (httpResponse.statusCode() == 200) {
-                Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL).build();
-                DocumentContext jsonContext = JsonPath.parse(httpResponse.body(), configuration);
-                return jsonContext.read("$.status." + core + ".name") != null;
-            }
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return Optional.of(response);
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("{}: {}", errorMessage, e.getMessage(), e);
+            return Optional.empty();
         } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
+            log.error("{}: {}", errorMessage, e.getMessage(), e);
             Thread.currentThread().interrupt();
+            return Optional.empty();
         }
-        return false;
     }
 }

@@ -6,11 +6,6 @@ import {
 
 import { ROUTES } from "@/app/routes.const"
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -26,46 +21,40 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import type { TurUser } from "@/models/auth/user"
-import { MD5 } from "crypto-js"
 import React from "react"
 import { NavLink } from "react-router-dom"
+import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "./ui/gradient-avatar"
 
 export function NavUser({
   user
-}: {
+}: Readonly<{
   user: TurUser
-}) {
+}>) {
   const { isMobile } = useSidebar()
-  const handleClick = () => {
-    console.log('NavLink clicked!');
-    localStorage.removeItem('restInfo');
-    localStorage.removeItem('user');
+  const handleLogout = () => {
+    globalThis.location.href = ROUTES.LOGOUT;
   };
   const initials = React.useMemo(() => {
-
     const first = user.firstName || '';
     const last = user.lastName || '';
 
     if (!first && !last) return ' ';
 
     const fullName = `${first} ${last}`.trim();
-    const nameParts = fullName.split(' ');
+    const nameParts = fullName.split(' ').filter(Boolean);
 
-    return nameParts
-      .map((part) => part.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join('');
+    if (nameParts.length === 1) {
+      return nameParts[0].charAt(0).toUpperCase();
+    }
+
+    return (
+      nameParts[0].charAt(0).toUpperCase() +
+      (nameParts.at(-1)?.charAt(0).toUpperCase() ?? '')
+    );
   }, [user]);
 
-  const gravatarUrl = React.useMemo(() => {
-    if (!user || !user.email) return '';
+  const avatarSrc = user?.avatarUrl || '';
 
-
-    const cleanEmail = user.email.trim().toLowerCase();
-    const hash = MD5(cleanEmail).toString();
-
-    return `https://www.gravatar.com/avatar/${hash}?d=404`;
-  }, [user]);
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -75,10 +64,10 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={gravatarUrl} alt={user.username} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-              </Avatar>
+              <GradientAvatar className="h-8 w-8 rounded-lg">
+                {avatarSrc && <GradientAvatarImage src={avatarSrc} alt={user.username} />}
+                <GradientAvatarFallback className="rounded-lg">{initials}</GradientAvatarFallback>
+              </GradientAvatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.firstName} {user.lastName}</span>
                 <span className="text-muted-foreground truncate text-xs">
@@ -96,10 +85,10 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={gravatarUrl} alt={user.username} />
-                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-                </Avatar>
+                <GradientAvatar className="h-8 w-8 rounded-lg">
+                  {avatarSrc && <GradientAvatarImage src={avatarSrc} alt={user.username} />}
+                  <GradientAvatarFallback className="rounded-lg">{initials}</GradientAvatarFallback>
+                </GradientAvatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.firstName} {user.lastName}</span>
                   <span className="text-muted-foreground truncate text-xs">
@@ -110,17 +99,17 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
+              <NavLink to={ROUTES.USER_ACCOUNT} className="w-full">
+                <DropdownMenuItem>
+                  <IconUserCircle />
+                  Account
+                </DropdownMenuItem>
+              </NavLink>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <NavLink to={ROUTES.LOGOUT}
-                onClick={handleClick} className="flex items-center gap-1 w-full">
-                <IconLogout />
-                <span>Log out</span></NavLink>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <IconLogout />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -52,6 +52,7 @@
   <fieldType name="pdate" class="solr.DatePointField" docValues="true" />
   <fieldType name="pdates" class="solr.DatePointField" docValues="true" multiValued="true" />
   <fieldType name="pdouble" class="solr.DoublePointField" docValues="true" />
+  <fieldType name="currency" class="solr.CurrencyFieldType" amountLongSuffix="_l_ns" codeStrSuffix="_s_ns" defaultCurrency="USD" currencyConfig="currency.xml" />
   <fieldType name="pdoubles" class="solr.DoublePointField" docValues="true" multiValued="true" />
   <fieldType name="pfloat" class="solr.FloatPointField" docValues="true" />
   <fieldType name="pfloats" class="solr.FloatPointField" docValues="true" multiValued="true" />
@@ -274,22 +275,22 @@
     </analyzer>
   </fieldType>
   <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
-			<analyzer type="index">
-				<tokenizer class="solr.WhitespaceTokenizerFactory" />
-				<filter class="solr.LowerCaseFilterFactory" />
-				<filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_es.txt" ignoreCase="true" />
-				<filter class="solr.WordDelimiterFilterFactory" preserveOriginal="1" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
-				<filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="1" maxPosQuestion="0" />
-        <filter class="solr.SpanishLightStemFilterFactory" />
-			</analyzer>
-			<analyzer type="query">
-				<tokenizer class="solr.WhitespaceTokenizerFactory" />
-				<filter class="solr.SynonymGraphFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
-				<filter class="solr.LowerCaseFilterFactory" />
-				<filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_es.txt" ignoreCase="true" />
-				<filter class="solr.SpanishLightStemFilterFactory" />
-			</analyzer>
-	</fieldType>
+    <analyzer type="index">
+      <tokenizer class="solr.WhitespaceTokenizerFactory" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_es.txt" ignoreCase="true" />
+      <filter class="solr.WordDelimiterFilterFactory" preserveOriginal="1" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0" />
+      <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true" maxPosAsterisk="1" maxPosQuestion="0" />
+      <filter class="solr.SpanishLightStemFilterFactory" />
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.WhitespaceTokenizerFactory" />
+      <filter class="solr.SynonymGraphFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt" />
+      <filter class="solr.LowerCaseFilterFactory" />
+      <filter class="solr.StopFilterFactory" format="snowball" words="lang/stopwords_es.txt" ignoreCase="true" />
+      <filter class="solr.SpanishLightStemFilterFactory" />
+    </analyzer>
+  </fieldType>
   <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
     <analyzer type="index">
       <tokenizer class="solr.StandardTokenizerFactory" />

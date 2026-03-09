@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.se.TurSEVendorDto;
+import com.viglet.turing.persistence.mapper.se.TurSEVendorMapper;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEVendorRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -44,34 +46,38 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Search Engine Vendor", description = "Search Engine Vendor API")
 public class TurSEVendorAPI {
 	private final TurSEVendorRepository turSEVendorRepository;
+	private final TurSEVendorMapper turSEVendorMapper;
 
-	public TurSEVendorAPI(TurSEVendorRepository turSEVendorRepository) {
+	public TurSEVendorAPI(TurSEVendorRepository turSEVendorRepository, TurSEVendorMapper turSEVendorMapper) {
 		this.turSEVendorRepository = turSEVendorRepository;
+		this.turSEVendorMapper = turSEVendorMapper;
 	}
 
 	@Operation(summary = "Search Engine Vendor List")
 	@GetMapping
-	public List<TurSEVendor> turSEVendorList() {
-		return this.turSEVendorRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
+	public List<TurSEVendorDto> turSEVendorList() {
+		return turSEVendorMapper
+				.toDtoList(this.turSEVendorRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
 	}
 
 	@Operation(summary = "Show a Search Engine Vendor")
 	@GetMapping("/{id}")
-	public TurSEVendor turSEVendorGet(@PathVariable String id) {
-		return this.turSEVendorRepository.findById(id).orElse(new TurSEVendor());
+	public TurSEVendorDto turSEVendorGet(@PathVariable String id) {
+		return turSEVendorMapper.toDto(this.turSEVendorRepository.findById(id).orElse(new TurSEVendor()));
 	}
 
 	@Operation(summary = "Update a Search Engine Vendor")
 	@PutMapping("/{id}")
-	public TurSEVendor turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendor turSEVendor) {
+	public TurSEVendorDto turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendorDto turSEVendorDto) {
+		TurSEVendor turSEVendor = turSEVendorMapper.toEntity(turSEVendorDto);
 		return this.turSEVendorRepository.findById(id).map(turSEVendorEdit -> {
 			turSEVendorEdit.setDescription(turSEVendor.getDescription());
 			turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
 			turSEVendorEdit.setTitle(turSEVendor.getTitle());
 			turSEVendorEdit.setWebsite(turSEVendor.getWebsite());
 			this.turSEVendorRepository.save(turSEVendorEdit);
-			return turSEVendorEdit;
-		}).orElse(new TurSEVendor());
+			return turSEVendorMapper.toDto(turSEVendorEdit);
+		}).orElse(new TurSEVendorDto());
 
 	}
 
@@ -85,9 +91,10 @@ public class TurSEVendorAPI {
 
 	@Operation(summary = "Create a Search Engine Vendor")
 	@PostMapping
-	public TurSEVendor turSEVendorAdd(@RequestBody TurSEVendor turSEVendor) {
+	public TurSEVendorDto turSEVendorAdd(@RequestBody TurSEVendorDto turSEVendorDto) {
+		TurSEVendor turSEVendor = turSEVendorMapper.toEntity(turSEVendorDto);
 		this.turSEVendorRepository.save(turSEVendor);
-		return turSEVendor;
+		return turSEVendorMapper.toDto(turSEVendor);
 
 	}
 }

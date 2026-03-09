@@ -81,6 +81,8 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.result.TurSEGenericResults;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.facet.TurSNFacetDefinition;
+import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
 import com.viglet.turing.sn.facet.TurSNFacetTypeContext;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolrInstance;
@@ -112,6 +114,7 @@ public class TurSNSearchProcess {
         private final boolean metricsEnabled;
         private final TurSearchEnginePluginFactory searchEnginePluginFactory;
         private final TurSolrQueryBuilder turSolrQueryBuilder;
+        private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory;
 
         public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
@@ -122,7 +125,8 @@ public class TurSNSearchProcess {
                         TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository,
                         @Value("${turing.search.metrics.enabled:false}") boolean metricsEnabled,
                         TurSearchEnginePluginFactory searchEnginePluginFactory,
-                        TurSolrQueryBuilder turSolrQueryBuilder) {
+                        TurSolrQueryBuilder turSolrQueryBuilder,
+                        TurSNFacetDefinitionFactory turSNFacetDefinitionFactory) {
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteRepository = turSNSiteRepository;
@@ -133,6 +137,7 @@ public class TurSNSearchProcess {
                 this.metricsEnabled = metricsEnabled;
                 this.searchEnginePluginFactory = searchEnginePluginFactory;
                 this.turSolrQueryBuilder = turSolrQueryBuilder;
+                this.turSNFacetDefinitionFactory = turSNFacetDefinitionFactory;
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
@@ -287,18 +292,20 @@ public class TurSNSearchProcess {
                         TurSolrInstance turSolrInstance, TurSEResults turSEResults) {
                 return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
                         populateMetrics(turSNSite, context, turSEResults.getNumFound());
-                        List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList = turSNSiteFieldExtRepository
-                                        .findByTurSNSiteAndFacetAndEnabled(
-                                                        turSNSite, 1, 1)
-                                        .stream().map(turSNSiteFieldExt -> {
-                                                TurSNSiteFieldExtDto turSNSiteFieldExtDto = new TurSNSiteFieldExtDto(
-                                                                turSNSiteFieldExt);
-                                                turSNSiteFieldExtDto
-                                                                .setFacetLocales(
-                                                                                getFacetLocales(context,
-                                                                                                turSNSiteFieldExt));
-                                                return turSNSiteFieldExtDto;
-                                        }).toList();
+                        List<TurSNFacetDefinition> facetDefinitions = turSNSiteFieldExtRepository
+                                        .findByTurSNSiteAndEnabled(turSNSite, 1)
+                                        .stream()
+                                        .filter(turSNSiteFieldExt -> turSNSiteFieldExt.getFacet() == 1
+                                                        || !CollectionUtils.isEmpty(turSNSiteFieldExt
+                                                                        .getCustomFacets()))
+                                        .flatMap(turSNSiteFieldExt -> getFacetDefinitions(
+                                                        context, turSNSiteFieldExt)
+                                                        .stream())
+                                        .toList();
+
+                        List<TurSNSiteFieldExtDto> turSNSiteFieldExtDtoList = facetDefinitions.stream()
+                                        .map(TurSNFacetDefinition::toFacetFieldExtDto)
+                                        .toList();
                         Map<String, TurSNSiteFieldExtDto> facetMap = setFacetMap(turSNSiteFieldExtDtoList);
                         if (turSolrQueryBuilder.hasGroup(context.getTurSEParameters())) {
                                 return getSearchBeanForGroup(context, turSolrInstance, turSEResults,
@@ -319,6 +326,13 @@ public class TurSNSearchProcess {
                                 .stream().findFirst()
                                 .orElse(TurSNSiteFieldExtFacet.builder().locale(context.getLocale())
                                                 .label(turSNSiteFieldExt.getFacetName()).build())));
+        }
+
+        private List<TurSNFacetDefinition> getFacetDefinitions(TurSNSiteSearchContext context,
+                        TurSNSiteFieldExt turSNSiteFieldExt) {
+                return turSNFacetDefinitionFactory.fromField(turSNSiteFieldExt,
+                                context.getLocale(),
+                                getFacetLocales(context, turSNSiteFieldExt));
         }
 
         private TurSNSiteSearchBean getSearchBeanForResults(TurSNSiteSearchContext context,

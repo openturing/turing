@@ -1,3 +1,11 @@
+## 2026.1
+
+#### BREAKING CHANGES
+* GraphQL `siteSearch` now exposes `SearchDocument.fields` as `JSON` scalar, replacing the fixed `SearchDocumentFields` object.
+
+#### IMPROVEMENTS
+* GraphQL `siteSearch` dynamic fields are now normalized from persisted site fields (`TurSNSiteFieldExt`), including disabled fields with `null` when absent.
+
 ## 0.3.7
 
 #### NEW FEATURES

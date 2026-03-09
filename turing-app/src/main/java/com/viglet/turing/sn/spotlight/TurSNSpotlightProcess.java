@@ -21,7 +21,6 @@
 package com.viglet.turing.sn.spotlight;
 
 import java.lang.invoke.MethodHandles;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,9 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.api.sn.queue.TurSpotlightContent;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
@@ -60,6 +55,9 @@ import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrUtils;
+
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * @author Alexandre Oliveira
@@ -140,66 +138,83 @@ public class TurSNSpotlightProcess {
 		String id = (String) turSNJobItem.getAttributes().get(TurSNFieldName.ID);
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite,
 				turSNJobItem.getLocale());
+
 		if (turSNSiteLocale == null) {
 			logger.warn("Spotlight ID '{}' of '{}' SN Site was not processed, because {} locale did not found.",
-					turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
-					turSNJobItem.getLocale());
+					id, turSNSite.getName(), turSNJobItem.getLocale());
 			return false;
-		} else {
-			Set<TurSNSiteSpotlight> turSNSiteSpotlights = turSNSiteSpotlightRepository
-					.findByUnmanagedIdAndTurSNSiteAndLanguage(id, turSNSite, turSNSiteLocale.getLanguage());
-			TurSNSiteSpotlight turSNSiteSpotlight = new TurSNSiteSpotlight();
-			if (!turSNSiteSpotlights.isEmpty()) {
-				turSNSiteSpotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
-				if (turSNSiteSpotlights.size() > 1) {
-					turSNSiteSpotlightRepository.deleteAllInBatch(turSNSiteSpotlights);
-				} else {
-					turSNSiteSpotlight = turSNSiteSpotlights.iterator().next();
-				}
-			}
-			try {
-				String jsonContent = (String) turSNJobItem.getAttributes().get(CONTENT_ATTRIBUTE);
-				String name = (String) turSNJobItem.getAttributes().get(NAME_ATTRIBUTE);
-				String provider = (String) turSNJobItem.getAttributes().get(TurSNFieldName.SOURCE_APPS);
-				String[] terms = ((String) turSNJobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(",");
-				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-				LocalDateTime date = LocalDateTime.parse(
-						(String) turSNJobItem.getAttributes().get(TurSNFieldName.MODIFICATION_DATE),
-						DateTimeFormatter.ISO_DATE_TIME);
-				List<TurSpotlightContent> turSpotlightContents = new ObjectMapper().readValue(jsonContent,
-						new TypeReference<>() {
-						});
+		}
 
-				turSNSiteSpotlight.setUnmanagedId(id);
-				turSNSiteSpotlight.setDescription(name);
-				turSNSiteSpotlight.setName(name);
-				turSNSiteSpotlight.setModificationDate(date);
-				turSNSiteSpotlight.setTurSNSite(turSNSite);
-				turSNSiteSpotlight.setLanguage(turSNSiteLocale.getLanguage());
-				turSNSiteSpotlight.setManaged(0);
-				turSNSiteSpotlight.setProvider(provider);
-				turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
+		Set<TurSNSiteSpotlight> existingSpotlights = turSNSiteSpotlightRepository
+				.findByUnmanagedIdAndTurSNSiteAndLanguage(id, turSNSite, turSNSiteLocale.getLanguage());
+		TurSNSiteSpotlight turSNSiteSpotlight = handleExistingSpotlights(existingSpotlights);
 
-				for (String term : terms) {
-					TurSNSiteSpotlightTerm turSNSiteSpotlightTerm = new TurSNSiteSpotlightTerm();
-					turSNSiteSpotlightTerm.setName(term.trim());
-					turSNSiteSpotlightTerm.setTurSNSiteSpotlight(turSNSiteSpotlight);
-					turSNSiteSpotlightTermRepository.save(turSNSiteSpotlightTerm);
-				}
+		try {
+			populateSpotlightFromJobItem(turSNSiteSpotlight, turSNJobItem, turSNSite, turSNSiteLocale);
+			turSNSiteSpotlightRepository.save(turSNSiteSpotlight);
 
-				for (TurSpotlightContent turSpotlightContent : turSpotlightContents) {
-					final TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = getTurSNSiteSpotlightDocument(
-							turSpotlightContent, turSNSiteSpotlight);
-					turSNSiteSpotlightDocumentRepository.save(turSNSiteSpotlightDocument);
-				}
-				logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
-						turSNJobItem.getAttributes().get(TurSNFieldName.ID), turSNSite.getName(),
-						turSNJobItem.getLocale());
-			} catch (JsonProcessingException e) {
-				logger.error(e.getMessage(), e);
-			}
+			saveSpotlightTerms(turSNJobItem, turSNSiteSpotlight);
+			saveSpotlightDocuments(turSNJobItem, turSNSiteSpotlight);
+
+			logger.warn("Spotlight ID '{}' of '{}' SN Site ({}) was created.",
+					id, turSNSite.getName(), turSNJobItem.getLocale());
 			return true;
+		} catch (Exception e) {
+			logger.error("Error creating unmanaged spotlight: {}", e.getMessage(), e);
+			return false;
+		}
+	}
+
+	private TurSNSiteSpotlight handleExistingSpotlights(Set<TurSNSiteSpotlight> spotlights) {
+		TurSNSiteSpotlight spotlight = new TurSNSiteSpotlight();
+		if (!spotlights.isEmpty()) {
+			spotlights.forEach(this::ifExistsDeleteSpotlightDependencies);
+			if (spotlights.size() > 1) {
+				turSNSiteSpotlightRepository.deleteAllInBatch(spotlights);
+			} else {
+				spotlight = spotlights.iterator().next();
+			}
+		}
+		return spotlight;
+	}
+
+	private void populateSpotlightFromJobItem(TurSNSiteSpotlight spotlight, TurSNJobItem jobItem, TurSNSite site,
+			TurSNSiteLocale locale) {
+		String id = (String) jobItem.getAttributes().get(TurSNFieldName.ID);
+		String name = (String) jobItem.getAttributes().get(NAME_ATTRIBUTE);
+		String provider = (String) jobItem.getAttributes().get(TurSNFieldName.SOURCE_APPS);
+		LocalDateTime date = LocalDateTime.parse(
+				(String) jobItem.getAttributes().get(TurSNFieldName.MODIFICATION_DATE),
+				DateTimeFormatter.ISO_DATE_TIME);
+
+		spotlight.setUnmanagedId(id);
+		spotlight.setDescription(name);
+		spotlight.setName(name);
+		spotlight.setModificationDate(date);
+		spotlight.setTurSNSite(site);
+		spotlight.setLanguage(locale.getLanguage());
+		spotlight.setManaged(0);
+		spotlight.setProvider(provider);
+	}
+
+	private void saveSpotlightTerms(TurSNJobItem jobItem, TurSNSiteSpotlight spotlight) {
+		String[] terms = ((String) jobItem.getAttributes().get(TERMS_ATTRIBUTE)).split(",");
+		for (String term : terms) {
+			TurSNSiteSpotlightTerm spotlightTerm = new TurSNSiteSpotlightTerm();
+			spotlightTerm.setName(term.trim());
+			spotlightTerm.setTurSNSiteSpotlight(spotlight);
+			turSNSiteSpotlightTermRepository.save(spotlightTerm);
+		}
+	}
+
+	private void saveSpotlightDocuments(TurSNJobItem jobItem, TurSNSiteSpotlight spotlight) {
+		String jsonContent = (String) jobItem.getAttributes().get(CONTENT_ATTRIBUTE);
+		List<TurSpotlightContent> contents = JsonMapper.builder().build()
+				.readValue(jsonContent, new TypeReference<List<TurSpotlightContent>>() {
+				});
+		for (TurSpotlightContent content : contents) {
+			TurSNSiteSpotlightDocument document = getTurSNSiteSpotlightDocument(content, spotlight);
+			turSNSiteSpotlightDocumentRepository.save(document);
 		}
 	}
 

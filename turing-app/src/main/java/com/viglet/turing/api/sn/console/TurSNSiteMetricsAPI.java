@@ -20,9 +20,15 @@
  */
 package com.viglet.turing.api.sn.console;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteMetricsTopTermsBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 
@@ -55,6 +62,40 @@ public class TurSNSiteMetricsAPI {
 			TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
+	}
+
+	@GetMapping("live")
+	public List<Map<String, Object>> getLiveMetrics(@PathVariable String snSiteId) {
+		Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		Instant sixtySecondsAgo = now.minusSeconds(60);
+
+		// Busca os dados reais do modelo TurSNSiteMetricAccess
+		List<TurSNSiteMetricAccess> rawData = turSNSiteMetricAccessRepository
+				.findLastMinuteMetrics(snSiteId, sixtySecondsAgo);
+
+		// 1. Criamos os baldes de 60 segundos
+		Map<Long, Long> buckets = new LinkedHashMap<>();
+		for (int i = 0; i < 60; i++) {
+			buckets.put(sixtySecondsAgo.plusSeconds(i).getEpochSecond(), 0L);
+		}
+
+		// 2. Preenchemos com os acessos reais
+		rawData.forEach(m -> {
+			long second = m.getAccessDate().truncatedTo(ChronoUnit.SECONDS).getEpochSecond();
+			buckets.computeIfPresent(second, (k, v) -> v + 1);
+		});
+
+		// 3. Conversão segura para evitar o erro de Type Mismatch
+		return buckets.entrySet().stream()
+				.sorted(Map.Entry.comparingByKey())
+				.map(e -> {
+					Map<String, Object> item = new HashMap<>();
+					item.put("time", e.getKey()); // Epoch Second
+					item.put("displayTime", Instant.ofEpochSecond(e.getKey()).toString().substring(11, 19));
+					item.put("accesses", e.getValue());
+					return item;
+				})
+				.toList();
 	}
 
 	@Operation(summary = "Semantic Navigation Site Metrics Top Terms")
@@ -87,11 +128,12 @@ public class TurSNSiteMetricsAPI {
 	private TurSNSiteMetricsTopTermsBean getTopTermsReport(int rows, Optional<TurSNSite> turSNSite, Calendar cal,
 			Calendar previousBegin, Calendar previousEnd) {
 		return turSNSite.map(snSite -> new TurSNSiteMetricsTopTermsBean(
-				this.turSNSiteMetricAccessRepository.topTermsBetweenDates(snSite, cal.getTime(),
-						new Date(), PageRequest.of(0, rows)),
-				this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, cal.getTime(), new Date()),
-				this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, previousBegin.getTime(),
-						previousEnd.getTime())))
+				this.turSNSiteMetricAccessRepository.topTermsBetweenDates(snSite, cal.getTime().toInstant(),
+						new Date().toInstant(), PageRequest.of(0, rows)),
+				this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, cal.getTime().toInstant(),
+						new Date().toInstant()),
+				this.turSNSiteMetricAccessRepository.countTermsByPeriod(snSite, previousBegin.getTime().toInstant(),
+						previousEnd.getTime().toInstant())))
 				.orElseGet(TurSNSiteMetricsTopTermsBean::new);
 	}
 

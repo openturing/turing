@@ -4,10 +4,16 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
-import jakarta.persistence.*;
+
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 
 @Setter
 @Getter
@@ -18,18 +24,19 @@ public class TurPrivilege implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @UuidGenerator
+    @TurAssignableUuidGenerator
     @Column(updatable = false, nullable = false)
     private String id;
 
     private String name;
 
     @ManyToMany(mappedBy = "turPrivileges")
-    private Collection<TurRole> turRoles  = new HashSet<>();
+    private Collection<TurRole> turRoles = new HashSet<>();
 
     public TurPrivilege() {
         super();
     }
+
     public TurPrivilege(String name) {
         super();
         this.name = name;
@@ -53,7 +60,8 @@ public class TurPrivilege implements Serializable {
         TurPrivilege other = (TurPrivilege) obj;
         if (getName() == null) {
             return other.getName() == null;
-        } else return getName().equals(other.getName());
+        } else
+            return getName().equals(other.getName());
     }
 
     @Override

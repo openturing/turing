@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { TurSECoreInfo } from "@/models/se/se-core-info.model.ts";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 
 export class TurSEInstanceService {
@@ -28,5 +29,15 @@ export class TurSEInstanceService {
       `/se/${turSEInstance.id.toString()}`
     );
     return  response.status == 200;
+  }
+  async getCores(id: string): Promise<TurSECoreInfo[]> {
+    const response = await axios.get<TurSECoreInfo[]>(`/se/${id}/cores`);
+    return response.data;
+  }
+  async deleteCore(id: string, core: string): Promise<void> {
+    await axios.delete(`/se/${id}/cores/${core}`);
+  }
+  async clearCore(id: string, core: string): Promise<void> {
+    await axios.delete(`/se/${id}/cores/${core}/documents`);
   }
 }

@@ -18,10 +18,12 @@
 package com.viglet.turing.client.sn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -272,5 +274,25 @@ class TurMultiValueTest {
 
         assertThat(multiValueDouble).containsExactly("3.14159");
         assertThat(multiValueLong).containsExactly("123456789");
+    }
+
+    @Test
+    void testCollectionFactoriesAndNullCollections() {
+        Date testDate = new Date(1609459200000L);
+
+        assertThat(TurMultiValue.fromDateCollection(List.of(testDate), true)).hasSize(1);
+        assertThat(TurMultiValue.fromBooleanCollection(List.of(Boolean.TRUE, Boolean.FALSE), true))
+                .containsExactly("true", "false");
+        assertThat(TurMultiValue.fromIntegerCollection(List.of(1, 2), true)).containsExactly("1", "2");
+        assertThat(TurMultiValue.fromDoubleCollection(List.of(1.5, 2.5), true)).containsExactly("1.5", "2.5");
+        assertThat(TurMultiValue.fromFloatCollection(List.of(1.25f, 2.25f), true)).containsExactly("1.25", "2.25");
+        assertThat(TurMultiValue.fromLongCollection(List.of(10L, 20L), true)).containsExactly("10", "20");
+
+        assertThat(TurMultiValue.fromDateCollection(null, true)).isEmpty();
+        assertThat(TurMultiValue.fromBooleanCollection(null, true)).isEmpty();
+        assertThat(TurMultiValue.fromIntegerCollection(null, true)).isEmpty();
+        assertThat(TurMultiValue.fromDoubleCollection(null, true)).isEmpty();
+        assertThat(TurMultiValue.fromFloatCollection(null, true)).isEmpty();
+        assertThat(TurMultiValue.fromLongCollection(null, true)).isEmpty();
     }
 }

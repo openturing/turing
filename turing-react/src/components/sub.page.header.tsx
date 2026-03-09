@@ -1,44 +1,71 @@
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
-import { NavLink } from "react-router-dom";
 import React from "react";
+import { NavLink } from "react-router-dom";
+import { DialogDelete } from "./dialog.delete";
+import { GradientButton } from "./ui/gradient-button";
+import { Separator } from "./ui/separator";
+import { SidebarTrigger } from "./ui/sidebar";
 
 interface Props {
   icon: React.ElementType
-  title: string;
+  feature: string;
+  name: string;
   description: string;
   urlNew?: string;
-  urlBase?:string;
+  urlBase?: string;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
-export const SubPageHeader: React.FC<Props> = ({ icon: Icon, title, description, urlNew, urlBase }) => {
+export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, description, urlNew, urlBase, onDelete, open, setOpen }) => {
   return (
-    <header className="mb-5 h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="w-full flex items-center gap-1 pr-4 lg:gap-2 lg:pr-6">
-        {urlBase !== undefined ? (
-          <>
-            {Icon && <Icon />}
-            <NavLink to={urlBase}>
-              <h1 className="text-base font-medium"> {title}</h1>
+    <header className="mb-5">
+      <div className="flex w-full items-start gap-3 px-4 lg:px-6">
+        <div className="flex items-center gap-1 pt-1">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mx-2 data-[orientation=vertical]:h-4"
+          />
+        </div>
+        <div className="min-w-0 flex-1 pt-1">
+          {urlBase ? (
+            <NavLink
+              to={urlBase}
+              className="flex flex-wrap items-center gap-x-2 gap-y-1"
+            >
+              <span className="flex items-center gap-2">
+                {Icon && <Icon className="size-6!" />}
+                <h1 className="text-base font-semibold leading-none text-foreground">{feature}</h1>
+              </span>
+              <span className="translate-y-0.5 text-sm text-muted-foreground leading-relaxed">
+                {description}
+              </span>
             </NavLink>
-          </>
-        ) :
-          (<> 
-          {Icon && <Icon />}
-            <h1 className="text-base font-medium"> {title}</h1>
-            
-          </>)
-        }
-        <div className="ml-auto flex items-center gap-2">
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="flex items-center gap-2">
+                {Icon && <Icon className="size-6!" />}
+                <h1 className="text-base font-semibold leading-none text-foreground">{feature}</h1>
+                <span className="text-muted-foreground leading-none"> {description}
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           {urlNew !== undefined && (
-            <Button>
-              {Icon && <Icon />}
-              <NavLink to={urlNew}>New {title}</NavLink>
-            </Button>
+            <GradientButton asChild size={"sm"}>
+              <NavLink to={urlNew} className="flex items-center gap-2">
+                {Icon && <Icon className="size-6!" />} New {feature}
+              </NavLink>
+            </GradientButton>
+          )}
+          {open !== undefined && onDelete !== undefined && setOpen !== undefined && (
+            <DialogDelete feature={feature} name={name} onDelete={onDelete} open={open} setOpen={setOpen} />
           )}
         </div>
       </div>
-       <div className="w-full text-muted-foreground text-sm mt-1">{description}</div>
-       <Separator className="mt-2" />
+      <Separator className="mt-3" />
     </header>
   )
 }

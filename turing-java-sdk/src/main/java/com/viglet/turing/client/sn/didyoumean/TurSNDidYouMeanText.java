@@ -34,8 +34,10 @@ public class TurSNDidYouMeanText {
 	
 	public TurSNDidYouMeanText(TurSNSiteSpellCheckText turSNSiteSpellCheckText) {
 		super();
-		this.text = turSNSiteSpellCheckText.getText();
-		this.link = turSNSiteSpellCheckText.getLink();
+		if (turSNSiteSpellCheckText != null) {
+			this.text = turSNSiteSpellCheckText.getText();
+			this.link = turSNSiteSpellCheckText.getLink();
+		}
 	}
 
 	public String getText() {

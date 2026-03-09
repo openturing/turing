@@ -1,14 +1,16 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Outlet } from "react-router-dom"
+} from "@/components/ui/sidebar";
+import { UserProvider } from "@/contexts/user.context";
 import React from "react";
+import { Outlet } from "react-router-dom";
 
 export default function ConsoleRootPage() {
   return (
-    <SidebarProvider
+    <UserProvider>
+    <SidebarProvider defaultOpen={false}
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -19,8 +21,9 @@ export default function ConsoleRootPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-         <Outlet />
+        <Outlet />
       </SidebarInset>
     </SidebarProvider>
+    </UserProvider>
   )
 }

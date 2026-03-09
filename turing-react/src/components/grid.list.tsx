@@ -1,14 +1,17 @@
 import {
     flexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     getPaginationRowModel,
+    getSortedRowModel,
     useReactTable,
     type ColumnDef,
+    type ColumnFiltersState,
+    type SortingState,
+    type VisibilityState,
 } from "@tanstack/react-table";
-import { Pencil } from "lucide-react";
 import { useState, type PropsWithChildren } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
     Select,
@@ -26,14 +29,14 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import type { TurGridItem } from "@/models/ui/grid-item";
-import { NavLink } from "react-router-dom";
+import React from "react";
+import { GradientButton } from "./ui/gradient-button";
+import { Input } from "./ui/input";
 
 interface Props {
     gridItemList: TurGridItem[];
 }
 
-
-// 3. Definição das Colunas
 export const columns: ColumnDef<TurGridItem>[] = [
     {
         accessorKey: "name",
@@ -47,14 +50,14 @@ export const columns: ColumnDef<TurGridItem>[] = [
     },
     {
         accessorKey: "url",
-        header: "Actions",
+        header: () => <div className="text-center">Actions</div>,
         cell: ({ row }) => {
             return (
-                // Ícone de lápis azul estilo Google
-                <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8">
-                    <NavLink to={row.getValue("url")}><Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit</span></NavLink>
-                </Button>
+                <div className="text-center">
+                    <GradientButton variant="outline" to={row.getValue("url")}>
+                        Open
+                    </GradientButton>
+                </div>
             );
         },
     },
@@ -66,22 +69,53 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
         pageIndex: 0, // initial page index
         pageSize: 10, // default page size
     });
-
+    const [sorting, setSorting] = React.useState<SortingState>([])
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+        []
+    )
+    const [columnVisibility, setColumnVisibility] =
+        React.useState<VisibilityState>({})
+    const [rowSelection, setRowSelection] = React.useState({})
+    const [globalFilter, setGlobalFilter] = useState("")
     const table = useReactTable({
         data: gridItemList,
         columns,
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        onPaginationChange: setPagination,
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
         state: {
+            globalFilter,
             pagination,
+            sorting,
+            columnFilters,
+            columnVisibility,
+            rowSelection,
         },
+        onGlobalFilterChange: setGlobalFilter,
+        getColumnCanGlobalFilter: (column) =>
+            column.id === "name" || column.id === "description",
+        onPaginationChange: setPagination
     });
 
     return (
-        <div className="px-4">
+        <div className="px-6">
             <Card>
                 <div className="rounded-md">
+                    <div className="flex items-center py-4 px-4">
+                        <Input
+                            placeholder="Filter by name or description..."
+                            value={globalFilter ?? ""}
+                            onChange={(event) => {
+                                setGlobalFilter(event.target.value);
+                            }}
+                            className="max-w-sm"
+                        />
+                    </div>
                     <Table>
                         <TableHeader >
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -152,7 +186,7 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
                         {table.getPageCount()}
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Button
+                        <GradientButton
                             variant="outline"
                             size="sm"
                             onClick={() => table.previousPage()}
@@ -160,8 +194,8 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
                             className="h-8 w-8 p-0"
                         >
                             <span>&lt;</span>
-                        </Button>
-                        <Button
+                        </GradientButton>
+                        <GradientButton
                             variant="outline"
                             size="sm"
                             onClick={() => table.nextPage()}
@@ -169,7 +203,7 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
                             className="h-8 w-8 p-0"
                         >
                             <span>&gt;</span>
-                        </Button>
+                        </GradientButton>
                     </div>
                 </div>
             </Card>

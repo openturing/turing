@@ -173,15 +173,8 @@ class TurSNLocaleTest {
         TurSNLocale locale = new TurSNLocale();
         locale.setLocale("de_DE");
         locale.setLink("https://example.de/suchen");
-
         String result = locale.toString();
-
-        // Verify the exact format: "locale: link"
-        assertThat(result)
-                .matches("de_DE: https://example\\.de/suchen")
-                .contains(": ")
-                .startsWith("de_DE")
-                .endsWith("https://example.de/suchen");
+        assertThat(result).isEqualTo("de_DE: https://example.de/suchen");
     }
 
     @Test

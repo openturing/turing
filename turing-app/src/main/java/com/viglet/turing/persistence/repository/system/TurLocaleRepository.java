@@ -40,6 +40,7 @@ public interface TurLocaleRepository extends JpaRepository<TurLocale, Locale> {
 	String PT_BR = "pt_BR";
 	String CA = "ca";
 
+	@Override
 	@Cacheable("turLocalefindAll")
 	@NotNull
 	List<TurLocale> findAll();

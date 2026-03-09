@@ -31,11 +31,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.viglet.turing.persistence.model.system.TurConfigVar;
 
 public interface TurConfigVarRepository extends JpaRepository<TurConfigVar, String> {
-
+	@Override
 	@Cacheable("turConfigVarfindAll")
 	@NotNull
 	List<TurConfigVar> findAll();
 
+	@Override
 	@Cacheable("turConfigVarfindById")
 	@NotNull
 	Optional<TurConfigVar> findById(@NotNull String id);
@@ -45,6 +46,7 @@ public interface TurConfigVarRepository extends JpaRepository<TurConfigVar, Stri
 	@Override
 	<S extends TurConfigVar> S save(@NotNull S entity);
 
+	@Override
 	@CacheEvict(value = { "turConfigVarfindAll", "turConfigVarfindById" }, allEntries = true)
 	void delete(@NotNull TurConfigVar turConfigVar);
 }

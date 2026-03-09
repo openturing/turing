@@ -3,6 +3,8 @@ package com.viglet.turing.commons.logging;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +27,24 @@ public class TurMongoDBAppender extends TurMongoDBAppenderBase {
 
     public static final int MAX_LENGTH_PACKAGE_NAME = 40;
     private static final Abbreviator ABBREVIATOR = new TargetLengthBasedClassNameAbbreviator(1);
+    private static String cachedHostName;
+
+    // Move Mapper to a static constant to avoid re-initializing it every log line
+    private static final JsonMapper MAPPER = JsonMapper.builder()
+            .addModule(new JodaModule())
+            .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
+            .build();
+
+    // Use an Executor to handle DB writes asynchronously
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    static {
+        try {
+            cachedHostName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            cachedHostName = "unknown";
+        }
+    }
 
     @Override
     protected void append(ILoggingEvent event) {
@@ -32,27 +52,31 @@ public class TurMongoDBAppender extends TurMongoDBAppenderBase {
             return;
         }
 
-        TurLoggingGeneral turLoggingGeneral = TurLoggingGeneral.builder()
+        // 1. Capture the log data immediately while still on the calling thread
+        TurLoggingGeneral logEntry = TurLoggingGeneral.builder()
                 .level(event.getLevel().toString())
                 .logger(abbreviatePackage(event.getLoggerName()))
                 .message(event.getFormattedMessage())
                 .date(new Date(event.getTimeStamp()))
                 .stackTrace(getStackTrace(event))
+                .clusterNode(cachedHostName)
                 .build();
 
-        try {
-            turLoggingGeneral.setClusterNode(InetAddress.getLocalHost().getHostName());
-        } catch (UnknownHostException e) {
-            // Use um fallback ou log de console aqui, evite recursão se o log falhar
-            System.err.println(e.getMessage());
-        }
-        JsonMapper mapper = JsonMapper.builder()
-                .addModule(new JodaModule())
-                .configure(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS, true)
-                .build();
-        String json = mapper.writeValueAsString(turLoggingGeneral);
-        collection.insertOne(Document.parse(json));
+        // 2. Offload the expensive JSON parsing and DB IO to the executor
+        executor.submit(() -> {
+            try {
+                String json = MAPPER.writeValueAsString(logEntry);
+                collection.insertOne(Document.parse(json));
+            } catch (Exception e) {
+                log.info("Failed to log to MongoDB: " + e.getMessage());
+            }
+        });
+    }
 
+    @Override
+    public void stop() {
+        executor.shutdown();
+        super.stop();
     }
 
     private static @NotNull String getStackTrace(ILoggingEvent event) {
@@ -73,4 +97,5 @@ public class TurMongoDBAppender extends TurMongoDBAppenderBase {
             return packageName;
         return ABBREVIATOR.abbreviate(packageName);
     }
+
 }

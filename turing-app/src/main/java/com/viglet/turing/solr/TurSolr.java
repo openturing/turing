@@ -17,6 +17,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.BaseHttpSolrClient;
+import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
@@ -67,10 +68,12 @@ public class TurSolr {
             TurSNTargetingRules turSNTargetingRules, TurSNSiteFieldService turSNSiteFieldUtils,
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
-            TurSNSiteRepository turSNSiteRepository, TurSNFieldProcess turSNFieldProcess) {
+            TurSNSiteRepository turSNSiteRepository, TurSNFieldProcess turSNFieldProcess,
+            TurDecimalFieldNormalizer turDecimalFieldNormalizer) {
         this.isCommitEnabled = isCommitEnabled;
         this.turSNSiteRepository = turSNSiteRepository;
-        this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils);
+        this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
+                turDecimalFieldNormalizer);
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
         this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess, turSNSiteFieldExtRepository);
@@ -240,15 +243,27 @@ public class TurSolr {
                 : queryResponse;
     }
 
-    public static Optional<QueryResponse> executeSolrQuery(TurSolrInstance turSolrInstance,
-            SolrQuery query) {
+    public static Optional<QueryResponse> executeSolrQuery(TurSolrInstance turSolrInstance, SolrQuery query) {
+        String core = turSolrInstance.getCore();
         try {
-            return Optional.ofNullable(turSolrInstance.getSolrClient().query(query));
-        } catch (BaseHttpSolrClient.RemoteSolrException | SolrServerException | IOException e) {
-            log.error("{}?{} - {}", query.get("qt"), query.toQueryString(),
-                    e.getMessage(), e);
+            QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
+            return Optional.ofNullable(response);
+        } catch (BaseHttpSolrClient.RemoteSolrException e) {
+            logSolrException(query, e, true);
+        } catch (SolrServerException | IOException e) {
+            logSolrException(query, e, false);
         }
         return Optional.empty();
+    }
+
+    private static void logSolrException(SolrQuery query, Exception e, boolean isRemote) {
+        QueryRequest req = new QueryRequest(query);
+        String msg = e.getMessage();
+        if (isRemote && msg != null && msg.contains("undefined field")) {
+            log.warn("Undefined field in Solr query [{}?{}]: {}", req.getPath(), query.toQueryString(), msg);
+        } else {
+            log.error("Error executing Solr query [{}?{}]: {}", req.getPath(), query.toQueryString(), msg, e);
+        }
     }
 
     public static void addAWildcardInQuery(SolrQuery query) {
@@ -341,7 +356,7 @@ public class TurSolr {
             return true;
         }
         try {
-            turSolrInstance.getSolrClient().commit();
+            turSolrInstance.getSolrClient().commit(turSolrInstance.getCore());
         } catch (SolrServerException | IOException e) {
             log.error(e.getMessage());
         }

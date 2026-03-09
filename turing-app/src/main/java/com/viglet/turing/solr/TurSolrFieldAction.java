@@ -2,7 +2,10 @@ package com.viglet.turing.solr;
 
 public enum TurSolrFieldAction {
     ADD("add-field"),
-    REPLACE("replace-field");
+    ADD_COPY("add-copy-field"),
+    REPLACE("replace-field"),
+    DELETE("delete-field"),
+    DELETE_COPY("delete-copy-field");
 
     private final String action;
 

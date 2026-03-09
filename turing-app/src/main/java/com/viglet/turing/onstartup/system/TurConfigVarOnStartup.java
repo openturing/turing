@@ -29,6 +29,12 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurConfigVarOnStartup {
+	public static final String FIRST_TIME = "FIRST_TIME";
+	public static final String DECIMAL_SEPARATOR = "GLOBAL_DECIMAL_SEPARATOR";
+	public static final String PYTHON_EXECUTABLE = "GLOBAL_PYTHON_EXECUTABLE";
+	public static final String SYSTEM_PATH = "/system";
+	public static final String GLOBAL_PATH = "/system/global";
+	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
 
 	private final TurConfigVarRepository turConfigVarRepository;
 
@@ -37,15 +43,17 @@ public class TurConfigVarOnStartup {
 	}
 
 	public void createDefaultRows() {
+		ensureConfigVar(FIRST_TIME, SYSTEM_PATH, "true");
+		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
+		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
+	}
 
-		final String FIRST_TIME = "FIRST_TIME";
-
-		if (turConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-
+	private void ensureConfigVar(String id, String path, String value) {
+		if (turConfigVarRepository.findById(id).isEmpty()) {
 			TurConfigVar turConfigVar = new TurConfigVar();
-			turConfigVar.setId(FIRST_TIME);
-			turConfigVar.setPath("/system");
-			turConfigVar.setValue("true");
+			turConfigVar.setId(id);
+			turConfigVar.setPath(path);
+			turConfigVar.setValue(value);
 			turConfigVarRepository.save(turConfigVar);
 		}
 	}

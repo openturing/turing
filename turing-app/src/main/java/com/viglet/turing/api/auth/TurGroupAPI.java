@@ -34,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.auth.TurGroupDto;
+import com.viglet.turing.persistence.mapper.auth.TurGroupMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
@@ -49,30 +51,35 @@ public class TurGroupAPI {
 
 	private final TurGroupRepository turGroupRepository;
 	private final TurUserRepository turUserRepository;
+	private final TurGroupMapper turGroupMapper;
 
-	public TurGroupAPI(TurGroupRepository turGroupRepository, TurUserRepository turUserRepository) {
+	public TurGroupAPI(TurGroupRepository turGroupRepository, TurUserRepository turUserRepository,
+			TurGroupMapper turGroupMapper) {
 		this.turGroupRepository = turGroupRepository;
 		this.turUserRepository = turUserRepository;
+		this.turGroupMapper = turGroupMapper;
 	}
 
 	@GetMapping
-	public List<TurGroup> turGroupList() {
-		return turGroupRepository.findAll();
+	public List<TurGroupDto> turGroupList() {
+		return turGroupMapper.toDtoList(turGroupRepository.findAll());
 	}
 
 	@GetMapping("/{id}")
-	public TurGroup turGroupEdit(@PathVariable String id) {
+	public TurGroupDto turGroupEdit(@PathVariable String id) {
 
-		return turGroupRepository.findById(id).map(turGroup -> {
+		TurGroup turGroup = turGroupRepository.findById(id).map(turGroupEdit -> {
 			List<TurGroup> turGroups = new ArrayList<>();
-			turGroups.add(turGroup);
-			turGroup.setTurUsers(turUserRepository.findByTurGroupsIn(turGroups));
-			return turGroup;
+			turGroups.add(turGroupEdit);
+			turGroupEdit.setTurUsers(turUserRepository.findByTurGroupsIn(turGroups));
+			return turGroupEdit;
 		}).orElse(new TurGroup());
+		return turGroupMapper.toDto(turGroup);
 	}
 
 	@PutMapping("/{id}")
-	public TurGroup turGroupUpdate(@PathVariable String id, @RequestBody TurGroup turGroup) {
+	public TurGroupDto turGroupUpdate(@PathVariable String id, @RequestBody TurGroupDto turGroupDto) {
+		TurGroup turGroup = turGroupMapper.toEntity(turGroupDto);
 		turGroupRepository.save(turGroup);
 		return turGroupRepository.findById(turGroup.getId()).map(turGroupRepos -> {
 			List<TurGroup> turGroups = new ArrayList<>();
@@ -88,8 +95,8 @@ public class TurGroupAPI {
 				turUserRepository.saveAndFlush(turUserRepos);
 			}
 
-			return turGroup;
-		}).orElse(new TurGroup());
+			return turGroupMapper.toDto(turGroup);
+		}).orElse(new TurGroupDto());
 	}
 
 	@Transactional
@@ -100,16 +107,17 @@ public class TurGroupAPI {
 	}
 
 	@PostMapping
-	public TurGroup turGroupAdd(@RequestBody TurGroup turGroup) {
+	public TurGroupDto turGroupAdd(@RequestBody TurGroupDto turGroupDto) {
+		TurGroup turGroup = turGroupMapper.toEntity(turGroupDto);
 
 		turGroupRepository.save(turGroup);
 
-		return turGroup;
+		return turGroupMapper.toDto(turGroup);
 	}
 
 	@GetMapping("/model")
-	public TurGroup turGroupStructure() {
-		return new TurGroup();
+	public TurGroupDto turGroupStructure() {
+		return new TurGroupDto();
 
 	}
 

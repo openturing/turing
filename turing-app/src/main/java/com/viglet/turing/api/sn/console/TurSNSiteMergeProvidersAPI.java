@@ -36,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.sn.merge.TurSNSiteMergeProvidersDto;
+import com.viglet.turing.persistence.mapper.sn.merge.TurSNSiteMergeProvidersMapper;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersFieldRepository;
@@ -57,41 +59,48 @@ public class TurSNSiteMergeProvidersAPI {
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeRepository;
 	private final TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository;
+	private final TurSNSiteMergeProvidersMapper turSNSiteMergeProvidersMapper;
 
 	public TurSNSiteMergeProvidersAPI(TurSNSiteRepository turSNSiteRepository,
 			TurSNSiteMergeProvidersRepository turSNSiteMergeRepository,
-			TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository) {
+			TurSNSiteMergeProvidersFieldRepository turSNSiteMergeFieldRepository,
+			TurSNSiteMergeProvidersMapper turSNSiteMergeProvidersMapper) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteMergeRepository = turSNSiteMergeRepository;
 		this.turSNSiteMergeFieldRepository = turSNSiteMergeFieldRepository;
+		this.turSNSiteMergeProvidersMapper = turSNSiteMergeProvidersMapper;
 	}
 
 	@Operation(summary = "Semantic Navigation Site Merge List")
 	@GetMapping
-	public List<TurSNSiteMergeProviders> turSNSiteMergeList(@PathVariable String ignoredSnSiteId) {
-		return turSNSiteRepository.findById(ignoredSnSiteId).map(this.turSNSiteMergeRepository::findByTurSNSite)
+	public List<TurSNSiteMergeProvidersDto> turSNSiteMergeList(@PathVariable String ignoredSnSiteId) {
+		return turSNSiteRepository.findById(ignoredSnSiteId)
+				.map(site -> turSNSiteMergeProvidersMapper
+						.toDtoList(this.turSNSiteMergeRepository.findByTurSNSite(site)))
 				.orElse(new ArrayList<>());
 	}
 
 	@Operation(summary = "Show a Semantic Navigation Site Merge Providers")
 	@GetMapping("/{id}")
-	public TurSNSiteMergeProviders turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId, @PathVariable String id) {
+	public TurSNSiteMergeProvidersDto turSNSiteFieldExtGet(@PathVariable String ignoredSnSiteId,
+			@PathVariable String id) {
 		Optional<TurSNSiteMergeProviders> turSNSiteMergeOptional = turSNSiteMergeRepository.findById(id);
 		if (turSNSiteMergeOptional.isPresent()) {
 			TurSNSiteMergeProviders turSNSiteMerge = turSNSiteMergeOptional.get();
 			turSNSiteMerge
 					.setOverwrittenFields(turSNSiteMergeFieldRepository.findByTurSNSiteMergeProviders(turSNSiteMerge));
-			return turSNSiteMerge;
+			return turSNSiteMergeProvidersMapper.toDto(turSNSiteMerge);
 		} else {
-			return new TurSNSiteMergeProviders();
+			return new TurSNSiteMergeProvidersDto();
 		}
 	}
 
 	@Transactional
 	@Operation(summary = "Update a Semantic Navigation Site Merge Providers")
 	@PutMapping("/{id}")
-	public TurSNSiteMergeProviders turSNSiteMergeUpdate(@PathVariable String id,
-			@RequestBody TurSNSiteMergeProviders turSNSiteMerge, @PathVariable String ignoredSnSiteId) {
+	public TurSNSiteMergeProvidersDto turSNSiteMergeUpdate(@PathVariable String id,
+			@RequestBody TurSNSiteMergeProvidersDto turSNSiteMergeDto, @PathVariable String ignoredSnSiteId) {
+		TurSNSiteMergeProviders turSNSiteMerge = turSNSiteMergeProvidersMapper.toEntity(turSNSiteMergeDto);
 		return this.turSNSiteMergeRepository.findById(id).map(turSNSiteMergeEdit -> {
 			turSNSiteMergeEdit.setProviderFrom(turSNSiteMerge.getProviderFrom());
 			turSNSiteMergeEdit.setProviderTo(turSNSiteMerge.getProviderTo());
@@ -107,8 +116,8 @@ public class TurSNSiteMergeProvidersAPI {
 				field.setTurSNSiteMergeProviders(turSNSiteMergeEdit);
 				turSNSiteMergeFieldRepository.save(field);
 			});
-			return turSNSiteMergeEdit;
-		}).orElse(new TurSNSiteMergeProviders());
+			return turSNSiteMergeProvidersMapper.toDto(turSNSiteMergeEdit);
+		}).orElse(new TurSNSiteMergeProvidersDto());
 
 	}
 
@@ -122,24 +131,25 @@ public class TurSNSiteMergeProvidersAPI {
 
 	@Operation(summary = "Create a Semantic Navigation Site Merge Providers")
 	@PostMapping
-	public TurSNSiteMergeProviders turSNSiteMergeAdd(@RequestBody TurSNSiteMergeProviders turSNSiteMerge,
+	public TurSNSiteMergeProvidersDto turSNSiteMergeAdd(@RequestBody TurSNSiteMergeProvidersDto turSNSiteMergeDto,
 			@PathVariable String ignoredSnSiteId) {
+		TurSNSiteMergeProviders turSNSiteMerge = turSNSiteMergeProvidersMapper.toEntity(turSNSiteMergeDto);
 		turSNSiteMergeRepository.save(turSNSiteMerge);
 		turSNSiteMerge.getOverwrittenFields().forEach(field -> {
 			field.setTurSNSiteMergeProviders(turSNSiteMerge);
 			turSNSiteMergeFieldRepository.save(field);
 		});
-		return turSNSiteMerge;
+		return turSNSiteMergeProvidersMapper.toDto(turSNSiteMerge);
 	}
 
 	@Operation(summary = "Semantic Navigation Site Merge structure")
 	@GetMapping("structure")
-	public TurSNSiteMergeProviders turSNSiteMergeStructure(@PathVariable String ignoredSnSiteId) {
+	public TurSNSiteMergeProvidersDto turSNSiteMergeStructure(@PathVariable String ignoredSnSiteId) {
 		return turSNSiteRepository.findById(ignoredSnSiteId).map(turSNSite -> {
 			TurSNSiteMergeProviders turSNSiteMerge = new TurSNSiteMergeProviders();
 			turSNSiteMerge.setLocale(DEFAULT_LANGUAGE);
 			turSNSiteMerge.setTurSNSite(turSNSite);
-			return turSNSiteMerge;
-		}).orElse(new TurSNSiteMergeProviders());
+			return turSNSiteMergeProvidersMapper.toDto(turSNSiteMerge);
+		}).orElse(new TurSNSiteMergeProvidersDto());
 	}
 }

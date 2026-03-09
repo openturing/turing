@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance } from "axios";
 
 export class TurIntegrationConnectorService {
-  private integrationId: string;
   private readonly axiosInstance: AxiosInstance;
+  integrationId: string;
 
   constructor(integrationId: string, axiosInstance: AxiosInstance = axios) {
     this.integrationId = integrationId;
@@ -10,14 +10,20 @@ export class TurIntegrationConnectorService {
   }
 
   private get connectorUrl(): string {
-    return `/integration/${this.integrationId}/connector`;
+    return `/v2/integration/${this.integrationId}/connector`;
   }
 
-  async indexAll(source: string): Promise<void> {
-    await this.axiosInstance.get(`${this.connectorUrl}/index/${source}/all`);
+  async indexAll(source: string): Promise<any> {
+    const { data } = await this.axiosInstance.get<any>(
+      `${this.connectorUrl}/index/${source}/all`,
+    );
+    return data;
   }
 
-  async reindexAll(source: string): Promise<void> {
-    await this.axiosInstance.get(`${this.connectorUrl}/reindex/${source}/all`);
+  async reindexAll(source: string): Promise<any> {
+    const { data } = await this.axiosInstance.get<any>(
+      `${this.connectorUrl}/reindex/${source}/all`,
+    );
+    return data;
   }
 }

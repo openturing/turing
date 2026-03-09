@@ -83,8 +83,8 @@ public interface TurSNSiteFieldExtRepository extends JpaRepository<TurSNSiteFiel
 
 	boolean existsByTurSNSiteAndName(TurSNSite turSNSite, String name);
 
-	@Query("SELECT MAX(t.facetPosition) FROM TurSNSiteFieldExt t")
-	Optional<Integer> findMaxFacetPosition();
+	@Query("SELECT MAX(t.facetPosition) FROM TurSNSiteFieldExt t where t.turSNSite = ?1")
+	Optional<Integer> findMaxFacetPosition(TurSNSite turSNSite);
 
 	@CacheEvict(value = { FIND_BY_TUR_SN_SITE, FIND_BY_TUR_SN_SITE_AND_ENABLED,
 			FIND_BY_TUR_SN_SITE_AND_FACET_AND_ENABLED, FIND_BY_TUR_SN_SITE_AND_HL_AND_ENABLED,

@@ -28,17 +28,19 @@ import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UuidGenerator;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.sn.TurSNFieldType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -67,7 +69,7 @@ public class TurSNSiteFieldExt implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @UuidGenerator
+    @TurAssignableUuidGenerator
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
     @Column(nullable = false)
@@ -83,6 +85,10 @@ public class TurSNSiteFieldExt implements Serializable {
     @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
+    @Builder.Default
+    @OneToMany(mappedBy = "turSNSiteFieldExt", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Set<TurSNSiteCustomFacet> customFacets = new HashSet<>();
     @Builder.Default
     @Column
     private TurSNSiteFacetRangeEnum facetRange = TurSNSiteFacetRangeEnum.DISABLED;
@@ -104,6 +110,7 @@ public class TurSNSiteFieldExt implements Serializable {
     @Column(nullable = false)
     private TurSNFieldType snType;
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private TurSEFieldType type;
     @Column
     private int multiValued;
@@ -128,8 +135,23 @@ public class TurSNSiteFieldExt implements Serializable {
 
     public void setFacetLocales(Set<TurSNSiteFieldExtFacet> facetLocales) {
         this.facetLocales.clear();
+
         if (facetLocales != null) {
-            this.facetLocales.addAll(facetLocales);
+            for (TurSNSiteFieldExtFacet facetLocale : facetLocales) {
+                facetLocale.setTurSNSiteFieldExt(this);
+                this.facetLocales.add(facetLocale);
+            }
+        }
+    }
+
+    public void setCustomFacets(Set<TurSNSiteCustomFacet> customFacets) {
+        this.customFacets.clear();
+
+        if (customFacets != null) {
+            for (TurSNSiteCustomFacet customFacet : customFacets) {
+                customFacet.setTurSNSiteFieldExt(this);
+                this.customFacets.add(customFacet);
+            }
         }
     }
 }

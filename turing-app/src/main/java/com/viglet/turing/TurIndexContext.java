@@ -34,9 +34,9 @@ public class TurIndexContext {
 	public void index(HttpServletResponse response, final Principal principal)
 			throws IOException {
 		if (principal != null) {
-			response.sendRedirect("/console");
+			response.sendRedirect("/admin");
 		} else {
-			response.sendRedirect("/welcome");
+			response.sendRedirect("/login");
 		}
 	}
 }

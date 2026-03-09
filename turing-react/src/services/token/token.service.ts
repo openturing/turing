@@ -1,6 +1,5 @@
-import axios from "axios";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
-
+import axios from "axios";
 
 export class TurTokenInstanceService {
   async query(): Promise<TurTokenInstance[]> {
@@ -12,22 +11,23 @@ export class TurTokenInstanceService {
     return response.data;
   }
   async create(turTokenInstance: TurTokenInstance): Promise<TurTokenInstance> {
-    const response = await axios.post<TurTokenInstance>("/dev/token/",
-      turTokenInstance
+    const response = await axios.post<TurTokenInstance>(
+      "/dev/token",
+      turTokenInstance,
     );
     return response.data;
   }
   async update(turTokenInstance: TurTokenInstance): Promise<TurTokenInstance> {
     const response = await axios.put<TurTokenInstance>(
       `/dev/token/${turTokenInstance.id.toString()}`,
-      turTokenInstance
+      turTokenInstance,
     );
     return response.data;
   }
   async delete(turTokenInstance: TurTokenInstance): Promise<boolean> {
     const response = await axios.delete<TurTokenInstance>(
-      `/dev/token/${turTokenInstance.id.toString()}`
+      `/dev/token/${turTokenInstance.id.toString()}`,
     );
-    return  response.status == 200;
+    return response.status == 200;
   }
 }

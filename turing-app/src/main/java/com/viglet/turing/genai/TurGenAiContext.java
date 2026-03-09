@@ -18,59 +18,26 @@
 
 package com.viglet.turing.genai;
 
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
-import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
-import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.vectorstore.VectorStore;
+
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder
 public class TurGenAiContext {
-    private final ChromaEmbeddingStore chromaEmbeddingStore;
+    private final VectorStore vectorStore;
     private final EmbeddingModel embeddingModel;
-    private final ChatModel chatLanguageModel;
+    private final ChatModel chatModel;
     private final boolean enabled;
     private final String systemPrompt;
     public static final String COLLECTION_NAME = "turing";
 
-    public TurGenAiContext(TurSNSiteGenAi turSNSiteGenAi) {
-        this.chromaEmbeddingStore = setEmbeddingStore(turSNSiteGenAi.getTurStoreInstance());
-        this.embeddingModel = setEmbeddingModel(turSNSiteGenAi.getTurLLMInstance());
-        this.chatLanguageModel = setChatModel(turSNSiteGenAi.getTurLLMInstance());
-        this.systemPrompt = turSNSiteGenAi.getSystemPrompt();
-        this.enabled = turSNSiteGenAi.isEnabled();
-    }
-
-    private ChromaEmbeddingStore setEmbeddingStore(TurStoreInstance turStoreInstance) {
-        return ChromaEmbeddingStore.builder()
-                .baseUrl(turStoreInstance.getUrl())
-                .collectionName(COLLECTION_NAME)
-                .logRequests(true)
-                .logResponses(true)
-                .build();
-    }
-    private OllamaEmbeddingModel setEmbeddingModel(TurLLMInstance turLLMInstance) {
-        return OllamaEmbeddingModel.builder()
-                .baseUrl(turLLMInstance.getUrl())
-                .logRequests(true)
-                .logResponses(true)
-                .modelName(turLLMInstance.getModelName())
-                .build();
-
-    }
-
-    private OllamaChatModel setChatModel(TurLLMInstance turLLMInstance) {
-        return  OllamaChatModel.builder()
-                .baseUrl(turLLMInstance.getUrl())
-                .logRequests(true)
-                .logResponses(true)
-                .modelName(turLLMInstance.getModelName())
-                .temperature(turLLMInstance.getTemperature())
-                .topK(turLLMInstance.getTopK())
+    public static TurGenAiContext disabled() {
+        return TurGenAiContext.builder()
+                .enabled(false)
                 .build();
     }
 

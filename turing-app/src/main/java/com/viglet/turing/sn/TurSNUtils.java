@@ -30,9 +30,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
-import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.util.StringUtils;
 import org.springframework.web.util.ForwardedHeaderUtils;
 
 import com.viglet.turing.commons.se.TurSEParameters;
@@ -88,7 +88,7 @@ public class TurSNUtils {
 
     public static boolean hasCorrectedText(TurSESpellCheckResult turSESpellCheckResult) {
         return turSESpellCheckResult.isCorrected()
-                && !StringUtils.isEmpty(turSESpellCheckResult.getCorrectedText());
+                && StringUtils.hasText(turSESpellCheckResult.getCorrectedText());
     }
 
     public static boolean isAutoCorrectionEnabled(TurSNSiteSearchContext context,

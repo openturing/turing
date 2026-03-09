@@ -1,0 +1,1844 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1770764084465-1
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_8
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+            tableName: auth_group
+  - changeSet:
+      id: 1770764084465-2
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: tur_groups_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: tur_roles_id
+                  type: VARCHAR(255)
+            tableName: auth_group_tur_roles
+  - changeSet:
+      id: 1770764084465-3
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_D
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+            tableName: auth_privilege
+  - changeSet:
+      id: 1770764084465-4
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_5
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+            tableName: auth_role
+  - changeSet:
+      id: 1770764084465-5
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: role_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: privilege_id
+                  type: VARCHAR(255)
+            tableName: auth_roles_privileges
+  - changeSet:
+      id: 1770764084465-6
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_57
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: confirm_email
+                  type: VARCHAR(255)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enabled
+                  type: INT
+              - column:
+                  name: first_name
+                  type: VARCHAR(255)
+              - column:
+                  name: last_login
+                  type: TIMESTAMP
+              - column:
+                  name: last_name
+                  type: VARCHAR(255)
+              - column:
+                  name: last_post_type
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: login_times
+                  type: INT
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+              - column:
+                  name: realm
+                  type: VARCHAR(255)
+              - column:
+                  name: recover_password
+                  type: VARCHAR(255)
+            tableName: auth_user
+  - changeSet:
+      id: 1770764084465-7
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: tur_users_username
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: tur_groups_id
+                  type: VARCHAR(255)
+            tableName: auth_user_tur_groups
+  - changeSet:
+      id: 1770764084465-8
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_7
+                  name: id
+                  type: VARCHAR(25)
+              - column:
+                  name: path
+                  type: VARCHAR(255)
+              - column:
+                  name: value
+                  type: VARCHAR(255)
+            tableName: configuration
+  - changeSet:
+      id: 1770764084465-9
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_F
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: created_by
+                  type: VARCHAR(255)
+              - column:
+                  name: creation_date
+                  type: TIMESTAMP
+              - column:
+                  name: last_modified_by
+                  type: VARCHAR(255)
+              - column:
+                  name: last_modified_date
+                  type: TIMESTAMP
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  name: token
+                  type: VARCHAR(255)
+            tableName: dev_token
+  - changeSet:
+      id: 1770764084465-10
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_88
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enabled
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: endpoint
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: vendor
+                  type: VARCHAR(255)
+            tableName: integration_instance
+  - changeSet:
+      id: 1770764084465-11
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_3
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enabled
+                  type: INT
+              - column:
+                  name: max_retries
+                  type: INT
+              - column:
+                  name: model_name
+                  type: VARCHAR(255)
+              - column:
+                  name: num_predict
+                  type: INT
+              - column:
+                  name: repeat_penalty
+                  type: DOUBLE PRECISION
+              - column:
+                  name: response_format
+                  type: VARCHAR(255)
+              - column:
+                  name: seed
+                  type: INT
+              - column:
+                  name: stop
+                  type: VARCHAR(255)
+              - column:
+                  name: supported_capabilities
+                  type: VARCHAR(255)
+              - column:
+                  name: temperature
+                  type: DOUBLE PRECISION
+              - column:
+                  name: timeout
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  name: topk
+                  type: INT
+              - column:
+                  name: topp
+                  type: DOUBLE PRECISION
+              - column:
+                  constraints:
+                    nullable: false
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: llm_vendor_id
+                  type: VARCHAR(10)
+            tableName: llm_instance
+  - changeSet:
+      id: 1770764084465-12
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_4
+                  name: id
+                  type: VARCHAR(10)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: plugin
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  name: website
+                  type: VARCHAR(255)
+            tableName: llm_vendor
+  - changeSet:
+      id: 1770764084465-13
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_B
+                  name: initials
+                  type: VARCHAR(5)
+              - column:
+                  name: en
+                  type: VARCHAR(255)
+              - column:
+                  name: pt
+                  type: VARCHAR(255)
+            tableName: locale
+  - changeSet:
+      id: 1770764084465-14
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_6
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enabled
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: host
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: port
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: se_vendor_id
+                  type: VARCHAR(10)
+            tableName: se_instance
+  - changeSet:
+      id: 1770764084465-15
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_72
+                  name: id
+                  type: VARCHAR(10)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: plugin
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  name: website
+                  type: VARCHAR(255)
+            tableName: se_vendor
+  - changeSet:
+      id: 1770764084465-16
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_44
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: created_by
+                  type: VARCHAR(255)
+              - column:
+                  name: creation_date
+                  type: TIMESTAMP
+              - column:
+                  name: last_modified_by
+                  type: VARCHAR(255)
+              - column:
+                  name: last_modified_date
+                  type: TIMESTAMP
+              - column:
+                  name: attribute
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: condition
+                  type: INT
+              - column:
+                  name: value
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: ranking_exp_id
+                  type: VARCHAR(255)
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770764084465-17
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_2
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: created_by
+                  type: VARCHAR(255)
+              - column:
+                  name: creation_date
+                  type: TIMESTAMP
+              - column:
+                  name: last_modified_by
+                  type: VARCHAR(255)
+              - column:
+                  name: last_modified_date
+                  type: TIMESTAMP
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  name: weight
+                  type: REAL
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770764084465-18
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_84924
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: created_by
+                  type: VARCHAR(255)
+              - column:
+                  name: creation_date
+                  type: TIMESTAMP
+              - column:
+                  name: last_modified_by
+                  type: VARCHAR(255)
+              - column:
+                  name: last_modified_date
+                  type: TIMESTAMP
+              - column:
+                  name: default_date_field
+                  type: VARCHAR(255)
+              - column:
+                  name: default_description_field
+                  type: VARCHAR(255)
+              - column:
+                  name: default_field
+                  type: VARCHAR(255)
+              - column:
+                  name: default_image_field
+                  type: VARCHAR(255)
+              - column:
+                  name: default_text_field
+                  type: VARCHAR(255)
+              - column:
+                  name: default_title_field
+                  type: VARCHAR(255)
+              - column:
+                  name: defaulturlfield
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: exact_match
+                  type: INT
+              - column:
+                  name: exact_match_field
+                  type: VARCHAR(255)
+              - column:
+                  name: facet
+                  type: INT
+              - column:
+                  name: facet_item_type
+                  type: TINYINT
+              - column:
+                  name: facet_sort
+                  type: TINYINT
+              - column:
+                  name: facet_type
+                  type: TINYINT
+              - column:
+                  name: hl
+                  type: INT
+              - column:
+                  name: hl_post
+                  type: VARCHAR(50)
+              - column:
+                  name: hl_pre
+                  type: VARCHAR(50)
+              - column:
+                  name: items_per_facet
+                  type: INT
+              - column:
+                  name: mlt
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  name: rows_per_page
+                  type: INT
+              - column:
+                  name: spell_check
+                  type: INT
+              - column:
+                  name: spell_check_fixes
+                  type: INT
+              - column:
+                  name: spotlight_with_results
+                  type: INT
+              - column:
+                  name: thesaurus
+                  type: INT
+              - column:
+                  name: wildcard_always
+                  type: INT
+              - column:
+                  name: wildcard_no_results
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: se_instance_id
+                  type: VARCHAR(255)
+              - column:
+                  name: tursnsite_gen_ai_id
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770764084465-19
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_D9E
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: multi_valued
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: type
+                  type: TINYINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_field
+  - changeSet:
+      id: 1770764084465-20
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_F93078C8
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: default_value
+                  type: VARCHAR(50)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: enabled
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: external_id
+                  type: VARCHAR(255)
+              - column:
+                  name: facet
+                  type: INT
+              - column:
+                  name: facet_item_type
+                  type: TINYINT
+              - column:
+                  name: facet_name
+                  type: VARCHAR(50)
+              - column:
+                  name: facet_position
+                  type: INT
+              - column:
+                  name: facet_range
+                  type: TINYINT
+              - column:
+                  name: facet_sort
+                  type: TINYINT
+              - column:
+                  name: facet_type
+                  type: TINYINT
+              - column:
+                  name: hl
+                  type: INT
+              - column:
+                  name: mlt
+                  type: INT
+              - column:
+                  name: multi_valued
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  name: required
+                  type: INT
+              - column:
+                  name: secondary_facet
+                  type: boolean
+              - column:
+                  name: show_all_facet_items
+                  type: boolean
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_type
+                  type: TINYINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: type
+                  type: TINYINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770764084465-21
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_3C
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: label
+                  type: VARCHAR(255)
+              - column:
+                  name: locale
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: field_ext_id
+                  type: VARCHAR(255)
+            tableName: sn_site_field_ext_facet
+  - changeSet:
+      id: 1770764084465-22
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_D9F
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: enabled
+                  type: boolean
+              - column:
+                  name: system_prompt
+                  type: text
+              - column:
+                  name: llm_instance_id
+                  type: VARCHAR(255)
+              - column:
+                  name: store_instance_id
+                  type: VARCHAR(255)
+            tableName: sn_site_genai
+  - changeSet:
+      id: 1770764084465-23
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_6D
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: core
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: language
+                  type: VARCHAR(5)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_locale
+  - changeSet:
+      id: 1770764084465-24
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_79
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: locale
+                  type: VARCHAR(5)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: provider_from
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: provider_to
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: relation_from
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: relation_to
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770764084465-25
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_1
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  name: sn_site_merge_id
+                  type: VARCHAR(255)
+            tableName: sn_site_merge_provider_field
+  - changeSet:
+      id: 1770764084465-26
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_80
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: access_date
+                  type: TIMESTAMP
+              - column:
+                  name: language
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: num_found
+                  type: BIGINT
+              - column:
+                  name: sanatized_term
+                  type: VARCHAR(255)
+              - column:
+                  name: term
+                  type: VARCHAR(255)
+              - column:
+                  name: user_id
+                  type: VARCHAR(50)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770764084465-27
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: tr_id
+                  type: VARCHAR(255)
+              - column:
+                  name: targeting_rules
+                  type: VARCHAR(255)
+            tableName: sn_site_metric_access_trs
+  - changeSet:
+      id: 1770764084465-28
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_76
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: language
+                  type: VARCHAR(255)
+              - column:
+                  name: managed
+                  type: INT
+              - column:
+                  name: modification_date
+                  type: TIMESTAMP
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+              - column:
+                  name: provider
+                  type: VARCHAR(255)
+              - column:
+                  name: unmanaged_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sn_site_id
+                  type: VARCHAR(255)
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770764084465-29
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_C
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: content
+                  type: VARCHAR(2000)
+              - column:
+                  name: link
+                  type: VARCHAR(255)
+              - column:
+                  name: position
+                  type: INT
+              - column:
+                  name: reference_id
+                  type: VARCHAR(255)
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: spotlight_id
+                  type: VARCHAR(255)
+            tableName: sn_site_spotlight_document
+  - changeSet:
+      id: 1770764084465-30
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_45
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: spotlight_id
+                  type: VARCHAR(255)
+            tableName: sn_site_spotlight_term
+  - changeSet:
+      id: 1770764084465-31
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_C8
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(50)
+            tableName: sn_source_type
+  - changeSet:
+      id: 1770764084465-32
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_B5
+                  name: id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: description
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enabled
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: store_vendor_id
+                  type: VARCHAR(10)
+            tableName: store_instance
+  - changeSet:
+      id: 1770764084465-33
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: CONSTRAINT_4B
+                  name: id
+                  type: VARCHAR(10)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: plugin
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: title
+                  type: VARCHAR(100)
+              - column:
+                  name: website
+                  type: VARCHAR(255)
+            tableName: store_vendor
+  - changeSet:
+      id: 1770764084465-34
+      author: alexa (generated)
+      changes:
+        - addUniqueConstraint:
+            columnNames: tursnsite_gen_ai_id
+            constraintName: UKmrja684oost803kcv9ing46a
+            tableName: sn_site
+  - changeSet:
+      id: 1770764084465-35
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: tur_groups_id
+            indexName: FK1hhnqjr6jvvbi2o66f3djqh1b_INDEX_A
+            tableName: auth_user_tur_groups
+  - changeSet:
+      id: 1770764084465-36
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: store_instance_id
+            indexName: FK3y30jauobtjwthcklebibyw7d_INDEX_D
+            tableName: sn_site_genai
+  - changeSet:
+      id: 1770764084465-37
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: llm_vendor_id
+            indexName: FK6p80ubeofka7up7hvxa8xct2d_INDEX_3
+            tableName: llm_instance
+  - changeSet:
+      id: 1770764084465-38
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: se_instance_id
+            indexName: FK89lv2ps1mkivotym4ac0mm9wg_INDEX_8
+            tableName: sn_site
+  - changeSet:
+      id: 1770764084465-39
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FK8ykx0xv8bds40ytrfqeglatue_INDEX_7
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770764084465-40
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FK97apj3np65x7xu6ryrh684ydi_INDEX_8
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770764084465-41
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FKax5ehkvma2x907eklvw5oys3v_INDEX_6
+            tableName: sn_site_locale
+  - changeSet:
+      id: 1770764084465-42
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FKbt3odaebxo2yvjv7kxwvp0vyh_INDEX_2
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770764084465-43
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: tr_id
+            indexName: FKcjsrxor3qjq7vn2mqp3wkm4sr_INDEX_4
+            tableName: sn_site_metric_access_trs
+  - changeSet:
+      id: 1770764084465-44
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: tur_roles_id
+            indexName: FKdgvx091iis3aqgkt7cpouqtsx_INDEX_A
+            tableName: auth_group_tur_roles
+  - changeSet:
+      id: 1770764084465-45
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: store_vendor_id
+            indexName: FKdtflf741shsk7x28fdrwj90ay_INDEX_B
+            tableName: store_instance
+  - changeSet:
+      id: 1770764084465-46
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FKhlecb9e124y4vffssrt1x2mx1_INDEX_7
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770764084465-47
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: tur_groups_id
+            indexName: FKhsi4l0pf7m7yondbrchoorunk_INDEX_A
+            tableName: auth_group_tur_roles
+  - changeSet:
+      id: 1770764084465-48
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FKia1tfhhodjt2ntrvjyh3bhtqr_INDEX_F
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770764084465-49
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: se_vendor_id
+            indexName: FKiss7849oscxvhac2gofthw6wh_INDEX_6
+            tableName: se_instance
+  - changeSet:
+      id: 1770764084465-50
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: ranking_exp_id
+            indexName: FKjd5c7fcjc9e7af9l76m47xiex_INDEX_4
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770764084465-51
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: privilege_id
+            indexName: FKkpb35opk78u4nscunry4edn5u_INDEX_B
+            tableName: auth_roles_privileges
+  - changeSet:
+      id: 1770764084465-52
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: spotlight_id
+            indexName: FKmp0uhn751f4t94ay3y2hdkkn0_INDEX_4
+            tableName: sn_site_spotlight_term
+  - changeSet:
+      id: 1770764084465-53
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: field_ext_id
+            indexName: FKnrv01mw2l3kk9v8pogd8q7gnd_INDEX_3
+            tableName: sn_site_field_ext_facet
+  - changeSet:
+      id: 1770764084465-54
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: spotlight_id
+            indexName: FKoii6hgv1kftdq1jy7sdtk1902_INDEX_C
+            tableName: sn_site_spotlight_document
+  - changeSet:
+      id: 1770764084465-55
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: llm_instance_id
+            indexName: FKqijf7ri2sitymjlcxqomp3kh9_INDEX_D
+            tableName: sn_site_genai
+  - changeSet:
+      id: 1770764084465-56
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_merge_id
+            indexName: FKrdmpm3x4wfwibxsbx7liob07q_INDEX_1
+            tableName: sn_site_merge_provider_field
+  - changeSet:
+      id: 1770764084465-57
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: tur_users_username
+            indexName: FKsd0jmeaajegkcpslgow5kbpvr_INDEX_A
+            tableName: auth_user_tur_groups
+  - changeSet:
+      id: 1770764084465-58
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: role_id
+            indexName: FKt7d7j5cjcafsl8qjs91rhbse5_INDEX_B
+            tableName: auth_roles_privileges
+  - changeSet:
+      id: 1770764084465-59
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: sn_site_id
+            indexName: FKtlp91rh7ynu1in0g0qul5mmvt_INDEX_D
+            tableName: sn_site_field
+  - changeSet:
+      id: 1770764084465-60
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tur_groups_id
+            baseTableName: auth_user_tur_groups
+            constraintName: FK1hhnqjr6jvvbi2o66f3djqh1b
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_group
+            validate: true
+  - changeSet:
+      id: 1770764084465-61
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: store_instance_id
+            baseTableName: sn_site_genai
+            constraintName: FK3y30jauobtjwthcklebibyw7d
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: store_instance
+            validate: true
+  - changeSet:
+      id: 1770764084465-62
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: llm_vendor_id
+            baseTableName: llm_instance
+            constraintName: FK6p80ubeofka7up7hvxa8xct2d
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: llm_vendor
+            validate: true
+  - changeSet:
+      id: 1770764084465-63
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: se_instance_id
+            baseTableName: sn_site
+            constraintName: FK89lv2ps1mkivotym4ac0mm9wg
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: se_instance
+            validate: true
+  - changeSet:
+      id: 1770764084465-64
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_spotlight
+            constraintName: FK8ykx0xv8bds40ytrfqeglatue
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-65
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_metric_access
+            constraintName: FK97apj3np65x7xu6ryrh684ydi
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-66
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_locale
+            constraintName: FKax5ehkvma2x907eklvw5oys3v
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-67
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_ranking_expression
+            constraintName: FKbt3odaebxo2yvjv7kxwvp0vyh
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-68
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tr_id
+            baseTableName: sn_site_metric_access_trs
+            constraintName: FKcjsrxor3qjq7vn2mqp3wkm4sr
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_metric_access
+            validate: true
+  - changeSet:
+      id: 1770764084465-69
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tur_roles_id
+            baseTableName: auth_group_tur_roles
+            constraintName: FKdgvx091iis3aqgkt7cpouqtsx
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_role
+            validate: true
+  - changeSet:
+      id: 1770764084465-70
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: store_vendor_id
+            baseTableName: store_instance
+            constraintName: FKdtflf741shsk7x28fdrwj90ay
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: store_vendor
+            validate: true
+  - changeSet:
+      id: 1770764084465-71
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_merge_provider
+            constraintName: FKhlecb9e124y4vffssrt1x2mx1
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-72
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tur_groups_id
+            baseTableName: auth_group_tur_roles
+            constraintName: FKhsi4l0pf7m7yondbrchoorunk
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_group
+            validate: true
+  - changeSet:
+      id: 1770764084465-73
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_field_ext
+            constraintName: FKia1tfhhodjt2ntrvjyh3bhtqr
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true
+  - changeSet:
+      id: 1770764084465-74
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: se_vendor_id
+            baseTableName: se_instance
+            constraintName: FKiss7849oscxvhac2gofthw6wh
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: se_vendor
+            validate: true
+  - changeSet:
+      id: 1770764084465-75
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: ranking_exp_id
+            baseTableName: sn_ranking_condition
+            constraintName: FKjd5c7fcjc9e7af9l76m47xiex
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_ranking_expression
+            validate: true
+  - changeSet:
+      id: 1770764084465-76
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: privilege_id
+            baseTableName: auth_roles_privileges
+            constraintName: FKkpb35opk78u4nscunry4edn5u
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_privilege
+            validate: true
+  - changeSet:
+      id: 1770764084465-77
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: spotlight_id
+            baseTableName: sn_site_spotlight_term
+            constraintName: FKmp0uhn751f4t94ay3y2hdkkn0
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_spotlight
+            validate: true
+  - changeSet:
+      id: 1770764084465-78
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tursnsite_gen_ai_id
+            baseTableName: sn_site
+            constraintName: FKn43erub36o4e4aiq64ymd70h0
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_genai
+            validate: true
+  - changeSet:
+      id: 1770764084465-79
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: field_ext_id
+            baseTableName: sn_site_field_ext_facet
+            constraintName: FKnrv01mw2l3kk9v8pogd8q7gnd
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_field_ext
+            validate: true
+  - changeSet:
+      id: 1770764084465-80
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: spotlight_id
+            baseTableName: sn_site_spotlight_document
+            constraintName: FKoii6hgv1kftdq1jy7sdtk1902
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_spotlight
+            validate: true
+  - changeSet:
+      id: 1770764084465-81
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: llm_instance_id
+            baseTableName: sn_site_genai
+            constraintName: FKqijf7ri2sitymjlcxqomp3kh9
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: llm_instance
+            validate: true
+  - changeSet:
+      id: 1770764084465-82
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_merge_id
+            baseTableName: sn_site_merge_provider_field
+            constraintName: FKrdmpm3x4wfwibxsbx7liob07q
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_merge_provider
+            validate: true
+  - changeSet:
+      id: 1770764084465-83
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: tur_users_username
+            baseTableName: auth_user_tur_groups
+            constraintName: FKsd0jmeaajegkcpslgow5kbpvr
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: username
+            referencedTableName: auth_user
+            validate: true
+  - changeSet:
+      id: 1770764084465-84
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: role_id
+            baseTableName: auth_roles_privileges
+            constraintName: FKt7d7j5cjcafsl8qjs91rhbse5
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_role
+            validate: true
+  - changeSet:
+      id: 1770764084465-85
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: sn_site_id
+            baseTableName: sn_site_field
+            constraintName: FKtlp91rh7ynu1in0g0qul5mmvt
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site
+            validate: true

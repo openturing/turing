@@ -29,7 +29,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.dto.sn.locale.TurSNSiteLocaleDto;
+import com.viglet.turing.persistence.mapper.sn.locale.TurSNSiteLocaleMapper;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 
@@ -47,18 +48,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurSNSiteByNameLocaleAPI {
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+	private final TurSNSiteLocaleMapper turSNSiteLocaleMapper;
 
 	public TurSNSiteByNameLocaleAPI(TurSNSiteRepository turSNSiteRepository,
-			TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+			TurSNSiteLocaleMapper turSNSiteLocaleMapper) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+		this.turSNSiteLocaleMapper = turSNSiteLocaleMapper;
 	}
 
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
-	public List<TurSNSiteLocale> turSNSiteLocaleByNameList(@PathVariable String siteName) {
-		return turSNSiteRepository.findByName(siteName).map(site -> this.turSNSiteLocaleRepository
-				.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site))
+	public List<TurSNSiteLocaleDto> turSNSiteLocaleByNameList(@PathVariable String siteName) {
+		return turSNSiteRepository.findByName(siteName)
+				.map(site -> turSNSiteLocaleMapper.toDtoList(this.turSNSiteLocaleRepository
+						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site)))
 				.orElse(Collections.emptyList());
 	}
 

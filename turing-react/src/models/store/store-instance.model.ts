@@ -6,18 +6,8 @@ export interface TurStoreInstance {
   description: string;
   url: string;
   turStoreVendor: TurStoreVendor;
-  language: string;
   enabled: number;
-  modelName: string;
-  temperature: number;
-  topK: number;
-  topP: number;
-  repeatPenalty: number;
-  seed: number;
-  numPredict: number;
-  stop: string;
-  responseFormat: string;
-  supportedCapabilities: string;
-  timeout: string;
-  maxRetries: number;
+  collectionName?: string;
+  credential?: string;
+  providerOptionsJson?: string;
 }

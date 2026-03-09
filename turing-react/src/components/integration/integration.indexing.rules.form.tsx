@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { ROUTES } from "@/app/routes.const"
-import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -31,8 +30,10 @@ import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { TurIntegrationIndexingRuleService } from "@/services/integration/integration-indexing-rule.service"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { GradientButton } from "../ui/gradient-button"
 import { DynamicIndexingRuleFields } from "./dynamic.indexing.rule.field"
-
 // Constants
 const RULE_TYPES = [
   { value: "IGNORE", label: "Ignore" }
@@ -50,6 +51,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
   integrationId,
   isNew
 }) => {
+  console.log("isNew", isNew);
   // Services - memoized to prevent recreation on each render
   const turSNSiteService = useMemo(() => new TurSNSiteService(), []);
   const turSNFieldService = useMemo(() => new TurSNFieldService(), []);
@@ -149,7 +151,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
         if (result) {
           form.reset(data); // Reset dirty state after successful save
           toast.success(`The "${data.name}" Integration Indexing Rule was created successfully.`);
-          navigate(ROUTES.INTEGRATION_INSTANCE);
+          navigate(`${ROUTES.INTEGRATION_INSTANCE}/${integrationId}/indexing-rule`);
         } else {
           toast.error("Failed to create the rule. Please try again.");
         }
@@ -172,165 +174,251 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
   const isAttributeFieldDisabled = !selectedSource || isLoadingFields;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-8 pr-8">
-        {/* Rule Name */}
-        <FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Rule Name</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="e.g., Ignore Draft Pages"
-                  type="text"
+    <div className="px-6 py-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Accordion
+            type="multiple"
+            defaultValue={[
+              "basic-info",
+              "site-settings",
+              "rule-action",
+              "matching-values"
+            ]}
+            className="space-y-6"
+          >
+            {/* Section: Basic Info */}
+            <AccordionItem value="basic-info" className="border rounded-lg px-6">
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-foreground">
+                    Rule Details
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6 pt-4">
+                {/* Rule Name */}
+                <FormField
+                  control={control}
+                  name="name"
+                  rules={{ required: "Please give your rule a name." }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rule Name</FormLabel>
+                      <FormDescription>
+                        Give your rule a short, memorable name so you and your team can easily recognize it later.
+                      </FormDescription>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Skip Draft Pages"
+                          type="text"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormDescription>
-                A unique, descriptive name to easily identify this rule in the list.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        {/* Rule Description */}
-        <FormField
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Rule Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="e.g., Excludes all draft pages from indexing"
-                  className="resize-none"
+                {/* Rule Description */}
+                <FormField
+                  control={control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What does this rule do?</FormLabel>
+                      <FormDescription>
+                        Briefly describe when or why this rule should be used. This helps everyone understand its purpose.
+                      </FormDescription>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="e.g., Prevents draft pages from being indexed"
+                          className="resize-none"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormDescription>
-                Provide details about what this rule does and when it should be applied.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              </AccordionContent>
+            </AccordionItem>
 
-        {/* Semantic Navigation Site */}
-        <FormField
-          control={control}
-          name="source"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Semantic Navigation Site</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {turSNSites.map((site) => (
-                    <SelectItem key={site.id} value={site.name}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                The Semantic Navigation site where this rule will be applied.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            {/* Section: Site Settings */}
+            <AccordionItem value="site-settings" className="border rounded-lg px-6">
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-foreground">
+                    Where does this rule apply?
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6 pt-4">
+                {/* Semantic Navigation Site */}
+                <FormField
+                  control={control}
+                  name="source"
+                  rules={{ required: "Please select a site." }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Choose a Site</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Select the Semantic Navigation site where this rule should be active.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select a site..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {turSNSites.map((site) => (
+                                <SelectItem key={site.id} value={site.name}>
+                                  {site.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
 
-        {/* Target Attribute/Field */}
-        <FormField
-          control={control}
-          name="attribute"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Field</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                disabled={isAttributeFieldDisabled}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={isLoadingFields ? "Loading..." : "Choose..."}
+                {/* Target Attribute/Field */}
+                <FormField
+                  control={control}
+                  name="attribute"
+                  rules={{ required: "Please select a field." }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Pick a Field</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Choose the content field this rule should check. Only items with matching values will be affected.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isAttributeFieldDisabled}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={isLoadingFields ? "Loading fields..." : "Select a field..."}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {turSNSiteFields.map((siteField) => (
+                                <SelectItem key={siteField.id} value={siteField.name}>
+                                  {siteField.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section: Rule Action */}
+            <AccordionItem value="rule-action" className="border rounded-lg px-6">
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-foreground">
+                    What happens to matching content?
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6 pt-4">
+                {/* Action Type */}
+                <FormField
+                  control={control}
+                  name="ruleType"
+                  rules={{ required: "Please choose an action." }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Action for Matching Items</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Decide what should happen when content matches this rule. For example, "Ignore" will skip these items during indexing.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Choose an action..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {RULE_TYPES.map((ruleType: typeof RULE_TYPES[number]) => (
+                                <SelectItem key={ruleType.value} value={ruleType.value}>
+                                  {ruleType.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section: Matching Values */}
+            <AccordionItem value="matching-values" className="border rounded-lg px-6">
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-foreground">
+                    Which values trigger this rule?
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6 pt-4">
+                <FormItem>
+                  <FormLabel>Values to Match</FormLabel>
+                  <FormDescription>
+                    Add one or more values. If the selected field matches any of these, the rule will apply.
+                  </FormDescription>
+                  <FormControl>
+                    <DynamicIndexingRuleFields
+                      fieldName="values"
+                      control={control}
+                      register={register}
                     />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {turSNSiteFields.map((siteField) => (
-                    <SelectItem key={siteField.id} value={siteField.name}>
-                      {siteField.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                The content attribute used to match against the values below.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </FormControl>
+                </FormItem>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-        {/* Action Type */}
-        <FormField
-          control={control}
-          name="ruleType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Action Type</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {RULE_TYPES.map((ruleType) => (
-                    <SelectItem key={ruleType.value} value={ruleType.value}>
-                      {ruleType.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Defines the action to take when content matches this rule.
-                "Ignore" will exclude matching content from indexing.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Matching Values */}
-        <FormItem>
-          <FormLabel>Matching Values</FormLabel>
-          <FormDescription>
-            Add the values that the attribute should match.
-            Content with matching attribute values will have the rule applied.
-          </FormDescription>
-          <FormControl>
-            <DynamicIndexingRuleFields
-              fieldName="values"
-              control={control}
-              register={register}
-            />
-          </FormControl>
-        </FormItem>
-
-        <Button type="submit">Save</Button>
-      </form>
-    </Form>
+          {/* Action Footer */}
+          <div className="flex justify-end gap-4 mt-8">
+            <GradientButton
+              type="button"
+              variant="outline"
+              onClick={() => navigate(`${ROUTES.INTEGRATION_INSTANCE}/${integrationId}/indexing-rule`)}
+            >
+              Cancel
+            </GradientButton>
+            <GradientButton type="submit">
+              Save Changes
+            </GradientButton>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }
 

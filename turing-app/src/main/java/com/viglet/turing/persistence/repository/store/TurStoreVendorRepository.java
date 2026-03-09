@@ -34,11 +34,12 @@ import org.springframework.data.jpa.repository.Query;
 import com.viglet.turing.persistence.model.store.TurStoreVendor;
 
 public interface TurStoreVendorRepository extends JpaRepository<TurStoreVendor, String> {
-
+	@Override
 	@Cacheable("turStoreVendorfindAll")
 	@NotNull
 	List<TurStoreVendor> findAll();
 
+	@Override
 	@Cacheable("turStoreVendorfindById")
 	@NotNull
 	Optional<TurStoreVendor> findById(@NotNull String id);

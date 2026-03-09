@@ -29,8 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.sn.bean.TurSNFieldExtType;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/sn/field/ext")
@@ -41,13 +41,15 @@ public class TurSNFieldExtAPI {
 	@GetMapping("/types")
 	public List<TurSNFieldExtType> turSNFieldExtTypeGet() {
 		List<TurSNFieldExtType> types = new ArrayList<>();
-		types.add(new TurSNFieldExtType("BOOL", "Boolean"));
-		types.add(new TurSNFieldExtType("DATE", "Date"));
-		types.add(new TurSNFieldExtType("LONG", "Long"));
-		types.add(new TurSNFieldExtType("INT", "Number"));
 		types.add(new TurSNFieldExtType("STRING", "String"));
 		types.add(new TurSNFieldExtType("TEXT", "Text"));
-
+		types.add(new TurSNFieldExtType("INT", "Number"));
+		types.add(new TurSNFieldExtType("DATE", "Date"));
+		types.add(new TurSNFieldExtType("BOOL", "Boolean"));
+		types.add(new TurSNFieldExtType("LONG", "Long"));
+		types.add(new TurSNFieldExtType("FLOAT", "Float"));
+		types.add(new TurSNFieldExtType("DOUBLE", "Double"));
+		types.add(new TurSNFieldExtType("CURRENCY", "Currency"));
 		return types;
 	}
 }

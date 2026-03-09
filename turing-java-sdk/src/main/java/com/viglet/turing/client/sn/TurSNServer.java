@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -41,7 +42,6 @@ import org.apache.hc.core5.net.URIBuilder;
 
 import com.viglet.turing.client.auth.credentials.TurApiKeyCredentials;
 import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
-import com.viglet.turing.client.sn.TurSNQuery.Order;
 import com.viglet.turing.client.sn.autocomplete.TurSNAutoCompleteQuery;
 import com.viglet.turing.client.sn.didyoumean.TurSNDidYouMean;
 import com.viglet.turing.client.sn.facet.TurSNFacetFieldList;
@@ -239,9 +239,12 @@ public class TurSNServer {
         return Collections.emptyList();
     }
 
-    private List<TurSNLocale> executeLocaleRequest(HttpGet httpGet, CloseableHttpClient client)
-            throws IOException {
-        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<>() {
+    private List<TurSNLocale> executeLocaleRequest(HttpGet httpGet, CloseableHttpClient client) {
+        String response = getHttpResponse(httpGet, client);
+        if (response == null) {
+            return Collections.emptyList();
+        }
+        return new ObjectMapper().readValue(response, new TypeReference<>() {
         });
     }
 
@@ -255,10 +258,12 @@ public class TurSNServer {
         return null;
     }
 
-    private List<String> executeAutoCompleteRequest(HttpGet httpGet, CloseableHttpClient client)
-            throws IOException {
-
-        return new ObjectMapper().readValue(getHttpResponse(httpGet, client), new TypeReference<>() {
+    private List<String> executeAutoCompleteRequest(HttpGet httpGet, CloseableHttpClient client) {
+        String response = getHttpResponse(httpGet, client);
+        if (response == null) {
+            return Collections.emptyList();
+        }
+        return new ObjectMapper().readValue(response, new TypeReference<>() {
         });
     }
 
@@ -280,8 +285,8 @@ public class TurSNServer {
 
         String requestString = openConnectionAndRequest(prepareQueryRequest());
         if (requestString != null) {
-            TurSNSiteSearchBean turSNSiteSearchBean = new ObjectMapper().readValue(requestString,
-                    TurSNSiteSearchBean.class);
+            TurSNSiteSearchBean turSNSiteSearchBean = Objects.requireNonNull(
+                    new ObjectMapper().readValue(requestString, TurSNSiteSearchBean.class), "Empty result");
             return createTuringResponse(turSNSiteSearchBean);
         }
         return new QueryTurSNResponse();
@@ -360,7 +365,9 @@ public class TurSNServer {
 
     private TurSNGroupList setGroupResponse(TurSNSiteSearchBean turSNSiteSearchBean) {
         List<TurSNGroup> turSNGroups = new ArrayList<>();
-
+        if (turSNSiteSearchBean.getGroups() == null) {
+            return new TurSNGroupList();
+        }
         turSNSiteSearchBean.getGroups().forEach(groups -> {
             TurSNGroup turSNGroup = new TurSNGroup();
             turSNGroup.setCount(groups.getCount());
@@ -458,6 +465,8 @@ public class TurSNServer {
             httpGet.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
             httpGet.setHeader(HttpHeaders.ACCEPT_ENCODING, StandardCharsets.UTF_8.name());
 
+            TurSNClientUtils.authentication(httpGet, this.getCredentials(), this.getApiKey());
+
             requestLog(turingURL);
 
         } catch (URISyntaxException e) {
@@ -501,14 +510,11 @@ public class TurSNServer {
 
             if (turSortField.getSort() != null) {
                 if (turSortField.getField() == null) {
-                    String orderMod;
-                    if (turSortField.getSort().name().equals(Order.desc.name())) {
-                        orderMod = NEWEST_SORT;
-                    } else if (turSortField.getSort().name().equals(Order.asc.name())) {
-                        orderMod = OLDEST_SORT;
-                    } else {
-                        orderMod = RELEVANCE_SORT;
-                    }
+                    String orderMod = switch (turSortField.getSort()) {
+                        case desc -> NEWEST_SORT;
+                        case asc -> OLDEST_SORT;
+                        case relevance -> RELEVANCE_SORT;
+                    };
                     turingURL.addParameter(TurSNParamType.SORT, orderMod);
                 } else {
                     turingURL.addParameter(TurSNParamType.SORT,

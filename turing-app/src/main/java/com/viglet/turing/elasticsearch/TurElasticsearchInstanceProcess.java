@@ -60,8 +60,7 @@ public class TurElasticsearchInstanceProcess {
     }
 
     private Optional<TurElasticsearchInstance> getElasticsearchClient(TurSEInstance turSEInstance, String index) {
-        String scheme = "http";
-        String urlString = String.format("%s://%s:%s", scheme, turSEInstance.getHost(), turSEInstance.getPort());
+        String urlString = turSEInstance.getEndpointUrl();
 
         try {
             RestClient restClient = RestClient.builder(urlString).build();

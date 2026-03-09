@@ -9,6 +9,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 public class TurSNFacetFieldValueList implements Iterable<TurSNFacetFieldValue>{
 	private List<TurSNFacetFieldValue> turFacetFieldValues = new ArrayList<>();
 	public TurSNFacetFieldValueList(List<TurSNSiteSearchFacetItemBean> facetItems) {
+		if (facetItems == null) return;
 		for (TurSNSiteSearchFacetItemBean facetItem : facetItems) {
 			TurSNFacetFieldValue turSNFacetFieldValue = new TurSNFacetFieldValue();
 			turSNFacetFieldValue.setLabel(facetItem.getLabel());

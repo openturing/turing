@@ -37,8 +37,9 @@ public class TurSNQuery {
 	 * 
 	 * @since 0.3.4
 	 */
+	@SuppressWarnings("java:S115")
 	public enum Order {
-		asc, desc
+		asc, desc, relevance
 	}
 
 	@Setter

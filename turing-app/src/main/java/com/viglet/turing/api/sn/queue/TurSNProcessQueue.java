@@ -26,14 +26,14 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobAttributeSpec;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -59,7 +59,9 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
+
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 @Slf4j
@@ -99,7 +101,7 @@ public class TurSNProcessQueue {
         this.turSEInstanceRepository = turSEInstanceRepository;
     }
 
-    @JmsListener(destination = TurSNConstants.INDEXING_QUEUE, id = TurSNConstants.INDEXING_QUEUE_LISTENER)
+    @JmsListener(destination = TurSNConstants.INDEXING_QUEUE, id = TurSNConstants.INDEXING_QUEUE_LISTENER, concurrency = "${turing.jms.concurrency:1-1}")
     @Transactional
     public void receiveIndexingQueue(TurSNJobItems turSNJobItems) {
         receiveQueueLog(turSNJobItems);
@@ -120,13 +122,13 @@ public class TurSNProcessQueue {
     private static void receiveQueueLog(TurSNJobItems turSNJobItems) {
         turSNJobItems.forEach(turSNJobItem -> TurLoggingUtils.setSuccessStatus(turSNJobItem,
                 TurIndexingStatus.RECEIVED_FROM_QUEUE));
+
         if (log.isDebugEnabled()) {
-            try {
-                log.debug("receiveQueue turSNJobItems: {}", new ObjectMapper().writer()
-                        .withDefaultPrettyPrinter().writeValueAsString(turSNJobItems));
-            } catch (JsonProcessingException e) {
-                log.error(e.getMessage(), e);
-            }
+            String json = JsonMapper.builder()
+                    .build()
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(turSNJobItems);
+            log.debug("receiveQueue turSNJobItems: {}", json);
         }
     }
 
@@ -208,9 +210,8 @@ public class TurSNProcessQueue {
     }
 
     private boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
-        Map<String, Object> attributes =
-                this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
-                        getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
+        Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
+                getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
@@ -239,6 +240,7 @@ public class TurSNProcessQueue {
     }
 
     private void saveFaceLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {
+        if (spec.getFacetName() == null) return;
         Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
         spec.getFacetName().forEach((key, value) -> {
             if (!key.equals(DEFAULT)) {
@@ -255,9 +257,11 @@ public class TurSNProcessQueue {
     @NotNull
     private TurSNSiteFieldExt saveSiteFieldExt(TurSNSite turSNSite, TurSNJobAttributeSpec spec,
             TurSNSiteField turSNSiteField) {
+        Map<String, String> facetName = spec.getFacetName();
         TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder().enabled(1)
                 .name(turSNSiteField.getName()).description(turSNSiteField.getDescription())
-                .facet(spec.isFacet() ? 1 : 0).facetName(spec.getFacetName().get(DEFAULT)).hl(0)
+                .facet(spec.isFacet() ? 1 : 0)
+                .facetName(facetName != null ? facetName.get(DEFAULT) : null).hl(0)
                 .multiValued(turSNSiteField.getMultiValued()).mlt(0)
                 .externalId(turSNSiteField.getId()).snType(TurSNFieldType.SE)
                 .type(turSNSiteField.getType()).turSNSite(turSNSite).build();

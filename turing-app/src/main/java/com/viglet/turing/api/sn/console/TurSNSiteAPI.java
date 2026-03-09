@@ -41,6 +41,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
+import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
+import com.viglet.turing.persistence.mapper.sn.TurSNSiteMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
@@ -48,7 +50,6 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -63,6 +64,7 @@ import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -70,10 +72,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/sn")
 @Tag(name = "Semantic Navigation Site", description = "Semantic Navigation Site API")
 @ComponentScan("com.viglet.turing")
+@RequiredArgsConstructor
 public class TurSNSiteAPI {
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurSNSiteExport turSNSiteExport;
     private final TurSNTemplate turSNTemplate;
@@ -81,60 +83,42 @@ public class TurSNSiteAPI {
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurSolr turSolr;
     private final TurConfigProperties turConfigProperties;
-
-    public TurSNSiteAPI(TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
-            TurSNSiteGenAiRepository turSNSiteGenAiRepository,
-            TurSNSiteExport turSNSiteExport,
-            TurSNTemplate turSNTemplate,
-            TurSNQueue turSNQueue,
-            TurSolrInstanceProcess turSolrInstanceProcess,
-            TurSolr turSolr,
-            TurConfigProperties turConfigProperties) {
-        this.turSNSiteRepository = turSNSiteRepository;
-        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
-        this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
-        this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
-        this.turSNSiteExport = turSNSiteExport;
-        this.turSNTemplate = turSNTemplate;
-        this.turSNQueue = turSNQueue;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
-        this.turSolr = turSolr;
-        this.turConfigProperties = turConfigProperties;
-    }
+    private final TurSNSiteMapper turSNSiteMapper;
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
-    public List<TurSNSite> turSNSiteList(Principal principal) {
+    public List<TurSNSiteDto> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
-            return this.turSNSiteRepository.findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),
-                    principal.getName().toLowerCase());
+            return turSNSiteMapper.toDtoList(this.turSNSiteRepository
+                    .findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),
+                            principal.getName().toLowerCase()));
         } else {
-            return this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
+            return turSNSiteMapper
+                    .toDtoList(this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase()));
         }
     }
 
     @Operation(summary = "Semantic Navigation Site structure")
     @GetMapping("/structure")
-    public TurSNSite turSNSiteStructure() {
+    public TurSNSiteDto turSNSiteStructure() {
         TurSNSite turSNSite = new TurSNSite();
         turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
         turSNSite.setFacetType(TurSNSiteFacetFieldEnum.AND);
         turSNSite.setTurSEInstance(new TurSEInstance());
         turSNSite.setTurSNSiteGenAi(new TurSNSiteGenAi());
-        return turSNSite;
+        return turSNSiteMapper.toDto(turSNSite);
     }
 
     @Operation(summary = "Show a Semantic Navigation Site")
     @GetMapping("/{id}")
-    public TurSNSite turSNSiteGet(@PathVariable String id) {
-        return this.turSNSiteRepository.findById(id).orElse(new TurSNSite());
+    public TurSNSiteDto turSNSiteGet(@PathVariable String id) {
+        return turSNSiteMapper.toDto(this.turSNSiteRepository.findById(id).orElse(new TurSNSite()));
     }
 
     @Operation(summary = "Update a Semantic Navigation Site")
     @PutMapping("/{id}")
-    public TurSNSite turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSite turSNSite) {
+    public TurSNSiteDto turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
+        TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
@@ -164,16 +148,19 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
             turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
             turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
-            turSNSiteEdit.setTurSNSiteGenAi(turSNSite.getTurSNSiteGenAi());
-            turSNSiteRepository.save(turSNSiteEdit);
-            Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi()).ifPresent(turSNSiteGenAi -> {
-                turSNSiteGenAi.setEnabled(turSNSite.getTurSNSiteGenAi().isEnabled());
-                turSNSiteGenAi.setTurLLMInstance(turSNSite.getTurSNSiteGenAi().getTurLLMInstance());
-                turSNSiteGenAi.setTurStoreInstance(turSNSite.getTurSNSiteGenAi().getTurStoreInstance());
+            Optional.ofNullable(turSNSite.getTurSNSiteGenAi()).ifPresent(genAi -> {
+                TurSNSiteGenAi turSNSiteGenAi = Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi())
+                        .orElse(new TurSNSiteGenAi());
+                turSNSiteGenAi.setEnabled(genAi.isEnabled());
+                turSNSiteGenAi.setTurLLMInstance(genAi.getTurLLMInstance());
+                turSNSiteGenAi.setTurStoreInstance(genAi.getTurStoreInstance());
+                turSNSiteGenAi.setSystemPrompt(genAi.getSystemPrompt());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
+                turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });
-            return turSNSiteEdit;
-        }).orElse(new TurSNSite());
+            turSNSiteRepository.save(turSNSiteEdit);
+            return turSNSiteMapper.toDto(turSNSiteEdit);
+        }).orElse(new TurSNSiteDto());
 
     }
 
@@ -182,31 +169,53 @@ public class TurSNSiteAPI {
     @DeleteMapping("/{id}")
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
-        turSNSite.ifPresent(
-                site -> turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
-                        .forEach(locale -> TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())));
-        turSNSiteRepository.delete(id);
+        turSNSite.ifPresent(site -> {
+            TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+            turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
+                    .forEach(locale -> TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore()));
+            site.getTurSNSiteFields().clear();
+            site.getTurSNSiteFieldExts().clear();
+            site.getTurSNSiteSpotlights().clear();
+            site.getTurSNRankingExpressions().clear();
+            site.getTurSNSiteMergeProviders().clear();
+            site.setTurSNSiteGenAi(null);
+            turSNSiteRepository.flush();
+            turSNSiteRepository.delete(site);
+            Optional.ofNullable(genAi).ifPresent(turSNSiteGenAiRepository::delete);
+        });
 
         return true;
     }
 
     @Operation(summary = "Create a Semantic Navigation Site")
     @PostMapping
-    public TurSNSite turSNSiteAdd(@RequestBody TurSNSite turSNSite, Principal principal) {
+    public TurSNSiteDto turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
+        TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         if (turSNSite.getTurSNSiteGenAi() != null) {
             turSNSiteGenAiRepository.save(turSNSite.getTurSNSiteGenAi());
         }
         turSNSiteRepository.save(turSNSite);
         turSNTemplate.createSNSite(turSNSite, principal.getName(), Locale.US);
-        return turSNSite;
+        return turSNSiteMapper.toDto(turSNSite);
 
     }
 
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
+    public StreamingResponseBody turSNSiteExportAll(HttpServletResponse response) {
 
         try {
-            return turSNSiteExport.exportObject(response);
+            return turSNSiteExport.exportAll(response);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @GetMapping(value = "/{id}/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public StreamingResponseBody turSNSiteExport(@PathVariable String id, HttpServletResponse response) {
+
+        try {
+            return turSNSiteExport.exportBySiteId(id, response);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

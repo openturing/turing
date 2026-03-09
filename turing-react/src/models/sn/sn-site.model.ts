@@ -5,7 +5,7 @@ import type { TurSNSiteGenAi } from "./sn-site-genai.model.ts";
 import type { TurSNSiteLocale } from "./sn-site-locale.model.ts";
 
 export type TurSNSite = {
- id: string;
+  id: string;
   name: string;
   description: string;
   exactMatchField: string;
@@ -36,4 +36,4 @@ export type TurSNSite = {
   wildcardAlways: number;
   exactMatch: number;
   turSNSiteGenAi: TurSNSiteGenAi;
-}
+};

@@ -230,12 +230,10 @@ public class TurCommonsUtils {
      * @param source the directory where the file entry is found
      * @param file   the file that is about to be added
      * @return the name of an archive entry
-     * @throws IOException if the io fails
      */
-    private static String getEntryName(File source, File file) throws IOException {
+    private static String getEntryName(File source, File file) {
         Path sourcePath = source.toPath().toAbsolutePath().normalize();
         Path filePath = file.toPath().toAbsolutePath().normalize();
-
         return sourcePath.relativize(filePath).toString();
     }
 

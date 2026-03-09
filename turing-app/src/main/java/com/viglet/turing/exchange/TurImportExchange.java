@@ -28,32 +28,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-/*
- * Copyright (C) 2016-2022 the original author or authors. 
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Component
@@ -87,26 +68,50 @@ public class TurImportExchange {
 	}
 
 	private void importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			TurExchange turExchange = mapper.readValue(
-					new FileInputStream(extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE)),
-					TurExchange.class);
+		ObjectMapper mapper = JsonMapper.builder().build();
 
-			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
-				turSNSiteImport.importSNSite(turExchange);
-			}
+		try (FileInputStream fis = new FileInputStream(
+				extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE))) {
 
-			FileUtils.deleteDirectory(extractFolder);
-			if (parentExtractFolder != null) {
-				FileUtils.deleteDirectory(parentExtractFolder);
-			}
-
-			return;
-		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			TurExchange turExchange = mapper.readValue(fis, TurExchange.class);
+			processTurExchange(turExchange);
+			cleanupDirectories(extractFolder, parentExtractFolder);
+		} catch (Exception e) {
+			log.error("Error importing SN Site: {}", e.getMessage(), e);
 		}
-		new TurExchange();
+	}
+
+	private void processTurExchange(TurExchange turExchange) {
+		if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
+			logSNSites(turExchange.getSnSites());
+			turSNSiteImport.importSNSite(turExchange);
+		} else {
+			log.warn("No SN Sites found in export file");
+		}
+	}
+
+	private void logSNSites(java.util.List<TurSNSiteExchange> sites) {
+		for (TurSNSiteExchange site : sites) {
+			log.info(
+					"Deserialized SN Site '{}': fields={}, fieldExts={}, locales={}, spotlights={}, rankings={}",
+					site.getName(),
+					formatSize(site.getTurSNSiteFields()),
+					formatSize(site.getTurSNSiteFieldExts()),
+					formatSize(site.getTurSNSiteLocales()),
+					formatSize(site.getTurSNSiteSpotlights()),
+					formatSize(site.getTurSNRankingExpressions()));
+		}
+	}
+
+	private String formatSize(java.util.Collection<?> collection) {
+		return collection != null ? String.valueOf(collection.size()) : "null";
+	}
+
+	private void cleanupDirectories(File extractFolder, File parentExtractFolder) throws IOException {
+		FileUtils.deleteDirectory(extractFolder);
+		if (parentExtractFolder != null) {
+			FileUtils.deleteDirectory(parentExtractFolder);
+		}
 	}
 
 	public TurExchange importFromFile(File file) {

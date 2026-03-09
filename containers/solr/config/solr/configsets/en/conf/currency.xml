@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<currencyConfig>
+    <rates>
+        <rate from="USD" to="USD" rate="1.0"/>
+        <rate from="BRL" to="BRL" rate="1.0"/>
+        <rate from="USD" to="BRL" rate="1.0"/>
+        <rate from="BRL" to="USD" rate="1.0"/>
+    </rates>
+</currencyConfig>

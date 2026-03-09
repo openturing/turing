@@ -1,0 +1,92 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mandatory": true,
+    "multiValued": false,
+    "description": "Unique document identifier",
+    "facet": false
+  },
+  {
+    "name": "title",
+    "type": "TEXT",
+    "mandatory": true,
+    "multiValued": false,
+    "description": "Article title",
+    "facet": false
+  },
+  {
+    "name": "modification_date",
+    "type": "DATE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Last modification date (ISO 8601)",
+    "facet": false
+  },
+  {
+    "name": "abstract",
+    "type": "TEXT",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Short summary of the article",
+    "facet": false
+  },
+  {
+    "name": "price12",
+    "type": "CURRENCY",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Article price in the default currency",
+    "facet": true,
+    "facetName": {
+      "default": "Price",
+      "en_US": "Price",
+      "pt_BR": "Preço",
+      "es_ES": "Precio"
+    }
+  },
+  {
+    "name": "latitude",
+    "type": "DOUBLE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Latitude of the article location",
+    "facet": true,
+    "facetName": {
+      "default": "Latitude",
+      "en_US": "Latitude",
+      "pt_BR": "Latitude",
+      "es_ES": "Latitud"
+    }
+  },
+  {
+    "name": "longitude",
+    "type": "DOUBLE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Longitude of the article location",
+    "facet": true,
+    "facetName": {
+      "default": "Longitude",
+      "en_US": "Longitude",
+      "pt_BR": "Longitude",
+      "es_ES": "Longitud"
+    }
+  },
+  {
+    "name": "url",
+    "type": "STRING",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Canonical URL of the article",
+    "facet": false
+  },
+  {
+    "name": "rating",
+    "type": "FLOAT",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Rating of the article",
+    "facet": false
+  }
+]

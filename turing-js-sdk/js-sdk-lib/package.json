@@ -5,10 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm install && node build.js",
+    "build:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
+    "build:run": "node build.js",
+    "build": "npm run build:deps && npm run build:run",
     "dev": "tsc --watch",
     "clean": "",
-    "prepublishOnly": "npm run clean && npm install && npm run build"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "publishConfig": {
     "access": "public"

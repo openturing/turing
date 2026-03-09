@@ -37,7 +37,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.api.ocr.TurTikaFileAttributes;
 import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
@@ -54,6 +53,8 @@ import com.viglet.turing.utils.TurFileUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @RestController
@@ -106,13 +107,19 @@ public class TurSNImportAPI {
     @PostMapping("zip")
     public boolean turSNImportZipFileBroker(@RequestParam("file") MultipartFile multipartFile) {
         File extractFolder = TurSpringUtils.extractZipFile(multipartFile);
+
+        ObjectMapper mapper = JsonMapper.builder().build();
+
         try (FileInputStream fileInputStream = new FileInputStream(
                 extractFolder.getAbsolutePath().concat(File.separator).concat(TurSNConstants.EXPORT_FILE))) {
-            TurSNJobItems turSNJobItems = new ObjectMapper().readValue(fileInputStream, TurSNJobItems.class);
+            TurSNJobItems turSNJobItems = mapper.readValue(fileInputStream, TurSNJobItems.class);
+
             turSNJobItems.forEach(turSNJobItem -> turSNJobItem.getAttributes().entrySet()
                     .forEach(attribute -> extractTextOfFileAttribute(extractFolder, attribute)));
+
             FileUtils.deleteDirectory(extractFolder);
             return turSNImportBroker(turSNJobItems);
+
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

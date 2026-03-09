@@ -21,17 +21,25 @@
 
 package com.viglet.turing.persistence.model.sn.field;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import jakarta.persistence.*;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Tolerate;
-import org.hibernate.annotations.UuidGenerator;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * The persistent class for the vigServices database table.
@@ -46,26 +54,27 @@ public class TurSNSiteField implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 
 	@Column(nullable = false, length = 50)
 	private String name;
-	
+
 	@Column
 	private String description;
 
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private TurSEFieldType type;
 
 	@Column
 	private int multiValued;
-	
+
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)
-	@JsonBackReference (value="turSNSiteField-turSNSite")
+	@JsonBackReference(value = "turSNSiteField-turSNSite")
 	private TurSNSite turSNSite;
 
 	@Tolerate

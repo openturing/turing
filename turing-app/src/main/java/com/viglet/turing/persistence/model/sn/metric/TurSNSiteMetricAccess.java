@@ -26,9 +26,9 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.UuidGenerator;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -56,7 +56,7 @@ public class TurSNSiteMetricAccess implements Serializable {
 
 	@Setter
 	@Id
-	@UuidGenerator
+	@TurAssignableUuidGenerator
 	@Column(name = "id", updatable = false, nullable = false)
 	private String id;
 

@@ -41,9 +41,6 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 @AutoConfigureAfter(DispatcherServletAutoConfiguration.class)
 public class TurStaticResourceConfiguration implements WebMvcConfigurer {
     public static final String FORWARD_INDEX_HTML = "forward:/index.html";
-    public static final String FORWARD_SN_TEMPLATES_BROWSER_INDEX_HTML = "forward:/sn/templates/browser/index.html";
-    public static final String FORWARD_WELCOME_BROWSER_INDEX_HTML = "forward:/welcome/browser/index.html";
-    public static final String FORWARD_CONSOLE_BROWSER_INDEX_HTML = "forward:/console/browser/index.html";
     @Value("${turing.allowedOrigins:http://localhost:5173,http://localhost:2700}")
     private String allowedOrigins;
 
@@ -59,12 +56,8 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/console").setViewName(FORWARD_CONSOLE_BROWSER_INDEX_HTML);
-        registry.addViewController("/console/").setViewName(FORWARD_CONSOLE_BROWSER_INDEX_HTML);
-        registry.addViewController("/welcome").setViewName(FORWARD_WELCOME_BROWSER_INDEX_HTML);
-        registry.addViewController("/welcome/").setViewName(FORWARD_WELCOME_BROWSER_INDEX_HTML);
-        registry.addViewController("/sn/templates").setViewName(FORWARD_SN_TEMPLATES_BROWSER_INDEX_HTML);
-        registry.addViewController("/sn/templates/").setViewName(FORWARD_SN_TEMPLATES_BROWSER_INDEX_HTML);
+        registry.addViewController("/sn").setViewName(FORWARD_INDEX_HTML);
+        registry.addViewController("/sn/").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/login").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/login/").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/admin").setViewName(FORWARD_INDEX_HTML);
@@ -79,11 +72,9 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@NotNull ResourceHandlerRegistry registry) {
-        registryAngular(registry, "/console");
-        registryAngular(registry, "/welcome");
         registryReact(registry, "/login");
         registryReact(registry, "/admin");
-        registrySearch(registry, "/sn/templates");
+        registryReact(registry, "/sn");
     }
 
     private static void registryFrontend(ResourceHandlerRegistry registry, String context, String location,
@@ -99,16 +90,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
                                 : new ClassPathResource(path);
                     }
                 });
-    }
-
-    private static void registryAngular(ResourceHandlerRegistry registry, String context) {
-        registryFrontend(registry, "%s/**".formatted(context), "classpath:/public%s/browser/".formatted(context),
-                "/public%s/browser/index.html".formatted(context));
-    }
-
-    private static void registrySearch(ResourceHandlerRegistry registry, String context) {
-        registryFrontend(registry, "%s/**".formatted(context), "classpath:/public%s/".formatted(context),
-                "/public%s/search.html".formatted(context));
     }
 
     private static void registryReact(ResourceHandlerRegistry registry, String context) {

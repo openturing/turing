@@ -18,6 +18,7 @@ package com.viglet.turing.commons.sn.bean.spellcheck;
 import java.io.Serializable;
 import java.net.URI;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
@@ -26,9 +27,9 @@ import lombok.Setter;
 
 /**
  * Spell Check Text of Turing ES Semantic Navigation response.
- * 
+ *
  * @author Alexandre Oliveira
- * 
+ *
  * @since 0.3.5
  */
 
@@ -39,6 +40,10 @@ public class TurSNSiteSpellCheckText implements Serializable {
 	private static final String TRUE = "1";
 	private String text;
 	private String link;
+
+	@JsonCreator
+	public TurSNSiteSpellCheckText() {
+	}
 
 	public TurSNSiteSpellCheckText(URI uri, String text, boolean isOriginal) {
 		super();

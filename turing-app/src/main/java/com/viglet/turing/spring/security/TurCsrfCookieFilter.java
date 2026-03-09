@@ -21,23 +21,35 @@
 
 package com.viglet.turing.spring.security;
 
+import java.io.IOException;
+
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
 
 class TurCsrfCookieFilter extends OncePerRequestFilter {
+
+    private static final String EXPOSE_HEADERS = "Access-Control-Expose-Headers";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
         // Render the token value to a cookie by causing the deferred token to be loaded
-        csrfToken.getToken();
+        String token = csrfToken.getToken();
+        response.setHeader(csrfToken.getHeaderName(), token);
+
+        String exposeHeaders = response.getHeader(EXPOSE_HEADERS);
+        if (!StringUtils.hasText(exposeHeaders)) {
+            response.setHeader(EXPOSE_HEADERS, csrfToken.getHeaderName());
+        } else if (!exposeHeaders.contains(csrfToken.getHeaderName())) {
+            response.setHeader(EXPOSE_HEADERS, exposeHeaders + ", " + csrfToken.getHeaderName());
+        }
 
         filterChain.doFilter(request, response);
     }

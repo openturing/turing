@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.dto.integration.TurIntegrationInstanceDto;
+import com.viglet.turing.persistence.mapper.integration.TurIntegrationInstanceMapper;
 import com.viglet.turing.persistence.model.integration.TurIntegrationInstance;
 import com.viglet.turing.persistence.repository.integration.TurIntegrationInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -44,34 +46,41 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Integration", description = "Integration API")
 public class TurIntegrationInstanceAPI {
 	private final TurIntegrationInstanceRepository turIntegrationInstanceRepository;
+	private final TurIntegrationInstanceMapper turIntegrationInstanceMapper;
 
-	public TurIntegrationInstanceAPI(TurIntegrationInstanceRepository turIntegrationInstanceRepository) {
+	public TurIntegrationInstanceAPI(TurIntegrationInstanceRepository turIntegrationInstanceRepository,
+			TurIntegrationInstanceMapper turIntegrationInstanceMapper) {
 		this.turIntegrationInstanceRepository = turIntegrationInstanceRepository;
+		this.turIntegrationInstanceMapper = turIntegrationInstanceMapper;
 	}
 
 	@Operation(summary = "Integration List")
 	@GetMapping
-	public List<TurIntegrationInstance> turIntegrationInstanceList() {
-		return this.turIntegrationInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase());
+	public List<TurIntegrationInstanceDto> turIntegrationInstanceList() {
+		return turIntegrationInstanceMapper
+				.toDtoList(this.turIntegrationInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
 	}
 
 	@Operation(summary = "Integration structure")
 	@GetMapping("/structure")
-	public TurIntegrationInstance turIntegrationInstanceStructure() {
-		return new TurIntegrationInstance();
+	public TurIntegrationInstanceDto turIntegrationInstanceStructure() {
+		return new TurIntegrationInstanceDto();
 
 	}
 
 	@Operation(summary = "Show a Integration")
 	@GetMapping("/{id}")
-	public TurIntegrationInstance turIntegrationInstanceGet(@PathVariable String id) {
-		return this.turIntegrationInstanceRepository.findById(id).orElse(new TurIntegrationInstance());
+	public TurIntegrationInstanceDto turIntegrationInstanceGet(@PathVariable String id) {
+		return turIntegrationInstanceMapper
+				.toDto(this.turIntegrationInstanceRepository.findById(id).orElse(new TurIntegrationInstance()));
 	}
 
 	@Operation(summary = "Update a Integration")
 	@PutMapping("/{id}")
-	public TurIntegrationInstance turIntegrationInstanceUpdate(@PathVariable String id,
-			@RequestBody TurIntegrationInstance turIntegrationInstance) {
+	public TurIntegrationInstanceDto turIntegrationInstanceUpdate(@PathVariable String id,
+			@RequestBody TurIntegrationInstanceDto turIntegrationInstanceDto) {
+		TurIntegrationInstance turIntegrationInstance = turIntegrationInstanceMapper
+				.toEntity(turIntegrationInstanceDto);
 		return turIntegrationInstanceRepository.findById(id).map(turIntegrationInstanceEdit -> {
 			turIntegrationInstanceEdit.setTitle(turIntegrationInstance.getTitle());
 			turIntegrationInstanceEdit.setDescription(turIntegrationInstance.getDescription());
@@ -79,8 +88,8 @@ public class TurIntegrationInstanceAPI {
 			turIntegrationInstanceEdit.setEndpoint(turIntegrationInstance.getEndpoint());
 			turIntegrationInstanceEdit.setEnabled(turIntegrationInstance.getEnabled());
 			this.turIntegrationInstanceRepository.save(turIntegrationInstanceEdit);
-			return turIntegrationInstanceEdit;
-		}).orElse(new TurIntegrationInstance());
+			return turIntegrationInstanceMapper.toDto(turIntegrationInstanceEdit);
+		}).orElse(new TurIntegrationInstanceDto());
 
 	}
 
@@ -94,10 +103,12 @@ public class TurIntegrationInstanceAPI {
 
 	@Operation(summary = "Create a Integration")
 	@PostMapping
-	public TurIntegrationInstance turIntegrationInstanceAdd(
-			@RequestBody TurIntegrationInstance turIntegrationInstance) {
+	public TurIntegrationInstanceDto turIntegrationInstanceAdd(
+			@RequestBody TurIntegrationInstanceDto turIntegrationInstanceDto) {
+		TurIntegrationInstance turIntegrationInstance = turIntegrationInstanceMapper
+				.toEntity(turIntegrationInstanceDto);
 		this.turIntegrationInstanceRepository.save(turIntegrationInstance);
-		return turIntegrationInstance;
+		return turIntegrationInstanceMapper.toDto(turIntegrationInstance);
 
 	}
 }

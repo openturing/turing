@@ -11,10 +11,10 @@ interface GridAdapterConfig<T> {
 
 export function useGridAdapter<T>(
   data: T[] | undefined | null,
-  config: GridAdapterConfig<T>
+  config: GridAdapterConfig<T>,
 ): TurGridItem[] {
   return useMemo(() => {
-    if (!data || data.length === 0) return [];
+    if (!Array.isArray(data) || data.length === 0) return [];
 
     const resolveField = (item: T, extractor: FieldExtractor<T>) => {
       if (typeof extractor === "function") {
@@ -23,12 +23,18 @@ export function useGridAdapter<T>(
       return String(item[extractor]);
     };
 
+    const resolveId = (item: T) => {
+      if (!config.id) {
+        return (item as any).id;
+      }
+      if (typeof config.id === "function") {
+        return config.id(item);
+      }
+      return item[config.id] as any;
+    };
+
     return data.map((item) => ({
-      id: config.id
-        ? typeof config.id === "function"
-          ? config.id(item)
-          : (item[config.id] as any)
-        : (item as any).id,
+      id: resolveId(item),
       name: resolveField(item, config.name),
       description: resolveField(item, config.description),
       url: config.url(item),

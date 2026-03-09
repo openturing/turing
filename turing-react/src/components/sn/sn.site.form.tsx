@@ -1,8 +1,5 @@
 "use client"
 import {
-  Button
-} from "@/components/ui/button"
-import {
   Form,
   FormControl,
   FormDescription,
@@ -34,6 +31,9 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { GradientButton } from "../ui/gradient-button"
 import { Skeleton } from "../ui/skeleton"
 const turSNSiteService = new TurSNSiteService();
 const turSEInstanceService = new TurSEInstanceService();
@@ -41,7 +41,6 @@ interface Props {
   value: TurSNSite;
   isNew: boolean;
 }
-
 export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
@@ -89,7 +88,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
     <>
       {
         isLoading ? (
-          <div className="flex w-full max-w-xs flex-col gap-7">
+          <div className="flex w-full max-w-xs flex-col gap-7 px-6">
             <div className="flex flex-col gap-3">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-8 w-full" />
@@ -102,73 +101,130 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-8 pr-8">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Title"
-                        type="text"
-                      />
-                    </FormControl>
-                    <FormDescription>Name will appear on semantic navigation site list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-8 px-6">
+              <Accordion
+                type="multiple"
+                defaultValue={["section-general", "section-search"]}
+                className="w-full space-y-4"
+              >
+                {/* General Information Section */}
+                <AccordionItem value="section-general" className="border rounded-lg px-6">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold">General Information</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                    {/* Name Field */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      rules={{
+                        required: "Site name is required.",
+                        pattern: {
+                          value: /^[a-zA-Z0-9_-]+$/,
+                          message: "Only letters, numbers, underscores, and hyphens are allowed.",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormDescription>
+                            Enter a unique identifier for this semantic navigation site. Use only letters, numbers, underscores, or hyphens. This name is used for API access and will appear in the site list.
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} placeholder="Site Name" type="text" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Description"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Description will appear on semantic navigation site list.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    {/* Description Field */}
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormDescription>
+                            Provide a concise summary describing the purpose or scope of this semantic navigation site. This helps users and agents understand its content focus.
+                          </FormDescription>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Describe this site"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-              <FormField
-                control={form.control}
-                name="turSEInstance.id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Search Engine Instance</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {seInstances.map((seInstance) => (
-                          <SelectItem key={seInstance.id} value={seInstance.id}>{seInstance.title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>Search engine instance that supports semantic navigation site.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Save</Button>
+                {/* Search Engine Section */}
+                <AccordionItem value="section-search" className="border rounded-lg px-6">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold">Search Engine</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                    {/* Search Engine Instance (Select) */}
+                    <FormField
+                      control={form.control}
+                      name="turSEInstance.id"
+                      rules={{ required: "Search engine instance is required." }}
+                      render={({ field }) => (
+                        <FormItemTwoColumns>
+                          <FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Label>Search Engine Instance</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Description>
+                              Select the search engine instance powering this semantic navigation site. This determines which backend is used for indexing and searching content.
+                            </FormItemTwoColumns.Description>
+                          </FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Right>
+                            <FormControl>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Choose..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {seInstances.map((seInstance) => (
+                                    <SelectItem key={seInstance.id} value={seInstance.id}>
+                                      {seInstance.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItemTwoColumns.Right>
+                          <FormMessage />
+                        </FormItemTwoColumns>
+                      )}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              {/* Action Footer */}
+              <div className="flex justify-end gap-3 pt-4">
+                <GradientButton
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(urlBase)}
+                >
+                  Cancel
+                </GradientButton>
+                <GradientButton type="submit">
+                  Save Changes
+                </GradientButton>
+              </div>
             </form>
           </Form>
         )}
     </>
   )
 }
-

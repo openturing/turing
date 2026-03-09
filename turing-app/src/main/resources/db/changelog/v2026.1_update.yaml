@@ -1,0 +1,1479 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1770767340033-85
+      author: alexa (generated)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: auth_user_tur_groups
+            constraintName: FK1hhnqjr6jvvbi2o66f3djqh1b
+  - changeSet:
+      id: 1770767340033-86
+      author: alexa (generated)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: auth_group_tur_roles
+            constraintName: FKdgvx091iis3aqgkt7cpouqtsx
+  - changeSet:
+      id: 1770767340033-87
+      author: alexa (generated)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: auth_group_tur_roles
+            constraintName: FKhsi4l0pf7m7yondbrchoorunk
+  - changeSet:
+      id: 1770767340033-88
+      author: alexa (generated)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: sn_site
+            constraintName: FKn43erub36o4e4aiq64ymd70h0
+  - changeSet:
+      id: 1770767340033-89
+      author: alexa (generated)
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: auth_user_tur_groups
+            constraintName: FKsd0jmeaajegkcpslgow5kbpvr
+  - changeSet:
+      id: 1770767340033-1
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: turGroups_id
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: turRoles_id
+                  type: VARCHAR(255)
+            tableName: auth_group_turRoles
+  - changeSet:
+      id: 1770767340033-2
+      author: alexa (generated)
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: turUsers_username
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: turGroups_id
+                  type: VARCHAR(255)
+            tableName: auth_user_turGroups
+  - changeSet:
+      id: 1770767340033-3
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: accessDate
+                  type: datetime
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-4
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: createdBy
+                  type: VARCHAR(255)
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-5
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: createdBy
+                  type: VARCHAR(255)
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-6
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: createdBy
+                  type: VARCHAR(255)
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-7
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: createdBy
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-8
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultValue
+                  type: VARCHAR(50)
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-9
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: targetingRules
+                  type: VARCHAR(255)
+            tableName: sn_site_metric_access_trs
+  - changeSet:
+      id: 1770767340033-10
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: creationDate
+                  type: datetime
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-11
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: creationDate
+                  type: datetime
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-12
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: creationDate
+                  type: datetime
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-13
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: creationDate
+                  type: datetime
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-14
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: multiValued
+                  type: INT
+            tableName: sn_site_field
+  - changeSet:
+      id: 1770767340033-15
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: systemPrompt
+                  type: text
+            tableName: sn_site_genai
+  - changeSet:
+      id: 1770767340033-16
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: firstName
+                  type: VARCHAR(255)
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-17
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedBy
+                  type: VARCHAR(255)
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-18
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedBy
+                  type: VARCHAR(255)
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-19
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedBy
+                  type: VARCHAR(255)
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-20
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedBy
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-21
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: maxRetries
+                  type: INT
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-22
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: numFound
+                  type: BIGINT
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-23
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: providerFrom
+                  type: VARCHAR(50)
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-24
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: externalId
+                  type: VARCHAR(255)
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-25
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastLogin
+                  type: datetime
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-26
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedDate
+                  type: datetime
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-27
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedDate
+                  type: datetime
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-28
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedDate
+                  type: datetime
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-29
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastModifiedDate
+                  type: datetime
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-30
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: modelName
+                  type: VARCHAR(255)
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-31
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: modificationDate
+                  type: TIMESTAMP
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770767340033-32
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: providerTo
+                  type: VARCHAR(50)
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-33
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: referenceId
+                  type: VARCHAR(255)
+            tableName: sn_site_spotlight_document
+  - changeSet:
+      id: 1770767340033-34
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: sanatizedTerm
+                  type: VARCHAR(255)
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-35
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultDateField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-36
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: lastName
+                  type: VARCHAR(255)
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-37
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: numPredict
+                  type: INT
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-38
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: relationFrom
+                  type: VARCHAR(50)
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-39
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultDescriptionField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-40
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetItemType
+                  type: TINYINT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-41
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: relationTo
+                  type: VARCHAR(50)
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-42
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: repeatPenalty
+                  type: DOUBLE PRECISION
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-43
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: userId
+                  type: VARCHAR(50)
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-44
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-45
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetName
+                  type: VARCHAR(50)
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-46
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: responseFormat
+                  type: VARCHAR(255)
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-47
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: unmanagedId
+                  type: VARCHAR(255)
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770767340033-48
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultImageField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-49
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetPosition
+                  type: INT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-50
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultTextField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-51
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetRange
+                  type: TINYINT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-52
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: defaultTitleField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-53
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetSort
+                  type: TINYINT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-54
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: supportedCapabilities
+                  type: VARCHAR(255)
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-55
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetType
+                  type: TINYINT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-56
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: exactMatch
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-57
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: exactMatchField
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-58
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: multiValued
+                  type: INT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-59
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetItemType
+                  type: TINYINT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-60
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetSort
+                  type: TINYINT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-61
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: secondaryFacet
+                  type: boolean
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-62
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: facetType
+                  type: TINYINT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-63
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: showAllFacetItems
+                  type: boolean
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-64
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                  name: snType
+                  type: TINYINT
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-65
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: hlPost
+                  type: VARCHAR(50)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-66
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: hlPre
+                  type: VARCHAR(50)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-67
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: itemsPerFacet
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-68
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: rowsPerPage
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-69
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: spellCheck
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-70
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: spellCheckFixes
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-71
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: spotlightWithResults
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-72
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: wildcardAlways
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-73
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: wildcardNoResults
+                  type: INT
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-74
+      author: alexa (generated)
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: turSNSiteGenAi_id
+                  type: VARCHAR(255)
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-75
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: turRoles_id
+            indexName: FK4ltm75nevup9btxvdgxrxktpd_INDEX_B
+            tableName: auth_group_turRoles
+  - changeSet:
+      id: 1770767340033-76
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: turUsers_username
+            indexName: FKbk7431c81jxpl7t6o4w3flf7n_INDEX_6
+            tableName: auth_user_turGroups
+  - changeSet:
+      id: 1770767340033-77
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: turGroups_id
+            indexName: FKh7xwcy783ovfb7i9442rblty_INDEX_B
+            tableName: auth_group_turRoles
+  - changeSet:
+      id: 1770767340033-78
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: turGroups_id
+            indexName: FKmp229e6vibmhk8hoe0brsbv7q_INDEX_6
+            tableName: auth_user_turGroups
+  - changeSet:
+      id: 1770767340033-79
+      author: alexa (generated)
+      changes:
+        - createIndex:
+            associatedWith: ""
+            columns:
+              - column:
+                  name: turSNSiteGenAi_id
+            indexName: UK8ng1cahgj3f9x4nwkjqib2c5e_INDEX_8
+            tableName: sn_site
+            unique: true
+  - changeSet:
+      id: 1770767340033-80
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: turRoles_id
+            baseTableName: auth_group_turRoles
+            constraintName: FK4ltm75nevup9btxvdgxrxktpd
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_role
+            validate: true
+  - changeSet:
+      id: 1770767340033-81
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: turUsers_username
+            baseTableName: auth_user_turGroups
+            constraintName: FKbk7431c81jxpl7t6o4w3flf7n
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: username
+            referencedTableName: auth_user
+            validate: true
+  - changeSet:
+      id: 1770767340033-82
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: turGroups_id
+            baseTableName: auth_group_turRoles
+            constraintName: FKh7xwcy783ovfb7i9442rblty
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_group
+            validate: true
+  - changeSet:
+      id: 1770767340033-83
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: turSNSiteGenAi_id
+            baseTableName: sn_site
+            constraintName: FKl4us4sdje9583cibml428v46h
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: sn_site_genai
+            validate: true
+  - changeSet:
+      id: 1770767340033-84
+      author: alexa (generated)
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: turGroups_id
+            baseTableName: auth_user_turGroups
+            constraintName: FKmp229e6vibmhk8hoe0brsbv7q
+            deferrable: false
+            initiallyDeferred: false
+            onDelete: NO ACTION
+            onUpdate: NO ACTION
+            referencedColumnNames: id
+            referencedTableName: auth_group
+            validate: true
+  - changeSet:
+      id: 1770767340033-90
+      author: alexa (generated)
+      changes:
+        - dropTable:
+            tableName: auth_group_tur_roles
+  - changeSet:
+      id: 1770767340033-91
+      author: alexa (generated)
+      changes:
+        - dropTable:
+            tableName: auth_user_tur_groups
+  - changeSet:
+      id: 1770767340033-92
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: access_date
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-93
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: confirm_email
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-94
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: created_by
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-95
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: created_by
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-96
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: created_by
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-97
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: created_by
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-98
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: creation_date
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-99
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: creation_date
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-100
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: creation_date
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-101
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: creation_date
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-102
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_date_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-103
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_description_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-104
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-105
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_image_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-106
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_text_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-107
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_title_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-108
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: default_value
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-109
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: exact_match
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-110
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: exact_match_field
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-111
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: external_id
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-112
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_item_type
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-113
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_item_type
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-114
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_name
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-115
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_position
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-116
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_range
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-117
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_sort
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-118
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_sort
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-119
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_type
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-120
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: facet_type
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-121
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: first_name
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-122
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: hl_post
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-123
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: hl_pre
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-124
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: items_per_facet
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-125
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_login
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-126
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_by
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-127
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_by
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-128
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_by
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-129
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_by
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-130
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_date
+            tableName: dev_token
+  - changeSet:
+      id: 1770767340033-131
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_date
+            tableName: sn_ranking_condition
+  - changeSet:
+      id: 1770767340033-132
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_date
+            tableName: sn_ranking_expression
+  - changeSet:
+      id: 1770767340033-133
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_modified_date
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-134
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_name
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-135
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: last_post_type
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-136
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: login_times
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-137
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: max_retries
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-138
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: model_name
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-139
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: modification_date
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770767340033-140
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: multi_valued
+            tableName: sn_site_field
+  - changeSet:
+      id: 1770767340033-141
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: multi_valued
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-142
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: num_found
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-143
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: num_predict
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-144
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: provider_from
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-145
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: provider_to
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-146
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: recover_password
+            tableName: auth_user
+  - changeSet:
+      id: 1770767340033-147
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: reference_id
+            tableName: sn_site_spotlight_document
+  - changeSet:
+      id: 1770767340033-148
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: relation_from
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-149
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: relation_to
+            tableName: sn_site_merge_provider
+  - changeSet:
+      id: 1770767340033-150
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: repeat_penalty
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-151
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: response_format
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-152
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: rows_per_page
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-153
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: sanatized_term
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-154
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: secondary_facet
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-155
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: show_all_facet_items
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-156
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: sn_type
+            tableName: sn_site_field_ext
+  - changeSet:
+      id: 1770767340033-157
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: spell_check
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-158
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: spell_check_fixes
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-159
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: spotlight_with_results
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-160
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: supported_capabilities
+            tableName: llm_instance
+  - changeSet:
+      id: 1770767340033-161
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: system_prompt
+            tableName: sn_site_genai
+  - changeSet:
+      id: 1770767340033-162
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: targeting_rules
+            tableName: sn_site_metric_access_trs
+  - changeSet:
+      id: 1770767340033-163
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: tursnsite_gen_ai_id
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-164
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: unmanaged_id
+            tableName: sn_site_spotlight
+  - changeSet:
+      id: 1770767340033-165
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: user_id
+            tableName: sn_site_metric_access
+  - changeSet:
+      id: 1770767340033-166
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: wildcard_always
+            tableName: sn_site
+  - changeSet:
+      id: 1770767340033-167
+      author: alexa (generated)
+      changes:
+        - dropColumn:
+            columnName: wildcard_no_results
+            tableName: sn_site

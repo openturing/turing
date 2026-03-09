@@ -21,7 +21,9 @@ import com.viglet.turing.plugins.se.solr.TurSolrSearchEnginePlugin;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -105,5 +107,121 @@ class TurSearchEnginePluginFactoryTest {
         );
 
         assertEquals("solr", factory.getDefaultEngineType());
+    }
+
+    @Test
+    void testGetPlugin_CaseInsensitive() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin, elasticsearchPlugin),
+                "solr"
+        );
+
+        TurSearchEnginePlugin plugin1 = factory.getPlugin("SOLR");
+        TurSearchEnginePlugin plugin2 = factory.getPlugin("Solr");
+        TurSearchEnginePlugin plugin3 = factory.getPlugin("solr");
+
+        assertEquals(solrPlugin, plugin1);
+        assertEquals(solrPlugin, plugin2);
+        assertEquals(solrPlugin, plugin3);
+    }
+
+    @Test
+    void testGetDefaultPlugin_InvalidDefaultThrowsException() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin),
+                "nonexistent"
+        );
+
+        assertThrows(IllegalStateException.class, factory::getDefaultPlugin);
+    }
+
+    @Test
+    void testFactoryWithEmptyPluginList() {
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Collections.emptyList(),
+                "solr"
+        );
+
+        assertThrows(IllegalStateException.class, factory::getDefaultPlugin);
+    }
+
+    @Test
+    void testMultipleCallsReturnSameInstance() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin, elasticsearchPlugin),
+                "solr"
+        );
+
+        TurSearchEnginePlugin plugin1 = factory.getPlugin("solr");
+        TurSearchEnginePlugin plugin2 = factory.getPlugin("solr");
+
+        assertSame(plugin1, plugin2);
+    }
+
+    @Test
+    void testExceptionMessageContainsAvailablePlugins() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin, elasticsearchPlugin),
+                "solr"
+        );
+
+        assertThatThrownBy(() -> factory.getPlugin("unknown"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Search engine plugin 'unknown' not found")
+            .hasMessageContaining("Available plugins:");
+    }
+
+    @Test
+    void testFactoryWithSinglePlugin() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Collections.singletonList(solrPlugin),
+                "solr"
+        );
+
+        TurSearchEnginePlugin plugin = factory.getDefaultPlugin();
+
+        assertNotNull(plugin);
+        assertEquals("solr", plugin.getPluginType());
+    }
+
+    @Test
+    void testGetPlugin_EmptyStringThrowsException() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin),
+                "solr"
+        );
+
+        assertThrows(IllegalStateException.class, () -> factory.getPlugin(""));
+    }
+
+    @Test
+    void testElasticsearchAsDefault() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Arrays.asList(solrPlugin, elasticsearchPlugin),
+                "elasticsearch"
+        );
+
+        TurSearchEnginePlugin defaultPlugin = factory.getDefaultPlugin();
+
+        assertEquals(elasticsearchPlugin, defaultPlugin);
+        assertEquals("elasticsearch", factory.getDefaultEngineType());
     }
 }

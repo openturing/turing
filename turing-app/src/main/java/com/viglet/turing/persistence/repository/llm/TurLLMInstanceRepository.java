@@ -35,9 +35,11 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 public interface TurLLMInstanceRepository extends JpaRepository<TurLLMInstance, String> {
 
+	@Override
 	@Cacheable("turLLMInstancefindAll")
 	List<TurLLMInstance> findAll();
 
+	@Override
 	@Cacheable("turLLMInstancefindById")
 	@NotNull
 	Optional<TurLLMInstance> findById(@NotNull String id);

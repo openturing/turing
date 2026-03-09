@@ -26,31 +26,26 @@ import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.TEXT;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.TITLE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.URL;
-import static org.apache.commons.lang3.stream.LangCollectors.joining;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
-import dev.langchain4j.data.document.DefaultDocument;
-import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.input.Prompt;
-import dev.langchain4j.model.input.PromptTemplate;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
-import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -60,10 +55,15 @@ public class TurGenAi {
     public static final String LOCALE = "locale";
     public static final String QUESTION = "question";
     public static final String INFORMATION = "information";
+    public static final int CHUNK_SIZE = 1024;
+    public static final String DEFAULT_PROMPT = "Use the provided information to answer the question.\nQuestion: {question}\nInformation: {information}";
     private final TurSNSearchProcess turSNSearchProcess;
+    private final TurGenAiContextFactory turGenAiContextFactory;
 
-    public TurGenAi(TurSNSearchProcess turSNSearchProcess) {
+    public TurGenAi(TurSNSearchProcess turSNSearchProcess,
+            TurGenAiContextFactory turGenAiContextFactory) {
         this.turSNSearchProcess = turSNSearchProcess;
+        this.turGenAiContextFactory = turGenAiContextFactory;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -84,24 +84,27 @@ public class TurGenAi {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {
-        EmbeddingSearchRequest embeddingSearchRequest = EmbeddingSearchRequest.builder()
-                .queryEmbedding(context.getEmbeddingModel().embed(q).content())
-                .maxResults(10)
-                .minScore(0.7)
+        SearchRequest embeddingSearchRequest = SearchRequest.builder()
+                .query(q)
+                .topK(10)
+                .similarityThreshold(0.7)
                 .build();
-        List<EmbeddingMatch<TextSegment>> relevantEmbeddings = context.getChromaEmbeddingStore()
-                .search(embeddingSearchRequest).matches();
-        PromptTemplate promptTemplate = PromptTemplate.from(context.getSystemPrompt());
-        String information = relevantEmbeddings.stream()
-                .map(match -> match.embedded().text())
-                .collect(joining("\n\n"));
+        List<Document> relevantDocuments = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        if (relevantDocuments.isEmpty()) {
+            relevantDocuments = Collections.emptyList();
+        }
+
+        PromptTemplate promptTemplate = new PromptTemplate(resolvePromptTemplate(context.getSystemPrompt()));
+        String information = relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
 
         Map<String, Object> variables = new HashMap<>();
         variables.put(QUESTION, q);
         variables.put(INFORMATION, information);
-        Prompt prompt = promptTemplate.apply(variables);
+        Prompt prompt = promptTemplate.create(variables);
         return TurChatMessage.builder()
-                .text(context.getChatLanguageModel().chat(prompt.toUserMessage()).aiMessage().text())
+                .text(context.getChatModel().call(prompt).getResult().getOutput().getText())
                 .enabled(true)
                 .build();
     }
@@ -109,25 +112,21 @@ public class TurGenAi {
     public void addDocuments(TurSNJobItems turSNJobItems) {
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
                 .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresent(turSNSite -> {
-                    TurGenAiContext context = new TurGenAiContext(turSNSite.getTurSNSiteGenAi());
+                    TurGenAiContext context = turGenAiContextFactory.build(turSNSite.getTurSNSiteGenAi());
                     if (context.isEnabled()) {
                         StringBuilder sb = new StringBuilder();
                         addAttributes(context, jobItem, sb);
-                        addDocument(context, sb.toString(), new Metadata(setMetadata(jobItem)));
+                        addDocument(context, sb.toString(), setMetadata(jobItem));
                     }
                 })));
     }
 
-    private void addDocument(TurGenAiContext context, String text, Metadata metadata) {
-        Document document = new DefaultDocument(text, metadata);
-        DocumentByCharacterSplitter documentByCharacterSplitter = new DocumentByCharacterSplitter(1024, 0);
-        EmbeddingStoreIngestor embeddingStoreIngestor = EmbeddingStoreIngestor.builder()
-                .documentSplitter(documentByCharacterSplitter)
-                .embeddingModel(context.getEmbeddingModel())
-                .embeddingStore(context.getChromaEmbeddingStore())
-                .build();
-        embeddingStoreIngestor.ingest(document);
-        log.info("added document to embedding store: {}", metadata.getString(ID));
+    private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
+        List<Document> documents = splitText(text, CHUNK_SIZE).stream()
+                .map(chunk -> new Document(chunk, metadata))
+                .toList();
+        context.getVectorStore().add(documents);
+        log.info("added document to embedding store: {}", metadata.get(ID));
     }
 
     private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {
@@ -157,5 +156,25 @@ public class TurGenAi {
             metadata.put(URL, jobItem.getAttributes().get(URL));
         }
         return metadata;
+    }
+
+    private String resolvePromptTemplate(String configuredPrompt) {
+        return (configuredPrompt == null || configuredPrompt.isBlank()) ? DEFAULT_PROMPT : configuredPrompt;
+    }
+
+    private List<String> splitText(String text, int chunkSize) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        if (text.length() <= chunkSize) {
+            return List.of(text);
+        }
+        int chunks = (int) Math.ceil((double) text.length() / chunkSize);
+        List<String> result = new java.util.ArrayList<>(chunks);
+        for (int start = 0; start < text.length(); start += chunkSize) {
+            int end = Math.min(text.length(), start + chunkSize);
+            result.add(text.substring(start, end));
+        }
+        return result;
     }
 }
