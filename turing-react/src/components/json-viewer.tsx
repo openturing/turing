@@ -2,12 +2,21 @@ import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
 
 type JsonValue =
+  | JsonPrimitive
+  | JsonArray
+  | JsonObject;
+
+type JsonPrimitive =
   | string
   | number
   | boolean
-  | null
-  | JsonValue[]
-  | Record<string, JsonValue>;
+  | null;
+
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+interface JsonArray extends Array<JsonValue> { }
 
 interface JsonNodeProps {
   value: JsonValue;
