@@ -33,7 +33,7 @@
   },
   {
     "name": "price",
-    "type": "FLOAT",
+    "type": "CURRENCY",
     "mandatory": false,
     "multiValued": false,
     "description": "Article price in the default currency",
@@ -41,7 +41,7 @@
     "facetName": {
       "default": "Price",
       "en_US": "Price",
-      "pt_BR": "Preco",
+      "pt_BR": "Preço",
       "es_ES": "Precio"
     }
   },
@@ -79,6 +79,14 @@
     "mandatory": false,
     "multiValued": false,
     "description": "Canonical URL of the article",
+    "facet": false
+  },
+  {
+    "name": "rating",
+    "type": "FLOAT",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Rating of the article",
     "facet": false
   }
 ]

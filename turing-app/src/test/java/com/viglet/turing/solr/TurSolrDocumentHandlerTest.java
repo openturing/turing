@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
@@ -140,8 +139,6 @@ class TurSolrDocumentHandlerTest {
 
         when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
         when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
-        when(turDecimalFieldNormalizer.normalizeCanonicalDecimal("150.00"))
-                .thenReturn(Optional.of("150.00"));
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("preco_produto", "150.00,BRL");

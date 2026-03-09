@@ -199,8 +199,16 @@ public class TurSolrDocumentHandler {
             return Optional.empty();
         }
 
-        return turDecimalFieldNormalizer.normalizeCanonicalDecimal(amountPart)
-                .map(amount -> String.format("%s,%s", amount, currencyCode));
+        // Currency amounts in API payloads use dot as decimal separator (standard JSON/REST format).
+        // Also accept comma-decimal notation (e.g. "19,92,BRL") by normalizing to dot form.
+        // Preserve the original string to avoid reformatting (e.g. "150.00" must not become "150.0").
+        String canonicalAmount = amountPart.replace(',', '.');
+        try {
+            Double.parseDouble(canonicalAmount); // validate only
+            return Optional.of(String.format(Locale.ROOT, "%s,%s", canonicalAmount, currencyCode));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
     private void processOtherTypes(SolrInputDocument document, String key, Object attribute) {
