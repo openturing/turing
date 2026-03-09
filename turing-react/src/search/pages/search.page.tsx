@@ -23,6 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { IconBraces } from "@tabler/icons-react";
 import { Search } from "lucide-react";
 import moment from "moment";
 import { useEffect, useState } from "react";
@@ -42,6 +49,7 @@ export default function SearchPage() {
   const [autoComplete, setAutoComplete] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [jsonSheetDoc, setJsonSheetDoc] = useState<Record<string, unknown> | null>(null);
   const turSiteName = siteName || "Sample"; // Get from URL params or use default
   const navigate = useNavigate();
   const sortOptions: Record<string, string> = {
@@ -564,6 +572,16 @@ export default function SearchPage() {
                           </div>
                         )}
                       </div>
+                      <div className="shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="View JSON"
+                          onClick={() => setJsonSheetDoc(document as unknown as Record<string, unknown>)}
+                        >
+                          <IconBraces className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -609,6 +627,23 @@ export default function SearchPage() {
           </div>
         )}
       </main>
+
+      {/* JSON Viewer Sheet */}
+      <Sheet open={jsonSheetDoc !== null} onOpenChange={(open) => { if (!open) setJsonSheetDoc(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <IconBraces className="w-5 h-5" />
+              Document JSON
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-auto mt-4">
+            <pre className="text-xs bg-muted rounded-md p-4 overflow-auto h-full whitespace-pre-wrap break-all">
+              {JSON.stringify(jsonSheetDoc, null, 2)}
+            </pre>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Footer */}
       <footer className="border-t border-border mt-12">

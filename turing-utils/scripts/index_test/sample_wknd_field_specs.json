@@ -46,6 +46,34 @@
     }
   },
   {
+    "name": "latitude",
+    "type": "DOUBLE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Latitude of the article location",
+    "facet": true,
+    "facetName": {
+      "default": "Latitude",
+      "en_US": "Latitude",
+      "pt_BR": "Latitude",
+      "es_ES": "Latitud"
+    }
+  },
+  {
+    "name": "longitude",
+    "type": "DOUBLE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Longitude of the article location",
+    "facet": true,
+    "facetName": {
+      "default": "Longitude",
+      "en_US": "Longitude",
+      "pt_BR": "Longitude",
+      "es_ES": "Longitud"
+    }
+  },
+  {
     "name": "url",
     "type": "STRING",
     "mandatory": false,
