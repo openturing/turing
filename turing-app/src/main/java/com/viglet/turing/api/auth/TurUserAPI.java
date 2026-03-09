@@ -21,17 +21,9 @@
 
 package com.viglet.turing.api.auth;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -46,12 +38,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.viglet.turing.bean.TurCurrentUser;
-import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.auth.TurUserDto;
 import com.viglet.turing.persistence.mapper.auth.TurUserMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
@@ -74,8 +63,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v2/user")
 @Tag(name = "User", description = "User API")
 public class TurUserAPI {
-
-    private static final String AVATARS_DIR = "avatars";
 
     private static final String ADMIN = "admin";
     private static final String ADMINISTRATOR = "Administrator";
@@ -138,9 +125,7 @@ public class TurUserAPI {
         turCurrentUser.setAdmin(isAdmin);
         turCurrentUser.setEmail(turUser.getEmail());
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
-        File avatarsDir = TurCommonsUtils.addSubDirToStoreDir(AVATARS_DIR);
-        turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null
-                || findAvatarFile(avatarsDir, currentUserName).isPresent());
+        turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
         return turCurrentUser;
     }
 
@@ -221,95 +206,5 @@ public class TurUserAPI {
         turUser.setAvatarUrl(avatarUrl);
         turUserRepository.save(turUser);
         return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/{username}/avatar")
-    public ResponseEntity<Void> uploadAvatar(@PathVariable String username,
-            @RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.badRequest().build();
-        }
-        TurUser turUser = turUserRepository.findByUsername(username);
-        if (turUser == null) {
-            return ResponseEntity.notFound().build();
-        }
-        try {
-            File avatarsDir = TurCommonsUtils.addSubDirToStoreDir(AVATARS_DIR);
-            String extension = getFileExtension(file.getOriginalFilename(), contentType);
-            deleteExistingAvatars(avatarsDir, username);
-            Path target = Path.of(avatarsDir.getAbsolutePath(), username + "." + extension);
-            Files.copy(file.getInputStream(), target);
-            return ResponseEntity.ok().build();
-        } catch (IOException e) {
-            log.error("Failed to save avatar for user {}: {}", username, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @GetMapping("/{username}/avatar")
-    public ResponseEntity<Resource> getAvatar(@PathVariable String username) {
-        File avatarsDir = TurCommonsUtils.addSubDirToStoreDir(AVATARS_DIR);
-        Optional<File> avatarFile = findAvatarFile(avatarsDir, username);
-        if (avatarFile.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        File file = avatarFile.get();
-        try {
-            String mimeType = Files.probeContentType(file.toPath());
-            if (mimeType == null) {
-                mimeType = "image/png";
-            }
-            Resource resource = new FileSystemResource(file);
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(mimeType))
-                    .body(resource);
-        } catch (IOException e) {
-            log.error("Failed to read avatar for user {}: {}", username, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @DeleteMapping("/{username}/avatar")
-    public ResponseEntity<Void> deleteAvatar(@PathVariable String username) {
-        File avatarsDir = TurCommonsUtils.addSubDirToStoreDir(AVATARS_DIR);
-        deleteExistingAvatars(avatarsDir, username);
-        return ResponseEntity.ok().build();
-    }
-
-    private void deleteExistingAvatars(File avatarsDir, String username) {
-        File[] existing = avatarsDir.listFiles((dir, name) -> name.startsWith(username + "."));
-        if (existing != null) {
-            for (File f : existing) {
-                try {
-                    Files.delete(f.toPath());
-                } catch (IOException e) {
-                    log.warn("Failed to delete existing avatar file {}: {}", f.getName(), e.getMessage());
-                }
-            }
-        }
-    }
-
-    private Optional<File> findAvatarFile(File avatarsDir, String username) {
-        File[] matches = avatarsDir.listFiles((dir, name) -> name.startsWith(username + "."));
-        if (matches != null && matches.length > 0) {
-            return Optional.of(matches[0]);
-        }
-        return Optional.empty();
-    }
-
-    private String getFileExtension(String filename, String contentType) {
-        if (filename != null && filename.contains(".")) {
-            return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
-        }
-        return switch (contentType) {
-            case "image/jpeg" -> "jpg";
-            case "image/gif" -> "gif";
-            case "image/webp" -> "webp";
-            default -> "png";
-        };
     }
 }
