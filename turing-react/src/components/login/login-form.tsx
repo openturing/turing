@@ -30,7 +30,6 @@ export function LoginForm({
                 throw new Error('Please enter both username and password');
             }
             authorization.login(turRestInfo.username, turRestInfo.password).then((response) => {
-                response.authdata = globalThis.btoa(turRestInfo.username + ':' + turRestInfo.password);
                 localStorage.setItem("restInfo", JSON.stringify(response));
                 globalThis.location.href = returnUrl;
             }).catch(() => {

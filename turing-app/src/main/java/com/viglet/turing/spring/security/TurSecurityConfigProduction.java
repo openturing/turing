@@ -31,7 +31,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -57,6 +59,7 @@ import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 @EnableMethodSecurity(securedEnabled = true)
 @ComponentScan(basePackageClasses = TurCustomUserDetailsService.class)
 public class TurSecurityConfigProduction {
+        private static final String LOGIN_PATH = "/api/login";
         private static final String LOGOUT_PATH = "/logout";
         public static final String ERROR_PATH = "/error/**";
         private final UserDetailsService userDetailsService;
@@ -106,7 +109,8 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/ocr/**"),
                                                 mvc.matcher("/api/genai/**"),
                                                 mvc.matcher("/api/v2/guest/**"),
-                                                mvc.matcher("/h2/**")))
+                                                mvc.matcher("/h2/**"),
+                                                mvc.matcher(LOGIN_PATH)))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
                 if (turConfigProperties.isKeycloak()) {
                         String keycloakUrlFormat = String.format(
@@ -131,7 +135,8 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/query/**"),
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
-                                                mvc.matcher("/api/sn/*/*/spell-check")).permitAll();
+                                                mvc.matcher("/api/sn/*/*/spell-check"),
+                                                mvc.matcher(LOGIN_PATH)).permitAll();
                                 authorizeRequests.anyRequest().authenticated();
                         });
                         http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
@@ -166,7 +171,8 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/manifest.json"),
                                                                 mvc.matcher("/browserconfig.xml"),
                                                                 mvc.matcher("/console/**"),
-                                                                mvc.matcher("/api/v2/guest/**")).permitAll();
+                                                                mvc.matcher("/api/v2/guest/**"),
+                                                                mvc.matcher(LOGIN_PATH)).permitAll();
                                                 authorizeRequests.anyRequest().authenticated();
 
                                         });
@@ -181,6 +187,15 @@ public class TurSecurityConfigProduction {
         WebSecurityCustomizer webSecurityCustomizer() {
                 return web -> web.httpFirewall(allowUrlEncodedSlaturHttpFirewall()).ignoring()
                                 .requestMatchers(mvc.matcher("/h2/**"));
+        }
+
+        @Bean
+        AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) {
+                try {
+                        return authenticationConfiguration.getAuthenticationManager();
+                } catch (Exception e) {
+                        throw new IllegalStateException("Failed to get AuthenticationManager", e);
+                }
         }
 
         @Autowired
