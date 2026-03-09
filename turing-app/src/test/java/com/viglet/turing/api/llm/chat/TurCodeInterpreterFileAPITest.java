@@ -2,26 +2,16 @@ package com.viglet.turing.api.llm.chat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class TurCodeInterpreterFileAPITest {
 
     private TurCodeInterpreterFileAPI api;
-
-    @TempDir
-    Path tempDir;
 
     @BeforeEach
     void setUp() {

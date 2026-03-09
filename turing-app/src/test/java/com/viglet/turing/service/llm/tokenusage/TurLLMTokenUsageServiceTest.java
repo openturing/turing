@@ -1,5 +1,6 @@
 package com.viglet.turing.service.llm.tokenusage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,8 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
@@ -157,6 +156,7 @@ class TurLLMTokenUsageServiceTest {
         when(usage.getTotalTokens()).thenReturn(15);
         when(tokenUsageRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
+        assertThat(service).isNotNull();
         service.recordUsage(instance, chatResponse, "admin");
         // Should not throw - exception is caught internally
     }

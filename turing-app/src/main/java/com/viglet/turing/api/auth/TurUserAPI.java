@@ -137,8 +137,10 @@ public class TurUserAPI {
         turCurrentUser.setLastName(turUser.getLastName());
         turCurrentUser.setAdmin(isAdmin);
         turCurrentUser.setEmail(turUser.getEmail());
+        turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         File avatarsDir = TurCommonsUtils.addSubDirToStoreDir(AVATARS_DIR);
-        turCurrentUser.setHasAvatar(findAvatarFile(avatarsDir, currentUserName).isPresent());
+        turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null
+                || findAvatarFile(avatarsDir, currentUserName).isPresent());
         return turCurrentUser;
     }
 
@@ -171,6 +173,7 @@ public class TurUserAPI {
             userEdit.setFirstName(turUser.getFirstName());
             userEdit.setLastName(turUser.getLastName());
             userEdit.setEmail(turUser.getEmail());
+            userEdit.setAvatarUrl(turUser.getAvatarUrl());
             if (StringUtils.hasText(turUser.getPassword())) {
                 userEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
             }

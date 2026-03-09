@@ -5,7 +5,6 @@ import {
 } from "@tabler/icons-react"
 
 import { ROUTES } from "@/app/routes.const"
-import { TurUserService } from "@/services/auth/user.service"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +21,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import type { TurUser } from "@/models/auth/user"
-import { MD5 } from "crypto-js"
 import React from "react"
 import { NavLink } from "react-router-dom"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "./ui/gradient-avatar"
@@ -50,42 +48,14 @@ export function NavUser({
       return nameParts[0].charAt(0).toUpperCase();
     }
 
-    // Pega a primeira letra da primeira e da última palavra
     return (
       nameParts[0].charAt(0).toUpperCase() +
       (nameParts.at(-1)?.charAt(0).toUpperCase() ?? '')
     );
   }, [user]);
 
-  const [avatarSrc, setAvatarSrc] = React.useState('');
+  const avatarSrc = user?.avatarUrl || '';
 
-  React.useEffect(() => {
-    let revoked = false;
-    let objectUrl: string | null = null;
-
-    if (user?.hasAvatar && user?.username) {
-      const svc = new TurUserService();
-      svc.getAvatarUrl(user.username).then((url) => {
-        if (!revoked) {
-          objectUrl = url;
-          setAvatarSrc(url);
-        } else {
-          URL.revokeObjectURL(url);
-        }
-      }).catch(() => setAvatarSrc(''));
-    } else if (user?.email) {
-      const cleanEmail = user.email.trim().toLowerCase();
-      const hash = MD5(cleanEmail).toString();
-      setAvatarSrc(`https://www.gravatar.com/avatar/${hash}?d=404`);
-    } else {
-      setAvatarSrc('');
-    }
-
-    return () => {
-      revoked = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [user]);
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -96,7 +66,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <GradientAvatar className="h-8 w-8 rounded-lg">
-                <GradientAvatarImage src={avatarSrc} alt={user.username} />
+                {avatarSrc && <GradientAvatarImage src={avatarSrc} alt={user.username} />}
                 <GradientAvatarFallback className="rounded-lg">{initials}</GradientAvatarFallback>
               </GradientAvatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -117,7 +87,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <GradientAvatar className="h-8 w-8 rounded-lg">
-                  <GradientAvatarImage src={avatarSrc} alt={user.username} />
+                  {avatarSrc && <GradientAvatarImage src={avatarSrc} alt={user.username} />}
                   <GradientAvatarFallback className="rounded-lg">{initials}</GradientAvatarFallback>
                 </GradientAvatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">

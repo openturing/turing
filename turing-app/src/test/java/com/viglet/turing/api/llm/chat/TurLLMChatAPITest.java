@@ -2,8 +2,6 @@ package com.viglet.turing.api.llm.chat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
@@ -156,7 +154,7 @@ class TurLLMChatAPITest {
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
-        when(provider.fetchContextWindow(eq(instance), eq("key"))).thenReturn(OptionalInt.of(200000));
+        when(provider.fetchContextWindow(instance, "key")).thenReturn(OptionalInt.of(200000));
 
         TurLLMChatAPI.ContextInfoResponse result = api.contextInfo("inst-1");
 
@@ -174,7 +172,7 @@ class TurLLMChatAPITest {
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
-        when(provider.fetchContextWindow(eq(instance), eq("key"))).thenReturn(OptionalInt.empty());
+        when(provider.fetchContextWindow(instance, "key")).thenReturn(OptionalInt.empty());
 
         TurLLMChatAPI.ContextInfoResponse result = api.contextInfo("inst-1");
 
@@ -192,7 +190,7 @@ class TurLLMChatAPITest {
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
-        when(provider.fetchContextWindow(eq(instance), eq("key"))).thenReturn(OptionalInt.empty());
+        when(provider.fetchContextWindow(instance, "key")).thenReturn(OptionalInt.empty());
 
         TurLLMChatAPI.ContextInfoResponse result = api.contextInfo("inst-1");
 

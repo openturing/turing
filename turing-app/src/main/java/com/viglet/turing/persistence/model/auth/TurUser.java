@@ -75,6 +75,9 @@ public class TurUser implements Serializable {
 	@Setter
 	private int enabled;
 
+	@Setter
+	private String avatarUrl;
+
 	@Builder.Default
 	@ManyToMany
 	private Collection<TurGroup> turGroups = new HashSet<>();

@@ -1,8 +1,8 @@
-import { IconCamera, IconDeviceFloppy, IconLoader2, IconLock, IconTrash } from "@tabler/icons-react"
-import { MD5 } from "crypto-js"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { IconDeviceFloppy, IconLoader2, IconLock, IconPalette, IconTrash } from "@tabler/icons-react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { DiceBearAvatarPicker } from "@/components/dicebear-avatar-picker"
 import { Button } from "@/components/ui/button"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { Input } from "@/components/ui/input"
@@ -22,9 +22,8 @@ export default function UserAccountPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [hasAvatar, setHasAvatar] = useState(false)
-  const [avatarKey, setAvatarKey] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   useEffect(() => {
     turUserService.get().then((currentUser) => {
@@ -32,7 +31,7 @@ export default function UserAccountPage() {
       setFirstName(currentUser.firstName ?? "")
       setLastName(currentUser.lastName ?? "")
       setEmail(currentUser.email ?? "")
-      setHasAvatar(currentUser.hasAvatar ?? false)
+      setAvatarUrl(currentUser.avatarUrl ?? undefined)
       setLoading(false)
     }).catch(() => {
       toast.error("Failed to load user data.")
@@ -49,56 +48,22 @@ export default function UserAccountPage() {
     return parts[0].charAt(0).toUpperCase() + (parts.at(-1)?.charAt(0).toUpperCase() ?? "")
   })()
 
-  const gravatarUrl = email
-    ? `https://www.gravatar.com/avatar/${MD5(email.trim().toLowerCase()).toString()}?d=404`
-    : ""
-
-  const [avatarUrl, setAvatarUrl] = useState("")
-
-  useEffect(() => {
-    let revoked = false;
-    let objectUrl: string | null = null;
-
-    if (user && hasAvatar) {
-      turUserService.getAvatarUrl(user.username).then((url) => {
-        if (revoked) {
-          URL.revokeObjectURL(url);
-        } else {
-          objectUrl = url;
-          setAvatarUrl(url);
-        }
-      }).catch(() => setAvatarUrl(""));
-    } else {
-      setAvatarUrl("");
-    }
-
-    return () => {
-      revoked = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [user, hasAvatar, avatarKey])
-
-  const handleAvatarUpload = useCallback(async (file: File) => {
+  const handleAvatarSelect = useCallback(async (url: string) => {
     if (!user) return
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file.")
-      return
-    }
     try {
-      await turUserService.uploadAvatar(user.username, file)
-      setHasAvatar(true)
-      setAvatarKey((k) => k + 1)
+      await turUserService.saveAvatarUrl(user.username, url)
+      setAvatarUrl(url)
       toast.success("Avatar updated.")
     } catch {
-      toast.error("Failed to upload avatar.")
+      toast.error("Failed to save avatar.")
     }
   }, [user])
 
-  const handleAvatarDelete = useCallback(async () => {
+  const handleAvatarRemove = useCallback(async () => {
     if (!user) return
     try {
-      await turUserService.deleteAvatar(user.username)
-      setHasAvatar(false)
+      await turUserService.saveAvatarUrl(user.username, null)
+      setAvatarUrl(undefined)
       toast.success("Avatar removed.")
     } catch {
       toast.error("Failed to remove avatar.")
@@ -158,30 +123,18 @@ export default function UserAccountPage() {
           <GradientAvatar className="size-16">
             {avatarUrl
               ? <GradientAvatarImage src={avatarUrl} alt={user.username} />
-              : <GradientAvatarImage src={gravatarUrl} alt={user.username} />
+              : null
             }
             <GradientAvatarFallback className="text-lg">{initials}</GradientAvatarFallback>
           </GradientAvatar>
           <button
             type="button"
-            title="Change avatar"
-            onClick={() => fileInputRef.current?.click()}
+            title="Choose avatar"
+            onClick={() => setPickerOpen(true)}
             className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           >
-            <IconCamera className="size-5 text-white" />
+            <IconPalette className="size-5 text-white" />
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            aria-label="Upload avatar"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleAvatarUpload(file)
-              e.target.value = ""
-            }}
-          />
         </div>
         <div>
           <div className="text-lg font-medium">{firstName} {lastName}</div>
@@ -189,15 +142,15 @@ export default function UserAccountPage() {
           <div className="flex items-center gap-2 mt-1">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setPickerOpen(true)}
               className="text-xs text-primary hover:underline cursor-pointer"
             >
-              Change photo
+              Choose avatar
             </button>
-            {hasAvatar && (
+            {avatarUrl && (
               <button
                 type="button"
-                onClick={handleAvatarDelete}
+                onClick={handleAvatarRemove}
                 className="text-xs text-destructive hover:underline cursor-pointer flex items-center gap-0.5"
               >
                 <IconTrash className="size-3" />
@@ -223,7 +176,6 @@ export default function UserAccountPage() {
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <p className="text-xs text-muted-foreground">If no photo is uploaded, your avatar falls back to Gravatar based on this email.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
@@ -255,6 +207,15 @@ export default function UserAccountPage() {
           Save Changes
         </Button>
       </div>
+
+      {/* DiceBear Avatar Picker Dialog */}
+      <DiceBearAvatarPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handleAvatarSelect}
+        defaultSeed={user.username}
+        currentAvatarUrl={avatarUrl}
+      />
     </div>
   )
 }

@@ -84,9 +84,9 @@ class TurUserTest {
         Instant now = Instant.now();
         Collection<TurGroup> groups = new HashSet<>();
         
-        TurUser turUser = new TurUser("admin", "admin@example.com", "Admin", 
-                now, "User", "pass", "realm", 1, groups);
-        
+        TurUser turUser = new TurUser("admin", "admin@example.com", "Admin",
+                now, "User", "pass", "realm", 1, null, groups);
+
         assertThat(turUser.getUsername()).isEqualTo("admin");
         assertThat(turUser.getEmail()).isEqualTo("admin@example.com");
         assertThat(turUser.getFirstName()).isEqualTo("Admin");
@@ -95,6 +95,7 @@ class TurUserTest {
         assertThat(turUser.getRealm()).isEqualTo("realm");
         assertThat(turUser.getEnabled()).isEqualTo(1);
         assertThat(turUser.getLastLogin()).isEqualTo(now);
+        assertThat(turUser.getAvatarUrl()).isNull();
         assertThat(turUser.getTurGroups()).isEqualTo(groups);
     }
 

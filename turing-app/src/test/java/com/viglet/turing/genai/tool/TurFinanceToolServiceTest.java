@@ -22,7 +22,7 @@ class TurFinanceToolServiceTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"  ", "\t"})
+    @ValueSource(strings = { "  ", "\t" })
     void shouldNormalizeBlankRangeTo5d(String range) throws Exception {
         Method method = TurFinanceToolService.class.getDeclaredMethod("normalizeRange", String.class);
         method.setAccessible(true);
@@ -72,31 +72,18 @@ class TurFinanceToolServiceTest {
                 .contains("ticker symbol is correct");
     }
 
-    @Test
-    void shouldFormatVolumeInBillions() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+            "1500000000, '1[.,]5B'",
+            "2500000, '2[.,]5M'",
+            "50000, '50[.,]0K'"
+    })
+    void shouldFormatVolume(long value, String expectedPattern) throws Exception {
         Method method = TurFinanceToolService.class.getDeclaredMethod("formatVolume", long.class);
         method.setAccessible(true);
 
-        String result = (String) method.invoke(service, 1_500_000_000L);
-        assertThat(result).matches("1[.,]5B");
-    }
-
-    @Test
-    void shouldFormatVolumeInMillions() throws Exception {
-        Method method = TurFinanceToolService.class.getDeclaredMethod("formatVolume", long.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, 2_500_000L);
-        assertThat(result).matches("2[.,]5M");
-    }
-
-    @Test
-    void shouldFormatVolumeInThousands() throws Exception {
-        Method method = TurFinanceToolService.class.getDeclaredMethod("formatVolume", long.class);
-        method.setAccessible(true);
-
-        String result = (String) method.invoke(service, 50_000L);
-        assertThat(result).matches("50[.,]0K");
+        String result = (String) method.invoke(service, value);
+        assertThat(result).matches(expectedPattern);
     }
 
     @Test

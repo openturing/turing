@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: v2026.1-add-avatar-url-to-auth-user
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - columnExists:
+              tableName: auth_user
+              columnName: avatar_url
+      changes:
+        - addColumn:
+            tableName: auth_user
+            columns:
+              - column:
+                  name: avatar_url
+                  type: VARCHAR(1024)

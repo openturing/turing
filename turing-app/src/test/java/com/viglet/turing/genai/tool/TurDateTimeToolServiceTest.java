@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TurDateTimeToolServiceTest {
 
@@ -72,26 +74,15 @@ class TurDateTimeToolServiceTest {
         assertThat(result).startsWith("Error: invalid timezone 'null'");
     }
 
-    @Test
-    void shouldContainDayOfWeekInResult() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)",
+            "(January|February|March|April|May|June|July|August|September|October|November|December)",
+            "\\d{2}:\\d{2}:\\d{2}"
+    })
+    void shouldContainExpectedPatterns(String pattern) {
         String result = service.getCurrentTime("UTC");
 
-        assertThat(result).containsPattern(
-                "(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)");
-    }
-
-    @Test
-    void shouldContainMonthInResult() {
-        String result = service.getCurrentTime("UTC");
-
-        assertThat(result).containsPattern(
-                "(January|February|March|April|May|June|July|August|September|October|November|December)");
-    }
-
-    @Test
-    void shouldContainTimeInResult() {
-        String result = service.getCurrentTime("UTC");
-
-        assertThat(result).containsPattern("\\d{2}:\\d{2}:\\d{2}");
+        assertThat(result).containsPattern(pattern);
     }
 }

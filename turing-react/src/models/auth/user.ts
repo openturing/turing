@@ -8,4 +8,5 @@ export type TurUser = {
   admin: boolean;
   email: string;
   hasAvatar?: boolean;
+  avatarUrl?: string;
 };

@@ -44,7 +44,8 @@ class TurImageSearchToolServiceTest {
     })
     void shouldRecognizeImageUrlPatterns(String url) throws Exception {
         boolean result = (boolean) isImageUrlMethod.invoke(service, url);
-        assertThat(result).isTrue();
+        assertThat(result).describedAs("Should recognize image patterns in URL paths or query parameters")
+                .isTrue();
     }
 
     @ParameterizedTest

@@ -9,6 +9,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class TurWebCrawlerToolServiceTest {
 
@@ -67,44 +69,20 @@ class TurWebCrawlerToolServiceTest {
         assertThat(result).isFalse();
     }
 
-    @Test
-    void shouldAcceptExtractLinkWithoutFilter() throws Exception {
-        Document doc = Jsoup.parse("<a href='https://example.com/page'>Link</a>", "https://example.com");
+    @ParameterizedTest
+    @CsvSource(value = {
+            "'<a href=\"https://example.com/page\">Link</a>','https://example.com',null,true",
+            "'<a href=\"https://example.com\">Documentation</a>','https://example.com','documentation',true",
+            "'<a href=\"https://example.com/docs/api\">Link</a>','https://example.com','docs',true",
+            "'<a href=\"https://example.com/about\">About</a>','https://example.com','pricing',false"
+    }, nullValues = "null")
+    void shouldValidateExtractLink(String html, String baseUrl, String filter, boolean expected) throws Exception {
+        Document doc = Jsoup.parse(html, baseUrl);
         Element link = doc.select("a").first();
 
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, null);
+        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, filter);
 
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldAcceptExtractLinkMatchingFilterInText() throws Exception {
-        Document doc = Jsoup.parse("<a href='https://example.com'>Documentation</a>", "https://example.com");
-        Element link = doc.select("a").first();
-
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, "documentation");
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldAcceptExtractLinkMatchingFilterInHref() throws Exception {
-        Document doc = Jsoup.parse("<a href='https://example.com/docs/api'>Link</a>", "https://example.com");
-        Element link = doc.select("a").first();
-
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, "docs");
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void shouldRejectExtractLinkNotMatchingFilter() throws Exception {
-        Document doc = Jsoup.parse("<a href='https://example.com/about'>About</a>", "https://example.com");
-        Element link = doc.select("a").first();
-
-        boolean result = (boolean) isValidExtractLinkMethod.invoke(service, link, "pricing");
-
-        assertThat(result).isFalse();
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
