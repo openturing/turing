@@ -161,9 +161,10 @@ axios.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login if not already on login page
+      // Handle unauthorized - redirect to login preserving the current URL
       if (!globalThis.location.pathname.startsWith("/login")) {
-        globalThis.location.href = "/login";
+        const returnUrl = globalThis.location.pathname + globalThis.location.search;
+        globalThis.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
       }
     }
     throw error;

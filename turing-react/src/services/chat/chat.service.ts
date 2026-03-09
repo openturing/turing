@@ -81,7 +81,8 @@ export class TurChatService {
 
       if (!response.ok) {
         if (response.status === 401 && !globalThis.location.pathname.startsWith("/login")) {
-          globalThis.location.href = "/login";
+          const returnUrl = globalThis.location.pathname + globalThis.location.search;
+          globalThis.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
           return;
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
