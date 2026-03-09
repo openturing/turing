@@ -3,6 +3,6 @@
     "title": "WKND Example Article 1",
     "modification_date": "2026-03-09T10:30:00Z",
     "abstract": "Sample content for Turing indexing test.",
-    "price3": 19.92,
+    "price": 19.92,
     "url": "https://www.example.com/wknd/example-article-1"
 }

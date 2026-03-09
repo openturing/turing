@@ -3,14 +3,41 @@ setlocal
 
 set "SCRIPT_DIR=%~dp0"
 set "BASE_URL=http://localhost:2700"
-if not "%~1"=="" set "BASE_URL=%~1"
-
-set "MODE_FLAG="
-if /I "%~2"=="--dry-run" set "MODE_FLAG=--dry-run"
-
-rem Optional: path to field specs JSON (defaults to sample_wknd_field_specs.json)
+set "API_KEY="
 set "SPECS_FILE=%SCRIPT_DIR%sample_wknd_field_specs.json"
-if not "%~3"=="" set "SPECS_FILE=%~3"
+set "MODE_FLAG="
+
+if "%~1"=="" (
+  echo Usage: %~nx0 --api-key KEY [OPTIONS]
+  echo.
+  echo Required:
+  echo   --api-key KEY        Turing API key for authentication
+  echo.
+  echo Optional:
+  echo   --base-url URL       Base URL of the Turing server (default: http://localhost:2700^)
+  echo   --specs-file PATH    Path to field specs JSON file (default: sample_wknd_field_specs.json^)
+  echo   --dry-run            Validate without indexing
+  echo.
+  echo Example:
+  echo   %~nx0 --api-key mykey123
+  echo   %~nx0 --api-key mykey123 --base-url http://myserver:2700 --dry-run
+  exit /b 0
+)
+
+:parse_args
+if "%~1"=="" goto done_args
+if /I "%~1"=="--base-url"   ( set "BASE_URL=%~2"   & shift & shift & goto parse_args )
+if /I "%~1"=="--api-key"    ( set "API_KEY=%~2"    & shift & shift & goto parse_args )
+if /I "%~1"=="--specs-file" ( set "SPECS_FILE=%~2" & shift & shift & goto parse_args )
+if /I "%~1"=="--dry-run"    ( set "MODE_FLAG=--dry-run" & shift & goto parse_args )
+echo Unknown argument: %~1
+exit /b 1
+:done_args
+
+if not defined API_KEY (
+  echo Error: --api-key is required.
+  exit /b 1
+)
 
 rem Detect whether the specs file is available
 set "HAS_SPECS="
@@ -18,22 +45,23 @@ if exist "%SPECS_FILE%" set "HAS_SPECS=1"
 
 where python >nul 2>nul
 if errorlevel 1 (
-  echo Python nao encontrado no PATH.
+  echo Python not found in PATH.
   exit /b 1
 )
 
 echo Running Turing indexing test...
-echo Base URL: %BASE_URL%
-echo Site: wknd
-echo Locale: en_US
-echo JSON: %SCRIPT_DIR%sample_wknd_document.json
-if defined HAS_SPECS (echo Specs: %SPECS_FILE%) else (echo Specs: [none])
+echo Base URL:  %BASE_URL%
+echo API Key:   %API_KEY%
+echo Site:      wknd
+echo Locale:    en_US
+echo JSON:      %SCRIPT_DIR%sample_wknd_document.json
+if defined HAS_SPECS (echo Specs:     %SPECS_FILE%) else (echo Specs:     [none])
 echo.
 
 if defined HAS_SPECS (
   python "%SCRIPT_DIR%turing_index_test.py" ^
     --base-url "%BASE_URL%" ^
-    --header "Key: 09e069003cd047fc918e62be8" ^
+    --header "Key: %API_KEY%" ^
     --site wknd ^
     --locale en_US ^
     --json-file "%SCRIPT_DIR%sample_wknd_document.json" ^
@@ -42,7 +70,7 @@ if defined HAS_SPECS (
 ) else (
   python "%SCRIPT_DIR%turing_index_test.py" ^
     --base-url "%BASE_URL%" ^
-    --header "Key: 09e069003cd047fc918e62be8" ^
+    --header "Key: %API_KEY%" ^
     --site wknd ^
     --locale en_US ^
     --json-file "%SCRIPT_DIR%sample_wknd_document.json" ^
@@ -52,10 +80,10 @@ if defined HAS_SPECS (
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
   echo.
-  echo Falha na indexacao. Exit code: %EXIT_CODE%
+  echo Indexing failed. Exit code: %EXIT_CODE%
   exit /b %EXIT_CODE%
 )
 
 echo.
-echo Indexacao enviada com sucesso.
+echo Indexing submitted successfully.
 exit /b 0

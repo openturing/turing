@@ -32,7 +32,7 @@
     "facet": false
   },
   {
-    "name": "price3",
+    "name": "price",
     "type": "FLOAT",
     "mandatory": false,
     "multiValued": false,
