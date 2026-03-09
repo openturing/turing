@@ -29,4 +29,8 @@ export class TurSEInstanceService {
     );
     return  response.status == 200;
   }
+  async getCores(id: string): Promise<string[]> {
+    const response = await axios.get<string[]>(`/se/${id}/cores`);
+    return response.data;
+  }
 }

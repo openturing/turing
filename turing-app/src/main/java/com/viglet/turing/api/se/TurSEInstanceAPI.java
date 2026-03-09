@@ -41,6 +41,7 @@ import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -120,6 +121,14 @@ public class TurSEInstanceAPI {
                 this.turSEInstanceRepository.save(turSEInstance);
                 return turSEInstanceMapper.toDto(turSEInstance);
 
+        }
+
+        @Operation(summary = "List Solr cores/collections for a Search Engine")
+        @GetMapping("/{id}/cores")
+        public ResponseEntity<List<String>> turSEInstanceCores(@PathVariable String id) {
+                return turSEInstanceRepository.findById(id)
+                                .map(turSEInstance -> ResponseEntity.ok(TurSolrUtils.listCores(turSEInstance)))
+                                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
 
         @GetMapping("/{id}/{core}/select")

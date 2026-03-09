@@ -27,6 +27,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -351,6 +353,30 @@ public class TurSolrUtils {
 
     public static int lastRowPositionFromCurrentPage(TurSEParameters turSEParameters) {
         return (turSEParameters.getCurrentPage() * turSEParameters.getRows());
+    }
+
+    public static List<String> listCores(TurSEInstance turSEInstance) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/cores", getSolrUrl(turSEInstance))))
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to list cores")
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(body -> {
+                    Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL).build();
+                    DocumentContext jsonContext = JsonPath.parse(body, configuration);
+                    Object statusObj = jsonContext.read("$.status");
+                    if (statusObj instanceof Map<?, ?> statusMap) {
+                        return new ArrayList<>(statusMap.keySet().stream()
+                                .map(Object::toString)
+                                .sorted()
+                                .toList());
+                    }
+                    return Collections.<String>emptyList();
+                })
+                .orElse(Collections.emptyList());
     }
 
     public static boolean coreExists(TurSEInstance turSEInstance, String core) {
