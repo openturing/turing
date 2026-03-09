@@ -1,0 +1,55 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mandatory": true,
+    "multiValued": false,
+    "description": "Unique document identifier",
+    "facet": false
+  },
+  {
+    "name": "title",
+    "type": "TEXT",
+    "mandatory": true,
+    "multiValued": false,
+    "description": "Article title",
+    "facet": false
+  },
+  {
+    "name": "modification_date",
+    "type": "DATE",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Last modification date (ISO 8601)",
+    "facet": false
+  },
+  {
+    "name": "abstract",
+    "type": "TEXT",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Short summary of the article",
+    "facet": false
+  },
+  {
+    "name": "price",
+    "type": "FLOAT",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Article price in the default currency",
+    "facet": true,
+    "facetName": {
+      "en": "Price",
+      "pt": "Preco",
+      "es": "Precio"
+    }
+  },
+  {
+    "name": "url",
+    "type": "STRING",
+    "mandatory": false,
+    "multiValued": false,
+    "description": "Canonical URL of the article",
+    "facet": false
+  }
+]

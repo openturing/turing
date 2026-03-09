@@ -69,6 +69,18 @@ mvn clean install
 - Anthropic and Gemini providers don't support embedding — throw `UnsupportedOperationException`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
 
+### Agent Operational Memory (Repository)
+- In `react-hook-form`, `disabled` fields are omitted from submission payloads; use `readOnly` when a value must be non-editable but still sent.
+- `TurAuthenticationEntryPoint` tests should validate `commence(...)` output directly: HTTP 401, `application/json`, and `{"error":"Unauthorized"}`.
+- For custom `/api/login` session auth alongside `httpBasic`, explicitly use `HttpSessionSecurityContextRepository` with `SessionCreationPolicy.IF_REQUIRED` to avoid browser requests returning 401 with valid `JSESSIONID`.
+- In SN field-check flows, `TurSolrFieldBean.getType()` may be `null`; prefer `Objects.equals(actual, expected)` over calling `.equals()` on nullable values.
+- For write-only secret fields modeled as JPA `@Transient` (`apiKey`, `credential`), MockMvc/Jackson binding may skip values; extract secrets from raw request payload map in controller tests and runtime paths.
+- Liquibase updates on reused local H2 files can fail with `Duplicate column name`; make changeSets idempotent with `preConditions` (`columnExists` + `onFail: MARK_RAN`).
+- In PowerShell, quote Maven test filters like `"-Dtest=A,B"` to avoid comma parsing issues.
+- In JUnit `@CsvSource`, quote regex values containing commas (for example `'1[.,]5B'`) and use `nullValues = "null"` when a true `null` is required.
+- In this Windows workspace, `py` may be unavailable; prefer `python` (for example `python -m py_compile ...`).
+- If `rg` is unavailable in PowerShell, use `Get-ChildItem` + `Select-String` for scripted searches.
+
 ### Frontend TypeScript Check (Windows EBUSY workaround)
 When `node_modules` native binaries are locked by the IDE/Vite dev server:
 1. **Don't loop** retrying `npm ci`, `npm install`, `npx tsc`, or other install variations — they will all fail with EBUSY/EPERM while the IDE holds locks.
