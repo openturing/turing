@@ -5,16 +5,19 @@ import { DialogDelete } from "@/components/dialog.delete";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { TurSECoreInfo } from "@/models/se/se-core-info.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import {
   IconChevronDown,
   IconDatabase,
   IconEraser,
+  IconSearch,
   IconServer,
   IconTrash,
+  IconX,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
@@ -242,7 +245,24 @@ export default function SEInstanceCoresPage() {
       .catch(() => setError(`Failed to remove documents from: ${coreName}`));
   };
 
-  const groups = cores ? groupCores(cores) : [];
+  const [search, setSearch] = useState("");
+  const allGroups = useMemo(() => (cores ? groupCores(cores) : []), [cores]);
+
+  const groups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allGroups;
+    return allGroups
+      .map((group) => {
+        const baseMatch = group.base.toLowerCase().includes(q);
+        if (baseMatch) return group;
+        const filteredLocales = group.locales.filter(({ coreInfo, locale }) =>
+          coreInfo.name.toLowerCase().includes(q) || locale.toLowerCase().includes(q)
+        );
+        if (filteredLocales.length > 0) return { ...group, locales: filteredLocales };
+        return null;
+      })
+      .filter((g): g is NonNullable<typeof g> => g !== null);
+  }, [allGroups, search]);
 
   return (
     <LoadProvider checkIsNotUndefined={cores} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}/cores`}>
@@ -254,15 +274,42 @@ export default function SEInstanceCoresPage() {
             feature="Cores"
             description="Solr cores and collections available in this Search Engine."
           />
-          <div className="px-6 pb-6 space-y-2">
-            {groups.map((group) => (
-              <CoreGroupRow
-                key={group.base}
-                group={group}
-                onDelete={handleDelete}
-                onClear={handleClear}
+          <div className="px-6 pb-6 space-y-4">
+            <div className="relative">
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search cores..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-9"
               />
-            ))}
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <IconX className="size-4" />
+                </button>
+              )}
+            </div>
+            {groups.length > 0 ? (
+              <div className="space-y-2">
+                {groups.map((group) => (
+                  <CoreGroupRow
+                    key={group.base}
+                    group={group}
+                    onDelete={handleDelete}
+                    onClear={handleClear}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No cores match <span className="font-semibold">"{search}"</span>.
+              </p>
+            )}
           </div>
         </>
       ) : (
