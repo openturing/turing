@@ -25,8 +25,6 @@ import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import tools.jackson.databind.annotation.JsonSerialize;
-import tools.jackson.databind.ser.jdk.MapSerializer;
 
 /**
  * Post Parameters for Search with sensitive data
@@ -58,10 +56,7 @@ public class TurSNSitePostParamsBean implements Serializable {
 	private List<String> fieldList;
 	private boolean disableAutoComplete = false;
 	private List<String> targetingRules = new ArrayList<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithCondition = new HashMap<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithConditionAND = new HashMap<>();
-	@JsonSerialize(keyUsing = MapSerializer.class)
 	private Map<String, List<String>> targetingRulesWithConditionOR = new HashMap<>();
 }

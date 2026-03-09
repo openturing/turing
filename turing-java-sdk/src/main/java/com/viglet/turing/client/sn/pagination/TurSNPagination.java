@@ -80,8 +80,11 @@ public class TurSNPagination {
 	}
 
 	public TurSNPaginationItem findByPageNumber(int pageNumber) {
-		return new TurSNPaginationItem(paginationList.stream()
-				.filter(paginationItem -> paginationItem.getPage() == pageNumber).findFirst().orElse(null));
+		return paginationList.stream()
+				.filter(paginationItem -> paginationItem.getPage() == pageNumber)
+				.findFirst()
+				.map(TurSNPaginationItem::new)
+				.orElse(null);
 	}
 
 	public List<Integer> getPageNumberList() {

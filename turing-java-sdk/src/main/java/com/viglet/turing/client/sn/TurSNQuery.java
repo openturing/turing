@@ -39,7 +39,7 @@ public class TurSNQuery {
 	 */
 	@SuppressWarnings("java:S115")
 	public enum Order {
-		asc, desc
+		asc, desc, relevance
 	}
 
 	@Setter

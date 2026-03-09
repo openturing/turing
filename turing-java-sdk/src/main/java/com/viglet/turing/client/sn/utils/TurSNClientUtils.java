@@ -16,7 +16,7 @@
 package com.viglet.turing.client.sn.utils;
 
 import com.viglet.turing.client.auth.credentials.TurUsernamePasswordCredentials;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.core5.http.HttpHeaders;
 
 import java.nio.charset.StandardCharsets;
@@ -24,9 +24,9 @@ import java.util.Base64;
 
 /**
  * Client Utils
- * 
+ *
  * @author Alexandre Oliveira
- * 
+ *
  * @since 0.3.6
  *
  */
@@ -36,15 +36,15 @@ public class TurSNClientUtils {
 		throw new IllegalStateException("Utility class");
 	}
 
-	public static void authentication(HttpPost httpPost, TurUsernamePasswordCredentials credentials, String apiKey) {
+	public static void authentication(HttpUriRequestBase httpRequest, TurUsernamePasswordCredentials credentials, String apiKey) {
 		if (apiKey != null) {
-			httpPost.setHeader("Key", apiKey);
+			httpRequest.setHeader("Key", apiKey);
 		}
 		else  if (credentials != null && credentials.getUsername() != null) {
 			String auth = String.format("%s:%s", credentials.getUsername(), credentials.getPassword());
 			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 			String authHeader = "Basic " + encodedAuth;
-			httpPost.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+			httpRequest.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
 		}
 	}
 }

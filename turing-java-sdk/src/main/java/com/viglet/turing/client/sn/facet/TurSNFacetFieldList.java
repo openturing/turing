@@ -22,6 +22,10 @@ public class TurSNFacetFieldList implements Iterable<TurSNFacetField> {
 			turSNFacetToRemove = new TurSNFacetField();
 			turSNFacetToRemove.setValues(turSNFacetToRemoveFieldValues);
 			turSNFacetToRemove.setLabel(facetToRemove.getLabel() != null ? facetToRemove.getLabel().getText() : null);
+			turSNFacetToRemove.setName(facetToRemove.getName());
+			turSNFacetToRemove.setDescription(facetToRemove.getDescription());
+			turSNFacetToRemove.setMultiValued(facetToRemove.isMultiValued());
+			turSNFacetToRemove.setType(facetToRemove.getType());
 		}
 
 		if (facets != null) {
