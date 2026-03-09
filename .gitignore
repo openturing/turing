@@ -45,4 +45,4 @@ turing-app/src/main/resources/public/favicon.ico
 turing-js-sdk/node_modules/
 turing-js-sdk/dist/
 /.claude
-/turing-utils/scripts/__pycache__
+/turing-utils/scripts/index_test/__pycache__

@@ -32,16 +32,17 @@
     "facet": false
   },
   {
-    "name": "price",
+    "name": "price3",
     "type": "FLOAT",
     "mandatory": false,
     "multiValued": false,
     "description": "Article price in the default currency",
     "facet": true,
     "facetName": {
-      "en": "Price",
-      "pt": "Preco",
-      "es": "Precio"
+      "default": "Price",
+      "en_US": "Price",
+      "pt_BR": "Preco",
+      "es_ES": "Precio"
     }
   },
   {
