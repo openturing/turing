@@ -15,4 +15,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TurGlobalSettingsBean {
     private TurGlobalDecimalSeparator decimalSeparator;
+    private String pythonExecutable;
 }

@@ -39,4 +39,21 @@ public class TurGlobalSettingsService {
         turConfigVarRepository.save(configVar);
         return decimalSeparator;
     }
+
+    public String getPythonExecutable() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updatePythonExecutable(String pythonExecutable) {
+        String value = pythonExecutable == null ? "" : pythonExecutable.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.PYTHON_EXECUTABLE);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
 }

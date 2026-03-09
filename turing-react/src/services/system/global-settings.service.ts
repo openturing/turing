@@ -1,7 +1,4 @@
-import type {
-  TurGlobalDecimalSeparator,
-  TurGlobalSettings,
-} from "@/models/system/global-settings.model";
+import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import axios from "axios";
 
 export class TurGlobalSettingsService {
@@ -12,14 +9,10 @@ export class TurGlobalSettingsService {
     return response.data;
   }
 
-  async update(
-    decimalSeparator: TurGlobalDecimalSeparator,
-  ): Promise<TurGlobalSettings> {
+  async update(settings: TurGlobalSettings): Promise<TurGlobalSettings> {
     const response = await axios.put<TurGlobalSettings>(
       "/system/global-settings",
-      {
-        decimalSeparator,
-      },
+      settings,
     );
     return response.data;
   }

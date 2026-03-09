@@ -19,7 +19,7 @@ class TurGlobalSettingsBeanTest {
 
     @Test
     void shouldCreateUsingAllArgsConstructor() {
-        TurGlobalSettingsBean bean = new TurGlobalSettingsBean(TurGlobalDecimalSeparator.DOT);
+        TurGlobalSettingsBean bean = new TurGlobalSettingsBean(TurGlobalDecimalSeparator.DOT, null);
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
     }

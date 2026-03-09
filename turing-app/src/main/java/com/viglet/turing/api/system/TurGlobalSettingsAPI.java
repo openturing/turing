@@ -26,6 +26,7 @@ public class TurGlobalSettingsAPI {
     public TurGlobalSettingsBean getGlobalSettings() {
         return TurGlobalSettingsBean.builder()
                 .decimalSeparator(turGlobalSettingsService.getDecimalSeparator())
+                .pythonExecutable(turGlobalSettingsService.getPythonExecutable())
                 .build();
     }
 
@@ -35,6 +36,8 @@ public class TurGlobalSettingsAPI {
         return TurGlobalSettingsBean.builder()
                 .decimalSeparator(turGlobalSettingsService
                         .updateDecimalSeparator(globalSettings.getDecimalSeparator()))
+                .pythonExecutable(turGlobalSettingsService
+                        .updatePythonExecutable(globalSettings.getPythonExecutable()))
                 .build();
     }
 }

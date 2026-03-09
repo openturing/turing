@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.system.TurGlobalSettingsService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +25,37 @@ public class TurCodeInterpreterToolService {
     private static final int TIMEOUT_SECONDS = 30;
     private static final int MAX_OUTPUT_LENGTH = 15_000;
     private static final String SANDBOX_DIR = "code-interpreter";
+
+    /** Fixed, read-only system directories allowed in the subprocess PATH. */
+    private static final String SAFE_PATH;
+    static {
+        boolean isWindows = System.getProperty("os.name", "")
+                .toLowerCase(Locale.ROOT).startsWith("windows");
+        SAFE_PATH = isWindows
+                ? String.join(File.pathSeparator, "C:\\Windows\\System32", "C:\\Windows")
+                : String.join(File.pathSeparator, "/usr/bin", "/usr/local/bin", "/bin");
+    }
+
+    /** Absolute Python candidates searched in order when no explicit path is configured. */
+    private static final List<String> PYTHON_CANDIDATES;
+    static {
+        boolean isWindows = System.getProperty("os.name", "")
+                .toLowerCase(Locale.ROOT).startsWith("windows");
+        PYTHON_CANDIDATES = isWindows
+                ? List.of("C:\\Python312\\python.exe", "C:\\Python311\\python.exe",
+                          "C:\\Python310\\python.exe")
+                : List.of("/usr/bin/python3", "/usr/local/bin/python3",
+                          "/usr/bin/python", "/usr/local/bin/python");
+    }
+
+    private final TurGlobalSettingsService turGlobalSettingsService;
+
+    public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService) {
+        this.turGlobalSettingsService = turGlobalSettingsService;
+    }
+
+    @Value("${turing.code-interpreter.python-executable:}")
+    private String configuredPythonExecutable;
 
     @Value("${server.port:2700}")
     private int serverPort;
@@ -47,8 +81,20 @@ public class TurCodeInterpreterToolService {
             statistics, collections, itertools, functools, urllib.
             - Libraries that MAY be available (if installed): numpy, pandas, matplotlib, \
             seaborn, scipy, openpyxl, requests, Pillow.
-            - If a library is not available, the error will tell you. Try an alternative.
             - Python version is 3.12+.
+
+            INSTALLING MISSING LIBRARIES:
+            - If a library is missing (ModuleNotFoundError or ImportError), install it \
+            BEFORE running the actual code by calling execute_python with an install script:
+              import subprocess, sys
+              subprocess.check_call([sys.executable, "-m", "pip", "install", \
+            "matplotlib", "numpy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            - Always use sys.executable so pip installs into the same interpreter.
+            - You may install multiple packages in a single call: \
+            ["matplotlib", "numpy", "pandas", "seaborn", "scipy", "openpyxl", "Pillow"].
+            - After a successful install call execute_python again with the real code.
+            - If pip itself fails (no internet, permissions), report the error and \
+            suggest a stdlib-only alternative when possible.
 
             CHART STYLING (mandatory for all charts):
             - Always start chart code with: plt.style.use('seaborn-v0_8-darkgrid')
@@ -66,10 +112,11 @@ public class TurCodeInterpreterToolService {
             ERROR HANDLING:
             - If the code fails (non-zero exit code) or produces warnings/errors in stderr, \
             the output will include the error details.
-            - When you receive an error, analyze it, fix the code, and call execute_python again \
-            with the corrected version. You may retry up to 3 times before giving up.
-            - Common fixes: missing imports, deprecated APIs, syntax errors, missing libraries \
-            (try an alternative).
+            - When you receive a ModuleNotFoundError, run the pip install step first, \
+            then retry with the real code. Count install + retry as a single attempt.
+            - For other errors, analyze and fix the code, then call execute_python again. \
+            You may retry up to 3 times before giving up.
+            - Common fixes: missing imports, deprecated APIs, syntax errors.
 
             Args:
                 code (str): Python code to execute. Required.
@@ -100,12 +147,48 @@ public class TurCodeInterpreterToolService {
         }
     }
 
+    private String resolvePythonExecutable() {
+        // 1. DB / global-settings (highest priority — editable at runtime)
+        String dbPath = turGlobalSettingsService.getPythonExecutable();
+        if (!dbPath.isBlank()) {
+            return requireAbsolute(dbPath, "Global Settings → Python Executable");
+        }
+        // 2. Application property (turing.code-interpreter.python-executable)
+        if (!configuredPythonExecutable.isBlank()) {
+            return requireAbsolute(configuredPythonExecutable,
+                    "turing.code-interpreter.python-executable");
+        }
+        // 3. Auto-detect from fixed system locations
+        for (String candidate : PYTHON_CANDIDATES) {
+            if (Files.isExecutable(Path.of(candidate))) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException(
+                "Python not found in safe locations. Configure it in Global Settings or set "
+                        + "turing.code-interpreter.python-executable to an absolute path.");
+    }
+
+    private static String requireAbsolute(String path, String source) {
+        if (!Path.of(path).isAbsolute()) {
+            throw new IllegalStateException(
+                    source + " must be an absolute path, got: " + path);
+        }
+        return path;
+    }
+
     private String executeAndCollectOutput(String sessionId, File sessionDir,
             Path scriptPath) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder("python", scriptPath.toString());
+        ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), scriptPath.toString());
         pb.directory(sessionDir);
         pb.redirectErrorStream(false);
-        pb.environment().put("MPLBACKEND", "Agg");
+        var env = pb.environment();
+        env.put("MPLBACKEND", "Agg");
+        env.put("PATH", SAFE_PATH);
+        env.remove("PYTHONPATH");
+        env.remove("PYTHONSTARTUP");
+        env.remove("PYTHONHOME");
+        env.remove("PYTHONUSERSITE");
 
         Process process = pb.start();
 

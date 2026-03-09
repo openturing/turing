@@ -9,6 +9,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
     Select,
@@ -18,10 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
-import type {
-    TurGlobalDecimalSeparator,
-    TurGlobalSettings,
-} from "@/models/system/global-settings.model";
+import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -54,9 +52,7 @@ export default function GlobalSettingsPage() {
 
     const onSubmit = async (settings: TurGlobalSettings) => {
         try {
-            const response = await turGlobalSettingsService.update(
-                settings.decimalSeparator as TurGlobalDecimalSeparator
-            );
+            const response = await turGlobalSettingsService.update(settings);
             form.reset(response);
             toast.success("Global settings were updated.");
         } catch (error) {
@@ -104,6 +100,29 @@ export default function GlobalSettingsPage() {
                                     <FormDescription>
                                         Decimal example: <strong>{decimalExample}</strong> | Currency example: <strong>{currencyExample}</strong>
                                     </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="pythonExecutable"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Python Executable Path</FormLabel>
+                                    <FormDescription>
+                                        Absolute path to the Python interpreter used by the code interpreter tool (e.g. <code>/usr/bin/python3</code>).
+                                        Leave empty to auto-detect from known system locations.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="/usr/bin/python3"
+                                            disabled={isLoading}
+                                            {...field}
+                                            value={field.value ?? ""}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.tool;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -8,13 +9,15 @@ import java.lang.reflect.Method;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.viglet.turing.system.TurGlobalSettingsService;
+
 class TurCodeInterpreterToolServiceTest {
 
     private TurCodeInterpreterToolService service;
 
     @BeforeEach
     void setUp() {
-        service = new TurCodeInterpreterToolService();
+        service = new TurCodeInterpreterToolService(mock(TurGlobalSettingsService.class));
     }
 
     @Test
