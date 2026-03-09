@@ -32,7 +32,7 @@
     "facet": false
   },
   {
-    "name": "price",
+    "name": "price12",
     "type": "CURRENCY",
     "mandatory": false,
     "multiValued": false,

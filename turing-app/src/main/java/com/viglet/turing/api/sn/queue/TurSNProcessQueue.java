@@ -240,6 +240,7 @@ public class TurSNProcessQueue {
     }
 
     private void saveFaceLocales(TurSNJobAttributeSpec spec, TurSNSiteFieldExt turSNSiteFieldExt) {
+        if (spec.getFacetName() == null) return;
         Set<TurSNSiteFieldExtFacet> facetLocales = new HashSet<>();
         spec.getFacetName().forEach((key, value) -> {
             if (!key.equals(DEFAULT)) {
@@ -256,9 +257,11 @@ public class TurSNProcessQueue {
     @NotNull
     private TurSNSiteFieldExt saveSiteFieldExt(TurSNSite turSNSite, TurSNJobAttributeSpec spec,
             TurSNSiteField turSNSiteField) {
+        Map<String, String> facetName = spec.getFacetName();
         TurSNSiteFieldExt turSNSiteFieldExt = TurSNSiteFieldExt.builder().enabled(1)
                 .name(turSNSiteField.getName()).description(turSNSiteField.getDescription())
-                .facet(spec.isFacet() ? 1 : 0).facetName(spec.getFacetName().get(DEFAULT)).hl(0)
+                .facet(spec.isFacet() ? 1 : 0)
+                .facetName(facetName != null ? facetName.get(DEFAULT) : null).hl(0)
                 .multiValued(turSNSiteField.getMultiValued()).mlt(0)
                 .externalId(turSNSiteField.getId()).snType(TurSNFieldType.SE)
                 .type(turSNSiteField.getType()).turSNSite(turSNSite).build();
