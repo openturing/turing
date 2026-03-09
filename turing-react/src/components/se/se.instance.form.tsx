@@ -206,39 +206,18 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     />
                     <FormField
                       control={control}
-                      name="host"
-                      rules={{ required: "Host is required." }}
+                      name="endpointUrl"
+                      rules={{ required: "Endpoint URL is required." }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Host</FormLabel>
+                          <FormLabel>Endpoint URL</FormLabel>
                           <FormDescription>
-                            Enter the server hostname or IP address (e.g., <code>localhost</code>).
+                            Enter the full URL of the search engine (e.g., <code>http://localhost:8983/solr</code>).
                           </FormDescription>
                           <FormControl>
                             <Input
-                              placeholder="e.g. localhost"
-                              type="text"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={control}
-                      name="port"
-                      rules={{ required: "Port is required." }}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Port</FormLabel>
-                          <FormDescription>
-                            Specify the network port for the search engine (e.g., <code>8983</code>).
-                          </FormDescription>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g. 8983"
-                              type="number"
+                              placeholder="e.g. http://localhost:8983/solr"
+                              type="url"
                               {...field}
                             />
                           </FormControl>

@@ -70,9 +70,12 @@ public class TurSolrUtils {
     }
 
     private static String getSolrUrl(TurSEInstance turSEInstance) {
-        return String.format("http://%s:%s",
-                turSEInstance.getHost(),
-                turSEInstance.getPort());
+        try {
+            URI uri = URI.create(turSEInstance.getEndpointUrl());
+            return uri.getScheme() + "://" + uri.getAuthority();
+        } catch (Exception e) {
+            return turSEInstance.getEndpointUrl();
+        }
     }
 
     public static void deleteCore(String solrUrl, String name) {

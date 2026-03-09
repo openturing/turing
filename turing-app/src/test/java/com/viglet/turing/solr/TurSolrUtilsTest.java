@@ -71,8 +71,7 @@ class TurSolrUtilsTest {
     void setUp() {
         // Use lenient() to avoid unnecessary stubbing exceptions for tests that don't
         // use the mock
-        lenient().when(turSEInstance.getHost()).thenReturn("localhost");
-        lenient().when(turSEInstance.getPort()).thenReturn(8983);
+        lenient().when(turSEInstance.getEndpointUrl()).thenReturn("http://localhost:8983/solr");
     }
 
     @Test
@@ -449,8 +448,7 @@ class TurSolrUtilsTest {
         server.start();
         try {
             TurSEInstance instance = mock(TurSEInstance.class);
-            when(instance.getHost()).thenReturn("localhost");
-            when(instance.getPort()).thenReturn(server.getAddress().getPort());
+            when(instance.getEndpointUrl()).thenReturn("http://localhost:" + server.getAddress().getPort() + "/solr");
 
             TurSolrUtils.deleteCore(solrUrl, "core1");
             assertThat(TurSolrUtils.coreExists(instance, "core1")).isTrue();
@@ -534,8 +532,7 @@ class TurSolrUtilsTest {
         server.start();
         try {
             TurSEInstance instance = mock(TurSEInstance.class);
-            when(instance.getHost()).thenReturn("localhost");
-            when(instance.getPort()).thenReturn(server.getAddress().getPort());
+            when(instance.getEndpointUrl()).thenReturn("http://localhost:" + server.getAddress().getPort() + "/solr");
 
             TurSolrUtils.addOrUpdateField(TurSolrFieldAction.ADD, instance, "core1",
                     "body", TurSEFieldType.TEXT, true, false);
@@ -573,8 +570,7 @@ class TurSolrUtilsTest {
         server.start();
         try {
             TurSEInstance instance = mock(TurSEInstance.class);
-            when(instance.getHost()).thenReturn("localhost");
-            when(instance.getPort()).thenReturn(server.getAddress().getPort());
+            when(instance.getEndpointUrl()).thenReturn("http://localhost:" + server.getAddress().getPort() + "/solr");
 
             TurSolrUtils.deleteField(instance, "core1", "body", TurSEFieldType.TEXT);
 
@@ -587,8 +583,7 @@ class TurSolrUtilsTest {
     @Test
     void testNetworkFailuresDoNotThrow() {
         TurSEInstance instance = mock(TurSEInstance.class);
-        when(instance.getHost()).thenReturn("localhost");
-        when(instance.getPort()).thenReturn(1);
+        when(instance.getEndpointUrl()).thenReturn("http://localhost:1/solr");
 
         TurSolrUtils.deleteCore("http://localhost:1", "coreX");
         TurSolrUtils.createCore("http://localhost:1", "coreX", "cfg");

@@ -180,8 +180,7 @@ class TurSNSiteAPITest {
                                 mock(TurSolr.class), mock(TurConfigProperties.class), siteMapper);
                 TurSNSite site = new TurSNSite();
                 TurSEInstance instance = new TurSEInstance();
-                instance.setHost("localhost");
-                instance.setPort(8983);
+                instance.setEndpointUrl("http://localhost:8983/solr");
                 site.setTurSEInstance(instance);
                 TurSNSiteLocale locale = new TurSNSiteLocale();
                 locale.setCore("core1");
@@ -213,8 +212,7 @@ class TurSNSiteAPITest {
 
                 TurSNSite site = new TurSNSite();
                 TurSEInstance instance = new TurSEInstance();
-                instance.setHost("localhost");
-                instance.setPort(8983);
+                instance.setEndpointUrl("http://localhost:8983/solr");
                 site.setTurSEInstance(instance);
                 TurSNSiteGenAi genAi = new TurSNSiteGenAi();
                 site.setTurSNSiteGenAi(genAi);

@@ -97,8 +97,7 @@ public class TurSEInstanceAPI {
                         turSEInstanceEdit.setTitle(turSEInstance.getTitle());
                         turSEInstanceEdit.setDescription(turSEInstance.getDescription());
                         turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
-                        turSEInstanceEdit.setHost(turSEInstance.getHost());
-                        turSEInstanceEdit.setPort(turSEInstance.getPort());
+                        turSEInstanceEdit.setEndpointUrl(turSEInstance.getEndpointUrl());
                         turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
                         this.turSEInstanceRepository.save(turSEInstanceEdit);
                         return turSEInstanceMapper.toDto(turSEInstanceEdit);

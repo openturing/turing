@@ -147,7 +147,8 @@ public class TurSNTemplate {
                         if (!Arrays.asList(locales).contains(configSet)) {
                                 configSet = "en";
                         }
-                        String solrURL = String.format("http://%s:%s", instance.getHost(), instance.getPort());
+                        java.net.URI solrUri = java.net.URI.create(instance.getEndpointUrl());
+                        String solrURL = solrUri.getScheme() + "://" + solrUri.getAuthority();
                         if (turConfigProperties.getSolr().isCloud()) {
                                 try {
                                         TurSolrUtils.createCollection(solrURL, coreName,

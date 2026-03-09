@@ -60,9 +60,7 @@ public class TurSolrInstanceProcess {
     }
 
     private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-        String baseUrl = String.format("http://%s:%s/solr",
-                turSEInstance.getHost(),
-                turSEInstance.getPort());
+        String baseUrl = turSEInstance.getEndpointUrl();
         HttpJdkSolrClient httpSolrClient = clientCache.computeIfAbsent(baseUrl, url -> {
             log.info("Starting Solr connection pool for URL: {}", url);
             return new HttpJdkSolrClient.Builder(url)

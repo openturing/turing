@@ -303,8 +303,7 @@ public class TurSNSiteImport {
 					seInstance.setTitle(vendor.getTitle());
 					seInstance.setDescription("Auto-created during import");
 					seInstance.setTurSEVendor(vendor);
-					seInstance.setHost("localhost");
-					seInstance.setPort(8983);
+					seInstance.setEndpointUrl("http://localhost:8983/solr");
 					seInstance.setEnabled(1);
 					TurSEInstance saved = turSEInstanceRepository.save(seInstance);
 					log.info("Created default SE Instance '{}' ({}) with vendor '{}'.",
@@ -527,8 +526,8 @@ public class TurSNSiteImport {
 			return existing.get();
 		}
 
-		if (exportedSeInstance.getTitle() == null || exportedSeInstance.getHost() == null) {
-			log.warn("Skipping creation of SE Instance due to missing required data (id/title/host). id={}",
+		if (exportedSeInstance.getTitle() == null || exportedSeInstance.getEndpointUrl() == null) {
+			log.warn("Skipping creation of SE Instance due to missing required data (id/title/endpointUrl). id={}",
 					exportedSeInstance.getId());
 			return null;
 		}
@@ -547,8 +546,7 @@ public class TurSNSiteImport {
 					seToCreate.setTitle(exportedSeInstance.getTitle());
 					seToCreate.setDescription(exportedSeInstance.getDescription());
 					seToCreate.setEnabled(exportedSeInstance.getEnabled());
-					seToCreate.setHost(exportedSeInstance.getHost());
-					seToCreate.setPort(exportedSeInstance.getPort());
+					seToCreate.setEndpointUrl(exportedSeInstance.getEndpointUrl());
 					seToCreate.setTurSEVendor(vendor);
 					TurSEInstance created = turSEInstanceRepository.save(seToCreate);
 					log.info("Created missing SE Instance '{}' ({}) from root exchange references.",

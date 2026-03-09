@@ -114,8 +114,7 @@ class TurSNSiteImportTest {
                 exportedSe.setTitle("SE 1");
                 exportedSe.setDescription("SE Desc");
                 exportedSe.setEnabled(1);
-                exportedSe.setHost("localhost");
-                exportedSe.setPort(8983);
+                exportedSe.setEndpointUrl("http://localhost:8983/solr");
                 exportedSe.setTurSEVendor(seVendor);
 
                 TurLLMVendor llmVendor = new TurLLMVendor();

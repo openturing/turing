@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: se-instance-add-endpoint-url
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            columnExists:
+              tableName: se_instance
+              columnName: endpoint_url
+      changes:
+        - addColumn:
+            tableName: se_instance
+            columns:
+              - column:
+                  name: endpoint_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: se-instance-migrate-host-port-to-endpoint-url
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: host
+      changes:
+        - sql:
+            sql: >-
+              UPDATE se_instance
+              SET endpoint_url = CONCAT('http://', host, ':', port, '/solr')
+              WHERE endpoint_url IS NULL
+
+  - changeSet:
+      id: se-instance-endpoint-url-not-null
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: endpoint_url
+      changes:
+        - addNotNullConstraint:
+            tableName: se_instance
+            columnName: endpoint_url
+            columnDataType: VARCHAR(255)
+            defaultNullValue: "http://localhost:8983/solr"
+
+  - changeSet:
+      id: se-instance-drop-host
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: host
+      changes:
+        - dropColumn:
+            tableName: se_instance
+            columnName: host
+
+  - changeSet:
+      id: se-instance-drop-port
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: se_instance
+            columnName: port
+      changes:
+        - dropColumn:
+            tableName: se_instance
+            columnName: port

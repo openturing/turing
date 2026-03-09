@@ -136,8 +136,7 @@ class TurSEInstanceAPITest {
 
         TurSEInstance updatedInstance = new TurSEInstance();
         updatedInstance.setTitle("New Title");
-        updatedInstance.setHost("localhost");
-        updatedInstance.setPort(8983);
+        updatedInstance.setEndpointUrl("http://localhost:8983/solr");
         updatedInstance.setEnabled(1);
 
         when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(existingInstance));
@@ -147,8 +146,7 @@ class TurSEInstanceAPITest {
                 .content(objectMapper.writeValueAsString(updatedInstance)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("New Title"))
-                .andExpect(jsonPath("$.host").value("localhost"))
-                .andExpect(jsonPath("$.port").value(8983))
+                .andExpect(jsonPath("$.endpointUrl").value("http://localhost:8983/solr"))
                 .andExpect(jsonPath("$.enabled").value(1));
 
         verify(turSEInstanceRepository, times(1)).findById("1");

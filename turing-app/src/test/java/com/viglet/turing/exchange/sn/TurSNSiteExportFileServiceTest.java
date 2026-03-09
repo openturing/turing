@@ -40,8 +40,7 @@ class TurSNSiteExportFileServiceTest {
         seInstance.setTitle("Search Engine 1");
         seInstance.setDescription("SE Desc");
         seInstance.setEnabled(1);
-        seInstance.setHost("localhost");
-        seInstance.setPort(8983);
+        seInstance.setEndpointUrl("http://localhost:8983/solr");
         seInstance.setTurSEVendor(seVendor);
 
         TurLLMVendor llmVendor = new TurLLMVendor();

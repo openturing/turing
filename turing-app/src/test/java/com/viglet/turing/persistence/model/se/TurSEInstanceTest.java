@@ -54,23 +54,20 @@ class TurSEInstanceTest {
         String title = "Test SE Instance";
         String description = "Test Description";
         int enabled = 1;
-        String host = "localhost";
-        int port = 8983;
-        
+        String endpointUrl = "http://localhost:8983/solr";
+
         turSEInstance.setId(id);
         turSEInstance.setTitle(title);
         turSEInstance.setDescription(description);
         turSEInstance.setEnabled(enabled);
-        turSEInstance.setHost(host);
-        turSEInstance.setPort(port);
+        turSEInstance.setEndpointUrl(endpointUrl);
         turSEInstance.setTurSEVendor(turSEVendor);
-        
+
         assertThat(turSEInstance.getId()).isEqualTo(id);
         assertThat(turSEInstance.getTitle()).isEqualTo(title);
         assertThat(turSEInstance.getDescription()).isEqualTo(description);
         assertThat(turSEInstance.getEnabled()).isEqualTo(enabled);
-        assertThat(turSEInstance.getHost()).isEqualTo(host);
-        assertThat(turSEInstance.getPort()).isEqualTo(port);
+        assertThat(turSEInstance.getEndpointUrl()).isEqualTo(endpointUrl);
         assertThat(turSEInstance.getTurSEVendor()).isEqualTo(turSEVendor);
     }
 
@@ -80,8 +77,7 @@ class TurSEInstanceTest {
         assertThat(turSEInstance.getTitle()).isNull();
         assertThat(turSEInstance.getDescription()).isNull();
         assertThat(turSEInstance.getEnabled()).isZero();
-        assertThat(turSEInstance.getHost()).isNull();
-        assertThat(turSEInstance.getPort()).isZero();
+        assertThat(turSEInstance.getEndpointUrl()).isNull();
         assertThat(turSEInstance.getTurSEVendor()).isNull();
     }
 
@@ -89,33 +85,21 @@ class TurSEInstanceTest {
     void testSetEnabledWithDifferentValues() {
         turSEInstance.setEnabled(0);
         assertThat(turSEInstance.getEnabled()).isZero();
-        
+
         turSEInstance.setEnabled(1);
         assertThat(turSEInstance.getEnabled()).isEqualTo(1);
     }
 
     @Test
-    void testSetPortWithDifferentValues() {
-        turSEInstance.setPort(8983);
-        assertThat(turSEInstance.getPort()).isEqualTo(8983);
-        
-        turSEInstance.setPort(9200);
-        assertThat(turSEInstance.getPort()).isEqualTo(9200);
-        
-        turSEInstance.setPort(80);
-        assertThat(turSEInstance.getPort()).isEqualTo(80);
-    }
+    void testSetEndpointUrlWithDifferentValues() {
+        turSEInstance.setEndpointUrl("http://localhost:8983/solr");
+        assertThat(turSEInstance.getEndpointUrl()).isEqualTo("http://localhost:8983/solr");
 
-    @Test
-    void testSetHostWithDifferentValues() {
-        turSEInstance.setHost("localhost");
-        assertThat(turSEInstance.getHost()).isEqualTo("localhost");
-        
-        turSEInstance.setHost("192.168.1.1");
-        assertThat(turSEInstance.getHost()).isEqualTo("192.168.1.1");
-        
-        turSEInstance.setHost("solr.example.com");
-        assertThat(turSEInstance.getHost()).isEqualTo("solr.example.com");
+        turSEInstance.setEndpointUrl("http://192.168.1.1:9200");
+        assertThat(turSEInstance.getEndpointUrl()).isEqualTo("http://192.168.1.1:9200");
+
+        turSEInstance.setEndpointUrl("https://solr.example.com/solr");
+        assertThat(turSEInstance.getEndpointUrl()).isEqualTo("https://solr.example.com/solr");
     }
 
     @Test
@@ -123,19 +107,19 @@ class TurSEInstanceTest {
         turSEInstance.setId("test-id");
         turSEInstance.setTitle("title");
         turSEInstance.setDescription("description");
-        turSEInstance.setHost("localhost");
+        turSEInstance.setEndpointUrl("http://localhost:8983/solr");
         turSEInstance.setTurSEVendor(turSEVendor);
-        
+
         turSEInstance.setId(null);
         turSEInstance.setTitle(null);
         turSEInstance.setDescription(null);
-        turSEInstance.setHost(null);
+        turSEInstance.setEndpointUrl(null);
         turSEInstance.setTurSEVendor(null);
-        
+
         assertThat(turSEInstance.getId()).isNull();
         assertThat(turSEInstance.getTitle()).isNull();
         assertThat(turSEInstance.getDescription()).isNull();
-        assertThat(turSEInstance.getHost()).isNull();
+        assertThat(turSEInstance.getEndpointUrl()).isNull();
         assertThat(turSEInstance.getTurSEVendor()).isNull();
     }
 

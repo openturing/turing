@@ -127,8 +127,7 @@ class TurSNTemplateTest {
         TurSNSite site = siteWithSEInstance("se-1");
         TurSEInstance instance = new TurSEInstance();
         instance.setId("se-1");
-        instance.setHost("localhost");
-        instance.setPort(8983);
+        instance.setEndpointUrl("http://localhost:8983/solr");
 
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
         when(localeRepository.save(any(TurSNSiteLocale.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -171,8 +170,7 @@ class TurSNTemplateTest {
 
         TurSEInstance instance = new TurSEInstance();
         instance.setId("se-1");
-        instance.setHost("127.0.0.1");
-        instance.setPort(8984);
+        instance.setEndpointUrl("http://127.0.0.1:8984/solr");
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
 
         try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
@@ -198,8 +196,7 @@ class TurSNTemplateTest {
 
         TurSEInstance instance = new TurSEInstance();
         instance.setId("se-1");
-        instance.setHost("solr-host");
-        instance.setPort(8983);
+        instance.setEndpointUrl("http://solr-host:8983/solr");
 
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
         when(resourceLoader.getResource("classpath:solr/configsets/pt.zip")).thenReturn(resource);
@@ -225,8 +222,7 @@ class TurSNTemplateTest {
         TurSNSite site = siteWithSEInstance("se-1");
         TurSEInstance instance = new TurSEInstance();
         instance.setId("se-1");
-        instance.setHost("localhost");
-        instance.setPort(8983);
+        instance.setEndpointUrl("http://localhost:8983/solr");
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
         when(localeRepository.save(any(TurSNSiteLocale.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
