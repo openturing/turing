@@ -38,6 +38,7 @@ import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -56,14 +57,17 @@ public class TurSEInstanceAPI {
         private final TurSEInstanceMapper turSEInstanceMapper;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSolr turSolr;
+        private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
         public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
                         TurSEInstanceMapper turSEInstanceMapper,
-                        TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr) {
+                        TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
+                        TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
                 this.turSEInstanceRepository = turSEInstanceRepository;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
+                this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         }
 
         @Operation(summary = "Search Engine List")
@@ -127,15 +131,24 @@ public class TurSEInstanceAPI {
         @Operation(summary = "List Solr cores/collections for a Search Engine")
         @GetMapping("/{id}/cores")
         public ResponseEntity<List<TurSECoreInfo>> turSEInstanceCores(@PathVariable String id) {
-                return turSEInstanceRepository.findById(id)
-                                .map(turSEInstance -> ResponseEntity.ok(TurSolrUtils.listCores(turSEInstance)))
-                                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        List<TurSECoreInfo> cores = TurSolrUtils.listCores(turSEInstance).stream()
+                                        .map(core -> new TurSECoreInfo(core.name(), core.numDocs(),
+                                                        turSNSiteLocaleRepository.findByCore(core.name()).stream()
+                                                                        .map(locale -> locale.getTurSNSite().getName())
+                                                                        .distinct().sorted().toList()))
+                                        .toList();
+                        return ResponseEntity.ok(cores);
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
 
         @Operation(summary = "Delete a Solr core/collection from a Search Engine")
         @DeleteMapping("/{id}/cores/{core}")
         public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        if (!turSNSiteLocaleRepository.findByCore(core).isEmpty()) {
+                                return ResponseEntity.status(HttpStatus.CONFLICT).<Void>build();
+                        }
                         TurSolrUtils.deleteCore(turSEInstance, core);
                         return ResponseEntity.noContent().<Void>build();
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());

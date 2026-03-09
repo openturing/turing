@@ -385,7 +385,7 @@ public class TurSolrUtils {
                                 .map(name -> {
                                     Number numDocsRaw = jsonContext.read("$.status." + name + ".index.numDocs");
                                     long numDocs = numDocsRaw != null ? numDocsRaw.longValue() : 0L;
-                                    return new TurSECoreInfo(name, numDocs);
+                                    return new TurSECoreInfo(name, numDocs, Collections.emptyList());
                                 })
                                 .toList();
                     }

@@ -56,6 +56,8 @@ public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale
 	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
 
+	List<TurSNSiteLocale> findByCore(String core);
+
 	@CacheEvict(value = { FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
 			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE }, allEntries = true)
 	@NotNull

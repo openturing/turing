@@ -29,6 +29,7 @@ interface LocaleEntry {
 interface CoreGroup {
   base: string;
   locales: LocaleEntry[];
+  coreInfo?: TurSECoreInfo; // only for leaf cores (no locale children)
 }
 
 // Matches: {base}_{lang}_{COUNTRY} or {base}_{lang}
@@ -36,6 +37,7 @@ const LOCALE_PATTERN = /^(.+)_([a-z]{2}_[A-Z]{2})$|^(.+)_([a-z]{2})$/;
 
 function groupCores(cores: TurSECoreInfo[]): CoreGroup[] {
   const map = new Map<string, LocaleEntry[]>();
+  const leafMap = new Map<string, TurSECoreInfo>();
 
   for (const coreInfo of cores) {
     const m = LOCALE_PATTERN.exec(coreInfo.name);
@@ -46,12 +48,13 @@ function groupCores(cores: TurSECoreInfo[]): CoreGroup[] {
       map.get(base)?.push({ locale, coreInfo });
     } else if (!map.has(coreInfo.name)) {
       map.set(coreInfo.name, []);
+      leafMap.set(coreInfo.name, coreInfo);
     }
   }
 
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([base, locales]) => ({ base, locales }));
+    .map(([base, locales]) => ({ base, locales, coreInfo: leafMap.get(base) }));
 }
 
 function formatNumDocs(n: number): string {
@@ -100,6 +103,7 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
           open={deleteOpen}
           setOpen={setDeleteOpen}
           onDelete={() => { setDeleteOpen(false); onDelete(coreInfo.name); }}
+          blockedBy={coreInfo.usedBySites}
           trigger={
             <Button variant="ghost" size="icon-sm" title="Delete core">
               <IconTrash className="size-4" />
@@ -121,21 +125,23 @@ interface CoreGroupRowProps {
 
 function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>) {
   const [open, setOpen] = useState(true);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const hasLocales = group.locales.length > 0;
   const localeCount = group.locales.length;
   const totalDocs = group.locales.reduce((sum, { coreInfo }) => sum + coreInfo.numDocs, 0);
 
   return (
     <div className="rounded-lg border bg-background overflow-hidden">
-      <button
-        type="button"
-        onClick={() => hasLocales && setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
-      >
-        <IconServer className="size-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-semibold flex-1">{group.base}</span>
-        {hasLocales && (
-          <>
+      <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+        {hasLocales ? (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="flex flex-1 items-center gap-3 text-left min-w-0"
+          >
+            <IconServer className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-semibold flex-1">{group.base}</span>
             <span className="text-xs text-muted-foreground">
               {formatNumDocs(totalDocs)} docs
             </span>
@@ -146,9 +152,51 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
             <IconChevronDown
               className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
+          </button>
+        ) : (
+          <>
+            <IconServer className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-semibold flex-1">{group.base}</span>
+            {group.coreInfo && (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {formatNumDocs(group.coreInfo.numDocs)} docs
+              </span>
+            )}
+            {group.coreInfo && (
+              <div className="flex items-center gap-1">
+                <DialogDelete
+                  feature="documents"
+                  name={group.coreInfo.name}
+                  open={clearOpen}
+                  setOpen={setClearOpen}
+                  onDelete={() => { setClearOpen(false); onClear(group.coreInfo!.name); }}
+                  trigger={
+                    <Button variant="ghost" size="icon-sm" title="Remove all documents">
+                      <IconEraser className="size-4" />
+                    </Button>
+                  }
+                  title="Remove all documents?"
+                  description="This will delete all indexed documents from this core."
+                  confirmLabel="Yes, remove all documents"
+                />
+                <DialogDelete
+                  feature="core"
+                  name={group.coreInfo.name}
+                  open={deleteOpen}
+                  setOpen={setDeleteOpen}
+                  onDelete={() => { setDeleteOpen(false); onDelete(group.coreInfo!.name); }}
+                  blockedBy={group.coreInfo.usedBySites}
+                  trigger={
+                    <Button variant="ghost" size="icon-sm" title="Delete core">
+                      <IconTrash className="size-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </>
         )}
-      </button>
+      </div>
 
       {hasLocales && open && (
         <div className="border-t divide-y">
