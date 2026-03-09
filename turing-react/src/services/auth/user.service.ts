@@ -36,8 +36,7 @@ export class TurUserService {
     return URL.createObjectURL(response.data);
   }
 
-  async saveAvatarUrl(username: string, avatarUrl: string | null): Promise<TurUser> {
-    const response = await axios.put<TurUser>(`/v2/user/${username}`, { avatarUrl });
-    return response.data;
+  async saveAvatarUrl(username: string, avatarUrl: string | null): Promise<void> {
+    await axios.put(`/v2/user/${username}/avatar-url`, { avatarUrl });
   }
 }

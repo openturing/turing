@@ -1,5 +1,5 @@
-import { IconCheck, IconDice5, IconLoader2, IconPalette } from "@tabler/icons-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { IconCheck, IconDice5, IconPalette } from "@tabler/icons-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -40,12 +40,21 @@ const DICEBEAR_STYLES = [
 
 type DiceBearStyle = (typeof DICEBEAR_STYLES)[number]["id"]
 
-function buildDiceBearUrl(style: DiceBearStyle, seed: string): string {
+function buildDiceBearUrl(style: string, seed: string): string {
   return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`
 }
 
 function generateRandomSeed(): string {
   return Math.random().toString(36).substring(2, 10)
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debouncedValue
 }
 
 interface DiceBearAvatarPickerProps {
@@ -67,7 +76,9 @@ export function DiceBearAvatarPicker({
   const [seed, setSeed] = useState(defaultSeed || generateRandomSeed())
   const [previewSeeds, setPreviewSeeds] = useState<string[]>([])
   const [selectedUrl, setSelectedUrl] = useState("")
-  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set())
+  const imgKeyRef = useRef(0)
+
+  const debouncedSeed = useDebounce(seed, 400)
 
   useEffect(() => {
     if (open) {
@@ -85,11 +96,12 @@ export function DiceBearAvatarPicker({
   const generatePreviewSeeds = useCallback(() => {
     const seeds = Array.from({ length: 12 }, () => generateRandomSeed())
     setPreviewSeeds(seeds)
+    imgKeyRef.current += 1
   }, [])
 
   const mainPreviewUrl = useMemo(
-    () => buildDiceBearUrl(selectedStyle, seed),
-    [selectedStyle, seed]
+    () => buildDiceBearUrl(selectedStyle, debouncedSeed),
+    [selectedStyle, debouncedSeed]
   )
 
   useEffect(() => {
@@ -104,18 +116,6 @@ export function DiceBearAvatarPicker({
   const handleConfirm = () => {
     onSelect(selectedUrl)
     onOpenChange(false)
-  }
-
-  const handleImageLoad = (url: string) => {
-    setLoadingImages((prev) => {
-      const next = new Set(prev)
-      next.delete(url)
-      return next
-    })
-  }
-
-  const handleImageLoadStart = (url: string) => {
-    setLoadingImages((prev) => new Set(prev).add(url))
   }
 
   return (
@@ -171,7 +171,7 @@ export function DiceBearAvatarPicker({
             <Label>Style</Label>
             <div className="grid grid-cols-7 gap-2 max-h-48 overflow-y-auto pr-1">
               {DICEBEAR_STYLES.map((style) => {
-                const url = buildDiceBearUrl(style.id, seed)
+                const url = buildDiceBearUrl(style.id, debouncedSeed)
                 const isSelected = style.id === selectedStyle
                 return (
                   <button
@@ -189,18 +189,13 @@ export function DiceBearAvatarPicker({
                     )}
                     title={style.label}
                   >
-                    <div className="size-10 rounded-full overflow-hidden bg-muted relative">
-                      {loadingImages.has(url) && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <IconLoader2 className="size-4 animate-spin text-muted-foreground" />
-                        </div>
-                      )}
+                    <div className="size-10 rounded-full overflow-hidden bg-muted">
                       <img
+                        key={`${style.id}-${debouncedSeed}`}
                         src={url}
                         alt={style.label}
                         className="size-full object-cover"
-                        onLoadStart={() => handleImageLoadStart(url)}
-                        onLoad={() => handleImageLoad(url)}
+                        loading="lazy"
                       />
                     </div>
                     <span className="text-[10px] leading-tight text-center truncate w-full">
@@ -232,10 +227,9 @@ export function DiceBearAvatarPicker({
                 const isActive = url === selectedUrl
                 return (
                   <button
-                    key={s}
+                    key={`${s}-${imgKeyRef.current}`}
                     type="button"
                     onClick={() => {
-                      setSeed(s)
                       setSelectedUrl(url)
                     }}
                     className={cn(
@@ -249,6 +243,7 @@ export function DiceBearAvatarPicker({
                       src={url}
                       alt={`Variation ${s}`}
                       className="size-full object-cover"
+                      loading="lazy"
                     />
                   </button>
                 )

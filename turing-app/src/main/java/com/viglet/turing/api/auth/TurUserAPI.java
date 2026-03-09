@@ -210,6 +210,19 @@ public class TurUserAPI {
         return new TurUserDto();
     }
 
+    @PutMapping("/{username}/avatar-url")
+    public ResponseEntity<Void> updateAvatarUrl(@PathVariable String username,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        TurUser turUser = turUserRepository.findByUsername(username);
+        if (turUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String avatarUrl = (body != null) ? body.get("avatarUrl") : null;
+        turUser.setAvatarUrl(avatarUrl);
+        turUserRepository.save(turUser);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{username}/avatar")
     public ResponseEntity<Void> uploadAvatar(@PathVariable String username,
             @RequestParam("file") MultipartFile file) {

@@ -8,12 +8,14 @@ import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/c
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { useCurrentUser } from "@/contexts/user.context"
 import type { TurUser } from "@/models/auth/user"
 import { TurUserService } from "@/services/auth/user.service"
 
 const turUserService = new TurUserService()
 
 export default function UserAccountPage() {
+  const { refreshUser } = useCurrentUser()
   const [user, setUser] = useState<TurUser | null>(null)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -53,6 +55,7 @@ export default function UserAccountPage() {
     try {
       await turUserService.saveAvatarUrl(user.username, url)
       setAvatarUrl(url)
+      refreshUser()
       toast.success("Avatar updated.")
     } catch {
       toast.error("Failed to save avatar.")
@@ -64,6 +67,7 @@ export default function UserAccountPage() {
     try {
       await turUserService.saveAvatarUrl(user.username, null)
       setAvatarUrl(undefined)
+      refreshUser()
       toast.success("Avatar removed.")
     } catch {
       toast.error("Failed to remove avatar.")
@@ -82,11 +86,13 @@ export default function UserAccountPage() {
         firstName,
         lastName,
         email,
+        avatarUrl: avatarUrl ?? undefined,
       }
       if (newPassword) {
         payload.password = newPassword
       }
       await turUserService.update(user.username, payload)
+      refreshUser()
       toast.success("Account updated successfully.")
       setNewPassword("")
       setConfirmPassword("")

@@ -16,6 +16,15 @@ export interface ContextInfoResponse {
   source: string;
 }
 
+function getBasicAuthHeader(): string | null {
+  try {
+    const restInfo = JSON.parse(localStorage.getItem("restInfo") || "{}");
+    return restInfo.authdata ? `Basic ${restInfo.authdata}` : null;
+  } catch {
+    return null;
+  }
+}
+
 function readCsrfTokenFromCookie(): string | null {
   const match = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie);
   return match ? decodeURIComponent(match[1]) : null;
@@ -53,6 +62,10 @@ export class TurChatService {
     };
     if (csrfToken) {
       headers["X-XSRF-TOKEN"] = csrfToken;
+    }
+    const authHeader = getBasicAuthHeader();
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
     }
 
     let body: BodyInit;
@@ -164,6 +177,10 @@ export class TurChatService {
     };
     if (csrfToken) {
       headers["X-XSRF-TOKEN"] = csrfToken;
+    }
+    const authHeader = getBasicAuthHeader();
+    if (authHeader) {
+      headers["Authorization"] = authHeader;
     }
 
     try {

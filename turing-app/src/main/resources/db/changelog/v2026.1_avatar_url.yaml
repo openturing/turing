@@ -7,11 +7,11 @@ databaseChangeLog:
         not:
           - columnExists:
               tableName: auth_user
-              columnName: avatar_url
+              columnName: avatarUrl
       changes:
         - addColumn:
             tableName: auth_user
             columns:
               - column:
-                  name: avatar_url
+                  name: avatarUrl
                   type: VARCHAR(1024)

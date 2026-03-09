@@ -3,11 +3,13 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { UserProvider } from "@/contexts/user.context";
 import React from "react";
 import { Outlet } from "react-router-dom";
 
 export default function ConsoleRootPage() {
   return (
+    <UserProvider>
     <SidebarProvider defaultOpen={false}
       style={
         {
@@ -22,5 +24,6 @@ export default function ConsoleRootPage() {
         <Outlet />
       </SidebarInset>
     </SidebarProvider>
+    </UserProvider>
   )
 }

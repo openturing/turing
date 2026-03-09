@@ -27,8 +27,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import type { TurUser } from "@/models/auth/user"
-import { TurUserService } from "@/services/auth/user.service"
+import { useCurrentUser } from "@/contexts/user.context"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
@@ -97,15 +96,13 @@ const allNavItems = [
   },
 ]
 
-const turUserService = new TurUserService();
 const turLLMInstanceService = new TurLLMInstanceService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = React.useState<TurUser>({} as TurUser);
+  const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
   const { toggleSidebar } = useSidebar();
   React.useEffect(() => {
-    turUserService.get().then(setUser);
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });

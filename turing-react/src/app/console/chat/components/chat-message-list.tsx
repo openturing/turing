@@ -3,7 +3,8 @@ import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeHighlight from "rehype-highlight"
-import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar"
+import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
+import { useCurrentUser } from "@/contexts/user.context"
 import { type ChatMessage, formatFileSize } from "../chat.types"
 
 interface ChatMessageListProps {
@@ -14,6 +15,7 @@ interface ChatMessageListProps {
 }
 
 export function ChatMessageList({ messages, loading, assistantName, endRef }: ChatMessageListProps) {
+  const { user } = useCurrentUser()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const handleCopy = (id: string, content: string) => {
@@ -28,6 +30,9 @@ export function ChatMessageList({ messages, loading, assistantName, endRef }: Ch
         <div key={message.id} className="flex gap-3">
           <div className="shrink-0 pt-0.5">
             <GradientAvatar className="size-7">
+              {message.role === "user" && user?.avatarUrl && (
+                <GradientAvatarImage src={user.avatarUrl} alt={user.username} />
+              )}
               <GradientAvatarFallback variant={message.role === "assistant" ? "info" : "secondary"}>
                 {message.role === "assistant" ? <IconCpu2 className="size-4" /> : <IconUser className="size-4" />}
               </GradientAvatarFallback>
