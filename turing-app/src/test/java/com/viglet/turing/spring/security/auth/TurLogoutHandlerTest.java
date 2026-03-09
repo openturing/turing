@@ -11,7 +11,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -32,22 +31,21 @@ class TurLogoutHandlerTest {
 
     @Test
     void shouldLogoutAndInvalidateSession() throws Exception {
-        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
 
         handler.logout(request, response, authentication);
 
-        verify(request).logout();
-        verify(request).getSession();
+        verify(request).getSession(false);
         verify(session).invalidate();
     }
 
     @Test
-    void shouldNotThrowWhenLogoutFails() throws Exception {
-        org.mockito.Mockito.doThrow(new ServletException("failure")).when(request).logout();
+    void shouldNotThrowWhenSessionDoesNotExist() throws Exception {
+        when(request.getSession(false)).thenReturn(null);
 
         assertDoesNotThrow(() -> handler.logout(request, response, authentication));
 
-        verify(request).logout();
-        verify(request, never()).getSession();
+        verify(request).getSession(false);
+        verify(session, never()).invalidate();
     }
 }

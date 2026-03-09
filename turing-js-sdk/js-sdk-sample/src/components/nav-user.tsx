@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { NavLink } from "react-router-dom"
+
 
 export function NavUser({
   user,
@@ -39,9 +39,8 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const handleClick = () => {
-    localStorage.removeItem('restInfo');
-    localStorage.removeItem('user');
+  const handleLogout = () => {
+    globalThis.location.href = ROUTES.LOGOUT;
   };
 
   return (
@@ -102,11 +101,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <NavLink to={ROUTES.LOGOUT}
-                onClick={handleClick}>
-                <IconLogout />
-                Log out</NavLink>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <IconLogout />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

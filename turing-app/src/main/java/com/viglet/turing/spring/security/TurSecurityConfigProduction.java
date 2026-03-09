@@ -30,8 +30,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -39,10 +39,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -93,6 +95,9 @@ public class TurSecurityConfigProduction {
                 http.addFilterBefore(turAuthTokenHeaderFilter, BasicAuthenticationFilter.class);
                 http.userDetailsService(userDetailsService);
                 http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+                http.securityContext(securityContext -> securityContext
+                                .securityContextRepository(new HttpSessionSecurityContextRepository()));
+                http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
                 CookieCsrfTokenRepository csrfTokenRepository = new CookieCsrfTokenRepository();
 
@@ -178,7 +183,11 @@ public class TurSecurityConfigProduction {
                                         });
                         http.logout(logout -> logout
                                         .logoutRequestMatcher(mvc.matcher(HttpMethod.GET, LOGOUT_PATH))
-                                        .addLogoutHandler(turLogoutHandler).logoutSuccessUrl("/"));
+                                        .addLogoutHandler(turLogoutHandler)
+                                        .invalidateHttpSession(true)
+                                        .clearAuthentication(true)
+                                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                                        .logoutSuccessUrl("/login"));
                 }
                 return http.build();
         }

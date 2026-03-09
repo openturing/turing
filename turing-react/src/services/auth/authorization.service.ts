@@ -22,7 +22,5 @@ export class TurAuthorizationService {
     return response.data;
   }
 
-  logout() {
-    localStorage.removeItem("restInfo");
-  }
+
 }

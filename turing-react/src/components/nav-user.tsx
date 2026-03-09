@@ -31,9 +31,8 @@ export function NavUser({
   user: TurUser
 }>) {
   const { isMobile } = useSidebar()
-  const handleClick = () => {
-    localStorage.removeItem('restInfo');
-    localStorage.removeItem('user');
+  const handleLogout = () => {
+    globalThis.location.href = ROUTES.LOGOUT;
   };
   const initials = React.useMemo(() => {
     const first = user.firstName || '';
@@ -108,11 +107,9 @@ export function NavUser({
               </NavLink>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <NavLink to={ROUTES.LOGOUT}
-                onClick={handleClick} className="flex items-center gap-1 w-full">
-                <IconLogout />
-                <span>Log out</span></NavLink>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <IconLogout />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

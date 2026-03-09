@@ -29,8 +29,7 @@ export function LoginForm({
             if (!turRestInfo.username || !turRestInfo.password) {
                 throw new Error('Please enter both username and password');
             }
-            authorization.login(turRestInfo.username, turRestInfo.password).then((response) => {
-                localStorage.setItem("restInfo", JSON.stringify(response));
+            authorization.login(turRestInfo.username, turRestInfo.password).then(() => {
                 globalThis.location.href = returnUrl;
             }).catch(() => {
                 setError('Invalid credentials. Please try again.');
