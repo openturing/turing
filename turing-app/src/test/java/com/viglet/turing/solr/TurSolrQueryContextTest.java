@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
-import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.request.SolrQuery;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.commons.se.TurSEParameters;

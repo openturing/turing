@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.request.SolrQuery;
 import org.apache.solr.common.params.GroupParams;
 import org.apache.solr.common.params.HighlightParams;
 import org.apache.solr.common.params.MoreLikeThisParams;

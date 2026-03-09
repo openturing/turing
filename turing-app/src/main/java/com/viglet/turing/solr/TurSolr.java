@@ -13,11 +13,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.BaseHttpSolrClient;
 import org.apache.solr.client.solrj.request.QueryRequest;
+import org.apache.solr.client.solrj.request.SolrQuery;
+import org.apache.solr.client.solrj.request.SolrQuery.ORDER;
 import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
@@ -91,8 +90,13 @@ public class TurSolr {
     }
 
     public long getDocumentTotal(TurSolrInstance turSolrInstance) {
-        return executeSolrQuery(turSolrInstance, new SolrQuery().setQuery("*:*").setRows(0))
-                .map(queryResponse -> queryResponse.getResults().getNumFound()).orElse(0L);
+        try {
+            return executeSolrQuery(turSolrInstance, new SolrQuery().setQuery("*:*").setRows(0))
+                    .map(queryResponse -> queryResponse.getResults().getNumFound()).orElse(0L);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return 0L;
+        }
     }
 
     public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
@@ -248,8 +252,6 @@ public class TurSolr {
         try {
             QueryResponse response = turSolrInstance.getSolrClient().query(core, query);
             return Optional.ofNullable(response);
-        } catch (BaseHttpSolrClient.RemoteSolrException e) {
-            logSolrException(query, e, true);
         } catch (SolrServerException | IOException e) {
             logSolrException(query, e, false);
         }
