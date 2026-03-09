@@ -62,6 +62,8 @@ import reactor.core.scheduler.Schedulers;
 @Tag(name = "LLM Chat", description = "Chat directly with a Language Model instance")
 public class TurLLMChatAPI {
 
+    private static final String ROLE_ASSISTANT = "assistant";
+
     private static final Set<String> IMAGE_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp");
 
@@ -199,7 +201,6 @@ public class TurLLMChatAPI {
         springMessages.add(new SystemMessage(SYSTEM_PROMPT));
         springMessages.addAll(buildMessages(request.messages(), files));
 
-        Prompt prompt;
         if (turLLMInstance.isToolsEnabled()) {
             ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
                     .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
@@ -214,34 +215,45 @@ public class TurLLMChatAPI {
                     .internalToolExecutionEnabled(true)
                     .build();
 
-            prompt = new Prompt(springMessages, chatOptions);
+            Prompt prompt = new Prompt(springMessages, chatOptions);
+
+            // Use call() instead of stream() to ensure tool calling works reliably.
+            // Spring AI's stream() + internalToolExecutionEnabled(true) does not execute
+            // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP issue).
+            return Mono.fromCallable(() -> {
+                log.info("[Chat] Calling LLM with tool support for instance {}", id);
+                var response = chatModel.call(prompt);
+
+                tokenUsageService.recordUsage(turLLMInstance, response, username);
+
+                String text = response.getResult() != null
+                        && response.getResult().getOutput() != null
+                        && response.getResult().getOutput().getText() != null
+                                ? response.getResult().getOutput().getText()
+                                : "";
+                log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
+                return new ChatResponse(ROLE_ASSISTANT, text);
+            })
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .doOnError(err -> log.error("[Chat] Call error: {}", err.getMessage(), err))
+                    .filter(response -> !response.content().isEmpty())
+                    .flux();
         } else {
-            log.info("[Chat] Tools disabled for LLM instance {}", id);
-            prompt = new Prompt(springMessages);
+            log.info("[Chat] Tools disabled, using stream for LLM instance {}", id);
+            Prompt prompt = new Prompt(springMessages);
+
+            return chatModel.stream(prompt)
+                    .map(response -> {
+                        String text = response.getResult() != null
+                                && response.getResult().getOutput() != null
+                                && response.getResult().getOutput().getText() != null
+                                        ? response.getResult().getOutput().getText()
+                                        : "";
+                        return new ChatResponse(ROLE_ASSISTANT, text);
+                    })
+                    .filter(response -> !response.content().isEmpty())
+                    .doOnError(err -> log.error("[Chat] Stream error: {}", err.getMessage(), err));
         }
-
-        // Use call() instead of stream() to ensure tool calling works reliably.
-        // Spring AI's stream() + internalToolExecutionEnabled(true) does not execute
-        // tools correctly with some providers (e.g. Anthropic CONTENT_BLOCK_STOP
-        // issue).
-        return Mono.fromCallable(() -> {
-            log.info("[Chat] Calling LLM with tool support for instance {}", id);
-            var response = chatModel.call(prompt);
-
-            tokenUsageService.recordUsage(turLLMInstance, response, username);
-
-            String text = response.getResult() != null
-                    && response.getResult().getOutput() != null
-                    && response.getResult().getOutput().getText() != null
-                            ? response.getResult().getOutput().getText()
-                            : "";
-            log.info("[Chat] LLM response: {} chars for instance {}", text.length(), id);
-            return new ChatResponse("assistant", text);
-        })
-                .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(err -> log.error("[Chat] Call error: {}", err.getMessage(), err))
-                .filter(response -> !response.content().isEmpty())
-                .flux();
     }
 
     private String resolveUsername() {
@@ -253,7 +265,7 @@ public class TurLLMChatAPI {
         List<Message> messages = new ArrayList<>();
         for (int i = 0; i < items.size(); i++) {
             ChatMessageItem item = items.get(i);
-            if ("assistant".equals(item.role())) {
+            if (ROLE_ASSISTANT.equals(item.role())) {
                 messages.add(new AssistantMessage(item.content()));
             } else {
                 boolean isLast = (i == items.size() - 1);
