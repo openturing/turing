@@ -176,7 +176,6 @@ class TurSolrUtilsTest {
     @Test
     void testConstantsAreCorrect() {
         assertThat(TurSolrUtils.STR_SUFFIX).isEqualTo("_str");
-        assertThat(TurSolrUtils.CURRENCY_TXT_SUFFIX).isEqualTo("_currency_txt");
         assertThat(TurSolrUtils.SCHEMA_API_URL).isEqualTo("%s/solr/%s/schema");
     }
 

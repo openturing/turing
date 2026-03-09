@@ -29,6 +29,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { JsonViewer } from "@/components/json-viewer";
 import { IconBraces } from "@tabler/icons-react";
 import { Search } from "lucide-react";
 import moment from "moment";
@@ -638,9 +639,7 @@ export default function SearchPage() {
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-auto mt-4">
-            <pre className="text-xs bg-muted rounded-md p-4 overflow-auto h-full whitespace-pre-wrap break-all">
-              {JSON.stringify(jsonSheetDoc, null, 2)}
-            </pre>
+            <JsonViewer data={jsonSheetDoc} className="h-full" />
           </div>
         </SheetContent>
       </Sheet>

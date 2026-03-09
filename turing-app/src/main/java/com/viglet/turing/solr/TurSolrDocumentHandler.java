@@ -164,8 +164,6 @@ public class TurSolrDocumentHandler {
             TurSEFieldType fieldType) {
         if (fieldType == TurSEFieldType.CURRENCY) {
             String rawCurrency = TurSolrField.convertFieldToString(value);
-            document.addField(key.concat(TurSolrUtils.CURRENCY_TXT_SUFFIX), rawCurrency);
-
             toSolrCurrencyValue(rawCurrency)
                     .ifPresentOrElse(
                             normalizedCurrency -> document.addField(key, normalizedCurrency),
@@ -199,9 +197,12 @@ public class TurSolrDocumentHandler {
             return Optional.empty();
         }
 
-        // Currency amounts in API payloads use dot as decimal separator (standard JSON/REST format).
-        // Also accept comma-decimal notation (e.g. "19,92,BRL") by normalizing to dot form.
-        // Preserve the original string to avoid reformatting (e.g. "150.00" must not become "150.0").
+        // Currency amounts in API payloads use dot as decimal separator (standard
+        // JSON/REST format).
+        // Also accept comma-decimal notation (e.g. "19,92,BRL") by normalizing to dot
+        // form.
+        // Preserve the original string to avoid reformatting (e.g. "150.00" must not
+        // become "150.0").
         String canonicalAmount = amountPart.replace(',', '.');
         try {
             Double.parseDouble(canonicalAmount); // validate only
