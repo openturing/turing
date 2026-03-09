@@ -4,6 +4,8 @@ setlocal
 set "SCRIPT_DIR=%~dp0"
 set "BASE_URL=http://localhost:2700"
 set "API_KEY="
+set "SITE=wknd"
+set "LOCALE=en_US"
 set "SPECS_FILE=%SCRIPT_DIR%sample_wknd_field_specs.json"
 set "MODE_FLAG="
 
@@ -15,12 +17,14 @@ if "%~1"=="" (
   echo.
   echo Optional:
   echo   --base-url URL       Base URL of the Turing server (default: http://localhost:2700^)
+  echo   --site NAME          Turing site name (default: wknd^)
+  echo   --locale LOCALE      Locale for indexing (default: en_US^)
   echo   --specs-file PATH    Path to field specs JSON file (default: sample_wknd_field_specs.json^)
   echo   --dry-run            Validate without indexing
   echo.
   echo Example:
   echo   %~nx0 --api-key mykey123
-  echo   %~nx0 --api-key mykey123 --base-url http://myserver:2700 --dry-run
+  echo   %~nx0 --api-key mykey123 --base-url http://myserver:2700 --site mysite --locale pt_BR
   exit /b 0
 )
 
@@ -28,6 +32,8 @@ if "%~1"=="" (
 if "%~1"=="" goto done_args
 if /I "%~1"=="--base-url"   ( set "BASE_URL=%~2"   & shift & shift & goto parse_args )
 if /I "%~1"=="--api-key"    ( set "API_KEY=%~2"    & shift & shift & goto parse_args )
+if /I "%~1"=="--site"       ( set "SITE=%~2"       & shift & shift & goto parse_args )
+if /I "%~1"=="--locale"     ( set "LOCALE=%~2"     & shift & shift & goto parse_args )
 if /I "%~1"=="--specs-file" ( set "SPECS_FILE=%~2" & shift & shift & goto parse_args )
 if /I "%~1"=="--dry-run"    ( set "MODE_FLAG=--dry-run" & shift & goto parse_args )
 echo Unknown argument: %~1
@@ -52,8 +58,8 @@ if errorlevel 1 (
 echo Running Turing indexing test...
 echo Base URL:  %BASE_URL%
 echo API Key:   %API_KEY%
-echo Site:      wknd
-echo Locale:    en_US
+echo Site:      %SITE%
+echo Locale:    %LOCALE%
 echo JSON:      %SCRIPT_DIR%sample_wknd_document.json
 if defined HAS_SPECS (echo Specs:     %SPECS_FILE%) else (echo Specs:     [none])
 echo.
@@ -62,8 +68,8 @@ if defined HAS_SPECS (
   python "%SCRIPT_DIR%turing_index_test.py" ^
     --base-url "%BASE_URL%" ^
     --header "Key: %API_KEY%" ^
-    --site wknd ^
-    --locale en_US ^
+    --site "%SITE%" ^
+    --locale "%LOCALE%" ^
     --json-file "%SCRIPT_DIR%sample_wknd_document.json" ^
     --specs-file "%SPECS_FILE%" ^
     %MODE_FLAG%
@@ -71,8 +77,8 @@ if defined HAS_SPECS (
   python "%SCRIPT_DIR%turing_index_test.py" ^
     --base-url "%BASE_URL%" ^
     --header "Key: %API_KEY%" ^
-    --site wknd ^
-    --locale en_US ^
+    --site "%SITE%" ^
+    --locale "%LOCALE%" ^
     --json-file "%SCRIPT_DIR%sample_wknd_document.json" ^
     %MODE_FLAG%
 )
