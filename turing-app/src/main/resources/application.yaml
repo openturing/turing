@@ -148,7 +148,7 @@ logging:
       apache: INFO
       "[apache.activemq]": ERROR
     com:
-      viglet: DEBUG
+      viglet: INFO
     dev:
       langchain4j: INFO
       ai4j:
