@@ -246,8 +246,24 @@ public class TurSNProcessQueue {
         if (isLuceneSite(turSNSite)) {
             return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
                     .map(luceneInstance -> {
-                        turLucene.indexing(luceneInstance, turSNSite, attributes);
-                        return true;
+                        try {
+                            turLucene.indexing(luceneInstance, turSNSite, attributes);
+                            return true;
+                        } catch (IllegalArgumentException e) {
+                            if (e.getMessage() != null && e.getMessage().contains("doc values type")) {
+                                log.warn("[Lucene] Schema conflict detected ({}). Recreating index and retrying.",
+                                        e.getMessage());
+                                turLuceneInstanceProcess.resetInstance(luceneInstance.getIndexPath());
+                                return turLuceneInstanceProcess
+                                        .initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
+                                        .map(fresh -> {
+                                            turLucene.indexing(fresh, turSNSite, attributes);
+                                            return true;
+                                        }).orElse(false);
+                            }
+                            log.error("[Lucene] Indexing failed: {}", e.getMessage(), e);
+                            return false;
+                        }
                     }).orElse(false);
         }
         return turSolrInstanceProcess

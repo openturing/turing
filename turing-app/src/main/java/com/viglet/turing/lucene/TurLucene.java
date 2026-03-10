@@ -20,13 +20,10 @@ import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,14 +48,12 @@ public class TurLucene {
     private final TurLuceneDocumentHandler turLuceneDocumentHandler;
 
     public TurLucene(TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteFieldService turSNSiteFieldService,
             TurLuceneQueryBuilder turLuceneQueryBuilder) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
         this.turLuceneResultProcessor = new TurLuceneResultProcessor();
-        this.turLuceneDocumentHandler = new TurLuceneDocumentHandler(turSNSiteFieldService,
-                turSNSiteFieldExtRepository);
+        this.turLuceneDocumentHandler = new TurLuceneDocumentHandler(turSNSiteFieldService);
     }
 
     // -------------------------------------------------------------------------
@@ -75,7 +70,7 @@ public class TurLucene {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
 
-            Query query = turLuceneQueryBuilder.buildQuery(context, turSNSite, params);
+            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);
 
             TurSEResults results = turLuceneResultProcessor.getResults(
                     instance, turSNSite, query, params,
@@ -104,7 +99,7 @@ public class TurLucene {
         return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
-            Query query = turLuceneQueryBuilder.buildQuery(context, turSNSite, params);
+            Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);
             return turLuceneResultProcessor.getResults(
                     instance, turSNSite, query, params,
                     turLuceneQueryBuilder.getFacetFields(turSNSite, facetName),

@@ -43,4 +43,11 @@ public final class TurLuceneConstants {
 
     /** Suffix for SortedSetDocValuesFacetField (faceting support). */
     public static final String FACET_DIM_CONFIG = "$facets";
+
+    /**
+     * Suffix appended to LONG and DATE field names when storing SortedSetDocValues
+     * for faceting, to avoid conflict with their NumericDocValuesField.
+     * e.g. field "price" → facet DocValues stored under "price_sf".
+     */
+    public static final String SORTED_SET_FACET_SUFFIX = "_sf";
 }

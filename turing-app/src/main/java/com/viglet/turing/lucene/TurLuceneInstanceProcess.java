@@ -132,6 +132,39 @@ public class TurLuceneInstanceProcess {
         }
     }
 
+    /**
+     * Closes and evicts the cached instance for {@code indexPath}, then deletes the
+     * index directory. The next call to {@code initLuceneInstance} will recreate
+     * a fresh empty index. Used to recover from Lucene schema conflicts.
+     */
+    public void resetInstance(Path indexPath) {
+        String cacheKey = indexPath.toString();
+        TurLuceneInstance removed = instanceCache.remove(cacheKey);
+        if (removed != null) {
+            try {
+                removed.close();
+            } catch (IOException e) {
+                log.error("Error closing Lucene instance during reset: {}", cacheKey, e);
+            }
+        }
+        try {
+            if (Files.exists(indexPath)) {
+                Files.walk(indexPath)
+                        .sorted(java.util.Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try {
+                                Files.delete(p);
+                            } catch (IOException ex) {
+                                log.warn("Could not delete index file '{}': {}", p, ex.getMessage());
+                            }
+                        });
+                log.info("Lucene index directory deleted for reset: {}", indexPath);
+            }
+        } catch (IOException e) {
+            log.error("Error deleting index directory during reset: {}", indexPath, e);
+        }
+    }
+
     @PreDestroy
     public void shutdown() {
         instanceCache.values().forEach(instance -> {

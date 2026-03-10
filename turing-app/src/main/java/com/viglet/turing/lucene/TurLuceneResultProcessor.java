@@ -17,6 +17,7 @@
 package com.viglet.turing.lucene;
 
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.se.facet.TurSEFacetResult;
@@ -26,6 +27,7 @@ import com.viglet.turing.se.result.TurSEResults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsCollectorManager;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.SortedSetDocValues;
 import org.apache.lucene.search.*;
@@ -76,8 +78,7 @@ public class TurLuceneResultProcessor {
             if (!facetFields.isEmpty()) {
                 // Two passes: hits first, then facets across all matching docs.
                 topDocs = searcher.search(query, hitsNeeded);
-                fc = new FacetsCollector();
-                searcher.search(query, fc);
+                fc = searcher.search(query, new FacetsCollectorManager());
             } else {
                 topDocs = searcher.search(query, hitsNeeded);
             }
@@ -156,16 +157,28 @@ public class TurLuceneResultProcessor {
     private List<TurSEFacetResult> computeFacets(FacetsCollector fc,
             List<TurSNSiteFieldExt> facetFields) {
         List<TurSEFacetResult> out = new ArrayList<>();
+        List<FacetsCollector.MatchingDocs> matchingDocsList = fc.getMatchingDocs();
+        log.debug("[Lucene] computeFacets: {} facet fields, {} matching segments",
+                facetFields.size(), matchingDocsList.size());
 
         for (TurSNSiteFieldExt fieldExt : facetFields) {
             String fieldName = fieldExt.getName();
+            // LONG and DATE store SortedSetDocValues under a _sf-suffixed field to avoid
+            // conflict with their NumericDocValuesField on the same field name.
+            TurSEFieldType type = fieldExt.getType();
+            String docValuesFieldName = (type == TurSEFieldType.LONG || type == TurSEFieldType.DATE)
+                    ? fieldName + TurLuceneConstants.SORTED_SET_FACET_SUFFIX
+                    : fieldName;
             Map<String, Integer> counts = new LinkedHashMap<>();
 
-            for (FacetsCollector.MatchingDocs matchingDocs : fc.getMatchingDocs()) {
+            for (FacetsCollector.MatchingDocs matchingDocs : matchingDocsList) {
                 try {
                     SortedSetDocValues docValues =
-                            matchingDocs.context().reader().getSortedSetDocValues(fieldName);
-                    if (docValues == null) continue;
+                            matchingDocs.context().reader().getSortedSetDocValues(docValuesFieldName);
+                    if (docValues == null) {
+                        log.debug("[Lucene] field '{}' has no SortedSetDocValues in segment", fieldName);
+                        continue;
+                    }
 
                     DocIdSetIterator disi = matchingDocs.bits().iterator();
                     if (disi == null) continue;
@@ -186,6 +199,7 @@ public class TurLuceneResultProcessor {
                 }
             }
 
+            log.debug("[Lucene] facet '{}': {} distinct values", fieldName, counts.size());
             if (counts.isEmpty()) continue;
 
             TurSEFacetResult turFacet = new TurSEFacetResult();

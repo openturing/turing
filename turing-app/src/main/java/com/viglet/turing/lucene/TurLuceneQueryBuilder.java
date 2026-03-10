@@ -28,6 +28,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -67,8 +68,7 @@ public class TurLuceneQueryBuilder {
      * Builds the primary Lucene {@link Query} from the search context.
      * Includes the user's query string and any active filter queries.
      */
-    public Query buildQuery(TurSNSiteSearchContext context, TurSNSite turSNSite,
-            TurSEParameters params) {
+    public Query buildQuery(TurSNSite turSNSite, TurSEParameters params) {
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
 
         // Main user query
@@ -89,12 +89,16 @@ public class TurLuceneQueryBuilder {
      * Returns the list of enabled facet fields for the given site.
      */
     public List<TurSNSiteFieldExt> getFacetFields(TurSNSite turSNSite) {
-        return turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1)
-                .stream()
+        List<TurSNSiteFieldExt> all = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1);
+        List<TurSNSiteFieldExt> facets = all.stream()
                 .filter(ext -> ext.getFacet() == 1)
                 .sorted(java.util.Comparator.comparingInt(ext ->
                         ext.getFacetPosition() != null ? ext.getFacetPosition() : Integer.MAX_VALUE))
                 .toList();
+        log.debug("[Lucene] site='{}' totalEnabledFields={} facetFields={} names={}",
+                turSNSite.getName(), all.size(), facets.size(),
+                facets.stream().map(TurSNSiteFieldExt::getName).toList());
+        return facets;
     }
 
     /**
@@ -114,7 +118,7 @@ public class TurLuceneQueryBuilder {
             TurSEParameters params) {
         String wildcardQuery = params.getQuery().trim() + "*";
         params.setQuery(wildcardQuery);
-        return buildQuery(context, turSNSite, params);
+        return buildQuery(turSNSite, params);
     }
 
     // -------------------------------------------------------------------------
@@ -131,7 +135,7 @@ public class TurLuceneQueryBuilder {
             if (textFields.length == 0) {
                 // Fallback: search the id field
                 return new QueryParser(TurLuceneConstants.ID, new StandardAnalyzer()).parse(
-                        QueryParser.escape(queryStr));
+                        QueryParserBase.escape(queryStr));
             }
             MultiFieldQueryParser parser = new MultiFieldQueryParser(textFields, new StandardAnalyzer());
             parser.setDefaultOperator(QueryParser.Operator.AND);
