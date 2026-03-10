@@ -182,7 +182,7 @@ public class TurCommonsUtils {
 
     public static List<String> cloneListOfTermsAsString(List<?> attributeArray) {
         return attributeArray.stream()
-                .map(String.class::cast)
+                .map(Object::toString)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
