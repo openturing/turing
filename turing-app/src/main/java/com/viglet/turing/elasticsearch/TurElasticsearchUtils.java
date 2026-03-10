@@ -104,23 +104,29 @@ public class TurElasticsearchUtils {
         }
     }
 
+    private static final String KEYWORD = "keyword";
+
     private static Property toEsProperty(TurSEFieldType type) {
         Property keywordSubField = Property.of(fp -> fp.keyword(k -> k.ignoreAbove(256)));
         return switch (type) {
             // TEXT: analyzed full-text + .keyword sub-field for aggregation
             case TEXT -> Property.of(p -> p.text(t -> t
-                    .fields("keyword", keywordSubField)));
+                    .fields(KEYWORD, keywordSubField)));
             // STRING/ARRAY: keyword (no tokenization) analyzer + .keyword sub-field for aggregation
             // Using "keyword" analyzer keeps exact-match semantics while providing a .keyword
             // sub-field — consistent with ES dynamic mapping so existing and new indexes behave the same
             case STRING, ARRAY -> Property.of(p -> p.text(t -> t
-                    .analyzer("keyword")
-                    .fields("keyword", keywordSubField)));
+                    .analyzer(KEYWORD)
+                    .fields(KEYWORD, keywordSubField)));
             case BOOL -> Property.of(p -> p.boolean_(b -> b));
             case INT -> Property.of(p -> p.integer(i -> i));
             case LONG -> Property.of(p -> p.long_(l -> l));
             case FLOAT -> Property.of(p -> p.float_(f -> f));
-            case DOUBLE, CURRENCY -> Property.of(p -> p.double_(d -> d));
+            case DOUBLE -> Property.of(p -> p.double_(d -> d));
+            // CURRENCY values are stored as "amount,ISO4217" strings (e.g. "150.00,BRL")
+            case CURRENCY -> Property.of(p -> p.text(t -> t
+                    .analyzer(KEYWORD)
+                    .fields(KEYWORD, keywordSubField)));
             case DATE -> Property.of(p -> p.date(d -> d));
         };
     }

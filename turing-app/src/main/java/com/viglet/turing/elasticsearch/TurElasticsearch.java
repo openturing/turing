@@ -358,7 +358,7 @@ public class TurElasticsearch {
         // Both have a ".keyword" sub-field that must be used for terms aggregations.
         TurSEFieldType type = facetField.getType();
         if (type == TurSEFieldType.TEXT || type == TurSEFieldType.STRING
-                || type == TurSEFieldType.ARRAY) {
+                || type == TurSEFieldType.ARRAY || type == TurSEFieldType.CURRENCY) {
             return facetField.getName() + ".keyword";
         }
         return facetField.getName();
