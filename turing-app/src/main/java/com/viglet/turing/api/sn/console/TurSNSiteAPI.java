@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -52,15 +52,10 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
-import com.viglet.turing.elasticsearch.TurElasticsearch;
-import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,10 +77,7 @@ public class TurSNSiteAPI {
     private final TurSNSiteExport turSNSiteExport;
     private final TurSNTemplate turSNTemplate;
     private final TurSNQueue turSNQueue;
-    private final TurSolrInstanceProcess turSolrInstanceProcess;
-    private final TurSolr turSolr;
-    private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
-    private final TurElasticsearch turElasticsearch;
+    private final TurSearchEnginePluginFactory pluginFactory;
     private final TurConfigProperties turConfigProperties;
     private final TurSNSiteMapper turSNSiteMapper;
 
@@ -177,7 +169,8 @@ public class TurSNSiteAPI {
         turSNSite.ifPresent(site -> {
             TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
             turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
-                    .forEach(locale -> TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore()));
+                    .forEach(locale -> pluginFactory.getPluginForSite(site)
+                            .deleteIndex(site.getTurSEInstance(), locale.getCore()));
             site.getTurSNSiteFields().clear();
             site.getTurSNSiteFieldExts().clear();
             site.getTurSNSiteSpotlights().clear();
@@ -234,18 +227,10 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
-            boolean isEs = TurSolrUtils.isElasticsearchEngine(turSNSite.getTurSEInstance());
+            var plugin = pluginFactory.getPluginForSite(turSNSite);
             for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
                     .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
-                if (isEs) {
-                    documentTotal += turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
-                            .map(turElasticsearch::getDocumentTotal).orElse(0L);
-                } else {
-                    Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
-                    if (turSolrInstance.isPresent()) {
-                        documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
-                    }
-                }
+                documentTotal += plugin.getDocumentTotal(turSNSiteLocale);
             }
             turSNSiteMonitoringStatusBean.setDocuments((int) documentTotal);
             return turSNSiteMonitoringStatusBean;

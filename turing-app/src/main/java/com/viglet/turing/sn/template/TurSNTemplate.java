@@ -37,23 +37,17 @@ import static com.viglet.turing.commons.sn.field.TurSNFieldName.TITLE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.TYPE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.URL;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.se.field.TurSEFieldType;
-import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -65,8 +59,8 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtReposi
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.lucene.TurLuceneUtils;
 import com.viglet.turing.solr.TurSolrUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -80,28 +74,28 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurSNTemplate {
         public static final String PT_BR = "pt_BR";
-        private final ResourceLoader resourceloader;
         private final TurSNSiteFieldRepository turSNSiteFieldRepository;
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
         private final TurSEInstanceRepository turSEInstanceRepository;
         private final TurConfigProperties turConfigProperties;
+        private final TurSearchEnginePluginFactory pluginFactory;
 
-        public TurSNTemplate(ResourceLoader resourceloader,
-                        TurSNSiteFieldRepository turSNSiteFieldRepository,
+        public TurSNTemplate(TurSNSiteFieldRepository turSNSiteFieldRepository,
                         TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                         TurSEInstanceRepository turSEInstanceRepository,
-                        TurConfigProperties turConfigProperties) {
-                this.resourceloader = resourceloader;
+                        TurConfigProperties turConfigProperties,
+                        TurSearchEnginePluginFactory pluginFactory) {
                 this.turSNSiteFieldRepository = turSNSiteFieldRepository;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
                 this.turSEInstanceRepository = turSEInstanceRepository;
                 this.turConfigProperties = turConfigProperties;
+                this.pluginFactory = pluginFactory;
         }
 
         @NotNull
@@ -142,49 +136,12 @@ public class TurSNTemplate {
 
         public String createSolrCore(TurSNSiteLocale turSNSiteLocale, String username) {
                 final String coreName = getCoreName(turSNSiteLocale, username);
-                Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
-                                .findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
-                turSEInstance.ifPresent(instance -> {
-                        if (TurSolrUtils.isLuceneEngine(instance)) {
-                                TurLuceneUtils.createCore(instance.getEndpointUrl(), coreName);
-                                return;
-                        }
-                        if (TurSolrUtils.isElasticsearchEngine(instance)) {
-                                Map<String, TurSEFieldType> fieldTypes =
-                                        turSNSiteFieldExtRepository
-                                                .findByTurSNSiteAndEnabled(turSNSiteLocale.getTurSNSite(), 1)
-                                                .stream()
-                                                .filter(f -> f.getType() != null)
-                                                .collect(Collectors.toMap(
-                                                        TurSNSiteFieldExt::getName,
-                                                        TurSNSiteFieldExt::getType,
-                                                        (a, b) -> a));
-                                com.viglet.turing.elasticsearch.TurElasticsearchUtils
-                                        .createIndex(instance.getEndpointUrl(), coreName, fieldTypes);
-                                return;
-                        }
-                        String configSet = turSNSiteLocale.getLanguage().getLanguage();
-                        String[] locales = { "en", "es", "pt" };
-                        if (!Arrays.asList(locales).contains(configSet)) {
-                                configSet = "en";
-                        }
-                        java.net.URI solrUri = java.net.URI.create(instance.getEndpointUrl());
-                        String solrURL = solrUri.getScheme() + "://" + solrUri.getAuthority();
-                        if (turConfigProperties.getSolr().isCloud()) {
-                                try {
-                                        TurSolrUtils.createCollection(solrURL, coreName,
-                                                        resourceloader.getResource(
-                                                                        String.format("classpath:solr/configsets/%s.zip",
-                                                                                        configSet))
-                                                                        .getInputStream(),
-                                                        1);
-                                } catch (IOException e) {
-                                        log.error(e.getMessage(), e);
-                                }
-                        } else {
-                                TurSolrUtils.createCore(solrURL, coreName, configSet);
-                        }
-                });
+                turSEInstanceRepository
+                                .findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId())
+                                .ifPresent(instance ->
+                                        pluginFactory.getPlugin(TurSolrUtils.getEnginePluginType(instance))
+                                                .createIndex(instance, turSNSiteLocale, coreName, Map.of())
+                                );
                 return coreName;
         }
 

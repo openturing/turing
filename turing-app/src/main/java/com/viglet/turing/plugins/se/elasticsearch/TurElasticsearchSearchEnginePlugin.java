@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
@@ -16,15 +16,28 @@
  */
 package com.viglet.turing.plugins.se.elasticsearch;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.elasticsearch.TurElasticsearch;
 import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
-import com.viglet.turing.se.result.TurSEResults;
-import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.elasticsearch.TurElasticsearchUtils;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Elasticsearch implementation of the search engine plugin interface.
@@ -38,12 +51,15 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
 
     private final TurElasticsearch turElasticsearch;
     private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
+    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
     public TurElasticsearchSearchEnginePlugin(
             TurElasticsearch turElasticsearch,
-            TurElasticsearchInstanceProcess turElasticsearchInstanceProcess) {
+            TurElasticsearchInstanceProcess turElasticsearchInstanceProcess,
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
         this.turElasticsearch = turElasticsearch;
         this.turElasticsearchInstanceProcess = turElasticsearchInstanceProcess;
+        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
     }
 
     @Override
@@ -65,5 +81,117 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
     public String getPluginType() {
         return "elasticsearch";
     }
-}
 
+    // ---- Index lifecycle -------------------------------------------------
+
+    @Override
+    public void createIndex(TurSEInstance seInstance, TurSNSiteLocale siteLocale, String indexName,
+            Map<String, TurSEFieldType> fieldTypes) {
+        Map<String, TurSEFieldType> resolved = fieldTypes.isEmpty()
+                ? buildFieldTypesFromSite(siteLocale)
+                : fieldTypes;
+        TurElasticsearchUtils.createIndex(seInstance.getEndpointUrl(), indexName, resolved);
+    }
+
+    private Map<String, TurSEFieldType> buildFieldTypesFromSite(TurSNSiteLocale siteLocale) {
+        if (siteLocale == null || siteLocale.getTurSNSite() == null) {
+            return Collections.emptyMap();
+        }
+        return turSNSiteFieldExtRepository
+                .findByTurSNSiteAndEnabled(siteLocale.getTurSNSite(), 1)
+                .stream()
+                .filter(f -> f.getType() != null)
+                .collect(Collectors.toMap(
+                        TurSNSiteFieldExt::getName,
+                        TurSNSiteFieldExt::getType,
+                        (a, b) -> a));
+    }
+
+    @Override
+    public void deleteIndex(TurSEInstance seInstance, String indexName) {
+        TurElasticsearchUtils.deleteIndex(seInstance.getEndpointUrl(), indexName);
+    }
+
+    @Override
+    public void clearIndex(TurSEInstance seInstance, String indexName) {
+        // ES: delete and recreate the index
+        TurElasticsearchUtils.deleteIndex(seInstance.getEndpointUrl(), indexName);
+        TurElasticsearchUtils.createIndex(seInstance.getEndpointUrl(), indexName);
+    }
+
+    @Override
+    public boolean indexExists(TurSEInstance seInstance, String indexName) {
+        // ES auto-creates indices on first index
+        return true;
+    }
+
+    @Override
+    public List<TurSECoreInfo> listIndexes(TurSEInstance seInstance) {
+        return Collections.emptyList();
+    }
+
+    // ---- Schema management (schema-less -> no-op) ------------------------
+
+    @Override
+    public void addOrUpdateField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType, boolean stored, boolean multiValued, boolean isNew) {
+        // Elasticsearch is schema-less — field types are tracked in the JPA model only
+    }
+
+    @Override
+    public void deleteField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType) {
+        // Elasticsearch is schema-less — no schema operation needed
+    }
+
+    @Override
+    public boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName) {
+        return false; // Elasticsearch is schema-less
+    }
+
+    // ---- Document operations ---------------------------------------------
+
+    @Override
+    public boolean indexDocument(TurSNSite turSNSite, Locale locale, Map<String, Object> attributes) {
+        return turElasticsearchInstanceProcess
+                .initElasticsearchInstance(turSNSite.getName(), locale)
+                .map(esInstance -> {
+                    turElasticsearch.indexing(esInstance, turSNSite, attributes);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean deIndex(TurSNSite turSNSite, Locale locale, String id) {
+        return turElasticsearchInstanceProcess
+                .initElasticsearchInstance(turSNSite.getName(), locale)
+                .map(esInstance -> {
+                    turElasticsearch.deIndexing(esInstance, id);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean deIndexByType(TurSNSite turSNSite, Locale locale, String type) {
+        return turElasticsearchInstanceProcess
+                .initElasticsearchInstance(turSNSite.getName(), locale)
+                .map(esInstance -> {
+                    turElasticsearch.deIndexingByType(esInstance, type);
+                    return true;
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean commit(TurSNSite turSNSite, Locale locale) {
+        // Elasticsearch commits are synchronous — nothing extra needed
+        return true;
+    }
+
+    // ---- Monitoring ------------------------------------------------------
+
+    @Override
+    public long getDocumentTotal(TurSNSiteLocale turSNSiteLocale) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(turElasticsearch::getDocumentTotal).orElse(0L);
+    }
+}

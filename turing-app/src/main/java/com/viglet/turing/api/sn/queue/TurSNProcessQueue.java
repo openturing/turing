@@ -52,17 +52,11 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
-import com.viglet.turing.elasticsearch.TurElasticsearch;
-import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
-import com.viglet.turing.lucene.TurLucene;
-import com.viglet.turing.lucene.TurLuceneInstanceProcess;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrFieldAction;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.solr.TurSolrUtils;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.json.JsonMapper;
@@ -73,14 +67,9 @@ public class TurSNProcessQueue {
     public static final String DEFAULT = "default";
     public static final String INDEXED = "Indexed";
     public static final String DEINDEXED = "Deindexed";
-    private final TurSolr turSolr;
-    private final TurLucene turLucene;
-    private final TurElasticsearch turElasticsearch;
+    private final TurSearchEnginePluginFactory pluginFactory;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    private final TurSolrInstanceProcess turSolrInstanceProcess;
-    private final TurLuceneInstanceProcess turLuceneInstanceProcess;
-    private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
     private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     private final TurSNSpotlightProcess turSNSpotlightProcess;
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
@@ -88,27 +77,18 @@ public class TurSNProcessQueue {
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
 
-    public TurSNProcessQueue(TurSolr turSolr, TurLucene turLucene,
-            TurElasticsearch turElasticsearch,
+    public TurSNProcessQueue(TurSearchEnginePluginFactory pluginFactory,
             TurSNSiteRepository turSNSiteRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSolrInstanceProcess turSolrInstanceProcess,
-            TurLuceneInstanceProcess turLuceneInstanceProcess,
-            TurElasticsearchInstanceProcess turElasticsearchInstanceProcess,
             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
             TurSNSpotlightProcess turSNSpotlightProcess,
             TurSNSiteFieldRepository turSNSiteFieldRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
             TurSEInstanceRepository turSEInstanceRepository) {
-        this.turSolr = turSolr;
-        this.turLucene = turLucene;
-        this.turElasticsearch = turElasticsearch;
+        this.pluginFactory = pluginFactory;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
-        this.turLuceneInstanceProcess = turLuceneInstanceProcess;
-        this.turElasticsearchInstanceProcess = turElasticsearchInstanceProcess;
         this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
         this.turSNSpotlightProcess = turSNSpotlightProcess;
         this.turSNSiteFieldRepository = turSNSiteFieldRepository;
@@ -174,13 +154,7 @@ public class TurSNProcessQueue {
     }
 
     private boolean commitJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
-        if (isLuceneSite(turSNSite) || isElasticsearchSite(turSNSite)) {
-            // Lucene and Elasticsearch commits are synchronous — nothing extra needed
-            return true;
-        }
-        return turSolrInstanceProcess
-                .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                .map(turSolr::commit).orElse(false);
+        return pluginFactory.getPluginForSite(turSNSite).commit(turSNSite, turSNJobItem.getLocale());
     }
 
     private boolean deleteJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
@@ -223,116 +197,23 @@ public class TurSNProcessQueue {
                 turSNJobItem.getLocale());
     }
 
-    private boolean isLuceneSite(TurSNSite turSNSite) {
-        if (turSNSite.getTurSEInstance() == null) return false;
-        return turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                .map(TurSolrUtils::isLuceneEngine)
-                .orElse(false);
-    }
-
-    private boolean isElasticsearchSite(TurSNSite turSNSite) {
-        if (turSNSite.getTurSEInstance() == null) {
-            log.debug("isElasticsearchSite: turSEInstance is null for site={}", turSNSite.getName());
-            return false;
-        }
-        boolean result = turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                .map(TurSolrUtils::isElasticsearchEngine)
-                .orElse(false);
-        log.debug("isElasticsearchSite: site={} seInstanceId={} result={}",
-                turSNSite.getName(), turSNSite.getTurSEInstance().getId(), result);
-        return result;
-    }
-
     public boolean deIndex(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         log.debug("DeIndex");
-        if (isLuceneSite(turSNSite)) {
-            return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                    .map(luceneInstance -> {
-                        if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
-                            turLucene.deIndexing(luceneInstance, turSNJobItem.getId());
-                        } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
-                            turLucene.deIndexingByType(luceneInstance,
-                                    (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
-                        }
-                        return true;
-                    }).orElse(false);
+        TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
+        if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
+            return plugin.deIndex(turSNSite, turSNJobItem.getLocale(), turSNJobItem.getId());
+        } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
+            return plugin.deIndexByType(turSNSite, turSNJobItem.getLocale(),
+                    (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
         }
-        if (isElasticsearchSite(turSNSite)) {
-            return turElasticsearchInstanceProcess
-                    .initElasticsearchInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                    .map(esInstance -> {
-                        if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
-                            turElasticsearch.deIndexing(esInstance, turSNJobItem.getId());
-                        } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
-                            turElasticsearch.deIndexingByType(esInstance,
-                                    (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
-                        }
-                        return true;
-                    }).orElse(false);
-        }
-        return turSolrInstanceProcess
-                .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                .map(turSolrInstance -> {
-                    if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
-                        turSolr.deIndexing(turSolrInstance, turSNJobItem.getId());
-                    } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
-                        turSolr.deIndexingByType(turSolrInstance,
-                                (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
-                    }
-                    return true;
-                }).orElse(false);
+        return false;
     }
 
     private boolean index(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
-        if (isLuceneSite(turSNSite)) {
-            return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                    .map(luceneInstance -> {
-                        try {
-                            turLucene.indexing(luceneInstance, turSNSite, attributes);
-                            return true;
-                        } catch (IllegalArgumentException e) {
-                            if (e.getMessage() != null && e.getMessage().contains("doc values type")) {
-                                log.warn("[Lucene] Schema conflict detected ({}). Recreating index and retrying.",
-                                        e.getMessage());
-                                turLuceneInstanceProcess.resetInstance(luceneInstance.getIndexPath());
-                                return turLuceneInstanceProcess
-                                        .initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                                        .map(fresh -> {
-                                            turLucene.indexing(fresh, turSNSite, attributes);
-                                            return true;
-                                        }).orElse(false);
-                            }
-                            log.error("[Lucene] Indexing failed: {}", e.getMessage(), e);
-                            return false;
-                        }
-                    }).orElse(false);
-        }
-        if (isElasticsearchSite(turSNSite)) {
-            log.debug("index: routing to Elasticsearch site={} locale={}", turSNSite.getName(), turSNJobItem.getLocale());
-            return turElasticsearchInstanceProcess
-                    .initElasticsearchInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                    .map(esInstance -> {
-                        log.debug("index: got ES instance index={}", esInstance.getIndex());
-                        turElasticsearch.indexing(esInstance, turSNSite, attributes);
-                        return true;
-                    })
-                    .orElseGet(() -> {
-                        log.warn("index: initElasticsearchInstance returned empty for site={} locale={}",
-                                turSNSite.getName(), turSNJobItem.getLocale());
-                        return false;
-                    });
-        }
-        return turSolrInstanceProcess
-                .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
-                .map(turSolrInstance -> {
-                    turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                            .ifPresent(seInstance -> turSolr.indexing(turSolrInstance, turSNSite,
-                                    attributes));
-                    return true;
-                }).orElse(false);
+        return pluginFactory.getPluginForSite(turSNSite).indexDocument(turSNSite, turSNJobItem.getLocale(), attributes);
     }
 
     private void createMissingFields(TurSNSite turSNSite,
@@ -392,14 +273,16 @@ public class TurSNProcessQueue {
     private void createFieldInSearchEngine(TurSNSite turSNSite, String coreName,
             TurSNSiteField turSNSiteField) {
         turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
-                .ifPresent(turSEInstance -> TurSolrUtils.addOrUpdateField(TurSolrFieldAction.ADD,
-                        turSEInstance, coreName, turSNSiteField.getName(), turSNSiteField.getType(),
-                        true, turSNSiteField.getMultiValued() == 1));
-
+                .ifPresent(seInstance -> pluginFactory.getPluginForSite(turSNSite)
+                        .addOrUpdateField(seInstance, coreName, turSNSiteField.getName(),
+                                turSNSiteField.getType(), true, turSNSiteField.getMultiValued() == 1, true));
     }
 
     private boolean existsFieldInSearchEngine(TurSNSite turSNSite, String coreName, String name) {
-        return TurSolrUtils.existsField(turSNSite.getTurSEInstance(), coreName, name);
+        if (turSNSite.getTurSEInstance() == null) return false;
+        return turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
+                .map(seInstance -> pluginFactory.getPluginForSite(turSNSite).fieldExists(seInstance, coreName, name))
+                .orElse(false);
     }
 
     private Map<String, Object> getConsolidateResults(TurSNJobItem turSNJobItem) {

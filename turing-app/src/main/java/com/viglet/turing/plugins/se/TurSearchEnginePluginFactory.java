@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.plugins.se;
 
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +60,20 @@ public class TurSearchEnginePluginFactory {
         String pluginType = Optional.ofNullable(turSNSite)
                 .map(TurSNSite::getTurSEInstance)
                 .map(i -> i.getTurSEVendor())
+                .map(v -> StringUtils.isNotBlank(v.getPlugin()) ? v.getPlugin() : v.getId())
+                .orElse("solr");
+        return getPlugin(pluginType);
+    }
+
+    /**
+     * Resolves the search engine plugin for the given SE instance by inspecting its vendor plugin type.
+     *
+     * @param turSEInstance the SE instance whose vendor defines the engine
+     * @return the matching plugin, or Solr as fallback
+     */
+    public TurSearchEnginePlugin getPluginForInstance(TurSEInstance turSEInstance) {
+        String pluginType = Optional.ofNullable(turSEInstance)
+                .map(TurSEInstance::getTurSEVendor)
                 .map(v -> StringUtils.isNotBlank(v.getPlugin()) ? v.getPlugin() : v.getId())
                 .orElse("solr");
         return getPlugin(pluginType);

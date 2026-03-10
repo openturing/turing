@@ -40,9 +40,9 @@ import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.solr.bean.TurSECoreSiteUsage;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -59,16 +59,19 @@ public class TurSEInstanceAPI {
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSolr turSolr;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+        private final TurSearchEnginePluginFactory pluginFactory;
 
         public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
                         TurSEInstanceMapper turSEInstanceMapper,
                         TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
-                        TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+                        TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSearchEnginePluginFactory pluginFactory) {
                 this.turSEInstanceRepository = turSEInstanceRepository;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+                this.pluginFactory = pluginFactory;
         }
 
         @Operation(summary = "Search Engine List")
@@ -133,7 +136,7 @@ public class TurSEInstanceAPI {
         @GetMapping("/{id}/cores")
         public ResponseEntity<List<TurSECoreInfo>> turSEInstanceCores(@PathVariable String id) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
-                        List<TurSECoreInfo> cores = TurSolrUtils.listCores(turSEInstance).stream()
+                        List<TurSECoreInfo> cores = pluginFactory.getPluginForInstance(turSEInstance).listIndexes(turSEInstance).stream()
                                         .map(core -> new TurSECoreInfo(core.name(), core.numDocs(),
                                                         turSNSiteLocaleRepository.findByCore(core.name()).stream()
                                                                         .map(locale -> new TurSECoreSiteUsage(
@@ -154,7 +157,7 @@ public class TurSEInstanceAPI {
                         if (!turSNSiteLocaleRepository.findByCore(core).isEmpty()) {
                                 return ResponseEntity.status(HttpStatus.CONFLICT).<Void>build();
                         }
-                        TurSolrUtils.deleteCore(turSEInstance, core);
+                        pluginFactory.getPluginForInstance(turSEInstance).deleteIndex(turSEInstance, core);
                         return ResponseEntity.noContent().<Void>build();
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
         }
@@ -163,7 +166,7 @@ public class TurSEInstanceAPI {
         @DeleteMapping("/{id}/cores/{core}/documents")
         public ResponseEntity<Void> turSEInstanceClearCore(@PathVariable String id, @PathVariable String core) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
-                        TurSolrUtils.clearCore(turSEInstance, core);
+                        pluginFactory.getPluginForInstance(turSEInstance).clearIndex(turSEInstance, core);
                         return ResponseEntity.noContent().<Void>build();
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
         }

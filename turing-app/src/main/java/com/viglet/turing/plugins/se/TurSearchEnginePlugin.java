@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
@@ -16,41 +16,83 @@
  */
 package com.viglet.turing.plugins.se;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * Interface for search engine plugins that can be used by Turing.
- * Implementations include Solr, Elasticsearch, etc.
+ * Implementations include Solr, Elasticsearch, and Lucene.
+ *
+ * <p>Each plugin owns all index lifecycle, schema, document, and monitoring
+ * operations for its engine. Callers should resolve the plugin via
+ * {@link TurSearchEnginePluginFactory} and call the appropriate method without
+ * needing to know which engine is in use.
  *
  * @author Alexandre Oliveira
  * @since 2025.4.4
  */
 public interface TurSearchEnginePlugin {
 
-    /**
-     * Retrieves search results from the search engine based on the given context.
-     *
-     * @param context the search context containing site name, locale, and search parameters
-     * @return Optional containing search results if successful, empty otherwise
-     */
+    // ---- Search (existing) -----------------------------------------------
+
     Optional<TurSEResults> retrieveSearchResults(TurSNSiteSearchContext context);
 
-    /**
-     * Retrieves facet results for a specific facet field.
-     *
-     * @param context the search context containing site name, locale, and search parameters
-     * @param facetName the name of the facet to retrieve
-     * @return Optional containing search results with facets if successful, empty otherwise
-     */
     Optional<TurSEResults> retrieveFacetResults(TurSNSiteSearchContext context, String facetName);
 
-    /**
-     * Gets the type identifier of this search engine plugin.
-     *
-     * @return the plugin type (e.g., "solr", "elasticsearch")
-     */
     String getPluginType();
+
+    // ---- Index lifecycle -------------------------------------------------
+
+    /**
+     * Creates an index/core for the given SE instance.
+     * Solr uses the locale language to pick the configSet; Lucene/ES ignore siteLocale.
+     */
+    void createIndex(TurSEInstance seInstance, TurSNSiteLocale siteLocale, String indexName,
+            Map<String, TurSEFieldType> fieldTypes);
+
+    void deleteIndex(TurSEInstance seInstance, String indexName);
+
+    void clearIndex(TurSEInstance seInstance, String indexName);
+
+    boolean indexExists(TurSEInstance seInstance, String indexName);
+
+    List<TurSECoreInfo> listIndexes(TurSEInstance seInstance);
+
+    // ---- Schema management (Lucene/ES are schema-less -> no-op/false) ----
+
+    /**
+     * Adds or updates a field in the index schema.
+     * @param isNew true = add-field, false = replace-field (Solr only; ignored by others)
+     */
+    void addOrUpdateField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType, boolean stored, boolean multiValued, boolean isNew);
+
+    void deleteField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType);
+
+    boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName);
+
+    // ---- Document operations (plugin resolves instance via site+locale) --
+
+    boolean indexDocument(TurSNSite turSNSite, Locale locale, Map<String, Object> attributes);
+
+    boolean deIndex(TurSNSite turSNSite, Locale locale, String id);
+
+    boolean deIndexByType(TurSNSite turSNSite, Locale locale, String type);
+
+    boolean commit(TurSNSite turSNSite, Locale locale);
+
+    // ---- Monitoring ------------------------------------------------------
+
+    long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);
 }
