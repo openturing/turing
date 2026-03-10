@@ -141,12 +141,12 @@ public class TurSNSearchProcess {
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
-                return turSNSiteRepository.findByName(siteName);
+                return turSNSiteRepository.findByNameIgnoreCase(siteName);
 
         }
 
         public boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
-                return turSNSiteRepository.findByName(siteName)
+                return turSNSiteRepository.findByNameIgnoreCase(siteName)
                                 .map(turSNSite -> turSNSiteLocaleRepository
                                                 .existsByTurSNSiteAndLanguage(turSNSite, locale))
                                 .orElse(false);
@@ -245,7 +245,7 @@ public class TurSNSearchProcess {
 
         public List<String> latestSearches(String siteName, String locale, String userId,
                         int rows) {
-                return turSNSiteRepository.findByName(siteName)
+                return turSNSiteRepository.findByNameIgnoreCase(siteName)
                                 .map(turSNSite -> turSNSiteMetricAccessRepository
                                                 .findLatestSearches(turSNSite, locale, userId,
                                                                 PageRequest.of(0, rows))
@@ -255,7 +255,7 @@ public class TurSNSearchProcess {
         }
 
         public TurSNSiteSearchBean search(TurSNSiteSearchContext turSNSiteSearchContext) {
-                return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName())
+                return turSNSiteRepository.findByNameIgnoreCase(turSNSiteSearchContext.getSiteName())
                                 .map(turSNSite -> {
                                         TurSearchEnginePlugin plugin = searchEnginePluginFactory
                                                         .getPluginForSite(turSNSite);
@@ -278,7 +278,7 @@ public class TurSNSearchProcess {
 
         public List<Object> searchList(TurSNSiteSearchContext turSNSiteSearchContext) {
                 turSNSiteSearchContext.getTurSNConfig().setHlEnabled(false);
-                return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName())
+                return turSNSiteRepository.findByNameIgnoreCase(turSNSiteSearchContext.getSiteName())
                                 .map(turSNSite -> {
                                         TurSearchEnginePlugin plugin = searchEnginePluginFactory
                                                         .getPluginForSite(turSNSite);
@@ -291,7 +291,7 @@ public class TurSNSearchProcess {
         }
 
         private List<Object> searchResponseList(TurSNSiteSearchContext context, TurSEResults turSEResults) {
-                return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+                return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
                         populateMetrics(turSNSite, context, turSEResults.getNumFound());
                         return responseList(context, turSEResults.getResults());
                 }).orElse(Collections.emptyList());
@@ -299,7 +299,7 @@ public class TurSNSearchProcess {
 
         private TurSNSiteSearchBean searchResponse(TurSNSiteSearchContext context,
                         TurSolrInstance turSolrInstance, TurSEResults turSEResults) {
-                return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+                return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
                         populateMetrics(turSNSite, context, turSEResults.getNumFound());
                         List<TurSNFacetDefinition> facetDefinitions = turSNSiteFieldExtRepository
                                         .findByTurSNSiteAndEnabled(turSNSite, 1)

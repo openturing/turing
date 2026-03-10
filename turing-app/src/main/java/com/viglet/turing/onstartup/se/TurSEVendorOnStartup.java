@@ -42,7 +42,7 @@ public class TurSEVendorOnStartup {
 			TurSEVendor solr = new TurSEVendor();
 			solr.setId("SOLR");
 			solr.setDescription("Apache Solr");
-			solr.setPlugin("");
+			solr.setPlugin("solr");
 			solr.setTitle("Apache Solr");
 			solr.setWebsite("https://solr.apache.org");
 			turSEVendorRepository.save(solr);
@@ -54,6 +54,14 @@ public class TurSEVendorOnStartup {
 			lucene.setTitle("Apache Lucene");
 			lucene.setWebsite("https://lucene.apache.org");
 			turSEVendorRepository.save(lucene);
+
+			TurSEVendor elastic = new TurSEVendor();
+			elastic.setId("ES");
+			elastic.setDescription("Elasticsearch");
+			elastic.setPlugin("elasticsearch");
+			elastic.setTitle("Elasticsearch");
+			elastic.setWebsite("https://www.elastic.co");
+			turSEVendorRepository.save(elastic);
 		}
 	}
 }

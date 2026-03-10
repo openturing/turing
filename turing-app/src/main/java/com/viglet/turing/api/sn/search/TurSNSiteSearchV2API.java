@@ -74,7 +74,7 @@ public class TurSNSiteSearchV2API {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByName(siteName).map(site -> {
+                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(site -> {
 
                         List<Object> termList = turSNSearchProcess
                                         .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
@@ -91,7 +91,7 @@ public class TurSNSiteSearchV2API {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByName(siteName)
+                return turSNSiteRepository.findByNameIgnoreCase(siteName)
                                 .map(site -> turSNSiteSearchService.executeGetSearch(turSNSearchParams,
                                                 request, site))
                                 .orElse(turSNSiteSearchService.notFoundResponse());
@@ -111,7 +111,7 @@ public class TurSNSiteSearchV2API {
                         return turSNSiteSearchService.notFoundResponse();
                 }
 
-                return turSNSiteRepository.findByName(siteName)
+                return turSNSiteRepository.findByNameIgnoreCase(siteName)
                                 .map(site -> turSNSiteSearchService.executePostSearch(turSNSearchParams,
                                                 turSNSitePostParamsBean, request,
                                                 site))
@@ -120,7 +120,7 @@ public class TurSNSiteSearchV2API {
 
         @GetMapping("locales")
         public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
-                return turSNSiteRepository.findByName(siteName).map(turSNSite -> {
+                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(turSNSite -> {
                         try {
                                 return turSNSearchProcess.responseLocales(turSNSite, new URI(
                                                 String.format("/api/v2/sn/%s/search", siteName)));

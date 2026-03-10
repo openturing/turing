@@ -60,7 +60,7 @@ public class TurSolrInstanceProcess {
     }
 
     private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-        if (TurSolrUtils.isLuceneEngine(turSEInstance)) {
+        if (TurSolrUtils.isLuceneEngine(turSEInstance) || TurSolrUtils.isElasticsearchEngine(turSEInstance)) {
             return Optional.empty();
         }
         String baseUrl = turSEInstance.getEndpointUrl();
@@ -84,7 +84,7 @@ public class TurSolrInstanceProcess {
     }
 
     public Optional<TurSolrInstance> initSolrInstance(String siteName, Locale locale) {
-        return turSNSiteRepository.findByName(siteName).flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
+        return turSNSiteRepository.findByNameIgnoreCase(siteName).flatMap(turSNSite -> this.initSolrInstance(turSNSite, locale));
 
     }
 

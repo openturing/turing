@@ -24,10 +24,11 @@ import {
   Textarea
 } from "@/components/ui/textarea"
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts"
-import { TurSEInstanceService } from "@/services/se/se.service"
+import type { TurSEVendor } from "@/models/se/se-vendor.model.ts"
+import { TurSEInstanceService, TurSEVendorService } from "@/services/se/se.service"
 import { useEffect, useState } from "react"
 import {
-  useForm
+  useForm, useWatch
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -36,6 +37,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 const turSEInstanceService = new TurSEInstanceService();
+const turSEVendorService = new TurSEVendorService();
+
+const VENDOR_DEFAULT_URLS: Record<string, string> = {
+  SOLR: "http://localhost:8983/solr",
+  LUCENE: "/data/turing/lucene",
+  ES: "http://localhost:9200",
+};
 interface Props {
   value: TurSEInstance;
   isNew: boolean;
@@ -47,11 +55,23 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const { control } = form;
   const [open, setOpen] = useState(false);
+  const [vendors, setVendors] = useState<TurSEVendor[]>([]);
   const navigate = useNavigate()
+  const selectedVendorId = useWatch({ control, name: "turSEVendor.id" });
 
   useEffect(() => {
     form.reset(value);
   }, [value])
+
+  useEffect(() => {
+    turSEVendorService.query().then(setVendors);
+  }, [])
+
+  useEffect(() => {
+    if (!isNew) return;
+    const defaultUrl = VENDOR_DEFAULT_URLS[selectedVendorId];
+    if (defaultUrl) form.setValue("endpointUrl", defaultUrl);
+  }, [selectedVendorId])
 
   async function onSubmit(seInstance: TurSEInstance) {
     try {
@@ -194,8 +214,9 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                   <SelectValue placeholder="Select vendor..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem key="SOLR" value="SOLR">Apache Solr</SelectItem>
-                                  <SelectItem key="LUCENE" value="LUCENE">Apache Lucene</SelectItem>
+                                  {vendors.map((vendor) => (
+                                    <SelectItem key={vendor.id} value={vendor.id}>{vendor.title}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </FormControl>

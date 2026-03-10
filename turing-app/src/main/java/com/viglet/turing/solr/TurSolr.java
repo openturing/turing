@@ -178,7 +178,7 @@ public class TurSolr {
 
     public Optional<TurSEResults> retrieveSolrFromSN(TurSolrInstance turSolrInstance,
             TurSNSiteSearchContext context) {
-        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+        return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
             TurSESpellCheckResult turSESpellCheckResult = prepareQueryAutoCorrection(context, turSNSite,
                     turSolrInstance);
             TurSEParameters turSEParameters = context.getTurSEParameters();
@@ -202,7 +202,7 @@ public class TurSolr {
 
     public Optional<TurSEResults> retrieveFacetSolrFromSN(TurSolrInstance turSolrInstance,
             TurSNSiteSearchContext context, String facetName) {
-        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+        return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
             TurSEParameters turSEParameters = context.getTurSEParameters();
             SolrQuery query = turSolrQueryBuilder.prepareSolrQuery(context, turSNSite, turSEParameters,
                     new TurSESpellCheckResult());

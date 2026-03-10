@@ -55,6 +55,8 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
+import com.viglet.turing.elasticsearch.TurElasticsearch;
+import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -82,6 +84,8 @@ public class TurSNSiteAPI {
     private final TurSNQueue turSNQueue;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurSolr turSolr;
+    private final TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
+    private final TurElasticsearch turElasticsearch;
     private final TurConfigProperties turConfigProperties;
     private final TurSNSiteMapper turSNSiteMapper;
 
@@ -230,11 +234,17 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
+            boolean isEs = TurSolrUtils.isElasticsearchEngine(turSNSite.getTurSEInstance());
             for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
                     .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
-                Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
-                if (turSolrInstance.isPresent()) {
-                    documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
+                if (isEs) {
+                    documentTotal += turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                            .map(turElasticsearch::getDocumentTotal).orElse(0L);
+                } else {
+                    Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
+                    if (turSolrInstance.isPresent()) {
+                        documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
+                    }
                 }
             }
             turSNSiteMonitoringStatusBean.setDocuments((int) documentTotal);

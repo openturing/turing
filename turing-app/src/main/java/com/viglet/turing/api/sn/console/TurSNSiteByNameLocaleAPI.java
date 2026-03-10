@@ -61,7 +61,7 @@ public class TurSNSiteByNameLocaleAPI {
 	@Operation(summary = "Semantic Navigation Site Locale List")
 	@GetMapping
 	public List<TurSNSiteLocaleDto> turSNSiteLocaleByNameList(@PathVariable String siteName) {
-		return turSNSiteRepository.findByName(siteName)
+		return turSNSiteRepository.findByNameIgnoreCase(siteName)
 				.map(site -> turSNSiteLocaleMapper.toDtoList(this.turSNSiteLocaleRepository
 						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site)))
 				.orElse(Collections.emptyList());

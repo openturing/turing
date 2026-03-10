@@ -20,7 +20,7 @@ public class TurSpotlightService {
         this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
     }
     public List<TurSNSiteSpotlight> findSpotlightBySNSiteAndLanguage(String snSite, Locale language) {
-        return turSNSiteRepository.findByName(snSite).map(turSNSite -> turSNSiteSpotlightRepository
+        return turSNSiteRepository.findByNameIgnoreCase(snSite).map(turSNSite -> turSNSiteSpotlightRepository
                 .findByTurSNSiteAndLanguage(turSNSite, language)).orElse(Collections.emptyList());
 
     }

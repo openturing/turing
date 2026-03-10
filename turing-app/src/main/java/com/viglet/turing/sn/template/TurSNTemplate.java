@@ -42,7 +42,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.jetbrains.annotations.NotNull;
@@ -145,6 +147,20 @@ public class TurSNTemplate {
                 turSEInstance.ifPresent(instance -> {
                         if (TurSolrUtils.isLuceneEngine(instance)) {
                                 TurLuceneUtils.createCore(instance.getEndpointUrl(), coreName);
+                                return;
+                        }
+                        if (TurSolrUtils.isElasticsearchEngine(instance)) {
+                                Map<String, TurSEFieldType> fieldTypes =
+                                        turSNSiteFieldExtRepository
+                                                .findByTurSNSiteAndEnabled(turSNSiteLocale.getTurSNSite(), 1)
+                                                .stream()
+                                                .filter(f -> f.getType() != null)
+                                                .collect(Collectors.toMap(
+                                                        TurSNSiteFieldExt::getName,
+                                                        TurSNSiteFieldExt::getType,
+                                                        (a, b) -> a));
+                                com.viglet.turing.elasticsearch.TurElasticsearchUtils
+                                        .createIndex(instance.getEndpointUrl(), coreName, fieldTypes);
                                 return;
                         }
                         String configSet = turSNSiteLocale.getLanguage().getLanguage();

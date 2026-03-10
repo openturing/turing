@@ -124,7 +124,7 @@ public class TurSemanticNavToolService {
                 siteName (str): Name of the site.""")
     public String getSiteFields(String siteName) {
         log.info("[SemanticNav Tool] get_site_fields called with siteName={}", siteName);
-        return turSNSiteRepository.findByName(siteName)
+        return turSNSiteRepository.findByNameIgnoreCase(siteName)
                 .map(site -> {
                     List<TurSNSiteFieldExt> fields = turSNSiteFieldExtRepository
                             .findByTurSNSiteAndEnabled(site, 1);

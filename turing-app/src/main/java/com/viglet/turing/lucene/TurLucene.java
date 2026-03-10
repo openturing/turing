@@ -66,7 +66,7 @@ public class TurLucene {
      */
     public Optional<TurSEResults> retrieveLuceneFromSN(TurLuceneInstance instance,
             TurSNSiteSearchContext context) {
-        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+        return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
 
@@ -96,7 +96,7 @@ public class TurLucene {
      */
     public Optional<TurSEResults> retrieveFacetLuceneFromSN(TurLuceneInstance instance,
             TurSNSiteSearchContext context, String facetName) {
-        return turSNSiteRepository.findByName(context.getSiteName()).map(turSNSite -> {
+        return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
             long startTime = System.currentTimeMillis();
             TurSEParameters params = context.getTurSEParameters();
             Query query = turLuceneQueryBuilder.buildQuery(turSNSite, params);

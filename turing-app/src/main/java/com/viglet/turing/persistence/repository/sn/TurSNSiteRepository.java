@@ -50,17 +50,20 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	@Cacheable("turSNSitefindByName")
 	Optional<TurSNSite> findByName(String name);
 
+	@Cacheable("turSNSitefindByNameIgnoreCase")
+	Optional<TurSNSite> findByNameIgnoreCase(String name);
+
 	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
 	Optional<TurSNSite> findByIdNoCache(@Param("id") String id);
 
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName" }, allEntries = true)
+			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase" }, allEntries = true)
 	@NotNull
 	@Override
 	<S extends TurSNSite> S save(@NotNull S entity);
 
 	@Override
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName" }, allEntries = true)
+			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase" }, allEntries = true)
 	void delete(@NotNull TurSNSite turSNSite);
 }

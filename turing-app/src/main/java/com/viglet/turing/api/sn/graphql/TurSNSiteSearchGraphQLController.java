@@ -102,7 +102,7 @@ public class TurSNSiteSearchGraphQLController {
             return new TurSNSiteSearchBean();
         }
 
-        return turSNSiteRepository.findByName(resolvedSiteName)
+        return turSNSiteRepository.findByNameIgnoreCase(resolvedSiteName)
                 .map(site -> {
                     // Get the current HTTP request to create proper search context
                     ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder
@@ -138,7 +138,7 @@ public class TurSNSiteSearchGraphQLController {
         if (StringUtils.isBlank(siteName)) {
             return siteName;
         }
-        if (turSNSiteRepository.findByName(siteName).isPresent()) {
+        if (turSNSiteRepository.findByNameIgnoreCase(siteName).isPresent()) {
             return siteName;
         }
 
@@ -157,7 +157,7 @@ public class TurSNSiteSearchGraphQLController {
         }
 
         String hyphenCandidate = siteName.toLowerCase(Locale.ROOT).replace('_', '-');
-        if (turSNSiteRepository.findByName(hyphenCandidate).isPresent()) {
+        if (turSNSiteRepository.findByNameIgnoreCase(hyphenCandidate).isPresent()) {
             return hyphenCandidate;
         }
 

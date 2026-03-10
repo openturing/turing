@@ -63,6 +63,8 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNQueue;
 import com.viglet.turing.sn.template.TurSNTemplate;
+import com.viglet.turing.elasticsearch.TurElasticsearch;
+import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -92,7 +94,9 @@ class TurSNSiteAPITest {
                 TurConfigProperties configProperties = mock(TurConfigProperties.class);
                 TurSNSiteMapper siteMapper = Mappers.getMapper(TurSNSiteMapper.class);
                 TurSNSiteAPI api = new TurSNSiteAPI(siteRepository, localeRepository, genAiRepository, export,
-                                template, queue, solrInstanceProcess, turSolr, configProperties, siteMapper);
+                                template, queue, solrInstanceProcess, turSolr,
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
+                                configProperties, siteMapper);
                 Principal principal = () -> "Admin";
                 TurSNSite site = new TurSNSite();
 
@@ -113,6 +117,7 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteLocaleRepository.class), mock(TurSNSiteGenAiRepository.class),
                                 mock(TurSNSiteExport.class), mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 mock(TurSolrInstanceProcess.class), mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
 
                 TurSNSiteDto result = api.turSNSiteStructure();
@@ -131,9 +136,8 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteLocaleRepository.class), mock(TurSNSiteGenAiRepository.class),
                                 mock(TurSNSiteExport.class), mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 mock(TurSolrInstanceProcess.class), mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
-
-                when(siteRepository.findById("site")).thenReturn(Optional.empty());
 
                 TurSNSiteDto result = api.turSNSiteGet("site");
 
@@ -149,6 +153,7 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteLocaleRepository.class), genAiRepository,
                                 mock(TurSNSiteExport.class), mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 mock(TurSolrInstanceProcess.class), mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
                 TurSNSite existing = new TurSNSite();
                 TurSNSiteGenAi genAi = new TurSNSiteGenAi();
@@ -177,7 +182,9 @@ class TurSNSiteAPITest {
                 TurSNSiteAPI api = new TurSNSiteAPI(siteRepository, localeRepository,
                                 mock(TurSNSiteGenAiRepository.class), mock(TurSNSiteExport.class),
                                 mock(TurSNTemplate.class), mock(TurSNQueue.class), mock(TurSolrInstanceProcess.class),
-                                mock(TurSolr.class), mock(TurConfigProperties.class), siteMapper);
+                                mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
+                                mock(TurConfigProperties.class), siteMapper);
                 TurSNSite site = new TurSNSite();
                 TurSEInstance instance = new TurSEInstance();
                 instance.setEndpointUrl("http://localhost:8983/solr");
@@ -208,7 +215,9 @@ class TurSNSiteAPITest {
                 TurSNSiteAPI api = new TurSNSiteAPI(siteRepository, localeRepository,
                                 genAiRepository, mock(TurSNSiteExport.class),
                                 mock(TurSNTemplate.class), mock(TurSNQueue.class), mock(TurSolrInstanceProcess.class),
-                                mock(TurSolr.class), mock(TurConfigProperties.class), siteMapper);
+                                mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
+                                mock(TurConfigProperties.class), siteMapper);
 
                 TurSNSite site = new TurSNSite();
                 TurSEInstance instance = new TurSEInstance();
@@ -267,6 +276,7 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteLocaleRepository.class), genAiRepository,
                                 mock(TurSNSiteExport.class), template, mock(TurSNQueue.class),
                                 mock(TurSolrInstanceProcess.class), mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
                 TurSNSiteDto site = new TurSNSiteDto();
                 site.setTurSNSiteGenAi(new TurSNSiteGenAi());
@@ -289,6 +299,7 @@ class TurSNSiteAPITest {
                                 mock(TurSNSiteLocaleRepository.class), mock(TurSNSiteGenAiRepository.class),
                                 export, mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 mock(TurSolrInstanceProcess.class), mock(TurSolr.class),
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
                 HttpServletResponse response = mock(HttpServletResponse.class);
                 StreamingResponseBody expected = outputStream -> outputStream.write(new byte[0]);
@@ -311,6 +322,7 @@ class TurSNSiteAPITest {
                 TurSNSiteAPI api = new TurSNSiteAPI(siteRepository, localeRepository,
                                 mock(TurSNSiteGenAiRepository.class), mock(TurSNSiteExport.class),
                                 mock(TurSNTemplate.class), queue, solrInstanceProcess, turSolr,
+                                mock(TurElasticsearchInstanceProcess.class), mock(TurElasticsearch.class),
                                 mock(TurConfigProperties.class), siteMapper);
                 TurSNSite site = new TurSNSite();
                 TurSNSiteLocale locale = new TurSNSiteLocale();

@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { TurSECoreInfo } from "@/models/se/se-core-info.model.ts";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
+import type { TurSEVendor } from "@/models/se/se-vendor.model.ts";
 
 export class TurSEInstanceService {
   async query(): Promise<TurSEInstance[]> {
@@ -39,5 +40,12 @@ export class TurSEInstanceService {
   }
   async clearCore(id: string, core: string): Promise<void> {
     await axios.delete(`/se/${id}/cores/${core}/documents`);
+  }
+}
+
+export class TurSEVendorService {
+  async query(): Promise<TurSEVendor[]> {
+    const response = await axios.get<TurSEVendor[]>("/se/vendor");
+    return response.data;
   }
 }

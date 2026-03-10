@@ -150,7 +150,7 @@ public class TurSNImportAPI {
     private void sendToGenAi(TurSNJobItems turSNJobItems) {
         turSNJobItems.forEach(turJobItem -> {
             if (isValidJobItem(turJobItem)) {
-                turJobItem.getSiteNames().forEach(siteName -> turSNSiteRepository.findByName(siteName)
+                turJobItem.getSiteNames().forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName)
                         .filter(turSNSite -> turSNSite.getTurSNSiteGenAi() != null
                                 && turSNSite.getTurSNSiteGenAi().isEnabled())
                         .ifPresent(turSNSite -> turGenAi.addDocuments(turSNJobItems)));
@@ -162,7 +162,7 @@ public class TurSNImportAPI {
         turSNJobItems.forEach(turSNJobItem -> {
             if (isValidJobItem(turSNJobItem)) {
                 turSNJobItem.getSiteNames()
-                        .forEach(siteName -> turSNSiteRepository.findByName(siteName).ifPresentOrElse(turSNSite -> {
+                        .forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName).ifPresentOrElse(turSNSite -> {
                             log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
                                     actionType(turSNJobItem),
                                     turSNJobItem.getAttributes().get(TurSNFieldName.ID),

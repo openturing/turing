@@ -64,7 +64,7 @@ public class TurLuceneInstanceProcess {
      * Initialises (or returns a cached) Lucene instance for the given site + locale.
      */
     public Optional<TurLuceneInstance> initLuceneInstance(String siteName, Locale locale) {
-        return turSNSiteRepository.findByName(siteName)
+        return turSNSiteRepository.findByNameIgnoreCase(siteName)
                 .flatMap(site -> initLuceneInstance(site, locale));
     }
 
