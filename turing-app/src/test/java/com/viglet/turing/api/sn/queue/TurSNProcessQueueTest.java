@@ -19,13 +19,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.client.sn.job.TurSNJobAction;
@@ -45,24 +42,19 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrFieldAction;
-import com.viglet.turing.solr.TurSolrInstance;
-import com.viglet.turing.solr.TurSolrInstanceProcess;
-import com.viglet.turing.solr.TurSolrUtils;
 
 @ExtendWith(MockitoExtension.class)
 class TurSNProcessQueueTest {
 
     @Mock
-    private TurSolr turSolr;
+    private TurSearchEnginePluginFactory pluginFactory;
     @Mock
     private TurSNSiteRepository turSNSiteRepository;
     @Mock
     private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
-    @Mock
-    private TurSolrInstanceProcess turSolrInstanceProcess;
     @Mock
     private TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     @Mock
@@ -78,11 +70,6 @@ class TurSNProcessQueueTest {
 
     @InjectMocks
     private TurSNProcessQueue processQueue;
-
-    @BeforeEach
-    void setUp() {
-        // Setup common mock behavior if needed
-    }
 
     @Test
     void testReceiveIndexingQueue_Create() {
@@ -105,17 +92,17 @@ class TurSNProcessQueueTest {
         site.setName("site1");
         site.setTurSEInstance(seInstance);
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
         when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US))).thenReturn(attrs);
-
-        TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
-        when(turSEInstanceRepository.findById("se1")).thenReturn(Optional.of(seInstance));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
-        verify(turSolr, times(1)).indexing(eq(solrInstance), eq(site), anyMap());
+        verify(plugin, times(1)).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
 
     @Test
@@ -134,15 +121,16 @@ class TurSNProcessQueueTest {
         TurSNSite site = new TurSNSite();
         site.setName("site1");
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
-        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
 
-        TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.deIndex(site, Locale.US, "1")).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
-        verify(turSolr, times(1)).deIndexing(solrInstance, "1");
+        verify(plugin, times(1)).deIndex(site, Locale.US, "1");
     }
 
     @Test
@@ -160,14 +148,15 @@ class TurSNProcessQueueTest {
         TurSNSite site = new TurSNSite();
         site.setName("site1");
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
 
-        TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.commit(site, Locale.US)).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
-        verify(turSolr, times(1)).commit(solrInstance);
+        verify(plugin, times(1)).commit(site, Locale.US);
     }
 
     @Test
@@ -200,14 +189,14 @@ class TurSNProcessQueueTest {
 
         TurSNSite site = new TurSNSite();
         site.setName("site1");
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(true);
         when(turSNSpotlightProcess.createUnmanagedSpotlight(item, site)).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
         verify(turSNSpotlightProcess).createUnmanagedSpotlight(item, site);
-        verify(turSolr, never()).indexing(any(), any(), anyMap());
+        verify(pluginFactory, never()).getPluginForSite(any());
     }
 
     @Test
@@ -222,14 +211,14 @@ class TurSNProcessQueueTest {
 
         TurSNSite site = new TurSNSite();
         site.setName("site1");
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(true);
         when(turSNSpotlightProcess.deleteUnmanagedSpotlight(item, site)).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
         verify(turSNSpotlightProcess).deleteUnmanagedSpotlight(item, site);
-        verify(turSolr, never()).deIndexing(any(), any());
+        verify(pluginFactory, never()).getPluginForSite(any());
     }
 
     @Test
@@ -244,20 +233,22 @@ class TurSNProcessQueueTest {
 
         TurSNSite site = new TurSNSite();
         site.setName("site1");
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
-        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
 
-        TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.deIndexByType(site, Locale.US, "news")).thenReturn(true);
 
         processQueue.receiveIndexingQueue(jobItems);
 
-        verify(turSolr).deIndexingByType(solrInstance, "news");
-        verify(turSolr, never()).deIndexing(solrInstance, item.getId());
+        verify(plugin).deIndexByType(site, Locale.US, "news");
+        verify(plugin, never()).deIndex(any(), any(), any());
     }
 
     @Test
-    void testReceiveIndexingQueue_CommitWithoutSolrInstance() {
+    void testReceiveIndexingQueue_CommitPluginReturnsFalse() {
         TurSNJobItems jobItems = new TurSNJobItems();
         TurSNJobItem item = new TurSNJobItem();
         item.setTurSNJobAction(TurSNJobAction.COMMIT);
@@ -268,12 +259,16 @@ class TurSNProcessQueueTest {
 
         TurSNSite site = new TurSNSite();
         site.setName("site1");
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.empty());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.commit(site, Locale.US)).thenReturn(false);
 
         processQueue.receiveIndexingQueue(jobItems);
 
-        verify(turSolr, never()).commit(any());
+        verify(plugin).commit(site, Locale.US);
     }
 
     @Test
@@ -322,7 +317,9 @@ class TurSNProcessQueueTest {
         locale.setCore("core_en");
         locale.setTurSNSite(site);
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
         when(turSNSpotlightProcess.isSpotlightJob(item)).thenReturn(false);
         when(turSNMergeProvidersProcess.mergeDocuments(eq(site), anyMap(), eq(Locale.US)))
                 .thenReturn(new HashMap<>(item.getAttributes()));
@@ -336,21 +333,17 @@ class TurSNProcessQueueTest {
         });
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.fieldExists(seInstance, "core_en", "customField")).thenReturn(false);
+        when(plugin.indexDocument(eq(site), eq(Locale.US), anyMap())).thenReturn(true);
 
-        TurSolrInstance solrInstance = mock(TurSolrInstance.class);
-        when(turSolrInstanceProcess.initSolrInstance("site1", Locale.US)).thenReturn(Optional.of(solrInstance));
+        processQueue.receiveIndexingQueue(jobItems);
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            utils.when(() -> TurSolrUtils.existsField(siteSeInstance, "core_en", "customField")).thenReturn(false);
-
-            processQueue.receiveIndexingQueue(jobItems);
-
-            verify(turSNSiteFieldRepository).save(any(TurSNSiteField.class));
-            verify(turSNSiteFieldExtRepository).save(any(TurSNSiteFieldExt.class));
-            verify(turSNSiteFieldExtFacetRepository).saveAll(any());
-            utils.verify(() -> TurSolrUtils.addOrUpdateField(eq(TurSolrFieldAction.ADD), eq(seInstance), eq("core_en"),
-                    eq("customField"), eq(TurSEFieldType.STRING), eq(true), eq(false)));
-            verify(turSolr).indexing(eq(solrInstance), eq(site), anyMap());
-        }
+        verify(turSNSiteFieldRepository).save(any(TurSNSiteField.class));
+        verify(turSNSiteFieldExtRepository).save(any(TurSNSiteFieldExt.class));
+        verify(turSNSiteFieldExtFacetRepository).saveAll(any());
+        verify(plugin).addOrUpdateField(eq(seInstance), eq("core_en"),
+                eq("customField"), eq(TurSEFieldType.STRING), eq(true), eq(false), eq(true));
+        verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
 }

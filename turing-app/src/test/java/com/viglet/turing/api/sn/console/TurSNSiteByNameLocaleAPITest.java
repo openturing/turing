@@ -54,7 +54,7 @@ class TurSNSiteByNameLocaleAPITest {
         TurSNSiteLocaleMapper localeMapper = Mappers.getMapper(TurSNSiteLocaleMapper.class);
         TurSNSiteByNameLocaleAPI api = new TurSNSiteByNameLocaleAPI(siteRepository, localeRepository, localeMapper);
 
-        when(siteRepository.findByName("site")).thenReturn(Optional.empty());
+        when(siteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
         List<TurSNSiteLocaleDto> result = api.turSNSiteLocaleByNameList("site");
 
@@ -70,7 +70,7 @@ class TurSNSiteByNameLocaleAPITest {
         TurSNSite site = new TurSNSite();
         TurSNSiteLocale locale = new TurSNSiteLocale();
 
-        when(siteRepository.findByName("site")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(localeRepository.findByTurSNSite(org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.eq(site)))
                 .thenReturn(List.of(locale));

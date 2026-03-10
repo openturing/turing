@@ -107,7 +107,7 @@ class TurSNSiteSearchGraphQLControllerTest {
                 searchProcess, siteRepository, fieldExtRepository);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.empty());
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.empty());
 
         TurSNSiteSearchBean result = controller.siteSearch("demo", new TurSNSearchParamsInput(), "en");
 
@@ -130,7 +130,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSiteFieldExt hlField = TurSNSiteFieldExt.builder().name("content").enabled(1).hl(1).build();
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of(hlField));
 
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
@@ -172,7 +172,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         input.setLocale("pt_BR");
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.US)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
@@ -202,7 +202,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         input.setFqiOp("WRONG");
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
@@ -230,7 +230,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         site.setHl(0);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
@@ -305,7 +305,7 @@ class TurSNSiteSearchGraphQLControllerTest {
                 .setGroups(List.of(group));
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
         when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(titleField, priceField, tagsField));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
@@ -360,7 +360,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         input.setFl(List.of("title"));
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByName("demo")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
         when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(titleField, urlField));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
@@ -384,9 +384,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         site.setName("insper-stage-publish");
         site.setHl(0);
 
-        when(siteRepository.findByName("INSPER_STAGE_PUBLISH")).thenReturn(Optional.empty());
+        when(siteRepository.findByNameIgnoreCase("INSPER_STAGE_PUBLISH")).thenReturn(Optional.empty());
         when(siteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
-        when(siteRepository.findByName("insper-stage-publish")).thenReturn(Optional.of(site));
+        when(siteRepository.findByNameIgnoreCase("insper-stage-publish")).thenReturn(Optional.of(site));
         when(searchProcess.existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH))
                 .thenReturn(true);
         when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
@@ -396,7 +396,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         controller.siteSearch("INSPER_STAGE_PUBLISH", new TurSNSearchParamsInput(), "en");
 
         verify(searchProcess).existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH);
-        verify(siteRepository).findByName("insper-stage-publish");
+        verify(siteRepository).findByNameIgnoreCase("insper-stage-publish");
     }
 
     @Test

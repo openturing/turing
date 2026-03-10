@@ -54,7 +54,7 @@ class TurElasticsearchInstanceProcessTest {
 
     @Test
     void testInitElasticsearchInstanceReturnsEmptyWhenSiteMissing() {
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
         TurElasticsearchInstanceProcess process = new TurElasticsearchInstanceProcess(
                 turSNSiteLocaleRepository, turSNSiteRepository);
@@ -66,7 +66,7 @@ class TurElasticsearchInstanceProcessTest {
     void testInitElasticsearchInstanceReturnsEmptyWhenLocaleMissing() {
         TurSNSite site = new TurSNSite();
         site.setName("site");
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(any(TurSNSite.class), any(Locale.class)))
                 .thenReturn(null);
 

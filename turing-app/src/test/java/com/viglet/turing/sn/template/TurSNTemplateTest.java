@@ -26,25 +26,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 
-import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
@@ -56,9 +49,10 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurSolrProperty;
-import com.viglet.turing.solr.TurSolrUtils;
 
 /**
  * Unit tests for TurSNTemplate.
@@ -68,15 +62,16 @@ import com.viglet.turing.solr.TurSolrUtils;
  */
 class TurSNTemplateTest {
 
-    private TurSNTemplate newTemplate(ResourceLoader resourceLoader,
+    private TurSNTemplate newTemplate(
             TurSNSiteFieldRepository fieldRepository,
             TurSNSiteFieldExtRepository fieldExtRepository,
             TurSNSiteFieldExtFacetRepository facetRepository,
             TurSNSiteLocaleRepository localeRepository,
             TurSEInstanceRepository instanceRepository,
-            TurConfigProperties configProperties) {
-        return new TurSNTemplate(resourceLoader, fieldRepository, fieldExtRepository, facetRepository,
-                localeRepository, instanceRepository, configProperties);
+            TurConfigProperties configProperties,
+            TurSearchEnginePluginFactory pluginFactory) {
+        return new TurSNTemplate(fieldRepository, fieldExtRepository, facetRepository,
+                localeRepository, instanceRepository, configProperties, pluginFactory);
     }
 
     private TurConfigProperties config(boolean cloud, boolean multiTenant) {
@@ -123,6 +118,9 @@ class TurSNTemplateTest {
         TurSNSiteFieldExtFacetRepository facetRepository = mock(TurSNSiteFieldExtFacetRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        when(pluginFactory.getPluginForInstance(any())).thenReturn(plugin);
 
         TurSNSite site = siteWithSEInstance("se-1");
         TurSEInstance instance = new TurSEInstance();
@@ -141,26 +139,28 @@ class TurSNTemplateTest {
         when(facetRepository.save(any(TurSNSiteFieldExtFacet.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        TurSNTemplate template = newTemplate(mock(ResourceLoader.class), fieldRepository, fieldExtRepository,
-                facetRepository, localeRepository, instanceRepository, config(false, false));
+        TurSNTemplate template = newTemplate(fieldRepository, fieldExtRepository,
+                facetRepository, localeRepository, instanceRepository, config(false, false), pluginFactory);
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            template.createSNSite(site, "alex", Locale.US);
-            utils.verify(() -> TurSolrUtils.createCore("http://localhost:8983", "my_site_en_US", "en"));
-        }
+        template.createSNSite(site, "alex", Locale.US);
 
         assertThat(site.getRowsPerPage()).isEqualTo(10);
         verify(localeRepository).save(any(TurSNSiteLocale.class));
         verify(fieldRepository, times(13)).save(any(TurSNSiteField.class));
         verify(fieldExtRepository, times(13)).save(any(TurSNSiteFieldExt.class));
+        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("my_site_en_US"), eq(Map.of()));
     }
 
     @Test
     void testCreateSolrCoreUsesExistingCoreAndFallbackConfigSet() {
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
-        TurSNTemplate template = newTemplate(mock(ResourceLoader.class), mock(TurSNSiteFieldRepository.class),
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        when(pluginFactory.getPluginForInstance(any())).thenReturn(plugin);
+
+        TurSNTemplate template = newTemplate(mock(TurSNSiteFieldRepository.class),
                 mock(TurSNSiteFieldExtRepository.class), mock(TurSNSiteFieldExtFacetRepository.class),
-                mock(TurSNSiteLocaleRepository.class), instanceRepository, config(false, false));
+                mock(TurSNSiteLocaleRepository.class), instanceRepository, config(false, false), pluginFactory);
 
         TurSNSite site = siteWithSEInstance("se-1");
         TurSNSiteLocale locale = new TurSNSiteLocale();
@@ -173,21 +173,22 @@ class TurSNTemplateTest {
         instance.setEndpointUrl("http://127.0.0.1:8984/solr");
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            String coreName = template.createSolrCore(locale, "alex");
-            assertThat(coreName).isEqualTo("existing_core");
-            utils.verify(() -> TurSolrUtils.createCore("http://127.0.0.1:8984", "existing_core", "en"));
-        }
+        String coreName = template.createSolrCore(locale, "alex");
+
+        assertThat(coreName).isEqualTo("existing_core");
+        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("existing_core"), eq(Map.of()));
     }
 
     @Test
-    void testCreateSolrCoreUsesCloudCollectionAndMultitenantName() throws IOException {
-        ResourceLoader resourceLoader = mock(ResourceLoader.class);
-        Resource resource = mock(Resource.class);
+    void testCreateSolrCoreUsesCloudCollectionAndMultitenantName() {
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
-        TurSNTemplate template = newTemplate(resourceLoader, mock(TurSNSiteFieldRepository.class),
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        when(pluginFactory.getPluginForInstance(any())).thenReturn(plugin);
+
+        TurSNTemplate template = newTemplate(mock(TurSNSiteFieldRepository.class),
                 mock(TurSNSiteFieldExtRepository.class), mock(TurSNSiteFieldExtFacetRepository.class),
-                mock(TurSNSiteLocaleRepository.class), instanceRepository, config(true, true));
+                mock(TurSNSiteLocaleRepository.class), instanceRepository, config(true, true), pluginFactory);
 
         TurSNSite site = siteWithSEInstance("se-1");
         TurSNSiteLocale locale = new TurSNSiteLocale();
@@ -197,27 +198,25 @@ class TurSNTemplateTest {
         TurSEInstance instance = new TurSEInstance();
         instance.setId("se-1");
         instance.setEndpointUrl("http://solr-host:8983/solr");
-
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
-        when(resourceLoader.getResource("classpath:solr/configsets/pt.zip")).thenReturn(resource);
-        when(resource.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[] { 1, 2, 3 }));
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            String coreName = template.createSolrCore(locale, "alex");
-            assertThat(coreName).isEqualTo("alex_my_site_pt_BR");
-            utils.verify(() -> TurSolrUtils.createCollection(eq("http://solr-host:8983"), eq("alex_my_site_pt_BR"),
-                    any(), eq(1)));
-            utils.verify(() -> TurSolrUtils.createCore(any(), any(), any()), never());
-        }
+        String coreName = template.createSolrCore(locale, "alex");
+
+        assertThat(coreName).isEqualTo("alex_my_site_pt_BR");
+        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("alex_my_site_pt_BR"), eq(Map.of()));
     }
 
     @Test
     void testCreateLocaleSavesLocaleWithCoreName() {
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
-        TurSNTemplate template = newTemplate(mock(ResourceLoader.class), mock(TurSNSiteFieldRepository.class),
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        when(pluginFactory.getPluginForInstance(any())).thenReturn(plugin);
+
+        TurSNTemplate template = newTemplate(mock(TurSNSiteFieldRepository.class),
                 mock(TurSNSiteFieldExtRepository.class), mock(TurSNSiteFieldExtFacetRepository.class),
-                localeRepository, instanceRepository, config(false, false));
+                localeRepository, instanceRepository, config(false, false), pluginFactory);
 
         TurSNSite site = siteWithSEInstance("se-1");
         TurSEInstance instance = new TurSEInstance();
@@ -226,23 +225,25 @@ class TurSNTemplateTest {
         when(instanceRepository.findById("se-1")).thenReturn(Optional.of(instance));
         when(localeRepository.save(any(TurSNSiteLocale.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            template.createLocale(site, "alex", Locale.of("es", "ES"));
-            verify(localeRepository).save(any(TurSNSiteLocale.class));
-            utils.verify(() -> TurSolrUtils.createCore("http://localhost:8983", "my_site_es_ES", "es"));
-        }
+        template.createLocale(site, "alex", Locale.of("es", "ES"));
+
+        verify(localeRepository).save(any(TurSNSiteLocale.class));
+        verify(plugin).createIndex(eq(instance), any(TurSNSiteLocale.class), eq("my_site_es_ES"), eq(Map.of()));
     }
 
     @Test
-    void testCreateSEFieldsCreatesCopyFieldOnlyWhenAllowed() {
+    void testCreateSEFieldsCreatesCopyFieldForEachLocale() {
         TurSNSiteFieldRepository fieldRepository = mock(TurSNSiteFieldRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteFieldExtFacetRepository facetRepository = mock(TurSNSiteFieldExtFacetRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSEInstanceRepository instanceRepository = mock(TurSEInstanceRepository.class);
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+        when(pluginFactory.getPluginForInstance(any())).thenReturn(plugin);
 
-        TurSNTemplate template = newTemplate(mock(ResourceLoader.class), fieldRepository, fieldExtRepository,
-                facetRepository, localeRepository, instanceRepository, config(false, false));
+        TurSNTemplate template = newTemplate(fieldRepository, fieldExtRepository,
+                facetRepository, localeRepository, instanceRepository, config(false, false), pluginFactory);
 
         TurSNSite site = siteWithSEInstance("se-1");
         TurSEInstance instance = new TurSEInstance();
@@ -263,16 +264,11 @@ class TurSNTemplateTest {
         when(facetRepository.save(any(TurSNSiteFieldExtFacet.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        try (MockedStatic<TurSolrUtils> utils = Mockito.mockStatic(TurSolrUtils.class)) {
-            utils.when(() -> TurSolrUtils.isCreateCopyFieldByCore(any(TurSEInstance.class), eq("core_en"), any(),
-                    any(TurSEFieldType.class))).thenReturn(true);
+        template.createSEFields(site);
 
-            template.createSEFields(site);
-
-            verify(fieldRepository, times(13)).save(any(TurSNSiteField.class));
-            verify(fieldExtRepository, times(13)).save(any(TurSNSiteFieldExt.class));
-            utils.verify(() -> TurSolrUtils.createCopyFieldByCore(any(TurSEInstance.class), eq("core_en"), any(),
-                    any(Boolean.class)), times(13));
-        }
+        verify(fieldRepository, times(13)).save(any(TurSNSiteField.class));
+        verify(fieldExtRepository, times(13)).save(any(TurSNSiteFieldExt.class));
+        // createCopyField is delegated to plugin once per field × locale
+        verify(plugin, times(13)).createCopyField(eq(instance), eq("core_en"), any(), any(), any(Boolean.class));
     }
 }

@@ -66,22 +66,7 @@ public class TurSolrUtils {
         throw new IllegalStateException("Solr Utility class");
     }
 
-    public static void deleteCore(TurSEInstance turSEInstance, String coreName) {
-        if (isLuceneEngine(turSEInstance)) {
-            com.viglet.turing.lucene.TurLuceneUtils.deleteCore(turSEInstance.getEndpointUrl(), coreName);
-            return;
-        }
-        if (isElasticsearchEngine(turSEInstance)) {
-            com.viglet.turing.elasticsearch.TurElasticsearchUtils
-                    .deleteIndex(turSEInstance.getEndpointUrl(), coreName);
-            return;
-        }
-        TurSolrUtils.deleteCore(getSolrUrl(turSEInstance), coreName);
-    }
-
     public static void clearCore(TurSEInstance turSEInstance, String coreName) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance))
-            return;
         String json = "{\"delete\":{\"query\":\"*:*\"}}";
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(String.format("%s/solr/%s/update?commit=true",
@@ -133,8 +118,6 @@ public class TurSolrUtils {
     }
 
     public static boolean existsField(TurSEInstance turSEInstance, String coreName, String fieldName) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance))
-            return false;
         URI uri = getFieldUri(turSEInstance, coreName, fieldName);
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(uri)
@@ -149,10 +132,6 @@ public class TurSolrUtils {
     public static void addOrUpdateField(TurSolrFieldAction turSolrFieldAction, TurSEInstance turSEInstance,
             String coreName, String fieldName, TurSEFieldType turSEFieldType,
             boolean stored, boolean multiValued) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance)) {
-            // Schema-less engines — field types are tracked in the JPA model only
-            return;
-        }
         ensureCurrencyFieldTypeByCore(turSEInstance, coreName, turSEFieldType);
 
         Map<String, Object> fieldDetails = Map.of(
@@ -187,10 +166,6 @@ public class TurSolrUtils {
 
     public static void deleteField(TurSEInstance turSEInstance,
             String coreName, String fieldName, TurSEFieldType turSEFieldType) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance)) {
-            // Schema-less engines — no schema operation needed
-            return;
-        }
         Map<String, Object> fieldDetails = Map.of("name", fieldName);
 
         executeSchemaAction(turSEInstance, coreName, TurSolrFieldAction.DELETE.getSolrAction(), fieldDetails);
@@ -202,8 +177,6 @@ public class TurSolrUtils {
 
     public static boolean isCreateCopyFieldByCore(TurSEInstance turSEInstance, String coreName,
             String fieldName, TurSEFieldType turSEFieldType) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance))
-            return false;
         return turSEFieldType.equals(TurSEFieldType.TEXT)
                 && !fieldName.endsWith(STR_SUFFIX)
                 && !existsField(turSEInstance, coreName, fieldName.concat(STR_SUFFIX));
@@ -211,8 +184,6 @@ public class TurSolrUtils {
 
     public static boolean isDeleteCopyFieldByCore(TurSEInstance turSEInstance, String coreName,
             String fieldName, TurSEFieldType turSEFieldType) {
-        if (isLuceneEngine(turSEInstance) || isElasticsearchEngine(turSEInstance))
-            return false;
         return turSEFieldType.equals(TurSEFieldType.TEXT)
                 && !fieldName.endsWith(STR_SUFFIX)
                 && existsField(turSEInstance, coreName, fieldName.concat(STR_SUFFIX));
@@ -355,11 +326,6 @@ public class TurSolrUtils {
     }
 
     public static List<TurSECoreInfo> listCores(TurSEInstance turSEInstance) {
-        if (isLuceneEngine(turSEInstance)) {
-            return com.viglet.turing.lucene.TurLuceneUtils.listCores(turSEInstance.getEndpointUrl());
-        }
-        if (isElasticsearchEngine(turSEInstance))
-            return Collections.emptyList();
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(String.format("%s/api/cores", getSolrUrl(turSEInstance))))
                 .GET()
@@ -390,11 +356,6 @@ public class TurSolrUtils {
     }
 
     public static boolean coreExists(TurSEInstance turSEInstance, String core) {
-        if (isLuceneEngine(turSEInstance)) {
-            return com.viglet.turing.lucene.TurLuceneUtils.coreExists(turSEInstance.getEndpointUrl(), core);
-        }
-        if (isElasticsearchEngine(turSEInstance))
-            return true; // ES auto-creates indices on first index
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(String.format("%s/api/cores/%s",
                         getSolrUrl(turSEInstance), core)))
@@ -420,44 +381,6 @@ public class TurSolrUtils {
         String json = new ObjectMapper().writeValueAsString(root);
         HttpRequest request = getHttpRequestSchemaApi(turSEInstance, coreName, json);
         executeRequest(request, "Failed to execute schema action: " + action);
-    }
-
-    /** Returns true when the SE instance is backed by the Lucene engine. */
-    public static boolean isLuceneEngine(TurSEInstance turSEInstance) {
-        boolean result = Optional.ofNullable(turSEInstance)
-                .map(i -> i.getTurSEVendor())
-                .map(v -> "LUCENE".equalsIgnoreCase(v.getId()))
-                .orElse(false);
-        log.debug("SE instance {} is{}using Lucene engine",
-                turSEInstance != null ? turSEInstance.getTitle() : "null",
-                result ? " " : " not ");
-        return result;
-    }
-
-    /** Returns true when the SE instance is backed by the Elasticsearch engine. */
-    public static boolean isElasticsearchEngine(TurSEInstance turSEInstance) {
-        boolean result = Optional.ofNullable(turSEInstance)
-                .map(i -> i.getTurSEVendor())
-                .map(v -> "ES".equalsIgnoreCase(v.getId()))
-                .orElse(false);
-        log.debug("SE instance {} is{}using Elasticsearch engine",
-                turSEInstance != null ? turSEInstance.getTitle() : "null",
-                result ? " " : " not ");
-        return result;
-    }
-
-    /**
-     * Returns the effective plugin type for the given SE instance.
-     * Uses {@code TurSEVendor.plugin} when non-blank, otherwise falls back
-     * to {@code TurSEVendor.id}.
-     */
-    public static String getEnginePluginType(TurSEInstance turSEInstance) {
-        return Optional.ofNullable(turSEInstance)
-                .map(TurSEInstance::getTurSEVendor)
-                .map(v -> (v.getPlugin() != null && !v.getPlugin().isBlank())
-                        ? v.getPlugin()
-                        : v.getId())
-                .orElse("solr");
     }
 
     private static Optional<HttpResponse<String>> executeRequest(HttpRequest request, String errorMessage) {

@@ -60,13 +60,16 @@ class TurElasticsearchTest {
     private TurSNSiteRepository turSNSiteRepository;
 
     @Mock
+    private com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+
+    @Mock
     private ElasticsearchClient elasticsearchClient;
 
     @Test
     void testRetrieveElasticsearchFromSNReturnsEmptyWhenSiteMissing() throws Exception {
-        when(turSNSiteRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
                 new TurSEParameters(searchParams), Locale.US, URI.create("http://example.com"));
@@ -82,11 +85,11 @@ class TurElasticsearchTest {
     void testRetrieveElasticsearchFromSNHandlesIOException() throws Exception {
         TurSNSite site = new TurSNSite();
         site.setName("site");
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(elasticsearchClient.search(any(SearchRequest.class), any(Type.class)))
                 .thenThrow(new IOException("boom"));
 
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository);
+        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
         TurSNSearchParams searchParams = new TurSNSearchParams();
         searchParams.setQ("test");
         TurSEParameters params = new TurSEParameters(searchParams);

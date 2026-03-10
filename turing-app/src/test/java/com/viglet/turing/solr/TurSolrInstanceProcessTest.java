@@ -87,32 +87,32 @@ class TurSolrInstanceProcessTest {
 
     @Test
     void testInitSolrInstanceBySiteNameNotFound() {
-        when(turSNSiteRepository.findByName("nonexistent")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase("nonexistent")).thenReturn(Optional.empty());
 
         Optional<TurSolrInstance> result = turSolrInstanceProcess.initSolrInstance("nonexistent", Locale.ENGLISH);
 
         assertThat(result).isEmpty();
-        verify(turSNSiteRepository).findByName("nonexistent");
+        verify(turSNSiteRepository).findByNameIgnoreCase("nonexistent");
     }
 
     @Test
     void testInitSolrInstanceBySiteNameLocaleNotFound() {
         TurSNSite turSNSite = mock(TurSNSite.class);
         when(turSNSite.getName()).thenReturn("testSite");
-        when(turSNSiteRepository.findByName("testSite")).thenReturn(Optional.of(turSNSite));
+        when(turSNSiteRepository.findByNameIgnoreCase("testSite")).thenReturn(Optional.of(turSNSite));
         when(turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(turSNSite, Locale.ENGLISH)).thenReturn(null);
 
         Optional<TurSolrInstance> result = turSolrInstanceProcess.initSolrInstance("testSite", Locale.ENGLISH);
 
         assertThat(result).isEmpty();
-        verify(turSNSiteRepository).findByName("testSite");
+        verify(turSNSiteRepository).findByNameIgnoreCase("testSite");
         verify(turSNSiteLocaleRepository).findByTurSNSiteAndLanguage(turSNSite, Locale.ENGLISH);
     }
 
     @Test
     void testMultipleCallsWithDifferentLocales() {
         TurSNSite turSNSite = mock(TurSNSite.class);
-        when(turSNSiteRepository.findByName("multiLocaleSite")).thenReturn(Optional.of(turSNSite));
+        when(turSNSiteRepository.findByNameIgnoreCase("multiLocaleSite")).thenReturn(Optional.of(turSNSite));
         when(turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(any(TurSNSite.class), any(Locale.class)))
                 .thenReturn(null);
 
@@ -120,7 +120,7 @@ class TurSolrInstanceProcessTest {
         turSolrInstanceProcess.initSolrInstance("multiLocaleSite", Locale.FRENCH);
         turSolrInstanceProcess.initSolrInstance("multiLocaleSite", Locale.GERMAN);
 
-        verify(turSNSiteRepository, times(3)).findByName("multiLocaleSite");
+        verify(turSNSiteRepository, times(3)).findByNameIgnoreCase("multiLocaleSite");
         verify(turSNSiteLocaleRepository).findByTurSNSiteAndLanguage(turSNSite, Locale.ENGLISH);
         verify(turSNSiteLocaleRepository).findByTurSNSiteAndLanguage(turSNSite, Locale.FRENCH);
         verify(turSNSiteLocaleRepository).findByTurSNSiteAndLanguage(turSNSite, Locale.GERMAN);

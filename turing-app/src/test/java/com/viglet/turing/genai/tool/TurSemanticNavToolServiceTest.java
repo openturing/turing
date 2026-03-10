@@ -145,7 +145,7 @@ class TurSemanticNavToolServiceTest {
 
     @Test
     void shouldReturnSiteNotFound() {
-        when(turSNSiteRepository.findByName("Missing")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase("Missing")).thenReturn(Optional.empty());
 
         String result = service.getSiteFields("Missing");
 
@@ -157,7 +157,7 @@ class TurSemanticNavToolServiceTest {
         TurSNSite site = new TurSNSite();
         site.setName("MySite");
 
-        when(turSNSiteRepository.findByName("MySite")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("MySite")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(Collections.emptyList());
 
@@ -181,7 +181,7 @@ class TurSemanticNavToolServiceTest {
         field2.setType(TurSEFieldType.STRING);
         field2.setFacet(1);
 
-        when(turSNSiteRepository.findByName("MySite")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("MySite")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(List.of(field1, field2));
 

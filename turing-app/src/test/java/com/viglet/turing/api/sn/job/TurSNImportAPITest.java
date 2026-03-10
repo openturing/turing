@@ -84,7 +84,7 @@ class TurSNImportAPITest {
         genAi.setEnabled(true);
         site.setTurSNSiteGenAi(genAi);
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
 
         mockMvc.perform(post("/api/sn/import")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -109,7 +109,7 @@ class TurSNImportAPITest {
         item.setAttributes(attributes);
         jobItems.add(item);
 
-        when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/sn/import")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class TurSNImportAPITest {
             item.setAttributes(attributes);
             jobItems.add(item);
 
-            when(turSNSiteRepository.findByName("site1")).thenReturn(Optional.empty());
+            when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
 
             zos.write(objectMapper.writeValueAsBytes(jobItems));
             zos.closeEntry();

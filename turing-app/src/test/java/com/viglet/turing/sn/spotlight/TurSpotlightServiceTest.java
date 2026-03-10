@@ -57,7 +57,7 @@ class TurSpotlightServiceTest {
     @Test
     void testFindSpotlightBySNSiteAndLanguageReturnsList() {
         TurSNSite site = new TurSNSite();
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         List<TurSNSiteSpotlight> spotlights = List.of(new TurSNSiteSpotlight());
         when(turSNSiteSpotlightRepository.findByTurSNSiteAndLanguage(site, Locale.US))
                 .thenReturn(spotlights);
@@ -71,7 +71,7 @@ class TurSpotlightServiceTest {
 
     @Test
     void testFindSpotlightBySNSiteAndLanguageReturnsEmptyWhenSiteMissing() {
-        when(turSNSiteRepository.findByName("site")).thenReturn(Optional.empty());
+        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
         TurSpotlightService service = new TurSpotlightService(turSNSiteRepository,
                 turSNSiteSpotlightRepository);

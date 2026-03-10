@@ -29,8 +29,17 @@ import com.viglet.turing.se.result.TurSEResults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
+
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -168,6 +177,20 @@ class TurSearchEnginePluginTest {
         public String getPluginType() {
             return "test";
         }
+
+        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
+        @Override public void deleteIndex(TurSEInstance s, String n) {}
+        @Override public void clearIndex(TurSEInstance s, String n) {}
+        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
+        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
+        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
+        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
+        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
+        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
+        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
+        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
+        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
+        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
     }
 
     private static class EmptySearchEnginePlugin implements TurSearchEnginePlugin {
@@ -185,6 +208,20 @@ class TurSearchEnginePluginTest {
         public String getPluginType() {
             return "empty";
         }
+
+        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
+        @Override public void deleteIndex(TurSEInstance s, String n) {}
+        @Override public void clearIndex(TurSEInstance s, String n) {}
+        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
+        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
+        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
+        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
+        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
+        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
+        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
+        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
+        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
+        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
     }
 
     private static class SolrLikePlugin implements TurSearchEnginePlugin {
@@ -202,6 +239,20 @@ class TurSearchEnginePluginTest {
         public String getPluginType() {
             return "solr";
         }
+
+        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
+        @Override public void deleteIndex(TurSEInstance s, String n) {}
+        @Override public void clearIndex(TurSEInstance s, String n) {}
+        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
+        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
+        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
+        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
+        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
+        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
+        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
+        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
+        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
+        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
     }
 
     private static class ElasticsearchLikePlugin implements TurSearchEnginePlugin {
@@ -219,5 +270,19 @@ class TurSearchEnginePluginTest {
         public String getPluginType() {
             return "elasticsearch";
         }
+
+        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
+        @Override public void deleteIndex(TurSEInstance s, String n) {}
+        @Override public void clearIndex(TurSEInstance s, String n) {}
+        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
+        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
+        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
+        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
+        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
+        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
+        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
+        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
+        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
+        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
     }
 }

@@ -138,14 +138,14 @@ class TurSNSearchProcessTest {
         void testGetSNSiteReturnsOptional() {
                 TurSNSite site = new TurSNSite();
                 site.setName("site");
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
 
                 assertThat(process(false).getSNSite("site")).contains(site);
         }
 
         @Test
         void testGetSNSiteReturnsEmptyWhenMissing() {
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.empty());
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
                 assertThat(process(false).getSNSite("site")).isEmpty();
         }
@@ -153,7 +153,7 @@ class TurSNSearchProcessTest {
         @Test
         void testExistsByTurSNSiteAndLanguage() {
                 TurSNSite site = new TurSNSite();
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(site, Locale.US))
                                 .thenReturn(true);
 
@@ -162,7 +162,7 @@ class TurSNSearchProcessTest {
 
         @Test
         void testExistsByTurSNSiteAndLanguageReturnsFalseWhenSiteMissing() {
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.empty());
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
                 assertThat(process(false).existsByTurSNSiteAndLanguage("site", Locale.US)).isFalse();
         }
@@ -170,7 +170,7 @@ class TurSNSearchProcessTest {
         @Test
         void testLatestSearchesReturnsTerms() {
                 TurSNSite site = new TurSNSite();
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 TurSNSiteMetricAccessTerm term1 = new TurSNSiteMetricAccessTerm("one", Instant.now());
                 TurSNSiteMetricAccessTerm term2 = new TurSNSiteMetricAccessTerm("two", Instant.now());
                 when(turSNSiteMetricAccessRepository.findLatestSearches(eq(site), eq("en"), eq("user"),
@@ -183,7 +183,7 @@ class TurSNSearchProcessTest {
 
         @Test
         void testLatestSearchesReturnsEmptyWhenSiteMissing() {
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.empty());
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
                 assertThat(process(false).latestSearches("site", "en", "user", 10)).isEmpty();
         }
@@ -346,7 +346,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -410,7 +410,7 @@ class TurSNSearchProcessTest {
                 site.setFacet(0);
                 site.setSpotlightWithResults(0);
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of());
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -465,7 +465,7 @@ class TurSNSearchProcessTest {
 
                 TurSNSite site = new TurSNSite();
                 site.setName("site");
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
                                 .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
 
@@ -503,7 +503,7 @@ class TurSNSearchProcessTest {
 
                 TurSNSite site = new TurSNSite();
                 site.setName("site");
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
                                 .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
 
@@ -534,7 +534,7 @@ class TurSNSearchProcessTest {
                 site.setFacet(0);
                 site.setSpotlightWithResults(1);
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1)).thenReturn(List.of());
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of());
                 when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
@@ -601,7 +601,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -676,7 +676,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -746,7 +746,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -814,7 +814,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -881,7 +881,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -944,7 +944,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -1013,7 +1013,7 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByName("site")).thenReturn(Optional.of(site));
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))

@@ -60,10 +60,11 @@ public class TurSolrInstanceProcess {
     }
 
     private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-        if (TurSolrUtils.isLuceneEngine(turSEInstance) || TurSolrUtils.isElasticsearchEngine(turSEInstance)) {
+        String baseUrl = turSEInstance.getEndpointUrl();
+        if (baseUrl == null || (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://"))) {
+            log.debug("Skipping Solr client init for non-HTTP endpoint: {}", baseUrl);
             return Optional.empty();
         }
-        String baseUrl = turSEInstance.getEndpointUrl();
         HttpJdkSolrClient httpSolrClient = clientCache.computeIfAbsent(baseUrl, url -> {
             log.info("Starting Solr connection pool for URL: {}", url);
             return new HttpJdkSolrClient.Builder(url)

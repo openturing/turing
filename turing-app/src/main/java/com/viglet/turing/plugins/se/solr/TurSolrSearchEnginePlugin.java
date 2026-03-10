@@ -199,6 +199,16 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .map(turSolr::getDocumentTotal).orElse(0L);
     }
 
+    // ---- Copy field ------------------------------------------------------
+
+    @Override
+    public void createCopyField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType, boolean multiValued) {
+        if (TurSolrUtils.isCreateCopyFieldByCore(seInstance, indexName, fieldName, fieldType)) {
+            TurSolrUtils.createCopyFieldByCore(seInstance, indexName, fieldName, multiValued);
+        }
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private static String getSolrUrl(TurSEInstance seInstance) {

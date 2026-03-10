@@ -61,7 +61,6 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNFieldType;
-import com.viglet.turing.solr.TurSolrUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -139,7 +138,7 @@ public class TurSNTemplate {
                 turSEInstanceRepository
                                 .findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId())
                                 .ifPresent(instance ->
-                                        pluginFactory.getPlugin(TurSolrUtils.getEnginePluginType(instance))
+                                        pluginFactory.getPluginForInstance(instance)
                                                 .createIndex(instance, turSNSiteLocale, coreName, Map.of())
                                 );
                 return coreName;
@@ -199,15 +198,11 @@ public class TurSNTemplate {
         private void createCopyField(int multiValued, TurSNSiteLocale turSNSiteLocale, TurSNSiteField turSNSiteField) {
                 turSEInstanceRepository
                                 .findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId())
-                                .ifPresent(turSEInstance -> {
-                                        if (TurSolrUtils.isCreateCopyFieldByCore(turSEInstance,
-                                                        turSNSiteLocale.getCore(),
-                                                        turSNSiteField.getName(), turSNSiteField.getType())) {
-                                                TurSolrUtils.createCopyFieldByCore(turSEInstance,
-                                                                turSNSiteLocale.getCore(),
-                                                                turSNSiteField.getName(), multiValued == 1);
-                                        }
-                                });
+                                .ifPresent(turSEInstance ->
+                                        pluginFactory.getPluginForInstance(turSEInstance)
+                                                .createCopyField(turSEInstance, turSNSiteLocale.getCore(),
+                                                        turSNSiteField.getName(), turSNSiteField.getType(),
+                                                        multiValued == 1));
         }
 
         public void createSEFields(TurSNSite turSNSite) {

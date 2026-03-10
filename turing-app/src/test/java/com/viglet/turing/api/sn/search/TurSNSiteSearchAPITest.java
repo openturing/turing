@@ -111,7 +111,7 @@ class TurSNSiteSearchAPITest {
         List<Object> expected = List.of("one");
 
         when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
-        when(repository.findByName("site")).thenReturn(Optional.of(site));
+        when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(service.getTurSNSiteSearchContext(params, request, site)).thenReturn(context);
         when(searchProcess.searchList(context)).thenReturn(expected);
 
@@ -134,7 +134,7 @@ class TurSNSiteSearchAPITest {
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
-        when(repository.findByName("site")).thenReturn(Optional.empty());
+        when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
         org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectGet("site", params,
@@ -154,7 +154,7 @@ class TurSNSiteSearchAPITest {
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
-        when(repository.findByName("site")).thenReturn(Optional.empty());
+        when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
         org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
 
         ResponseEntity<List<Object>> response = api.turSNSiteSearchSelectListGet("site", params, null,
@@ -180,7 +180,7 @@ class TurSNSiteSearchAPITest {
 
         when(service.determineLocale(postParams, Locale.US)).thenReturn(Locale.CANADA);
         when(searchProcess.existsByTurSNSiteAndLanguage("site", params.getLocale())).thenReturn(true);
-        when(repository.findByName("site")).thenReturn(Optional.of(site));
+        when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(service.executePostSearch(params, postParams, request, site)).thenReturn(expected);
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectPost("site", params,
@@ -214,7 +214,7 @@ class TurSNSiteSearchAPITest {
         TurSNSite site = mock(TurSNSite.class);
         List<TurSNSiteLocaleBean> locales = List.of(new TurSNSiteLocaleBean());
 
-        when(repository.findByName("site")).thenReturn(Optional.of(site));
+        when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
         when(searchProcess.responseLocales(any(TurSNSite.class), any())).thenReturn(locales);
 
         List<TurSNSiteLocaleBean> response = api.turSNSiteSearchLocale("site");

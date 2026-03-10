@@ -24,6 +24,7 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.elasticsearch.TurElasticsearch;
 import com.viglet.turing.elasticsearch.TurElasticsearchInstance;
 import com.viglet.turing.elasticsearch.TurElasticsearchInstanceProcess;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.se.result.TurSEResults;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +34,8 @@ class TurElasticsearchSearchEnginePluginTest {
     private TurElasticsearch turElasticsearch;
     @Mock
     private TurElasticsearchInstanceProcess turElasticsearchInstanceProcess;
+    @Mock
+    private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
     @InjectMocks
     private TurElasticsearchSearchEnginePlugin plugin;
@@ -70,13 +73,13 @@ class TurElasticsearchSearchEnginePluginTest {
 
         when(turElasticsearchInstanceProcess.initElasticsearchInstance("site-es", Locale.ENGLISH))
                 .thenReturn(Optional.of(instance));
-        when(turElasticsearch.retrieveFacetElasticsearchFromSN(instance, context)).thenReturn(Optional.of(results));
+        when(turElasticsearch.retrieveFacetElasticsearchFromSN(instance, context, "author")).thenReturn(Optional.of(results));
 
         Optional<TurSEResults> response = plugin.retrieveFacetResults(context, "author");
 
         assertTrue(response.isPresent());
         assertEquals("facet-es", response.get().getQueryString());
-        verify(turElasticsearch).retrieveFacetElasticsearchFromSN(instance, context);
+        verify(turElasticsearch).retrieveFacetElasticsearchFromSN(instance, context, "author");
     }
 
     @Test

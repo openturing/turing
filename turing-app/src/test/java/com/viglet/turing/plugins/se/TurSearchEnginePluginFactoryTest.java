@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test for TurSearchEnginePluginFactory
@@ -47,9 +49,21 @@ class TurSearchEnginePluginFactoryTest {
         return site;
     }
 
+    private TurSolrSearchEnginePlugin mockSolrPlugin() {
+        TurSolrSearchEnginePlugin plugin = mock(TurSolrSearchEnginePlugin.class);
+        when(plugin.getPluginType()).thenReturn("solr");
+        return plugin;
+    }
+
+    private TurElasticsearchSearchEnginePlugin mockElasticsearchPlugin() {
+        TurElasticsearchSearchEnginePlugin plugin = mock(TurElasticsearchSearchEnginePlugin.class);
+        when(plugin.getPluginType()).thenReturn("elasticsearch");
+        return plugin;
+    }
+
     @Test
     void testGetPluginForSite_Solr() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 
@@ -61,8 +75,8 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPluginForSite_Elasticsearch() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = mockElasticsearchPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Arrays.asList(solrPlugin, elasticsearchPlugin));
 
@@ -74,8 +88,8 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPlugin_SpecificType() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = mockElasticsearchPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Arrays.asList(solrPlugin, elasticsearchPlugin));
 
@@ -85,7 +99,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPlugin_InvalidFallsBackToSolr() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 
@@ -96,7 +110,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPlugin_InvalidWithNoSolrFallbackThrows() {
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = mockElasticsearchPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(elasticsearchPlugin));
 
@@ -105,7 +119,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPlugin_CaseInsensitive() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 
@@ -116,7 +130,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testMultipleCallsReturnSameInstance() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 
@@ -125,7 +139,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPluginForSite_NullSiteFallsBackToSolr() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 
@@ -135,7 +149,7 @@ class TurSearchEnginePluginFactoryTest {
 
     @Test
     void testGetPluginForSite_VendorByIdWhenPluginBlank() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSolrSearchEnginePlugin solrPlugin = mockSolrPlugin();
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
                 Collections.singletonList(solrPlugin));
 

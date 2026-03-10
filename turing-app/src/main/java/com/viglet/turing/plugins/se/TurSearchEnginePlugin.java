@@ -92,6 +92,17 @@ public interface TurSearchEnginePlugin {
 
     boolean commit(TurSNSite turSNSite, Locale locale);
 
+    // ---- Copy field (Solr-specific; no-op for schema-less engines) -------
+
+    /**
+     * Creates a copy field mapping if the engine supports it.
+     * Lucene and Elasticsearch ignore this call by default.
+     */
+    default void createCopyField(TurSEInstance seInstance, String indexName, String fieldName,
+            TurSEFieldType fieldType, boolean multiValued) {
+        // No-op for schema-less engines
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);
