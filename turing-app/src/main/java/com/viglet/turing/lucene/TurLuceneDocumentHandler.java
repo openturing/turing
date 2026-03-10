@@ -26,7 +26,6 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtReposi
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.document.*;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.BytesRef;
 import org.json.JSONArray;
@@ -106,10 +105,6 @@ public class TurLuceneDocumentHandler {
                     boolean multiValued = siteField != null && siteField.getMultiValued() == 1;
                     boolean isFacet = facetFields.contains(key);
 
-                    // Configure multi-valued facet dimensions
-                    if (isFacet && multiValued) {
-                        instance.getFacetsConfig().setMultiValued(key, true);
-                    }
                     addAttributeToDocument(doc, key, value, fieldType, multiValued, isFacet);
                 }));
 
@@ -117,8 +112,7 @@ public class TurLuceneDocumentHandler {
                 .map(Object::toString)
                 .orElse(UUID.randomUUID().toString());
         try {
-            Document builtDoc = instance.getFacetsConfig().build(doc);
-            instance.getWriter().updateDocument(new Term(ID, docId), builtDoc);
+            instance.getWriter().updateDocument(new Term(ID, docId), doc);
             instance.getWriter().commit();
         } catch (IOException e) {
             log.error("Error writing Lucene document id={}", docId, e);
@@ -246,12 +240,6 @@ public class TurLuceneDocumentHandler {
     private void addFacetField(Document doc, String fieldName, String value) {
         // Truncate very long values to avoid BytesRef limit (32766 bytes)
         String truncated = value.length() > 500 ? value.substring(0, 500) : value;
-        try {
-            doc.add(new SortedSetDocValuesFacetField(fieldName, truncated));
-            // Also add SortedDocValuesField for sort/grouping on single-valued fields
-            doc.add(new SortedSetDocValuesField(fieldName + "_dv", new BytesRef(truncated)));
-        } catch (Exception e) {
-            log.warn("Cannot add facet field '{}' value='{}': {}", fieldName, truncated, e.getMessage());
-        }
+        doc.add(new SortedSetDocValuesField(fieldName, new BytesRef(truncated)));
     }
 }

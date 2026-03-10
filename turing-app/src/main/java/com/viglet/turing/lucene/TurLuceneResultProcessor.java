@@ -25,12 +25,9 @@ import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.facet.FacetResult;
 import org.apache.lucene.facet.FacetsCollector;
-import org.apache.lucene.facet.LabelAndValue;
-import org.apache.lucene.facet.sortedset.DefaultSortedSetDocValuesReaderState;
-import org.apache.lucene.facet.sortedset.SortedSetDocValuesFacetCounts;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.SortedSetDocValues;
 import org.apache.lucene.search.*;
 
 import java.io.IOException;
@@ -56,8 +53,9 @@ public class TurLuceneResultProcessor {
      * Executes a search against the Lucene index and returns a fully
      * populated {@link TurSEResults}, including facet counts.
      *
-     * <p>Uses {@link FacetsCollector#search} to collect both top hits and
-     * facet data in a single index traversal when facets are enabled.
+     * <p>Uses {@link FacetsCollector} to collect matched documents across all
+     * index segments; facet values are then counted directly from per-field
+     * {@link SortedSetDocValues} without relying on FacetsConfig internals.
      */
     public TurSEResults getResults(TurLuceneInstance instance, TurSNSite turSNSite,
             Query query, TurSEParameters params, List<TurSNSiteFieldExt> facetFields,
@@ -76,7 +74,7 @@ public class TurLuceneResultProcessor {
             FacetsCollector fc = null;
 
             if (!facetFields.isEmpty()) {
-                // Two passes: hits first, then facets. Keeps compatibility across Lucene versions.
+                // Two passes: hits first, then facets across all matching docs.
                 topDocs = searcher.search(query, hitsNeeded);
                 fc = new FacetsCollector();
                 searcher.search(query, fc);
@@ -98,9 +96,9 @@ public class TurLuceneResultProcessor {
             }
             results.setResults(resultList);
 
-            // Compute facets
+            // Compute facets directly from per-field SortedSetDocValues
             if (fc != null && !facetFields.isEmpty()) {
-                results.setFacetResults(computeFacets(instance, fc, facetFields));
+                results.setFacetResults(computeFacets(fc, facetFields));
             }
 
         } catch (IOException e) {
@@ -149,40 +147,61 @@ public class TurLuceneResultProcessor {
     // Facet computation
     // -------------------------------------------------------------------------
 
-    private List<TurSEFacetResult> computeFacets(TurLuceneInstance instance,
-            FacetsCollector fc, List<TurSNSiteFieldExt> facetFields) {
+    /**
+     * Counts facet values directly from per-field {@link SortedSetDocValues} across
+     * all segments that had matching documents. This avoids the {@code FacetsConfig}
+     * / {@code $facets} internal field entirely, making it robust across index
+     * updates and Lucene version differences.
+     */
+    private List<TurSEFacetResult> computeFacets(FacetsCollector fc,
+            List<TurSNSiteFieldExt> facetFields) {
         List<TurSEFacetResult> out = new ArrayList<>();
-        try {
-            DefaultSortedSetDocValuesReaderState state =
-                    new DefaultSortedSetDocValuesReaderState(instance.getReader(),
-                            instance.getFacetsConfig());
-            SortedSetDocValuesFacetCounts counts = new SortedSetDocValuesFacetCounts(state, fc);
 
-            for (TurSNSiteFieldExt fieldExt : facetFields) {
-                String fieldName = fieldExt.getName();
+        for (TurSNSiteFieldExt fieldExt : facetFields) {
+            String fieldName = fieldExt.getName();
+            Map<String, Integer> counts = new LinkedHashMap<>();
+
+            for (FacetsCollector.MatchingDocs matchingDocs : fc.getMatchingDocs()) {
                 try {
-                    FacetResult facetResult = counts.getTopChildren(MAX_FACET_VALUES, fieldName);
-                    if (facetResult == null) continue;
+                    SortedSetDocValues docValues =
+                            matchingDocs.context().reader().getSortedSetDocValues(fieldName);
+                    if (docValues == null) continue;
 
-                    TurSEFacetResult turFacet = new TurSEFacetResult();
-                    turFacet.setFacet(fieldName);
-                    turFacet.setFacetPosition(
-                            fieldExt.getFacetPosition() != null ? fieldExt.getFacetPosition() : 0);
+                    DocIdSetIterator disi = matchingDocs.bits().iterator();
+                    if (disi == null) continue;
 
-                    for (LabelAndValue lv : facetResult.labelValues) {
-                        turFacet.add(lv.label, new TurSEFacetResultAttr(lv.label, lv.value.intValue()));
+                    int docId;
+                    while ((docId = disi.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+                        if (docValues.advanceExact(docId)) {
+                            int count = docValues.docValueCount();
+                            for (int i = 0; i < count; i++) {
+                                String label = docValues.lookupOrd(docValues.nextOrd()).utf8ToString();
+                                counts.merge(label, 1, Integer::sum);
+                            }
+                        }
                     }
-                    out.add(turFacet);
-                } catch (IllegalArgumentException e) {
-                    log.debug("No facet data for field '{}': {}", fieldName, e.getMessage());
+                } catch (IOException e) {
+                    log.warn("Error reading facets for field '{}' in segment: {}", fieldName,
+                            e.getMessage());
                 }
             }
-        } catch (IOException e) {
-            log.error("Error computing Lucene facets", e);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            // Index has no facets indexed yet, or $facets field type mismatch (re-index required)
-            log.debug("SortedSetDocValues not available (re-index may be required): {}", e.getMessage());
+
+            if (counts.isEmpty()) continue;
+
+            TurSEFacetResult turFacet = new TurSEFacetResult();
+            turFacet.setFacet(fieldName);
+            turFacet.setFacetPosition(
+                    fieldExt.getFacetPosition() != null ? fieldExt.getFacetPosition() : 0);
+
+            counts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(MAX_FACET_VALUES)
+                    .forEach(e -> turFacet.add(e.getKey(),
+                            new TurSEFacetResultAttr(e.getKey(), e.getValue())));
+
+            out.add(turFacet);
         }
+
         return out;
     }
 
