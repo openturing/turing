@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
@@ -16,6 +16,9 @@
  */
 package com.viglet.turing.plugins.se;
 
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.se.TurSEVendor;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.plugins.se.elasticsearch.TurElasticsearchSearchEnginePlugin;
 import com.viglet.turing.plugins.se.solr.TurSolrSearchEnginePlugin;
 import org.junit.jupiter.api.Test;
@@ -23,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -34,33 +36,37 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TurSearchEnginePluginFactoryTest {
 
-    @Test
-    void testGetDefaultPlugin_Solr() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "solr"
-        );
+    private TurSNSite siteWithPlugin(String pluginType) {
+        TurSEVendor vendor = new TurSEVendor();
+        vendor.setId(pluginType.toUpperCase());
+        vendor.setPlugin(pluginType);
+        TurSEInstance instance = new TurSEInstance();
+        instance.setTurSEVendor(vendor);
+        TurSNSite site = new TurSNSite();
+        site.setTurSEInstance(instance);
+        return site;
+    }
 
-        TurSearchEnginePlugin plugin = factory.getDefaultPlugin();
+    @Test
+    void testGetPluginForSite_Solr() {
+        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Collections.singletonList(solrPlugin));
+
+        TurSearchEnginePlugin plugin = factory.getPluginForSite(siteWithPlugin("solr"));
         assertNotNull(plugin);
         assertEquals("solr", plugin.getPluginType());
         assertSame(solrPlugin, plugin);
     }
 
     @Test
-    void testGetDefaultPlugin_Elasticsearch() {
+    void testGetPluginForSite_Elasticsearch() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
         TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "elasticsearch"
-        );
+                Arrays.asList(solrPlugin, elasticsearchPlugin));
 
-        TurSearchEnginePlugin plugin = factory.getDefaultPlugin();
+        TurSearchEnginePlugin plugin = factory.getPluginForSite(siteWithPlugin("elasticsearch"));
         assertNotNull(plugin);
         assertEquals("elasticsearch", plugin.getPluginType());
         assertSame(elasticsearchPlugin, plugin);
@@ -70,158 +76,78 @@ class TurSearchEnginePluginFactoryTest {
     void testGetPlugin_SpecificType() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
         TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "solr"
-        );
+                Arrays.asList(solrPlugin, elasticsearchPlugin));
 
-        TurSearchEnginePlugin solr = factory.getPlugin("solr");
-        assertNotNull(solr);
-        assertEquals("solr", solr.getPluginType());
-
-        TurSearchEnginePlugin elasticsearch = factory.getPlugin("elasticsearch");
-        assertNotNull(elasticsearch);
-        assertEquals("elasticsearch", elasticsearch.getPluginType());
+        assertEquals("solr", factory.getPlugin("solr").getPluginType());
+        assertEquals("elasticsearch", factory.getPlugin("elasticsearch").getPluginType());
     }
 
     @Test
-    void testGetPlugin_InvalidType() {
+    void testGetPlugin_InvalidFallsBackToSolr() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin),
-                "solr"
-        );
+                Collections.singletonList(solrPlugin));
+
+        // Falls back to solr when unknown type is requested
+        TurSearchEnginePlugin plugin = factory.getPlugin("invalid");
+        assertSame(solrPlugin, plugin);
+    }
+
+    @Test
+    void testGetPlugin_InvalidWithNoSolrFallbackThrows() {
+        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
+        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
+                Collections.singletonList(elasticsearchPlugin));
 
         assertThrows(IllegalStateException.class, () -> factory.getPlugin("invalid"));
     }
 
     @Test
-    void testGetDefaultEngineType() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin),
-                "solr"
-        );
-
-        assertEquals("solr", factory.getDefaultEngineType());
-    }
-
-    @Test
     void testGetPlugin_CaseInsensitive() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "solr"
-        );
+                Collections.singletonList(solrPlugin));
 
-        TurSearchEnginePlugin plugin1 = factory.getPlugin("SOLR");
-        TurSearchEnginePlugin plugin2 = factory.getPlugin("Solr");
-        TurSearchEnginePlugin plugin3 = factory.getPlugin("solr");
-
-        assertEquals(solrPlugin, plugin1);
-        assertEquals(solrPlugin, plugin2);
-        assertEquals(solrPlugin, plugin3);
-    }
-
-    @Test
-    void testGetDefaultPlugin_InvalidDefaultThrowsException() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin),
-                "nonexistent"
-        );
-
-        assertThrows(IllegalStateException.class, factory::getDefaultPlugin);
-    }
-
-    @Test
-    void testFactoryWithEmptyPluginList() {
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Collections.emptyList(),
-                "solr"
-        );
-
-        assertThrows(IllegalStateException.class, factory::getDefaultPlugin);
+        assertSame(solrPlugin, factory.getPlugin("SOLR"));
+        assertSame(solrPlugin, factory.getPlugin("Solr"));
+        assertSame(solrPlugin, factory.getPlugin("solr"));
     }
 
     @Test
     void testMultipleCallsReturnSameInstance() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "solr"
-        );
+                Collections.singletonList(solrPlugin));
 
-        TurSearchEnginePlugin plugin1 = factory.getPlugin("solr");
-        TurSearchEnginePlugin plugin2 = factory.getPlugin("solr");
-
-        assertSame(plugin1, plugin2);
+        assertSame(factory.getPlugin("solr"), factory.getPlugin("solr"));
     }
 
     @Test
-    void testExceptionMessageContainsAvailablePlugins() {
+    void testGetPluginForSite_NullSiteFallsBackToSolr() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "solr"
-        );
+                Collections.singletonList(solrPlugin));
 
-        assertThatThrownBy(() -> factory.getPlugin("unknown"))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Search engine plugin 'unknown' not found")
-            .hasMessageContaining("Available plugins:");
+        TurSearchEnginePlugin plugin = factory.getPluginForSite(null);
+        assertSame(solrPlugin, plugin);
     }
 
     @Test
-    void testFactoryWithSinglePlugin() {
+    void testGetPluginForSite_VendorByIdWhenPluginBlank() {
         TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        
         TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Collections.singletonList(solrPlugin),
-                "solr"
-        );
+                Collections.singletonList(solrPlugin));
 
-        TurSearchEnginePlugin plugin = factory.getDefaultPlugin();
+        TurSEVendor vendor = new TurSEVendor();
+        vendor.setId("SOLR");
+        vendor.setPlugin(""); // blank plugin — should fall back to id
+        TurSEInstance instance = new TurSEInstance();
+        instance.setTurSEVendor(vendor);
+        TurSNSite site = new TurSNSite();
+        site.setTurSEInstance(instance);
 
-        assertNotNull(plugin);
-        assertEquals("solr", plugin.getPluginType());
-    }
-
-    @Test
-    void testGetPlugin_EmptyStringThrowsException() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin),
-                "solr"
-        );
-
-        assertThrows(IllegalStateException.class, () -> factory.getPlugin(""));
-    }
-
-    @Test
-    void testElasticsearchAsDefault() {
-        TurSolrSearchEnginePlugin solrPlugin = new TurSolrSearchEnginePlugin(null, null);
-        TurElasticsearchSearchEnginePlugin elasticsearchPlugin = new TurElasticsearchSearchEnginePlugin(null, null);
-        
-        TurSearchEnginePluginFactory factory = new TurSearchEnginePluginFactory(
-                Arrays.asList(solrPlugin, elasticsearchPlugin),
-                "elasticsearch"
-        );
-
-        TurSearchEnginePlugin defaultPlugin = factory.getDefaultPlugin();
-
-        assertEquals(elasticsearchPlugin, defaultPlugin);
-        assertEquals("elasticsearch", factory.getDefaultEngineType());
+        TurSearchEnginePlugin plugin = factory.getPluginForSite(site);
+        assertSame(solrPlugin, plugin);
     }
 }

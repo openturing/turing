@@ -255,29 +255,38 @@ public class TurSNSearchProcess {
         }
 
         public TurSNSiteSearchBean search(TurSNSiteSearchContext turSNSiteSearchContext) {
-                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getDefaultPlugin();
-                return plugin.retrieveSearchResults(turSNSiteSearchContext)
-                                .map(turSEResults -> turSolrInstanceProcess
-                                                .initSolrInstance(turSNSiteSearchContext.getSiteName(),
-                                                                turSNSiteSearchContext.getLocale())
-                                                .map(turSolrInstance -> searchResponse(
-                                                                turSNSiteSearchContext,
-                                                                turSolrInstance, turSEResults))
-                                                .orElse(new TurSNSiteSearchBean()))
+                return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName())
+                                .map(turSNSite -> {
+                                        TurSearchEnginePlugin plugin = searchEnginePluginFactory
+                                                        .getPluginForSite(turSNSite);
+                                        return plugin.retrieveSearchResults(turSNSiteSearchContext)
+                                                        .map(turSEResults -> {
+                                                                TurSolrInstance solrInstance = turSolrInstanceProcess
+                                                                                .initSolrInstance(
+                                                                                                turSNSiteSearchContext
+                                                                                                                .getSiteName(),
+                                                                                                turSNSiteSearchContext
+                                                                                                                .getLocale())
+                                                                                .orElse(null);
+                                                                return searchResponse(turSNSiteSearchContext,
+                                                                                solrInstance, turSEResults);
+                                                        })
+                                                        .orElse(new TurSNSiteSearchBean());
+                                })
                                 .orElse(new TurSNSiteSearchBean());
         }
 
         public List<Object> searchList(TurSNSiteSearchContext turSNSiteSearchContext) {
                 turSNSiteSearchContext.getTurSNConfig().setHlEnabled(false);
-                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getDefaultPlugin();
-                return plugin.retrieveSearchResults(turSNSiteSearchContext)
-                                .map(turSEResults -> turSolrInstanceProcess
-                                                .initSolrInstance(turSNSiteSearchContext.getSiteName(),
-                                                                turSNSiteSearchContext.getLocale())
-                                                .map(turSolrInstance -> searchResponseList(
-                                                                turSNSiteSearchContext,
-                                                                turSEResults))
-                                                .orElse(Collections.emptyList()))
+                return turSNSiteRepository.findByName(turSNSiteSearchContext.getSiteName())
+                                .map(turSNSite -> {
+                                        TurSearchEnginePlugin plugin = searchEnginePluginFactory
+                                                        .getPluginForSite(turSNSite);
+                                        return plugin.retrieveSearchResults(turSNSiteSearchContext)
+                                                        .map(turSEResults -> searchResponseList(
+                                                                        turSNSiteSearchContext, turSEResults))
+                                                        .orElse(Collections.emptyList());
+                                })
                                 .orElse(Collections.emptyList());
         }
 
@@ -534,6 +543,7 @@ public class TurSNSearchProcess {
                                 facetMap, turSNSiteSearchDocumentsBean, result, false));
                 Optional.ofNullable(turSNSite).map(TurSNSite::getSpotlightWithResults)
                                 .filter(TurSNUtils::isTrue)
+                                .filter(r -> turSolrInstance != null)
                                 .ifPresent(r -> turSNSpotlightProcess.addSpotlightToResults(context,
                                                 turSolrInstance, turSNSite, facetMap, fieldExtMap,
                                                 turSNSiteSearchDocumentsBean));
@@ -558,8 +568,9 @@ public class TurSNSearchProcess {
                                                 facetMap, turSEResults))
                                 .setFacetToRemove(responseFacetToRemove(context, turSNSite))
                                 .setSimilar(responseMLT(turSNSite, turSEResults))
-                                .setSpellCheck(new TurSNSiteSpellCheckBean(context,
-                                                turSEResults.getSpellCheck()))
+                                .setSpellCheck(turSEResults.getSpellCheck() != null
+                                                ? new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck())
+                                                : new TurSNSiteSpellCheckBean())
                                 .setLocales(responseLocales(turSNSite, context.getUri()))
                                 .setSpotlights(responseSpotlights(context, turSNSite))
                                 .setCleanUpFacets(responseCleanUpFacet(context, turSNSite))
@@ -783,7 +794,8 @@ public class TurSNSearchProcess {
                 if (facetTypeAndFacetItemTypeValues.equals(AND_OR)
                                 && turSolrQueryBuilder.getFqFields(turSNFacetTypeContext.getTurSNFilterParams())
                                                 .contains(facetName)) {
-                        TurSearchEnginePlugin plugin = searchEnginePluginFactory.getDefaultPlugin();
+                        TurSearchEnginePlugin plugin = searchEnginePluginFactory
+                                        .getPluginForSite(turSNFacetTypeContext.getTurSNSite());
                         TurSEFacetResult turSEFacetResult = plugin
                                         .retrieveFacetResults(getContextSearchFacet(context, facetName),
                                                         facetName)

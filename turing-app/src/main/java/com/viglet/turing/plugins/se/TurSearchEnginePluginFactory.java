@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
  * agreements. See the NOTICE file distributed with this work for additional information regarding
@@ -16,17 +16,19 @@
  */
 package com.viglet.turing.plugins.se;
 
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Factory for creating and selecting search engine plugins based on configuration.
+ * Factory for selecting search engine plugins based on the site's SE instance vendor.
  *
  * @author Alexandre Oliveira
  * @since 2025.4.4
@@ -36,53 +38,51 @@ import java.util.stream.Collectors;
 public class TurSearchEnginePluginFactory {
 
     private final Map<String, TurSearchEnginePlugin> pluginMap;
-    private final String defaultEngineType;
 
-    public TurSearchEnginePluginFactory(
-            List<TurSearchEnginePlugin> plugins,
-            @Value("${turing.search.engine.type:solr}") String defaultEngineType) {
+    public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins) {
         this.pluginMap = plugins.stream()
                 .collect(Collectors.toMap(
                         plugin -> plugin.getPluginType().toLowerCase(),
                         Function.identity()));
-        this.defaultEngineType = defaultEngineType;
-        log.info("Initialized TurSearchEnginePluginFactory with {} plugins. Default engine: {}",
-                pluginMap.size(), defaultEngineType);
+        log.info("Initialized TurSearchEnginePluginFactory with {} plugins.", pluginMap.size());
         pluginMap.keySet().forEach(type -> log.info("Registered plugin: {}", type));
     }
 
     /**
-     * Gets the configured default search engine plugin.
+     * Resolves the search engine plugin for the given SN site by inspecting its
+     * SE instance vendor plugin type.
      *
-     * @return the default search engine plugin
-     * @throws IllegalStateException if the configured plugin is not found
+     * @param turSNSite the SN site whose SE instance defines the engine
+     * @return the matching plugin, or Solr as fallback
      */
-    public TurSearchEnginePlugin getDefaultPlugin() {
-        return getPlugin(defaultEngineType);
+    public TurSearchEnginePlugin getPluginForSite(TurSNSite turSNSite) {
+        String pluginType = Optional.ofNullable(turSNSite)
+                .map(TurSNSite::getTurSEInstance)
+                .map(i -> i.getTurSEVendor())
+                .map(v -> StringUtils.isNotBlank(v.getPlugin()) ? v.getPlugin() : v.getId())
+                .orElse("solr");
+        return getPlugin(pluginType);
     }
 
     /**
      * Gets a specific search engine plugin by type.
      *
-     * @param engineType the type of search engine (e.g., "solr", "elasticsearch")
+     * @param engineType the type of search engine (e.g., "solr", "lucene")
      * @return the search engine plugin
      * @throws IllegalStateException if the plugin is not found
      */
     public TurSearchEnginePlugin getPlugin(String engineType) {
         TurSearchEnginePlugin plugin = pluginMap.get(engineType.toLowerCase());
         if (plugin == null) {
-            throw new IllegalStateException(
-                    "Search engine plugin '" + engineType + "' not found. Available plugins: " + pluginMap.keySet());
+            log.warn("Search engine plugin '{}' not found, falling back to 'solr'. Available: {}",
+                    engineType, pluginMap.keySet());
+            plugin = pluginMap.get("solr");
+            if (plugin == null) {
+                throw new IllegalStateException(
+                        "Search engine plugin '" + engineType + "' not found and no 'solr' fallback available. " +
+                        "Available plugins: " + pluginMap.keySet());
+            }
         }
         return plugin;
-    }
-
-    /**
-     * Gets the default engine type configured.
-     *
-     * @return the default engine type
-     */
-    public String getDefaultEngineType() {
-        return defaultEngineType;
     }
 }

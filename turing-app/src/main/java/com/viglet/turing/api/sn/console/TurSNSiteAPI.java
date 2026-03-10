@@ -111,8 +111,9 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Show a Semantic Navigation Site")
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public TurSNSiteDto turSNSiteGet(@PathVariable String id) {
-        return turSNSiteMapper.toDto(this.turSNSiteRepository.findById(id).orElse(new TurSNSite()));
+        return turSNSiteMapper.toDto(this.turSNSiteRepository.findByIdNoCache(id).orElse(new TurSNSite()));
     }
 
     @Operation(summary = "Update a Semantic Navigation Site")

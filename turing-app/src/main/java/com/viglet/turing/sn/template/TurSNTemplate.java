@@ -64,6 +64,7 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepositor
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.lucene.TurLuceneUtils;
 import com.viglet.turing.solr.TurSolrUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -142,6 +143,10 @@ public class TurSNTemplate {
                 Optional<TurSEInstance> turSEInstance = turSEInstanceRepository
                                 .findById(turSNSiteLocale.getTurSNSite().getTurSEInstance().getId());
                 turSEInstance.ifPresent(instance -> {
+                        if (TurSolrUtils.isLuceneEngine(instance)) {
+                                TurLuceneUtils.createCore(instance.getEndpointUrl(), coreName);
+                                return;
+                        }
                         String configSet = turSNSiteLocale.getLanguage().getLanguage();
                         String[] locales = { "en", "es", "pt" };
                         if (!Arrays.asList(locales).contains(configSet)) {

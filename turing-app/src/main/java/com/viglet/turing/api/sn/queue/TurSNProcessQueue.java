@@ -55,6 +55,8 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
+import com.viglet.turing.lucene.TurLucene;
+import com.viglet.turing.lucene.TurLuceneInstanceProcess;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -70,9 +72,11 @@ public class TurSNProcessQueue {
     public static final String INDEXED = "Indexed";
     public static final String DEINDEXED = "Deindexed";
     private final TurSolr turSolr;
+    private final TurLucene turLucene;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
+    private final TurLuceneInstanceProcess turLuceneInstanceProcess;
     private final TurSNMergeProvidersProcess turSNMergeProvidersProcess;
     private final TurSNSpotlightProcess turSNSpotlightProcess;
     private final TurSNSiteFieldRepository turSNSiteFieldRepository;
@@ -80,9 +84,11 @@ public class TurSNProcessQueue {
     private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
     private final TurSEInstanceRepository turSEInstanceRepository;
 
-    public TurSNProcessQueue(TurSolr turSolr, TurSNSiteRepository turSNSiteRepository,
+    public TurSNProcessQueue(TurSolr turSolr, TurLucene turLucene,
+            TurSNSiteRepository turSNSiteRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSolrInstanceProcess turSolrInstanceProcess,
+            TurLuceneInstanceProcess turLuceneInstanceProcess,
             TurSNMergeProvidersProcess turSNMergeProvidersProcess,
             TurSNSpotlightProcess turSNSpotlightProcess,
             TurSNSiteFieldRepository turSNSiteFieldRepository,
@@ -90,9 +96,11 @@ public class TurSNProcessQueue {
             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
             TurSEInstanceRepository turSEInstanceRepository) {
         this.turSolr = turSolr;
+        this.turLucene = turLucene;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSolrInstanceProcess = turSolrInstanceProcess;
+        this.turLuceneInstanceProcess = turLuceneInstanceProcess;
         this.turSNMergeProvidersProcess = turSNMergeProvidersProcess;
         this.turSNSpotlightProcess = turSNSpotlightProcess;
         this.turSNSiteFieldRepository = turSNSiteFieldRepository;
@@ -149,6 +157,10 @@ public class TurSNProcessQueue {
     }
 
     private boolean commitJob(TurSNSite turSNSite, TurSNJobItem turSNJobItem) {
+        if (isLuceneSite(turSNSite)) {
+            // Lucene commits are synchronous — nothing extra needed
+            return true;
+        }
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
                 .map(turSolr::commit).orElse(false);
@@ -194,8 +206,26 @@ public class TurSNProcessQueue {
                 turSNJobItem.getLocale());
     }
 
+    private boolean isLuceneSite(TurSNSite turSNSite) {
+        return turSEInstanceRepository.findById(turSNSite.getTurSEInstance().getId())
+                .map(TurSolrUtils::isLuceneEngine)
+                .orElse(false);
+    }
+
     public boolean deIndex(TurSNJobItem turSNJobItem, TurSNSite turSNSite) {
         log.debug("DeIndex");
+        if (isLuceneSite(turSNSite)) {
+            return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
+                    .map(luceneInstance -> {
+                        if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.ID)) {
+                            turLucene.deIndexing(luceneInstance, turSNJobItem.getId());
+                        } else if (turSNJobItem.getAttributes().containsKey(TurSNFieldName.TYPE)) {
+                            turLucene.deIndexingByType(luceneInstance,
+                                    (String) turSNJobItem.getAttributes().get(TurSNFieldName.TYPE));
+                        }
+                        return true;
+                    }).orElse(false);
+        }
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
                 .map(turSolrInstance -> {
@@ -213,6 +243,13 @@ public class TurSNProcessQueue {
         Map<String, Object> attributes = this.removeDuplicateTerms(turSNMergeProvidersProcess.mergeDocuments(turSNSite,
                 getConsolidateResults(turSNJobItem), turSNJobItem.getLocale()));
         createMissingFields(turSNSite, turSNJobItem.getSpecs());
+        if (isLuceneSite(turSNSite)) {
+            return turLuceneInstanceProcess.initLuceneInstance(turSNSite.getName(), turSNJobItem.getLocale())
+                    .map(luceneInstance -> {
+                        turLucene.indexing(luceneInstance, turSNSite, attributes);
+                        return true;
+                    }).orElse(false);
+        }
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), turSNJobItem.getLocale())
                 .map(turSolrInstance -> {
@@ -221,7 +258,6 @@ public class TurSNProcessQueue {
                                     attributes));
                     return true;
                 }).orElse(false);
-
     }
 
     private void createMissingFields(TurSNSite turSNSite,

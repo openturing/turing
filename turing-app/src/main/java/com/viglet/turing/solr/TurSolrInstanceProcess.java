@@ -60,6 +60,9 @@ public class TurSolrInstanceProcess {
     }
 
     private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
+        if (TurSolrUtils.isLuceneEngine(turSEInstance)) {
+            return Optional.empty();
+        }
         String baseUrl = turSEInstance.getEndpointUrl();
         HttpJdkSolrClient httpSolrClient = clientCache.computeIfAbsent(baseUrl, url -> {
             log.info("Starting Solr connection pool for URL: {}", url);

@@ -112,8 +112,6 @@ turing:
   elasticsearch:
     timeout: 30000
   search:
-    engine:
-      type: solr
     metrics.enabled: true
     cache:
       ttl:

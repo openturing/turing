@@ -50,7 +50,7 @@ public class TurSEVendorOnStartup {
 			TurSEVendor lucene = new TurSEVendor();
 			lucene.setId("LUCENE");
 			lucene.setDescription("Apache Lucene");
-			lucene.setPlugin("");
+			lucene.setPlugin("lucene");
 			lucene.setTitle("Apache Lucene");
 			lucene.setWebsite("https://lucene.apache.org");
 			turSEVendorRepository.save(lucene);

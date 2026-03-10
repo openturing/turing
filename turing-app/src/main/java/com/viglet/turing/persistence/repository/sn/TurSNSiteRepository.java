@@ -29,7 +29,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 
 public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
@@ -48,6 +49,9 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 
 	@Cacheable("turSNSitefindByName")
 	Optional<TurSNSite> findByName(String name);
+
+	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
+	Optional<TurSNSite> findByIdNoCache(@Param("id") String id);
 
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
 			"turSNSitefindByName" }, allEntries = true)

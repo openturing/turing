@@ -191,7 +191,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchReturnsEmptyWhenPluginReturnsEmpty() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.empty());
 
                 assertThat(process(false).search(context("java")).getResults()).isNull();
@@ -200,7 +200,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchReturnsEmptyWhenSolrInstanceMissing() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(TurSEResults.builder().build()));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
 
@@ -210,7 +210,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListReturnsEmptyWhenPluginReturnsEmpty() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.empty());
 
                 assertThat(process(false).searchList(context("java"))).isEmpty();
@@ -219,7 +219,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListReturnsEmptyWhenSolrInstanceMissing() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(TurSEResults.builder().build()));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
 
@@ -322,7 +322,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchBuildsResultsWidgetAndPagination() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -402,7 +402,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchBuildsGroupedResponseWhenGroupEnabled() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -461,7 +461,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListReturnsMappedObjectsForMultipleFields() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setName("site");
@@ -499,7 +499,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListUsesDefaultSingleFieldAndSkipsNullValues() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setName("site");
@@ -526,7 +526,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchWidgetIncludesSpotlights() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -581,7 +581,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchFacetAndOrUsesRetrieveFacetResults() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -654,7 +654,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchSecondaryFacetAndFacetItemAndLinks() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -726,7 +726,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchUsesDefaultFacetTypesWhenNullAndHidesSelectedFacetForNullItemType() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -793,7 +793,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchShowAllFacetItemsCreatesUnselectedOrLink() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -861,7 +861,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchFacetToRemoveUsesQuotedFilterValueLabel() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -924,7 +924,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchAndOrShowsSelectedFacetWithZeroCount() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
@@ -993,7 +993,7 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchHidesSelectedFacetWhenFacetItemTypeAnd() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getDefaultPlugin()).thenReturn(plugin);
+                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
                 TurSNSite site = new TurSNSite();
                 site.setId("site-id");
