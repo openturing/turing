@@ -1,0 +1,1 @@
+mvn clean install -pl turing-app -Dskip.npm -Dmaven.test.skip=true

@@ -151,6 +151,43 @@ databaseChangeLog:
             where: id = 'MILVUS'
 
   # --- Widen vendor ID columns for longer codes (e.g. AZURE_OPENAI, GEMINI_OPENAI) ---
+  # MySQL requires dropping the FK on llm_instance.llm_vendor_id before widening llm_vendor.id (PK).
+  # Dynamic SQL via information_schema avoids depending on the auto-generated Hibernate FK name.
+  # NOTE: dbms: mysql is on the sql change (execution filter), NOT on preConditions (which would cause
+  #       Liquibase to MARK_RAN the entire changeset instead of running the MySQL-specific SQL).
+  - changeSet:
+      id: v2026.1.11-04c-drop-llm-instance-vendor-fk
+      author: viglet-team
+      changes:
+        - sql:
+            dbms: mysql
+            splitStatements: true
+            endDelimiter: ";"
+            sql: |
+              SET @__fk = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'llm_instance'
+                AND COLUMN_NAME = 'llm_vendor_id' AND REFERENCED_TABLE_NAME = 'llm_vendor' LIMIT 1);
+              SET @__drop = IF(@__fk IS NOT NULL, CONCAT('ALTER TABLE llm_instance DROP FOREIGN KEY `', @__fk, '`'), 'SELECT 1');
+              PREPARE __s FROM @__drop;
+              EXECUTE __s;
+              DEALLOCATE PREPARE __s;
+
+  # 04d: retry drop — 04c was recorded as a no-op due to a preConditions/dbms bug.
+  # Uses foreignKeyConstraintExists so it gracefully MARK_RAN if FK name differs across environments.
+  - changeSet:
+      id: v2026.1.11-04d-drop-llm-instance-vendor-fk-retry
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        foreignKeyConstraintExists:
+          foreignKeyTableName: llm_instance
+          foreignKeyName: FK6p80ubeofka7up7hvxa8xct2d
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: llm_instance
+            constraintName: FK6p80ubeofka7up7hvxa8xct2d
+
   - changeSet:
       id: v2026.1.11-05-widen-llm-vendor-id
       author: viglet-team
@@ -168,6 +205,25 @@ databaseChangeLog:
             tableName: llm_instance
             columnName: llm_vendor_id
             newDataType: VARCHAR(20)
+
+  # Re-add with an explicit, stable name instead of the Hibernate-generated hash.
+  - changeSet:
+      id: v2026.1.14-00b-readd-llm-vendor-fk
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        not:
+          - foreignKeyConstraintExists:
+              foreignKeyTableName: llm_instance
+              foreignKeyName: fk_llm_instance_vendor_id
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: llm_instance
+            baseColumnNames: llm_vendor_id
+            referencedTableName: llm_vendor
+            referencedColumnNames: id
+            constraintName: fk_llm_instance_vendor_id
 
   # --- New LLM vendors ---
   - changeSet:
