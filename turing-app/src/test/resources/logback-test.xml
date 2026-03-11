@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -- %msg%n</Pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.hc" level="OFF"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="liquibase" level="WARN"/>
+    <logger name="com.hazelcast" level="WARN"/>
+    <logger name="org.apache.solr" level="WARN"/>
+    <logger name="co.elastic" level="WARN"/>
+    <logger name="com.viglet.turing" level="OFF"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
