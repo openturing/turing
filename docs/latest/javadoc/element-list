@@ -65,6 +65,7 @@ com.viglet.turing.genai.provider.store
 com.viglet.turing.genai.tool
 com.viglet.turing.jpa
 com.viglet.turing.logging
+com.viglet.turing.lucene
 com.viglet.turing.onstartup
 com.viglet.turing.onstartup.auth
 com.viglet.turing.onstartup.llm
@@ -140,6 +141,7 @@ com.viglet.turing.persistence.repository.system
 com.viglet.turing.persistence.utils
 com.viglet.turing.plugins.se
 com.viglet.turing.plugins.se.elasticsearch
+com.viglet.turing.plugins.se.lucene
 com.viglet.turing.plugins.se.solr
 com.viglet.turing.properties
 com.viglet.turing.se
