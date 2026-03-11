@@ -54,7 +54,8 @@ class TurGlobalSettingsServiceTest {
         nullValue.setValue(null);
 
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(invalid), Optional.of(nullValue));
+                .thenReturn(Optional.of(invalid))
+                .thenReturn(Optional.of(nullValue));
 
         TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
 
