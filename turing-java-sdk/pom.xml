@@ -46,12 +46,10 @@
         <dependency>
             <groupId>com.viglet.turing</groupId>
             <artifactId>turing-commons</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.5.0-jre</version>
         </dependency>
         <dependency>
             <groupId>tools.jackson.core</groupId>

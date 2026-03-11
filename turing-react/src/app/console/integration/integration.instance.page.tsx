@@ -10,6 +10,7 @@ import {
     IconCloudUpload,
     IconGitCommit,
     IconGraph,
+    IconListCheck,
     IconPlugConnectedX,
     IconPlus,
     IconSettings,
@@ -69,6 +70,11 @@ const data = {
             title: "Monitoring",
             url: "/monitoring",
             icon: IconGraph,
+        },
+        {
+            title: "Double Check",
+            url: "/double-check",
+            icon: IconListCheck,
         },
     ],
 }

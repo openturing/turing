@@ -1,0 +1,90 @@
+databaseChangeLog:
+  # --- Make description nullable on se_instance ---
+  - changeSet:
+      id: 2026.1.12-01-se-instance-description-nullable
+      author: viglet-team
+      preconditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: se_instance
+            columnName: description
+      changes:
+        - dropNotNullConstraint:
+            tableName: se_instance
+            columnName: description
+            columnDataType: VARCHAR(255)
+
+  # --- Make description nullable on store_instance ---
+  - changeSet:
+      id: 2026.1.12-02-store-instance-description-nullable
+      author: viglet-team
+      preconditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: store_instance
+            columnName: description
+      changes:
+        - dropNotNullConstraint:
+            tableName: store_instance
+            columnName: description
+            columnDataType: VARCHAR(255)
+
+  # --- Make description nullable on sn_site ---
+  - changeSet:
+      id: 2026.1.12-03-sn-site-description-nullable
+      author: viglet-team
+      preconditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site
+            columnName: description
+      changes:
+        - dropNotNullConstraint:
+            tableName: sn_site
+            columnName: description
+            columnDataType: VARCHAR(255)
+
+  # --- Make description nullable on integration_instance ---
+  - changeSet:
+      id: 2026.1.12-04-integration-instance-description-nullable
+      author: viglet-team
+      preconditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: integration_instance
+            columnName: description
+      changes:
+        - dropNotNullConstraint:
+            tableName: integration_instance
+            columnName: description
+            columnDataType: VARCHAR(255)
+
+  # --- Add Elasticsearch SE Vendor if table is not empty ---
+  - changeSet:
+      id: 2026.1.12-05-add-elasticsearch-se-vendor
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM se_vendor"
+      changes:
+        - insert:
+            tableName: se_vendor
+            columns:
+              - column:
+                  name: id
+                  value: ES
+              - column:
+                  name: description
+                  value: Elasticsearch
+              - column:
+                  name: plugin
+                  value: elasticsearch
+              - column:
+                  name: title
+                  value: Elasticsearch
+              - column:
+                  name: website
+                  value: "https://www.elastic.co"

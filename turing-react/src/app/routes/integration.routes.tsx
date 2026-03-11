@@ -1,5 +1,6 @@
 import { Navigate, Route, useParams } from "react-router-dom"
 import IntegrationInstanceDetailPage from "../console/integration/integration.instance.detail.page"
+import IntegrationInstanceDoubleCheckPage from "../console/integration/integration.instance.double.check.page"
 import IntegrationInstanceIndexAdminPage from "../console/integration/integration.instance.indexing.manager.page"
 import IntegrationInstanceIndexingRulesListPage from "../console/integration/integration.instance.indexing.rules.list.page"
 import IntegrationInstanceIndexingRulesPage from "../console/integration/integration.instance.indexing.rules.page"
@@ -33,6 +34,7 @@ export const IntegrationRoutes = (
                 <Route index element={<Navigate to="all" replace />} />
                 <Route path=":source" element={<IntegrationInstanceMonitoringPage />} />
             </Route>
+            <Route path="double-check" element={<IntegrationInstanceDoubleCheckPage />} />
         </Route>
     </Route>
 )
