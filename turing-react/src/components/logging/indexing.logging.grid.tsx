@@ -1,13 +1,13 @@
 import {
     flexRender,
     getCoreRowModel,
-    getPaginationRowModel,
     useReactTable,
     type ColumnDef,
 } from "@tanstack/react-table";
-import { useState, type PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -28,6 +28,7 @@ import type { TurLoggingIndexing } from "@/models/logging/logging-indexing.model
 import { formatDistanceToNow } from "date-fns";
 import { ArrowRightCircle, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { IconSearch } from "@tabler/icons-react";
 import { BadgeColorful } from "../badge-colorful";
 import { BadgeLocale } from "../badge-locale";
 import { Badge } from "../ui/badge";
@@ -35,6 +36,24 @@ import { GradientButton } from "../ui/gradient-button";
 
 interface Props {
     gridItemList: TurLoggingIndexing[];
+    page: number;
+    totalPages: number;
+    totalElements: number;
+    pageSize: number;
+    dateFrom: string;
+    dateTo: string;
+    status: string;
+    contentId: string;
+    resultStatus: string;
+    url: string;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (pageSize: number) => void;
+    onDateFromChange: (dateFrom: string) => void;
+    onDateToChange: (dateTo: string) => void;
+    onStatusChange: (status: string) => void;
+    onContentIdChange: (contentId: string) => void;
+    onResultStatusChange: (resultStatus: string) => void;
+    onUrlChange: (url: string) => void;
 }
 
 export const columns: ColumnDef<TurLoggingIndexing>[] = [
@@ -258,27 +277,106 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     }
 ];
 
+const STATUS_OPTIONS = [
+    "", "PREPARE_INDEX", "PREPARE_UNCHANGED", "PREPARE_REINDEX", "PREPARE_FORCED_REINDEX",
+    "RECEIVED_AND_SENT_TO_TURING", "SENT_TO_QUEUE", "RECEIVED_FROM_QUEUE",
+    "INDEXED", "FINISHED", "DEINDEXED", "NOT_PROCESSED", "IGNORED"
+];
 
-export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) => {
-    const [pagination, setPagination] = useState({
-        pageIndex: 0, // initial page index
-        pageSize: 100, // default page size
-    });
+const RESULT_STATUS_OPTIONS = ["", "SUCCESS", "ERROR"];
 
+export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
+    gridItemList, page, totalPages, totalElements, pageSize,
+    dateFrom, dateTo, status, contentId, resultStatus, url,
+    onPageChange, onPageSizeChange, onDateFromChange, onDateToChange,
+    onStatusChange, onContentIdChange, onResultStatusChange, onUrlChange
+}) => {
     const table = useReactTable({
         data: gridItemList,
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onPaginationChange: setPagination,
+        manualPagination: true,
+        pageCount: totalPages,
         state: {
-            pagination,
+            pagination: { pageIndex: page, pageSize },
         },
     });
 
     return (
         <div className="px-4">
             <Card>
+                <div className="flex flex-wrap items-center gap-3 p-4 border-b">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+                        <Select value={status} onValueChange={onStatusChange}>
+                            <SelectTrigger className="h-8 w-44 text-xs font-mono">
+                                <SelectValue placeholder="All" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {STATUS_OPTIONS.map((s) => (
+                                    <SelectItem key={s || "all"} value={s || "all"} className="text-xs">
+                                        {s || "All"}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">Result:</span>
+                        <Select value={resultStatus} onValueChange={onResultStatusChange}>
+                            <SelectTrigger className="h-8 w-28 text-xs font-mono">
+                                <SelectValue placeholder="All" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {RESULT_STATUS_OPTIONS.map((s) => (
+                                    <SelectItem key={s || "all"} value={s || "all"} className="text-xs">
+                                        {s || "All"}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">From:</span>
+                        <Input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => onDateFromChange(e.target.value)}
+                            className="h-8 w-36 text-xs font-mono"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">To:</span>
+                        <Input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => onDateToChange(e.target.value)}
+                            className="h-8 w-36 text-xs font-mono"
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 p-4 border-b">
+                    <div className="flex items-center gap-2 flex-1 min-w-48">
+                        <IconSearch className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Search content ID..."
+                            value={contentId}
+                            onChange={(e) => onContentIdChange(e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-48">
+                        <IconSearch className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="text"
+                            placeholder="Search URL..."
+                            value={url}
+                            onChange={(e) => onUrlChange(e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                </div>
                 <div className="rounded-md">
                     <Table>
                         <TableHeader >
@@ -305,7 +403,6 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({ gridIt
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && "selected"}
-
                                     >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell key={cell.id} className="px-5 py-3 text-sm">
@@ -324,50 +421,52 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({ gridIt
                         </TableBody>
                     </Table>
                 </div>
-                <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
-                    <div className="flex items-center space-x-2">
-                        <p >Rows per page</p>
-                        <Select
-                            value={`${table.getState().pagination.pageSize}`}
-                            onValueChange={(value) => {
-                                table.setPageSize(Number(value))
-                            }}
-                        >
-                            <SelectTrigger className="h-8 w-17.5">
-                                <SelectValue placeholder={table.getState().pagination.pageSize} />
-                            </SelectTrigger>
-                            <SelectContent side="top">
-                                {[10, 20, 30, 40, 50, 100].map((pageSize) => (
-                                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                                        {pageSize}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                <div className="flex items-center justify-between py-4 px-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                        {totalElements} total records
                     </div>
-                    <div className="flex w-25 items-center justify-center text-sm font-medium">
-                        Page {table.getState().pagination.pageIndex + 1} of{" "}
-                        {table.getPageCount()}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <GradientButton
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
-                            className="h-8 w-8 p-0"
-                        >
-                            <span>&lt;</span>
-                        </GradientButton>
-                        <GradientButton
-                            variant="outline"
-                            size="sm"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
-                            className="h-8 w-8 p-0"
-                        >
-                            <span>&gt;</span>
-                        </GradientButton>
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                            <p className="text-sm">Rows per page</p>
+                            <Select
+                                value={`${pageSize}`}
+                                onValueChange={(value) => onPageSizeChange(Number(value))}
+                            >
+                                <SelectTrigger className="h-8 w-17.5">
+                                    <SelectValue placeholder={pageSize} />
+                                </SelectTrigger>
+                                <SelectContent side="top">
+                                    {[10, 20, 30, 40, 50, 100].map((ps) => (
+                                        <SelectItem key={ps} value={`${ps}`}>
+                                            {ps}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex w-25 items-center justify-center text-sm font-medium">
+                            Page {page + 1} of{" "}{totalPages || 1}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <GradientButton
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onPageChange(page - 1)}
+                                disabled={page <= 0}
+                                className="h-8 w-8 p-0"
+                            >
+                                <span>&lt;</span>
+                            </GradientButton>
+                            <GradientButton
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onPageChange(page + 1)}
+                                disabled={page >= totalPages - 1}
+                                className="h-8 w-8 p-0"
+                            >
+                                <span>&gt;</span>
+                            </GradientButton>
+                        </div>
                     </div>
                 </div>
             </Card>

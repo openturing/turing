@@ -1,20 +1,22 @@
 package com.viglet.turing.api.logging;
 
 import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -45,39 +47,193 @@ public class TurLoggingAPI {
 
     @Operation(summary = "Server Logging")
     @GetMapping
-    public List<Document> serverLogging() {
-        return getDocuments(serverCollectionName);
+    public Map<String, Object> serverLogging(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int pageSize,
+            @RequestParam(required = false) String level,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String search) {
+        return getGeneralDocuments(serverCollectionName, page, pageSize, level, dateFrom, dateTo, search);
     }
 
     @Operation(summary = "Indexing Logging")
     @GetMapping("indexing")
-    public List<Document> indexingLogging() {
-        return getDocuments(indexingCollectionName);
+    public Map<String, Object> indexingLogging(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int pageSize,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String contentId,
+            @RequestParam(required = false) String resultStatus,
+            @RequestParam(required = false) String url) {
+        return getIndexingDocuments(indexingCollectionName, page, pageSize, dateFrom, dateTo,
+                status, contentId, resultStatus, url);
     }
 
     @Operation(summary = "AEM Logging")
     @GetMapping("aem")
-    public List<Document> aemLogging() {
-        return getDocuments(aemCollectionName);
+    public Map<String, Object> aemLogging(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int pageSize,
+            @RequestParam(required = false) String level,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String search) {
+        return getGeneralDocuments(aemCollectionName, page, pageSize, level, dateFrom, dateTo, search);
     }
 
-    private @NotNull List<Document> getDocuments(String ii) {
-        List<Document> documentList = new ArrayList<>();
+    private @NotNull Map<String, Object> getGeneralDocuments(String collectionName, int page, int pageSize,
+                                                              String level, String dateFrom, String dateTo,
+                                                              String search) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("content", Collections.emptyList());
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("totalElements", 0L);
+        result.put("totalPages", 0);
+
         if (!enabled) {
-            return documentList;
+            return result;
         }
+
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             MongoDatabase database = mongoClient.getDatabase(databaseName);
-            MongoCollection<Document> indexingCollection = database.getCollection(ii);
-            indexingCollection.find()
+            MongoCollection<Document> collection = database.getCollection(collectionName);
+
+            List<Bson> filters = new ArrayList<>();
+            addLevelFilter(filters, level);
+            addDateRangeFilter(filters, dateFrom, dateTo);
+            addTextSearchFilter(filters, search, "message", "stackTrace");
+
+            Bson filter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            long totalElements = collection.countDocuments(filter);
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+            int skip = page * pageSize;
+            List<Document> documentList = new ArrayList<>();
+            collection.find(filter)
                     .sort(Sorts.descending(DATE))
-                    .limit(100).forEach(documentList::add);
+                    .skip(skip)
+                    .limit(pageSize)
+                    .forEach(documentList::add);
+
+            Collections.reverse(documentList);
+
+            result.put("content", documentList);
+            result.put("totalElements", totalElements);
+            result.put("totalPages", totalPages);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
-        Collections.reverse(documentList);
-        return documentList;
+        return result;
     }
 
+    private @NotNull Map<String, Object> getIndexingDocuments(String collectionName, int page, int pageSize,
+                                                               String dateFrom, String dateTo,
+                                                               String status, String contentId,
+                                                               String resultStatus, String url) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("content", Collections.emptyList());
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("totalElements", 0L);
+        result.put("totalPages", 0);
 
+        if (!enabled) {
+            return result;
+        }
+
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            MongoDatabase database = mongoClient.getDatabase(databaseName);
+            MongoCollection<Document> collection = database.getCollection(collectionName);
+
+            List<Bson> filters = new ArrayList<>();
+            addDateRangeFilter(filters, dateFrom, dateTo);
+            addExactFilter(filters, "status", status);
+            addRegexFilter(filters, "contentId", contentId);
+            addExactFilter(filters, "resultStatus", resultStatus);
+            addRegexFilter(filters, "url", url);
+
+            Bson filter = filters.isEmpty() ? new Document() : Filters.and(filters);
+
+            long totalElements = collection.countDocuments(filter);
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+            int skip = page * pageSize;
+            List<Document> documentList = new ArrayList<>();
+            collection.find(filter)
+                    .sort(Sorts.descending(DATE))
+                    .skip(skip)
+                    .limit(pageSize)
+                    .forEach(documentList::add);
+
+            Collections.reverse(documentList);
+
+            result.put("content", documentList);
+            result.put("totalElements", totalElements);
+            result.put("totalPages", totalPages);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return result;
+    }
+
+    private void addLevelFilter(List<Bson> filters, String level) {
+        if (level != null && !level.isBlank()) {
+            filters.add(Filters.eq("level", level.toUpperCase()));
+        }
+    }
+
+    private void addDateRangeFilter(List<Bson> filters, String dateFrom, String dateTo) {
+        if (dateFrom != null && !dateFrom.isBlank()) {
+            Date from = parseDate(dateFrom, false);
+            if (from != null) {
+                filters.add(Filters.gte(DATE, from));
+            }
+        }
+        if (dateTo != null && !dateTo.isBlank()) {
+            Date to = parseDate(dateTo, true);
+            if (to != null) {
+                filters.add(Filters.lte(DATE, to));
+            }
+        }
+    }
+
+    private void addTextSearchFilter(List<Bson> filters, String search, String... fields) {
+        if (search != null && !search.isBlank()) {
+            List<Bson> orFilters = new ArrayList<>();
+            for (String field : fields) {
+                orFilters.add(Filters.regex(field, search, "i"));
+            }
+            filters.add(Filters.or(orFilters));
+        }
+    }
+
+    private void addExactFilter(List<Bson> filters, String field, String value) {
+        if (value != null && !value.isBlank()) {
+            filters.add(Filters.eq(field, value));
+        }
+    }
+
+    private void addRegexFilter(List<Bson> filters, String field, String value) {
+        if (value != null && !value.isBlank()) {
+            filters.add(Filters.regex(field, value, "i"));
+        }
+    }
+
+    private Date parseDate(String dateStr, boolean endOfDay) {
+        try {
+            LocalDate localDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
+            Instant instant = endOfDay
+                    ? localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
+                    : localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            return Date.from(instant);
+        } catch (Exception e) {
+            log.warn("Invalid date format: {}", dateStr);
+            return null;
+        }
+    }
 }
