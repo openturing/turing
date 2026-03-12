@@ -14,6 +14,9 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  /* Stepper flow animation */
+  --animate-stepper-flow: stepper-flow 3s ease-in-out infinite;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -123,6 +126,33 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes stepper-flow {
+  0% { background-position: 0% 300%; }
+  100% { background-position: 0% 0%; }
+}
+
+.stepper-ready {
+  animation: stepper-ready-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes stepper-ready-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+
+.stepper-line {
+  background: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary), transparent 70%) 40%,
+    var(--color-primary) 60%,
+    color-mix(in srgb, var(--color-primary), transparent 70%) 100%
+  );
+  background-size: 100% 300%;
+  animation: stepper-flow 3s ease-in-out infinite;
 }
 
 @keyframes accordion-down {

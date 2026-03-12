@@ -20,7 +20,8 @@ export function useGridAdapter<T>(
       if (typeof extractor === "function") {
         return extractor(item);
       }
-      return String(item[extractor]);
+      const value = item[extractor];
+      return value === null || value === undefined ? "" : String(value);
     };
 
     const resolveId = (item: T) => {

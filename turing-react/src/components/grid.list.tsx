@@ -1,14 +1,11 @@
 import {
-    flexRender,
-    getCoreRowModel,
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    getCoreRowModel,
     useReactTable,
     type ColumnDef,
-    type ColumnFiltersState,
     type SortingState,
-    type VisibilityState,
 } from "@tanstack/react-table";
 import { useState, type PropsWithChildren } from "react";
 
@@ -20,160 +17,157 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import type { TurGridItem } from "@/models/ui/grid-item";
 import React from "react";
 import { GradientButton } from "./ui/gradient-button";
 import { Input } from "./ui/input";
+import { IconChevronRight, IconSearch } from "@tabler/icons-react";
+import { NavLink } from "react-router-dom";
 
 interface Props {
     gridItemList: TurGridItem[];
 }
 
-export const columns: ColumnDef<TurGridItem>[] = [
-    {
-        accessorKey: "name",
-        header: "Name",
-        cell: ({ row }) => <div>{row.getValue("name")}</div>,
-    },
-    {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => <div>{row.getValue("description")}</div>,
-    },
-    {
-        accessorKey: "url",
-        header: () => <div className="text-center">Actions</div>,
-        cell: ({ row }) => {
-            return (
-                <div className="text-center">
-                    <GradientButton variant="outline" to={row.getValue("url")}>
-                        Open
-                    </GradientButton>
-                </div>
-            );
-        },
-    },
+const GRADIENT_PAIRS = [
+    "from-blue-500 to-indigo-500",
+    "from-emerald-500 to-teal-500",
+    "from-violet-500 to-purple-500",
+    "from-amber-500 to-orange-500",
+    "from-rose-500 to-pink-500",
+    "from-cyan-500 to-sky-500",
+    "from-fuchsia-500 to-pink-500",
+    "from-lime-500 to-emerald-500",
 ];
 
+function getGradient(name: string): string {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = (name.codePointAt(i) ?? 0) + ((hash << 5) - hash);
+    }
+    return GRADIENT_PAIRS[Math.abs(hash) % GRADIENT_PAIRS.length];
+}
+
+function getInitials(name: string): string {
+    return name
+        .split(/[\s\-_]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0].toUpperCase())
+        .join("");
+}
+
+const columns: ColumnDef<TurGridItem>[] = [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "description", header: "Description" },
+    { accessorKey: "url", header: "URL" },
+];
 
 export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) => {
     const [pagination, setPagination] = useState({
-        pageIndex: 0, // initial page index
-        pageSize: 10, // default page size
+        pageIndex: 0,
+        pageSize: 12,
     });
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-        []
-    )
-    const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
-    const [globalFilter, setGlobalFilter] = useState("")
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState("");
+
     const table = useReactTable({
         data: gridItemList,
         columns,
         onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
         state: {
             globalFilter,
             pagination,
             sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
         },
         onGlobalFilterChange: setGlobalFilter,
         getColumnCanGlobalFilter: (column) =>
             column.id === "name" || column.id === "description",
-        onPaginationChange: setPagination
+        onPaginationChange: setPagination,
     });
+
+    const rows = table.getRowModel().rows;
 
     return (
         <div className="px-6">
-            <Card>
-                <div className="rounded-md">
-                    <div className="flex items-center py-4 px-4">
-                        <Input
-                            placeholder="Filter by name or description..."
-                            value={globalFilter ?? ""}
-                            onChange={(event) => {
-                                setGlobalFilter(event.target.value);
-                            }}
-                            className="max-w-sm"
-                        />
-                    </div>
-                    <Table>
-                        <TableHeader >
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => {
-                                        return (
-                                            <TableHead key={header.id} className="px-5">
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                            </TableHead>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
-
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className="px-5 py-3 text-sm">
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={columns.length}>
-                                        No results.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+            <div className="flex items-center gap-3 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                    <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search..."
+                        value={globalFilter ?? ""}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="pl-9"
+                    />
                 </div>
-                <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
+                <span className="text-sm text-muted-foreground">
+                    {table.getFilteredRowModel().rows.length} item{table.getFilteredRowModel().rows.length !== 1 && "s"}
+                </span>
+            </div>
+
+            {rows.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {rows.map((row) => {
+                        const name: string = row.getValue("name");
+                        const description: string = row.getValue("description");
+                        const url: string = row.getValue("url");
+                        const gradient = getGradient(name);
+                        const initials = getInitials(name);
+
+                        return (
+                            <NavLink key={row.id} to={url} className="group">
+                                <Card className="relative overflow-hidden p-0 h-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5 border-border/60 hover:border-blue-500/30 dark:hover:border-blue-400/30">
+                                    <div className={`h-1.5 bg-linear-to-r ${gradient} opacity-70 group-hover:opacity-100 transition-opacity`} />
+                                    <div className="p-4 flex items-start gap-3">
+                                        <div className={`shrink-0 w-10 h-10 rounded-lg bg-linear-to-br ${gradient} flex items-center justify-center text-white text-sm font-semibold shadow-sm`}>
+                                            {initials}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-medium text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                {name}
+                                            </h3>
+                                            {description ? (
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                                    {description}
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground/50 mt-1 italic">
+                                                    No description
+                                                </p>
+                                            )}
+                                        </div>
+                                        <IconChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-blue-500 transition-all group-hover:translate-x-0.5 mt-0.5 shrink-0" />
+                                    </div>
+                                </Card>
+                            </NavLink>
+                        );
+                    })}
+                </div>
+            ) : (
+                <Card className="p-8">
+                    <div className="text-center text-muted-foreground">
+                        <IconSearch className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">No results found</p>
+                    </div>
+                </Card>
+            )}
+
+            {table.getPageCount() > 1 && (
+                <div className="flex items-center justify-end space-x-2 mt-4">
                     <div className="flex items-center space-x-2">
-                        <p >Rows per page</p>
+                        <p className="text-sm text-muted-foreground">Per page</p>
                         <Select
                             value={`${table.getState().pagination.pageSize}`}
-                            onValueChange={(value) => {
-                                table.setPageSize(Number(value))
-                            }}
+                            onValueChange={(value) => table.setPageSize(Number(value))}
                         >
                             <SelectTrigger className="h-8 w-17.5">
                                 <SelectValue placeholder={table.getState().pagination.pageSize} />
                             </SelectTrigger>
                             <SelectContent side="top">
-                                {[10, 20, 30, 40, 50].map((pageSize) => (
+                                {[12, 24, 36, 48].map((pageSize) => (
                                     <SelectItem key={pageSize} value={`${pageSize}`}>
                                         {pageSize}
                                     </SelectItem>
@@ -206,7 +200,7 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
                         </GradientButton>
                     </div>
                 </div>
-            </Card>
-        </div >
+            )}
+        </div>
     );
-}
+};

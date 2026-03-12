@@ -2,8 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { IntegrationIndexingManagerForm } from "@/components/integration/integration.indexing.manager.form";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
 import { TurIntegrationAemSourceService } from "@/services/integration/integration-aem-source.service";
@@ -11,14 +10,12 @@ import {
   IconAdjustmentsSearch,
   IconCloudDownload,
   IconCloudUpload,
-  IconInfoCircle,
   IconPlus,
-  IconTrash
+  IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-// Type alias for tab values
 type IndexingTabMode = "INDEXING" | "DEINDEXING" | "PUBLISHING" | "UNPUBLISHING";
 
 type IndexingTabItem = {
@@ -26,11 +23,63 @@ type IndexingTabItem = {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  activeBorder: string;
+  bgLight: string;
+  bgActive: string;
+  borderActive: string;
   description: string;
-  detailedDescription: string;
-  mode: IndexingTabMode;
+  hint: string;
 };
+
+const items: IndexingTabItem[] = [
+  {
+    value: "INDEXING",
+    title: "Indexing",
+    icon: IconPlus,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgLight: "bg-emerald-50 dark:bg-emerald-950/30",
+    bgActive: "bg-emerald-500",
+    borderActive: "ring-emerald-500/30",
+    description:
+      "Reindex selected content. Already published items will be automatically republished.",
+    hint: "Best for updating stale or inconsistent search results.",
+  },
+  {
+    value: "DEINDEXING",
+    title: "Deindexing",
+    icon: IconTrash,
+    color: "text-red-600 dark:text-red-400",
+    bgLight: "bg-red-50 dark:bg-red-950/30",
+    bgActive: "bg-red-500",
+    borderActive: "ring-red-500/30",
+    description:
+      "Remove content from the search index in all environments.",
+    hint: "Use for obsolete or sensitive content that shouldn't appear in search.",
+  },
+  {
+    value: "PUBLISHING",
+    title: "Publishing",
+    icon: IconCloudUpload,
+    color: "text-blue-600 dark:text-blue-400",
+    bgLight: "bg-blue-50 dark:bg-blue-950/30",
+    bgActive: "bg-blue-500",
+    borderActive: "ring-blue-500/30",
+    description:
+      "Force-publish content to the target environment regardless of current status.",
+    hint: "Useful to push urgent updates live without waiting for the standard flow.",
+  },
+  {
+    value: "UNPUBLISHING",
+    title: "Unpublishing",
+    icon: IconCloudDownload,
+    color: "text-amber-600 dark:text-amber-400",
+    bgLight: "bg-amber-50 dark:bg-amber-950/30",
+    bgActive: "bg-amber-500",
+    borderActive: "ring-amber-500/30",
+    description:
+      "Remove content from the Publish environment while keeping it in Author.",
+    hint: "Content stays editable but becomes invisible to the public.",
+  },
+];
 
 export default function IntegrationInstanceIndexAdminPage() {
   const { id } = useParams() as { id: string };
@@ -41,7 +90,6 @@ export default function IntegrationInstanceIndexAdminPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Tab path mapping
   const tabPathMap: Record<IndexingTabMode, string> = {
     INDEXING: "indexing",
     DEINDEXING: "deindexing",
@@ -49,19 +97,16 @@ export default function IntegrationInstanceIndexAdminPage() {
     UNPUBLISHING: "unpublishing",
   };
 
-  // Reverse mapping
   const pathTabMap: Record<string, IndexingTabMode> = Object.entries(tabPathMap).reduce(
     (acc, [tab, path]) => {
       acc[path] = tab as IndexingTabMode;
       return acc;
     },
-    {} as Record<string, IndexingTabMode>
+    {} as Record<string, IndexingTabMode>,
   );
 
-  // Extract tab from URL
   const pathSegment = location.pathname.split("/").pop();
   const initialTab: IndexingTabMode = pathTabMap[pathSegment ?? ""] || "INDEXING";
-
   const [selectedTab, setSelectedTab] = useState<IndexingTabMode>(initialTab);
 
   useEffect(() => {
@@ -71,11 +116,10 @@ export default function IntegrationInstanceIndexAdminPage() {
     else if (!tab && selectedTab !== "INDEXING") setSelectedTab("INDEXING");
   }, [location.pathname, selectedTab]);
 
-  const handleTabChange = (value: string) => {
-    const mode = value as IndexingTabMode;
+  const handleTabChange = (mode: IndexingTabMode) => {
     setSelectedTab(mode);
     navigate(
-      `/admin/integration/instance/${id}/indexing-manager/${tabPathMap[mode]}`
+      `/admin/integration/instance/${id}/indexing-manager/${tabPathMap[mode]}`,
     );
   };
 
@@ -94,54 +138,7 @@ export default function IntegrationInstanceIndexAdminPage() {
     };
   }, [turIntegrationAemSourceService, pushItem, popItem]);
 
-  const items: IndexingTabItem[] = [
-    {
-      value: "INDEXING",
-      title: "Indexing",
-      icon: IconPlus,
-      mode: "INDEXING",
-      color: "text-green-500",
-      activeBorder: "data-[state=active]:border-green-500",
-      description:
-        "Reindexes the selected content. If the item is already published, it will be automatically republished in the chosen environments.",
-      detailedDescription:
-        "Use this function to ensure the content is up-to-date in the Turing search index. The process supports selection by ID or URL and can be executed in different environments (Author or Publish). After reindexing, the content will be republished if it is already available in the Publish environment. Ideal for fixing inconsistencies or quickly updating indexed content."
-    },
-    {
-      value: "DEINDEXING",
-      title: "Deindexing",
-      icon: IconTrash,
-      mode: "DEINDEXING",
-      color: "text-red-500",
-      activeBorder: "data-[state=active]:border-red-500",
-      description:
-        "Removes the content from the search index, both in the Author and Publish environments.",
-      detailedDescription:
-        "Deindexing removes the content from the Turing index, making it invisible to searches in all selected environments. Use this option to remove obsolete, sensitive, or no longer relevant content from search results. The process is safe and does not affect the original content in AEM."
-    },
-    {
-      value: "PUBLISHING",
-      title: "Publishing",
-      icon: IconCloudUpload,
-      mode: "PUBLISHING",
-      color: "text-blue-500",
-      activeBorder: "data-[state=active]:border-blue-500",
-      description: "Forces the publication of the content in the target environment, regardless of its current status.",
-      detailedDescription:
-        "This action immediately publishes the selected content in the Publish environment, even if it is not yet published in Author. Useful to ensure that updates or new content are available to end users without relying on the standard publication flow."
-    },
-    {
-      value: "UNPUBLISHING",
-      title: "Unpublishing",
-      icon: IconCloudDownload,
-      mode: "UNPUBLISHING",
-      color: "text-orange-500",
-      activeBorder: "data-[state=active]:border-orange-500",
-      description: "Forces the unpublishing of the content, removing it from the air in the Publish environment.",
-      detailedDescription:
-        "Use this function to quickly remove content from the Publish environment, making it inaccessible to the public but keeping it available in Author for future edits. Unpublishing is immediate and independent of the previous content status."
-    }
-  ];
+  const activeItem = items.find((i) => i.value === selectedTab) ?? items[0];
 
   return (
     <LoadProvider
@@ -153,64 +150,73 @@ export default function IntegrationInstanceIndexAdminPage() {
         icon={IconAdjustmentsSearch}
         feature="Indexing Manager"
         name="Indexing Manager"
-        description="Directly manage and override content indexing states to ensure search accuracy."
+        description="Manage content indexing states to ensure search accuracy."
       />
-      <div className="w-full mx-auto mt-6 px-6 pb-6">
-        <Tabs
-          value={selectedTab}
-          onValueChange={handleTabChange}
-          className="w-full"
-        >
-          <TabsList className="w-full h-auto bg-transparent p-0 gap-4 flex-wrap justify-start">
-            {items.map((item) => (
-              <TabsTrigger
+      <div className="w-full mx-auto mt-4 px-6 pb-6 space-y-6">
+        {/* Operation Selector Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {items.map((item) => {
+            const isActive = selectedTab === item.value;
+            return (
+              <button
                 key={item.value}
-                value={item.value}
-                className={`flex-1 min-w-45 max-w-55 flex flex-col items-center gap-2 py-5 px-2 h-auto border-2 border-transparent bg-card shadow-sm hover:bg-accent hover:text-accent-foreground data-[state=active]:shadow-md transition-all ${item.activeBorder}`}
+                type="button"
+                onClick={() => handleTabChange(item.value)}
+                className={[
+                  "relative text-left rounded-xl p-4 transition-all duration-200 cursor-pointer border",
+                  isActive
+                    ? `ring-2 ${item.borderActive} border-transparent shadow-md`
+                    : "border-border/60 hover:border-border hover:shadow-sm",
+                ].join(" ")}
               >
-                <item.icon className={`w-8 h-8 ${item.color}`} />
-                <span className="font-semibold text-base">{item.title}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                {/* Active indicator bar */}
+                <div
+                  className={[
+                    "absolute top-0 left-4 right-4 h-0.5 rounded-b transition-all duration-200",
+                    isActive ? item.bgActive : "bg-transparent",
+                  ].join(" ")}
+                />
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`rounded-lg p-2 ${item.bgLight}`}>
+                    <item.icon className={`w-5 h-5 ${item.color}`} />
+                  </div>
+                  <span className={`font-semibold text-sm ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                    {item.title}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                  {item.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="mt-8 border rounded-xl p-8 bg-card shadow-md">
-            {items.map((item) => (
-              <TabsContent key={item.value} value={item.value} className="mt-0 focus-visible:ring-0">
-                <div className="mb-8 pb-4 border-b flex flex-col md:flex-row md:items-center  gap-4">
-                  <div className="flex items-center gap-3">
-                    <item.icon className={`w-7 h-7 ${item.color}`} />
-                    <span className="text-xl font-semibold">{item.title} Operation</span>
-                    <HoverCard>
-                      <HoverCardTrigger asChild>
-                        <IconInfoCircle className="w-5 h-5 text-muted-foreground cursor-help" />
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80">
-                        <div className="space-y-2">
-                          <h4 className="font-medium leading-none">About {item.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {item.detailedDescription}
-                          </p>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </div>
-                  <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 w-full md:w-auto text-left">
-                    {item.description}
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <p className="text-muted-foreground text-sm">
-                    Configure the parameters for the <span className="font-medium">{item.title.toLowerCase()}</span> operation below.
-                  </p>
-                </div>
-                <div className="rounded-lg p-6 shadow-inner">
-                  <IntegrationIndexingManagerForm integrationId={id} mode={item.mode} sources={sources} />
-                </div>
-              </TabsContent>
-            ))}
+        {/* Active Operation Content */}
+        <Card className="overflow-hidden p-0">
+          {/* Header with colored accent */}
+          <div className={`${activeItem.bgLight} px-6 py-4 border-b`}>
+            <div className="flex items-center gap-3">
+              <div className={`rounded-lg p-2 bg-white dark:bg-background shadow-sm`}>
+                <activeItem.icon className={`w-5 h-5 ${activeItem.color}`} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-base">{activeItem.title}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{activeItem.hint}</p>
+              </div>
+            </div>
           </div>
-        </Tabs>
+
+          {/* Form */}
+          <div className="p-6">
+            <IntegrationIndexingManagerForm
+              key={activeItem.value}
+              integrationId={id}
+              mode={activeItem.value}
+              sources={sources}
+            />
+          </div>
+        </Card>
       </div>
     </LoadProvider>
   );

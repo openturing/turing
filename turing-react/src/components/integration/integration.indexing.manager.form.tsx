@@ -1,10 +1,4 @@
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -13,7 +7,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   Select,
@@ -25,10 +18,18 @@ import {
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
 import type { TurIntegrationIndexingManager } from "@/models/integration/integration-indexing-manager.model";
 import { TurIntegrationIndexingManagerService } from "@/services/integration/integration-indexing-manager.service";
-import { useMemo } from "react";
+import {
+  IconChevronDown,
+  IconHash,
+  IconLink,
+  IconLoader2,
+  IconSettings,
+} from "@tabler/icons-react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { GradientSwitch } from "../ui/gradient-switch";
+import { Stepper } from "../ui/stepper";
 import { DynamicIndexingRuleFields } from "./dynamic.indexing.rule.field";
 
 interface IndexingManagerFormValues {
@@ -44,14 +45,68 @@ interface IntegrationIndexingManagerFormProps {
   sources?: TurIntegrationAemSource[];
 }
 
+const MODE_LABELS: Record<string, string> = {
+  INDEXING: "Index",
+  DEINDEXING: "Deindex",
+  PUBLISHING: "Publish",
+  UNPUBLISHING: "Unpublish",
+};
+
+function AdvancedSettings({ form }: Readonly<{ form: ReturnType<typeof useForm<IndexingManagerFormValues>> }>) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-6 rounded-lg border border-dashed border-muted-foreground/30">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      >
+        <IconSettings className="h-4 w-4" />
+        <span className="font-medium">Advanced Settings</span>
+        <span className="text-xs text-muted-foreground/60 ml-1">Optional</span>
+        <IconChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-4">
+          <FormField
+            control={form.control}
+            name="recursive"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between max-w-md rounded-lg border bg-muted/30 p-4">
+                  <div>
+                    <FormLabel className="text-sm font-semibold">Recursive</FormLabel>
+                    <FormDescription className="mt-0.5">
+                      Also apply to all child pages and assets.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <GradientSwitch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManagerFormProps> = ({
   integrationId,
   mode,
   sources,
 }) => {
+  const [submitting, setSubmitting] = useState(false);
   const turIntegrationIndexingManagerService = useMemo(
     () => new TurIntegrationIndexingManagerService(integrationId),
-    [integrationId]
+    [integrationId],
   );
 
   const form = useForm<IndexingManagerFormValues>({
@@ -63,12 +118,24 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
     },
   });
 
+  const watchSource = form.watch("source");
+  const selectedAttribute = form.watch("attribute");
+  const watchValues = form.watch("values");
+
+  const step1Done = !!watchSource;
+  const step2Done = !!selectedAttribute;
+  const step3Done = Array.isArray(watchValues) && watchValues.some(
+    (v: any) => (typeof v === "object" && v !== null && "value" in v ? v.value : v)?.toString().trim(),
+  );
+
   async function onSubmit(data: IndexingManagerFormValues) {
     try {
       if (!data.attribute) {
         toast.error("Please select a target attribute.");
         return;
       }
+
+      setSubmitting(true);
 
       const isRecursive = data.attribute === "id" && data.recursive;
 
@@ -80,7 +147,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
       };
 
       await turIntegrationIndexingManagerService.submit(data.source, payload);
-      toast.success(`${mode} requested successfully`);
+      toast.success(`${MODE_LABELS[mode]} requested successfully`);
 
       form.reset({
         source: "",
@@ -88,205 +155,156 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
         values: [""],
         recursive: false,
       });
-    } catch (error) {
-      toast.error("Request failed");
-      console.error(error);
+    } catch {
+      toast.error("Request failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  const selectedAttribute = form.watch("attribute");
+  const actionLabel = MODE_LABELS[mode] ?? mode;
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8"
+        className="space-y-0"
         autoComplete="off"
       >
-        <Accordion
-          type="multiple"
-          defaultValue={[
-            "content-source",
-            "target-attribute",
-            "matching-values",
-            "advanced-options",
-          ]}
-          className="space-y-6"
-        >
-          {/* Content Source */}
-          <AccordionItem
-            value="content-source"
-            className="border rounded-lg px-6"
-          >
-            <AccordionTrigger className="text-lg font-semibold">
-              Content Source
-            </AccordionTrigger>
-            <AccordionContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="source"
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <FormItemTwoColumns>
-                    <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Where should we look?</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description>
-                        Choose the content source you want to manage. This is where your indexing or publishing actions will apply.
-                      </FormItemTwoColumns.Description>
-                    </FormItemTwoColumns.Left>
-                    <FormItemTwoColumns.Right>
-                      <FormControl>
-                        <Select
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Pick a source..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sources?.map((s) => (
-                              <SelectItem key={s.id} value={s.name}>
-                                {s.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItemTwoColumns.Right>
-                    <FormMessage />
-                  </FormItemTwoColumns>
-                )}
-              />
-            </AccordionContent>
-          </AccordionItem>
+        <Stepper completedSteps={[step1Done, step2Done, step3Done]}>
+          {/* Step 1: Source */}
+          <Stepper.Step index={0}>
+            <FormField
+              control={form.control}
+              name="source"
+              rules={{ required: true }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-semibold">Content Source</FormLabel>
+                  <FormDescription>
+                    Choose where the content lives.
+                  </FormDescription>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full max-w-md mt-2">
+                        <SelectValue placeholder="Select a source..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sources?.map((s) => (
+                          <SelectItem key={s.id} value={s.name}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Stepper.Step>
 
-          {/* Target Attribute */}
-          <AccordionItem
-            value="target-attribute"
-            className="border rounded-lg px-6"
-          >
-            <AccordionTrigger className="text-lg font-semibold">
-              Target Attribute
-            </AccordionTrigger>
-            <AccordionContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="attribute"
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <FormItemTwoColumns>
-                    <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>How should we match?</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description>
-                        Select how you want to identify items: by their unique Identifier or by their URL.
-                      </FormItemTwoColumns.Description>
-                    </FormItemTwoColumns.Left>
-                    <FormItemTwoColumns.Right>
-                      <FormControl>
-                        <Select
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choose an attribute..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="id">Identifier</SelectItem>
-                            <SelectItem value="url">URL</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItemTwoColumns.Right>
-                    <FormMessage />
-                  </FormItemTwoColumns>
-                )}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Matching Values */}
-          <AccordionItem
-            value="matching-values"
-            className="border rounded-lg px-6"
-          >
-            <AccordionTrigger className="text-lg font-semibold">
-              Matching Values
-            </AccordionTrigger>
-            <AccordionContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="values"
-                rules={{ required: true }}
-                render={() => (
-                  <FormItem>
-                    {/* Label + Description on top */}
-                    <FormLabel>What are you targeting?</FormLabel>
-                    <FormDescription>
-                      Enter one or more values (Identifiers or URLs) to match the items you want to process.
-                    </FormDescription>
-                    <div className="flex flex-row items-center w-full mt-2">
-                      {/* Right: Dynamic Fields */}
-                      <div className="w-full flex justify-end">
-                        <FormControl>
-                          <DynamicIndexingRuleFields
-                            control={form.control}
-                            register={form.register}
-                            fieldName="values"
-                          />
-                        </FormControl>
+          {/* Step 2: Attribute */}
+          <Stepper.Step index={1}>
+            <FormField
+              control={form.control}
+              name="attribute"
+              rules={{ required: true }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-semibold">Match By</FormLabel>
+                  <FormDescription>
+                    How should we identify the content?
+                  </FormDescription>
+                  <div className="grid grid-cols-2 gap-3 max-w-md mt-2">
+                    <button
+                      type="button"
+                      onClick={() => field.onChange("id")}
+                      className={[
+                        "flex items-center gap-3 rounded-lg border p-3 text-left transition-all cursor-pointer",
+                        field.value === "id"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-muted-foreground/30 hover:bg-accent/50",
+                      ].join(" ")}
+                    >
+                      <IconHash className={`h-5 w-5 ${field.value === "id" ? "text-primary" : "text-muted-foreground"}`} />
+                      <div>
+                        <div className="text-sm font-medium">Identifier</div>
+                        <div className="text-xs text-muted-foreground">By unique ID</div>
                       </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </AccordionContent>
-          </AccordionItem>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => field.onChange("url")}
+                      className={[
+                        "flex items-center gap-3 rounded-lg border p-3 text-left transition-all cursor-pointer",
+                        field.value === "url"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-muted-foreground/30 hover:bg-accent/50",
+                      ].join(" ")}
+                    >
+                      <IconLink className={`h-5 w-5 ${field.value === "url" ? "text-primary" : "text-muted-foreground"}`} />
+                      <div>
+                        <div className="text-sm font-medium">URL</div>
+                        <div className="text-xs text-muted-foreground">By content path</div>
+                      </div>
+                    </button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Stepper.Step>
 
-          {/* Advanced Options */}
-          {selectedAttribute === "id" && (
-            <AccordionItem
-              value="advanced-options"
-              className="border rounded-lg px-6"
-            >
-              <AccordionTrigger className="text-lg font-semibold">
-                Advanced Options
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="recursive"
-                  render={({ field }) => (
-                    <FormItemTwoColumns>
-                      <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Include child items?</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description>
-                          Turn this on to also apply the action to all child pages and assets.
-                        </FormItemTwoColumns.Description>
-                      </FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Right>
-                        <FormControl>
-                          <GradientSwitch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItemTwoColumns.Right>
-                      <FormMessage />
-                    </FormItemTwoColumns>
-                  )}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          )}
-        </Accordion>
+          {/* Step 3: Values */}
+          <Stepper.Step index={2}>
+            <FormField
+              control={form.control}
+              name="values"
+              rules={{ required: true }}
+              render={() => (
+                <FormItem>
+                  <FormLabel className="text-base font-semibold">Values</FormLabel>
+                  <FormDescription>
+                    Enter the {selectedAttribute === "url" ? "URLs" : "identifiers"} of the items to {actionLabel.toLowerCase()}.
+                  </FormDescription>
+                  <div className="mt-2">
+                    <FormControl>
+                      <DynamicIndexingRuleFields
+                        control={form.control}
+                        register={form.register}
+                        fieldName="values"
+                      />
+                    </FormControl>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Stepper.Step>
 
-        {/* Action Footer */}
-        <div className="flex justify-end gap-2 pt-4">
-          <GradientButton type="button" variant="outline" onClick={() => form.reset()}>
-            Cancel
+          <Stepper.Completion />
+        </Stepper>
+
+        {/* Advanced Settings — separate from the stepper, only for ID */}
+        {selectedAttribute === "id" && (
+          <AdvancedSettings form={form} />
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <GradientButton
+            type="button"
+            variant="ghost"
+            onClick={() => form.reset()}
+            disabled={submitting}
+          >
+            Reset
           </GradientButton>
-          <GradientButton type="submit">{mode.charAt(0) + mode.slice(1).toLowerCase()}</GradientButton>
+          <GradientButton type="submit" disabled={submitting}>
+            {submitting && <IconLoader2 className="h-4 w-4 animate-spin" />}
+            {actionLabel}
+          </GradientButton>
         </div>
       </form>
     </Form>
