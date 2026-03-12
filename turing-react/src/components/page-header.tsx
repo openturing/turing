@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { IconPlus } from "@tabler/icons-react";
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { ModeToggle } from "./mode-toggle";
@@ -45,20 +46,27 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
             </BreadcrumbList>
           </Breadcrumb>
         ) : (
-          <>
-            {TurIcon && <TurIcon />}
-            <h1 className="text-base font-medium"> {title}</h1>
-          </>
+          <div className="flex items-center gap-2.5">
+            {TurIcon && (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 ring-1 ring-blue-500/10 dark:ring-blue-400/10">
+                <TurIcon className="size-4.5! text-blue-600 dark:text-blue-400" />
+              </div>
+            )}
+            <h1 className="text-base font-semibold">{title}</h1>
+          </div>
         )}
         <div className="ml-auto flex items-center gap-2">
           {urlNew !== undefined && (
             <GradientButton asChild size="sm">
-              <NavLink to={urlNew} className="flex items-center gap-2">{TurIcon && <TurIcon />} New {title}</NavLink>
+              <NavLink to={urlNew} className="flex items-center gap-1.5">
+                <IconPlus className="size-4!" />
+                New {title}
+              </NavLink>
             </GradientButton>
           )}
-          <ModeToggle></ModeToggle>
+          <ModeToggle />
         </div>
       </div>
-    </header >
+    </header>
   )
 }

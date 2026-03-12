@@ -1,3 +1,4 @@
+import { IconPlus } from "@tabler/icons-react";
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { DialogDelete } from "./dialog.delete";
@@ -17,46 +18,45 @@ interface Props {
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, description, urlNew, urlBase, onDelete, open, setOpen }) => {
+  const headerContent = (
+    <div className="flex items-center gap-3">
+      {Icon && (
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 ring-1 ring-blue-500/10 dark:ring-blue-400/10">
+          <Icon className="size-5! text-blue-600 dark:text-blue-400" />
+        </div>
+      )}
+      <div className="min-w-0">
+        <h1 className="text-base font-semibold leading-tight text-foreground">{feature}</h1>
+        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{description}</p>
+      </div>
+    </div>
+  );
+
   return (
     <header className="mb-5">
-      <div className="flex w-full items-start gap-3 px-4 lg:px-6">
-        <div className="flex items-center gap-1 pt-1">
+      <div className="flex w-full items-center gap-3 px-4 lg:px-6">
+        <div className="flex items-center gap-1">
           <SidebarTrigger className="-ml-1" />
           <Separator
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
           />
         </div>
-        <div className="min-w-0 flex-1 pt-1">
+        <div className="min-w-0 flex-1">
           {urlBase ? (
-            <NavLink
-              to={urlBase}
-              className="flex flex-wrap items-center gap-x-2 gap-y-1"
-            >
-              <span className="flex items-center gap-2">
-                {Icon && <Icon className="size-6!" />}
-                <h1 className="text-base font-semibold leading-none text-foreground">{feature}</h1>
-              </span>
-              <span className="translate-y-0.5 text-sm text-muted-foreground leading-relaxed">
-                {description}
-              </span>
+            <NavLink to={urlBase} className="group inline-flex">
+              {headerContent}
             </NavLink>
           ) : (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="flex items-center gap-2">
-                {Icon && <Icon className="size-6!" />}
-                <h1 className="text-base font-semibold leading-none text-foreground">{feature}</h1>
-                <span className="text-muted-foreground leading-none"> {description}
-                </span>
-              </span>
-            </div>
+            headerContent
           )}
         </div>
         <div className="flex items-center gap-2">
           {urlNew !== undefined && (
-            <GradientButton asChild size={"sm"}>
-              <NavLink to={urlNew} className="flex items-center gap-2">
-                {Icon && <Icon className="size-6!" />} New {feature}
+            <GradientButton asChild size="sm">
+              <NavLink to={urlNew} className="flex items-center gap-1.5">
+                <IconPlus className="size-4!" />
+                New {feature}
               </NavLink>
             </GradientButton>
           )}

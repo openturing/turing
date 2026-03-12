@@ -1,7 +1,6 @@
 import React, { type Dispatch, type SetStateAction } from "react";
 import { Outlet } from "react-router-dom";
 import { InternalSidebar } from "./internal.sidebar";
-import { Card } from "./ui/card";
 import { SidebarInset, SidebarProvider } from "./ui/sidebar";
 
 interface NavMainItem {
@@ -36,8 +35,8 @@ interface Props {
 
 export const SubPage: React.FC<Props> = (props) => {
   return (
-    <div className="flex w-full items-center justify-center px-8 py-4">
-      <Card className="w-full bg-sidebar py-1 overflow-hidden">
+    <div className="flex w-full items-center justify-center px-6 lg:px-8 py-4">
+      <div className="w-full overflow-hidden rounded-xl border bg-sidebar shadow-sm">
         <SidebarProvider
           defaultOpen={true}
           style={{
@@ -46,13 +45,13 @@ export const SubPage: React.FC<Props> = (props) => {
           } as React.CSSProperties}
         >
           <InternalSidebar {...props} />
-          <SidebarInset className="mr-1 rounded-xl border ">
+          <SidebarInset className="mr-1.5 my-1.5 rounded-xl border bg-background shadow-sm">
             <main className="flex flex-1 flex-col overflow-hidden pt-4">
               <Outlet />
             </main>
           </SidebarInset>
         </SidebarProvider>
-      </Card>
+      </div>
     </div>
   );
 };

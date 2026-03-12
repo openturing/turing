@@ -60,7 +60,6 @@ const renderNavItems = (
           <span>{item.title}</span>
         </NavLink>
       </SidebarMenuButton>
-      {/* Render children recursively if present */}
       {!isCollapsed && item.children && item.children.length > 0 && (
         <SidebarMenu className="ml-4">
           {renderNavItems(item.children, urlBase, pathname, isCollapsed)}
@@ -88,14 +87,16 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
 
   return (
     <Sidebar collapsible="icon" variant="inset" position="absolute">
-      <SidebarHeader>
+      <SidebarHeader className="pb-3">
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center">
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <NavLink to={urlBase ?? "#"} className="flex items-center gap-2">
-                <Icon className="size-7!" />
+              <NavLink to={urlBase ?? "#"} className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 ring-1 ring-blue-500/10 dark:ring-blue-400/10">
+                  <Icon className="size-5! text-blue-600 dark:text-blue-400" />
+                </div>
                 {!isCollapsed && (
-                  <span className="text-base font-semibold whitespace-nowrap">
+                  <span className="text-sm font-semibold whitespace-nowrap truncate">
                     {isNew ? `New ${feature}` : name}
                   </span>
                 )}

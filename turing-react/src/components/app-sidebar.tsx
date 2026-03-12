@@ -101,7 +101,9 @@ const turLLMInstanceService = new TurLLMInstanceService();
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   React.useEffect(() => {
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
@@ -120,8 +122,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               onClick={toggleSidebar}
               className="data-[slot=sidebar-menu-button]:p-1.5!">
+
               <TurLogo className="size-6!" />
-              <span className="text-base font-semibold">Turing ES</span>
+
+              {!isCollapsed && (
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="text-sm font-bold tracking-tight">Turing ES</span>
+                  <span className="text-[10px] text-muted-foreground">Enterprise Search</span>
+                </div>
+              )}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

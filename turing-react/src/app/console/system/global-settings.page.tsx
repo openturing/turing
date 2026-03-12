@@ -1,5 +1,3 @@
-import { ROUTES } from "@/app/routes.const";
-import { SubPageHeader } from "@/components/sub.page.header";
 import {
     Form,
     FormControl,
@@ -18,10 +16,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
-import { IconSettings } from "@tabler/icons-react";
+import {
+    IconDeviceFloppy,
+    IconHash,
+    IconLoader2,
+    IconTerminal2,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -33,10 +35,9 @@ export default function GlobalSettingsPage() {
         defaultValues: { decimalSeparator: "DOT" },
     });
     const [isLoading, setIsLoading] = useState(true);
-    const { pushItem, popItem } = useBreadcrumb();
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        pushItem({ label: "Global Settings", href: ROUTES.GLOBAL_SETTINGS });
         turGlobalSettingsService
             .query()
             .then((settings) => {
@@ -46,94 +47,131 @@ export default function GlobalSettingsPage() {
                 toast.error("Failed to load global settings. Using default values.");
             })
             .finally(() => setIsLoading(false));
-
-        return () => popItem();
-    }, [form, popItem, pushItem]);
+    }, [form]);
 
     const onSubmit = async (settings: TurGlobalSettings) => {
         try {
+            setIsSaving(true);
             const response = await turGlobalSettingsService.update(settings);
             form.reset(response);
             toast.success("Global settings were updated.");
         } catch (error) {
             console.error("Form submission error", error);
             toast.error("Failed to update global settings.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const decimalSeparator = form.watch("decimalSeparator") ?? "DOT";
-    const decimalExample = decimalSeparator === "COMMA" ? "150,75" : "150.75";
+    const decimalExample = decimalSeparator === "COMMA" ? "1.500,75" : "1,500.75";
     const currencyExample =
         decimalSeparator === "COMMA" ? "150,75,BRL" : "150.75,BRL";
 
     return (
-        <>
-            <SubPageHeader
-                icon={IconSettings}
-                feature="Global Settings"
-                name="Global Settings"
-                description="System-wide administration settings."
-            />
-            <div className="px-6 py-8 max-w-xl">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 border rounded-lg p-6">
-                        <FormField
-                            control={form.control}
-                            name="decimalSeparator"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Decimal Separator</FormLabel>
-                                    <FormDescription>
-                                        Defines how decimal values are typed in admin forms (including currency amount format).
-                                    </FormDescription>
-                                    <FormControl>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Choose..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="DOT">Dot (.)</SelectItem>
-                                                <SelectItem value="COMMA">Comma (,)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
-                                    <FormDescription>
-                                        Decimal example: <strong>{decimalExample}</strong> | Currency example: <strong>{currencyExample}</strong>
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+        <div className="px-4 lg:px-6 max-w-2xl space-y-6">
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Numeric Formatting Section */}
+                    <div className="rounded-xl border overflow-hidden">
+                        <div className="flex items-center gap-3 px-5 py-4 bg-muted/40 border-b">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 ring-1 ring-amber-500/10 dark:ring-amber-400/10">
+                                <IconHash className="size-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold">Numeric Formatting</h3>
+                                <p className="text-xs text-muted-foreground">Control how numbers and currencies are displayed across the platform.</p>
+                            </div>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="decimalSeparator"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Decimal Separator</FormLabel>
+                                        <FormDescription>
+                                            Defines how decimal values are typed in admin forms (including currency amount format).
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                                                <SelectTrigger className="w-full max-w-xs">
+                                                    <SelectValue placeholder="Choose..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="DOT">Dot (.)</SelectItem>
+                                                    <SelectItem value="COMMA">Comma (,)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex gap-4">
+                                <div className="flex-1 rounded-lg bg-muted/40 px-4 py-3">
+                                    <span className="text-xs text-muted-foreground">Decimal preview</span>
+                                    <p className="text-sm font-mono font-semibold mt-0.5">{decimalExample}</p>
+                                </div>
+                                <div className="flex-1 rounded-lg bg-muted/40 px-4 py-3">
+                                    <span className="text-xs text-muted-foreground">Currency format</span>
+                                    <p className="text-sm font-mono font-semibold mt-0.5">{currencyExample}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                        <FormField
-                            control={form.control}
-                            name="pythonExecutable"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Python Executable Path</FormLabel>
-                                    <FormDescription>
-                                        Absolute path to the Python interpreter used by the code interpreter tool (e.g. <code>/usr/bin/python3</code>).
-                                        Leave empty to auto-detect from known system locations.
-                                    </FormDescription>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="/usr/bin/python3"
-                                            disabled={isLoading}
-                                            {...field}
-                                            value={field.value ?? ""}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                    {/* Runtime Section */}
+                    <div className="rounded-xl border overflow-hidden">
+                        <div className="flex items-center gap-3 px-5 py-4 bg-muted/40 border-b">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 ring-1 ring-emerald-500/10 dark:ring-emerald-400/10">
+                                <IconTerminal2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold">Runtime Environment</h3>
+                                <p className="text-xs text-muted-foreground">Configure external tool paths and execution environment.</p>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <FormField
+                                control={form.control}
+                                name="pythonExecutable"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Python Executable Path</FormLabel>
+                                        <FormDescription>
+                                            Absolute path to the Python interpreter used by the code interpreter tool.
+                                            Leave empty to auto-detect from known system locations.
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                className="max-w-md font-mono text-sm"
+                                                placeholder="/usr/bin/python3"
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
 
-                        <GradientButton type="submit" disabled={isLoading}>
-                            Save
+                    {/* Submit */}
+                    <div className="flex items-center justify-end pt-2">
+                        <GradientButton type="submit" disabled={isLoading || isSaving}>
+                            {isSaving ? (
+                                <IconLoader2 className="size-4 animate-spin" />
+                            ) : (
+                                <IconDeviceFloppy className="size-4" />
+                            )}
+                            Save Settings
                         </GradientButton>
-                    </form>
-                </Form>
-            </div>
-        </>
+                    </div>
+                </form>
+            </Form>
+        </div>
     );
 }
