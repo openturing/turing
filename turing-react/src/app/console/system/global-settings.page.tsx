@@ -8,7 +8,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { FormActions } from "@/components/ui/form-actions";
 import {
     Select,
     SelectContent,
@@ -18,10 +18,9 @@ import {
 } from "@/components/ui/select";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
+import { SectionCard } from "@/components/ui/section-card";
 import {
-    IconDeviceFloppy,
     IconHash,
-    IconLoader2,
     IconTerminal2,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -73,17 +72,9 @@ export default function GlobalSettingsPage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {/* Numeric Formatting Section */}
-                    <div className="rounded-xl border overflow-hidden">
-                        <div className="flex items-center gap-3 px-5 py-4 bg-muted/40 border-b">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 ring-1 ring-amber-500/10 dark:ring-amber-400/10">
-                                <IconHash className="size-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold">Numeric Formatting</h3>
-                                <p className="text-xs text-muted-foreground">Control how numbers and currencies are displayed across the platform.</p>
-                            </div>
-                        </div>
-                        <div className="p-5 space-y-4">
+                    <SectionCard variant="amber">
+                        <SectionCard.StaticHeader icon={IconHash} title="Numeric Formatting" description="Control how numbers and currencies are displayed across the platform." />
+                        <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="decimalSeparator"
@@ -118,21 +109,13 @@ export default function GlobalSettingsPage() {
                                     <p className="text-sm font-mono font-semibold mt-0.5">{currencyExample}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </SectionCard.Content>
+                    </SectionCard>
 
                     {/* Runtime Section */}
-                    <div className="rounded-xl border overflow-hidden">
-                        <div className="flex items-center gap-3 px-5 py-4 bg-muted/40 border-b">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 ring-1 ring-emerald-500/10 dark:ring-emerald-400/10">
-                                <IconTerminal2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-semibold">Runtime Environment</h3>
-                                <p className="text-xs text-muted-foreground">Configure external tool paths and execution environment.</p>
-                            </div>
-                        </div>
-                        <div className="p-5">
+                    <SectionCard variant="emerald">
+                        <SectionCard.StaticHeader icon={IconTerminal2} title="Runtime Environment" description="Configure external tool paths and execution environment." />
+                        <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="pythonExecutable"
@@ -156,20 +139,15 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
-                        </div>
-                    </div>
+                        </SectionCard.Content>
+                    </SectionCard>
 
                     {/* Submit */}
-                    <div className="flex items-center justify-end pt-2">
-                        <GradientButton type="submit" disabled={isLoading || isSaving}>
-                            {isSaving ? (
-                                <IconLoader2 className="size-4 animate-spin" />
-                            ) : (
-                                <IconDeviceFloppy className="size-4" />
-                            )}
+                    <FormActions className="border-t-0 pt-2">
+                        <FormActions.Submit loading={isSaving} disabled={isLoading}>
                             Save Settings
-                        </GradientButton>
-                    </div>
+                        </FormActions.Submit>
+                    </FormActions>
                 </form>
             </Form>
         </div>
