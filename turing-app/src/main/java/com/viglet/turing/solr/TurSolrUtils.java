@@ -355,6 +355,52 @@ public class TurSolrUtils {
                 .orElse(Collections.emptyList());
     }
 
+    public static List<TurSECoreInfo> listCollections(TurSEInstance turSEInstance) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/collections", getSolrUrl(turSEInstance))))
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to list collections")
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(body -> {
+                    Configuration configuration = Configuration.builder().options(Option.DEFAULT_PATH_LEAF_TO_NULL)
+                            .build();
+                    DocumentContext jsonContext = JsonPath.parse(body, configuration);
+                    Object collectionsObj = jsonContext.read("$.collections");
+                    if (collectionsObj instanceof List<?> collectionsList) {
+                        return collectionsList.stream()
+                                .map(Object::toString)
+                                .sorted()
+                                .map(name -> new TurSECoreInfo(name, 0L, Collections.emptyList()))
+                                .toList();
+                    }
+                    return Collections.<TurSECoreInfo>emptyList();
+                })
+                .orElse(Collections.emptyList());
+    }
+
+    public static void deleteCollection(String solrUrl, String name) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/collections/%s", solrUrl, name)))
+                .DELETE()
+                .build();
+        executeRequest(request, "Failed to delete collection: " + name);
+    }
+
+    public static boolean collectionExists(TurSEInstance turSEInstance, String collection) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/api/collections/%s",
+                        getSolrUrl(turSEInstance), collection)))
+                .GET()
+                .build();
+
+        return executeRequest(request, "Failed to check collection existence: " + collection)
+                .map(response -> response.statusCode() == 200)
+                .orElse(false);
+    }
+
     public static boolean coreExists(TurSEInstance turSEInstance, String core) {
         HttpRequest request = getHttpRequestBuilderJson()
                 .uri(URI.create(String.format("%s/api/cores/%s",

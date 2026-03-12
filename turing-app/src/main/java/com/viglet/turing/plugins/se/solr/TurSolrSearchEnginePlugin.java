@@ -114,7 +114,12 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public void deleteIndex(TurSEInstance seInstance, String indexName) {
-        TurSolrUtils.deleteCore(getSolrUrl(seInstance), indexName);
+        String solrUrl = getSolrUrl(seInstance);
+        if (turConfigProperties.getSolr().isCloud()) {
+            TurSolrUtils.deleteCollection(solrUrl, indexName);
+        } else {
+            TurSolrUtils.deleteCore(solrUrl, indexName);
+        }
     }
 
     @Override
@@ -124,11 +129,17 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public boolean indexExists(TurSEInstance seInstance, String indexName) {
+        if (turConfigProperties.getSolr().isCloud()) {
+            return TurSolrUtils.collectionExists(seInstance, indexName);
+        }
         return TurSolrUtils.coreExists(seInstance, indexName);
     }
 
     @Override
     public List<TurSECoreInfo> listIndexes(TurSEInstance seInstance) {
+        if (turConfigProperties.getSolr().isCloud()) {
+            return TurSolrUtils.listCollections(seInstance);
+        }
         return TurSolrUtils.listCores(seInstance);
     }
 

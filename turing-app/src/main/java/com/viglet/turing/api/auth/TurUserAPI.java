@@ -129,14 +129,39 @@ public class TurUserAPI {
         return turCurrentUser;
     }
 
-    private static TurCurrentUser keycloakUser() {
+    private TurCurrentUser keycloakUser() {
         OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        String username = user.getAttribute(PREFERRED_USERNAME);
+        String firstName = user.getAttribute(GIVEN_NAME);
+        String lastName = user.getAttribute(FAMILY_NAME);
+        String email = user.getAttribute(EMAIL);
+
+        TurUser turUser = turUserRepository.findByUsername(username);
+        if (turUser == null) {
+            turUser = TurUser.builder()
+                    .username(username)
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .email(email)
+                    .realm("keycloak")
+                    .enabled(1)
+                    .build();
+            turUserRepository.save(turUser);
+        } else {
+            turUser.setFirstName(firstName);
+            turUser.setLastName(lastName);
+            turUser.setEmail(email);
+            turUserRepository.save(turUser);
+        }
+
         TurCurrentUser turCurrentUser = new TurCurrentUser();
-        turCurrentUser.setUsername(user.getAttribute(PREFERRED_USERNAME));
-        turCurrentUser.setFirstName(user.getAttribute(GIVEN_NAME));
-        turCurrentUser.setLastName(user.getAttribute(FAMILY_NAME));
-        turCurrentUser.setEmail(user.getAttribute(EMAIL));
+        turCurrentUser.setUsername(username);
+        turCurrentUser.setFirstName(firstName);
+        turCurrentUser.setLastName(lastName);
+        turCurrentUser.setEmail(email);
         turCurrentUser.setAdmin(true);
+        turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
+        turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
         return turCurrentUser;
     }
 
