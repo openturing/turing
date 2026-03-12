@@ -3,9 +3,13 @@ package com.viglet.turing.api.llm.chat;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -50,15 +54,51 @@ public class TurCodeInterpreterFileAPI {
         try {
             String mimeType = Files.probeContentType(file.toPath());
             if (mimeType == null) {
-                mimeType = "application/octet-stream";
+                mimeType = mimeTypeFromExtension(filename);
             }
             Resource resource = new FileSystemResource(file);
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            ContentDisposition.attachment()
+                                    .filename(filename)
+                                    .build().toString())
                     .body(resource);
         } catch (IOException e) {
             log.error("Failed to serve code interpreter file {}/{}: {}", sessionId, filename, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    private static final Map<String, String> EXTENSION_MIME_TYPES = Map.ofEntries(
+            Map.entry(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            Map.entry(".xls", "application/vnd.ms-excel"),
+            Map.entry(".csv", "text/csv"),
+            Map.entry(".pdf", "application/pdf"),
+            Map.entry(".json", "application/json"),
+            Map.entry(".png", "image/png"),
+            Map.entry(".jpg", "image/jpeg"),
+            Map.entry(".jpeg", "image/jpeg"),
+            Map.entry(".gif", "image/gif"),
+            Map.entry(".svg", "image/svg+xml"),
+            Map.entry(".webp", "image/webp"),
+            Map.entry(".txt", "text/plain"),
+            Map.entry(".html", "text/html"),
+            Map.entry(".zip", "application/zip"),
+            Map.entry(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            Map.entry(".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+    );
+
+    private static String mimeTypeFromExtension(String filename) {
+        String lower = filename.toLowerCase(Locale.ROOT);
+        int dot = lower.lastIndexOf('.');
+        if (dot >= 0) {
+            String ext = lower.substring(dot);
+            String mime = EXTENSION_MIME_TYPES.get(ext);
+            if (mime != null) {
+                return mime;
+            }
+        }
+        return "application/octet-stream";
     }
 }

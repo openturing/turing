@@ -85,7 +85,9 @@ public class TurLLMChatAPI {
             remove top/right spines (ax.spines['top'].set_visible(False), ax.spines['right'].set_visible(False)), \
             use colorblind-friendly palette ['#0072B2','#D55E00','#009E73','#CC79A7','#F0E442','#56B4E9','#E69F00'], \
             call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
-            Do NOT call plt.show(). Always use print() for output. \
+            Do NOT call plt.show(). \
+            CRITICAL: This is NOT a Jupyter notebook — bare expressions on the last line produce NO output. \
+            You MUST wrap every result in print(). For example, write print(future_day), NOT just future_day. \
             If the code produces errors or warnings, analyze the issue, fix the code, and call \
             execute_python again with the corrected version (up to 3 retries).
             - search_images — ONLY when the user asks to see, show, or find a photo, picture, or image \
@@ -103,7 +105,8 @@ public class TurLLMChatAPI {
             2. If the user asks in a specific language, respond in that same language.
             3. Only use a tool when you are certain the user wants real-time or computed data.
             4. After using a tool, summarize the results clearly.
-            5. When execute_python returns a file URL, include it in your response.
+            5. When execute_python returns generated files, copy the exact markdown from the tool output: \
+            use ![image](url) for images, [Download filename](url) for other files (Excel, CSV, PDF, etc.).
             6. For stock queries, use search_ticker first if you don't know the symbol.
             """;
 

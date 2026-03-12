@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -73,10 +74,18 @@ public class TurCodeInterpreterToolService {
             (charts, CSVs, etc.) are saved there and accessible via URL.
 
             IMPORTANT:
-            - Use print() to produce output that will be returned to you.
+            - This runs as a standard Python script, NOT a Jupyter notebook. \
+            Bare expressions (e.g. a variable name alone on the last line) produce NO output. \
+            You MUST always use print() explicitly to produce output. \
+            WRONG: result    CORRECT: print(result)
             - For charts: use plt.savefig('output.png', dpi=150, bbox_inches='tight') \
             then print the filename. Do NOT call plt.show().
             - For data files: save to the current directory and print the filename.
+            - ALWAYS use descriptive filenames with the CORRECT extension for the format: \
+            .xlsx for Excel, .csv for CSV, .pdf for PDF, .json for JSON, .png for images, etc. \
+            WRONG: f.txt, output.txt, data.txt for an Excel file. \
+            CORRECT: report.xlsx, sales_data.xlsx, analysis.csv. \
+            The filename must match the actual file format being written.
             - Common libraries available: math, json, csv, datetime, os, sys, re, \
             statistics, collections, itertools, functools, urllib.
             - Libraries that MAY be available (if installed): numpy, pandas, matplotlib, \
@@ -105,9 +114,13 @@ public class TurCodeInterpreterToolService {
 
             DISPLAYING GENERATED FILES:
             - The tool returns file URLs starting with /api/v2/code-interpreter/...
-            - To display an image, use EXACTLY the URL returned, with NO prefix. \
+            - Use EXACTLY the URL returned, with NO prefix. NEVER add "sandbox:" or any other prefix.
+            - For IMAGE files (.png, .jpg, .gif, .svg): use image markdown. \
             Example: ![Chart](/api/v2/code-interpreter/abc123/output.png)
-            - NEVER add "sandbox:" or any other prefix to the URL.
+            - For NON-IMAGE files (.xlsx, .csv, .pdf, .txt, .json, etc.): use a download link. \
+            Example: [Download report.xlsx](/api/v2/code-interpreter/abc123/report.xlsx)
+            - The tool output already provides the correct markdown format for each file — \
+            copy it exactly as given in the "Markdown:" line.
 
             ERROR HANDLING:
             - If the code fails (non-zero exit code) or produces warnings/errors in stderr, \
@@ -179,12 +192,16 @@ public class TurCodeInterpreterToolService {
 
     private String executeAndCollectOutput(String sessionId, File sessionDir,
             Path scriptPath) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), scriptPath.toString());
+        Path runnerPath = sessionDir.toPath().resolve("_runner.py");
+        Files.writeString(runnerPath, buildRunnerScript(scriptPath.getFileName().toString()));
+        ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
         pb.directory(sessionDir);
         pb.redirectErrorStream(false);
         var env = pb.environment();
         env.put("MPLBACKEND", "Agg");
         env.put("PATH", SAFE_PATH);
+        env.put("PYTHONUTF8", "1");
+        env.put("PYTHONIOENCODING", "utf-8");
         env.remove("PYTHONPATH");
         env.remove("PYTHONSTARTUP");
         env.remove("PYTHONHOME");
@@ -195,8 +212,12 @@ public class TurCodeInterpreterToolService {
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
-        Thread outThread = Thread.ofVirtual().start(() -> readStream(process.inputReader(), stdout));
-        Thread errThread = Thread.ofVirtual().start(() -> readStream(process.errorReader(), stderr));
+        Thread outThread = Thread.ofVirtual().start(() ->
+                readStream(new java.io.InputStreamReader(process.getInputStream(),
+                        java.nio.charset.StandardCharsets.UTF_8), stdout));
+        Thread errThread = Thread.ofVirtual().start(() ->
+                readStream(new java.io.InputStreamReader(process.getErrorStream(),
+                        java.nio.charset.StandardCharsets.UTF_8), stderr));
 
         boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
@@ -214,7 +235,8 @@ public class TurCodeInterpreterToolService {
         errThread.join(5000);
 
         int exitCode = process.exitValue();
-        File[] generatedFiles = sessionDir.listFiles((dir, name) -> !name.equals("script.py"));
+        File[] generatedFiles = sessionDir.listFiles((dir, name) ->
+                !name.equals("script.py") && !name.equals("_runner.py"));
 
         String result = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles);
         logResult(sessionId, scriptPath, exitCode, stdout, stderr, generatedFiles);
@@ -256,10 +278,17 @@ public class TurCodeInterpreterToolService {
             result.append("\n--- Generated Files ---\n");
             for (File f : generatedFiles) {
                 String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName();
+                boolean isImage = isImageFile(f.getName());
                 result.append("- ").append(f.getName())
                         .append(" (").append(formatFileSize(f.length())).append(")")
                         .append("\n  URL: ").append(fileUrl)
-                        .append("\n  Markdown: ![").append(f.getName()).append("](").append(fileUrl).append(")\n");
+                        .append("\n  Markdown: ");
+                if (isImage) {
+                    result.append("![").append(f.getName()).append("](").append(fileUrl).append(")");
+                } else {
+                    result.append("[Download ").append(f.getName()).append("](").append(fileUrl).append(")");
+                }
+                result.append("\n");
             }
         }
 
@@ -283,6 +312,46 @@ public class TurCodeInterpreterToolService {
             log.error("[CodeInterpreter] session={} | FAILED (exit={}) | script={} | stderr:\n{}",
                     sessionId, exitCode, scriptPath.toAbsolutePath(), stderr);
         }
+    }
+
+    /**
+     * Builds a small Python runner that parses the user script with {@code ast},
+     * detects if the last statement is a bare expression (e.g. {@code result}
+     * instead of {@code print(result)}), and wraps it with {@code print()} so
+     * the value is emitted to stdout — mimicking Jupyter/IPython behaviour.
+     */
+    private String buildRunnerScript(String scriptFilename) {
+        return """
+                import ast, sys
+                try:
+                    import matplotlib as _mpl
+                    _mpl.rcParams['font.family'] = 'sans-serif'
+                    _mpl.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Segoe UI', 'sans-serif']
+                    _mpl.rcParams['axes.unicode_minus'] = False
+                except ImportError:
+                    pass
+                _src = open(%s, encoding='utf-8').read()
+                _tree = ast.parse(_src)
+                if _tree.body and isinstance(_tree.body[-1], ast.Expr):
+                    _last = _tree.body[-1]
+                    _tree.body[-1] = ast.Expr(value=ast.Call(
+                        func=ast.Name(id='print', ctx=ast.Load()),
+                        args=[_last.value], keywords=[]))
+                    ast.fix_missing_locations(_tree)
+                exec(compile(_tree, %s, 'exec'))
+                """.formatted(repr(scriptFilename), repr(scriptFilename));
+    }
+
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
+            ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp");
+
+    private static boolean isImageFile(String filename) {
+        String lower = filename.toLowerCase(Locale.ROOT);
+        return IMAGE_EXTENSIONS.stream().anyMatch(lower::endsWith);
+    }
+
+    private static String repr(String s) {
+        return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'";
     }
 
     private String formatFileSize(long bytes) {
