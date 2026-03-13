@@ -1,4 +1,3 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
     Form,
     FormControl,
@@ -9,7 +8,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
-import { GradientButton } from "@/components/ui/gradient-button"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
     Select,
@@ -26,7 +24,10 @@ import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
+import { IconBrain, IconMessageChatbot, IconPower } from "@tabler/icons-react"
 import { Info, PlusCircle } from "lucide-react"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -124,20 +125,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     return (
         <div className="px-6">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-8 px-0">
-                    <Accordion
-                        type="multiple"
-                        defaultValue={["section-activation", "section-models", "section-prompt"]}
-                        className="w-full space-y-4"
-                    >
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+                    <div className="space-y-4">
                         {/* Section 1: Activation */}
-                        <AccordionItem value="section-activation" className="border rounded-lg px-6">
-                            <AccordionTrigger className="hover:no-underline">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-lg font-semibold">Activation</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="flex flex-col gap-6 pt-4">
+                        <SectionCard variant="blue">
+                            <SectionCard.Header icon={IconPower} title="Activation" description="Enable AI-powered answers for this site." />
+                            <SectionCard.Content>
                                 <FormField
                                     control={form.control}
                                     name="enabled"
@@ -160,18 +153,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                            </AccordionContent>
-                        </AccordionItem>
+                            </SectionCard.Content>
+                        </SectionCard>
 
                         {/* Section 2: Models */}
                         {enabled && (
-                            <AccordionItem value="section-models" className="border rounded-lg px-6">
-                                <AccordionTrigger className="hover:no-underline">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg font-semibold">AI Model & Embedding Store</span>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="flex flex-col gap-6 pt-4">
+                            <SectionCard variant="violet">
+                                <SectionCard.Header icon={IconBrain} title="AI Model & Embedding Store" description="Language model and vector store configuration." />
+                                <SectionCard.Content>
                                     {/* Language Model */}
                                     <FormField
                                         control={form.control}
@@ -253,19 +242,15 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                             </FormItemTwoColumns>
                                         )}
                                     />
-                                </AccordionContent>
-                            </AccordionItem>
+                                </SectionCard.Content>
+                            </SectionCard>
                         )}
 
                         {/* Section 3: System Prompt */}
                         {enabled && (
-                            <AccordionItem value="section-prompt" className="border rounded-lg px-6">
-                                <AccordionTrigger className="hover:no-underline">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg font-semibold">System Prompt</span>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="flex flex-col gap-6 pt-4">
+                            <SectionCard variant="emerald">
+                                <SectionCard.Header icon={IconMessageChatbot} title="System Prompt" description="Define the prompt template for the AI agent." />
+                                <SectionCard.Content>
                                     <FormField
                                         control={form.control}
                                         name="systemPrompt"
@@ -318,29 +303,15 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                             </FormItem>
                                         )}
                                     />
-                                </AccordionContent>
-                            </AccordionItem>
+                                </SectionCard.Content>
+                            </SectionCard>
                         )}
-                    </Accordion>
-
-                    {/* Action Footer */}
-                    <div className="flex justify-end gap-2 pt-4">
-                        <GradientButton
-                            type="button"
-                            variant="outline"
-                            onClick={() => form.reset(snSite.turSNSiteGenAi)}
-                            className="w-full sm:w-auto"
-                        >
-                            Cancel
-                        </GradientButton>
-                        <GradientButton
-                            type="submit"
-                            disabled={enabled && (!hasQuestion || !hasInformation)}
-                            className="w-full sm:w-auto"
-                        >
-                            Save Changes
-                        </GradientButton>
                     </div>
+
+                    <FormActions>
+                        <FormActions.Cancel onClick={() => form.reset(snSite.turSNSiteGenAi)} />
+                        <FormActions.Submit disabled={enabled && (!hasQuestion || !hasInformation)} />
+                    </FormActions>
                 </form>
             </Form>
         </div>

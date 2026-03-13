@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   Form,
   FormControl,
@@ -10,7 +9,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { GradientButton } from "@/components/ui/gradient-button"
 import {
   Input
 } from "@/components/ui/input"
@@ -19,12 +17,15 @@ import {
 } from "@/components/ui/textarea"
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model"
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service"
+import { IconFilter, IconInfoCircle, IconScale } from "@tabler/icons-react"
 import React, { useEffect } from "react"
 import {
   useForm
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
 const turSNRankingExpressionService = new TurSNRankingExpressionService();
@@ -80,20 +81,15 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
   return (
     <div className="px-6 py-8">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Accordion
-            type="multiple"
-            defaultValue={["general", "conditions", "weight"]}
-            className="w-full space-y-4"
-          >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* General Information Section */}
-            <AccordionItem value="general" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">General Information</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-6 pt-4">
+            <SectionCard variant="blue">
+              <SectionCard.Header
+                icon={IconInfoCircle}
+                title="General Information"
+                description="Basic details for this ranking expression."
+              />
+              <SectionCard.Content>
                 <FormField
                   control={form.control}
                   name="name"
@@ -135,17 +131,17 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     </FormItem>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Ranking Conditions Section */}
-            <AccordionItem value="conditions" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">Ranking Conditions</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-6 pt-4">
+            <SectionCard variant="violet">
+              <SectionCard.Header
+                icon={IconFilter}
+                title="Ranking Conditions"
+                description="Define filter expressions to target content for ranking."
+              />
+              <SectionCard.Content>
                 <FormItem>
                   <FormLabel>
                     Content Filter <span className="text-destructive">*</span>
@@ -163,17 +159,17 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     />
                   </FormControl>
                 </FormItem>
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Ranking Weight Section */}
-            <AccordionItem value="weight" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold">Ranking Weight</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-6 pt-4">
+            <SectionCard variant="emerald">
+              <SectionCard.Header
+                icon={IconScale}
+                title="Ranking Weight"
+                description="Adjust the influence of this expression on search results."
+              />
+              <SectionCard.Content>
                 <FormField
                   control={form.control}
                   name="weight"
@@ -207,25 +203,16 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     </FormItem>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </SectionCard.Content>
+            </SectionCard>
+
           {/* Action Footer */}
-          <div className="flex justify-end gap-4 mt-8">
-            <GradientButton
-              type="button"
-              variant="outline"
-              onClick={() => navigate(urlBase)}
-            >
-              Cancel
-            </GradientButton>
-            <GradientButton type="submit">
-              Save Changes
-            </GradientButton>
-          </div>
+          <FormActions>
+            <FormActions.Cancel onClick={() => navigate(urlBase)} />
+            <FormActions.Submit />
+          </FormActions>
         </form>
       </Form>
     </div>
   )
 }
-

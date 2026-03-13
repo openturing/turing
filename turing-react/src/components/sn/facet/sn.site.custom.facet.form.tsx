@@ -2,12 +2,8 @@
 import { ROUTES } from "@/app/routes.const"
 import { BadgeFieldType } from "@/components/badge-field-type"
 import { SNSiteLabelTranslations } from "@/components/sn/facet/sn.site.label.translations"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -69,6 +65,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { IconFilter, IconInfoCircle, IconLanguage, IconListDetails } from '@tabler/icons-react'
 import { GripVertical, PlusCircle } from 'lucide-react'
 import { useEffect, useState } from "react"
 import {
@@ -76,7 +73,6 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { GradientButton } from "../../ui/gradient-button"
 
 const turSNSiteCustomFacetService = new TurSNSiteCustomFacetService();
 const turLocaleService = new TurLocaleService();
@@ -419,12 +415,11 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
         </DialogContent>
       </Dialog>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 py-10 px-8">
-          <Accordion type="multiple" defaultValue={["basic-info", "labels", "facet-config", "facet-items"]} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
             {/* Basic Information Section */}
-            <AccordionItem value="basic-info" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold">Basic Information</AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="blue">
+              <SectionCard.Header icon={IconInfoCircle} title="Basic Information" description="Unique identifier for this custom facet." />
+              <SectionCard.Content>
                 <FormField
                   control={control}
                   name="name"
@@ -454,13 +449,13 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                 />
 
 
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Labels Section */}
-            <AccordionItem value="labels" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold">Display Labels</AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="violet">
+              <SectionCard.Header icon={IconLanguage} title="Display Labels" description="Names shown to users when browsing filters." />
+              <SectionCard.Content>
                 <div>
                   <FormField
                     control={control}
@@ -492,13 +487,13 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                     onRemove={removeLabelEntry}
                   />
                 </div>
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Facet Configuration Section */}
-            <AccordionItem value="facet-config" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold">Facet Configuration</AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="emerald">
+              <SectionCard.Header icon={IconFilter} title="Facet Configuration" description="Field selection and operator settings." />
+              <SectionCard.Content>
                 <FormField
                   control={control}
                   name="fieldExtId"
@@ -599,13 +594,13 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                     )}
                   />
                 </div>
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Facet Items Section */}
-            <AccordionItem value="facet-items" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold">Facet Range Items</AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="amber">
+              <SectionCard.Header icon={IconListDetails} title="Facet Range Items" description="Custom range buckets for this filter." />
+              <SectionCard.Content>
                 <FormItem>
                   <div className="flex items-center justify-between mb-4">
                     <div className="grid gap-2">
@@ -651,24 +646,13 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                     </div>
                   </DndContext>
                 </FormItem>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </SectionCard.Content>
+            </SectionCard>
 
-          {/* Action Footer */}
-          <div className="flex items-center justify-end gap-3 pt-6 border-t">
-            <GradientButton
-              type="button"
-              variant="outline"
-              className="w-full md:w-auto"
-              onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/custom-facet`)}
-            >
-              Cancel
-            </GradientButton>
-            <GradientButton type="submit">
-              {isNew ? "Create Facet" : "Save Changes"}
-            </GradientButton>
-          </div>
+          <FormActions>
+            <FormActions.Cancel onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/custom-facet`)} />
+            <FormActions.Submit>{isNew ? "Create Facet" : "Save Changes"}</FormActions.Submit>
+          </FormActions>
         </form>
       </Form>
     </>

@@ -31,10 +31,11 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
+import { SectionCard } from "../ui/section-card"
 import { Skeleton } from "../ui/skeleton"
+import { IconSettings, IconSearch } from "@tabler/icons-react"
 const turSNSiteService = new TurSNSiteService();
 const turSEInstanceService = new TurSEInstanceService();
 interface Props {
@@ -101,20 +102,11 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-8 px-6">
-              <Accordion
-                type="multiple"
-                defaultValue={["section-general", "section-search"]}
-                className="w-full space-y-4"
-              >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
                 {/* General Information Section */}
-                <AccordionItem value="section-general" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">General Information</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="blue">
+                  <SectionCard.Header icon={IconSettings} title="General Information" description="Basic site identity and description." />
+                  <SectionCard.Content>
                     {/* Name Field */}
                     <FormField
                       control={form.control}
@@ -161,17 +153,13 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItem>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Search Engine Section */}
-                <AccordionItem value="section-search" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Search Engine</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="emerald">
+                  <SectionCard.Header icon={IconSearch} title="Search Engine" description="Backend engine powering this site." />
+                  <SectionCard.Content>
                     {/* Search Engine Instance (Select) */}
                     <FormField
                       control={form.control}
@@ -205,23 +193,13 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                  </SectionCard.Content>
+                </SectionCard>
 
-              {/* Action Footer */}
-              <div className="flex justify-end gap-3 pt-4">
-                <GradientButton
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(urlBase)}
-                >
-                  Cancel
-                </GradientButton>
-                <GradientButton type="submit">
-                  Save Changes
-                </GradientButton>
-              </div>
+              <FormActions>
+                <FormActions.Cancel onClick={() => navigate(urlBase)} />
+                <FormActions.Submit />
+              </FormActions>
             </form>
           </Form>
         )}

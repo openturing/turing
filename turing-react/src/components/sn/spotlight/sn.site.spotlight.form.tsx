@@ -1,6 +1,7 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 import {
     Dialog,
     DialogContent,
@@ -39,6 +40,7 @@ import type { TurSNSearch } from "@/search/models/sn-search.model"
 import { TurSNSearchService } from "@/search/services/sn-search.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
+import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
 import { PlusCircle, Search, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -215,20 +217,11 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
     return (
 
         <Form {...form}>
-            <form onSubmit={handleFormSubmit}>
-                <Accordion
-                    type="multiple"
-                    defaultValue={["general", "terms", "documents"]}
-                    className="space-y-6 py-8 px-6"
-                >
+            <form onSubmit={handleFormSubmit} className="space-y-4 py-8 px-6">
                     {/* General Section */}
-                    <AccordionItem value="general" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Spotlight Details</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
+                    <SectionCard variant="blue">
+                        <SectionCard.Header icon={IconSpeakerphone} title="Spotlight Details" description="Name, description, and language for this spotlight." />
+                        <SectionCard.Content>
                             {/* Name */}
                             <FormField
                                 control={form.control}
@@ -297,17 +290,13 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                     </FormItemTwoColumns>
                                 )}
                             />
-                        </AccordionContent>
-                    </AccordionItem>
+                        </SectionCard.Content>
+                    </SectionCard>
 
                     {/* Terms Section */}
-                    <AccordionItem value="terms" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Trigger Terms</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
+                    <SectionCard variant="violet">
+                        <SectionCard.Header icon={IconTags} title="Trigger Terms" description="Keywords that activate this spotlight." />
+                        <SectionCard.Content>
                             <div>
                                 <div className="mb-2 font-medium">When someone searches for these terms...</div>
                                 <div className="text-sm text-muted-foreground mb-4">
@@ -344,17 +333,13 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                     <p className="text-sm font-medium text-destructive mt-2">{termsError}</p>
                                 )}
                             </div>
-                        </AccordionContent>
-                    </AccordionItem>
+                        </SectionCard.Content>
+                    </SectionCard>
 
                     {/* Documents Section */}
-                    <AccordionItem value="documents" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Spotlight Documents</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
+                    <SectionCard variant="emerald">
+                        <SectionCard.Header icon={IconFileText} title="Spotlight Documents" description="Documents highlighted when terms are searched." />
+                        <SectionCard.Content>
                             <div>
                                 <div className="mb-2 font-medium">...show these documents as spotlights</div>
                                 <div className="text-sm text-muted-foreground mb-4">
@@ -488,18 +473,12 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                     <p className="text-sm font-medium text-destructive mt-2">{documentsError}</p>
                                 )}
                             </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-                {/* Action Footer */}
-                <div className="flex justify-end gap-4 mt-8">
-                    <GradientButton variant="outline" type="button" onClick={() => navigate(urlBase)}>
-                        Cancel
-                    </GradientButton>
-                    <GradientButton type="submit">
-                        {isNew ? "Create Spotlight" : "Save Changes"}
-                    </GradientButton>
-                </div>
+                        </SectionCard.Content>
+                    </SectionCard>
+                <FormActions>
+                    <FormActions.Cancel onClick={() => navigate(urlBase)} />
+                    <FormActions.Submit>{isNew ? "Create Spotlight" : "Save Changes"}</FormActions.Submit>
+                </FormActions>
             </form>
         </Form>
     );

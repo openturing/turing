@@ -31,9 +31,9 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
-
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { SectionCard } from "../ui/section-card"
+import { FormActions } from "../ui/form-actions"
+import { IconSettings, IconPlug } from "@tabler/icons-react"
 
 const turIntegrationInstanceService = new TurIntegrationInstanceService();
 interface Props {
@@ -71,22 +71,11 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <div className="px-6 py-8">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Accordion
-            type="multiple"
-            defaultValue={["general", "connection"]}
-            className="space-y-6"
-          >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* General Information Section */}
-            <AccordionItem value="general" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    General Information
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-8 pt-4">
+            <SectionCard variant="blue">
+              <SectionCard.Header icon={IconSettings} title="General Information" description="Name and description for this integration." />
+              <SectionCard.Content>
                 {/* Title */}
                 <FormField
                   control={form.control}
@@ -130,19 +119,13 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     </FormItem>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Connection Details Section */}
-            <AccordionItem value="connection" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    Connection Details
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-8 pt-4">
+            <SectionCard variant="violet">
+              <SectionCard.Header icon={IconPlug} title="Connection Details" description="Vendor type and endpoint configuration." />
+              <SectionCard.Content>
                 {/* Vendor (50/50 row) */}
                 <FormField
                   control={form.control}
@@ -195,23 +178,13 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     </FormItem>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </SectionCard.Content>
+            </SectionCard>
 
-          {/* Action Footer */}
-          <div className="flex justify-end gap-4 mt-8">
-            <GradientButton
-              type="button"
-              variant="outline"
-              onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)}
-            >
-              Cancel
-            </GradientButton>
-            <GradientButton type="submit">
-              Save Changes
-            </GradientButton>
-          </div>
+          <FormActions>
+            <FormActions.Cancel onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)} />
+            <FormActions.Submit />
+          </FormActions>
         </form>
       </Form >
     </div>

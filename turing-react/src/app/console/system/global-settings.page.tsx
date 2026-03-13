@@ -68,7 +68,7 @@ export default function GlobalSettingsPage() {
         decimalSeparator === "COMMA" ? "150,75,BRL" : "150.75,BRL";
 
     return (
-        <div className="px-4 lg:px-6 max-w-2xl space-y-6">
+        <div className="px-4 lg:px-6 max-w-2xl mx-auto space-y-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {/* Numeric Formatting Section */}

@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
     Dialog,
     DialogContent,
@@ -19,9 +18,11 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
+import { FormActions } from "@/components/ui/form-actions"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { SectionCard } from "@/components/ui/section-card"
 import {
     Table,
     TableBody,
@@ -33,6 +34,7 @@ import {
 import type { TurSNSiteMergeField } from "@/models/sn/sn-site-merge-field.model"
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model"
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service"
+import { IconFileText, IconGitMerge, IconLink, IconReplace } from "@tabler/icons-react"
 import { PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -105,222 +107,192 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 py-8 px-6">
-                <Accordion
-                    type="multiple"
-                    defaultValue={["providers", "relations", "description", "overwritten-fields"]}
-                    className="w-full space-y-4"
-                >
-                    {/* Providers Section */}
-                    <AccordionItem value="providers" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Provider Details</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
-                            <FormField
-                                control={form.control}
-                                name="providerFrom"
-                                rules={{ required: "Please enter the source provider." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Source Provider</FormLabel>
-                                        <FormDescription>
-                                            Choose the provider you want to merge data from. This is where your information starts.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Input {...field} placeholder="e.g. Main Database" type="text" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="providerTo"
-                                rules={{ required: "Please enter the destination provider." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Destination Provider</FormLabel>
-                                        <FormDescription>
-                                            Select where the merged data will go. This is your target location.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Input {...field} placeholder="e.g. Analytics Store" type="text" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+                {/* Providers Section */}
+                <SectionCard variant="blue">
+                    <SectionCard.Header icon={IconGitMerge} title="Provider Details" description="Configure source and destination providers for this merge." />
+                    <SectionCard.Content>
+                        <FormField
+                            control={form.control}
+                            name="providerFrom"
+                            rules={{ required: "Please enter the source provider." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Source Provider</FormLabel>
+                                    <FormDescription>
+                                        Choose the provider you want to merge data from. This is where your information starts.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. Main Database" type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="providerTo"
+                            rules={{ required: "Please enter the destination provider." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Destination Provider</FormLabel>
+                                    <FormDescription>
+                                        Select where the merged data will go. This is your target location.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. Analytics Store" type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </SectionCard.Content>
+                </SectionCard>
 
-                    {/* Relations Section */}
-                    <AccordionItem value="relations" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Relation Mapping</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
-                            <FormField
-                                control={form.control}
-                                name="relationFrom"
-                                rules={{ required: "Please enter the source relation." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Source Relation</FormLabel>
-                                        <FormDescription>
-                                            Specify the relation from your source provider. This helps match the right data.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Input {...field} placeholder="e.g. user_id" type="text" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="relationTo"
-                                rules={{ required: "Please enter the destination relation." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Destination Relation</FormLabel>
-                                        <FormDescription>
-                                            Enter the relation in your destination provider. This is where the data will be linked.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Input {...field} placeholder="e.g. account_id" type="text" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
+                {/* Relations Section */}
+                <SectionCard variant="violet">
+                    <SectionCard.Header icon={IconLink} title="Relation Mapping" description="Define how source and destination data are linked." />
+                    <SectionCard.Content>
+                        <FormField
+                            control={form.control}
+                            name="relationFrom"
+                            rules={{ required: "Please enter the source relation." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Source Relation</FormLabel>
+                                    <FormDescription>
+                                        Specify the relation from your source provider. This helps match the right data.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. user_id" type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="relationTo"
+                            rules={{ required: "Please enter the destination relation." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Destination Relation</FormLabel>
+                                    <FormDescription>
+                                        Enter the relation in your destination provider. This is where the data will be linked.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. account_id" type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </SectionCard.Content>
+                </SectionCard>
 
-                    {/* Description Section */}
-                    <AccordionItem value="description" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">About This Merge</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Merge Description</FormLabel>
-                                        <FormDescription>
-                                            Add a short note to help you and your team understand the purpose of this merge.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Input {...field} placeholder="e.g. Sync user profiles for analytics" type="text" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
+                {/* Description Section */}
+                <SectionCard variant="emerald">
+                    <SectionCard.Header icon={IconFileText} title="About This Merge" description="Add context to help your team understand this merge." />
+                    <SectionCard.Content>
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Merge Description</FormLabel>
+                                    <FormDescription>
+                                        Add a short note to help you and your team understand the purpose of this merge.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. Sync user profiles for analytics" type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </SectionCard.Content>
+                </SectionCard>
 
-                    {/* Overwritten Fields Section */}
-                    <AccordionItem value="overwritten-fields" className="border rounded-lg px-6">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-foreground">Fields to Overwrite</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-8 pt-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
-                                    <DialogTrigger asChild>
-                                        <GradientButton variant="outline" type="button">
-                                            <PlusCircle className="h-4 w-4 mr-2" />
+                {/* Overwritten Fields Section */}
+                <SectionCard variant="amber">
+                    <SectionCard.Header icon={IconReplace} title="Fields to Overwrite" description="Manage which fields are replaced during the merge." />
+                    <SectionCard.Content>
+                        <div className="flex items-center justify-between mb-4">
+                            <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
+                                <DialogTrigger asChild>
+                                    <GradientButton variant="outline" type="button">
+                                        <PlusCircle className="h-4 w-4 mr-2" />
+                                        Add Field
+                                    </GradientButton>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Add a Field to Overwrite</DialogTitle>
+                                        <DialogDescription>
+                                            Pick a field from your source that should replace the value in your destination. This is useful for keeping important data up to date.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="field-name">Field Name</Label>
+                                            <Input
+                                                id="field-name"
+                                                value={newFieldName}
+                                                onChange={(e) => setNewFieldName(e.target.value)}
+                                                placeholder="e.g. email"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        addOverwrittenField();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <GradientButton type="button" onClick={addOverwrittenField}>
                                             Add Field
                                         </GradientButton>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>Add a Field to Overwrite</DialogTitle>
-                                            <DialogDescription>
-                                                Pick a field from your source that should replace the value in your destination. This is useful for keeping important data up to date.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4 py-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="field-name">Field Name</Label>
-                                                <Input
-                                                    id="field-name"
-                                                    value={newFieldName}
-                                                    onChange={(e) => setNewFieldName(e.target.value)}
-                                                    placeholder="e.g. email"
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === "Enter") {
-                                                            e.preventDefault();
-                                                            addOverwrittenField();
-                                                        }
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <GradientButton type="button" onClick={addOverwrittenField}>
-                                                Add Field
-                                            </GradientButton>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                            {overwrittenFields.length > 0 && (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Field Name</TableHead>
-                                            <TableHead className="w-24 text-right">Actions</TableHead>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                        {overwrittenFields.length > 0 && (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Field Name</TableHead>
+                                        <TableHead className="w-24 text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {overwrittenFields.map((field, index) => (
+                                        <TableRow key={field.id ?? `new-${index}`}>
+                                            <TableCell>{field.name}</TableCell>
+                                            <TableCell className="text-right">
+                                                <GradientButton
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    type="button"
+                                                    onClick={() => removeOverwrittenField(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-1" />
+                                                    Delete
+                                                </GradientButton>
+                                            </TableCell>
                                         </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {overwrittenFields.map((field, index) => (
-                                            <TableRow key={field.id ?? `new-${index}`}>
-                                                <TableCell>{field.name}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <GradientButton
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        type="button"
-                                                        onClick={() => removeOverwrittenField(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 mr-1" />
-                                                        Delete
-                                                    </GradientButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </SectionCard.Content>
+                </SectionCard>
 
                 {/* Action Footer */}
-                <div className="flex justify-end gap-3 pt-4">
-                    <GradientButton
-                        type="button"
-                        variant="outline"
-                        onClick={() => navigate(urlBase)}
-                    >
-                        Cancel
-                    </GradientButton>
-                    <GradientButton type="submit">
-                        {isNew ? "Create Merge Provider" : "Save Changes"}
-                    </GradientButton>
-                </div>
+                <FormActions>
+                    <FormActions.Cancel onClick={() => navigate(urlBase)} />
+                    <FormActions.Submit />
+                </FormActions>
             </form>
         </Form>
     );

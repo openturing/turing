@@ -31,11 +31,12 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { IconSettings, IconBuildingStore, IconPlug, IconAdjustments, IconToggleLeft } from "@tabler/icons-react"
 import { DialogDelete } from "../dialog.delete"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { SectionCard } from "../ui/section-card"
 const turStoreInstanceService = new TurStoreInstanceService();
 const urlBase = ROUTES.STORE_INSTANCE
 interface Props {
@@ -298,20 +299,11 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-              <Accordion
-                type="multiple"
-                defaultValue={["general", "vendor", "endpoint", "advanced", "status"]}
-                className="w-full space-y-4"
-              >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
                 {/* General Information Section */}
-                <AccordionItem value="general" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">General Information</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="blue">
+                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
+                  <SectionCard.Content>
                     <div className="w-full">
                       <FormField
                         control={form.control}
@@ -357,17 +349,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Vendor Section - Strict Inline */}
-                <AccordionItem value="vendor" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Vendor</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="cyan">
+                  <SectionCard.Header icon={IconBuildingStore} title="Vendor" description="Backend technology for this store." />
+                  <SectionCard.Content>
                     <div className="w-full flex flex-row justify-between items-center gap-4">
                       <div className="flex flex-col">
                         <FormLabel>Vendor</FormLabel>
@@ -409,17 +397,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         />
                       </div>
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Endpoint Section */}
-                <AccordionItem value="endpoint" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Endpoint</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="violet">
+                  <SectionCard.Header icon={IconPlug} title="Endpoint" description="Connection URL, collection, and credentials." />
+                  <SectionCard.Content>
                     <div className="w-full">
                       <FormField
                         control={form.control}
@@ -490,17 +474,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Advanced Section */}
-                <AccordionItem value="advanced" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Advanced Options</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="amber">
+                  <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Provider-specific overrides and configuration." />
+                  <SectionCard.Content>
                     <div className="w-full rounded-md border p-4 space-y-4">
                       <div className="text-sm font-medium">Visual Provider Options</div>
                       <div className="text-muted-foreground text-sm">
@@ -570,17 +550,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Status Section - Strict Inline */}
-                <AccordionItem value="status" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Status</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="slate">
+                  <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this store." />
+                  <SectionCard.Content>
                     <FormField
                       control={form.control}
                       name="enabled"
@@ -605,21 +581,12 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-              <div className="flex justify-end gap-3 pt-4">
-                <GradientButton
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(urlBase)}
-                >
-                  Cancel
-                </GradientButton>
-                <GradientButton type="submit">
-                  Save Changes
-                </GradientButton>
-              </div>
+                  </SectionCard.Content>
+                </SectionCard>
+              <FormActions>
+                <FormActions.Cancel onClick={() => navigate(urlBase)} />
+                <FormActions.Submit />
+              </FormActions>
             </form>
           </Form>
         </CardContent>

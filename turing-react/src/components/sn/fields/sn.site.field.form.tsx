@@ -1,7 +1,6 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { BadgeFieldType } from "@/components/badge-field-type"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   Form,
   FormControl,
@@ -11,12 +10,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { FormActions } from "@/components/ui/form-actions"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
-import { GradientButton } from "@/components/ui/gradient-button"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
   Input
 } from "@/components/ui/input"
+import { SectionCard } from "@/components/ui/section-card"
 import {
   Select,
   SelectContent,
@@ -33,6 +33,7 @@ import type { TurSNFieldType } from "@/models/sn/sn-field-type.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
+import { IconSettings } from "@tabler/icons-react"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -179,288 +180,264 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 py-10 px-8">
-            <Accordion
-              type="multiple"
-              defaultValue={["general", "facet"]}
-              className="w-full space-y-4"
-            >
-              {/* General Configuration */}
-              <AccordionItem value="general" className="border rounded-lg px-6">
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold">General Configuration</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="flex flex-col gap-6 pt-4">
-                  {/* Name */}
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    rules={{ required: "Name is required." }}
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Name</FormLabel>
-                        <FormDescription>
-                          Unique identifier for this field. Used for search and indexing.
-                        </FormDescription>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
+            {/* General Configuration */}
+            <SectionCard variant="blue">
+              <SectionCard.Header icon={IconSettings} title="General Configuration" description="Core field settings including name, type, and behavior." />
+              <SectionCard.Content>
+                {/* Name */}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  rules={{ required: "Name is required." }}
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Name</FormLabel>
+                      <FormDescription>
+                        Unique identifier for this field. Used for search and indexing.
+                      </FormDescription>
+                      <FormControl>
+                        <Input {...field} placeholder="Name" type="text" className="w-full" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Type */}
+                <FormField
+                  control={form.control}
+                  name="type"
+                  rules={{ required: "Type is required." }}
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Type</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Data type for this field (e.g., text, number, date).
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
                         <FormControl>
-                          <Input {...field} placeholder="Name" type="text" className="w-full" />
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger className="w-full min-w-45">
+                              <SelectValue placeholder="Choose..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {snFieldTypes.map((snFieldType) => (
+                                <SelectItem key={snFieldType.id} value={snFieldType.id}>
+                                  <div className="flex w-full items-center justify-between gap-3">
+                                    <BadgeFieldType type={snFieldType.id} variation="short" />
+                                    <span>{snFieldType.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {/* Type */}
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    rules={{ required: "Type is required." }}
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Type</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Data type for this field (e.g., text, number, date).
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <FormControl>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <SelectTrigger className="w-full min-w-45">
-                                <SelectValue placeholder="Choose..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {snFieldTypes.map((snFieldType) => (
-                                  <SelectItem key={snFieldType.id} value={snFieldType.id}>
-                                    <div className="flex w-full items-center justify-between gap-3">
-                                      <BadgeFieldType type={snFieldType.id} variation="short" />
-                                      <span>{snFieldType.name}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* Description */}
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Description</FormLabel>
-                        <FormDescription>
-                          Brief explanation of the field’s purpose or usage.
-                        </FormDescription>
-                        <FormControl>
-                          <Textarea placeholder="Description" className="resize-none w-full" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {/* Default Value */}
-                  <FormField
-                    control={form.control}
-                    name="defaultValue"
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                        <FormLabel>Default Value</FormLabel>
-                        <FormDescription>
-                          Value automatically assigned if no value is provided during indexing.
-                          {isDecimalType
-                            ? ` Use ${decimalSymbol} as decimal separator (example: 150${decimalSymbol}75).`
-                            : null}
-                          {isCurrencyType
-                            ? ` Currency format: amount,ISO-4217 (example: 150${decimalSymbol}75,BRL).`
-                            : null}
-                        </FormDescription>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={defaultValuePlaceholder}
-                            type="text"
-                            className="w-full"
-                            onBlur={(event) => {
-                              const rawValue = event.target.value ?? "";
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* Description */}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Description</FormLabel>
+                      <FormDescription>
+                        Brief explanation of the field's purpose or usage.
+                      </FormDescription>
+                      <FormControl>
+                        <Textarea placeholder="Description" className="resize-none w-full" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Default Value */}
+                <FormField
+                  control={form.control}
+                  name="defaultValue"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Default Value</FormLabel>
+                      <FormDescription>
+                        Value automatically assigned if no value is provided during indexing.
+                        {isDecimalType
+                          ? ` Use ${decimalSymbol} as decimal separator (example: 150${decimalSymbol}75).`
+                          : null}
+                        {isCurrencyType
+                          ? ` Currency format: amount,ISO-4217 (example: 150${decimalSymbol}75,BRL).`
+                          : null}
+                      </FormDescription>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder={defaultValuePlaceholder}
+                          type="text"
+                          className="w-full"
+                          onBlur={(event) => {
+                            const rawValue = event.target.value ?? "";
 
-                              if (isDecimalType) {
-                                field.onChange(normalizeDecimalString(rawValue));
-                                return;
-                              }
+                            if (isDecimalType) {
+                              field.onChange(normalizeDecimalString(rawValue));
+                              return;
+                            }
 
-                              if (isCurrencyType) {
-                                field.onChange(normalizeCurrencyString(rawValue));
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {/* Multi Value Switch */}
-                  <FormField
-                    control={form.control}
-                    name="multiValued"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Multi Value</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Allows this field to store multiple values (e.g., tags).
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* Highlighting Switch */}
-                  <FormField
-                    control={form.control}
-                    name="hl"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Highlighting</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Enables highlighting of matching search terms in results.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* MLT Switch */}
-                  <FormField
-                    control={form.control}
-                    name="mlt"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>MLT</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Activates “More Like This” functionality.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* Enabled Switch */}
-                  <FormField
-                    control={form.control}
-                    name="enabled"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            If enabled, this field will be included in search queries and indexing.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* Required Switch */}
-                  <FormField
-                    control={form.control}
-                    name="required"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Required</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Marks this field as mandatory during indexing.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                  {/* Facet Switch */}
-                  <FormField
-                    control={form.control}
-                    name="facet"
-                    render={({ field }) => (
-                      <FormItemTwoColumns className="w-full">
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Facet</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            Enables this field as a filter in the search page.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={field.value === 1}
-                            onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
-                          />
-                        </FormItemTwoColumns.Right>
-                        <FormMessage />
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                            if (isCurrencyType) {
+                              field.onChange(normalizeCurrencyString(rawValue));
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Multi Value Switch */}
+                <FormField
+                  control={form.control}
+                  name="multiValued"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Multi Value</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Allows this field to store multiple values (e.g., tags).
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* Highlighting Switch */}
+                <FormField
+                  control={form.control}
+                  name="hl"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Highlighting</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Enables highlighting of matching search terms in results.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* MLT Switch */}
+                <FormField
+                  control={form.control}
+                  name="mlt"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>MLT</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Activates "More Like This" functionality.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* Enabled Switch */}
+                <FormField
+                  control={form.control}
+                  name="enabled"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          If enabled, this field will be included in search queries and indexing.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* Required Switch */}
+                <FormField
+                  control={form.control}
+                  name="required"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Required</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Marks this field as mandatory during indexing.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+                {/* Facet Switch */}
+                <FormField
+                  control={form.control}
+                  name="facet"
+                  render={({ field }) => (
+                    <FormItemTwoColumns className="w-full">
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Facet</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Enables this field as a filter in the search page.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormItemTwoColumns.Right>
+                      <FormMessage />
+                    </FormItemTwoColumns>
+                  )}
+                />
+              </SectionCard.Content>
+            </SectionCard>
             {/* Action Footer */}
-            <div className="flex justify-end gap-4 pt-6">
-              <GradientButton
-                type="button"
-                variant="outline"
-                className="w-full md:w-auto"
-                onClick={() => navigate(urlBase)}
-              >
-                Cancel
-              </GradientButton>
-              <GradientButton
-                type="submit"
-                disabled={isLoading}
-                className="w-full md:w-auto"
-              >
-                Save Changes
-              </GradientButton>
-            </div>
+            <FormActions>
+              <FormActions.Cancel onClick={() => navigate(urlBase)} />
+              <FormActions.Submit />
+            </FormActions>
           </form>
         </Form>
       )}
     </>
   )
 }
-

@@ -30,9 +30,10 @@ import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { TurIntegrationIndexingRuleService } from "@/services/integration/integration-indexing-rule.service"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { IconFileText, IconMap, IconGavel, IconList } from "@tabler/icons-react"
+import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
+import { SectionCard } from "../ui/section-card"
 import { DynamicIndexingRuleFields } from "./dynamic.indexing.rule.field"
 // Constants
 const RULE_TYPES = [
@@ -177,26 +178,11 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
     <div className="px-6 py-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Accordion
-            type="multiple"
-            defaultValue={[
-              "basic-info",
-              "site-settings",
-              "rule-action",
-              "matching-values"
-            ]}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             {/* Section: Basic Info */}
-            <AccordionItem value="basic-info" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    Rule Details
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="blue">
+              <SectionCard.Header icon={IconFileText} title="Rule Details" description="Name and describe this indexing rule." />
+              <SectionCard.Content>
                 {/* Rule Name */}
                 <FormField
                   control={control}
@@ -241,19 +227,13 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                     </FormItem>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Section: Site Settings */}
-            <AccordionItem value="site-settings" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    Where does this rule apply?
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="violet">
+              <SectionCard.Header icon={IconMap} title="Where does this rule apply?" description="Select the site and field for this rule." />
+              <SectionCard.Content>
                 {/* Semantic Navigation Site */}
                 <FormField
                   control={control}
@@ -327,19 +307,13 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                     </FormItemTwoColumns>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Section: Rule Action */}
-            <AccordionItem value="rule-action" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    What happens to matching content?
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="emerald">
+              <SectionCard.Header icon={IconGavel} title="What happens to matching content?" description="Define the action for matched items." />
+              <SectionCard.Content>
                 {/* Action Type */}
                 <FormField
                   control={control}
@@ -373,19 +347,13 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                     </FormItemTwoColumns>
                   )}
                 />
-              </AccordionContent>
-            </AccordionItem>
+              </SectionCard.Content>
+            </SectionCard>
 
             {/* Section: Matching Values */}
-            <AccordionItem value="matching-values" className="border rounded-lg px-6">
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">
-                    Which values trigger this rule?
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-6 pt-4">
+            <SectionCard variant="amber">
+              <SectionCard.Header icon={IconList} title="Which values trigger this rule?" description="Specify the values that activate this rule." />
+              <SectionCard.Content>
                 <FormItem>
                   <FormLabel>Values to Match</FormLabel>
                   <FormDescription>
@@ -399,23 +367,15 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                     />
                   </FormControl>
                 </FormItem>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </SectionCard.Content>
+            </SectionCard>
+          </div>
 
           {/* Action Footer */}
-          <div className="flex justify-end gap-4 mt-8">
-            <GradientButton
-              type="button"
-              variant="outline"
-              onClick={() => navigate(`${ROUTES.INTEGRATION_INSTANCE}/${integrationId}/indexing-rule`)}
-            >
-              Cancel
-            </GradientButton>
-            <GradientButton type="submit">
-              Save Changes
-            </GradientButton>
-          </div>
+          <FormActions className="mt-6">
+            <FormActions.Cancel onClick={() => navigate(`${ROUTES.INTEGRATION_INSTANCE}/${integrationId}/indexing-rule`)} />
+            <FormActions.Submit />
+          </FormActions>
         </form>
       </Form>
     </div>

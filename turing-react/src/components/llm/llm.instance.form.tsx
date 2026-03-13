@@ -1,6 +1,8 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { SectionCard } from "../ui/section-card"
+import { FormActions } from "../ui/form-actions"
+import { IconSettings, IconBrain, IconSparkles, IconAdjustments, IconToggleLeft } from "@tabler/icons-react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
@@ -35,7 +37,6 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { DialogDelete } from "../dialog.delete"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 const turLLMInstanceService = new TurLLMInstanceService();
 const turLLMVendorService = new TurLLMVendorService();
@@ -380,28 +381,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-8"
+              className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-4"
               autoComplete="off"
             >
-              <Accordion
-                type="multiple"
-                defaultValue={[
-                  "general",
-                  "model",
-                  "generation",
-                  "advanced",
-                  "status"
-                ]}
-                className="w-full space-y-4"
-              >
                 {/* General Section */}
-                <AccordionItem value="general" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">General Information</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="blue">
+                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title, vendor, and description." />
+                  <SectionCard.Content>
                     {/* Title */}
                     <div className="w-full">
                       <FormField
@@ -485,17 +471,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Model Section */}
-                <AccordionItem value="model" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Model Settings</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="violet">
+                  <SectionCard.Header icon={IconBrain} title="Model Settings" description="Endpoint, model name, and API key." />
+                  <SectionCard.Content>
                     {/* URL */}
                     <div className="w-full">
                       <FormField
@@ -562,17 +544,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Generation Section */}
-                <AccordionItem value="generation" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Generation Parameters</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="emerald">
+                  <SectionCard.Header icon={IconSparkles} title="Generation Parameters" description="Temperature, sampling, and seed settings." />
+                  <SectionCard.Content>
                     {/* Temperature — all vendors */}
                     <div className="w-full">
                       <FormField
@@ -632,17 +610,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         />
                       </div>
                     )}
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Advanced Section */}
-                <AccordionItem value="advanced" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Advanced Options</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="amber">
+                  <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Response format, capabilities, and provider overrides." />
+                  <SectionCard.Content>
                     {/* Response Format */}
                     <div className="w-full">
                       <FormField
@@ -790,17 +764,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Status Section */}
-                <AccordionItem value="status" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Status</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="slate">
+                  <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this language model." />
+                  <SectionCard.Content>
                     <FormField
                       control={form.control}
                       name="enabled"
@@ -847,24 +817,14 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                  </SectionCard.Content>
+                </SectionCard>
 
               {/* Action Footer */}
-              <div className="flex justify-end gap-4 mt-8">
-                <GradientButton
-                  type="button"
-                  variant="outline"
-                  className="w-40"
-                  onClick={() => navigate(urlBase)}
-                >
-                  Cancel
-                </GradientButton>
-                <GradientButton type="submit" className="w-40">
-                  Save Changes
-                </GradientButton>
-              </div>
+              <FormActions>
+                <FormActions.Cancel onClick={() => navigate(urlBase)} />
+                <FormActions.Submit />
+              </FormActions>
             </form>
           </Form>
         </CardContent>

@@ -32,10 +32,11 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { IconPlug, IconSettings } from "@tabler/icons-react"
 import { DialogDelete } from "../dialog.delete"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { GradientButton } from "../ui/gradient-button"
+import { SectionCard } from "../ui/section-card"
 const turSEInstanceService = new TurSEInstanceService();
 const turSEVendorService = new TurSEVendorService();
 
@@ -129,20 +130,11 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         </CardHeader >
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl mx-auto py-10">
-              <Accordion
-                type="multiple"
-                defaultValue={["general", "connection"]}
-                className="w-full space-y-4"
-              >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
                 {/* General Section */}
-                <AccordionItem value="general" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">General Information</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="blue">
+                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this engine." />
+                  <SectionCard.Content>
                     <FormField
                       control={control}
                       name="title"
@@ -184,17 +176,13 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItem>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
+                  </SectionCard.Content>
+                </SectionCard>
 
                 {/* Connection Section */}
-                <AccordionItem value="connection" className="border rounded-lg px-6">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">Connection Settings</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="flex flex-col gap-6 pt-4">
+                <SectionCard variant="violet">
+                  <SectionCard.Header icon={IconPlug} title="Connection Settings" description="Vendor and endpoint configuration." />
+                  <SectionCard.Content>
                     <FormField
                       control={control}
                       name="turSEVendor.id"
@@ -246,23 +234,13 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItem>
                       )}
                     />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                  </SectionCard.Content>
+                </SectionCard>
 
-              {/* Action Footer */}
-              <div className="flex justify-end gap-3 pt-8">
-                <GradientButton
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(ROUTES.SE_INSTANCE)}
-                >
-                  Cancel
-                </GradientButton>
-                <GradientButton type="submit">
-                  Save Changes
-                </GradientButton>
-              </div>
+              <FormActions>
+                <FormActions.Cancel onClick={() => navigate(ROUTES.SE_INSTANCE)} />
+                <FormActions.Submit />
+              </FormActions>
             </form>
           </Form>
         </CardContent>

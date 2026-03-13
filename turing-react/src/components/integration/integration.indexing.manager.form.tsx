@@ -7,7 +7,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { FormActions } from "@/components/ui/form-actions";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,6 @@ import {
   IconChevronDown,
   IconHash,
   IconLink,
-  IconLoader2,
   IconSettings,
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
@@ -292,20 +291,10 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t">
-          <GradientButton
-            type="button"
-            variant="ghost"
-            onClick={() => form.reset()}
-            disabled={submitting}
-          >
-            Reset
-          </GradientButton>
-          <GradientButton type="submit" disabled={submitting}>
-            {submitting && <IconLoader2 className="h-4 w-4 animate-spin" />}
-            {actionLabel}
-          </GradientButton>
-        </div>
+        <FormActions>
+          <FormActions.Cancel onClick={() => form.reset()}>Reset</FormActions.Cancel>
+          <FormActions.Submit loading={submitting}>{actionLabel}</FormActions.Submit>
+        </FormActions>
       </form>
     </Form>
   );
