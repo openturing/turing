@@ -1,7 +1,6 @@
 import {
     flexRender,
     getCoreRowModel,
-    getPaginationRowModel,
     useReactTable,
     type ColumnDef,
 } from "@tanstack/react-table";
@@ -26,7 +25,7 @@ import {
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurIntegrationIndexing } from "@/models/integration/integration-indexing.model";
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowRightCircle, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
+import { ArrowRightCircle, ArrowUpDown, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { BadgeColorful } from "../badge-colorful";
 import { BadgeLocale } from "../badge-locale";
@@ -36,8 +35,24 @@ import { GradientButton } from "../ui/gradient-button";
 interface Props {
     gridItemList: TurIntegrationIndexing[];
     refreshInterval?: number;
-
+    page: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+    sortBy: string;
+    sortDirection: "asc" | "desc";
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: number) => void;
+    onSortChange: (field: string, direction: "asc" | "desc") => void;
 }
+
+const SORTABLE_COLUMNS: Record<string, string> = {
+    modificationDate: "Date",
+    objectId: "Object ID",
+    status: "Status",
+    environment: "Environment",
+    locale: "Language",
+};
 
 export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     {
@@ -98,7 +113,7 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
 
-            const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
+            const statusConfig: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
                 PREPARE_INDEX: {
                     label: "Indexed",
                     icon: FileSearch,
@@ -242,53 +257,100 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     },
 ];
 
-export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({ gridItemList, refreshInterval }) => {
-    const [pagination, setPagination] = useState({
-        pageIndex: 0, // initial page index
-        pageSize: 100, // default page size
-    });
-
+export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
+    gridItemList,
+    refreshInterval,
+    page,
+    pageSize,
+    totalElements,
+    totalPages,
+    sortBy,
+    sortDirection,
+    onPageChange,
+    onPageSizeChange,
+    onSortChange,
+}) => {
     const table = useReactTable({
         data: gridItemList,
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onPaginationChange: setPagination,
+        manualPagination: true,
+        pageCount: totalPages,
         state: {
-            pagination,
+            pagination: {
+                pageIndex: page,
+                pageSize,
+            },
         },
     });
 
     const [lastUpdated, setLastUpdated] = useState(Date.now());
 
     useEffect(() => {
+        setLastUpdated(Date.now());
+    }, [gridItemList]);
+
+    useEffect(() => {
+        if (!refreshInterval) return;
         const tick = setInterval(() => {
             setLastUpdated(Date.now());
         }, refreshInterval);
 
         return () => clearInterval(tick);
     }, [refreshInterval]);
+
+    const handleSort = (field: string) => {
+        if (sortBy === field) {
+            onSortChange(field, sortDirection === "asc" ? "desc" : "asc");
+        } else {
+            onSortChange(field, "desc");
+        }
+    };
+
     return (
         <div className="px-6">
-            <div className="flex justify-end p-2 items-center gap-2 text-xs text-muted-foreground">
-                <RefreshCcw className="h-3 w-3 animate-spin-slow" />
-                Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+            <div className="flex justify-between p-2 items-center text-xs text-muted-foreground">
+                <span>{totalElements.toLocaleString()} total records</span>
+                <div className="flex items-center gap-2">
+                    <RefreshCcw className="h-3 w-3 animate-spin-slow" />
+                    Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+                </div>
             </div>
             <Card>
                 <div className="rounded-md">
                     <Table>
-                        <TableHeader >
+                        <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {
+                                        const columnId = header.column.id;
+                                        const isSortable = columnId in SORTABLE_COLUMNS;
+                                        const isActive = sortBy === columnId;
                                         return (
-                                            <TableHead key={header.id} className="px-5">
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
+                                            <TableHead
+                                                key={header.id}
+                                                className={cn("px-5", isSortable && "cursor-pointer select-none hover:bg-muted/50")}
+                                                onClick={isSortable ? () => handleSort(columnId) : undefined}
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                    {isSortable && (
+                                                        <ArrowUpDown className={cn(
+                                                            "h-3 w-3 ml-1",
+                                                            isActive ? "text-foreground" : "text-muted-foreground/50"
+                                                        )} />
                                                     )}
+                                                    {isActive && (
+                                                        <span className="text-[10px] font-mono text-muted-foreground">
+                                                            {sortDirection === "asc" ? "\u2191" : "\u2193"}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </TableHead>
                                         );
                                     })}
@@ -322,35 +384,33 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({ gridItem
                 </div>
                 <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
                     <div className="flex items-center space-x-2">
-                        <p >Rows per page</p>
+                        <p>Rows per page</p>
                         <Select
-                            value={`${table.getState().pagination.pageSize}`}
-                            onValueChange={(value) => {
-                                table.setPageSize(Number(value))
-                            }}
+                            value={`${pageSize}`}
+                            onValueChange={(value) => onPageSizeChange(Number(value))}
                         >
                             <SelectTrigger className="h-8 w-17.5">
-                                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                                <SelectValue placeholder={pageSize} />
                             </SelectTrigger>
                             <SelectContent side="top">
-                                {[10, 20, 30, 40, 50, 100].map((pageSize) => (
-                                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                                        {pageSize}
+                                {[10, 20, 30, 40, 50, 100].map((size) => (
+                                    <SelectItem key={size} value={`${size}`}>
+                                        {size}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="flex w-25 items-center justify-center text-sm font-medium">
-                        Page {table.getState().pagination.pageIndex + 1} of{" "}
-                        {table.getPageCount()}
+                        Page {page + 1} of{" "}
+                        {totalPages || 1}
                     </div>
                     <div className="flex items-center space-x-2">
                         <GradientButton
                             variant="outline"
                             size="sm"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
+                            onClick={() => onPageChange(page - 1)}
+                            disabled={page <= 0}
                             className="h-8 w-8 p-0"
                         >
                             <span>&lt;</span>
@@ -358,8 +418,8 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({ gridItem
                         <GradientButton
                             variant="outline"
                             size="sm"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
+                            onClick={() => onPageChange(page + 1)}
+                            disabled={page >= totalPages - 1}
                             className="h-8 w-8 p-0"
                         >
                             <span>&gt;</span>
