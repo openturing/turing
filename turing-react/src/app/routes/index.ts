@@ -1,3 +1,4 @@
+export { AdminRoutes } from "./admin.routes";
 export { ChatRoutes } from "./chat.routes";
 export { ExchangeRoutes } from "./exchange.routes";
 export { GlobalSettingsRoutes } from "./global-settings.routes";

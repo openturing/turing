@@ -34,10 +34,10 @@ interface InternalSidebarProps {
     counts?: any[];
     navMain: NavMainItem[];
   };
-  onDelete: () => void;
+  onDelete?: () => void;
   onExport?: () => void;
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const formatCount = (value?: number) => (value ?? 0).toLocaleString();
@@ -113,12 +113,12 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
                     <IconDownload className="size-5!" />
                   </GradientButton>
                 )}
-                {!isNew && (
+                {!isNew && onDelete && setOpen && (
                   <DialogDelete
                     feature={feature}
                     name={name}
                     onDelete={onDelete}
-                    open={open}
+                    open={open ?? false}
                     setOpen={setOpen}
                   />
                 )}

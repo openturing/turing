@@ -27,9 +27,9 @@ interface Props {
   urlBase?: string;
   isNew?: boolean;
   data?: DataType;
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>
-  onDelete: () => void;
+  open?: boolean;
+  setOpen?: Dispatch<SetStateAction<boolean>>
+  onDelete?: () => void;
   onExport?: () => void;
 }
 

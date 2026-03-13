@@ -10,6 +10,7 @@ import {
   IconReceiptRupee,
   IconSearch,
   IconSettings,
+  IconShieldCog,
   IconZoomCode
 } from "@tabler/icons-react"
 import * as React from "react"
@@ -28,10 +29,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { TurAuthorizationService } from "@/services/auth/authorization.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
 const LLM_ONLY_ITEMS = new Set(["Chat", "Token Usage"])
+const KEYCLOAK_HIDDEN_ITEMS = new Set(["Administration"])
 
 const allNavItems = [
   {
@@ -94,13 +97,20 @@ const allNavItems = [
     url: "/admin/token/instance",
     icon: IconCode,
   },
+  {
+    title: "Administration",
+    url: ROUTES.ADMIN_ROOT,
+    icon: IconShieldCog,
+  },
 ]
 
 const turLLMInstanceService = new TurLLMInstanceService();
+const turAuthorizationService = new TurAuthorizationService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
+  const [isKeycloak, setIsKeycloak] = React.useState(true);
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -108,11 +118,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
+    turAuthorizationService.discovery().then((d) => {
+      setIsKeycloak(d.keycloak);
+    });
   }, [])
 
   const navMain = React.useMemo(
-    () => hasEnabledLlm ? allNavItems : allNavItems.filter((item) => !LLM_ONLY_ITEMS.has(item.title)),
-    [hasEnabledLlm]
+    () => allNavItems.filter((item) => {
+      if (!hasEnabledLlm && LLM_ONLY_ITEMS.has(item.title)) return false;
+      if (isKeycloak && KEYCLOAK_HIDDEN_ITEMS.has(item.title)) return false;
+      return true;
+    }),
+    [hasEnabledLlm, isKeycloak]
   )
   return (
     <Sidebar collapsible="icon" {...props}>

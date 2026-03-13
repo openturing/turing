@@ -1,3 +1,5 @@
+import type { TurGroup } from "./group";
+
 export type TurUser = {
   username: string;
   firstName: string;
@@ -7,4 +9,5 @@ export type TurUser = {
   password?: string;
   hasAvatar?: boolean;
   avatarUrl?: string;
+  turGroups?: TurGroup[];
 };
