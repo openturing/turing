@@ -32,11 +32,12 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById("FIRST_TIME")).thenReturn(Optional.empty());
         when(turConfigVarRepository.findById("GLOBAL_DECIMAL_SEPARATOR")).thenReturn(Optional.empty());
         when(turConfigVarRepository.findById("GLOBAL_PYTHON_EXECUTABLE")).thenReturn(Optional.empty());
+        when(turConfigVarRepository.findById("GLOBAL_DEFAULT_LLM")).thenReturn(Optional.empty());
 
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(3)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(4)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -48,6 +49,9 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PYTHON_EXECUTABLE".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_LLM".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
     }
 
     @Test
@@ -56,6 +60,8 @@ class TurConfigVarOnStartupTest {
         when(turConfigVarRepository.findById("GLOBAL_DECIMAL_SEPARATOR"))
                 .thenReturn(Optional.of(new TurConfigVar()));
         when(turConfigVarRepository.findById("GLOBAL_PYTHON_EXECUTABLE"))
+                .thenReturn(Optional.of(new TurConfigVar()));
+        when(turConfigVarRepository.findById("GLOBAL_DEFAULT_LLM"))
                 .thenReturn(Optional.of(new TurConfigVar()));
 
         turConfigVarOnStartup.createDefaultRows();
