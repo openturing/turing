@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
   FormControl,
@@ -33,7 +32,6 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { IconPlug, IconSettings } from "@tabler/icons-react"
-import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { SectionCard } from "../ui/section-card"
@@ -55,7 +53,6 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     defaultValues: value
   });
   const { control } = form;
-  const [open, setOpen] = useState(false);
   const [vendors, setVendors] = useState<TurSEVendor[]>([]);
   const navigate = useNavigate()
   const selectedVendorId = useWatch({ control, name: "turSEVendor.id" });
@@ -99,38 +96,10 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     }
   }
 
-  async function onDelete() {
-    console.log("delete");
-    try {
-      if (await turSEInstanceService.delete(value)) {
-        toast.success(`The ${value.title} Search Engine was deleted`);
-        navigate(ROUTES.SE_INSTANCE);
-      }
-      else {
-        toast.error(`The ${value.title} Search Engine was not deleted`);
-      }
-
-    } catch (error) {
-      console.error("Form submission error", error);
-      toast.error(`The ${value.title} Search Engine was not deleted`);
-    }
-    setOpen(false);
-  }
   return (
-    <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Search Engine</CardTitle>
-          <CardAction>
-            {!isNew && <DialogDelete feature="Search Engine" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
-          </CardAction>
-          <CardDescription>
-            Search engine settings.
-          </CardDescription>
-        </CardHeader >
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
+    <div className="px-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                 {/* General Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this engine." />
@@ -241,11 +210,9 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                 <FormActions.Cancel onClick={() => navigate(ROUTES.SE_INSTANCE)} />
                 <FormActions.Submit />
               </FormActions>
-            </form>
-          </Form>
-        </CardContent>
-      </Card >
-    </div >
+        </form>
+      </Form>
+    </div>
   )
 }
 

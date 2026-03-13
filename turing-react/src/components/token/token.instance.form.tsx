@@ -103,7 +103,7 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
       <TooltipProvider>
-        <div className="mx-auto w-full max-w-md space-y-4">
+        <div className="mx-auto w-full max-w-2xl space-y-4">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-2xl font-bold">{isNew && (<span>New </span>)}API Token</h2>
             {!isNew && <DialogDelete feature="API token" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}

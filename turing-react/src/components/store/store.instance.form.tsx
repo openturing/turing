@@ -25,13 +25,13 @@ import {
 } from "@/components/ui/textarea"
 import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import { TurStoreInstanceService } from "@/services/store/store.service"
+import { IconAdjustments, IconBuildingStore, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { IconSettings, IconBuildingStore, IconPlug, IconAdjustments, IconToggleLeft } from "@tabler/icons-react"
 import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
@@ -287,7 +287,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   }
   return (
     <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-md">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Embedding Store</CardTitle>
           <CardAction>
@@ -300,289 +300,289 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
-                {/* General Information Section */}
-                <SectionCard variant="blue">
-                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
-                  <SectionCard.Content>
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        rules={{ required: "A title is required for this embedding store." }}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Title</FormLabel>
-                            <FormDescription>
-                              Provide a unique, descriptive name for this embedding store instance.
-                            </FormDescription>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Enter store title"
-                                type="text"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormDescription>
-                              Summarize the purpose or intended use of this embedding store.
-                            </FormDescription>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Enter a brief description"
-                                className="resize-none"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </SectionCard.Content>
-                </SectionCard>
+              {/* General Information Section */}
+              <SectionCard variant="blue">
+                <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
+                <SectionCard.Content>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      rules={{ required: "A title is required for this embedding store." }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
+                          <FormDescription>
+                            Provide a unique, descriptive name for this embedding store instance.
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Enter store title"
+                              type="text"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormDescription>
+                            Summarize the purpose or intended use of this embedding store.
+                          </FormDescription>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Enter a brief description"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </SectionCard.Content>
+              </SectionCard>
 
-                {/* Vendor Section - Strict Inline */}
-                <SectionCard variant="cyan">
-                  <SectionCard.Header icon={IconBuildingStore} title="Vendor" description="Backend technology for this store." />
-                  <SectionCard.Content>
-                    <div className="w-full flex flex-row justify-between items-center gap-4">
-                      <div className="flex flex-col">
-                        <FormLabel>Vendor</FormLabel>
-                        <FormDescription>
-                          Choose the backend technology powering this embedding store.
-                        </FormDescription>
-                      </div>
-                      <div className="flex-1 max-w-xs">
-                        <FormField
-                          control={form.control}
-                          name="turStoreVendor.id"
-                          rules={{ required: "Please select a vendor." }}
-                          render={({ field }) => (
-                            <FormItem className="mb-0">
-                              <Select
-                                onValueChange={(nextValue) => {
-                                  field.onChange(nextValue);
-                                  applyVendorDefaults(nextValue);
-                                }}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select vendor..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem key="CHROMA" value="CHROMA">
-                                    Chroma
-                                  </SelectItem>
-                                  <SelectItem key="MILVUS" value="MILVUS">
-                                    Milvus
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+              {/* Vendor Section - Strict Inline */}
+              <SectionCard variant="cyan">
+                <SectionCard.Header icon={IconBuildingStore} title="Vendor" description="Backend technology for this store." />
+                <SectionCard.Content>
+                  <div className="w-full flex flex-row justify-between items-center gap-4">
+                    <div className="flex flex-col">
+                      <FormLabel>Vendor</FormLabel>
+                      <FormDescription>
+                        Choose the backend technology powering this embedding store.
+                      </FormDescription>
+                    </div>
+                    <div className="flex-1 max-w-xs">
+                      <FormField
+                        control={form.control}
+                        name="turStoreVendor.id"
+                        rules={{ required: "Please select a vendor." }}
+                        render={({ field }) => (
+                          <FormItem className="mb-0">
+                            <Select
+                              onValueChange={(nextValue) => {
+                                field.onChange(nextValue);
+                                applyVendorDefaults(nextValue);
+                              }}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select vendor..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem key="CHROMA" value="CHROMA">
+                                  Chroma
+                                </SelectItem>
+                                <SelectItem key="MILVUS" value="MILVUS">
+                                  Milvus
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </SectionCard.Content>
+              </SectionCard>
+
+              {/* Endpoint Section */}
+              <SectionCard variant="violet">
+                <SectionCard.Header icon={IconPlug} title="Endpoint" description="Connection URL, collection, and credentials." />
+                <SectionCard.Content>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="url"
+                      rules={{ required: "Endpoint URL is required." }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Endpoint</FormLabel>
+                          <FormDescription>
+                            Enter the base URL where this embedding store is accessible. Example: http://localhost:8000
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter endpoint URL"
+                              type="text"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="collectionName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Collection Name</FormLabel>
+                          <FormDescription>
+                            Optional collection/index name used by the vector store.
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., turing"
+                              type="text"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="credential"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Credential</FormLabel>
+                          <FormDescription>
+                            Optional token/credential. Leave blank to keep existing credential when editing.
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter credential"
+                              type="password"
+                              autoComplete="new-password"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </SectionCard.Content>
+              </SectionCard>
+
+              {/* Advanced Section */}
+              <SectionCard variant="amber">
+                <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Provider-specific overrides and configuration." />
+                <SectionCard.Content>
+                  <div className="w-full rounded-md border p-4 space-y-4">
+                    <div className="text-sm font-medium">Visual Provider Options</div>
+                    <div className="text-muted-foreground text-sm">
+                      Use these fields for common options. Any value in raw JSON below overrides visual values.
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input placeholder="Base URL" value={storeProviderOptionsDraft.baseUrl} onChange={(event) => setStoreDraftValue("baseUrl", event.target.value)} />
+                      <Input placeholder="Collection Name" value={storeProviderOptionsDraft.collectionName} onChange={(event) => setStoreDraftValue("collectionName", event.target.value)} />
+                      <Input placeholder="Database Name" value={storeProviderOptionsDraft.databaseName} onChange={(event) => setStoreDraftValue("databaseName", event.target.value)} />
+                    </div>
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Initialize Schema</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          Enable automatic schema initialization for the vector store.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <GradientSwitch
+                          checked={storeProviderOptionsDraft.initializeSchema}
+                          onCheckedChange={(checked) => setStoreDraftValue("initializeSchema", checked)}
                         />
-                      </div>
-                    </div>
-                  </SectionCard.Content>
-                </SectionCard>
+                      </FormItemTwoColumns.Right>
+                    </FormItemTwoColumns>
 
-                {/* Endpoint Section */}
-                <SectionCard variant="violet">
-                  <SectionCard.Header icon={IconPlug} title="Endpoint" description="Connection URL, collection, and credentials." />
-                  <SectionCard.Content>
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="url"
-                        rules={{ required: "Endpoint URL is required." }}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endpoint</FormLabel>
-                            <FormDescription>
-                              Enter the base URL where this embedding store is accessible. Example: http://localhost:8000
-                            </FormDescription>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter endpoint URL"
-                                type="text"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="collectionName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Collection Name</FormLabel>
-                            <FormDescription>
-                              Optional collection/index name used by the vector store.
-                            </FormDescription>
-                            <FormControl>
-                              <Input
-                                placeholder="e.g., turing"
-                                type="text"
-                                {...field}
-                                value={field.value ?? ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="credential"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Credential</FormLabel>
-                            <FormDescription>
-                              Optional token/credential. Leave blank to keep existing credential when editing.
-                            </FormDescription>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter credential"
-                                type="password"
-                                autoComplete="new-password"
-                                {...field}
-                                value={field.value ?? ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </SectionCard.Content>
-                </SectionCard>
-
-                {/* Advanced Section */}
-                <SectionCard variant="amber">
-                  <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Provider-specific overrides and configuration." />
-                  <SectionCard.Content>
-                    <div className="w-full rounded-md border p-4 space-y-4">
-                      <div className="text-sm font-medium">Visual Provider Options</div>
-                      <div className="text-muted-foreground text-sm">
-                        Use these fields for common options. Any value in raw JSON below overrides visual values.
-                      </div>
+                    {selectedVendorId === "CHROMA" && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input placeholder="Base URL" value={storeProviderOptionsDraft.baseUrl} onChange={(event) => setStoreDraftValue("baseUrl", event.target.value)} />
-                        <Input placeholder="Collection Name" value={storeProviderOptionsDraft.collectionName} onChange={(event) => setStoreDraftValue("collectionName", event.target.value)} />
-                        <Input placeholder="Database Name" value={storeProviderOptionsDraft.databaseName} onChange={(event) => setStoreDraftValue("databaseName", event.target.value)} />
+                        <Input placeholder="Tenant Name" value={storeProviderOptionsDraft.tenantName} onChange={(event) => setStoreDraftValue("tenantName", event.target.value)} />
+                        <Input placeholder="Key Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.keyToken} onChange={(event) => setStoreDraftValue("keyToken", event.target.value)} />
+                        <Input placeholder="Basic Username" value={storeProviderOptionsDraft.basicUsername} onChange={(event) => setStoreDraftValue("basicUsername", event.target.value)} />
+                        <Input placeholder="Basic Password" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.basicPassword} onChange={(event) => setStoreDraftValue("basicPassword", event.target.value)} />
                       </div>
+                    )}
+
+                    {selectedVendorId === "MILVUS" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input placeholder="Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.token} onChange={(event) => setStoreDraftValue("token", event.target.value)} />
+                        <Input placeholder="Embedding Dimension" type="number" value={storeProviderOptionsDraft.embeddingDimension} onChange={(event) => setStoreDraftValue("embeddingDimension", event.target.value)} />
+                        <Input placeholder="Metric Type (e.g. COSINE)" value={storeProviderOptionsDraft.metricType} onChange={(event) => setStoreDraftValue("metricType", event.target.value)} />
+                        <Input placeholder="Index Type (e.g. HNSW)" value={storeProviderOptionsDraft.indexType} onChange={(event) => setStoreDraftValue("indexType", event.target.value)} />
+                        <Input placeholder="Index Parameters (JSON string)" value={storeProviderOptionsDraft.indexParameters} onChange={(event) => setStoreDraftValue("indexParameters", event.target.value)} className="md:col-span-2" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="providerOptionsJson"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Provider Options (JSON)</FormLabel>
+                          <FormDescription>
+                            Optional provider-specific overrides. Use valid JSON.
+                          </FormDescription>
+                          <FormControl>
+                            <Textarea
+                              placeholder={getProviderOptionsPlaceholder(selectedVendorId)}
+                              className="resize-y min-h-40"
+                              rows={10}
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </SectionCard.Content>
+              </SectionCard>
+
+              {/* Status Section - Strict Inline */}
+              <SectionCard variant="slate">
+                <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this store." />
+                <SectionCard.Content>
+                  <FormField
+                    control={form.control}
+                    name="enabled"
+                    render={({ field }) => (
                       <FormItemTwoColumns>
                         <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Initialize Schema</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
                           <FormItemTwoColumns.Description>
-                            Enable automatic schema initialization for the vector store.
+                            Toggle to activate or deactivate this embedding store instance.
                           </FormItemTwoColumns.Description>
                         </FormItemTwoColumns.Left>
                         <FormItemTwoColumns.Right>
-                          <GradientSwitch
-                            checked={storeProviderOptionsDraft.initializeSchema}
-                            onCheckedChange={(checked) => setStoreDraftValue("initializeSchema", checked)}
-                          />
+                          <FormControl>
+                            <GradientSwitch
+                              checked={field.value === 1}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked ? 1 : 0);
+                              }}
+                            />
+                          </FormControl>
                         </FormItemTwoColumns.Right>
                       </FormItemTwoColumns>
-
-                      {selectedVendorId === "CHROMA" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Tenant Name" value={storeProviderOptionsDraft.tenantName} onChange={(event) => setStoreDraftValue("tenantName", event.target.value)} />
-                          <Input placeholder="Key Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.keyToken} onChange={(event) => setStoreDraftValue("keyToken", event.target.value)} />
-                          <Input placeholder="Basic Username" value={storeProviderOptionsDraft.basicUsername} onChange={(event) => setStoreDraftValue("basicUsername", event.target.value)} />
-                          <Input placeholder="Basic Password" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.basicPassword} onChange={(event) => setStoreDraftValue("basicPassword", event.target.value)} />
-                        </div>
-                      )}
-
-                      {selectedVendorId === "MILVUS" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.token} onChange={(event) => setStoreDraftValue("token", event.target.value)} />
-                          <Input placeholder="Embedding Dimension" type="number" value={storeProviderOptionsDraft.embeddingDimension} onChange={(event) => setStoreDraftValue("embeddingDimension", event.target.value)} />
-                          <Input placeholder="Metric Type (e.g. COSINE)" value={storeProviderOptionsDraft.metricType} onChange={(event) => setStoreDraftValue("metricType", event.target.value)} />
-                          <Input placeholder="Index Type (e.g. HNSW)" value={storeProviderOptionsDraft.indexType} onChange={(event) => setStoreDraftValue("indexType", event.target.value)} />
-                          <Input placeholder="Index Parameters (JSON string)" value={storeProviderOptionsDraft.indexParameters} onChange={(event) => setStoreDraftValue("indexParameters", event.target.value)} className="md:col-span-2" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="providerOptionsJson"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Provider Options (JSON)</FormLabel>
-                            <FormDescription>
-                              Optional provider-specific overrides. Use valid JSON.
-                            </FormDescription>
-                            <FormControl>
-                              <Textarea
-                                placeholder={getProviderOptionsPlaceholder(selectedVendorId)}
-                                className="resize-y min-h-40"
-                                rows={10}
-                                {...field}
-                                value={field.value ?? ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </SectionCard.Content>
-                </SectionCard>
-
-                {/* Status Section - Strict Inline */}
-                <SectionCard variant="slate">
-                  <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this store." />
-                  <SectionCard.Content>
-                    <FormField
-                      control={form.control}
-                      name="enabled"
-                      render={({ field }) => (
-                        <FormItemTwoColumns>
-                          <FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
-                            <FormItemTwoColumns.Description>
-                              Toggle to activate or deactivate this embedding store instance.
-                            </FormItemTwoColumns.Description>
-                          </FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Right>
-                            <FormControl>
-                              <GradientSwitch
-                                checked={field.value === 1}
-                                onCheckedChange={(checked) => {
-                                  field.onChange(checked ? 1 : 0);
-                                }}
-                              />
-                            </FormControl>
-                          </FormItemTwoColumns.Right>
-                        </FormItemTwoColumns>
-                      )}
-                    />
-                  </SectionCard.Content>
-                </SectionCard>
+                    )}
+                  />
+                </SectionCard.Content>
+              </SectionCard>
               <FormActions>
                 <FormActions.Cancel onClick={() => navigate(urlBase)} />
                 <FormActions.Submit />
