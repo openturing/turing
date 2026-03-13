@@ -329,7 +329,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
         <StackTraceContext.Provider value={{ openStackTrace: (message, stackTrace) => setSelectedTrace({ message, stackTrace }) }}>
             <div className="px-4">
                 {selectedTrace ? (
-                    <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-14rem)]">
+                    <ResizablePanelGroup orientation="horizontal" className="min-h-[calc(100vh-14rem)]">
                         <ResizablePanel defaultSize={60} minSize={30}>
                             {gridContent}
                         </ResizablePanel>

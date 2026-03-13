@@ -17,11 +17,17 @@ interface Props {
   setOpen: Dispatch<SetStateAction<boolean>>;
   trigger?: React.ReactNode;
   blockedBy?: TurSECoreSiteUsage[];
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
 }
 export const DialogDelete: React.FC<Props> = ({
   feature, name, onDelete, open, setOpen,
   trigger,
   blockedBy,
+  title,
+  description,
+  confirmLabel,
 }) => {
   const isBlocked = blockedBy && blockedBy.length > 0;
   const navigate = useNavigate();
@@ -93,9 +99,9 @@ export const DialogDelete: React.FC<Props> = ({
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/20 mb-2">
                 <IconTrash className="size-6 text-red-500" />
               </div>
-              <DialogTitle className="text-center">Delete {feature}</DialogTitle>
+              <DialogTitle className="text-center">{title ?? `Delete ${feature}`}</DialogTitle>
               <DialogDescription className="text-center">
-                This will permanently delete <span className="font-semibold text-foreground">{name}</span>. This action cannot be undone.
+                {description ?? <>This will permanently delete <span className="font-semibold text-foreground">{name}</span>. This action cannot be undone.</>}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
@@ -118,7 +124,7 @@ export const DialogDelete: React.FC<Props> = ({
                 className="w-full"
               >
                 <IconTrash className="size-4" />
-                Delete {feature}
+                {confirmLabel ?? `Delete ${feature}`}
               </GradientButton>
               <GradientButton
                 onClick={() => handleOpenChange(false)}

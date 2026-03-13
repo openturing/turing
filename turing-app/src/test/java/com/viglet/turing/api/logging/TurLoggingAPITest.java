@@ -21,24 +21,27 @@ class TurLoggingAPITest {
         mockMvc = MockMvcBuilders.standaloneSetup(turLoggingAPI).build();
     }
 
+    private static final String EMPTY_PAGE_RESPONSE =
+            "{\"content\":[],\"page\":0,\"pageSize\":100,\"totalElements\":0,\"totalPages\":0}";
+
     @Test
     void testServerLogging() throws Exception {
         mockMvc.perform(get("/api/logging"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+                .andExpect(content().json(EMPTY_PAGE_RESPONSE));
     }
 
     @Test
     void testIndexingLogging() throws Exception {
         mockMvc.perform(get("/api/logging/indexing"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+                .andExpect(content().json(EMPTY_PAGE_RESPONSE));
     }
 
     @Test
     void testAemLogging() throws Exception {
         mockMvc.perform(get("/api/logging/aem"))
                 .andExpect(status().isOk())
-                .andExpect(content().json("[]"));
+                .andExpect(content().json(EMPTY_PAGE_RESPONSE));
     }
 }
