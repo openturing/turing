@@ -1,7 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { Page } from "@/components/page";
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
-import { IconSearch } from "@tabler/icons-react";
+import { IconCompass } from "@tabler/icons-react";
 import { useEffect } from "react";
 
 export default function SNSiteRootPage() {
@@ -11,7 +11,7 @@ export default function SNSiteRootPage() {
     return () => popItem();
   }, []);
   return (
-    <Page turIcon={IconSearch} title="Semantic Navigation" urlBase={ROUTES.SN_INSTANCE} urlNew={`${ROUTES.SN_INSTANCE}/new`} />
+    <Page turIcon={IconCompass} title="Semantic Navigation" urlBase={ROUTES.SN_INSTANCE} urlNew={`${ROUTES.SN_INSTANCE}/new`} />
   )
 }
 

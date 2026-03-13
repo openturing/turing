@@ -1,0 +1,117 @@
+databaseChangeLog:
+  # --- Create ai_agent table ---
+  - changeSet:
+      id: 2026.1.14-01-create-ai-agent-table
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - tableExists:
+              tableName: ai_agent
+      changes:
+        - createTable:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: system_prompt
+                  type: CLOB
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  # --- Create ai_agent_llm_instance join table ---
+  - changeSet:
+      id: 2026.1.14-02-create-ai-agent-llm-instance-table
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - tableExists:
+              tableName: ai_agent_llm_instance
+      changes:
+        - createTable:
+            tableName: ai_agent_llm_instance
+            columns:
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: llm_instance_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: ai_agent_llm_instance
+            columnNames: agent_id, llm_instance_id
+            constraintName: pk_ai_agent_llm_instance
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_llm_instance
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_llm_agent
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_llm_instance
+            baseColumnNames: llm_instance_id
+            referencedTableName: llm_instance
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_llm_instance
+
+  # --- Create ai_agent_mcp_server join table ---
+  - changeSet:
+      id: 2026.1.14-03-create-ai-agent-mcp-server-table
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - tableExists:
+              tableName: ai_agent_mcp_server
+      changes:
+        - createTable:
+            tableName: ai_agent_mcp_server
+            columns:
+              - column:
+                  name: agent_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mcp_server_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: ai_agent_mcp_server
+            columnNames: agent_id, mcp_server_id
+            constraintName: pk_ai_agent_mcp_server
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_mcp_server
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_mcp_agent
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_mcp_server
+            baseColumnNames: mcp_server_id
+            referencedTableName: mcp_server
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_mcp_server

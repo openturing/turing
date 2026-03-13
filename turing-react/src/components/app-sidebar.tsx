@@ -1,13 +1,14 @@
 import {
   IconBrandGraphql,
   IconChartBar,
+  IconCompass,
   IconCpu2,
   IconDatabase,
   IconFileImport,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
-  IconSearch,
+  IconRobot,
   IconServer2,
   IconShieldCog,
   IconZoomCode
@@ -37,19 +38,22 @@ const generativeAiItems = [
   { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
   { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
   { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
-  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
+  { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },
   { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
 ]
 
 const searchItems = [
   { title: "Search Engine", url: "/admin/se/instance", icon: IconZoomCode },
-  { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconSearch },
+  { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconCompass },
 ]
-
-const otherItems = [
+const developerAndInfra = [
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
+  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
   { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
+]
+
+const management = [
   { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
   { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
@@ -77,8 +81,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navGroups = React.useMemo(
     () => [
       { label: "Generative AI", items: filterLlm(generativeAiItems) },
-      { label: "Search", items: searchItems },
-      { items: otherItems },
+      { label: "Enterprise Search", items: searchItems },
+      { label: "Developer & Infrastructure", items: developerAndInfra },
+      { label: "Management", items: management },
     ],
     [filterLlm]
   )

@@ -4,6 +4,7 @@ import RealTimeDashboardPage from "./app/console/dashboard/dashboard.page"
 import LoginPage from "./app/login/login.page"
 import {
   AdminRoutes,
+  AIAgentRoutes,
   ChatRoutes,
   ExchangeRoutes,
   GraphqlRoutes,
@@ -43,6 +44,7 @@ function App() {
                 {StoreRoutes}
                 {LLMRoutes}
                 {McpServerRoutes}
+                {AIAgentRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}

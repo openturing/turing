@@ -1,0 +1,159 @@
+import { IconInfoCircle } from "@tabler/icons-react";
+import { PlusCircle } from "lucide-react";
+import React, { useCallback, useMemo, useRef } from "react";
+import { Textarea } from "./textarea";
+
+// ---------------------------------------------------------------------------
+// Variable
+// ---------------------------------------------------------------------------
+
+export interface PromptVariable {
+  /** The variable token, e.g. "{{question}}" */
+  token: string;
+  /** Short label shown in the badge, e.g. "question" */
+  label: string;
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface SystemPromptEditorProps {
+  /** Current prompt text (controlled) */
+  value: string;
+  /** Called when the prompt text changes */
+  onChange: (value: string) => void;
+  /** react-hook-form ref callback (optional) */
+  fieldRef?: React.Ref<HTMLTextAreaElement>;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Number of visible rows */
+  rows?: number;
+  /** Variables that can be inserted into the prompt */
+  variables?: PromptVariable[];
+  /** Hint text shown in the info box */
+  hint?: string;
+  /** Whether variables are required (shows validation badges) */
+  requireVariables?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// StatusBadge (internal)
+// ---------------------------------------------------------------------------
+
+function StatusBadge({ label, active }: Readonly<{ label: string; active: boolean }>) {
+  return (
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full border text-[10px] font-bold transition-all ${active
+      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 dark:border-emerald-400/20"
+      : "bg-slate-100 text-slate-400 border-slate-200 opacity-60 dark:bg-slate-800 dark:border-slate-700"
+      }`}>
+      <div className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-500 animate-pulse" : "bg-slate-300 dark:bg-slate-600"}`} />
+      {label.toUpperCase()}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SystemPromptEditor
+// ---------------------------------------------------------------------------
+
+export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
+  value,
+  onChange,
+  fieldRef,
+  placeholder = "You are a helpful assistant that...",
+  rows = 8,
+  variables,
+  hint,
+  requireVariables = false,
+}) => {
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+
+  const setRef = useCallback((el: HTMLTextAreaElement | null) => {
+    (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+    if (typeof fieldRef === "function") {
+      fieldRef(el);
+    } else if (fieldRef && typeof fieldRef === "object") {
+      (fieldRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+    }
+  }, [fieldRef]);
+
+  const insertVariable = useCallback((token: string) => {
+    const textarea = internalRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const before = value.slice(0, start);
+      const after = value.slice(end);
+      onChange(before + token + after);
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + token.length, start + token.length);
+      }, 0);
+    } else {
+      onChange(value + token);
+    }
+  }, [value, onChange]);
+
+  const variablePresence = useMemo(() => {
+    if (!variables) return [];
+    return variables.map((v) => ({
+      ...v,
+      present: value.includes(v.token),
+    }));
+  }, [variables, value]);
+
+  return (
+    <div className="space-y-2">
+      {/* Variable insertion buttons */}
+      {variables && variables.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {variables.map((v) => (
+            <button
+              key={v.token}
+              type="button"
+              onClick={() => insertVariable(v.token)}
+              className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono dark:text-amber-400 dark:border-amber-400/20"
+            >
+              <PlusCircle className="w-3 h-3" /> {v.token}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Textarea */}
+      <Textarea
+        ref={setRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        className="font-mono text-sm leading-relaxed resize-y"
+      />
+
+      {/* Variable validation badges */}
+      {requireVariables && variables && variables.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {variablePresence.map((v) => (
+            <StatusBadge key={v.token} label={v.label} active={v.present} />
+          ))}
+        </div>
+      )}
+
+      {/* Hint box */}
+      {hint && (
+        <div className="flex items-start gap-2 p-2 bg-slate-50 rounded-md dark:bg-slate-900 border">
+          <IconInfoCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-muted-foreground">{hint}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Helper: returns true when all required variables are present in the prompt.
+ */
+export function allVariablesPresent(prompt: string, variables: PromptVariable[]): boolean {
+  return variables.every((v) => prompt.includes(v.token));
+}

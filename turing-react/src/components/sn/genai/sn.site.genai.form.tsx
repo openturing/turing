@@ -16,7 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { allVariablesPresent, SystemPromptEditor, type PromptVariable } from "@/components/ui/system-prompt-editor"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
@@ -25,10 +25,9 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { IconBrain, IconMessageChatbot, IconPower } from "@tabler/icons-react"
-import { Info, PlusCircle } from "lucide-react"
 import { FormActions } from "../../ui/form-actions"
 import { SectionCard } from "../../ui/section-card"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -68,9 +67,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const enabled = form.watch("enabled");
     const systemPrompt = form.watch("systemPrompt") || "";
 
-    // Tag validation logic
-    const hasQuestion = systemPrompt.includes("{{question}}");
-    const hasInformation = systemPrompt.includes("{{information}}");
+    const PROMPT_VARIABLES: PromptVariable[] = [
+        { token: "{{question}}", label: "question" },
+        { token: "{{information}}", label: "information" },
+    ];
+
+    const hasAllVariables = allVariablesPresent(systemPrompt, PROMPT_VARIABLES);
 
     function handleEnabledChange(checked: boolean) {
         form.setValue("enabled", checked);
@@ -78,32 +80,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             form.setValue("systemPrompt", DEFAULT_SYSTEM_PROMPT);
         }
     }
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const insertVariable = (variable: string) => {
-        const textarea = textareaRef.current;
-        const currentPrompt = form.getValues("systemPrompt") || "";
-
-        if (textarea) {
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-
-            const before = currentPrompt.slice(0, start);
-            const after = currentPrompt.slice(end);
-            const newPrompt = before + variable + after;
-
-            form.setValue("systemPrompt", newPrompt, { shouldValidate: true });
-
-            setTimeout(() => {
-                textarea.focus();
-                textarea.setSelectionRange(start + variable.length, start + variable.length);
-            }, 0);
-        } else {
-            form.setValue("systemPrompt", currentPrompt + variable, { shouldValidate: true });
-        }
-    };
 
     async function onSubmit(data: TurSNSiteGenAi) {
-        if (data.enabled && (!hasQuestion || !hasInformation)) {
+        if (data.enabled && !hasAllVariables) {
             toast.error("The System Prompt must contain the tags {{question}} and {{information}}.");
             return;
         }
@@ -259,46 +238,19 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                             <FormItem>
                                                 <FormLabel>Prompt Template</FormLabel>
                                                 <FormDescription>
-                                                    Define the prompt for the AI agent. Use <span className="font-mono font-bold text-amber-600">{'{question}'}</span> and <span className="font-mono font-bold text-amber-600">{'{information}'}</span> to insert user queries and retrieved content. This guides the AI's response style and context.
+                                                    Define the prompt for the AI agent. Use <span className="font-mono font-bold text-amber-600">{"{{question}}"}</span> and <span className="font-mono font-bold text-amber-600">{"{{information}}"}</span> to insert user queries and retrieved content.
                                                 </FormDescription>
-                                                <div className="flex gap-2 mt-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => insertVariable("{{question}}")}
-                                                        className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono"
-                                                    >
-                                                        <PlusCircle className="w-3 h-3" /> {"{{question}}"}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => insertVariable("{{information}}")}
-                                                        className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono"
-                                                    >
-                                                        <PlusCircle className="w-3 h-3" /> {"{{information}}"}
-                                                    </button>
-                                                </div>
                                                 <FormControl>
-                                                    <Textarea
-                                                        {...field}
-                                                        ref={(e) => {
-                                                            field.ref(e);
-                                                            (textareaRef as any).current = e;
-                                                        }}
-                                                        rows={8}
+                                                    <SystemPromptEditor
+                                                        value={field.value ?? ""}
+                                                        onChange={field.onChange}
+                                                        fieldRef={field.ref}
                                                         placeholder="Ex: Use {{information}} to answer {{question}}..."
-                                                        className="font-mono text-sm leading-relaxed mt-2"
+                                                        variables={PROMPT_VARIABLES}
+                                                        requireVariables
+                                                        hint="For RAG to work, the prompt must contain {{question}} and {{information}}."
                                                     />
                                                 </FormControl>
-                                                <div className="flex gap-4 mt-2">
-                                                    <StatusBadge label="question" active={hasQuestion} />
-                                                    <StatusBadge label="information" active={hasInformation} />
-                                                </div>
-                                                <div className="flex items-start gap-2 mt-2 p-2 bg-slate-50 rounded-md dark:bg-slate-900 border">
-                                                    <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                                                    <p className="text-[11px] text-muted-foreground">
-                                                        For RAG to work, the prompt must contain <span className="font-bold text-amber-600">{'{question}'}</span> and <span className="font-bold text-amber-600">{'{information}'}</span>.
-                                                    </p>
-                                                </div>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -310,22 +262,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
                     <FormActions>
                         <FormActions.Cancel onClick={() => form.reset(snSite.turSNSiteGenAi)} />
-                        <FormActions.Submit disabled={enabled && (!hasQuestion || !hasInformation)} />
+                        <FormActions.Submit disabled={enabled && !hasAllVariables} />
                     </FormActions>
                 </form>
             </Form>
         </div>
     );
 };
-
-function StatusBadge({ label, active }: { readonly label: string; readonly active: boolean }) {
-    return (
-        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full border text-[10px] font-bold transition-all ${active
-            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-            : "bg-slate-100 text-slate-400 border-slate-200 opacity-60"
-            }`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
-            {label.toUpperCase()}
-        </div>
-    );
-}
