@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurSemanticNavToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -35,6 +36,8 @@ class TurLLMSemanticChatAPITest {
     @Mock
     private TurSemanticNavToolService semanticNavToolService;
     @Mock
+    private TurMcpToolCallbackService mcpToolCallbackService;
+    @Mock
     private TurLLMTokenUsageService tokenUsageService;
     @Mock
     private TurGenAiLlmProvider provider;
@@ -45,7 +48,7 @@ class TurLLMSemanticChatAPITest {
     void setUp() {
         api = new TurLLMSemanticChatAPI(
                 turLLMInstanceRepository, llmProviderFactory, turSecretCryptoService,
-                semanticNavToolService, tokenUsageService);
+                semanticNavToolService, mcpToolCallbackService, tokenUsageService);
     }
 
     // --- Record Tests ---

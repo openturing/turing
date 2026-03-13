@@ -36,6 +36,7 @@ const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 const generativeAiItems = [
   { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
   { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
+  { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
   { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
 ]
@@ -46,7 +47,6 @@ const searchItems = [
 ]
 
 const otherItems = [
-  { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
   { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },

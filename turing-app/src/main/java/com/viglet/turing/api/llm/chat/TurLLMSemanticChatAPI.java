@@ -1,7 +1,9 @@
 package com.viglet.turing.api.llm.chat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -23,6 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.tool.TurLoggingToolCallback;
+import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurSemanticNavToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -49,6 +53,7 @@ public class TurLLMSemanticChatAPI {
             1. List all available Semantic Navigation sites (list_sites)
             2. Get field mappings for a site (get_site_fields)
             3. Search content within a site (search_site)
+            4. Any additional tools provided by registered MCP servers
 
             CRITICAL RULES:
             1. ALWAYS call list_sites first to discover available sites and their exact locale codes.
@@ -61,23 +66,28 @@ public class TurLLMSemanticChatAPI {
             (e.g., category, type, department) and use them as filterQueries to narrow results.
             4. Present search results in a clear, organized format with relevant field values.
             5. If the user asks in a specific language, respond in that same language.
+            6. When you have access to MCP server tools, use them when relevant to fulfill the user's request. \
+            These tools extend your capabilities beyond semantic navigation.
             """;
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurSemanticNavToolService semanticNavToolService;
+    private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurLLMTokenUsageService tokenUsageService;
 
     public TurLLMSemanticChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurSemanticNavToolService semanticNavToolService,
+            TurMcpToolCallbackService mcpToolCallbackService,
             TurLLMTokenUsageService tokenUsageService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.semanticNavToolService = semanticNavToolService;
+        this.mcpToolCallbackService = mcpToolCallbackService;
         this.tokenUsageService = tokenUsageService;
     }
 
@@ -107,15 +117,24 @@ public class TurLLMSemanticChatAPI {
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
         ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
 
-        ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
+        ToolCallback[] semanticCallbacks = MethodToolCallbackProvider.builder()
                 .toolObjects(semanticNavToolService)
                 .build()
                 .getToolCallbacks();
 
-        log.info("[SemanticChat] Registered {} tool callbacks for instance {}", toolCallbacks.length, id);
+        ToolCallback[] mcpCallbacks = mcpToolCallbackService.getToolCallbacks();
+
+        ToolCallback[] allCallbacks = TurLoggingToolCallback.wrap(
+                Stream.concat(
+                        Arrays.stream(semanticCallbacks),
+                        Arrays.stream(mcpCallbacks)
+                ).toArray(ToolCallback[]::new));
+
+        log.info("[SemanticChat] Registered {} tool callbacks ({} semantic + {} MCP) for instance {}",
+                allCallbacks.length, semanticCallbacks.length, mcpCallbacks.length, id);
 
         var chatOptions = DefaultToolCallingChatOptions.builder()
-                .toolCallbacks(toolCallbacks)
+                .toolCallbacks(allCallbacks)
                 .internalToolExecutionEnabled(true)
                 .build();
 
