@@ -6,7 +6,6 @@ import {
   AdminRoutes,
   ChatRoutes,
   ExchangeRoutes,
-  GlobalSettingsRoutes,
   GraphqlRoutes,
   IntegrationRoutes,
   LLMRoutes,
@@ -14,7 +13,6 @@ import {
   SERoutes,
   SNRoutes,
   StoreRoutes,
-  TokenRoutes,
   TokenUsageRoutes,
   UserRoutes
 } from "./app/routes"
@@ -42,12 +40,10 @@ function App() {
                 {SERoutes}
                 {SNRoutes}
                 {StoreRoutes}
-                {TokenRoutes}
                 {LLMRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}
-                {GlobalSettingsRoutes}
                 {GraphqlRoutes}
                 {ChatRoutes}
                 {TokenUsageRoutes}

@@ -1,7 +1,6 @@
 import {
   IconBrandGraphql,
   IconChartBar,
-  IconCode,
   IconCpu2,
   IconDatabase,
   IconFileImport,
@@ -9,7 +8,6 @@ import {
   IconPlugConnectedX,
   IconReceiptRupee,
   IconSearch,
-  IconSettings,
   IconShieldCog,
   IconZoomCode
 } from "@tabler/icons-react"
@@ -34,7 +32,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
 const LLM_ONLY_ITEMS = new Set(["Chat", "Token Usage"])
-const KEYCLOAK_HIDDEN_ITEMS = new Set(["Administration"])
+const KEYCLOAK_HIDDEN_ITEMS = new Set<string>([])
 
 const allNavItems = [
   {
@@ -83,19 +81,9 @@ const allNavItems = [
     icon: IconFileImport,
   },
   {
-    title: "Global Settings",
-    url: ROUTES.GLOBAL_SETTINGS,
-    icon: IconSettings,
-  },
-  {
     title: "Token Usage",
     url: ROUTES.TOKEN_USAGE,
     icon: IconChartBar,
-  },
-  {
-    title: "API Token",
-    url: "/admin/token/instance",
-    icon: IconCode,
   },
   {
     title: "Administration",

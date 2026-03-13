@@ -7,7 +7,8 @@ import type { TurGroup } from "@/models/auth/group";
 import { TurGroupService } from "@/services/auth/group.service";
 import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const turGroupService = new TurGroupService();
 
@@ -16,6 +17,8 @@ export default function AdminGroupPage() {
     const [group, setGroup] = useState<TurGroup>();
     const [isNew, setIsNew] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
     const { pushItem, popItem } = useBreadcrumb();
 
     useEffect(() => {
@@ -36,13 +39,28 @@ export default function AdminGroupPage() {
         return () => { if (added) popItem(); };
     }, [groupId]);
 
+    function onDelete() {
+        turGroupService.delete(group!.id).then((success) => {
+            if (success) {
+                toast.success(`Group "${group!.name}" was deleted.`);
+                navigate(ROUTES.ADMIN_GROUPS);
+            } else {
+                toast.error(`Failed to delete group "${group!.name}".`);
+            }
+        }).catch((error) => {
+            console.error("Delete error", error);
+            toast.error(`Failed to delete group "${group!.name}".`);
+        }).finally(() => setOpen(false));
+    }
+
     return (
         <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/groups/${groupId}`}>
             <SubPageHeader
                 icon={IconUsersGroup}
-                feature={isNew ? "New Group" : "Group"}
+                feature="Group"
                 name={isNew ? "New Group" : (group?.name ?? "")}
                 description={isNew ? "Create a new user group." : "Edit group details and members."}
+                {...(isNew ? {} : { onDelete, open, setOpen })}
             />
             {group && <AdminGroupForm value={group} isNew={isNew} />}
         </LoadProvider>

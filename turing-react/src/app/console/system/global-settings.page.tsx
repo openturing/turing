@@ -16,11 +16,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
 import {
     IconHash,
+    IconSettings,
     IconTerminal2,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -68,12 +70,18 @@ export default function GlobalSettingsPage() {
         decimalSeparator === "COMMA" ? "150,75,BRL" : "150.75,BRL";
 
     return (
-        <div className="px-4 lg:px-6 max-w-2xl mx-auto space-y-6">
+        <>
+            <SubPageHeader
+                icon={IconSettings}
+                feature="Settings"
+                name="Global Settings"
+                description="Platform-wide configuration and preferences."
+            />
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Numeric Formatting Section */}
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
+                    {/* Numeric Formatting */}
                     <SectionCard variant="amber">
-                        <SectionCard.StaticHeader icon={IconHash} title="Numeric Formatting" description="Control how numbers and currencies are displayed across the platform." />
+                        <SectionCard.Header icon={IconHash} title="Numeric Formatting" description="Control how numbers and currencies are displayed across the platform." />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -112,9 +120,9 @@ export default function GlobalSettingsPage() {
                         </SectionCard.Content>
                     </SectionCard>
 
-                    {/* Runtime Section */}
+                    {/* Runtime Environment */}
                     <SectionCard variant="emerald">
-                        <SectionCard.StaticHeader icon={IconTerminal2} title="Runtime Environment" description="Configure external tool paths and execution environment." />
+                        <SectionCard.Header icon={IconTerminal2} title="Runtime Environment" description="Configure external tool paths and execution environment." />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -142,14 +150,14 @@ export default function GlobalSettingsPage() {
                         </SectionCard.Content>
                     </SectionCard>
 
-                    {/* Submit */}
-                    <FormActions className="border-t-0 pt-2">
+                    {/* Footer */}
+                    <FormActions>
                         <FormActions.Submit loading={isSaving} disabled={isLoading}>
                             Save Settings
                         </FormActions.Submit>
                     </FormActions>
                 </form>
             </Form>
-        </div>
+        </>
     );
 }

@@ -6,6 +6,9 @@ import AdminRolePage from "../console/admin-settings/admin.role.page"
 import AdminRolesListPage from "../console/admin-settings/admin.roles.list.page"
 import AdminUserPage from "../console/admin-settings/admin.user.page"
 import AdminUsersListPage from "../console/admin-settings/admin.users.list.page"
+import GlobalSettingsPage from "../console/system/global-settings.page"
+import TokenInstanceListPage from "../console/token/token.instance.list.page"
+import TokenInstancePage from "../console/token/token.instance.page"
 import { ROUTES } from "../routes.const"
 
 export const AdminRoutes = (
@@ -17,5 +20,8 @@ export const AdminRoutes = (
         <Route path="groups/:groupId" element={<AdminGroupPage />} />
         <Route path="roles" element={<AdminRolesListPage />} />
         <Route path="roles/:roleId" element={<AdminRolePage />} />
+        <Route path="tokens" element={<TokenInstanceListPage />} />
+        <Route path="tokens/:id" element={<TokenInstancePage />} />
+        <Route path="settings" element={<GlobalSettingsPage />} />
     </Route>
 )

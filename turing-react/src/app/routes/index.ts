@@ -1,7 +1,6 @@
 export { AdminRoutes } from "./admin.routes";
 export { ChatRoutes } from "./chat.routes";
 export { ExchangeRoutes } from "./exchange.routes";
-export { GlobalSettingsRoutes } from "./global-settings.routes";
 export { GraphqlRoutes } from "./graphql.routes";
 export { IntegrationRoutes } from "./integration.routes";
 export { LLMRoutes } from "./llm.routes";
@@ -9,6 +8,5 @@ export { LoggingRoutes } from "./logging.routes";
 export { SERoutes } from "./se.routes";
 export { SNRoutes } from "./sn.routes";
 export { StoreRoutes } from "./store.routes";
-export { TokenRoutes } from "./token.routes";
 export { TokenUsageRoutes } from "./token-usage.routes";
 export { UserRoutes } from "./user.routes";

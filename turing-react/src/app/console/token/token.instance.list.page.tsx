@@ -2,6 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
+import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
 import { TurTokenInstanceService } from "@/services/token/token.service";
@@ -19,10 +20,17 @@ export default function TokenInstanceListPage() {
   const gridItemList = useGridAdapter(tokenInstances, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.TOKEN_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.ADMIN_TOKENS}/${item.id}`
   });
   return (
-    <LoadProvider checkIsNotUndefined={tokenInstances} error={error} tryAgainUrl={`${ROUTES.TOKEN_INSTANCE}`}>
+    <LoadProvider checkIsNotUndefined={tokenInstances} error={error} tryAgainUrl={ROUTES.ADMIN_TOKENS}>
+      <SubPageHeader
+        icon={IconCode}
+        feature="API Token"
+        name="API Token"
+        description="Manage API tokens for external access."
+        urlNew={`${ROUTES.ADMIN_TOKENS}/new`}
+      />
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList} />
       ) : (
@@ -31,7 +39,7 @@ export default function TokenInstanceListPage() {
           title="You don’t seem to have any API token."
           description="Create a new token to allow access to the API."
           buttonText="New API token"
-          urlNew={`${ROUTES.TOKEN_INSTANCE}/new`} />
+          urlNew={`${ROUTES.ADMIN_TOKENS}/new`} />
       )}
     </LoadProvider>
   )

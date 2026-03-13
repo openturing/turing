@@ -7,7 +7,8 @@ import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const turAdminUserService = new TurAdminUserService();
 
@@ -16,6 +17,8 @@ export default function AdminUserPage() {
     const [user, setUser] = useState<TurUser>();
     const [isNew, setIsNew] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
     const { pushItem, popItem } = useBreadcrumb();
 
     useEffect(() => {
@@ -36,13 +39,28 @@ export default function AdminUserPage() {
         return () => { if (added) popItem(); };
     }, [username]);
 
+    function onDelete() {
+        turAdminUserService.delete(username).then((success) => {
+            if (success) {
+                toast.success(`User "${username}" was deleted.`);
+                navigate(ROUTES.ADMIN_USERS);
+            } else {
+                toast.error(`Failed to delete user "${username}".`);
+            }
+        }).catch((error) => {
+            console.error("Delete error", error);
+            toast.error(`Failed to delete user "${username}".`);
+        }).finally(() => setOpen(false));
+    }
+
     return (
         <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/users/${username}`}>
             <SubPageHeader
                 icon={IconUser}
-                feature={isNew ? "New User" : "User"}
+                feature="User"
                 name={isNew ? "New User" : (user?.username ?? "")}
                 description={isNew ? "Create a new user account." : "Edit user account details."}
+                {...(isNew ? {} : { onDelete, open, setOpen })}
             />
             {user && <AdminUserForm value={user} isNew={isNew} />}
         </LoadProvider>
