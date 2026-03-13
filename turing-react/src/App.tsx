@@ -10,6 +10,7 @@ import {
   IntegrationRoutes,
   LLMRoutes,
   LoggingRoutes,
+  McpServerRoutes,
   SERoutes,
   SNRoutes,
   StoreRoutes,
@@ -41,6 +42,7 @@ function App() {
                 {SNRoutes}
                 {StoreRoutes}
                 {LLMRoutes}
+                {McpServerRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}

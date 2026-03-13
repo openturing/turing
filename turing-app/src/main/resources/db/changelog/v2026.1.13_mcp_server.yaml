@@ -1,0 +1,53 @@
+databaseChangeLog:
+  # --- Create mcp_server table ---
+  - changeSet:
+      id: 2026.1.13-01-create-mcp-server-table
+      author: viglet-team
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - tableExists:
+              tableName: mcp_server
+      changes:
+        - createTable:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  name: url
+                  type: VARCHAR(255)
+              - column:
+                  name: command
+                  type: VARCHAR(255)
+              - column:
+                  name: args
+                  type: VARCHAR(1000)
+              - column:
+                  name: type
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: connection_type
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

@@ -8,6 +8,7 @@ import {
   IconPlugConnectedX,
   IconReceiptRupee,
   IconSearch,
+  IconServer2,
   IconShieldCog,
   IconZoomCode
 } from "@tabler/icons-react"
@@ -45,6 +46,7 @@ const searchItems = [
 ]
 
 const otherItems = [
+  { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
   { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },

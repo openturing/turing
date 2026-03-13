@@ -27,6 +27,8 @@ export const ROUTES = {
   GRAPHQL_ROOT: `${consolePath}/graphql`,
   USER_ACCOUNT: `${consolePath}/user/account`,
   TOKEN_USAGE: `${consolePath}/token-usage`,
+  MCP_ROOT: `${consolePath}/mcp`,
+  MCP_INSTANCE: `${consolePath}/mcp/instance`,
   ADMIN_ROOT: `${consolePath}/admin-settings`,
   ADMIN_USERS: `${consolePath}/admin-settings/users`,
   ADMIN_GROUPS: `${consolePath}/admin-settings/groups`,
