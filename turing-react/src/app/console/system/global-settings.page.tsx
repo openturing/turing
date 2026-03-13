@@ -7,6 +7,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
 import { Input } from "@/components/ui/input";
 import { FormActions } from "@/components/ui/form-actions";
 import {
@@ -20,16 +21,15 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import {
-    IconHash,
-    IconSettings,
-    IconTerminal2,
-} from "@tabler/icons-react";
+import { IconSettings } from "@tabler/icons-react";
+import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
+import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 const turGlobalSettingsService = new TurGlobalSettingsService();
+const turLLMInstanceService = new TurLLMInstanceService();
 
 export default function GlobalSettingsPage() {
     const form = useForm<TurGlobalSettings>({
@@ -37,12 +37,16 @@ export default function GlobalSettingsPage() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
 
     useEffect(() => {
-        turGlobalSettingsService
-            .query()
-            .then((settings) => {
+        Promise.all([
+            turGlobalSettingsService.query(),
+            turLLMInstanceService.query(),
+        ])
+            .then(([settings, instances]) => {
                 form.reset(settings);
+                setLlmInstances(instances.filter((i) => i.enabled === 1));
             })
             .catch(() => {
                 toast.error("Failed to load global settings. Using default values.");
@@ -79,32 +83,34 @@ export default function GlobalSettingsPage() {
             />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
-                    {/* Numeric Formatting */}
                     <SectionCard variant="amber">
-                        <SectionCard.Header icon={IconHash} title="Numeric Formatting" description="Control how numbers and currencies are displayed across the platform." />
+                        <SectionCard.Header icon={IconSettings} title="Global Settings" description="Platform-wide configuration, formatting, and AI preferences." />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="decimalSeparator"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Decimal Separator</FormLabel>
-                                        <FormDescription>
-                                            Defines how decimal values are typed in admin forms (including currency amount format).
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
-                                                <SelectTrigger className="w-full max-w-xs">
-                                                    <SelectValue placeholder="Choose..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="DOT">Dot (.)</SelectItem>
-                                                    <SelectItem value="COMMA">Comma (,)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>Decimal Separator</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                Defines how decimal values are typed in admin forms (including currency amount format).
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
+                                                    <SelectTrigger className="w-full max-w-xs">
+                                                        <SelectValue placeholder="Choose..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="DOT">Dot (.)</SelectItem>
+                                                        <SelectItem value="COMMA">Comma (,)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
                                 )}
                             />
                             <div className="flex gap-4">
@@ -117,13 +123,6 @@ export default function GlobalSettingsPage() {
                                     <p className="text-sm font-mono font-semibold mt-0.5">{currencyExample}</p>
                                 </div>
                             </div>
-                        </SectionCard.Content>
-                    </SectionCard>
-
-                    {/* Runtime Environment */}
-                    <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconTerminal2} title="Runtime Environment" description="Configure external tool paths and execution environment." />
-                        <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="pythonExecutable"
@@ -147,10 +146,45 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="defaultLlmId"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>Default LLM</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                LLM instance used for AI suggestions across all screens
+                                                (e.g., log analysis, monitoring summaries).
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <Select
+                                                    onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                                                    value={field.value || "none"}
+                                                    disabled={isLoading}
+                                                >
+                                                    <SelectTrigger className="w-full max-w-xs">
+                                                        <SelectValue placeholder="Select an LLM instance..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">None</SelectItem>
+                                                        {llmInstances.map((instance) => (
+                                                            <SelectItem key={instance.id} value={instance.id}>
+                                                                {instance.title}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
                         </SectionCard.Content>
                     </SectionCard>
 
-                    {/* Footer */}
                     <FormActions>
                         <FormActions.Submit loading={isSaving} disabled={isLoading}>
                             Save Settings

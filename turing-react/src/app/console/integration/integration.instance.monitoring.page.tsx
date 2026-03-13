@@ -2,6 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { AemMonitoringGrid } from "@/components/integration/aem.monitoring.grid";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +14,6 @@ import { TurIntegrationMonitoringService } from "@/services/integration/integrat
 import { IconFilter, IconFilterOff, IconGraph } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { GradientButton } from "@/components/ui/gradient-button";
 
 const DEFAULT_SOURCE = "all";
 
@@ -261,7 +261,7 @@ export default function IntegrationInstanceMonitoringPage() {
                     <SelectContent>
                       <SelectItem value={NONE_VALUE} className="text-xs">All</SelectItem>
                       {STATUS_OPTIONS.map((s) => (
-                        <SelectItem key={s} value={s} className="text-xs">{s.replace(/_/g, " ")}</SelectItem>
+                        <SelectItem key={s} value={s} className="text-xs">{s.replaceAll("_", " ")}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

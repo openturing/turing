@@ -32,6 +32,7 @@ public class TurConfigVarOnStartup {
 	public static final String FIRST_TIME = "FIRST_TIME";
 	public static final String DECIMAL_SEPARATOR = "GLOBAL_DECIMAL_SEPARATOR";
 	public static final String PYTHON_EXECUTABLE = "GLOBAL_PYTHON_EXECUTABLE";
+	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -46,6 +47,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(FIRST_TIME, SYSTEM_PATH, "true");
 		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
 		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
+		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

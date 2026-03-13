@@ -1,4 +1,5 @@
 import { Navigate, Route } from "react-router-dom"
+import AdminSettingsRootPage from "../console/admin-settings/admin.settings.root.page"
 import AdminSettingsPage from "../console/admin-settings/admin.settings.page"
 import AdminGroupPage from "../console/admin-settings/admin.group.page"
 import AdminGroupsListPage from "../console/admin-settings/admin.groups.list.page"
@@ -12,16 +13,18 @@ import TokenInstancePage from "../console/token/token.instance.page"
 import { ROUTES } from "../routes.const"
 
 export const AdminRoutes = (
-    <Route path={ROUTES.ADMIN_ROOT} element={<AdminSettingsPage />}>
-        <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/users`} replace />} />
-        <Route path="users" element={<AdminUsersListPage />} />
-        <Route path="users/:username" element={<AdminUserPage />} />
-        <Route path="groups" element={<AdminGroupsListPage />} />
-        <Route path="groups/:groupId" element={<AdminGroupPage />} />
-        <Route path="roles" element={<AdminRolesListPage />} />
-        <Route path="roles/:roleId" element={<AdminRolePage />} />
-        <Route path="tokens" element={<TokenInstanceListPage />} />
-        <Route path="tokens/:id" element={<TokenInstancePage />} />
-        <Route path="settings" element={<GlobalSettingsPage />} />
+    <Route path={ROUTES.ADMIN_ROOT} element={<AdminSettingsRootPage />}>
+        <Route element={<AdminSettingsPage />}>
+            <Route index element={<Navigate to={`${ROUTES.ADMIN_ROOT}/users`} replace />} />
+            <Route path="users" element={<AdminUsersListPage />} />
+            <Route path="users/:username" element={<AdminUserPage />} />
+            <Route path="groups" element={<AdminGroupsListPage />} />
+            <Route path="groups/:groupId" element={<AdminGroupPage />} />
+            <Route path="roles" element={<AdminRolesListPage />} />
+            <Route path="roles/:roleId" element={<AdminRolePage />} />
+            <Route path="tokens" element={<TokenInstanceListPage />} />
+            <Route path="tokens/:id" element={<TokenInstancePage />} />
+            <Route path="settings" element={<GlobalSettingsPage />} />
+        </Route>
     </Route>
 )

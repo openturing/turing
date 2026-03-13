@@ -27,78 +27,36 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useCurrentUser } from "@/contexts/user.context"
-import { TurAuthorizationService } from "@/services/auth/authorization.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
-const LLM_ONLY_ITEMS = new Set(["Chat", "Token Usage"])
-const KEYCLOAK_HIDDEN_ITEMS = new Set<string>([])
+const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 
-const allNavItems = [
-  {
-    title: "Search Engine",
-    url: "/admin/se/instance",
-    icon: IconZoomCode,
-  },
-  {
-    title: "Language Model",
-    url: "/admin/llm/instance",
-    icon: IconCpu2,
-  },
-  {
-    title: "Embedding Store",
-    url: "/admin/store/instance",
-    icon: IconDatabase,
-  },
-  {
-    title: "Chat",
-    url: ROUTES.CHAT_ROOT,
-    icon: IconMessageChatbot,
-  },
-  {
-    title: "Semantic Navigation",
-    url: "/admin/sn/instance",
-    icon: IconSearch,
-  },
-  {
-    title: "Integration",
-    url: "/admin/integration/instance",
-    icon: IconPlugConnectedX,
-  },
-  {
-    title: "GraphQL Explorer",
-    url: ROUTES.GRAPHQL_ROOT,
-    icon: IconBrandGraphql,
-  },
-  {
-    title: "Logging",
-    url: "/admin/logging/instance",
-    icon: IconReceiptRupee,
-  },
-  {
-    title: "Import",
-    url: "/admin/exchange/import",
-    icon: IconFileImport,
-  },
-  {
-    title: "Token Usage",
-    url: ROUTES.TOKEN_USAGE,
-    icon: IconChartBar,
-  },
-  {
-    title: "Administration",
-    url: ROUTES.ADMIN_ROOT,
-    icon: IconShieldCog,
-  },
+const generativeAiItems = [
+  { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
+  { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
+  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
+  { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+]
+
+const searchItems = [
+  { title: "Search Engine", url: "/admin/se/instance", icon: IconZoomCode },
+  { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconSearch },
+]
+
+const otherItems = [
+  { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
+  { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
+  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
+  { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
+  { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
 
 const turLLMInstanceService = new TurLLMInstanceService();
-const turAuthorizationService = new TurAuthorizationService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
-  const [isKeycloak, setIsKeycloak] = React.useState(true);
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -106,18 +64,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
-    turAuthorizationService.discovery().then((d) => {
-      setIsKeycloak(d.keycloak);
-    });
   }, [])
 
-  const navMain = React.useMemo(
-    () => allNavItems.filter((item) => {
-      if (!hasEnabledLlm && LLM_ONLY_ITEMS.has(item.title)) return false;
-      if (isKeycloak && KEYCLOAK_HIDDEN_ITEMS.has(item.title)) return false;
-      return true;
-    }),
-    [hasEnabledLlm, isKeycloak]
+  const filterLlm = React.useCallback(
+    (items: typeof generativeAiItems) =>
+      items.filter((item) => !LLM_ONLY_TITLES.has(item.title) || hasEnabledLlm),
+    [hasEnabledLlm]
+  )
+
+  const navGroups = React.useMemo(
+    () => [
+      { label: "Generative AI", items: filterLlm(generativeAiItems) },
+      { label: "Search", items: searchItems },
+      { items: otherItems },
+    ],
+    [filterLlm]
   )
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -141,7 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain groups={navGroups} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

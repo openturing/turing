@@ -1,6 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import {
     IconCode,
@@ -15,7 +14,6 @@ import { useEffect, useMemo, useState } from "react";
 const turAuthorizationService = new TurAuthorizationService();
 
 export default function AdminSettingsPage() {
-    const { pushItem, popItem } = useBreadcrumb();
     const [isKeycloak, setIsKeycloak] = useState(true);
 
     useEffect(() => {
@@ -26,6 +24,11 @@ export default function AdminSettingsPage() {
 
     const data = useMemo(() => ({
         navMain: [
+            {
+                title: "Settings",
+                url: "/settings",
+                icon: IconSettings,
+            },
             ...(isKeycloak ? [] : [
                 {
                     title: "Users",
@@ -48,18 +51,9 @@ export default function AdminSettingsPage() {
                 url: "/tokens",
                 icon: IconCode,
             },
-            {
-                title: "Settings",
-                url: "/settings",
-                icon: IconSettings,
-            },
+
         ],
     }), [isKeycloak]);
-
-    useEffect(() => {
-        pushItem({ label: "Administration", href: ROUTES.ADMIN_ROOT });
-        return () => popItem();
-    }, []);
 
     return (
         <SubPage

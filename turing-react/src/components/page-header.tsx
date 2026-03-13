@@ -26,6 +26,11 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
+        {TurIcon && (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 ring-1 ring-blue-500/10 dark:ring-blue-400/10">
+            <TurIcon className="size-4.5! text-blue-600 dark:text-blue-400" />
+          </div>
+        )}
         {urlBase ? (
           <Breadcrumb>
             <BreadcrumbList>
@@ -46,14 +51,7 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
             </BreadcrumbList>
           </Breadcrumb>
         ) : (
-          <div className="flex items-center gap-2.5">
-            {TurIcon && (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 ring-1 ring-blue-500/10 dark:ring-blue-400/10">
-                <TurIcon className="size-4.5! text-blue-600 dark:text-blue-400" />
-              </div>
-            )}
-            <h1 className="text-base font-semibold">{title}</h1>
-          </div>
+          <h1 className="text-base font-semibold">{title}</h1>
         )}
         <div className="ml-auto flex items-center gap-2">
           {urlNew !== undefined && (

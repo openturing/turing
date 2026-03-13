@@ -56,4 +56,21 @@ public class TurGlobalSettingsService {
         turConfigVarRepository.save(configVar);
         return value;
     }
+
+    public String getDefaultLlmId() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateDefaultLlmId(String defaultLlmId) {
+        String value = defaultLlmId == null ? "" : defaultLlmId.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.DEFAULT_LLM);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
 }
