@@ -21,7 +21,7 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconSettings } from "@tabler/icons-react";
+import { IconMail, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { useEffect, useState } from "react";
@@ -180,6 +180,129 @@ export default function GlobalSettingsPage() {
                                             </FormControl>
                                         </FormItemTwoColumns.Right>
                                     </FormItemTwoColumns>
+                                )}
+                            />
+                        </SectionCard.Content>
+                    </SectionCard>
+
+                    <SectionCard variant="amber">
+                        <SectionCard.Header icon={IconMail} title="Email Settings" description="Configure email service for notifications and weekly reports." />
+                        <SectionCard.Content>
+                            <FormField
+                                control={form.control}
+                                name="emailProvider"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>Email Provider</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                Service used to send transactional emails.
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <Select onValueChange={field.onChange} value={field.value ?? "BREVO"} disabled={isLoading}>
+                                                    <SelectTrigger className="w-full max-w-xs">
+                                                        <SelectValue placeholder="Choose..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="BREVO">Brevo</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="emailApiKey"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>API Key</FormLabel>
+                                        <FormDescription>
+                                            API key for the selected email provider.
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                type="password"
+                                                className="max-w-md font-mono text-sm"
+                                                placeholder="xkeysib-..."
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="senderEmail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sender Email</FormLabel>
+                                        <FormDescription>
+                                            Email address used as the sender for outgoing emails.
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                type="email"
+                                                className="max-w-md text-sm"
+                                                placeholder="noreply@example.com"
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="senderName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sender Name</FormLabel>
+                                        <FormDescription>
+                                            Display name shown as the sender (e.g., "Viglet Turing").
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                className="max-w-md text-sm"
+                                                placeholder="Viglet Turing"
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="recipientEmail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Recipient Email</FormLabel>
+                                        <FormDescription>
+                                            Default recipient for automated reports (e.g., weekly search report).
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                type="email"
+                                                className="max-w-md text-sm"
+                                                placeholder="admin@example.com"
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
                         </SectionCard.Content>

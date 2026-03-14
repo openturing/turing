@@ -73,4 +73,93 @@ public class TurGlobalSettingsService {
         turConfigVarRepository.save(configVar);
         return value;
     }
+
+    public TurEmailProviderType getEmailProvider() {
+        String value = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER)
+                .map(TurConfigVar::getValue)
+                .orElse(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE);
+        try {
+            return TurEmailProviderType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return TurEmailProviderType.valueOf(TurConfigVarOnStartup.EMAIL_PROVIDER_DEFAULT_VALUE);
+        }
+    }
+
+    public TurEmailProviderType updateEmailProvider(TurEmailProviderType emailProvider) {
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.EMAIL_PROVIDER);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(emailProvider.name());
+        turConfigVarRepository.save(configVar);
+        return emailProvider;
+    }
+
+    public String getEmailApiKey() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateEmailApiKey(String emailApiKey) {
+        String value = emailApiKey == null ? "" : emailApiKey.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.EMAIL_API_KEY);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    public String getSenderEmail() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_EMAIL)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateSenderEmail(String senderEmail) {
+        String value = senderEmail == null ? "" : senderEmail.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_EMAIL)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.SENDER_EMAIL);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    public String getSenderName() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_NAME)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateSenderName(String senderName) {
+        String value = senderName == null ? "" : senderName.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_NAME)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.SENDER_NAME);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    public String getRecipientEmail() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateRecipientEmail(String recipientEmail) {
+        String value = recipientEmail == null ? "" : recipientEmail.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RECIPIENT_EMAIL);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
 }

@@ -28,6 +28,11 @@ public class TurGlobalSettingsAPI {
                 .decimalSeparator(turGlobalSettingsService.getDecimalSeparator())
                 .pythonExecutable(turGlobalSettingsService.getPythonExecutable())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
+                .emailProvider(turGlobalSettingsService.getEmailProvider())
+                .emailApiKey(turGlobalSettingsService.getEmailApiKey())
+                .senderEmail(turGlobalSettingsService.getSenderEmail())
+                .senderName(turGlobalSettingsService.getSenderName())
+                .recipientEmail(turGlobalSettingsService.getRecipientEmail())
                 .build();
     }
 
@@ -41,6 +46,16 @@ public class TurGlobalSettingsAPI {
                         .updatePythonExecutable(globalSettings.getPythonExecutable()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
+                .emailProvider(turGlobalSettingsService
+                        .updateEmailProvider(globalSettings.getEmailProvider()))
+                .emailApiKey(turGlobalSettingsService
+                        .updateEmailApiKey(globalSettings.getEmailApiKey()))
+                .senderEmail(turGlobalSettingsService
+                        .updateSenderEmail(globalSettings.getSenderEmail()))
+                .senderName(turGlobalSettingsService
+                        .updateSenderName(globalSettings.getSenderName()))
+                .recipientEmail(turGlobalSettingsService
+                        .updateRecipientEmail(globalSettings.getRecipientEmail()))
                 .build();
     }
 }

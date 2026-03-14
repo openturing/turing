@@ -33,9 +33,15 @@ public class TurConfigVarOnStartup {
 	public static final String DECIMAL_SEPARATOR = "GLOBAL_DECIMAL_SEPARATOR";
 	public static final String PYTHON_EXECUTABLE = "GLOBAL_PYTHON_EXECUTABLE";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
+	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
+	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
+	public static final String SENDER_EMAIL = "GLOBAL_SENDER_EMAIL";
+	public static final String SENDER_NAME = "GLOBAL_SENDER_NAME";
+	public static final String RECIPIENT_EMAIL = "GLOBAL_RECIPIENT_EMAIL";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
+	public static final String EMAIL_PROVIDER_DEFAULT_VALUE = "BREVO";
 
 	private final TurConfigVarRepository turConfigVarRepository;
 
@@ -48,6 +54,11 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
 		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
+		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
+		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
+		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");
+		ensureConfigVar(SENDER_NAME, GLOBAL_PATH, "");
+		ensureConfigVar(RECIPIENT_EMAIL, GLOBAL_PATH, "");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

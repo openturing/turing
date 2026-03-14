@@ -1,5 +1,6 @@
 package com.viglet.turing.api.system;
 
+import com.viglet.turing.system.TurEmailProviderType;
 import com.viglet.turing.system.TurGlobalDecimalSeparator;
 
 import lombok.AllArgsConstructor;
@@ -17,4 +18,9 @@ public class TurGlobalSettingsBean {
     private TurGlobalDecimalSeparator decimalSeparator;
     private String pythonExecutable;
     private String defaultLlmId;
+    private TurEmailProviderType emailProvider;
+    private String emailApiKey;
+    private String senderEmail;
+    private String senderName;
+    private String recipientEmail;
 }

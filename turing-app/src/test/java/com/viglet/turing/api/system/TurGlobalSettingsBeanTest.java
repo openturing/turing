@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
+import com.viglet.turing.system.TurEmailProviderType;
 import com.viglet.turing.system.TurGlobalDecimalSeparator;
 
 class TurGlobalSettingsBeanTest {
@@ -12,16 +13,21 @@ class TurGlobalSettingsBeanTest {
     void shouldCreateUsingBuilder() {
         TurGlobalSettingsBean bean = TurGlobalSettingsBean.builder()
                 .decimalSeparator(TurGlobalDecimalSeparator.COMMA)
+                .emailProvider(TurEmailProviderType.BREVO)
                 .build();
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.COMMA);
+        assertThat(bean.getEmailProvider()).isEqualTo(TurEmailProviderType.BREVO);
     }
 
     @Test
     void shouldCreateUsingAllArgsConstructor() {
-        TurGlobalSettingsBean bean = new TurGlobalSettingsBean(TurGlobalDecimalSeparator.DOT, null, null);
+        TurGlobalSettingsBean bean = new TurGlobalSettingsBean(
+                TurGlobalDecimalSeparator.DOT, null, null,
+                TurEmailProviderType.BREVO, null, null, null, null);
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
+        assertThat(bean.getEmailProvider()).isEqualTo(TurEmailProviderType.BREVO);
     }
 
     @Test
