@@ -1,96 +1,248 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Viglet Turing ES - Weekly Search Report</title>
-</head>
-<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#0a0a0f;">
-        <tr>
-            <td align="center" style="padding:32px 16px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="660" style="max-width:660px;width:100%;">
-
-                    <!-- Hero Header -->
-                    <tr>
-                        <td style="background:linear-gradient(135deg,#2563eb 0%,#4f46e5 50%,#6366f1 100%);border-radius:20px 20px 0 0;padding:48px 40px 36px;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td>
-                                        <div style="display:inline-block;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border-radius:14px;padding:10px 14px;margin-bottom:20px;">
-                                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAY9QTFRF/+K4/+Cx7tS128i52ce52ci52ce52ci52ce52ci52si52si52se528m579W0/+CxyL2+zcC8/+Gw7tS17tS128i52ce52si579W079W0zcC808O7/+Gx/+G3/+Gw7tS179W0/+GxconSVnjZVXjaVnjaV3jZdYvSP2rfQ2zeQmzfQmzeQGrfRG3eQ23eaIPVWHnZWnvYSXDdSHDdfI/Qa4XUdIrSTnPbZ4LViZfNhJTOf5HPTXPcUXXbW3vYZIDWR2/dS3HcnaPItrHCtLHCs7DDsa/Ds7DCtrLCjZnMRW7eTHLcqqvExry9w7q+2si4/N2w0sO7xLu+x7y9mKDJRm7dipjM9NeycYjTQWvfb4fTaYTVpafGnKLIhZXO7NS0Y4DW3Mq4k53KhZTO69K0Yn/W28i5kp3KYn/XUHTbg5TO79WzQGvfXXzY5c62kpzL9diyaYPV7NO0t7PBd4zRi5jMzcC8/t2wkZzLlJ7K5M222ce5oqbGyLy9g5POVXfaTnPcSnDddYrSeIzR////EbgDRwAAACJ0Uk5TCHPY9PX19vf4+Pj5+fTUbfHwZ9XS8/T608/x72QIZtPQY6rjmygAAAABYktHRIRi0FpxAAAACXBIWXMAABYlAAAWJQFJUiTwAAABeklEQVQ4y7XT51PCMBgG8CjVWqLiorgHbYAQWgRRQUXBLU5UhLonilvce/CPWw5wnKmf9PmSy93vLrn3nheAvHwdU1DIskWcXg+L1UCYPvQcW1hSagAgr8wsiAgh8UeQaLGWV4BKsw1TYycEO6xVwChgiRbZ2epyY8EIeEQHbZ72jk6MeMDQAfH6urp7MGIASweyy9/bF8CIBZxIfwLLGEtY5ADUABklQmD6HZj+CHxMTwME+wcGh4ZHBkfHQlRAxicmp6ZnwrNz8yGNJyIBeSEakwIhnJkA5ZOKL7qokKVl9RJciRENoKyurRPs39hUtMDW9g6R/fHdfwV7RE7Etf+wf+C0HR4dn3wDMAtOFxX7WfL84vLq+uYLgNnCKJ6w1y5Fbu+S9w+PT18Al6ucOxFIHy7ns/Ty+jlJtXK50mbmi+1Y+py0lC6tVu2zgAdGy29AXZzqNwfWjCNVAwy1VoG+uwgJqbp60NDYpOMZloOmb4Ecy/C65paGd9L/u7Nsc3iyAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTEyLTEwVDIzOjQ2OjU3KzAwOjAwLkNwtwAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0xMi0xMFQyMzo0Njo1NyswMDowMF8eyAsAAABGdEVYdHNvZnR3YXJlAEltYWdlTWFnaWNrIDYuNy44LTkgMjAxNC0wNS0xMiBRMTYgaHR0cDovL3d3dy5pbWFnZW1hZ2ljay5vcmfchu0AAAAAGHRFWHRUaHVtYjo6RG9jdW1lbnQ6OlBhZ2VzADGn/7svAAAAGHRFWHRUaHVtYjo6SW1hZ2U6OmhlaWdodAAxOTIPAHKFAAAAF3RFWHRUaHVtYjo6SW1hZ2U6OldpZHRoADE5MtOsIQgAAAAZdEVYdFRodW1iOjpNaW1ldHlwZQBpbWFnZS9wbmc/slZOAAAAF3RFWHRUaHVtYjo6TVRpbWUAMTU3NjAyMTYxNxMZk9AAAAAPdEVYdFRodW1iOjpTaXplADBCQpSiPuwAAABWdEVYdFRodW1iOjpVUkkAZmlsZTovLy9tbnRsb2cvZmF2aWNvbnMvMjAxOS0xMi0xMC83OThlMWI1M2M4MTkwYTNiNDMyMGIxYjlkZjRmOGFmNS5pY28ucG5ngEglugAAAABJRU5ErkJggg==" alt="Viglet Turing ES" width="28" height="28" style="display:block;border:0;" />
-                                        </div>
-                                        <h1 style="margin:12px 0 6px;font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                                            Weekly Intelligence Report
-                                        </h1>
-                                        <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.5px;">
-                                            VIGLET TURING ES
-                                        </p>
-                                        <p style="margin:6px 0 0;font-size:15px;color:rgba(255,255,255,0.75);font-weight:400;">
-                                            {{reportPeriod}}
-                                        </p>
-                                    </td>
-                                    <td align="right" valign="top" style="padding-left:16px;">
-                                        <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:16px 20px;text-align:center;">
-                                            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.6);margin-bottom:6px;">Total Searches</div>
-                                            <div style="font-size:36px;font-weight:900;color:#ffffff;line-height:1;">{{totalSearches}}</div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- Decorative accent line -->
-                    <tr>
-                        <td style="background:linear-gradient(90deg,#2563eb,#4f46e5,#6366f1);height:3px;font-size:0;line-height:0;">&nbsp;</td>
-                    </tr>
-
-                    <!-- Body -->
-                    <tr>
-                        <td style="background-color:#111118;padding:0;">
-
-                            <!-- Site Cards -->
-                            {{siteCards}}
-
-                            <!-- Footer -->
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td style="padding:28px 40px 36px;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top:1px solid #1e1e2e;padding-top:24px;">
-                                            <tr>
-                                                <td>
-                                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                                        <tr>
-                                                            <td valign="middle">
-                                                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAY9QTFRF/+K4/+Cx7tS128i52ce52ci52ce52ci52ce52ci52si52si52se528m579W0/+CxyL2+zcC8/+Gw7tS17tS128i52ce52si579W079W0zcC808O7/+Gx/+G3/+Gw7tS179W0/+GxconSVnjZVXjaVnjaV3jZdYvSP2rfQ2zeQmzfQmzeQGrfRG3eQ23eaIPVWHnZWnvYSXDdSHDdfI/Qa4XUdIrSTnPbZ4LViZfNhJTOf5HPTXPcUXXbW3vYZIDWR2/dS3HcnaPItrHCtLHCs7DDsa/Ds7DCtrLCjZnMRW7eTHLcqqvExry9w7q+2si4/N2w0sO7xLu+x7y9mKDJRm7dipjM9NeycYjTQWvfb4fTaYTVpafGnKLIhZXO7NS0Y4DW3Mq4k53KhZTO69K0Yn/W28i5kp3KYn/XUHTbg5TO79WzQGvfXXzY5c62kpzL9diyaYPV7NO0t7PBd4zRi5jMzcC8/t2wkZzLlJ7K5M222ce5oqbGyLy9g5POVXfaTnPcSnDddYrSeIzR////EbgDRwAAACJ0Uk5TCHPY9PX19vf4+Pj5+fTUbfHwZ9XS8/T608/x72QIZtPQY6rjmygAAAABYktHRIRi0FpxAAAACXBIWXMAABYlAAAWJQFJUiTwAAABeklEQVQ4y7XT51PCMBgG8CjVWqLiorgHbYAQWgRRQUXBLU5UhLonilvce/CPWw5wnKmf9PmSy93vLrn3nheAvHwdU1DIskWcXg+L1UCYPvQcW1hSagAgr8wsiAgh8UeQaLGWV4BKsw1TYycEO6xVwChgiRbZ2epyY8EIeEQHbZ72jk6MeMDQAfH6urp7MGIASweyy9/bF8CIBZxIfwLLGEtY5ADUABklQmD6HZj+CHxMTwME+wcGh4ZHBkfHQlRAxicmp6ZnwrNz8yGNJyIBeSEakwIhnJkA5ZOKL7qokKVl9RJciRENoKyurRPs39hUtMDW9g6R/fHdfwV7RE7Etf+wf+C0HR4dn3wDMAtOFxX7WfL84vLq+uYLgNnCKJ6w1y5Fbu+S9w+PT18Al6ucOxFIHy7ns/Ty+jlJtXK50mbmi+1Y+py0lC6tVu2zgAdGy29AXZzqNwfWjCNVAwy1VoG+uwgJqbp60NDYpOMZloOmb4Ecy/C65paGd9L/u7Nsc3iyAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTEyLTEwVDIzOjQ2OjU3KzAwOjAwLkNwtwAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0xMi0xMFQyMzo0Njo1NyswMDowMF8eyAsAAABGdEVYdHNvZnR3YXJlAEltYWdlTWFnaWNrIDYuNy44LTkgMjAxNC0wNS0xMiBRMTYgaHR0cDovL3d3dy5pbWFnZW1hZ2ljay5vcmfchu0AAAAAGHRFWHRUaHVtYjo6RG9jdW1lbnQ6OlBhZ2VzADGn/7svAAAAGHRFWHRUaHVtYjo6SW1hZ2U6OmhlaWdodAAxOTIPAHKFAAAAF3RFWHRUaHVtYjo6SW1hZ2U6OldpZHRoADE5MtOsIQgAAAAZdEVYdFRodW1iOjpNaW1ldHlwZQBpbWFnZS9wbmc/slZOAAAAF3RFWHRUaHVtYjo6TVRpbWUAMTU3NjAyMTYxNxMZk9AAAAAPdEVYdFRodW1iOjpTaXplADBCQpSiPuwAAABWdEVYdFRodW1iOjpVUkkAZmlsZTovLy9tbnRsb2cvZmF2aWNvbnMvMjAxOS0xMi0xMC83OThlMWI1M2M4MTkwYTNiNDMyMGIxYjlkZjRmOGFmNS5pY28ucG5ngEglugAAAABJRU5ErkJggg==" alt="Viglet Turing ES" width="20" height="20" style="display:inline-block;border:0;vertical-align:middle;" />
-                                                                <span style="font-size:13px;color:#64748b;vertical-align:middle;margin-left:8px;">
-                                                                    Generated by <strong style="color:#94a3b8;">Viglet Turing ES</strong> on {{generatedAt}}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <p style="margin:10px 0 0;font-size:11px;color:#475569;">
-                                                        Viglet Turing ES &bull; Enterprise Search Intelligence Platform
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-
-                        </td>
-                    </tr>
-
-                    <!-- Bottom Gradient Bar -->
-                    <tr>
-                        <td style="background:linear-gradient(90deg,#2563eb,#4f46e5,#6366f1);height:4px;border-radius:0 0 20px 20px;font-size:0;line-height:0;">&nbsp;</td>
-                    </tr>
-
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #0a0a0f;
+      font-family: &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif;
+    "
+  >
+    <table
+      role="presentation"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      width="100%"
+      style="background-color: #0a0a0f"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            width="660"
+            style="max-width: 660px; width: 100%"
+          >
+            <!-- Hero Header -->
+            <tr>
+              <td
+                style="
+                  background-color: #2563eb;
+                  border-radius: 20px 20px 0 0;
+                  padding: 48px 40px 36px;
+                "
+              >
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  width="100%"
+                >
+                  <tr>
+                    <td>
+                      <div
+                        style="
+                          display: inline-block;
+                          background-color: #4169e1;
+                          border: 2px solid #ffffcc;
+                          border-radius: 7px;
+                          width: 44px;
+                          height: 44px;
+                          text-align: left;
+                          font-size: 20px;
+                          font-weight: 500;
+                          color: #ffffcc;
+                          font-family:
+                            &quot;Proxima Nova&quot;, &quot;Segoe UI&quot;,
+                            system-ui, sans-serif;
+                          margin-bottom: 20px;
+                          padding: 11px 0 0 5px;
+                          box-sizing: border-box;
+                        "
+                      >
+                        Tu
+                      </div>
+                      <h1
+                        style="
+                          margin: 12px 0 6px;
+                          font-size: 30px;
+                          font-weight: 800;
+                          color: #ffffff;
+                          letter-spacing: -0.5px;
+                        "
+                      >
+                        Weekly Intelligence Report
+                      </h1>
+                      <p
+                        style="
+                          margin: 4px 0 0;
+                          font-size: 13px;
+                          color: #93c5fd;
+                          font-weight: 600;
+                          letter-spacing: 0.5px;
+                        "
+                      >
+                        VIGLET TURING ES
+                      </p>
+                      <p
+                        style="
+                          margin: 6px 0 0;
+                          font-size: 15px;
+                          color: #bfdbfe;
+                          font-weight: 400;
+                        "
+                      >
+                        {{reportPeriod}}
+                      </p>
+                    </td>
+                    <td align="right" valign="top" style="padding-left: 16px">
+                      <div
+                        style="
+                          background-color: #1d4ed8;
+                          border: 1px solid #3b82f6;
+                          border-radius: 16px;
+                          padding: 16px 20px;
+                          text-align: center;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 10px;
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                            color: #93c5fd;
+                            margin-bottom: 6px;
+                          "
+                        >
+                          Total Searches
+                        </div>
+                        <div
+                          style="
+                            font-size: 36px;
+                            font-weight: 900;
+                            color: #ffffff;
+                            line-height: 1;
+                          "
+                        >
+                          {{totalSearches}}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 </table>
-            </td>
-        </tr>
+              </td>
+            </tr>
+
+            <!-- Decorative accent line -->
+            <tr>
+              <td
+                style="
+                  background-color: #4f46e5;
+                  height: 3px;
+                  font-size: 0;
+                  line-height: 0;
+                "
+              >
+                &nbsp;
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="background-color: #111118; padding: 0">
+                <!-- Site Cards -->
+                {{siteCards}}
+
+                <!-- Footer -->
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  width="100%"
+                >
+                  <tr>
+                    <td style="padding: 28px 40px 36px">
+                      <table
+                        role="presentation"
+                        cellspacing="0"
+                        cellpadding="0"
+                        border="0"
+                        width="100%"
+                        style="border-top: 1px solid #1e1e2e; padding-top: 24px"
+                      >
+                        <tr>
+                          <td>
+                            <table
+                              role="presentation"
+                              cellspacing="0"
+                              cellpadding="0"
+                              border="0"
+                              width="100%"
+                            >
+                              <tr>
+                                <td valign="middle">
+                                  <span
+                                    style="
+                                      font-size: 13px;
+                                      color: #64748b;
+                                      vertical-align: middle;
+                                    "
+                                  >
+                                    Generated by
+                                    <strong style="color: #94a3b8"
+                                      >Viglet Turing ES</strong
+                                    >
+                                    on {{generatedAt}}
+                                  </span>
+                                </td>
+                              </tr>
+                            </table>
+                            <p
+                              style="
+                                margin: 10px 0 0;
+                                font-size: 11px;
+                                color: #475569;
+                              "
+                            >
+                              Viglet Turing ES &bull; Enterprise Search
+                              Intelligence Platform
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Bottom Accent Bar -->
+            <tr>
+              <td
+                style="
+                  background-color: #4f46e5;
+                  height: 4px;
+                  border-radius: 0 0 20px 20px;
+                  font-size: 0;
+                  line-height: 0;
+                "
+              >
+                &nbsp;
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
     </table>
-</body>
+  </body>
 </html>
