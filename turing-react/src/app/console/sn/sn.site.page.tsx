@@ -5,6 +5,7 @@ import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model.ts";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
+import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import {
     IconAlignBoxCenterStretch,
     IconCpu2,
@@ -18,18 +19,21 @@ import {
     IconScale,
     IconSearch,
     IconSettings,
+    IconSparkles,
     IconSpeakerphone
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 const turSNSiteService = new TurSNSiteService();
+const turGlobalSettingsService = new TurGlobalSettingsService();
 
 export default function SNSitePage() {
     const { id } = useParams() as { id: string };
     const [snSite, setSnSite] = useState<TurSNSite>({} as TurSNSite);
     const [snStatus, setSnStatus] = useState<TurSNSiteStatus | null>(null);
     const [isNew, setIsNew] = useState<boolean>(true);
+    const [hasDefaultLlm, setHasDefaultLlm] = useState(false);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate()
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
@@ -50,59 +54,71 @@ export default function SNSitePage() {
             };
         }
 
+        const navItems = [];
+
+        if (hasDefaultLlm) {
+            navItems.push({
+                title: "Summary",
+                url: "/summary",
+                icon: IconSparkles,
+            });
+        }
+
+        navItems.push(
+            {
+                title: "Settings",
+                url: "/detail",
+                icon: IconSettings,
+            },
+            {
+                title: "Multi Languages",
+                url: "/locale",
+                icon: IconLanguage,
+            },
+            {
+                title: "Behavior",
+                url: "/behavior",
+                icon: IconScale,
+            },
+            {
+                title: "Fields",
+                url: "/field",
+                icon: IconAlignBoxCenterStretch,
+            },
+            {
+                title: "Facets",
+                url: "/facet",
+                icon: IconFilter,
+            },
+            {
+                title: "Generative AI",
+                url: "/ai",
+                icon: IconCpu2,
+            },
+            {
+                title: "Result Ranking",
+                url: "/result-ranking",
+                icon: IconNumber123,
+            },
+            {
+                title: "Merge Providers",
+                url: "/merge-providers",
+                icon: IconGitMerge,
+            },
+            {
+                title: "Spotlight",
+                url: "/spotlight",
+                icon: IconSpeakerphone,
+            },
+            {
+                title: "Top Search Terms",
+                url: "/top-terms",
+                icon: IconDashboard,
+            },
+        );
+
         return {
-            navMain: [
-                {
-                    title: "Settings",
-                    url: "/detail",
-                    icon: IconSettings,
-                },
-                {
-                    title: "Multi Languages",
-                    url: "/locale",
-                    icon: IconLanguage,
-                },
-                {
-                    title: "Behavior",
-                    url: "/behavior",
-                    icon: IconScale,
-                },
-                {
-                    title: "Fields",
-                    url: "/field",
-                    icon: IconAlignBoxCenterStretch,
-                },
-                {
-                    title: "Facets",
-                    url: "/facet",
-                    icon: IconFilter,
-                },
-                {
-                    title: "Generative AI",
-                    url: "/ai",
-                    icon: IconCpu2,
-                },
-                {
-                    title: "Result Ranking",
-                    url: "/result-ranking",
-                    icon: IconNumber123,
-                },
-                {
-                    title: "Merge Providers",
-                    url: "/merge-providers",
-                    icon: IconGitMerge,
-                },
-                {
-                    title: "Spotlight",
-                    url: "/spotlight",
-                    icon: IconSpeakerphone,
-                },
-                {
-                    title: "Top Search Terms",
-                    url: "/top-terms",
-                    icon: IconDashboard,
-                },
-            ],
+            navMain: navItems,
             counts: [
                 {
                     title: "Queue",
@@ -116,7 +132,7 @@ export default function SNSitePage() {
                 },
             ],
         };
-    }, [isNew, snStatus]);
+    }, [isNew, hasDefaultLlm, snStatus]);
     useEffect(() => {
         let added = false;
 
@@ -138,6 +154,9 @@ export default function SNSitePage() {
             turSNSiteService.getStatus(id)
                 .then(setSnStatus)
                 .catch(() => setError("Connection error or timeout while fetching Semantic Navigation site status."));
+            turGlobalSettingsService.query()
+                .then((settings) => setHasDefaultLlm(!!settings.defaultLlmId))
+                .catch(() => setHasDefaultLlm(false));
             setIsNew(false);
         }
 
