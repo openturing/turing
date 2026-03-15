@@ -21,9 +21,10 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconMail, IconSettings } from "@tabler/icons-react";
+import { IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -33,10 +34,20 @@ const turLLMInstanceService = new TurLLMInstanceService();
 
 export default function GlobalSettingsPage() {
     const form = useForm<TurGlobalSettings>({
-        defaultValues: { decimalSeparator: "DOT" },
+        defaultValues: {
+            decimalSeparator: "DOT",
+            defaultLlmId: "",
+            pythonExecutable: "",
+            emailProvider: "BREVO",
+            emailApiKey: "",
+            senderEmail: "",
+            senderName: "",
+            recipientEmail: "",
+        },
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSendingTest, setIsSendingTest] = useState(false);
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
 
     useEffect(() => {
@@ -45,8 +56,8 @@ export default function GlobalSettingsPage() {
             turLLMInstanceService.query(),
         ])
             .then(([settings, instances]) => {
-                form.reset(settings);
                 setLlmInstances(instances.filter((i) => i.enabled === 1));
+                form.reset(settings);
             })
             .catch(() => {
                 toast.error("Failed to load global settings. Using default values.");
@@ -65,6 +76,22 @@ export default function GlobalSettingsPage() {
             toast.error("Failed to update global settings.");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const onSendTestEmail = async () => {
+        try {
+            setIsSendingTest(true);
+            const result = await turGlobalSettingsService.sendTestEmail();
+            if (result.success) {
+                toast.success(result.message);
+            } else {
+                toast.error(result.message);
+            }
+        } catch {
+            toast.error("Failed to send test email. Check your email settings.");
+        } finally {
+            setIsSendingTest(false);
         }
     };
 
@@ -305,6 +332,24 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex items-center gap-3 pt-4 border-t">
+                                <GradientButton
+                                    type="button"
+                                    variant="outline"
+                                    disabled={isLoading || isSendingTest}
+                                    onClick={onSendTestEmail}
+                                >
+                                    {isSendingTest ? (
+                                        <IconLoader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <IconMailForward className="size-4" />
+                                    )}
+                                    {isSendingTest ? "Sending..." : "Send Test Email"}
+                                </GradientButton>
+                                <span className="text-xs text-muted-foreground">
+                                    Save settings before testing to use the latest configuration.
+                                </span>
+                            </div>
                         </SectionCard.Content>
                     </SectionCard>
 

@@ -1,7 +1,7 @@
 package com.viglet.turing.api.system;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,7 +24,7 @@ public class TurEmailReportAPI {
     }
 
     @Operation(summary = "Send weekly search report email immediately")
-    @PostMapping("/weekly/send")
+    @GetMapping("/weekly/send")
     public ResponseEntity<TurEmailReportResponse> sendWeeklyReport() {
         try {
             weeklySearchReportService.sendWeeklyReport();
@@ -37,7 +37,7 @@ public class TurEmailReportAPI {
     }
 
     @Operation(summary = "Preview weekly search report HTML without sending")
-    @PostMapping("/weekly/preview")
+    @GetMapping("/weekly/preview")
     public ResponseEntity<String> previewWeeklyReport() {
         try {
             String html = weeklySearchReportService.buildReportHtml();

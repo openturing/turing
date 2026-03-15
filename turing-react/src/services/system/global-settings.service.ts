@@ -16,4 +16,11 @@ export class TurGlobalSettingsService {
     );
     return response.data;
   }
+
+  async sendTestEmail(): Promise<{ success: boolean; message: string }> {
+    const response = await axios.post<{ success: boolean; message: string }>(
+      "/system/global-settings/email/test",
+    );
+    return response.data;
+  }
 }
