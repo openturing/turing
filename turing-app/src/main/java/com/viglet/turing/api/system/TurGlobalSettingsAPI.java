@@ -71,13 +71,13 @@ public class TurGlobalSettingsAPI {
     @PostMapping("/email/test")
     public ResponseEntity<TurEmailTestResponse> sendTestEmail() {
         try {
-            turEmailService.sendEmail("Turing - Test Email",
+            turEmailService.sendEmail("Viglet Turing ES - Test Email",
                     "<div style=\"font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;\">"
                     + "<h2 style=\"color:#6366f1;\">Email Configuration Test</h2>"
-                    + "<p>This is a test email from <strong>Viglet Turing</strong>.</p>"
+                    + "<p>This is a test email from <strong>Viglet Turing ES</strong>.</p>"
                     + "<p>If you received this message, your email settings are configured correctly.</p>"
                     + "<hr style=\"border:none;border-top:1px solid #e2e8f0;margin:24px 0;\">"
-                    + "<p style=\"font-size:12px;color:#94a3b8;\">Sent by Turing Enterprise Search Intelligence Platform</p>"
+                    + "<p style=\"font-size:12px;color:#94a3b8;\">Sent by Viglet Turing ES &mdash; Enterprise Search Intelligence Platform</p>"
                     + "</div>");
             return ResponseEntity.ok(new TurEmailTestResponse(true, "Test email sent successfully."));
         } catch (Exception e) {

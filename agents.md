@@ -47,6 +47,20 @@ mvn clean install
 - Use `preconditions` with `onFail: MARK_RAN` for idempotent changesets
 - Column size changes: use `modifyDataType`; new data: use `insert`
 
+### Visual Identity & Brand Colors
+- **Product name**: Viglet Turing ES (Enterprise Search)
+- **Logo**: `turing-react/public/favicon-96x96.png` (also available at 32x32, 16x16)
+- **Primary gradient**: `blue-600 (#2563eb)` → `indigo-600 (#4f46e5)` — used in buttons, avatars, switches, headers
+- **Dark mode primary**: `blue-500 (#3b82f6)` → `indigo-500 (#6366f1)`
+- **Semantic colors**:
+  - Success: `emerald-600 (#059669)` → `teal-600 (#0d9488)`
+  - Destructive: `red-600 (#dc2626)` → `rose-600 (#e11d48)`
+  - Secondary: `slate-600 (#475569)` → `slate-700 (#334155)`
+- **Gradient components**: `GradientButton`, `GradientAvatar`, `GradientSwitch` — all use the blue→indigo gradient
+- **Email templates**: use inline styles with the same blue→indigo palette; dark background `#0a0a0f`, card background `#16161f`, border `#1e1e2e`
+- **Icons**: `@tabler/icons-react` (primary), `lucide-react` (some components)
+- Always reference the product as **Viglet Turing ES** in user-facing text (emails, reports, footers)
+
 ### Frontend Conventions
 - **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS v4** with `@tailwindcss/typography` plugin

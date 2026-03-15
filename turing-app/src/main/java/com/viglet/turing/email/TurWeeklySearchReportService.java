@@ -48,8 +48,8 @@ public class TurWeeklySearchReportService {
     private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' HH:mm");
 
     private static final String[] SITE_ACCENT_COLORS = {
-            "#818cf8", "#c084fc", "#f472b6", "#fb923c", "#34d399",
-            "#38bdf8", "#a78bfa", "#fb7185", "#fbbf24", "#4ade80"
+            "#3b82f6", "#6366f1", "#818cf8", "#60a5fa", "#a78bfa",
+            "#38bdf8", "#34d399", "#93c5fd", "#c084fc", "#4ade80"
     };
 
     private final TurEmailService emailService;
@@ -90,7 +90,7 @@ public class TurWeeklySearchReportService {
         log.info("Generating weekly search report...");
         try {
             String html = buildReportHtml();
-            emailService.sendEmail("Turing Weekly Intelligence Report", html);
+            emailService.sendEmail("Viglet Turing ES - Weekly Intelligence Report", html);
             log.info("Weekly search report sent successfully.");
         } catch (Exception e) {
             log.error("Failed to send weekly search report", e);
@@ -193,8 +193,8 @@ public class TurWeeklySearchReportService {
                             + "Highlight any potential issues or misconfigurations. "
                             + "Do NOT include <html>, <head>, <body>, or <style> tags. "
                             + "Use inline styles with colors suitable for a dark background "
-                            + "(text: #cbd5e1, headings: #f1f5f9, accent/bold: #f59e0b, secondary: #94a3b8, "
-                            + "list bullets: #818cf8). Style <h3> with: color:#f1f5f9;font-size:14px;font-weight:700;margin:16px 0 8px;"),
+                            + "(text: #cbd5e1, headings: #f1f5f9, accent/bold: #60a5fa, secondary: #94a3b8, "
+                            + "list bullets: #6366f1). Style <h3> with: color:#f1f5f9;font-size:14px;font-weight:700;margin:16px 0 8px;"),
                     new UserMessage(siteData + "\nPlease analyze all this data and provide a comprehensive summary with suggestions."));
 
             Prompt prompt = new Prompt(messages);
