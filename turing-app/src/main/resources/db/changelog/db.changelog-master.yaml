@@ -10,8 +10,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/v2026.1.11.1.yaml
   - include:
-      file: db/changelog/v2026.1.12.yaml
-  - include:
-      file: db/changelog/v2026.1.13_mcp_server.yaml
-  - include:
-      file: db/changelog/v2026.1.14_ai_agent.yaml
+      file: db/changelog/v2026.1.14.0.yaml

@@ -41,7 +41,8 @@ mvn clean install
 - `TurSecretCryptoService` handles API key encryption/decryption
 
 ### Liquibase Conventions
-- Changelog files: `v{version}_{description}.yaml`
+- **Always create a new file** — never modify existing changelog files
+- Naming: `v{currentVersion}.{subversion}.yaml` with incremental subversion (e.g., if current version is `2026.1.14` and `v2026.1.14.0.yaml` exists, the next file is `v2026.1.14.1.yaml`)
 - Include in `db.changelog-master.yaml`
 - Use `preconditions` with `onFail: MARK_RAN` for idempotent changesets
 - Column size changes: use `modifyDataType`; new data: use `insert`
