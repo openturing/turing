@@ -5,32 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turing Weekly Search Report</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0f172a;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#0f172a;">
+<body style="margin:0;padding:0;background-color:#0a0a0f;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#0a0a0f;">
         <tr>
             <td align="center" style="padding:32px 16px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="640" style="max-width:640px;width:100%;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="660" style="max-width:660px;width:100%;">
 
-                    <!-- Header -->
+                    <!-- Hero Header -->
                     <tr>
-                        <td style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%);border-radius:16px 16px 0 0;padding:40px 32px 32px;">
+                        <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 40%,#c026d3 100%);border-radius:20px 20px 0 0;padding:48px 40px 36px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td>
-                                        <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:16px;">
-                                            <span style="font-size:24px;line-height:1;">&#x1F50D;</span>
+                                        <div style="display:inline-block;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border-radius:14px;padding:12px 16px;margin-bottom:20px;">
+                                            <span style="font-size:26px;line-height:1;">&#x1F680;</span>
                                         </div>
-                                        <h1 style="margin:12px 0 4px;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
-                                            Weekly Search Report
+                                        <h1 style="margin:12px 0 6px;font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
+                                            Weekly Intelligence Report
                                         </h1>
-                                        <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.8);font-weight:400;">
+                                        <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.75);font-weight:400;">
                                             {{reportPeriod}}
                                         </p>
                                     </td>
-                                    <td align="right" valign="top">
-                                        <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;text-align:center;">
-                                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.7);margin-bottom:4px;">Total Searches</div>
-                                            <div style="font-size:32px;font-weight:800;color:#ffffff;line-height:1;">{{totalSearches}}</div>
+                                    <td align="right" valign="top" style="padding-left:16px;">
+                                        <div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:16px 20px;text-align:center;">
+                                            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.6);margin-bottom:6px;">Total Searches</div>
+                                            <div style="font-size:36px;font-weight:900;color:#ffffff;line-height:1;">{{totalSearches}}</div>
                                         </div>
                                     </td>
                                 </tr>
@@ -38,9 +38,14 @@
                         </td>
                     </tr>
 
+                    <!-- Decorative accent line -->
+                    <tr>
+                        <td style="background:linear-gradient(90deg,#4f46e5,#c026d3,#f59e0b);height:3px;font-size:0;line-height:0;">&nbsp;</td>
+                    </tr>
+
                     <!-- Body -->
                     <tr>
-                        <td style="background-color:#1e293b;padding:0;">
+                        <td style="background-color:#111118;padding:0;">
 
                             <!-- Site Cards -->
                             {{siteCards}}
@@ -48,17 +53,24 @@
                             <!-- Footer -->
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td style="padding:24px 32px 32px;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top:1px solid #334155;padding-top:24px;">
+                                    <td style="padding:28px 40px 36px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top:1px solid #1e1e2e;padding-top:24px;">
                                             <tr>
                                                 <td>
-                                                    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">
-                                                        This report was automatically generated by
-                                                        <strong style="color:#94a3b8;">Viglet Turing</strong>
-                                                        on {{generatedAt}}.
-                                                    </p>
-                                                    <p style="margin:8px 0 0;font-size:12px;color:#475569;">
-                                                        Powered by Turing Enterprise Search Intelligence Platform
+                                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                                        <tr>
+                                                            <td valign="middle">
+                                                                <div style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#c026d3);border-radius:8px;width:28px;height:28px;text-align:center;line-height:28px;font-size:14px;color:#fff;font-weight:700;vertical-align:middle;">
+                                                                    T
+                                                                </div>
+                                                                <span style="font-size:13px;color:#64748b;vertical-align:middle;margin-left:10px;">
+                                                                    Generated by <strong style="color:#94a3b8;">Viglet Turing</strong> on {{generatedAt}}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                    <p style="margin:10px 0 0;font-size:11px;color:#475569;">
+                                                        Enterprise Search Intelligence Platform &bull; Automated Weekly Report
                                                     </p>
                                                 </td>
                                             </tr>
@@ -72,7 +84,7 @@
 
                     <!-- Bottom Gradient Bar -->
                     <tr>
-                        <td style="background:linear-gradient(135deg,#6366f1,#a855f7);height:4px;border-radius:0 0 16px 16px;font-size:0;line-height:0;">&nbsp;</td>
+                        <td style="background:linear-gradient(90deg,#4f46e5,#c026d3,#f59e0b);height:4px;border-radius:0 0 20px 20px;font-size:0;line-height:0;">&nbsp;</td>
                     </tr>
 
                 </table>

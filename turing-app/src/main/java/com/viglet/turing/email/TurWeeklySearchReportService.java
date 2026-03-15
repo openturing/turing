@@ -7,7 +7,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,6 +30,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.sn.TurSNSiteDataCollectorService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -47,6 +47,11 @@ public class TurWeeklySearchReportService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' HH:mm");
 
+    private static final String[] SITE_ACCENT_COLORS = {
+            "#818cf8", "#c084fc", "#f472b6", "#fb923c", "#34d399",
+            "#38bdf8", "#a78bfa", "#fb7185", "#fbbf24", "#4ade80"
+    };
+
     private final TurEmailService emailService;
     private final TurSNSiteRepository snSiteRepository;
     private final TurSNSiteLocaleRepository snSiteLocaleRepository;
@@ -56,6 +61,7 @@ public class TurWeeklySearchReportService {
     private final TurLLMInstanceRepository llmInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
+    private final TurSNSiteDataCollectorService siteDataCollectorService;
 
     public TurWeeklySearchReportService(TurEmailService emailService,
             TurSNSiteRepository snSiteRepository,
@@ -65,7 +71,8 @@ public class TurWeeklySearchReportService {
             TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
-            TurSecretCryptoService secretCryptoService) {
+            TurSecretCryptoService secretCryptoService,
+            TurSNSiteDataCollectorService siteDataCollectorService) {
         this.emailService = emailService;
         this.snSiteRepository = snSiteRepository;
         this.snSiteLocaleRepository = snSiteLocaleRepository;
@@ -75,6 +82,7 @@ public class TurWeeklySearchReportService {
         this.llmInstanceRepository = llmInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.secretCryptoService = secretCryptoService;
+        this.siteDataCollectorService = siteDataCollectorService;
     }
 
     @Scheduled(cron = "0 0 8 * * MON")
@@ -82,7 +90,7 @@ public class TurWeeklySearchReportService {
         log.info("Generating weekly search report...");
         try {
             String html = buildReportHtml();
-            emailService.sendEmail("Turing Weekly Search Report", html);
+            emailService.sendEmail("Turing Weekly Intelligence Report", html);
             log.info("Weekly search report sent successfully.");
         } catch (Exception e) {
             log.error("Failed to send weekly search report", e);
@@ -100,79 +108,94 @@ public class TurWeeklySearchReportService {
 
         List<TurSNSite> sites = snSiteRepository.findAll(Sort.by("name"));
 
-        StringBuilder siteCardsHtml = new StringBuilder();
-        List<SiteReportData> siteDataList = new ArrayList<>();
-        int totalSearches = 0;
+        // Resolve LLM once for all sites
+        ChatModel chatModel = null;
+        String llmModelName = null;
+        String defaultLlmId = globalSettingsService.getDefaultLlmId();
+        if (StringUtils.hasText(defaultLlmId)) {
+            TurLLMInstance llmInstance = llmInstanceRepository.findById(defaultLlmId).orElse(null);
+            if (llmInstance != null && llmInstance.getEnabled() == 1) {
+                try {
+                    var provider = llmProviderFactory.getProvider(llmInstance);
+                    String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
+                    chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
+                    llmModelName = StringUtils.hasText(llmInstance.getModelName())
+                            ? llmInstance.getTitle() + " (" + llmInstance.getModelName() + ")"
+                            : llmInstance.getTitle();
+                } catch (Exception e) {
+                    log.warn("Could not create LLM chat model for weekly report", e);
+                }
+            }
+        }
 
+        StringBuilder siteCardsHtml = new StringBuilder();
+        int totalSearches = 0;
         String siteCardTemplate = emailService.loadTemplate(SITE_CARD_TEMPLATE_PATH);
 
-        for (TurSNSite site : sites) {
+        for (int i = 0; i < sites.size(); i++) {
+            TurSNSite site = sites.get(i);
+            String accentColor = SITE_ACCENT_COLORS[i % SITE_ACCENT_COLORS.length];
+
             int siteSearchCount = metricAccessRepository.countTermsByPeriod(site, startInstant, endInstant);
             totalSearches += siteSearchCount;
 
             long documentCount = getDocumentCount(site);
+            int localeCount = snSiteLocaleRepository.findByTurSNSite(site).size();
 
             List<TurSNSiteMetricAccessTerm> topTerms = metricAccessRepository
                     .topTermsBetweenDates(site, startInstant, endInstant, PageRequest.of(0, TOP_SEARCHES_LIMIT));
 
-            siteDataList.add(new SiteReportData(site.getName(), siteSearchCount, documentCount, topTerms));
-
-            String topSearchRows = buildTopSearchRows(topTerms);
+            String topSearchRows = buildTopSearchRows(topTerms, accentColor);
+            String siteSummaryHtml = generateSiteSummary(site, chatModel, llmModelName);
 
             String siteCard = siteCardTemplate
                     .replace("{{siteName}}", escapeHtml(site.getName()))
                     .replace("{{siteInitial}}", escapeHtml(site.getName().substring(0, 1).toUpperCase(Locale.ROOT)))
+                    .replace("{{siteAccentColor}}", accentColor)
                     .replace("{{siteSearchCount}}", formatNumber(siteSearchCount))
                     .replace("{{siteDocumentCount}}", formatNumber(documentCount))
-                    .replace("{{topSearchRows}}", topSearchRows);
+                    .replace("{{siteLocaleCount}}", formatNumber(localeCount))
+                    .replace("{{topSearchRows}}", topSearchRows)
+                    .replace("{{siteSummary}}", siteSummaryHtml);
 
             siteCardsHtml.append(siteCard);
         }
 
         String reportPeriod = weekStart.format(DATE_FORMAT) + " - " + weekEnd.minusDays(1).format(DATE_FORMAT);
 
-        String aiInsightsHtml = generateAiInsights(reportPeriod, totalSearches, siteDataList);
-
         String reportHtml = emailService.loadTemplate(TEMPLATE_PATH);
         return reportHtml
                 .replace("{{reportPeriod}}", reportPeriod)
                 .replace("{{totalSearches}}", formatNumber(totalSearches))
-                .replace("{{siteCards}}", siteCardsHtml.toString() + aiInsightsHtml)
+                .replace("{{siteCards}}", siteCardsHtml.toString())
                 .replace("{{generatedAt}}", now.format(DATETIME_FORMAT));
     }
 
-    private String generateAiInsights(String reportPeriod, int totalSearches, List<SiteReportData> siteDataList) {
-        String defaultLlmId = globalSettingsService.getDefaultLlmId();
-        if (!StringUtils.hasText(defaultLlmId)) {
-            return "";
-        }
-
-        TurLLMInstance llmInstance = llmInstanceRepository.findById(defaultLlmId).orElse(null);
-        if (llmInstance == null || llmInstance.getEnabled() != 1) {
-            log.warn("Default LLM '{}' not found or disabled, skipping AI insights.", defaultLlmId);
+    private String generateSiteSummary(TurSNSite site, ChatModel chatModel, String llmModelName) {
+        if (chatModel == null) {
             return "";
         }
 
         try {
-            var provider = llmProviderFactory.getProvider(llmInstance);
-            String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-            ChatModel chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
-
-            String dataSummary = buildDataSummaryForLlm(reportPeriod, totalSearches, siteDataList);
+            String siteData = siteDataCollectorService.collectSiteData(site);
 
             List<Message> messages = List.of(
                     new SystemMessage(
-                            "You are a search analytics expert for the Turing Enterprise Search platform. "
-                            + "Analyze the weekly search report data provided and generate a concise analysis in HTML format. "
-                            + "Include: 1) A brief summary of the overall search activity, "
-                            + "2) Key patterns or trends you identify from the top search terms, "
-                            + "3) Actionable suggestions to improve search relevance and user experience. "
-                            + "Use <p>, <strong>, and <ul>/<li> tags for formatting. "
-                            + "Keep the response concise (max 3-4 short paragraphs). "
+                            "You are an enterprise search expert analyzing a Semantic Navigation site from the Turing platform. "
+                            + "Based on the site data provided, generate a comprehensive summary in HTML format. "
+                            + "Include these sections with <h3> headings:\n"
+                            + "<h3>Overview</h3> Brief summary of the site configuration and health.\n"
+                            + "<h3>Search Activity</h3> Analysis of search metrics and top terms.\n"
+                            + "<h3>Configuration Review</h3> Review of fields, locales, facets, and behavior settings.\n"
+                            + "<h3>Suggestions</h3> Actionable recommendations to improve search quality and user experience.\n\n"
+                            + "Use <p>, <strong>, <ul>/<li> tags for formatting. "
+                            + "Be concise but insightful. Use bullet points where appropriate. "
+                            + "Highlight any potential issues or misconfigurations. "
                             + "Do NOT include <html>, <head>, <body>, or <style> tags. "
-                            + "Use inline styles only if needed, with colors suitable for a dark background "
-                            + "(text: #e2e8f0, accent: #f59e0b, secondary: #94a3b8)."),
-                    new UserMessage(dataSummary));
+                            + "Use inline styles with colors suitable for a dark background "
+                            + "(text: #cbd5e1, headings: #f1f5f9, accent/bold: #f59e0b, secondary: #94a3b8, "
+                            + "list bullets: #818cf8). Style <h3> with: color:#f1f5f9;font-size:14px;font-weight:700;margin:16px 0 8px;"),
+                    new UserMessage(siteData + "\nPlease analyze all this data and provide a comprehensive summary with suggestions."));
 
             Prompt prompt = new Prompt(messages);
             var response = chatModel.call(prompt);
@@ -182,47 +205,15 @@ public class TurWeeklySearchReportService {
                 return "";
             }
 
-            String modelName = StringUtils.hasText(llmInstance.getModelName())
-                    ? llmInstance.getTitle() + " (" + llmInstance.getModelName() + ")"
-                    : llmInstance.getTitle();
-
             String aiTemplate = emailService.loadTemplate(AI_INSIGHTS_TEMPLATE_PATH);
             return aiTemplate
                     .replace("{{aiInsightsContent}}", aiContent)
-                    .replace("{{llmModelName}}", escapeHtml(modelName));
+                    .replace("{{llmModelName}}", escapeHtml(llmModelName));
 
         } catch (Exception e) {
-            log.error("Failed to generate AI insights for weekly report", e);
+            log.warn("Failed to generate AI summary for site {}", site.getName(), e);
             return "";
         }
-    }
-
-    private String buildDataSummaryForLlm(String reportPeriod, int totalSearches, List<SiteReportData> siteDataList) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Weekly Search Report Data (").append(reportPeriod).append(")\n");
-        sb.append("Total searches across all sites: ").append(totalSearches).append("\n\n");
-
-        for (SiteReportData site : siteDataList) {
-            sb.append("Site: ").append(site.name()).append("\n");
-            sb.append("  Searches this week: ").append(site.searchCount()).append("\n");
-            sb.append("  Indexed documents: ").append(site.documentCount()).append("\n");
-            if (!site.topTerms().isEmpty()) {
-                sb.append("  Top search terms:\n");
-                for (TurSNSiteMetricAccessTerm term : site.topTerms()) {
-                    sb.append("    - \"").append(term.getTerm()).append("\" (").append(term.getTotal()).append(" searches)\n");
-                }
-            } else {
-                sb.append("  No searches recorded this week.\n");
-            }
-            sb.append("\n");
-        }
-
-        sb.append("Please analyze this data and provide insights and suggestions.");
-        return sb.toString();
-    }
-
-    private record SiteReportData(String name, int searchCount, long documentCount,
-            List<TurSNSiteMetricAccessTerm> topTerms) {
     }
 
     private long getDocumentCount(TurSNSite site) {
@@ -245,22 +236,16 @@ public class TurWeeklySearchReportService {
         }
     }
 
-    private String buildTopSearchRows(List<TurSNSiteMetricAccessTerm> topTerms) {
+    private String buildTopSearchRows(List<TurSNSiteMetricAccessTerm> topTerms, String accentColor) {
         if (topTerms.isEmpty()) {
-            return "<tr><td style=\"padding:16px;text-align:center;color:#64748b;font-size:13px;font-style:italic;\">"
+            return "<tr><td style=\"padding:14px;text-align:center;color:#475569;font-size:12px;font-style:italic;\">"
                     + "No searches recorded this week</td></tr>";
         }
 
         StringBuilder rows = new StringBuilder();
-        String[] colors = {
-                "#818cf8", "#a78bfa", "#c084fc", "#e879f9", "#f472b6",
-                "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399"
-        };
-
         for (int i = 0; i < topTerms.size(); i++) {
             TurSNSiteMetricAccessTerm term = topTerms.get(i);
-            String bgColor = (i % 2 == 0) ? "#0f172a" : "#111827";
-            String accentColor = colors[i % colors.length];
+            String bgColor = (i % 2 == 0) ? "#0d0d14" : "#111118";
             String borderRadius = "";
             if (i == 0) {
                 borderRadius = "border-radius:12px 12px 0 0;";
@@ -269,19 +254,19 @@ public class TurWeeklySearchReportService {
             }
 
             rows.append("<tr>")
-                    .append("<td style=\"padding:10px 16px;background:").append(bgColor).append(";").append(borderRadius).append("\">")
+                    .append("<td style=\"padding:9px 14px;background:").append(bgColor).append(";").append(borderRadius).append("\">")
                     .append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\"><tr>")
-                    .append("<td width=\"28\" style=\"vertical-align:middle;\">")
-                    .append("<div style=\"background:").append(accentColor).append(";width:24px;height:24px;border-radius:6px;text-align:center;line-height:24px;font-size:11px;font-weight:700;color:#0f172a;\">")
+                    .append("<td width=\"26\" style=\"vertical-align:middle;\">")
+                    .append("<div style=\"background:").append(accentColor).append(";width:22px;height:22px;border-radius:6px;text-align:center;line-height:22px;font-size:10px;font-weight:800;color:#0a0a0f;\">")
                     .append(i + 1)
                     .append("</div>")
                     .append("</td>")
-                    .append("<td style=\"padding-left:12px;vertical-align:middle;\">")
-                    .append("<span style=\"font-size:14px;color:#e2e8f0;font-weight:500;\">").append(escapeHtml(term.getTerm())).append("</span>")
+                    .append("<td style=\"padding-left:10px;vertical-align:middle;\">")
+                    .append("<span style=\"font-size:13px;color:#e2e8f0;font-weight:500;\">").append(escapeHtml(term.getTerm())).append("</span>")
                     .append("</td>")
                     .append("<td align=\"right\" style=\"vertical-align:middle;\">")
-                    .append("<span style=\"font-size:12px;color:#94a3b8;background:#1e293b;border-radius:6px;padding:4px 8px;\">")
-                    .append(term.getTotal()).append(" searches")
+                    .append("<span style=\"font-size:11px;color:#64748b;background:#16161f;border-radius:4px;padding:3px 7px;\">")
+                    .append(term.getTotal()).append("x")
                     .append("</span>")
                     .append("</td>")
                     .append("</tr></table>")

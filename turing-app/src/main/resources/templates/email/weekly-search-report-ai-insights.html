@@ -1,37 +1,16 @@
-<!-- AI Insights Section -->
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:4px;">
-    <tr>
-        <td style="padding:24px 32px;">
-            <!-- Section Header -->
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                    <td>
-                        <div style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:8px;width:36px;height:36px;text-align:center;line-height:36px;font-size:16px;color:#ffffff;vertical-align:middle;">
-                            &#x2728;
-                        </div>
-                        <span style="font-size:18px;font-weight:700;color:#f1f5f9;vertical-align:middle;margin-left:12px;">
-                            AI Analysis &amp; Suggestions
-                        </span>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- AI Content -->
-            <div style="margin-top:16px;background:#0f172a;border-radius:12px;padding:20px 24px;border-left:4px solid #f59e0b;">
-                <div style="font-size:14px;color:#e2e8f0;line-height:1.7;">
-                    {{aiInsightsContent}}
-                </div>
-            </div>
-
-            <!-- Powered by badge -->
-            <div style="margin-top:12px;text-align:right;">
-                <span style="font-size:11px;color:#64748b;background:#1e293b;border-radius:6px;padding:4px 10px;">
-                    Powered by {{llmModelName}}
-                </span>
-            </div>
-
-            <!-- Divider -->
-            <div style="border-bottom:1px solid #334155;margin-top:24px;"></div>
-        </td>
-    </tr>
-</table>
+<!-- Per-site AI Summary -->
+<div style="margin-top:20px;">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;margin-bottom:10px;font-weight:700;">
+        &#x2728; AI Insights
+    </div>
+    <div style="background:#0d0d14;border:1px solid #1e1e2e;border-radius:12px;padding:18px 20px;border-left:3px solid #f59e0b;">
+        <div style="font-size:13px;color:#cbd5e1;line-height:1.7;">
+            {{aiInsightsContent}}
+        </div>
+        <div style="margin-top:12px;text-align:right;">
+            <span style="font-size:10px;color:#475569;background:#16161f;border-radius:4px;padding:3px 8px;">
+                {{llmModelName}}
+            </span>
+        </div>
+    </div>
+</div>
