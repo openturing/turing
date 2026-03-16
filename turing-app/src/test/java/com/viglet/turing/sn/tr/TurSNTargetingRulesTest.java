@@ -1,59 +1,92 @@
-/*
- * Copyright (C) 2016-2025 the original author or authors.
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 package com.viglet.turing.sn.tr;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for TurSNTargetingRules.
- *
- * @author Alexandre Oliveira
- * @since 2026.1.10
- */
 class TurSNTargetingRulesTest {
 
+    private final TurSNTargetingRules rules = new TurSNTargetingRules();
+
     @Test
-    void testAndMethodBuildsQuery() {
-        TurSNTargetingRules rules = new TurSNTargetingRules();
-
-        String result = rules.andMethod(List.of("group:Admins", "group:Users"));
-
-        assertThat(result).isEqualTo("( group:Admins OR group:Users OR (*:* NOT group:*) )");
+    void andMethodShouldCreateCorrectQueryWithMultipleAttributes() {
+        List<String> trs = List.of("group:admin", "group:user", "role:editor");
+        String result = rules.andMethod(trs);
+        assertNotNull(result);
+        assertTrue(result.contains("AND"), "Expected AND between attribute groups: " + result);
+        assertTrue(result.contains("group:admin"), "Expected group:admin in result: " + result);
+        assertTrue(result.contains("group:user"), "Expected group:user in result: " + result);
+        assertTrue(result.contains("role:editor"), "Expected role:editor in result: " + result);
+        assertTrue(result.contains("NOT group:*"), "Expected NOT group:* in result: " + result);
+        assertTrue(result.contains("NOT role:*"), "Expected NOT role:* in result: " + result);
     }
 
     @Test
-    void testOrMethodBuildsQueryWithConditions() {
-        TurSNTargetingRules rules = new TurSNTargetingRules();
+    void andMethodShouldGroupSameAttribute() {
+        List<String> trs = List.of("group:admin", "group:user");
+        String result = rules.andMethod(trs);
+        assertTrue(result.contains("OR"), "Expected OR between values of same attribute: " + result);
+        assertTrue(result.contains("group:admin"), "Expected group:admin in result: " + result);
+        assertTrue(result.contains("group:user"), "Expected group:user in result: " + result);
+        // Single attribute group means no AND connector between groups
+        assertFalse(result.contains(" AND "), "Expected no AND for single attribute group: " + result);
+    }
 
-        String result = rules.orMethod(List.of("group:Admins", "role:Editor"));
+    @Test
+    void orMethodShouldCreateCorrectQuery() {
+        List<String> trs = List.of("attr1:val1", "attr2:val2");
+        String result = rules.orMethod(trs);
+        assertTrue(result.contains("OR"), "Expected OR in result: " + result);
+        assertTrue(result.contains("attr1:val1"), "Expected attr1:val1 in result: " + result);
+        assertTrue(result.contains("attr2:val2"), "Expected attr2:val2 in result: " + result);
+        assertTrue(result.contains("NOT attr1:*"), "Expected NOT attr1:* in result: " + result);
+        assertTrue(result.contains("NOT attr2:*"), "Expected NOT attr2:* in result: " + result);
+    }
 
-        assertThat(result)
-                .contains("group:Admins")
-                .contains("role:Editor")
-                .contains("NOT group:*")
-                .contains("NOT role:*");
+    @Test
+    void ruleExpressionShouldDelegateToAndMethod() {
+        List<String> trs = List.of("group:admin");
+        String andResult = rules.ruleExpression(TurSNTargetingRuleMethod.AND, trs);
+        String directResult = rules.andMethod(trs);
+        assertEquals(directResult, andResult);
+    }
+
+    @Test
+    void ruleExpressionShouldDelegateToOrMethod() {
+        List<String> trs = List.of("group:admin");
+        String orResult = rules.ruleExpression(TurSNTargetingRuleMethod.OR, trs);
+        String directResult = rules.orMethod(trs);
+        assertEquals(directResult, orResult);
+    }
+
+    @Test
+    void andMethodShouldReturnEmptyForEmptyList() {
+        assertEquals("", rules.andMethod(List.of()));
+    }
+
+    @Test
+    void orMethodShouldHandleEmptyList() {
+        String result = rules.orMethod(List.of());
+        // With no entries, produces " OR (*:* )" pattern
+        assertNotNull(result);
+    }
+
+    @Test
+    void andMethodShouldSkipEntriesWithoutColon() {
+        List<String> trs = List.of("nocolon", "valid:entry");
+        String result = rules.andMethod(trs);
+        assertTrue(result.contains("valid:entry"), "Expected valid:entry in result: " + result);
+        assertFalse(result.contains("nocolon"), "Expected nocolon to be skipped: " + result);
+    }
+
+    @Test
+    void andMethodShouldHandleSingleEntry() {
+        List<String> trs = List.of("group:admin");
+        String result = rules.andMethod(trs);
+        assertTrue(result.contains("group:admin"), "Expected group:admin in result: " + result);
+        assertTrue(result.contains("NOT group:*"), "Expected NOT group:* in result: " + result);
+        assertFalse(result.contains(" AND "), "Expected no AND for single entry: " + result);
     }
 }

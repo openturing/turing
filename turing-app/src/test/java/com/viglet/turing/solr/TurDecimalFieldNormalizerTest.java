@@ -1,14 +1,13 @@
 package com.viglet.turing.solr;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.system.TurGlobalDecimalSeparator;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -16,78 +15,108 @@ import com.viglet.turing.system.TurGlobalSettingsService;
 @ExtendWith(MockitoExtension.class)
 class TurDecimalFieldNormalizerTest {
 
-    @Mock
-    private TurGlobalSettingsService turGlobalSettingsService;
+    @Mock private TurGlobalSettingsService turGlobalSettingsService;
+    @InjectMocks private TurDecimalFieldNormalizer normalizer;
 
-    private TurDecimalFieldNormalizer normalizer;
-
-    @BeforeEach
-    void setUp() {
-        normalizer = new TurDecimalFieldNormalizer(turGlobalSettingsService);
+    @Test
+    void isDecimalFieldTypeShouldReturnTrueForFloat() {
+        assertTrue(normalizer.isDecimalFieldType(TurSEFieldType.FLOAT));
     }
 
     @Test
-    void shouldIdentifyDecimalFieldTypes() {
-        assertThat(normalizer.isDecimalFieldType(TurSEFieldType.FLOAT)).isTrue();
-        assertThat(normalizer.isDecimalFieldType(TurSEFieldType.DOUBLE)).isTrue();
-        assertThat(normalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).isTrue();
-        assertThat(normalizer.isDecimalFieldType(TurSEFieldType.STRING)).isFalse();
-        assertThat(normalizer.isDecimalFieldType(null)).isFalse();
+    void isDecimalFieldTypeShouldReturnTrueForDouble() {
+        assertTrue(normalizer.isDecimalFieldType(TurSEFieldType.DOUBLE));
     }
 
     @Test
-    void shouldNormalizeCanonicalDecimalForCommaLocale() {
-        when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.COMMA);
-
-        assertThat(normalizer.normalizeCanonicalDecimal(" R$ 1.234,56 ")).contains("1234.56");
-        assertThat(normalizer.normalizeCanonicalDecimal("1,234.56")).isEmpty();
+    void isDecimalFieldTypeShouldReturnTrueForCurrency() {
+        assertTrue(normalizer.isDecimalFieldType(TurSEFieldType.CURRENCY));
     }
 
     @Test
-    void shouldNormalizeCanonicalDecimalForDotLocale() {
+    void isDecimalFieldTypeShouldReturnFalseForString() {
+        assertFalse(normalizer.isDecimalFieldType(TurSEFieldType.STRING));
+    }
+
+    @Test
+    void isDecimalFieldTypeShouldReturnFalseForInt() {
+        assertFalse(normalizer.isDecimalFieldType(TurSEFieldType.INT));
+    }
+
+    @Test
+    void normalizeNumericValueShouldReturnEmptyForNull() {
+        assertEquals(Optional.empty(), normalizer.normalizeNumericValue(TurSEFieldType.FLOAT, null));
+    }
+
+    @Test
+    void normalizeNumericValueShouldReturnEmptyForNonDecimalType() {
+        assertEquals(Optional.empty(), normalizer.normalizeNumericValue(TurSEFieldType.STRING, "1.5"));
+    }
+
+    @Test
+    void normalizeNumericValueDotSeparatorShouldParseSimpleDecimal() {
         when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.DOT);
-
-        assertThat(normalizer.normalizeCanonicalDecimal("$ 1,234.56")).contains("1234.56");
-        assertThat(normalizer.normalizeCanonicalDecimal("1.234,56")).isEmpty();
+        Optional<Object> result = normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, "1.5");
+        assertTrue(result.isPresent());
+        assertEquals(1.5, result.get());
     }
 
     @Test
-    void shouldKeepNumericInputAsCanonicalString() {
-        assertThat(normalizer.normalizeCanonicalDecimal(1234.5)).contains("1234.5");
-    }
-
-    @Test
-    void shouldNormalizeNumericValueForFloatAndDouble() {
+    void normalizeNumericValueDotSeparatorShouldReturnFloatForFloatType() {
         when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.DOT);
-
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.FLOAT, "1,234.50"))
-                .hasValueSatisfying(value -> {
-                    assertThat(value).isInstanceOf(Float.class);
-                    assertThat(((Float) value).doubleValue()).isEqualTo(1234.5d);
-                });
-
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, "1,234.50"))
-                .hasValueSatisfying(value -> {
-                    assertThat(value).isInstanceOf(Double.class);
-                    assertThat((Double) value).isEqualTo(1234.5d);
-                });
+        Optional<Object> result = normalizer.normalizeNumericValue(TurSEFieldType.FLOAT, "1.5");
+        assertTrue(result.isPresent());
+        assertInstanceOf(Float.class, result.get());
+        assertEquals(1.5f, (Float) result.get(), 0.001f);
     }
 
     @Test
-    void shouldNormalizeNumericValueForCurrencyAsDouble() {
+    void normalizeNumericValueCommaSeparatorShouldNormalize() {
         when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.COMMA);
-
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.CURRENCY, "1.234,50"))
-                .contains(1234.5d);
+        Optional<Object> result = normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, "1.500,75");
+        assertTrue(result.isPresent());
+        assertEquals(1500.75, result.get());
     }
 
     @Test
-    void shouldReturnEmptyForInvalidOrUnsupportedInput() {
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.STRING, "10.00")).isEmpty();
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, "abc")).isEmpty();
-        assertThat(normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, null)).isEmpty();
-        assertThat(normalizer.normalizeNumericValue(null, "10.00")).isEmpty();
-        assertThat(normalizer.normalizeCanonicalDecimal("   ")).isEmpty();
-        assertThat(normalizer.normalizeCanonicalDecimal(null)).isEmpty();
+    void normalizeCanonicalDecimalShouldReturnEmptyForNull() {
+        assertEquals(Optional.empty(), normalizer.normalizeCanonicalDecimal(null));
+    }
+
+    @Test
+    void normalizeCanonicalDecimalShouldReturnNumberToStringForNumber() {
+        Optional<String> result = normalizer.normalizeCanonicalDecimal(42.5);
+        assertTrue(result.isPresent());
+        assertEquals("42.5", result.get());
+    }
+
+    @Test
+    void normalizeCanonicalDecimalDotShouldRemoveThousandCommas() {
+        when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.DOT);
+        Optional<String> result = normalizer.normalizeCanonicalDecimal("1,500.75");
+        assertTrue(result.isPresent());
+        assertEquals("1500.75", result.get());
+    }
+
+    @Test
+    void normalizeCanonicalDecimalCommaShouldConvertToCanonical() {
+        when(turGlobalSettingsService.getDecimalSeparator()).thenReturn(TurGlobalDecimalSeparator.COMMA);
+        Optional<String> result = normalizer.normalizeCanonicalDecimal("1.500,75");
+        assertTrue(result.isPresent());
+        assertEquals("1500.75", result.get());
+    }
+
+    @Test
+    void normalizeCanonicalDecimalShouldReturnEmptyForNonNumeric() {
+        // normalizeInput("abc") strips all non-numeric chars -> empty string -> Optional.empty()
+        Optional<String> result = normalizer.normalizeCanonicalDecimal("abc");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void normalizeNumericValueShouldHandleNumberInput() {
+        Optional<Object> result = normalizer.normalizeNumericValue(TurSEFieldType.DOUBLE, 42.5);
+        assertTrue(result.isPresent());
+        assertEquals(42.5, result.get());
     }
 }

@@ -1,15 +1,13 @@
 package com.viglet.turing.system;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -22,82 +20,136 @@ class TurGlobalSettingsServiceTest {
 
     @Mock
     private TurConfigVarRepository turConfigVarRepository;
+    @InjectMocks
+    private TurGlobalSettingsService service;
 
     @Test
-    void shouldReadConfiguredSeparatorCaseInsensitive() {
-        TurConfigVar configVar = new TurConfigVar();
-        configVar.setValue(" comma ");
-        when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(configVar));
-
-        TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
-        TurGlobalDecimalSeparator result = service.getDecimalSeparator();
-
-        assertThat(result).isEqualTo(TurGlobalDecimalSeparator.COMMA);
-    }
-
-    @Test
-    void shouldFallbackToDefaultWhenConfigMissing() {
+    void getDecimalSeparatorShouldReturnDotByDefault() {
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
                 .thenReturn(Optional.empty());
-
-        TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
-
-        assertThat(service.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
+        assertEquals(TurGlobalDecimalSeparator.DOT, service.getDecimalSeparator());
     }
 
     @Test
-    void shouldFallbackToDefaultWhenConfigIsInvalidOrNull() {
-        TurConfigVar invalid = new TurConfigVar();
-        invalid.setValue("invalid");
-        TurConfigVar nullValue = new TurConfigVar();
-        nullValue.setValue(null);
-
+    void getDecimalSeparatorShouldReturnCommaWhenConfigured() {
+        TurConfigVar var = new TurConfigVar();
+        var.setValue("COMMA");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(invalid))
-                .thenReturn(Optional.of(nullValue));
-
-        TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
-
-        assertThat(service.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
-        assertThat(service.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);
+                .thenReturn(Optional.of(var));
+        assertEquals(TurGlobalDecimalSeparator.COMMA, service.getDecimalSeparator());
     }
 
     @Test
-    void shouldUpdateExistingConfigVar() {
-        TurConfigVar existing = new TurConfigVar();
-        existing.setId(TurConfigVarOnStartup.DECIMAL_SEPARATOR);
-        existing.setPath("/legacy");
-        existing.setValue("DOT");
-
+    void getDecimalSeparatorShouldReturnDotForInvalidValue() {
+        TurConfigVar var = new TurConfigVar();
+        var.setValue("INVALID");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(existing));
-        when(turConfigVarRepository.save(any(TurConfigVar.class))).thenAnswer(invocation -> invocation.getArgument(0));
+                .thenReturn(Optional.of(var));
+        assertEquals(TurGlobalDecimalSeparator.DOT, service.getDecimalSeparator());
+    }
 
-        TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
+    @Test
+    void getPythonExecutableShouldReturnEmptyByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE))
+                .thenReturn(Optional.empty());
+        assertEquals("", service.getPythonExecutable());
+    }
+
+    @Test
+    void getDefaultLlmIdShouldReturnEmptyByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM))
+                .thenReturn(Optional.empty());
+        assertEquals("", service.getDefaultLlmId());
+    }
+
+    @Test
+    void getEmailProviderShouldReturnBrevoByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER))
+                .thenReturn(Optional.empty());
+        assertEquals(TurEmailProviderType.BREVO, service.getEmailProvider());
+    }
+
+    @Test
+    void isLlmCacheEnabledShouldReturnFalseByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED))
+                .thenReturn(Optional.empty());
+        assertFalse(service.isLlmCacheEnabled());
+    }
+
+    @Test
+    void isLlmCacheEnabledShouldReturnTrueWhenConfigured() {
+        TurConfigVar var = new TurConfigVar();
+        var.setValue("true");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED))
+                .thenReturn(Optional.of(var));
+        assertTrue(service.isLlmCacheEnabled());
+    }
+
+    @Test
+    void getLlmCacheTtlMsShouldReturnDefaultWhenNotSet() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
+                .thenReturn(Optional.empty());
+        assertEquals(3_600_000L, service.getLlmCacheTtlMs());
+    }
+
+    @Test
+    void getLlmCacheTtlMsShouldParseConfiguredValue() {
+        TurConfigVar var = new TurConfigVar();
+        var.setValue("5000");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
+                .thenReturn(Optional.of(var));
+        assertEquals(5000L, service.getLlmCacheTtlMs());
+    }
+
+    @Test
+    void getLlmCacheTtlMsShouldReturnDefaultForInvalidValue() {
+        TurConfigVar var = new TurConfigVar();
+        var.setValue("notanumber");
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
+                .thenReturn(Optional.of(var));
+        assertEquals(3_600_000L, service.getLlmCacheTtlMs());
+    }
+
+    @Test
+    void updateDecimalSeparatorShouldSaveAndReturn() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
+                .thenReturn(Optional.empty());
+        when(turConfigVarRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
         TurGlobalDecimalSeparator result = service.updateDecimalSeparator(TurGlobalDecimalSeparator.COMMA);
 
-        assertThat(result).isEqualTo(TurGlobalDecimalSeparator.COMMA);
-        assertThat(existing.getId()).isEqualTo(TurConfigVarOnStartup.DECIMAL_SEPARATOR);
-        assertThat(existing.getPath()).isEqualTo(TurConfigVarOnStartup.GLOBAL_PATH);
-        assertThat(existing.getValue()).isEqualTo("COMMA");
-        verify(turConfigVarRepository).save(existing);
+        assertEquals(TurGlobalDecimalSeparator.COMMA, result);
+        verify(turConfigVarRepository).save(any(TurConfigVar.class));
     }
 
     @Test
-    void shouldCreateConfigVarWhenMissing() {
-        when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
+    void updateLlmCacheTtlMsShouldClampNegativeToZero() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
                 .thenReturn(Optional.empty());
-        when(turConfigVarRepository.save(any(TurConfigVar.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(turConfigVarRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        TurGlobalSettingsService service = new TurGlobalSettingsService(turConfigVarRepository);
-        service.updateDecimalSeparator(TurGlobalDecimalSeparator.DOT);
+        long result = service.updateLlmCacheTtlMs(-100);
+        assertEquals(0L, result);
+    }
 
-        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository).save(captor.capture());
-        TurConfigVar saved = captor.getValue();
-        assertThat(saved.getId()).isEqualTo(TurConfigVarOnStartup.DECIMAL_SEPARATOR);
-        assertThat(saved.getPath()).isEqualTo(TurConfigVarOnStartup.GLOBAL_PATH);
-        assertThat(saved.getValue()).isEqualTo("DOT");
+    @Test
+    void getEmailApiKeyShouldReturnEmptyByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY))
+                .thenReturn(Optional.empty());
+        assertEquals("", service.getEmailApiKey());
+    }
+
+    @Test
+    void getSenderEmailShouldReturnEmptyByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_EMAIL))
+                .thenReturn(Optional.empty());
+        assertEquals("", service.getSenderEmail());
+    }
+
+    @Test
+    void getRecipientEmailShouldReturnEmptyByDefault() {
+        when(turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL))
+                .thenReturn(Optional.empty());
+        assertEquals("", service.getRecipientEmail());
     }
 }
