@@ -28,7 +28,7 @@ import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.NIOFSDirectory;
+import org.apache.lucene.store.FSDirectory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -112,7 +112,7 @@ public class TurLuceneInstanceProcess {
     private TurLuceneInstance createInstance(Path indexPath) throws IOException {
         Files.createDirectories(indexPath);
         log.info("Opening Lucene index at: {}", indexPath);
-        Directory directory = NIOFSDirectory.open(indexPath);
+        Directory directory = FSDirectory.open(indexPath);
         IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
         config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
         IndexWriter writer = new IndexWriter(directory, config);

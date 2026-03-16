@@ -342,8 +342,8 @@ class TurSNProcessQueueTest {
         verify(turSNSiteFieldRepository).save(any(TurSNSiteField.class));
         verify(turSNSiteFieldExtRepository).save(any(TurSNSiteFieldExt.class));
         verify(turSNSiteFieldExtFacetRepository).saveAll(any());
-        verify(plugin).addOrUpdateField(eq(seInstance), eq("core_en"),
-                eq("customField"), eq(TurSEFieldType.STRING), eq(true), eq(false), eq(true));
+        verify(plugin).addOrUpdateField(seInstance, "core_en",
+                "customField", TurSEFieldType.STRING, true, false, true);
         verify(plugin).indexDocument(eq(site), eq(Locale.US), anyMap());
     }
 }

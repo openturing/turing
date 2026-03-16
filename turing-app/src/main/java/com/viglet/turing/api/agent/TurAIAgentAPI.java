@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentDto;
 import com.viglet.turing.persistence.mapper.agent.TurAIAgentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
@@ -70,7 +68,8 @@ public class TurAIAgentAPI {
     @Operation(summary = "Update an AI Agent")
     @PutMapping("/{id}")
     public TurAIAgentDto turAIAgentUpdate(@PathVariable String id,
-            @RequestBody TurAIAgent turAIAgent) {
+            @RequestBody TurAIAgentDto turAIAgentDto) {
+        TurAIAgent turAIAgent = turAIAgentMapper.toEntity(turAIAgentDto);
         return turAIAgentRepository.findById(id).map(agentEdit -> {
             agentEdit.setTitle(turAIAgent.getTitle());
             agentEdit.setDescription(turAIAgent.getDescription());
@@ -95,7 +94,8 @@ public class TurAIAgentAPI {
 
     @Operation(summary = "Create an AI Agent")
     @PostMapping
-    public TurAIAgentDto turAIAgentAdd(@RequestBody TurAIAgent turAIAgent) {
+    public TurAIAgentDto turAIAgentAdd(@RequestBody TurAIAgentDto turAIAgentDto) {
+        TurAIAgent turAIAgent = turAIAgentMapper.toEntity(turAIAgentDto);
         turAIAgent.setLlmInstances(resolveRelations(
                 turAIAgent.getLlmInstances(), turLLMInstanceRepository));
         turAIAgent.setMcpServers(resolveRelations(
@@ -104,24 +104,21 @@ public class TurAIAgentAPI {
         return turAIAgentMapper.toDto(turAIAgent);
     }
 
-    private <T, ID> Set<T> resolveRelations(
+    private <T> Set<T> resolveRelations(
             Set<T> incoming,
             org.springframework.data.jpa.repository.JpaRepository<T, String> repo) {
         if (incoming == null || incoming.isEmpty()) {
             return new HashSet<>();
         }
         return incoming.stream()
-                .map(entity -> {
-                    try {
-                        var idField = entity.getClass().getDeclaredField("id");
-                        idField.setAccessible(true);
-                        String id = (String) idField.get(entity);
-                        return repo.findById(id).orElse(null);
-                    } catch (Exception e) {
-                        return null;
+                .flatMap(entity -> {
+                    if (entity instanceof org.springframework.data.domain.Persistable) {
+                        var persistable = (org.springframework.data.domain.Persistable<?>) entity;
+                        String id = (String) persistable.getId();
+                        return repo.findById(id).stream();
                     }
+                    return java.util.stream.Stream.of(entity);
                 })
-                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 }

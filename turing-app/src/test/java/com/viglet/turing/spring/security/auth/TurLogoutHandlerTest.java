@@ -30,7 +30,7 @@ class TurLogoutHandlerTest {
     private HttpSession session;
 
     @Test
-    void shouldLogoutAndInvalidateSession() throws Exception {
+    void shouldLogoutAndInvalidateSession() {
         when(request.getSession(false)).thenReturn(session);
 
         handler.logout(request, response, authentication);
@@ -40,7 +40,7 @@ class TurLogoutHandlerTest {
     }
 
     @Test
-    void shouldNotThrowWhenSessionDoesNotExist() throws Exception {
+    void shouldNotThrowWhenSessionDoesNotExist() {
         when(request.getSession(false)).thenReturn(null);
 
         assertDoesNotThrow(() -> handler.logout(request, response, authentication));

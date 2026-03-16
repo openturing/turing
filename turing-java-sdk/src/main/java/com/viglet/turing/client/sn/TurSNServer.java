@@ -244,7 +244,7 @@ public class TurSNServer {
         if (response == null) {
             return Collections.emptyList();
         }
-        return new ObjectMapper().readValue(response, new TypeReference<>() {
+        return new ObjectMapper().readValue(response, new TypeReference<List<TurSNLocale>>() {
         });
     }
 
@@ -263,7 +263,7 @@ public class TurSNServer {
         if (response == null) {
             return Collections.emptyList();
         }
-        return new ObjectMapper().readValue(response, new TypeReference<>() {
+        return new ObjectMapper().readValue(response, new TypeReference<List<String>>() {
         });
     }
 

@@ -16,28 +16,34 @@
  */
 package com.viglet.turing.lucene;
 
-import com.viglet.turing.commons.se.TurSEParameters;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
-import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import lombok.extern.slf4j.Slf4j;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Builds Lucene {@link Query} objects from {@link TurSNSiteSearchContext} and
@@ -51,8 +57,8 @@ import java.util.Set;
 @Component
 public class TurLuceneQueryBuilder {
 
-    private static final Set<TurSEFieldType> TEXT_FIELD_TYPES =
-            EnumSet.of(TurSEFieldType.TEXT, TurSEFieldType.STRING, TurSEFieldType.ARRAY);
+    private static final Set<TurSEFieldType> TEXT_FIELD_TYPES = EnumSet.of(TurSEFieldType.TEXT, TurSEFieldType.STRING,
+            TurSEFieldType.ARRAY);
 
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
@@ -78,8 +84,8 @@ public class TurLuceneQueryBuilder {
         // Filter queries (facet selections)
         List<String> filterQueries = params.getTurSNFilterParams().getDefaultValues();
         if (!CollectionUtils.isEmpty(filterQueries)) {
-            filterQueries.forEach(fq -> parseFilterQuery(fq).ifPresent(q ->
-                    builder.add(q, BooleanClause.Occur.FILTER)));
+            filterQueries
+                    .forEach(fq -> parseFilterQuery(fq).ifPresent(q -> builder.add(q, BooleanClause.Occur.FILTER)));
         }
 
         return builder.build();
@@ -92,8 +98,8 @@ public class TurLuceneQueryBuilder {
         List<TurSNSiteFieldExt> all = turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1);
         List<TurSNSiteFieldExt> facets = all.stream()
                 .filter(ext -> ext.getFacet() == 1)
-                .sorted(java.util.Comparator.comparingInt(ext ->
-                        ext.getFacetPosition() != null ? ext.getFacetPosition() : Integer.MAX_VALUE))
+                .sorted(java.util.Comparator.comparingInt(
+                        ext -> ext.getFacetPosition() != null ? ext.getFacetPosition() : Integer.MAX_VALUE))
                 .toList();
         log.debug("[Lucene] site='{}' totalEnabledFields={} facetFields={} names={}",
                 turSNSite.getName(), all.size(), facets.size(),
@@ -114,8 +120,7 @@ public class TurLuceneQueryBuilder {
     /**
      * Builds a wildcard-appended version of the query (for no-results fallback).
      */
-    public Query buildWildcardQuery(TurSNSiteSearchContext context, TurSNSite turSNSite,
-            TurSEParameters params) {
+    public Query buildWildcardQuery(TurSNSite turSNSite, TurSEParameters params) {
         String wildcardQuery = params.getQuery().trim() + "*";
         params.setQuery(wildcardQuery);
         return buildQuery(turSNSite, params);
@@ -168,7 +173,8 @@ public class TurLuceneQueryBuilder {
     }
 
     private Optional<Query> parseFilterQuery(String fq) {
-        if (!StringUtils.hasText(fq)) return Optional.empty();
+        if (!StringUtils.hasText(fq))
+            return Optional.empty();
         try {
             // Filter queries use the format: fieldName:"value" or fieldName:value
             QueryParser parser = new QueryParser(TurLuceneConstants.ID, new StandardAnalyzer());

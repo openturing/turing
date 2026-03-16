@@ -1,6 +1,7 @@
 package com.viglet.turing.client.sn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -281,7 +283,8 @@ class TurSNSearchAPITest {
         private final HttpServer server;
         private final List<CapturedRequest> capturedRequests = new ArrayList<>();
 
-        record CapturedRequest(String method, String uri, String body) {}
+        record CapturedRequest(String method, String uri, String body) {
+        }
 
         private SearchHttpServer(HttpServer server) {
             this.server = server;
@@ -331,7 +334,8 @@ class TurSNSearchAPITest {
 
         CapturedRequest getLastSearchRequest() {
             return capturedRequests.stream()
-                    .filter(r -> r.uri().contains("/search") && !r.uri().contains("/locales") && !r.uri().contains("/latest"))
+                    .filter(r -> r.uri().contains("/search") && !r.uri().contains("/locales")
+                            && !r.uri().contains("/latest"))
                     .reduce((first, second) -> second)
                     .orElse(null);
         }
@@ -346,7 +350,8 @@ class TurSNSearchAPITest {
     private static Map<String, List<String>> parseQueryString(String uri) {
         Map<String, List<String>> params = new LinkedHashMap<>();
         int qIndex = uri.indexOf('?');
-        if (qIndex < 0) return params;
+        if (qIndex < 0)
+            return params;
         String queryStr = uri.substring(qIndex + 1);
         for (String pair : queryStr.split("&")) {
             String[] parts = pair.split("=", 2);
@@ -387,7 +392,7 @@ class TurSNSearchAPITest {
             try (SearchHttpServer http = SearchHttpServer.start(EMPTY_SEARCH_RESPONSE)) {
                 TurSNServer server = new TurSNServer(
                         URI.create("http://localhost:" + http.port()), "MySite",
-                        new Locale("pt", "BR"));
+                        Locale.of("pt", "BR"));
                 TurSNQuery query = new TurSNQuery();
                 query.setQuery("busca");
 
@@ -813,11 +818,10 @@ class TurSNSearchAPITest {
                 Map<String, List<String>> params = parseQueryString(http.getLastSearchRequest().uri());
                 assertThat(params.get("fq[]")).hasSize(1);
                 String fq = params.get("fq[]").getFirst();
-                assertThat(fq)
-                        .startsWith("created:[")
-                        .contains("1970-01-01T00:00:00Z")
-                        .contains("1970-01-02T00:00:00Z")
-                        .contains(" TO ");
+                assertTrue(fq.startsWith("created:["), "should start with 'created:['");
+                assertTrue(fq.contains("1970-01-01T00:00:00Z"), "should contain start date");
+                assertTrue(fq.contains("1970-01-02T00:00:00Z"), "should contain end date");
+                assertTrue(fq.contains(" TO "), "should contain ' TO '");
             }
         }
 
@@ -1349,7 +1353,7 @@ class TurSNSearchAPITest {
             try (SearchHttpServer http = SearchHttpServer.start(EMPTY_SEARCH_RESPONSE)) {
                 TurSNServer server = new TurSNServer(
                         URI.create("http://localhost:" + http.port()), "MySite",
-                        new Locale("pt", "BR"),
+                        Locale.of("pt", "BR"),
                         new TurApiKeyCredentials("key"));
                 TurSNAutoCompleteQuery acQuery = new TurSNAutoCompleteQuery();
                 acQuery.setQuery("bus");
@@ -1513,6 +1517,7 @@ class TurSNSearchAPITest {
             // even though authentication could work with API key
             server.deleteItemsByType("Page");
             // No exception but nothing happens - the API key is ignored
+            assertThat(server.getApiKey()).isEqualTo("my-api-key");
         }
     }
 
@@ -1772,15 +1777,16 @@ class TurSNSearchAPITest {
             server.setTurSNQuery(query);
 
             HttpUriRequestBase request = invokePrepareQueryRequest(server);
-            String uri = request.getUri().toString();
+            assertThat(request.getUri()).isNotNull();
+            String uri = Objects.requireNonNull(request.getUri()).toString();
 
-            assertThat(uri.contains("q=hello+world") || uri.contains("q=hello%20world"))
-                    .as("query parameter 'q' should contain encoded 'hello world'").isTrue();
-            assertThat(uri).contains("rows=15");
-            assertThat(uri).contains("group=category");
-            assertThat(uri.contains("sort=date+desc") || uri.contains("sort=date%20desc"))
-                    .as("sort parameter should contain 'date desc' encoded").isTrue();
-            assertThat(uri).contains("p=2");
+            assertTrue(uri.contains("q=hello+world") || uri.contains("q=hello%20world"),
+                    "query parameter 'q' should contain encoded 'hello world'");
+            assertTrue(uri.contains("rows=15"), "should contain rows=15");
+            assertTrue(uri.contains("group=category"), "should contain group=category");
+            assertTrue(uri.contains("sort=date+desc") || uri.contains("sort=date%20desc"),
+                    "sort parameter should contain 'date desc' encoded");
+            assertTrue(uri.contains("p=2"), "should contain p=2");
         }
 
         private HttpUriRequestBase invokePrepareQueryRequest(TurSNServer server) throws Exception {

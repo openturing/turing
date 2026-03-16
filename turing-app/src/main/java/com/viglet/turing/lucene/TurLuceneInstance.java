@@ -16,15 +16,17 @@
  */
 package com.viglet.turing.lucene;
 
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 
-import java.io.IOException;
-import java.nio.file.Path;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Holds the Lucene index state for a single core (index directory).
@@ -41,7 +43,7 @@ public class TurLuceneInstance {
     private final Directory directory;
     private final Path indexPath;
     private final FacetsConfig facetsConfig;
-    private volatile DirectoryReader directoryReader;
+    private final AtomicReference<DirectoryReader> directoryReader;
 
     public TurLuceneInstance(IndexWriter indexWriter, Directory directory, Path indexPath,
             FacetsConfig facetsConfig) throws IOException {
@@ -49,32 +51,38 @@ public class TurLuceneInstance {
         this.directory = directory;
         this.indexPath = indexPath;
         this.facetsConfig = facetsConfig;
-        this.directoryReader = DirectoryReader.open(indexWriter);
+        this.directoryReader = new AtomicReference<>(DirectoryReader.open(indexWriter));
     }
 
     /**
      * Returns an {@link IndexSearcher} backed by the latest index state.
-     * If the underlying index has changed since the last call, the reader is refreshed.
+     * If the underlying index has changed since the last call, the reader is
+     * refreshed.
      */
     public synchronized IndexSearcher getSearcher() throws IOException {
-        DirectoryReader newReader = DirectoryReader.openIfChanged(directoryReader, indexWriter);
-        if (newReader != null) {
-            directoryReader.close();
-            directoryReader = newReader;
+        DirectoryReader current = directoryReader.get();
+        try (DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter)) {
+            if (newReader != null) {
+                current.close();
+                directoryReader.set(newReader);
+            }
         }
-        return new IndexSearcher(directoryReader);
+        return new IndexSearcher(directoryReader.get());
     }
 
     /**
-     * Returns the current {@link DirectoryReader}, refreshing it if the index has changed.
+     * Returns the current {@link DirectoryReader}, refreshing it if the index has
+     * changed.
      */
     public synchronized DirectoryReader getReader() throws IOException {
-        DirectoryReader newReader = DirectoryReader.openIfChanged(directoryReader, indexWriter);
-        if (newReader != null) {
-            directoryReader.close();
-            directoryReader = newReader;
+        DirectoryReader current = directoryReader.get();
+        try (DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter)) {
+            if (newReader != null) {
+                current.close();
+                directoryReader.set(newReader);
+            }
         }
-        return directoryReader;
+        return directoryReader.get();
     }
 
     public IndexWriter getWriter() {
@@ -85,14 +93,16 @@ public class TurLuceneInstance {
         return indexPath;
     }
 
-    /** Returns the {@link FacetsConfig} used when building facet-enabled documents. */
+    /**
+     * Returns the {@link FacetsConfig} used when building facet-enabled documents.
+     */
     public FacetsConfig getFacetsConfig() {
         return facetsConfig;
     }
 
     public void close() throws IOException {
         try {
-            directoryReader.close();
+            directoryReader.get().close();
         } finally {
             try {
                 indexWriter.close();

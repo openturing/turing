@@ -57,7 +57,8 @@ public class TurMcpServerAPI {
     @Operation(summary = "Update a MCP Server")
     @PutMapping("/{id}")
     public TurMcpServerDto turMcpServerUpdate(@PathVariable String id,
-            @RequestBody TurMcpServer turMcpServer) {
+            @RequestBody TurMcpServerDto turMcpServerDto) {
+        TurMcpServer turMcpServer = turMcpServerMapper.toEntity(turMcpServerDto);
         return turMcpServerRepository.findById(id).map(turMcpServerEdit -> {
             turMcpServerEdit.setTitle(turMcpServer.getTitle());
             turMcpServerEdit.setDescription(turMcpServer.getDescription());
@@ -82,7 +83,8 @@ public class TurMcpServerAPI {
 
     @Operation(summary = "Create a MCP Server")
     @PostMapping
-    public TurMcpServerDto turMcpServerAdd(@RequestBody TurMcpServer turMcpServer) {
+    public TurMcpServerDto turMcpServerAdd(@RequestBody TurMcpServerDto turMcpServerDto) {
+        TurMcpServer turMcpServer = turMcpServerMapper.toEntity(turMcpServerDto);
         this.turMcpServerRepository.save(turMcpServer);
         return turMcpServerMapper.toDto(turMcpServer);
     }

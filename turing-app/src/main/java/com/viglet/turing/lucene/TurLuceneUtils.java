@@ -16,25 +16,29 @@
  */
 package com.viglet.turing.lucene;
 
-import com.viglet.turing.solr.bean.TurSECoreInfo;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.viglet.turing.solr.bean.TurSECoreInfo;
+
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Static utilities for Lucene core (index directory) management.
  * Mirrors {@code TurSolrUtils} for the Lucene engine.
  *
- * <p>In Lucene, a "core" corresponds to a directory on the filesystem that
+ * <p>
+ * In Lucene, a "core" corresponds to a directory on the filesystem that
  * contains a Lucene index. The {@code basePath} is the value of
  * {@code TurSEInstance.endpointUrl} for Lucene-backed SE instances.
  *
- * <p>Field management is intentionally a no-op: Lucene is schema-less and
+ * <p>
+ * Field management is intentionally a no-op: Lucene is schema-less and
  * field types are tracked in the Turing JPA model (TurSNSiteField).
  *
  * @author Alexandre Oliveira
@@ -103,7 +107,8 @@ public final class TurLuceneUtils {
 
     /**
      * Lists all direct sub-directories of {@code basePath} as cores.
-     * Returns basic info: name and approximate doc count (not exact without opening the index).
+     * Returns basic info: name and approximate doc count (not exact without opening
+     * the index).
      */
     public static List<TurSECoreInfo> listCores(String basePath) {
         Path base = Path.of(basePath);
@@ -129,7 +134,7 @@ public final class TurLuceneUtils {
      * No-op for Lucene: field types are tracked in the JPA model; the index
      * itself is schema-less and accepts any field at index time.
      */
-    public static void addOrUpdateField(String basePath, String coreName, String fieldName) {
+    public static void addOrUpdateField(String coreName, String fieldName) {
         log.debug("Lucene addOrUpdateField: no-op for field '{}' in core '{}'", fieldName, coreName);
     }
 
@@ -137,7 +142,7 @@ public final class TurLuceneUtils {
      * No-op for Lucene: removing a field definition only requires updating the
      * JPA model — existing indexed values are not retroactively removed.
      */
-    public static void deleteField(String basePath, String coreName, String fieldName) {
+    public static void deleteField(String coreName, String fieldName) {
         log.debug("Lucene deleteField: no-op for field '{}' in core '{}'", fieldName, coreName);
     }
 }

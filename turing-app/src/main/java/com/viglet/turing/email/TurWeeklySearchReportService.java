@@ -181,21 +181,24 @@ public class TurWeeklySearchReportService {
 
             List<Message> messages = List.of(
                     new SystemMessage(
-                            "You are an enterprise search expert analyzing a Semantic Navigation site from the Turing platform. "
-                            + "Based on the site data provided, generate a comprehensive summary in HTML format. "
-                            + "Include these sections with <h3> headings:\n"
-                            + "<h3>Overview</h3> Brief summary of the site configuration and health.\n"
-                            + "<h3>Search Activity</h3> Analysis of search metrics and top terms.\n"
-                            + "<h3>Configuration Review</h3> Review of fields, locales, facets, and behavior settings.\n"
-                            + "<h3>Suggestions</h3> Actionable recommendations to improve search quality and user experience.\n\n"
-                            + "Use <p>, <strong>, <ul>/<li> tags for formatting. "
-                            + "Be concise but insightful. Use bullet points where appropriate. "
-                            + "Highlight any potential issues or misconfigurations. "
-                            + "Do NOT include <html>, <head>, <body>, or <style> tags. "
-                            + "Use inline styles with colors suitable for a dark background "
-                            + "(text: #cbd5e1, headings: #f1f5f9, accent/bold: #60a5fa, secondary: #94a3b8, "
-                            + "list bullets: #6366f1). Style <h3> with: color:#f1f5f9;font-size:14px;font-weight:700;margin:16px 0 8px;"),
-                    new UserMessage(siteData + "\nPlease analyze all this data and provide a comprehensive summary with suggestions."));
+                            """
+                                    You are an enterprise search expert analyzing a Semantic Navigation site from the Turing platform. \
+                                    Based on the site data provided, generate a comprehensive summary in HTML format. \
+                                    Include these sections with <h3> headings:
+                                    <h3>Overview</h3> Brief summary of the site configuration and health.
+                                    <h3>Search Activity</h3> Analysis of search metrics and top terms.
+                                    <h3>Configuration Review</h3> Review of fields, locales, facets, and behavior settings.
+                                    <h3>Suggestions</h3> Actionable recommendations to improve search quality and user experience.
+
+                                    Use <p>, <strong>, <ul>/<li> tags for formatting. \
+                                    Be concise but insightful. Use bullet points where appropriate. \
+                                    Highlight any potential issues or misconfigurations. \
+                                    Do NOT include <html>, <head>, <body>, or <style> tags. \
+                                    Use inline styles with colors suitable for a dark background \
+                                    (text: #cbd5e1, headings: #f1f5f9, accent/bold: #60a5fa, secondary: #94a3b8, \
+                                    list bullets: #6366f1). Style <h3> with: color:#f1f5f9;font-size:14px;font-weight:700;margin:16px 0 8px;"""),
+                    new UserMessage(siteData
+                            + "\nPlease analyze all this data and provide a comprehensive summary with suggestions."));
 
             Prompt prompt = new Prompt(messages);
             var response = chatModel.call(prompt);
@@ -253,25 +256,30 @@ public class TurWeeklySearchReportService {
                 borderRadius = "border-radius:0 0 12px 12px;";
             }
 
-            rows.append("<tr>")
-                    .append("<td style=\"padding:9px 14px;background:").append(bgColor).append(";").append(borderRadius).append("\">")
-                    .append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\"><tr>")
-                    .append("<td width=\"26\" style=\"vertical-align:middle;\">")
-                    .append("<div style=\"background:").append(accentColor).append(";width:22px;height:22px;border-radius:6px;text-align:center;line-height:22px;font-size:10px;font-weight:800;color:#0a0a0f;\">")
-                    .append(i + 1)
-                    .append("</div>")
-                    .append("</td>")
-                    .append("<td style=\"padding-left:10px;vertical-align:middle;\">")
-                    .append("<span style=\"font-size:13px;color:#e2e8f0;font-weight:500;\">").append(escapeHtml(term.getTerm())).append("</span>")
-                    .append("</td>")
-                    .append("<td align=\"right\" style=\"vertical-align:middle;\">")
-                    .append("<span style=\"font-size:11px;color:#64748b;background:#16161f;border-radius:4px;padding:3px 7px;\">")
-                    .append(term.getTotal()).append("x")
-                    .append("</span>")
-                    .append("</td>")
-                    .append("</tr></table>")
-                    .append("</td>")
-                    .append("</tr>");
+            rows.append(
+                    """
+                            <tr>
+                            <td style="padding:9px 14px;background:%s;%s">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%"><tr>
+                            <td width="26" style="vertical-align:middle;">
+                            <div style="background:%s;width:22px;height:22px;border-radius:6px;text-align:center;line-height:22px;font-size:10px;font-weight:800;color:#0a0a0f;">
+                            %d
+                            </div>
+                            </td>
+                            <td style="padding-left:10px;vertical-align:middle;">
+                            <span style="font-size:13px;color:#e2e8f0;font-weight:500;">%s</span>
+                            </td>
+                            <td align="right" style="vertical-align:middle;">
+                            <span style="font-size:11px;color:#64748b;background:#16161f;border-radius:4px;padding:3px 7px;">
+                            %dx
+                            </span>
+                            </td>
+                            </tr></table>
+                            </td>
+                            </tr>
+                            """
+                            .formatted(bgColor, borderRadius, accentColor, i + 1, escapeHtml(term.getTerm()),
+                                    term.getTotal()));
         }
 
         return rows.toString();
@@ -282,7 +290,8 @@ public class TurWeeklySearchReportService {
     }
 
     private static String escapeHtml(String text) {
-        if (text == null) return "";
+        if (text == null)
+            return "";
         return text.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")

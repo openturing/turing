@@ -24,6 +24,11 @@ import java.util.*;
 @Tag(name = "Logging", description = "Logging API")
 public class TurLoggingAPI {
     public static final String DATE = "date";
+    public static final String CONTENT = "content";
+    public static final String TOTAL_ELEMENTS = "totalElements";
+    public static final String TOTAL_PAGES = "totalPages";
+    public static final String PAGE = "page";
+    public static final String PAGE_SIZE = "pageSize";
     private final boolean enabled;
     private final String connectionString;
     private final String databaseName;
@@ -88,11 +93,11 @@ public class TurLoggingAPI {
                                                               String level, String dateFrom, String dateTo,
                                                               String search) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("content", Collections.emptyList());
-        result.put("page", page);
-        result.put("pageSize", pageSize);
-        result.put("totalElements", 0L);
-        result.put("totalPages", 0);
+        result.put(CONTENT, Collections.emptyList());
+        result.put(PAGE, page);
+        result.put(PAGE_SIZE, pageSize);
+        result.put(TOTAL_ELEMENTS, 0L);
+        result.put(TOTAL_PAGES, 0);
 
         if (!enabled) {
             return result;
@@ -122,9 +127,9 @@ public class TurLoggingAPI {
 
             Collections.reverse(documentList);
 
-            result.put("content", documentList);
-            result.put("totalElements", totalElements);
-            result.put("totalPages", totalPages);
+            result.put(CONTENT, documentList);
+            result.put(TOTAL_ELEMENTS, totalElements);
+            result.put(TOTAL_PAGES, totalPages);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -136,11 +141,11 @@ public class TurLoggingAPI {
                                                                String status, String contentId,
                                                                String resultStatus, String url) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("content", Collections.emptyList());
-        result.put("page", page);
-        result.put("pageSize", pageSize);
-        result.put("totalElements", 0L);
-        result.put("totalPages", 0);
+        result.put(CONTENT, Collections.emptyList());
+        result.put(PAGE, page);
+        result.put(PAGE_SIZE, pageSize);
+        result.put(TOTAL_ELEMENTS, 0L);
+        result.put(TOTAL_PAGES, 0);
 
         if (!enabled) {
             return result;
@@ -172,9 +177,9 @@ public class TurLoggingAPI {
 
             Collections.reverse(documentList);
 
-            result.put("content", documentList);
-            result.put("totalElements", totalElements);
-            result.put("totalPages", totalPages);
+            result.put(CONTENT, documentList);
+            result.put(TOTAL_ELEMENTS, totalElements);
+            result.put(TOTAL_PAGES, totalPages);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }

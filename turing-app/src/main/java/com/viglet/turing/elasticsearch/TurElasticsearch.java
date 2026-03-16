@@ -16,19 +16,6 @@
  */
 package com.viglet.turing.elasticsearch;
 
-import co.elastic.clients.elasticsearch._types.aggregations.DoubleTermsBucket;
-import co.elastic.clients.elasticsearch._types.aggregations.LongTermsBucket;
-import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
-import com.viglet.turing.commons.se.field.TurSEFieldType;
-import com.viglet.turing.commons.sn.field.TurSNFieldName;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.se.facet.TurSEFacetResult;
-import com.viglet.turing.se.facet.TurSEFacetResultAttr;
-
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -43,13 +30,25 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.se.facet.TurSEFacetResult;
+import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.aggregations.DoubleTermsBucket;
+import co.elastic.clients.elasticsearch._types.aggregations.LongTermsBucket;
+import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -99,19 +98,8 @@ public class TurElasticsearch {
                                 .from(from)
                                 .size(rows);
 
-                        // Add a terms aggregation for each facet field
-                        for (TurSNSiteFieldExt facetField : facetFields) {
-                            String fieldName = facetField.getName();
-                            String aggField = getFacetAggField(facetField);
-                            searchBuilder.aggregations(FACET_AGG_PREFIX + fieldName,
-                                    a -> a.terms(t -> t.field(aggField).size(100)));
-                        }
-
-                        // Add sorting if specified ("relevance" = ES default _score — skip explicit sort)
-                        String sort = turSEParameters.getSort();
-                        if (StringUtils.hasText(sort) && !"relevance".equalsIgnoreCase(sort)) {
-                            addSorting(searchBuilder, sort);
-                        }
+                        addFacetAggregations(searchBuilder, facetFields);
+                        addOptionalSorting(searchBuilder, turSEParameters);
 
                         SearchRequest searchRequest = searchBuilder.build();
                         SearchResponse<Map<String, Object>> response = elasticsearchInstance.getClient()
@@ -119,19 +107,7 @@ public class TurElasticsearch {
 
                         return Optional.of(buildTurSEResults(response, turSEParameters, facetFields));
                     } catch (co.elastic.clients.elasticsearch._types.ElasticsearchException e) {
-                        if ("index_not_found_exception".equals(e.error().type())) {
-                            log.debug("Index '{}' not found, returning empty results",
-                                    elasticsearchInstance.getIndex());
-                        } else {
-                            var err = e.error();
-                            log.error("ES search failed: type={} reason={} causedBy={}",
-                                    err.type(), err.reason(),
-                                    Optional.ofNullable(err.causedBy()).map(c -> c.reason()).orElse("none"));
-                            if (err.rootCause() != null && !err.rootCause().isEmpty()) {
-                                err.rootCause().forEach(rc ->
-                                        log.error("  root cause: type={} reason={}", rc.type(), rc.reason()));
-                            }
-                        }
+                        handleElasticsearchException(e, elasticsearchInstance.getIndex());
                         return Optional.empty();
                     } catch (IOException e) {
                         log.error("Error executing Elasticsearch search: {}", e.getMessage(), e);
@@ -299,6 +275,23 @@ public class TurElasticsearch {
         return (currentPage - 1) * rows;
     }
 
+    private void addFacetAggregations(SearchRequest.Builder searchBuilder,
+            List<TurSNSiteFieldExt> facetFields) {
+        for (TurSNSiteFieldExt facetField : facetFields) {
+            String fieldName = facetField.getName();
+            String aggField = getFacetAggField(facetField);
+            searchBuilder.aggregations(FACET_AGG_PREFIX + fieldName,
+                    a -> a.terms(t -> t.field(aggField).size(100)));
+        }
+    }
+
+    private void addOptionalSorting(SearchRequest.Builder searchBuilder, TurSEParameters turSEParameters) {
+        String sort = turSEParameters.getSort();
+        if (StringUtils.hasText(sort) && !"relevance".equalsIgnoreCase(sort)) {
+            addSorting(searchBuilder, sort);
+        }
+    }
+
     private void addSorting(SearchRequest.Builder searchBuilder, String sortString) {
         String[] sortParts = sortString.split("\\s+");
         if (sortParts.length > 0) {
@@ -308,6 +301,22 @@ public class TurElasticsearch {
                     : SortOrder.Asc;
 
             searchBuilder.sort(s -> s.field(f -> f.field(field).order(order)));
+        }
+    }
+
+    private void handleElasticsearchException(co.elastic.clients.elasticsearch._types.ElasticsearchException e,
+            String index) {
+        if ("index_not_found_exception".equals(e.error().type())) {
+            log.debug("Index '{}' not found, returning empty results", index);
+        } else {
+            var err = e.error();
+            log.error("ES search failed: type={} reason={} causedBy={}",
+                    err.type(), err.reason(),
+                    Optional.ofNullable(err.causedBy()).map(c -> c.reason()).orElse("none"));
+            if (err.rootCause() != null && !err.rootCause().isEmpty()) {
+                err.rootCause().forEach(
+                        rc -> log.error("  root cause: type={} reason={}", rc.type(), rc.reason()));
+            }
         }
     }
 
@@ -347,14 +356,19 @@ public class TurElasticsearch {
 
     /**
      * Returns the ES field name to use for a terms aggregation.
-     * String-like types (TEXT, STRING, ARRAY, BOOL) are dynamically mapped by ES as "text"
-     * with a ".keyword" sub-field. Terms aggregations must use the ".keyword" sub-field.
-     * Numeric types (INT, LONG, FLOAT, DOUBLE, CURRENCY) and DATE are mapped natively
+     * String-like types (TEXT, STRING, ARRAY, BOOL) are dynamically mapped by ES as
+     * "text"
+     * with a ".keyword" sub-field. Terms aggregations must use the ".keyword"
+     * sub-field.
+     * Numeric types (INT, LONG, FLOAT, DOUBLE, CURRENCY) and DATE are mapped
+     * natively
      * and can be aggregated directly.
      */
     private static String getFacetAggField(TurSNSiteFieldExt facetField) {
-        // TEXT, STRING and ARRAY are all stored as "text" in ES (either via dynamic mapping
-        // on existing indexes, or explicit mapping with "keyword" analyzer for STRING/ARRAY).
+        // TEXT, STRING and ARRAY are all stored as "text" in ES (either via dynamic
+        // mapping
+        // on existing indexes, or explicit mapping with "keyword" analyzer for
+        // STRING/ARRAY).
         // Both have a ".keyword" sub-field that must be used for terms aggregations.
         TurSEFieldType type = facetField.getType();
         if (type == TurSEFieldType.TEXT || type == TurSEFieldType.STRING
@@ -367,8 +381,8 @@ public class TurElasticsearch {
     private List<TurSEFacetResult> buildFacetResults(SearchResponse<Map<String, Object>> response,
             List<TurSNSiteFieldExt> facetFields) {
         List<TurSEFacetResult> facetResults = new ArrayList<>();
-        Map<String, co.elastic.clients.elasticsearch._types.aggregations.Aggregate> aggregations =
-                response.aggregations();
+        Map<String, co.elastic.clients.elasticsearch._types.aggregations.Aggregate> aggregations = response
+                .aggregations();
         if (aggregations == null || facetFields.isEmpty()) {
             return facetResults;
         }
@@ -380,38 +394,63 @@ public class TurElasticsearch {
                 log.debug("ES facet agg '{}' not found in response", aggName);
                 continue;
             }
-            TurSEFacetResult facetResult = new TurSEFacetResult();
-            facetResult.setFacet(fieldName);
-            facetResult.setFacetPosition(facetField.getFacetPosition() != null
-                    ? facetField.getFacetPosition() : 1);
-            if (agg.isSterms()) {
-                List<StringTermsBucket> buckets = agg.sterms().buckets().array();
-                log.debug("ES facet field={} buckets={}", fieldName, buckets.size());
-                for (StringTermsBucket bucket : buckets) {
-                    String key = bucket.key().stringValue();
-                    facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
-                }
-            } else if (agg.isDterms()) {
-                List<DoubleTermsBucket> buckets = agg.dterms().buckets().array();
-                log.debug("ES facet field={} dterms buckets={}", fieldName, buckets.size());
-                for (DoubleTermsBucket bucket : buckets) {
-                    String key = bucket.keyAsString() != null
-                            ? bucket.keyAsString() : String.valueOf(bucket.key());
-                    facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
-                }
-            } else if (agg.isLterms()) {
-                List<LongTermsBucket> buckets = agg.lterms().buckets().array();
-                log.debug("ES facet field={} lterms buckets={}", fieldName, buckets.size());
-                for (LongTermsBucket bucket : buckets) {
-                    String key = bucket.keyAsString() != null
-                            ? bucket.keyAsString() : String.valueOf(bucket.key());
-                    facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
-                }
-            } else {
-                log.debug("ES facet field={} unhandled agg kind={}", fieldName, agg._kind());
-            }
+            TurSEFacetResult facetResult = createFacetResult(facetField, fieldName, agg);
             facetResults.add(facetResult);
         }
         return facetResults;
+    }
+
+    private TurSEFacetResult createFacetResult(TurSNSiteFieldExt facetField, String fieldName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate agg) {
+        TurSEFacetResult facetResult = new TurSEFacetResult();
+        facetResult.setFacet(fieldName);
+        facetResult.setFacetPosition(facetField.getFacetPosition() != null
+                ? facetField.getFacetPosition()
+                : 1);
+
+        if (agg.isSterms()) {
+            populateStringTermsBuckets(facetResult, fieldName, agg);
+        } else if (agg.isDterms()) {
+            populateDoubleTermsBuckets(facetResult, fieldName, agg);
+        } else if (agg.isLterms()) {
+            populateLongTermsBuckets(facetResult, fieldName, agg);
+        } else {
+            log.debug("ES facet field={} unhandled agg kind={}", fieldName, agg._kind());
+        }
+        return facetResult;
+    }
+
+    private void populateStringTermsBuckets(TurSEFacetResult facetResult, String fieldName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate agg) {
+        List<StringTermsBucket> buckets = agg.sterms().buckets().array();
+        log.debug("ES facet field={} buckets={}", fieldName, buckets.size());
+        for (StringTermsBucket bucket : buckets) {
+            String key = bucket.key().stringValue();
+            facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
+        }
+    }
+
+    private void populateDoubleTermsBuckets(TurSEFacetResult facetResult, String fieldName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate agg) {
+        List<DoubleTermsBucket> buckets = agg.dterms().buckets().array();
+        log.debug("ES facet field={} dterms buckets={}", fieldName, buckets.size());
+        for (DoubleTermsBucket bucket : buckets) {
+            String key = bucket.keyAsString() != null
+                    ? bucket.keyAsString()
+                    : String.valueOf(bucket.key());
+            facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
+        }
+    }
+
+    private void populateLongTermsBuckets(TurSEFacetResult facetResult, String fieldName,
+            co.elastic.clients.elasticsearch._types.aggregations.Aggregate agg) {
+        List<LongTermsBucket> buckets = agg.lterms().buckets().array();
+        log.debug("ES facet field={} lterms buckets={}", fieldName, buckets.size());
+        for (LongTermsBucket bucket : buckets) {
+            String key = bucket.keyAsString() != null
+                    ? bucket.keyAsString()
+                    : String.valueOf(bucket.key());
+            facetResult.add(key, new TurSEFacetResultAttr(key, (int) bucket.docCount()));
+        }
     }
 }

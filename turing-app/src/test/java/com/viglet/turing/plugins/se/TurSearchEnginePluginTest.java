@@ -21,19 +21,7 @@
 
 package com.viglet.turing.plugins.se;
 
-import com.viglet.turing.commons.se.TurSEParameters;
-import com.viglet.turing.commons.sn.TurSNConfig;
-import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
-import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.se.result.TurSEResults;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.viglet.turing.commons.se.field.TurSEFieldType;
-import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.solr.bean.TurSECoreInfo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URI;
 import java.util.Collections;
@@ -42,7 +30,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.commons.sn.TurSNConfig;
+import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 
 /**
  * Unit tests for TurSearchEnginePlugin interface.
@@ -58,17 +58,16 @@ class TurSearchEnginePluginTest {
     @BeforeEach
     void setUp() {
         plugin = new TestSearchEnginePlugin();
-        
+
         TurSNConfig config = new TurSNConfig();
         TurSNSearchParams searchParams = new TurSNSearchParams();
         TurSEParameters parameters = new TurSEParameters(searchParams);
         context = new TurSNSiteSearchContext(
-            "testSite",
-            config,
-            parameters,
-            Locale.ENGLISH,
-            URI.create("http://localhost:8080")
-        );
+                "testSite",
+                config,
+                parameters,
+                Locale.ENGLISH,
+                URI.create("http://localhost:8080"));
     }
 
     @Test
@@ -146,30 +145,30 @@ class TurSearchEnginePluginTest {
         @Override
         public Optional<TurSEResults> retrieveSearchResults(TurSNSiteSearchContext context) {
             TurSEResults results = TurSEResults.builder()
-                .queryString("test query")
-                .numFound(10)
-                .start(0)
-                .limit(10)
-                .pageCount(1)
-                .currentPage(1)
-                .qTime(100)
-                .elapsedTime(100L)
-                .build();
+                    .queryString("test query")
+                    .numFound(10)
+                    .start(0)
+                    .limit(10)
+                    .pageCount(1)
+                    .currentPage(1)
+                    .qTime(100)
+                    .elapsedTime(100L)
+                    .build();
             return Optional.of(results);
         }
 
         @Override
         public Optional<TurSEResults> retrieveFacetResults(TurSNSiteSearchContext context, String facetName) {
             TurSEResults results = TurSEResults.builder()
-                .queryString("facet:" + facetName)
-                .numFound(5)
-                .start(0)
-                .limit(10)
-                .pageCount(1)
-                .currentPage(1)
-                .qTime(50)
-                .elapsedTime(50L)
-                .build();
+                    .queryString("facet:" + facetName)
+                    .numFound(5)
+                    .start(0)
+                    .limit(10)
+                    .pageCount(1)
+                    .currentPage(1)
+                    .qTime(50)
+                    .elapsedTime(50L)
+                    .build();
             return Optional.of(results);
         }
 
@@ -178,19 +177,72 @@ class TurSearchEnginePluginTest {
             return "test";
         }
 
-        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
-        @Override public void deleteIndex(TurSEInstance s, String n) {}
-        @Override public void clearIndex(TurSEInstance s, String n) {}
-        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
-        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
-        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
-        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
-        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
-        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
-        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
-        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
-        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
-        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
+        // Test stub methods - not implemented for unit testing purposes
+        @Override
+        public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void deleteIndex(TurSEInstance s, String n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void clearIndex(TurSEInstance s, String n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public boolean indexExists(TurSEInstance s, String n) {
+            return false;
+        }
+
+        @Override
+        public List<TurSECoreInfo> listIndexes(TurSEInstance s) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m,
+                boolean n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public boolean fieldExists(TurSEInstance s, String i, String f) {
+            return false;
+        }
+
+        @Override
+        public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndex(TurSNSite site, Locale l, String id) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndexByType(TurSNSite site, Locale l, String t) {
+            return false;
+        }
+
+        @Override
+        public boolean commit(TurSNSite site, Locale l) {
+            return false;
+        }
+
+        @Override
+        public long getDocumentTotal(TurSNSiteLocale locale) {
+            return 0L;
+        }
     }
 
     private static class EmptySearchEnginePlugin implements TurSearchEnginePlugin {
@@ -209,19 +261,72 @@ class TurSearchEnginePluginTest {
             return "empty";
         }
 
-        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
-        @Override public void deleteIndex(TurSEInstance s, String n) {}
-        @Override public void clearIndex(TurSEInstance s, String n) {}
-        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
-        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
-        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
-        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
-        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
-        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
-        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
-        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
-        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
-        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
+        // Test stub methods - not implemented for unit testing purposes
+        @Override
+        public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void deleteIndex(TurSEInstance s, String n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void clearIndex(TurSEInstance s, String n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public boolean indexExists(TurSEInstance s, String n) {
+            return false;
+        }
+
+        @Override
+        public List<TurSECoreInfo> listIndexes(TurSEInstance s) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m,
+                boolean n) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {
+            // Stub: not needed for this unit test
+        }
+
+        @Override
+        public boolean fieldExists(TurSEInstance s, String i, String f) {
+            return false;
+        }
+
+        @Override
+        public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndex(TurSNSite site, Locale l, String id) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndexByType(TurSNSite site, Locale l, String t) {
+            return false;
+        }
+
+        @Override
+        public boolean commit(TurSNSite site, Locale l) {
+            return false;
+        }
+
+        @Override
+        public long getDocumentTotal(TurSNSiteLocale locale) {
+            return 0L;
+        }
     }
 
     private static class SolrLikePlugin implements TurSearchEnginePlugin {
@@ -240,19 +345,80 @@ class TurSearchEnginePluginTest {
             return "solr";
         }
 
-        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
-        @Override public void deleteIndex(TurSEInstance s, String n) {}
-        @Override public void clearIndex(TurSEInstance s, String n) {}
-        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
-        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
-        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
-        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
-        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
-        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
-        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
-        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
-        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
-        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
+        // Test stub methods - not implemented for unit testing purposes
+        @Override
+        public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void deleteIndex(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void clearIndex(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public boolean indexExists(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public List<TurSECoreInfo> listIndexes(TurSEInstance s) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m,
+                boolean n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public boolean fieldExists(TurSEInstance s, String i, String f) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public boolean deIndex(TurSNSite site, Locale l, String id) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public boolean deIndexByType(TurSNSite site, Locale l, String t) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public boolean commit(TurSNSite site, Locale l) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public long getDocumentTotal(TurSNSiteLocale locale) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return 0L;
+        }
     }
 
     private static class ElasticsearchLikePlugin implements TurSearchEnginePlugin {
@@ -271,18 +437,73 @@ class TurSearchEnginePluginTest {
             return "elasticsearch";
         }
 
-        @Override public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {}
-        @Override public void deleteIndex(TurSEInstance s, String n) {}
-        @Override public void clearIndex(TurSEInstance s, String n) {}
-        @Override public boolean indexExists(TurSEInstance s, String n) { return false; }
-        @Override public List<TurSECoreInfo> listIndexes(TurSEInstance s) { return Collections.emptyList(); }
-        @Override public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m, boolean n) {}
-        @Override public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {}
-        @Override public boolean fieldExists(TurSEInstance s, String i, String f) { return false; }
-        @Override public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) { return false; }
-        @Override public boolean deIndex(TurSNSite site, Locale l, String id) { return false; }
-        @Override public boolean deIndexByType(TurSNSite site, Locale l, String t) { return false; }
-        @Override public boolean commit(TurSNSite site, Locale l) { return false; }
-        @Override public long getDocumentTotal(TurSNSiteLocale locale) { return 0L; }
+        // Test stub methods - not implemented for unit testing purposes
+        @Override
+        public void createIndex(TurSEInstance s, TurSNSiteLocale l, String n, Map<String, TurSEFieldType> f) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void deleteIndex(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void clearIndex(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public boolean indexExists(TurSEInstance s, String n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return false;
+        }
+
+        @Override
+        public List<TurSECoreInfo> listIndexes(TurSEInstance s) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void addOrUpdateField(TurSEInstance s, String i, String f, TurSEFieldType t, boolean st, boolean m,
+                boolean n) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public void deleteField(TurSEInstance s, String i, String f, TurSEFieldType t) {
+            // Not implemented: test stub only tests search and facet retrieval methods
+        }
+
+        @Override
+        public boolean fieldExists(TurSEInstance s, String i, String f) {
+            return false;
+        }
+
+        @Override
+        public boolean indexDocument(TurSNSite site, Locale l, Map<String, Object> a) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndex(TurSNSite site, Locale l, String id) {
+            return false;
+        }
+
+        @Override
+        public boolean deIndexByType(TurSNSite site, Locale l, String t) {
+            return false;
+        }
+
+        @Override
+        public boolean commit(TurSNSite site, Locale l) {
+            return false;
+        }
+
+        @Override
+        public long getDocumentTotal(TurSNSiteLocale locale) {
+            return 0L;
+        }
     }
 }

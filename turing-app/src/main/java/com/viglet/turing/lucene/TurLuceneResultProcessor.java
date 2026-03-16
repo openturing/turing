@@ -16,6 +16,23 @@
  */
 package com.viglet.turing.lucene;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.lucene.document.Document;
+import org.apache.lucene.facet.FacetsCollector;
+import org.apache.lucene.facet.FacetsCollectorManager;
+import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.SortedSetDocValues;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
+
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -24,16 +41,8 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.facet.FacetsCollector;
-import org.apache.lucene.facet.FacetsCollectorManager;
-import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.index.SortedSetDocValues;
-import org.apache.lucene.search.*;
 
-import java.io.IOException;
-import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Converts Lucene {@link TopDocs} and facet data into {@link TurSEResults}.
@@ -55,7 +64,8 @@ public class TurLuceneResultProcessor {
      * Executes a search against the Lucene index and returns a fully
      * populated {@link TurSEResults}, including facet counts.
      *
-     * <p>Uses {@link FacetsCollector} to collect matched documents across all
+     * <p>
+     * Uses {@link FacetsCollector} to collect matched documents across all
      * index segments; facet values are then counted directly from per-field
      * {@link SortedSetDocValues} without relying on FacetsConfig internals.
      */
@@ -85,7 +95,7 @@ public class TurLuceneResultProcessor {
 
             long numFound = topDocs.totalHits.value();
             results.setNumFound(numFound);
-            results.setStart((long) start);
+            results.setStart(start);
             results.setPageCount((int) Math.ceil(numFound / (double) rows));
 
             // Map hits to TurSEResult (apply pagination offset)
@@ -119,14 +129,14 @@ public class TurLuceneResultProcessor {
         for (IndexableField f : doc.getFields()) {
             String name = f.name();
             // Skip Lucene-internal facet storage fields
-            if (name.startsWith("$")) continue;
+            if (name.startsWith("$"))
+                continue;
             Object newVal = extractStoredValue(f);
             Object existing = fields.get(name);
             if (existing == null) {
                 fields.put(name, newVal);
             } else if (existing instanceof List<?> list) {
-                @SuppressWarnings("unchecked")
-                List<Object> mutable = new ArrayList<>((List<Object>) list);
+                List<Object> mutable = new ArrayList<>(list);
                 mutable.add(newVal);
                 fields.put(name, mutable);
             } else {
@@ -139,7 +149,8 @@ public class TurLuceneResultProcessor {
 
     private Object extractStoredValue(IndexableField f) {
         Number num = f.numericValue();
-        if (num != null) return num;
+        if (num != null)
+            return num;
         String str = f.stringValue();
         return str != null ? str : "";
     }
@@ -150,7 +161,8 @@ public class TurLuceneResultProcessor {
 
     /**
      * Counts facet values directly from per-field {@link SortedSetDocValues} across
-     * all segments that had matching documents. This avoids the {@code FacetsConfig}
+     * all segments that had matching documents. This avoids the
+     * {@code FacetsConfig}
      * / {@code $facets} internal field entirely, making it robust across index
      * updates and Lucene version differences.
      */
@@ -162,61 +174,122 @@ public class TurLuceneResultProcessor {
                 facetFields.size(), matchingDocsList.size());
 
         for (TurSNSiteFieldExt fieldExt : facetFields) {
-            String fieldName = fieldExt.getName();
-            // LONG and DATE store SortedSetDocValues under a _sf-suffixed field to avoid
-            // conflict with their NumericDocValuesField on the same field name.
-            TurSEFieldType type = fieldExt.getType();
-            String docValuesFieldName = (type == TurSEFieldType.LONG || type == TurSEFieldType.DATE)
-                    ? fieldName + TurLuceneConstants.SORTED_SET_FACET_SUFFIX
-                    : fieldName;
-            Map<String, Integer> counts = new LinkedHashMap<>();
-
-            for (FacetsCollector.MatchingDocs matchingDocs : matchingDocsList) {
-                try {
-                    SortedSetDocValues docValues =
-                            matchingDocs.context().reader().getSortedSetDocValues(docValuesFieldName);
-                    if (docValues == null) {
-                        log.debug("[Lucene] field '{}' has no SortedSetDocValues in segment", fieldName);
-                        continue;
-                    }
-
-                    DocIdSetIterator disi = matchingDocs.bits().iterator();
-                    if (disi == null) continue;
-
-                    int docId;
-                    while ((docId = disi.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
-                        if (docValues.advanceExact(docId)) {
-                            int count = docValues.docValueCount();
-                            for (int i = 0; i < count; i++) {
-                                String label = docValues.lookupOrd(docValues.nextOrd()).utf8ToString();
-                                counts.merge(label, 1, Integer::sum);
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    log.warn("Error reading facets for field '{}' in segment: {}", fieldName,
-                            e.getMessage());
-                }
+            TurSEFacetResult turFacet = processFacetField(fieldExt, matchingDocsList);
+            if (turFacet != null) {
+                out.add(turFacet);
             }
-
-            log.debug("[Lucene] facet '{}': {} distinct values", fieldName, counts.size());
-            if (counts.isEmpty()) continue;
-
-            TurSEFacetResult turFacet = new TurSEFacetResult();
-            turFacet.setFacet(fieldName);
-            turFacet.setFacetPosition(
-                    fieldExt.getFacetPosition() != null ? fieldExt.getFacetPosition() : 0);
-
-            counts.entrySet().stream()
-                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                    .limit(MAX_FACET_VALUES)
-                    .forEach(e -> turFacet.add(e.getKey(),
-                            new TurSEFacetResultAttr(e.getKey(), e.getValue())));
-
-            out.add(turFacet);
         }
 
         return out;
+    }
+
+    /**
+     * Processes a single facet field by counting values across all matching
+     * segments.
+     *
+     * @param fieldExt         the facet field definition
+     * @param matchingDocsList list of matching docs from all segments
+     * @return a {@link TurSEFacetResult} or null if no facet values found
+     */
+    private TurSEFacetResult processFacetField(TurSNSiteFieldExt fieldExt,
+            List<FacetsCollector.MatchingDocs> matchingDocsList) {
+        String fieldName = fieldExt.getName();
+        // LONG and DATE store SortedSetDocValues under a _sf-suffixed field to avoid
+        // conflict with their NumericDocValuesField on the same field name.
+        TurSEFieldType type = fieldExt.getType();
+        String docValuesFieldName = (type == TurSEFieldType.LONG || type == TurSEFieldType.DATE)
+                ? fieldName + TurLuceneConstants.SORTED_SET_FACET_SUFFIX
+                : fieldName;
+        Map<String, Integer> counts = countFacetValues(fieldName, docValuesFieldName, matchingDocsList);
+
+        log.debug("[Lucene] facet '{}': {} distinct values", fieldName, counts.size());
+        if (counts.isEmpty()) {
+            return null;
+        }
+
+        TurSEFacetResult turFacet = new TurSEFacetResult();
+        turFacet.setFacet(fieldName);
+        turFacet.setFacetPosition(
+                fieldExt.getFacetPosition() != null ? fieldExt.getFacetPosition() : 0);
+
+        counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(MAX_FACET_VALUES)
+                .forEach(e -> turFacet.add(e.getKey(),
+                        new TurSEFacetResultAttr(e.getKey(), e.getValue())));
+
+        return turFacet;
+    }
+
+    /**
+     * Counts facet values for a given field across all matching document segments.
+     *
+     * @param fieldName          the facet field name
+     * @param docValuesFieldName the actual field name for SortedSetDocValues
+     * @param matchingDocsList   list of matching docs from all segments
+     * @return a map of facet values to their counts
+     */
+    private Map<String, Integer> countFacetValues(String fieldName, String docValuesFieldName,
+            List<FacetsCollector.MatchingDocs> matchingDocsList) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+
+        for (FacetsCollector.MatchingDocs matchingDocs : matchingDocsList) {
+            processSegmentFacets(fieldName, docValuesFieldName, matchingDocs, counts);
+        }
+
+        return counts;
+    }
+
+    /**
+     * Processes facet values for a single segment, handling null checks and errors.
+     *
+     * @param fieldName          the facet field name
+     * @param docValuesFieldName the actual field name for SortedSetDocValues
+     * @param matchingDocs       the matching docs for a segment
+     * @param counts             the map accumulating counts
+     */
+    private void processSegmentFacets(String fieldName, String docValuesFieldName,
+            FacetsCollector.MatchingDocs matchingDocs, Map<String, Integer> counts) {
+        try {
+            SortedSetDocValues docValues = matchingDocs.context().reader()
+                    .getSortedSetDocValues(docValuesFieldName);
+            if (docValues == null) {
+                log.debug("[Lucene] field '{}' has no SortedSetDocValues in segment", fieldName);
+                return;
+            }
+
+            DocIdSetIterator disi = matchingDocs.bits().iterator();
+            if (disi == null) {
+                return;
+            }
+
+            countValuesInSegment(docValues, disi, counts);
+        } catch (IOException e) {
+            log.warn("Error reading facets for field '{}' in segment: {}", fieldName,
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Counts facet values for a single segment.
+     *
+     * @param docValues the SortedSetDocValues for the field
+     * @param disi      the document ID set iterator for matching docs
+     * @param counts    the map accumulating counts
+     * @throws IOException if an error occurs reading doc values
+     */
+    private void countValuesInSegment(SortedSetDocValues docValues, DocIdSetIterator disi,
+            Map<String, Integer> counts) throws IOException {
+        int docId;
+        while ((docId = disi.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+            if (docValues.advanceExact(docId)) {
+                int count = docValues.docValueCount();
+                for (int i = 0; i < count; i++) {
+                    String label = docValues.lookupOrd(docValues.nextOrd()).utf8ToString();
+                    counts.merge(label, 1, (existing, one) -> existing + one);
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -80,7 +80,7 @@ public class TurLucene {
             // Wildcard fallback when no results and site allows it
             if (results.getResults().isEmpty()
                     && shouldApplyWildcard(turSNSite, params.getQuery())) {
-                Query wildcardQuery = turLuceneQueryBuilder.buildWildcardQuery(context, turSNSite, params);
+                Query wildcardQuery = turLuceneQueryBuilder.buildWildcardQuery(turSNSite, params);
                 results = turLuceneResultProcessor.getResults(
                         instance, turSNSite, wildcardQuery, params,
                         turLuceneQueryBuilder.getFacetFields(turSNSite),
