@@ -34,21 +34,25 @@ import { toast } from "sonner";
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turLLMInstanceService = new TurLLMInstanceService();
 
+const DEFAULT_SETTINGS: TurGlobalSettings = {
+    decimalSeparator: "DOT",
+    defaultLlmId: "",
+    pythonExecutable: "",
+    llmCacheEnabled: false,
+    llmCacheTtlMs: 3600000,
+    llmCacheRegenerate: false,
+    emailProvider: "BREVO",
+    emailApiKey: "",
+    senderEmail: "",
+    senderName: "",
+    recipientEmail: "",
+};
+
 export default function GlobalSettingsPage() {
+    const [settings, setSettings] = useState<TurGlobalSettings>(DEFAULT_SETTINGS);
     const form = useForm<TurGlobalSettings>({
-        defaultValues: {
-            decimalSeparator: "DOT",
-            defaultLlmId: "",
-            pythonExecutable: "",
-            llmCacheEnabled: false,
-            llmCacheTtlMs: 3600000,
-            llmCacheRegenerate: false,
-            emailProvider: "BREVO",
-            emailApiKey: "",
-            senderEmail: "",
-            senderName: "",
-            recipientEmail: "",
-        },
+        defaultValues: DEFAULT_SETTINGS,
+        values: settings,
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -60,21 +64,21 @@ export default function GlobalSettingsPage() {
             turGlobalSettingsService.query(),
             turLLMInstanceService.query(),
         ])
-            .then(([settings, instances]) => {
+            .then(([loadedSettings, instances]) => {
                 setLlmInstances(instances.filter((i) => i.enabled === 1));
-                form.reset(settings);
+                setSettings(loadedSettings);
             })
             .catch(() => {
                 toast.error("Failed to load global settings. Using default values.");
             })
             .finally(() => setIsLoading(false));
-    }, [form]);
+    }, []);
 
-    const onSubmit = async (settings: TurGlobalSettings) => {
+    const onSubmit = async (data: TurGlobalSettings) => {
         try {
             setIsSaving(true);
-            const response = await turGlobalSettingsService.update(settings);
-            form.reset(response);
+            const response = await turGlobalSettingsService.update(data);
+            setSettings(response);
             toast.success("Global settings were updated.");
         } catch (error) {
             console.error("Form submission error", error);

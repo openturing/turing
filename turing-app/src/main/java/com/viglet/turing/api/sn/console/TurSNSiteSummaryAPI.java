@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -21,6 +22,7 @@ import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNSiteDataCollectorService;
 import com.viglet.turing.system.TurGlobalSettingsService;
+import com.viglet.turing.system.TurLlmCacheService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +43,7 @@ public class TurSNSiteSummaryAPI {
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurSNSiteDataCollectorService siteDataCollectorService;
+    private final TurLlmCacheService llmCacheService;
 
     @Operation(summary = "Check if AI summary is available")
     @GetMapping("/available")
@@ -57,22 +60,37 @@ public class TurSNSiteSummaryAPI {
 
     @Operation(summary = "Generate AI summary for a Semantic Navigation Site")
     @GetMapping
-    public ResponseEntity<SummaryResponse> generateSummary(@PathVariable String snSiteId) {
+    public ResponseEntity<SummaryResponse> generateSummary(
+            @PathVariable String snSiteId,
+            @RequestParam(defaultValue = "false") boolean regenerate) {
         String llmId = globalSettingsService.getDefaultLlmId();
         if (!StringUtils.hasText(llmId)) {
             return ResponseEntity.badRequest()
-                    .body(new SummaryResponse(false, "No default LLM configured in Global Settings.", null));
+                    .body(new SummaryResponse(false, "No default LLM configured in Global Settings.", null,
+                            false));
         }
 
         TurLLMInstance llmInstance = llmInstanceRepository.findById(llmId).orElse(null);
         if (llmInstance == null || llmInstance.getEnabled() != 1) {
             return ResponseEntity.badRequest()
-                    .body(new SummaryResponse(false, "Default LLM not found or disabled.", null));
+                    .body(new SummaryResponse(false, "Default LLM not found or disabled.", null,
+                            false));
         }
 
         TurSNSite site = snSiteRepository.findById(snSiteId).orElse(null);
         if (site == null) {
             return ResponseEntity.notFound().build();
+        }
+
+        boolean canRegenerate = globalSettingsService.isLlmCacheRegenerate();
+
+        if (!regenerate) {
+            String cached = llmCacheService.get(snSiteId);
+            if (cached != null) {
+                return ResponseEntity.ok(new SummaryResponse(true, null, cached, canRegenerate));
+            }
+        } else {
+            llmCacheService.evict(snSiteId);
         }
 
         try {
@@ -114,17 +132,20 @@ public class TurSNSiteSummaryAPI {
             var response = chatModel.call(prompt);
             String content = response.getResult().getOutput().getText();
 
-            return ResponseEntity.ok(new SummaryResponse(true, null, content));
+            llmCacheService.put(snSiteId, content);
+
+            return ResponseEntity.ok(new SummaryResponse(true, null, content, canRegenerate));
         } catch (Exception e) {
             log.error("Failed to generate AI summary for site {}", snSiteId, e);
             return ResponseEntity.internalServerError()
-                    .body(new SummaryResponse(false, "Failed to generate summary: " + e.getMessage(), null));
+                    .body(new SummaryResponse(false, "Failed to generate summary: " + e.getMessage(), null,
+                            canRegenerate));
         }
     }
 
     public record SummaryAvailableResponse(boolean available) {
     }
 
-    public record SummaryResponse(boolean success, String error, String content) {
+    public record SummaryResponse(boolean success, String error, String content, boolean canRegenerate) {
     }
 }

@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessT
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNSiteDataCollectorService;
 import com.viglet.turing.system.TurGlobalSettingsService;
+import com.viglet.turing.system.TurLlmCacheService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,7 @@ public class TurWeeklySearchReportService {
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurSNSiteDataCollectorService siteDataCollectorService;
+    private final TurLlmCacheService llmCacheService;
 
     public TurWeeklySearchReportService(TurEmailService emailService,
             TurSNSiteRepository snSiteRepository,
@@ -72,7 +74,8 @@ public class TurWeeklySearchReportService {
             TurLLMInstanceRepository llmInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService secretCryptoService,
-            TurSNSiteDataCollectorService siteDataCollectorService) {
+            TurSNSiteDataCollectorService siteDataCollectorService,
+            TurLlmCacheService llmCacheService) {
         this.emailService = emailService;
         this.snSiteRepository = snSiteRepository;
         this.snSiteLocaleRepository = snSiteLocaleRepository;
@@ -83,6 +86,7 @@ public class TurWeeklySearchReportService {
         this.llmProviderFactory = llmProviderFactory;
         this.secretCryptoService = secretCryptoService;
         this.siteDataCollectorService = siteDataCollectorService;
+        this.llmCacheService = llmCacheService;
     }
 
     @Scheduled(cron = "0 0 8 * * MON")
@@ -176,6 +180,15 @@ public class TurWeeklySearchReportService {
             return "";
         }
 
+        String cached = llmCacheService.get(site.getId());
+        if (cached != null) {
+            log.debug("Using cached LLM summary for site {}", site.getName());
+            String aiTemplate = emailService.loadTemplate(AI_INSIGHTS_TEMPLATE_PATH);
+            return aiTemplate
+                    .replace("{{aiInsightsContent}}", cached)
+                    .replace("{{llmModelName}}", escapeHtml(llmModelName) + " (cached)");
+        }
+
         try {
             String siteData = siteDataCollectorService.collectSiteData(site);
 
@@ -207,6 +220,8 @@ public class TurWeeklySearchReportService {
             if (!StringUtils.hasText(aiContent)) {
                 return "";
             }
+
+            llmCacheService.put(site.getId(), aiContent);
 
             String aiTemplate = emailService.loadTemplate(AI_INSIGHTS_TEMPLATE_PATH);
             return aiTemplate

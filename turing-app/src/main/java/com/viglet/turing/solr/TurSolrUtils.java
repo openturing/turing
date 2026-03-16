@@ -361,6 +361,7 @@ public class TurSolrUtils {
                 .GET()
                 .build();
 
+        String solrUrl = getSolrUrl(turSEInstance);
         return executeRequest(request, "Failed to list collections")
                 .filter(response -> response.statusCode() == 200)
                 .map(HttpResponse::body)
@@ -373,12 +374,33 @@ public class TurSolrUtils {
                         return collectionsList.stream()
                                 .map(Object::toString)
                                 .sorted()
-                                .map(name -> new TurSECoreInfo(name, 0L, Collections.emptyList()))
+                                .map(name -> new TurSECoreInfo(name,
+                                        getCollectionDocCount(solrUrl, name),
+                                        Collections.emptyList()))
                                 .toList();
                     }
                     return Collections.<TurSECoreInfo>emptyList();
                 })
                 .orElse(Collections.emptyList());
+    }
+
+    private static long getCollectionDocCount(String solrUrl, String collectionName) {
+        HttpRequest request = getHttpRequestBuilderJson()
+                .uri(URI.create(String.format("%s/solr/%s/select?q=*:*&rows=0",
+                        solrUrl, collectionName)))
+                .GET()
+                .build();
+        return executeRequest(request, "Failed to get doc count for collection: " + collectionName)
+                .filter(response -> response.statusCode() == 200)
+                .map(HttpResponse::body)
+                .map(body -> {
+                    Configuration configuration = Configuration.builder()
+                            .options(Option.DEFAULT_PATH_LEAF_TO_NULL).build();
+                    DocumentContext jsonContext = JsonPath.parse(body, configuration);
+                    Number numFound = jsonContext.read("$.response.numFound");
+                    return numFound != null ? numFound.longValue() : 0L;
+                })
+                .orElse(0L);
     }
 
     public static void deleteCollection(String solrUrl, String name) {

@@ -10,28 +10,36 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import axios from "axios";
 
+interface SummaryResponse {
+    success: boolean;
+    error: string | null;
+    content: string | null;
+    canRegenerate: boolean;
+}
+
 export default function SNSiteSummaryPage() {
     const { id } = useParams() as { id: string };
     const [content, setContent] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [canRegenerate, setCanRegenerate] = useState(false);
 
-    const fetchSummary = useCallback(async () => {
+    const fetchSummary = useCallback(async (regenerate = false) => {
         setIsLoading(true);
         setError(null);
         setContent(null);
         try {
-            const response = await axios.get<{
-                success: boolean;
-                error: string | null;
-                content: string | null;
-            }>(`/sn/${id}/summary`);
+            const response = await axios.get<SummaryResponse>(
+                `/sn/${id}/summary`,
+                { params: regenerate ? { regenerate: true } : {} }
+            );
 
             if (response.data.success && response.data.content) {
                 setContent(response.data.content);
             } else {
                 setError(response.data.error ?? "Failed to generate summary.");
             }
+            setCanRegenerate(response.data.canRegenerate ?? false);
         } catch {
             setError("Failed to connect to the summary service. Please try again.");
         } finally {
@@ -89,12 +97,12 @@ export default function SNSiteSummaryPage() {
                     </Card>
                 )}
 
-                {!isLoading && (
+                {!isLoading && canRegenerate && (
                     <div className="flex justify-end">
                         <GradientButton
                             type="button"
                             variant="outline"
-                            onClick={fetchSummary}
+                            onClick={() => fetchSummary(true)}
                         >
                             <IconRefresh className="size-4" />
                             Regenerate
