@@ -21,20 +21,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import com.google.common.collect.Iterators;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * List of jobs to index and deIndex in Turing ES.
- * 
+ * Thread-safe list of jobs to index and deIndex in Turing ES.
+ *
  * @author Alexandre Oliveira
- * 
+ *
  * @since 0.3.4
  */
 public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
-	private List<TurSNJobItem> snJobItems = new ArrayList<>();
+	private List<TurSNJobItem> snJobItems = new CopyOnWriteArrayList<>();
 
 	public TurSNJobItems() {
 		super();
@@ -50,15 +49,11 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 
 	@Override
 	public Iterator<TurSNJobItem> iterator() {
-		if (snJobItems == null) {
-			snJobItems = new ArrayList<>();
-		}
 		return snJobItems.iterator();
 	}
 
-	@SuppressWarnings("null")
 	public int size() {
-		return Iterators.size(this.iterator());
+		return snJobItems.size();
 	}
 
 	public List<TurSNJobItem> getTuringDocuments() {
@@ -70,7 +65,7 @@ public class TurSNJobItems implements Iterable<TurSNJobItem>, Serializable {
 	}
 
 	public void setTuringDocuments(List<TurSNJobItem> jobItems) {
-		this.snJobItems = jobItems;
+		this.snJobItems = new CopyOnWriteArrayList<>(jobItems);
 	}
 
 	public boolean add(TurSNJobItem turSNJobItem) {
