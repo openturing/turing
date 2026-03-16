@@ -1,22 +1,35 @@
 package com.viglet.turing.api.logging;
 
-import com.mongodb.client.*;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -37,11 +50,11 @@ public class TurLoggingAPI {
     private final String aemCollectionName;
 
     public TurLoggingAPI(@Value("${turing.mongodb.enabled:false}") boolean enabled,
-                         @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String connectionString,
-                         @Value("${turing.mongodb.logging.database:'turingLog'}") String databaseName,
-                         @Value("${turing.mongodb.logging.collection.server:'server'}") String serverCollectionName,
-                         @Value("${turing.mongodb.logging.collection.indexing:'indexing'}") String indexingCollectionName,
-                         @Value("${turing.mongodb.logging.collection.aem:'aem'}") String aemCollectionName) {
+            @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String connectionString,
+            @Value("${turing.mongodb.logging.database:'turingLog'}") String databaseName,
+            @Value("${turing.mongodb.logging.collection.server:'server'}") String serverCollectionName,
+            @Value("${turing.mongodb.logging.collection.indexing:'indexing'}") String indexingCollectionName,
+            @Value("${turing.mongodb.logging.collection.aem:'aem'}") String aemCollectionName) {
         this.enabled = enabled;
         this.connectionString = connectionString;
         this.databaseName = databaseName;
@@ -90,8 +103,8 @@ public class TurLoggingAPI {
     }
 
     private @NotNull Map<String, Object> getGeneralDocuments(String collectionName, int page, int pageSize,
-                                                              String level, String dateFrom, String dateTo,
-                                                              String search) {
+            String level, String dateFrom, String dateTo,
+            String search) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
@@ -120,12 +133,10 @@ public class TurLoggingAPI {
             int skip = page * pageSize;
             List<Document> documentList = new ArrayList<>();
             collection.find(filter)
-                    .sort(Sorts.descending(DATE))
+                    .sort(Sorts.ascending(DATE))
                     .skip(skip)
                     .limit(pageSize)
                     .forEach(documentList::add);
-
-            Collections.reverse(documentList);
 
             result.put(CONTENT, documentList);
             result.put(TOTAL_ELEMENTS, totalElements);
@@ -137,9 +148,9 @@ public class TurLoggingAPI {
     }
 
     private @NotNull Map<String, Object> getIndexingDocuments(String collectionName, int page, int pageSize,
-                                                               String dateFrom, String dateTo,
-                                                               String status, String contentId,
-                                                               String resultStatus, String url) {
+            String dateFrom, String dateTo,
+            String status, String contentId,
+            String resultStatus, String url) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
@@ -170,12 +181,10 @@ public class TurLoggingAPI {
             int skip = page * pageSize;
             List<Document> documentList = new ArrayList<>();
             collection.find(filter)
-                    .sort(Sorts.descending(DATE))
+                    .sort(Sorts.ascending(DATE))
                     .skip(skip)
                     .limit(pageSize)
                     .forEach(documentList::add);
-
-            Collections.reverse(documentList);
 
             result.put(CONTENT, documentList);
             result.put(TOTAL_ELEMENTS, totalElements);

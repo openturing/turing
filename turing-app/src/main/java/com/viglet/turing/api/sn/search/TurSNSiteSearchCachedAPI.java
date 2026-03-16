@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class TurSNSiteSearchCachedAPI {
-    public static final String TIMESTAMP = "timestamp";
+    public static final String DATE = "date";
     private final TurSNSearchProcess turSNSearchProcess;
     private final boolean enabled;
     private final String connectionString;
@@ -88,13 +88,15 @@ public class TurSNSiteSearchCachedAPI {
     public void purgeMongoDBLogs() {
         if (!enabled)
             return;
-        log.info("Executing housekeeping log task");
+        Date purgeDate = getPurgeDate();
+        log.info("Executing housekeeping log task, purging logs older than {}", purgeDate);
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
-            Bson filter = Filters.lt(TIMESTAMP, getPurgeDate());
+            Bson filter = Filters.lt(DATE, purgeDate);
             MongoDatabase database = mongoClient.getDatabase(databaseName);
-            database.getCollection(serverCollectionName).deleteMany(filter);
-            database.getCollection(aemCollectionName).deleteMany(filter);
-            database.getCollection(indexingCollectionName).deleteMany(filter);
+            long serverDeleted = database.getCollection(serverCollectionName).deleteMany(filter).getDeletedCount();
+            long aemDeleted = database.getCollection(aemCollectionName).deleteMany(filter).getDeletedCount();
+            long indexingDeleted = database.getCollection(indexingCollectionName).deleteMany(filter).getDeletedCount();
+            log.info("Purged logs: server={}, aem={}, indexing={}", serverDeleted, aemDeleted, indexingDeleted);
         }
     }
 

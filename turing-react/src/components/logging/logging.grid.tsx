@@ -303,6 +303,15 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             <GradientButton
                                 variant="outline"
                                 size="sm"
+                                onClick={() => onPageChange(0)}
+                                disabled={page <= 0}
+                                className="h-8 w-8 p-0"
+                            >
+                                <span>&laquo;</span>
+                            </GradientButton>
+                            <GradientButton
+                                variant="outline"
+                                size="sm"
                                 onClick={() => onPageChange(page - 1)}
                                 disabled={page <= 0}
                                 className="h-8 w-8 p-0"
@@ -317,6 +326,15 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 className="h-8 w-8 p-0"
                             >
                                 <span>&gt;</span>
+                            </GradientButton>
+                            <GradientButton
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onPageChange(totalPages - 1)}
+                                disabled={page >= totalPages - 1}
+                                className="h-8 w-8 p-0"
+                            >
+                                <span>&raquo;</span>
                             </GradientButton>
                         </div>
                     </div>
