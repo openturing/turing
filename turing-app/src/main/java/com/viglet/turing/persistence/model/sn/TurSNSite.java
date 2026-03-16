@@ -81,7 +81,7 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column(nullable = true)
+	@Column(nullable = true, length = 500)
 	private String description;
 
 	/**

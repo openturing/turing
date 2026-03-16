@@ -24,6 +24,7 @@ class TurGlobalSettingsBeanTest {
     void shouldCreateUsingAllArgsConstructor() {
         TurGlobalSettingsBean bean = new TurGlobalSettingsBean(
                 TurGlobalDecimalSeparator.DOT, null, null,
+                false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null);
 
         assertThat(bean.getDecimalSeparator()).isEqualTo(TurGlobalDecimalSeparator.DOT);

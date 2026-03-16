@@ -7,4 +7,5 @@ export interface TurSNSiteGenAi {
   turStoreInstance: TurStoreInstance;
   enabled: boolean;
   systemPrompt: string;
+  sitePrompt?: string;
 }

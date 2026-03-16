@@ -136,6 +136,12 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                     <FormField
                       control={form.control}
                       name="description"
+                      rules={{
+                        maxLength: {
+                          value: 500,
+                          message: "Description must be at most 500 characters.",
+                        },
+                      }}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Description</FormLabel>
@@ -146,10 +152,16 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                             <Textarea
                               placeholder="Describe this site"
                               className="resize-none"
+                              maxLength={500}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <div className="flex justify-between">
+                            <FormMessage />
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {(field.value?.length ?? 0)}/500
+                            </span>
+                          </div>
                         </FormItem>
                       )}
                     />

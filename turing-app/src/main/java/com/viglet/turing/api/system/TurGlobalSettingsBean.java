@@ -18,6 +18,9 @@ public class TurGlobalSettingsBean {
     private TurGlobalDecimalSeparator decimalSeparator;
     private String pythonExecutable;
     private String defaultLlmId;
+    private boolean llmCacheEnabled;
+    private long llmCacheTtlMs;
+    private boolean llmCacheRegenerate;
     private TurEmailProviderType emailProvider;
     private String emailApiKey;
     private String senderEmail;

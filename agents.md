@@ -40,12 +40,23 @@ mvn clean install
 - Avoid injecting `ObjectMapper` in controllers — use `@RequestBody` / `@RequestPart` for auto-deserialization
 - `TurSecretCryptoService` handles API key encryption/decryption
 
+### JPA & Database Column Naming
+- **No implicit naming strategy** is configured — Hibernate maps Java field names **literally** to column names (no snake_case conversion)
+- A Java field `sitePrompt` maps to column `sitePrompt`, **not** `site_prompt`
+- When adding `@Column` annotations, use the exact camelCase field name (or omit `name` to let Hibernate use the default)
+- **Never use snake_case** in Liquibase column names unless the existing table already uses it — always match the convention of the target table
+- Existing tables like `sn_site_genai` use camelCase columns: `systemPrompt`, `sitePrompt`
+- Existing tables like `sn_site` use lowercase: `description`, `name`, `facet`
+- When in doubt, check the existing columns in the entity class or run a query against the H2 dev database
+
 ### Liquibase Conventions
 - **Always create a new file** — never modify existing changelog files
 - Naming: `v{currentVersion}.{subversion}.yaml` with incremental subversion (e.g., if current version is `2026.1.14` and `v2026.1.14.0.yaml` exists, the next file is `v2026.1.14.1.yaml`)
 - Include in `db.changelog-master.yaml`
 - Use `preconditions` with `onFail: MARK_RAN` for idempotent changesets
 - Column size changes: use `modifyDataType`; new data: use `insert`
+- **Column names must match the JPA field name exactly** (camelCase) — see "JPA & Database Column Naming" above
+- **Large text columns**: use `longtext` instead of `clob` — `longtext` is compatible with H2, MySQL, and PostgreSQL, while `clob` may not map correctly on MySQL
 
 ### Visual Identity & Brand Colors
 - **Product name**: Viglet Turing ES (Enterprise Search)

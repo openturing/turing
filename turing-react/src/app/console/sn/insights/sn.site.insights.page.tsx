@@ -47,8 +47,8 @@ export default function SNSiteSummaryPage() {
         <>
             <SubPageHeader
                 icon={IconSparkles}
-                name="AI Summary"
-                feature="Summary"
+                name="AI Insights"
+                feature="AI Insights"
                 description="AI-powered overview and suggestions for this Semantic Navigation site."
             />
             <div className="px-6 py-6 space-y-4">

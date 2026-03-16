@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(9)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(12)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -50,6 +50,15 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_LLM".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_LLM_CACHE_ENABLED".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_LLM_CACHE_TTL_MS".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "3600000".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_LLM_CACHE_REGENERATE".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_EMAIL_PROVIDER".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "BREVO".equals(configVar.getValue())));

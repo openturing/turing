@@ -58,8 +58,8 @@ export default function SNSitePage() {
 
         if (hasDefaultLlm) {
             navItems.push({
-                title: "Summary",
-                url: "/summary",
+                title: "AI Insights",
+                url: "/insights",
                 icon: IconSparkles,
             });
         }

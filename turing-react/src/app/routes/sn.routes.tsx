@@ -18,7 +18,7 @@ import SNSitePage from "../console/sn/sn.site.page"
 import SNSiteRootPage from "../console/sn/sn.site.root.page"
 import SNSiteSpotlightListPage from "../console/sn/spotlight/sn.site.spotlight.list.page"
 import SNSiteSpotlightPage from "../console/sn/spotlight/sn.site.spotlight.page"
-import SNSiteSummaryPage from "../console/sn/summary/sn.site.summary.page"
+import SNSiteInsightsPage from "../console/sn/insights/sn.site.insights.page"
 import SNSiteTopSearchTermsPage from "../console/sn/top-search-terms/sn.site.top.search.terms.page"
 import { ROUTES } from "../routes.const"
 
@@ -33,7 +33,7 @@ export const SNRoutes = (
         <Route path={ROUTES.SN_INSTANCE} element={<SNSiteListPage />} />
         <Route path={`${ROUTES.SN_INSTANCE}/:id`} element={<SNSitePage />}>
             <Route index element={<RedirectToSNDetail />} />
-            <Route path={'summary'} element={<SNSiteSummaryPage />} />
+            <Route path={'insights'} element={<SNSiteInsightsPage />} />
             <Route path={'detail'} element={<SNSiteDetailPage />} />
             <Route path={'locale'} element={<SNSiteMultiLanguageListPage />} />
             <Route path={'locale/:localeId'} element={<SNSiteMultiLanguagePage />} />

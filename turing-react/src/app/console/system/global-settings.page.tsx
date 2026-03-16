@@ -21,10 +21,12 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
+import { IconBrain, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { GradientSwitch } from "@/components/ui/gradient-switch";
+import { DurationInput } from "@/components/ui/duration-input";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -38,6 +40,9 @@ export default function GlobalSettingsPage() {
             decimalSeparator: "DOT",
             defaultLlmId: "",
             pythonExecutable: "",
+            llmCacheEnabled: false,
+            llmCacheTtlMs: 3600000,
+            llmCacheRegenerate: false,
             emailProvider: "BREVO",
             emailApiKey: "",
             senderEmail: "",
@@ -100,6 +105,8 @@ export default function GlobalSettingsPage() {
     const currencyExample =
         decimalSeparator === "COMMA" ? "150,75,BRL" : "150.75,BRL";
 
+    const llmCacheEnabled = form.watch("llmCacheEnabled") ?? false;
+
     return (
         <>
             <SubPageHeader
@@ -111,7 +118,7 @@ export default function GlobalSettingsPage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
                     <SectionCard variant="amber">
-                        <SectionCard.Header icon={IconSettings} title="Global Settings" description="Platform-wide configuration, formatting, and AI preferences." />
+                        <SectionCard.Header icon={IconSettings} title="Global Settings" description="Platform-wide configuration and formatting preferences." />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -173,6 +180,12 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
+                        </SectionCard.Content>
+                    </SectionCard>
+
+                    <SectionCard variant="violet">
+                        <SectionCard.Header icon={IconBrain} title="LLM Settings" description="Language model instance and cache configuration for reports, insights, and emails." />
+                        <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="defaultLlmId"
@@ -209,6 +222,78 @@ export default function GlobalSettingsPage() {
                                     </FormItemTwoColumns>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="llmCacheEnabled"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>LLM Cache</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                Enable caching of LLM responses for reports, insights, and emails
+                                                to reduce API calls and improve response time.
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <GradientSwitch
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            {llmCacheEnabled && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="llmCacheTtlMs"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cache Duration</FormLabel>
+                                                <FormDescription>
+                                                    How long cached LLM responses remain valid before a new request is made.
+                                                </FormDescription>
+                                                <FormControl>
+                                                    <DurationInput
+                                                        value={field.value ?? 3600000}
+                                                        onChange={field.onChange}
+                                                        disabled={isLoading}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="llmCacheRegenerate"
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>Regenerate Cache</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        Force a new LLM call on the next request, ignoring any existing cache.
+                                                        The cache will be recreated with the fresh response.
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <GradientSwitch
+                                                            checked={field.value ?? false}
+                                                            onCheckedChange={field.onChange}
+                                                            disabled={isLoading}
+                                                        />
+                                                    </FormControl>
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
+                                </>
+                            )}
                         </SectionCard.Content>
                     </SectionCard>
 

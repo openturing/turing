@@ -82,17 +82,32 @@ public class TurSNSiteSummaryAPI {
             String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
             ChatModel chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
 
+            String sitePrompt = site.getTurSNSiteGenAi() != null
+                    ? site.getTurSNSiteGenAi().getSitePrompt()
+                    : null;
+
+            String analysisInstructions = """
+                    Analyze the data provided and generate a comprehensive summary in Markdown format. \
+                    Include these sections:
+                    ## Overview
+                    Brief summary of the site configuration and health.
+                    ## Search Activity
+                    Analysis of search metrics and top terms.
+                    ## Configuration Review
+                    Review of fields, locales, facets, and behavior settings.
+                    ## Suggestions
+                    Actionable recommendations to improve search quality and user experience.
+
+                    Be concise but insightful. Use bullet points where appropriate. \
+                    Highlight any potential issues or misconfigurations.""";
+
+            String systemPromptText = StringUtils.hasText(sitePrompt)
+                    ? sitePrompt + "\n\n" + analysisInstructions
+                    : "You are an enterprise search expert analyzing a Semantic Navigation site "
+                      + "from the Turing platform. " + analysisInstructions;
+
             List<Message> messages = List.of(
-                    new SystemMessage(
-                            "You are an enterprise search expert analyzing a Semantic Navigation site from the Turing platform. "
-                            + "Based on the site data provided, generate a comprehensive summary in Markdown format. "
-                            + "Include these sections:\n"
-                            + "## Overview\nBrief summary of the site configuration and health.\n"
-                            + "## Search Activity\nAnalysis of search metrics and top terms.\n"
-                            + "## Configuration Review\nReview of fields, locales, facets, and behavior settings.\n"
-                            + "## Suggestions\nActionable recommendations to improve search quality and user experience.\n\n"
-                            + "Be concise but insightful. Use bullet points where appropriate. "
-                            + "Highlight any potential issues or misconfigurations."),
+                    new SystemMessage(systemPromptText),
                     new UserMessage(dataSummary + "\nPlease analyze all this data and provide a comprehensive summary with suggestions."));
 
             Prompt prompt = new Prompt(messages);

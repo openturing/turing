@@ -63,4 +63,8 @@ public class TurSNSiteGenAi implements Serializable {
     @Lob
     @Column
     private String systemPrompt;
+
+    @Lob
+    @Column
+    private String sitePrompt;
 }

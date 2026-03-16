@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026.1.14.1-01
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: configuration
+            columnName: id
+      changes:
+        - modifyDataType:
+            tableName: configuration
+            columnName: id
+            newDataType: varchar(50)
+
+  - changeSet:
+      id: 2026.1.14.1-02
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site
+            columnName: description
+      changes:
+        - modifyDataType:
+            tableName: sn_site
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: 2026.1.14.1-03
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: sitePrompt
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: sitePrompt
+                  type: longtext

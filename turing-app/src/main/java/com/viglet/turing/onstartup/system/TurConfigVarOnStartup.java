@@ -38,6 +38,9 @@ public class TurConfigVarOnStartup {
 	public static final String SENDER_EMAIL = "GLOBAL_SENDER_EMAIL";
 	public static final String SENDER_NAME = "GLOBAL_SENDER_NAME";
 	public static final String RECIPIENT_EMAIL = "GLOBAL_RECIPIENT_EMAIL";
+	public static final String LLM_CACHE_ENABLED = "GLOBAL_LLM_CACHE_ENABLED";
+	public static final String LLM_CACHE_TTL_MS = "GLOBAL_LLM_CACHE_TTL_MS";
+	public static final String LLM_CACHE_REGENERATE = "GLOBAL_LLM_CACHE_REGENERATE";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -59,6 +62,9 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");
 		ensureConfigVar(SENDER_NAME, GLOBAL_PATH, "");
 		ensureConfigVar(RECIPIENT_EMAIL, GLOBAL_PATH, "");
+		ensureConfigVar(LLM_CACHE_ENABLED, GLOBAL_PATH, "false");
+		ensureConfigVar(LLM_CACHE_TTL_MS, GLOBAL_PATH, "3600000");
+		ensureConfigVar(LLM_CACHE_REGENERATE, GLOBAL_PATH, "false");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

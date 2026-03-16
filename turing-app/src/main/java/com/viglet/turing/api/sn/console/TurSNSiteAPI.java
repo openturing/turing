@@ -152,6 +152,7 @@ public class TurSNSiteAPI {
                 turSNSiteGenAi.setTurLLMInstance(genAi.getTurLLMInstance());
                 turSNSiteGenAi.setTurStoreInstance(genAi.getTurStoreInstance());
                 turSNSiteGenAi.setSystemPrompt(genAi.getSystemPrompt());
+                turSNSiteGenAi.setSitePrompt(genAi.getSitePrompt());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });

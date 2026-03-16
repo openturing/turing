@@ -36,6 +36,9 @@ public class TurGlobalSettingsAPI {
                 .decimalSeparator(turGlobalSettingsService.getDecimalSeparator())
                 .pythonExecutable(turGlobalSettingsService.getPythonExecutable())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
+                .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
+                .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
+                .llmCacheRegenerate(turGlobalSettingsService.isLlmCacheRegenerate())
                 .emailProvider(turGlobalSettingsService.getEmailProvider())
                 .emailApiKey(turGlobalSettingsService.getEmailApiKey())
                 .senderEmail(turGlobalSettingsService.getSenderEmail())
@@ -54,6 +57,12 @@ public class TurGlobalSettingsAPI {
                         .updatePythonExecutable(globalSettings.getPythonExecutable()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
+                .llmCacheEnabled(turGlobalSettingsService
+                        .updateLlmCacheEnabled(globalSettings.isLlmCacheEnabled()))
+                .llmCacheTtlMs(turGlobalSettingsService
+                        .updateLlmCacheTtlMs(globalSettings.getLlmCacheTtlMs()))
+                .llmCacheRegenerate(turGlobalSettingsService
+                        .updateLlmCacheRegenerate(globalSettings.isLlmCacheRegenerate()))
                 .emailProvider(turGlobalSettingsService
                         .updateEmailProvider(globalSettings.getEmailProvider()))
                 .emailApiKey(turGlobalSettingsService

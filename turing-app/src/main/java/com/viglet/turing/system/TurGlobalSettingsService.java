@@ -146,6 +146,64 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    public boolean isLlmCacheEnabled() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateLlmCacheEnabled(boolean enabled) {
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_ENABLED);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(enabled));
+        turConfigVarRepository.save(configVar);
+        return enabled;
+    }
+
+    public long getLlmCacheTtlMs() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS)
+                .map(TurConfigVar::getValue)
+                .map(v -> {
+                    try {
+                        return Long.parseLong(v.trim());
+                    } catch (NumberFormatException e) {
+                        return 3_600_000L;
+                    }
+                })
+                .orElse(3_600_000L);
+    }
+
+    public long updateLlmCacheTtlMs(long ttlMs) {
+        long value = Math.max(0, ttlMs);
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_TTL_MS);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(value));
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    public boolean isLlmCacheRegenerate() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_REGENERATE)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateLlmCacheRegenerate(boolean regenerate) {
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_REGENERATE)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.LLM_CACHE_REGENERATE);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(regenerate));
+        turConfigVarRepository.save(configVar);
+        return regenerate;
+    }
+
     public String getRecipientEmail() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.RECIPIENT_EMAIL)
                 .map(TurConfigVar::getValue)

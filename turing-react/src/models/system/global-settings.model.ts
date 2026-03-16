@@ -6,6 +6,9 @@ export interface TurGlobalSettings {
   decimalSeparator: TurGlobalDecimalSeparator;
   pythonExecutable?: string;
   defaultLlmId?: string;
+  llmCacheEnabled?: boolean;
+  llmCacheTtlMs?: number;
+  llmCacheRegenerate?: boolean;
   emailProvider?: TurEmailProviderType;
   emailApiKey?: string;
   senderEmail?: string;

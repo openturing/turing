@@ -1,4 +1,12 @@
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import {
     Form,
     FormControl,
     FormDescription,
@@ -21,19 +29,26 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
+import { TurChatService } from "@/services/chat/chat.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
-import { IconBrain, IconMessageChatbot, IconPower } from "@tabler/icons-react"
-import { FormActions } from "../../ui/form-actions"
-import { SectionCard } from "../../ui/section-card"
-import React, { useEffect, useState } from "react"
+import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
+import { IconBrain, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles } from "@tabler/icons-react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
+import { Button } from "../../ui/button"
+import { FormActions } from "../../ui/form-actions"
+import { GradientButton } from "../../ui/gradient-button"
+import { SectionCard } from "../../ui/section-card"
+import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
 const turLLMInstanceService = new TurLLMInstanceService();
 const turStoreInstanceService = new TurStoreInstanceService();
+const turGlobalSettingsService = new TurGlobalSettingsService();
+const turChatService = new TurChatService();
 
 const DEFAULT_SYSTEM_PROMPT =
     "Using only this rag data. Answer in Portuguese. You are a helpful assistant that can answer questions about the web site:\n" +
@@ -50,18 +65,29 @@ interface Props {
 
 export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const form = useForm<TurSNSiteGenAi>({
-        defaultValues: snSite.turSNSiteGenAi,
+        defaultValues: {
+            ...snSite.turSNSiteGenAi
+        },
     });
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
+    const [defaultLlmId, setDefaultLlmId] = useState<string>("");
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
 
     useEffect(() => {
         turLLMInstanceService.query().then(setLlmInstances);
         turStoreInstanceService.query().then(setStoreInstances);
+        turGlobalSettingsService.query().then((settings) => {
+            setDefaultLlmId(settings.defaultLlmId ?? "");
+        });
     }, []);
 
     useEffect(() => {
-        form.reset(snSite.turSNSiteGenAi);
+        form.reset({
+            ...snSite.turSNSiteGenAi,
+            sitePrompt: snSite.turSNSiteGenAi?.sitePrompt ?? "",
+        });
     }, [snSite]);
 
     const enabled = form.watch("enabled");
@@ -81,6 +107,54 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         }
     }
 
+    const generateSitePrompt = useCallback(async () => {
+        if (!defaultLlmId || !snSite.description) return;
+
+        setIsGenerating(true);
+        let generated = "";
+
+        await turChatService.sendStream(
+            defaultLlmId,
+            [{
+                role: "user",
+                content:
+                    "Based on the following site description, generate a detailed prompt that describes what this site is about, " +
+                    "its purpose, target audience, content types, and any relevant context. " +
+                    "The prompt should be written as instructions for an AI assistant that will use it to generate reports, insights, and emails about this site. " +
+                    "Write only the prompt text, no explanations or formatting.\n\n" +
+                    `Site name: ${snSite.name}\n` +
+                    `Site description: ${snSite.description}`,
+            }],
+            (token) => {
+                generated += token;
+                form.setValue("sitePrompt", generated);
+            },
+            () => {
+                setIsGenerating(false);
+                toast.success("Site prompt generated successfully.");
+            },
+            (error) => {
+                setIsGenerating(false);
+                console.error("Failed to generate site prompt", error);
+                toast.error("Failed to generate site prompt. Check the default LLM configuration.");
+            },
+        );
+    }, [defaultLlmId, snSite.name, snSite.description, form]);
+
+    function handleGenerateClick() {
+        const currentPrompt = form.getValues("sitePrompt") ?? "";
+        if (currentPrompt.trim()) {
+            setShowOverwriteDialog(true);
+        } else {
+            generateSitePrompt();
+        }
+    }
+
+    function handleOverwriteConfirm() {
+        setShowOverwriteDialog(false);
+        generateSitePrompt();
+    }
+
     async function onSubmit(data: TurSNSiteGenAi) {
         if (data.enabled && !hasAllVariables) {
             toast.error("The System Prompt must contain the tags {{question}} and {{information}}.");
@@ -88,7 +162,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         }
 
         try {
-            const updatedSite = { ...snSite, turSNSiteGenAi: data };
+            const updatedSite = {
+                ...snSite,
+                turSNSiteGenAi: {
+                    ...data,
+                    sitePrompt: data.sitePrompt ?? "",
+                },
+            };
             const result = await turSNSiteService.update(updatedSite);
             if (result) {
                 toast.success(`${snSite.name} semantic navigation site was updated.`);
@@ -101,14 +181,67 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         }
     }
 
+    const canGenerate = !!defaultLlmId && !!snSite.description && !isGenerating;
+
     return (
         <div className="px-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                     <div className="space-y-4">
-                        {/* Section 1: Activation */}
+                        {/* Section 1: Site Prompt */}
+                        <SectionCard variant="amber">
+                            <SectionCard.Header icon={IconFileDescription} title="Site Prompt" description="Describe what this site is about. Used by the default LLM (Global Settings) for reports, insights, and emails." />
+                            <SectionCard.Content>
+                                <FormField
+                                    control={form.control}
+                                    name="sitePrompt"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Site Description Prompt</FormLabel>
+                                            <FormDescription>
+                                                Write a detailed prompt describing what this site contains, its purpose, target audience, and any specific instructions for the AI. This prompt is used by the default LLM configured in Global Settings to generate reports, insights, and emails about this site.
+                                            </FormDescription>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="Example: This site indexes the internal knowledge base of our engineering team. It contains documentation about microservices architecture, deployment procedures, API specifications, and troubleshooting guides. The target audience is software engineers and DevOps team members..."
+                                                    className="min-h-40"
+                                                    disabled={isGenerating}
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="flex items-center gap-3 pt-2">
+                                    <GradientButton
+                                        type="button"
+                                        variant="outline"
+                                        disabled={!canGenerate}
+                                        onClick={handleGenerateClick}
+                                    >
+                                        {isGenerating ? (
+                                            <IconLoader2 className="size-4 animate-spin" />
+                                        ) : (
+                                            <IconSparkles className="size-4" />
+                                        )}
+                                        {isGenerating ? "Generating..." : "Generate with AI"}
+                                    </GradientButton>
+                                    <span className="text-xs text-muted-foreground">
+                                        {!defaultLlmId
+                                            ? "Configure a default LLM in Global Settings to enable."
+                                            : !snSite.description
+                                                ? "Add a site description in Settings to enable."
+                                                : "Generate a prompt based on the site description using the default LLM."}
+                                    </span>
+                                </div>
+                            </SectionCard.Content>
+                        </SectionCard>
+
+                        {/* Section 2: RAG Activation */}
                         <SectionCard variant="blue">
-                            <SectionCard.Header icon={IconPower} title="Activation" description="Enable AI-powered answers for this site." />
+                            <SectionCard.Header icon={IconPower} title="RAG" description="Retrieval-Augmented Generation for this site." />
                             <SectionCard.Content>
                                 <FormField
                                     control={form.control}
@@ -116,9 +249,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                     render={({ field }) => (
                                         <FormItemTwoColumns>
                                             <FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Label>Enable Generative AI</FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Label>Enable RAG</FormItemTwoColumns.Label>
                                                 <FormItemTwoColumns.Description>
-                                                    Turn on AI-powered answers and semantic search for this site.
+                                                    Enable Retrieval-Augmented Generation (RAG) to combine search results with a language model, providing AI-powered answers grounded in this site's indexed content.
                                                 </FormItemTwoColumns.Description>
                                             </FormItemTwoColumns.Left>
                                             <FormItemTwoColumns.Right>
@@ -135,7 +268,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             </SectionCard.Content>
                         </SectionCard>
 
-                        {/* Section 2: Models */}
+                        {/* Section 3: Models */}
                         {enabled && (
                             <SectionCard variant="violet">
                                 <SectionCard.Header icon={IconBrain} title="AI Model & Embedding Store" description="Language model and vector store configuration." />
@@ -225,7 +358,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             </SectionCard>
                         )}
 
-                        {/* Section 3: System Prompt */}
+                        {/* Section 4: System Prompt */}
                         {enabled && (
                             <SectionCard variant="emerald">
                                 <SectionCard.Header icon={IconMessageChatbot} title="System Prompt" description="Define the prompt template for the AI agent." />
@@ -266,6 +399,26 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     </FormActions>
                 </form>
             </Form>
+
+            <Dialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Overwrite Site Prompt?</DialogTitle>
+                        <DialogDescription>
+                            The site description prompt already has content. Generating a new one will replace the existing text. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col gap-2 sm:flex-row">
+                        <Button variant="outline" onClick={() => setShowOverwriteDialog(false)}>
+                            Cancel
+                        </Button>
+                        <GradientButton onClick={handleOverwriteConfirm}>
+                            <IconSparkles className="size-4" />
+                            Overwrite and Generate
+                        </GradientButton>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
