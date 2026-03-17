@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TurSNSiteMetricsTerm } from "@/models/sn/sn-site-metrics-term.model";
 import { TurSNSiteMetricsService, type TurSNTopTermsPeriod } from "@/services/sn/sn.site.metrics.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconArrowDown, IconArrowUp, IconChartBar, IconSearch } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const turSNSiteMetricsService = new TurSNSiteMetricsService();
@@ -43,6 +44,25 @@ function formatNumber(value: number | undefined): string {
 export default function SNSiteTopSearchTermsPage() {
   const { id, period: periodParam } = useParams() as { id: string; period?: string };
   const navigate = useNavigate();
+  const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
+
+  useEffect(() => {
+    if (!breadcrumbAdded.current) {
+      pushItem({ label: "Top Search Terms" });
+      breadcrumbAdded.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
+
   const [topTerms, setTopTerms] = useState<TurSNSiteMetricsTerm | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

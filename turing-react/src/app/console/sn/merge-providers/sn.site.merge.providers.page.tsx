@@ -4,8 +4,9 @@ import { SNSiteMergeForm } from "@/components/sn/merge/sn.site.merge.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model";
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconGitMerge } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,14 +19,42 @@ export default function SNSiteMergeProvidersPage() {
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
     useEffect(() => {
         if (mergeProviderId === "new") {
             turSNSiteMergeService.getStructure(id).then(setMergeProvider).catch(() => setError("Connection error or timeout while fetching merge provider structure."));
+            if (!breadcrumbAdded.current) {
+                pushItem({ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` });
+                pushItem({ label: "New" });
+                breadcrumbAdded.current = true;
+            }
         } else {
-            turSNSiteMergeService.get(id, mergeProviderId).then(setMergeProvider).catch(() => setError("Connection error or timeout while fetching merge provider details."));
+            turSNSiteMergeService.get(id, mergeProviderId).then((merge) => {
+                setMergeProvider(merge);
+                if (!breadcrumbAdded.current) {
+                    const label = merge.providerFrom && merge.providerTo
+                        ? `${merge.providerFrom} → ${merge.providerTo}`
+                        : mergeProviderId;
+                    pushItem({ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` });
+                    pushItem({ label });
+                    breadcrumbAdded.current = true;
+                }
+            }).catch(() => setError("Connection error or timeout while fetching merge provider details."));
             setIsNew(false);
         }
     }, [id, mergeProviderId]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
 
     async function onDelete() {
         if (!mergeProvider) return;

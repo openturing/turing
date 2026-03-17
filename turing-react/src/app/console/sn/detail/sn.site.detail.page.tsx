@@ -6,7 +6,7 @@ import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
 import { IconSettings } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSNSiteService = new TurSNSiteService();
@@ -17,22 +17,31 @@ export default function SNSiteDetailPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
+
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       turSNSiteService.query().then(() => {
         setSnSite({} as TurSNSite);
-        pushItem({ label: "Settings", href: `${ROUTES.SN_INSTANCE}/${id}/settings` });
-        added = true;
       }).catch(() => setError("Connection error or timeout while fetching site service."));
     } else {
       turSNSiteService.get(id).then(setSnSite).catch(() => setError("Connection error or timeout while fetching site details."));
       setIsNew(false);
     }
+    if (!breadcrumbAdded.current) {
+      pushItem({ label: "Settings" });
+      breadcrumbAdded.current = true;
+    }
+  }, [id]);
+
+  useEffect(() => {
     return () => {
-      if (added) popItem();
+      if (breadcrumbAdded.current) {
+        popItem();
+        breadcrumbAdded.current = false;
+      }
     };
-  }, [id])
+  }, []);
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/settings`}>
       <SubPageHeader icon={IconSettings} name="Settings" feature="Settings" description="Configure the Semantic Navigation Site." />

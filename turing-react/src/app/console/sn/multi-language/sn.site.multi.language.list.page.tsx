@@ -6,6 +6,7 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
 import { IconLanguage } from "@tabler/icons-react";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import * as React from "react";
 import { useParams } from "react-router-dom";
 
@@ -14,9 +15,25 @@ export default function SNSiteMultiLanguageListPage() {
     const { id } = useParams() as { id: string };
     const [data, setData] = React.useState<TurSNSiteLocale[]>();
     const [error, setError] = React.useState<string | null>(null);
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = React.useRef(false);
+
     React.useEffect(() => {
+        if (!breadcrumbAdded.current) {
+            pushItem({ label: "Multi Languages" });
+            breadcrumbAdded.current = true;
+        }
         turSNSiteLocaleService.query(id).then(setData).catch(() => setError("Connection error or timeout while fetching Multi Language data."));
-    }, [id])
+    }, [id]);
+
+    React.useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
 
     return (
         <LoadProvider checkIsNotUndefined={data} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/locale`}>

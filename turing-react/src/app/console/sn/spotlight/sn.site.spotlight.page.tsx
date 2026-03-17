@@ -4,8 +4,9 @@ import { SNSiteSpotlightForm } from "@/components/sn/spotlight/sn.site.spotlight
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model";
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconSpeakerphone } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,14 +19,39 @@ export default function SNSiteSpotlightPage() {
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
     useEffect(() => {
         if (spotlightId === "new") {
             turSNSiteSpotlightService.getStructure(id).then(setSpotlight).catch(() => setError("Connection error or timeout while fetching spotlight structure."));
+            if (!breadcrumbAdded.current) {
+                pushItem({ label: "Spotlight", href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` });
+                pushItem({ label: "New" });
+                breadcrumbAdded.current = true;
+            }
         } else {
-            turSNSiteSpotlightService.get(id, spotlightId).then(setSpotlight).catch(() => setError("Connection error or timeout while fetching spotlight details."));
+            turSNSiteSpotlightService.get(id, spotlightId).then((s) => {
+                setSpotlight(s);
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: "Spotlight", href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` });
+                    pushItem({ label: s.name || spotlightId });
+                    breadcrumbAdded.current = true;
+                }
+            }).catch(() => setError("Connection error or timeout while fetching spotlight details."));
             setIsNew(false);
         }
     }, [id, spotlightId]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
 
     async function onDelete() {
         if (!spotlight) return;

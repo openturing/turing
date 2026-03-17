@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconLoader2, IconRefresh, IconSparkles } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -19,6 +20,25 @@ interface SummaryResponse {
 
 export default function SNSiteSummaryPage() {
     const { id } = useParams() as { id: string };
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
+    useEffect(() => {
+        if (!breadcrumbAdded.current) {
+            pushItem({ label: "AI Insights" });
+            breadcrumbAdded.current = true;
+        }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
+
     const [content, setContent] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);

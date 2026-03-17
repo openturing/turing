@@ -4,8 +4,9 @@ import { SNSiteCustomFacetForm } from "@/components/sn/facet/sn.site.custom.face
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteCustomFacet } from "@/models/sn/sn-site-custom-facet.model";
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconFilter } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,6 +19,9 @@ export default function SNSiteCustomFacetPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
+
   useEffect(() => {
     if (customFacetId === "new") {
       setCustomFacet({
@@ -29,11 +33,33 @@ export default function SNSiteCustomFacetPage() {
         items: [],
         fieldExtId: "",
       } as TurSNSiteCustomFacet);
+      if (!breadcrumbAdded.current) {
+        pushItem({ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` });
+        pushItem({ label: "New" });
+        breadcrumbAdded.current = true;
+      }
     } else {
-      turSNSiteCustomFacetService.get(id, customFacetId).then(setCustomFacet).catch(() => setError("Connection error or timeout while fetching custom facet details."));
+      turSNSiteCustomFacetService.get(id, customFacetId).then((facet) => {
+        setCustomFacet(facet);
+        if (!breadcrumbAdded.current) {
+          pushItem({ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` });
+          pushItem({ label: facet.name || customFacetId });
+          breadcrumbAdded.current = true;
+        }
+      }).catch(() => setError("Connection error or timeout while fetching custom facet details."));
       setIsNew(false);
     }
-  }, [id, customFacetId])
+  }, [id, customFacetId]);
+
+  useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
 
   async function onDelete() {
     try {

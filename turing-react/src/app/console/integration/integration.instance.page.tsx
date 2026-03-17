@@ -6,18 +6,14 @@ import type { TurIntegrationInstance } from "@/models/integration/integration-in
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import {
     IconAdjustmentsSearch,
-    IconCloudDownload,
-    IconCloudUpload,
     IconGitCommit,
     IconGraph,
     IconListCheck,
     IconPlugConnectedX,
-    IconPlus,
     IconSettings,
-    IconTools,
-    IconTrash
+    IconTools
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -42,29 +38,7 @@ const data = {
         {
             title: "Indexing Manager",
             url: "/indexing-manager",
-            icon: IconAdjustmentsSearch,
-            children: [
-                {
-                    title: "Indexing",
-                    url: "/indexing-manager/indexing",
-                    icon: IconPlus,
-                },
-                {
-                    title: "Deindexing",
-                    url: "/indexing-manager/deindexing",
-                    icon: IconTrash,
-                },
-                {
-                    title: "Publishing",
-                    url: "/indexing-manager/publishing",
-                    icon: IconCloudUpload,
-                },
-                {
-                    title: "Unpublishing",
-                    url: "/indexing-manager/unpublishing",
-                    icon: IconCloudDownload,
-                }
-            ]
+            icon: IconAdjustmentsSearch
         },
         {
             title: "Monitoring",
@@ -88,27 +62,38 @@ export default function IntegrationInstancePage() {
     const navigate = useNavigate()
     const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`
     const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
     useEffect(() => {
-        let added = false;
         if (id === "new") {
             turIntegrationInstanceService.query().then(() => {
                 setIntegration({} as TurIntegrationInstance);
-                pushItem({ label: "New Integration" });
-                added = true;
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: "New Integration" });
+                    breadcrumbAdded.current = true;
+                }
             }).catch(() => setError("Connection error or timeout while fetching Integration instances."));
             setIsNew(true);
         } else {
             turIntegrationInstanceService.get(id).then((integration) => {
                 setIntegration(integration);
-                pushItem({ label: integration.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${integration.id}` });
-                added = true;
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: integration.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${integration.id}` });
+                    breadcrumbAdded.current = true;
+                }
             }).catch(() => setError("Connection error or timeout while fetching Integration instance."));
             setIsNew(false);
         }
+    }, []);
+
+    useEffect(() => {
         return () => {
-            if (added) popItem();
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
         };
-    }, [])
+    }, []);
 
 
 

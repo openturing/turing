@@ -4,8 +4,9 @@ import { SNSiteLocaleForm } from "@/components/sn/locales/sn.site.locale.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model";
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconLanguage } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,14 +19,39 @@ export default function SNSiteMultiLanguagePage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
+
   useEffect(() => {
     if (localeId === "new") {
       turSNSiteLocaleService.query(id).then(() => setSnLocale({} as TurSNSiteLocale)).catch(() => setError("Connection error or timeout while fetching Multi Language data."));
+      if (!breadcrumbAdded.current) {
+        pushItem({ label: "Multi Languages", href: `${ROUTES.SN_INSTANCE}/${id}/locale` });
+        pushItem({ label: "New" });
+        breadcrumbAdded.current = true;
+      }
     } else {
-      turSNSiteLocaleService.get(id, localeId).then(setSnLocale).catch(() => setError("Connection error or timeout while fetching locale details."));
+      turSNSiteLocaleService.get(id, localeId).then((locale) => {
+        setSnLocale(locale);
+        if (!breadcrumbAdded.current) {
+          pushItem({ label: "Multi Languages", href: `${ROUTES.SN_INSTANCE}/${id}/locale` });
+          pushItem({ label: locale.language || localeId });
+          breadcrumbAdded.current = true;
+        }
+      }).catch(() => setError("Connection error or timeout while fetching locale details."));
       setIsNew(false);
     }
-  }, [id, localeId])
+  }, [id, localeId]);
+
+  useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
   async function onDelete() {
     if (!snLocale) return;
     try {

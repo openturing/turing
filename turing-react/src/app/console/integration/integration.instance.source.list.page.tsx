@@ -8,7 +8,7 @@ import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
 import { TurIntegrationAemSourceService } from "@/services/integration/integration-aem-source.service";
 import { IconGitCommit } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 export default function IntegrationInstanceSourceListPage() {
@@ -17,18 +17,26 @@ export default function IntegrationInstanceSourceListPage() {
   const turIntegrationAemSourceService = new TurIntegrationAemSourceService(id);
   const [error, setError] = useState<string | null>(null);
   const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
 
   useEffect(() => {
-    let added = false;
     turIntegrationAemSourceService.query().then((sources) => {
       setIntegrationAemSources(sources);
-      pushItem({ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` });
-      added = true;
+      if (!breadcrumbAdded.current) {
+        pushItem({ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` });
+        breadcrumbAdded.current = true;
+      }
     }).catch(() => setError("Connection error or timeout while fetching Integration service."));
+  }, [id]);
+
+  useEffect(() => {
     return () => {
-      if (added) popItem();
+      if (breadcrumbAdded.current) {
+        popItem();
+        breadcrumbAdded.current = false;
+      }
     };
-  }, [id])
+  }, []);
   const gridItemList = useGridAdapter(integrationAemSources, {
     name: "name",
     description: "endpoint",

@@ -75,8 +75,12 @@ export default function IntegrationInstanceMonitoringPage() {
 
   const handleTabChange = useCallback((newSource: string) => {
     setPage(0);
+    if (breadcrumbAdded.current) {
+      popItem();
+      pushItem({ label: newSource === DEFAULT_SOURCE ? "All" : newSource });
+    }
     navigate(`${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring/${newSource}`);
-  }, [navigate, id]);
+  }, [navigate, id, popItem, pushItem]);
 
   const buildRequest = useCallback((): TurIntegrationMonitoringRequest => {
     return {

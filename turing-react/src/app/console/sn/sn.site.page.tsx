@@ -22,7 +22,7 @@ import {
     IconSparkles,
     IconSpeakerphone
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 const turSNSiteService = new TurSNSiteService();
@@ -39,7 +39,7 @@ export default function SNSitePage() {
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
     const [error, setError] = useState<string | null>(null);
     const { pushItem, popItem } = useBreadcrumb();
-
+    const breadcrumbAdded = useRef(false);
 
     const data = useMemo(() => {
         if (isNew) {
@@ -134,21 +134,23 @@ export default function SNSitePage() {
         };
     }, [isNew, hasDefaultLlm, snStatus]);
     useEffect(() => {
-        let added = false;
-
         if (id === "new") {
             turSNSiteService.query().then(() => {
                 setSnSite({} as TurSNSite);
                 setSnStatus(null);
                 setIsNew(true);
-                pushItem({ label: "New Site" });
-                added = true;
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: "New Site" });
+                    breadcrumbAdded.current = true;
+                }
             }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation sites."));
         } else {
             turSNSiteService.get(id).then((site) => {
                 setSnSite(site);
-                pushItem({ label: site.name, href: `${ROUTES.SN_INSTANCE}/${site.id}` });
-                added = true;
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: site.name, href: `${ROUTES.SN_INSTANCE}/${site.id}` });
+                    breadcrumbAdded.current = true;
+                }
             }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation site details."));
 
             turSNSiteService.getStatus(id)
@@ -159,11 +161,16 @@ export default function SNSitePage() {
                 .catch(() => setHasDefaultLlm(false));
             setIsNew(false);
         }
-
-        return () => {
-            if (added) popItem();
-        };
     }, [id]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
 
     async function onDelete() {
         try {

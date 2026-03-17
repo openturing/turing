@@ -6,8 +6,9 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model.ts";
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconNumber123 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSNRankingExpressionService = new TurSNRankingExpressionService();
@@ -16,9 +17,25 @@ export default function SNSiteResultRankingListPage() {
     const { id } = useParams() as { id: string };
     const [rankingList, setRankingList] = useState<TurSNRankingExpression[]>();
     const [error, setError] = useState<string | null>(null);
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
     useEffect(() => {
+        if (!breadcrumbAdded.current) {
+            pushItem({ label: "Result Ranking" });
+            breadcrumbAdded.current = true;
+        }
         turSNRankingExpressionService.query(id).then(setRankingList).catch(() => setError("Connection error or timeout while fetching result ranking."));
-    }, [id])
+    }, [id]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
     const gridItemList = useGridAdapter(rankingList, {
         name: "name",
         description: "description",

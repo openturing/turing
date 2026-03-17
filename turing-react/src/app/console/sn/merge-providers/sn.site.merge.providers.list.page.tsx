@@ -6,8 +6,9 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model";
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconGitMerge } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSNSiteMergeService = new TurSNSiteMergeService();
@@ -16,9 +17,25 @@ export default function SNSiteMergeProvidersListPage() {
     const { id } = useParams() as { id: string };
     const [mergeProviderList, setMergeProviderList] = useState<TurSNSiteMerge[]>();
     const [error, setError] = useState<string | null>(null);
+    const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
+
     useEffect(() => {
+        if (!breadcrumbAdded.current) {
+            pushItem({ label: "Merge Providers" });
+            breadcrumbAdded.current = true;
+        }
         turSNSiteMergeService.query(id).then(setMergeProviderList).catch(() => setError("Connection error or timeout while fetching merge providers."));
-    }, [id])
+    }, [id]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
     const gridItemList = useGridAdapter(mergeProviderList, {
         name: (item) => `${item.providerFrom} → ${item.providerTo}`,
         description: "description",

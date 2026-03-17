@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
         <SubPage
             icon={IconShieldCog}
             feature="Administration"
-            name="User Management"
+            name="Administration"
             urlBase={ROUTES.ADMIN_ROOT}
             data={data}
         />

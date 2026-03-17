@@ -4,6 +4,7 @@ import { SNSiteFacetDraggableList } from "@/components/sn/facet/sn.site.facet.dr
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model";
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconFilter } from "@tabler/icons-react";
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
@@ -13,9 +14,25 @@ export default function SNSiteFacetListPage() {
   const { id: siteId } = useParams() as { id: string };
   const [error, setError] = useState<string | null>(null);
   const [tableData, setTableData] = React.useState<TurSNSiteFacetOrdering[]>();
+  const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = React.useRef(false);
+
   React.useEffect(() => {
+    if (!breadcrumbAdded.current) {
+      pushItem({ label: "Facets" });
+      breadcrumbAdded.current = true;
+    }
     turSNFacetedFieldService.query(siteId).then(setTableData).catch(() => setError("Connection error or timeout while fetching faceted fields."));
-  }, [siteId])
+  }, [siteId]);
+
+  React.useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
   return (
     <LoadProvider checkIsNotUndefined={tableData} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${siteId}/facet`}>
       <SubPageHeader
