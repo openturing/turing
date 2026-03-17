@@ -7,7 +7,7 @@ import {
     type ColumnDef,
     type SortingState,
 } from "@tanstack/react-table";
-import { useState, type PropsWithChildren } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import {
@@ -26,6 +26,7 @@ import { NavLink } from "react-router-dom";
 
 interface Props {
     gridItemList: TurGridItem[];
+    actions?: ReactNode;
 }
 
 const GRADIENT_PAIRS = [
@@ -62,7 +63,7 @@ const columns: ColumnDef<TurGridItem>[] = [
     { accessorKey: "url", header: "URL" },
 ];
 
-export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) => {
+export const GridList: React.FC<Props> = ({ gridItemList, actions }) => {
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 12,
@@ -106,6 +107,7 @@ export const GridList: React.FC<PropsWithChildren<Props>> = ({ gridItemList }) =
                 <span className="text-sm text-muted-foreground">
                     {table.getFilteredRowModel().rows.length} item{table.getFilteredRowModel().rows.length !== 1 && "s"}
                 </span>
+                {actions && <div className="flex items-center gap-2 ml-auto">{actions}</div>}
             </div>
 
             {rows.length > 0 ? (

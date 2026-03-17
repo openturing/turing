@@ -25,10 +25,10 @@ import {
 } from "@/components/ui/table";
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurLoggingIndexing } from "@/models/logging/logging-indexing.model";
+import { IconRefresh, IconSearch } from "@tabler/icons-react";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowRightCircle, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { IconRefresh, IconSearch } from "@tabler/icons-react";
 import { BadgeColorful } from "../badge-colorful";
 import { BadgeLocale } from "../badge-locale";
 import { Badge } from "../ui/badge";
@@ -442,7 +442,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 value={`${pageSize}`}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}
                             >
-                                <SelectTrigger className="h-8 w-17.5">
+                                <SelectTrigger className="h-8 w-20">
                                     <SelectValue placeholder={pageSize} />
                                 </SelectTrigger>
                                 <SelectContent side="top">
@@ -454,7 +454,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex w-25 items-center justify-center text-sm font-medium">
+                        <div className="flex w-40 items-center justify-center text-sm font-medium">
                             Page {page + 1} of{" "}{totalPages || 1}
                         </div>
                         <div className="flex items-center space-x-2">

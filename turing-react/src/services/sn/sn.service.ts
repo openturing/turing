@@ -34,6 +34,18 @@ export class TurSNSiteService {
     );
     return response.status == 200;
   }
+  async exportAll(): Promise<Blob | null> {
+    const response = await axios
+      .get<Blob>("/sn/export", {
+        responseType: "blob",
+      })
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error("Failed to export all SN sites", error);
+        return null;
+      });
+    return response;
+  }
   async export(turSNSite: TurSNSite): Promise<Blob | null> {
     const response = await axios
       .get<Blob>(`/sn/${turSNSite.id.toString()}/export`, {

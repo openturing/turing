@@ -29,8 +29,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import type { TurLoggingGeneral } from "@/models/logging/logging-general.model";
-import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { IconFileAlert, IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
+import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { Badge } from "../ui/badge";
 import { GradientButton } from "../ui/gradient-button";
 import { LogHighlighter } from "./logging.hl";
@@ -293,7 +293,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 value={`${pageSize}`}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}
                             >
-                                <SelectTrigger className="h-8 w-17.5">
+                                <SelectTrigger className="h-8 w-20">
                                     <SelectValue placeholder={pageSize} />
                                 </SelectTrigger>
                                 <SelectContent side="top">
@@ -305,7 +305,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex w-25 items-center justify-center text-sm font-medium">
+                        <div className="flex w-40 items-center justify-center text-sm font-medium">
                             Page {page + 1} of{" "}{totalPages || 1}
                         </div>
                         <div className="flex items-center space-x-2">
