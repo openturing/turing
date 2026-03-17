@@ -33,6 +33,7 @@ export default function LoggingServerPage() {
   const [search, setSearch] = useState("");
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [initialLoad, setInitialLoad] = useState(true);
+  const skipNextFetch = useRef(false);
 
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const debouncedSearch = useRef(search);
@@ -67,6 +68,7 @@ export default function LoggingServerPage() {
       const data = await fetchData(0, "desc");
       if (data) {
         const lastPage = Math.max(0, data.totalPages - 1);
+        skipNextFetch.current = true;
         setPage(lastPage);
         setInitialLoad(false);
         pushItem({ label: "Turing ES Server" });
@@ -82,6 +84,10 @@ export default function LoggingServerPage() {
   // Fetch on filter/page changes (skip initial load)
   useEffect(() => {
     if (initialLoad || page < 0) return;
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false;
+      return;
+    }
     fetchData(page);
   }, [page, pageSize, level, dateFrom, dateTo, fetchData]);
 
@@ -105,11 +111,15 @@ export default function LoggingServerPage() {
     const interval = setInterval(async () => {
       const data = await fetchData(0, "desc", true);
       if (data) {
-        setPage(Math.max(0, data.totalPages - 1));
+        const lastPage = Math.max(0, data.totalPages - 1);
+        if (lastPage !== page) {
+          skipNextFetch.current = true;
+          setPage(lastPage);
+        }
       }
     }, refreshInterval);
     return () => clearInterval(interval);
-  }, [refreshInterval, pageSize, fetchData, initialLoad]);
+  }, [refreshInterval, pageSize, fetchData, initialLoad, page]);
 
   const handlePageSizeChange = useCallback((newPageSize: number) => {
     setPageSize(newPageSize);

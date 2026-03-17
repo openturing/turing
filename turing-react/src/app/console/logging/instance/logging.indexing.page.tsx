@@ -35,6 +35,7 @@ export default function LoggingIndexingPage() {
   const [url, setUrl] = useState("");
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [initialLoad, setInitialLoad] = useState(true);
+  const skipNextFetch = useRef(false);
 
   const contentIdTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const urlTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -73,6 +74,7 @@ export default function LoggingIndexingPage() {
       const data = await fetchData(0, "desc");
       if (data) {
         const lastPage = Math.max(0, data.totalPages - 1);
+        skipNextFetch.current = true;
         setPage(lastPage);
         setInitialLoad(false);
         pushItem({ label: "Indexing" });
@@ -88,6 +90,10 @@ export default function LoggingIndexingPage() {
   // Fetch on filter/page changes (skip initial load)
   useEffect(() => {
     if (initialLoad || page < 0) return;
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false;
+      return;
+    }
     fetchData(page);
   }, [page, pageSize, dateFrom, dateTo, status, resultStatus, fetchData]);
 
@@ -125,11 +131,15 @@ export default function LoggingIndexingPage() {
     const interval = setInterval(async () => {
       const data = await fetchData(0, "desc", true);
       if (data) {
-        setPage(Math.max(0, data.totalPages - 1));
+        const lastPage = Math.max(0, data.totalPages - 1);
+        if (lastPage !== page) {
+          skipNextFetch.current = true;
+          setPage(lastPage);
+        }
       }
     }, refreshInterval);
     return () => clearInterval(interval);
-  }, [refreshInterval, pageSize, fetchData, initialLoad]);
+  }, [refreshInterval, pageSize, fetchData, initialLoad, page]);
 
   const handlePageSizeChange = useCallback((newPageSize: number) => {
     setPageSize(newPageSize);
