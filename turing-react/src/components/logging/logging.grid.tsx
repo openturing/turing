@@ -4,7 +4,7 @@ import {
     useReactTable,
     type ColumnDef,
 } from "@tanstack/react-table";
-import { createContext, useContext, useState, type PropsWithChildren } from "react";
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
 
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import type { TurLoggingGeneral } from "@/models/logging/logging-general.model";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
-import { IconFileAlert, IconSearch, IconX } from "@tabler/icons-react";
+import { IconFileAlert, IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
 import { Badge } from "../ui/badge";
 import { GradientButton } from "../ui/gradient-button";
 import { LogHighlighter } from "./logging.hl";
@@ -169,6 +169,11 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
     onPageChange, onPageSizeChange, onLevelChange, onDateFromChange, onDateToChange, onSearchChange
 }) => {
     const [selectedTrace, setSelectedTrace] = useState<{ message: string; stackTrace: string } | null>(null);
+    const [lastUpdated, setLastUpdated] = useState(Date.now());
+
+    useEffect(() => {
+        setLastUpdated(Date.now());
+    }, [gridItemList]);
 
     const table = useReactTable({
         data: gridItemList,
@@ -274,8 +279,12 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                     </Table>
                 </div>
                 <div className="flex items-center justify-between py-4 px-4 border-t">
-                    <div className="text-sm text-muted-foreground">
-                        {totalElements} total records
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{totalElements} total records</span>
+                        <span className="flex items-center gap-1 text-xs italic">
+                            <IconRefresh className="h-3 w-3" />
+                            Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+                        </span>
                     </div>
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">

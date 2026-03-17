@@ -37,7 +37,7 @@ export default function LoggingAemPage() {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const debouncedSearch = useRef(search);
 
-  const fetchData = useCallback(async (fetchPage: number, silent = false) => {
+  const fetchData = useCallback(async (fetchPage: number, sort: "asc" | "desc" = "asc", silent = false) => {
     try {
       const data = await turLoggingInstanceService.aem({
         page: fetchPage,
@@ -46,7 +46,11 @@ export default function LoggingAemPage() {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         search: debouncedSearch.current || undefined,
+        sort,
       });
+      if (sort === "desc") {
+        data.content = [...data.content].reverse();
+      }
       setPageData(data);
       if (!silent) setError(null);
       return data;
@@ -56,17 +60,14 @@ export default function LoggingAemPage() {
     }
   }, [pageSize, level, dateFrom, dateTo]);
 
-  // Initial load: fetch page 0 to get totalPages, then go to last page
+  // Initial load: fetch page 0 desc (newest N rows), single request
   useEffect(() => {
     let added = false;
     const init = async () => {
-      const data = await fetchData(0);
+      const data = await fetchData(0, "desc");
       if (data) {
         const lastPage = Math.max(0, data.totalPages - 1);
         setPage(lastPage);
-        if (lastPage > 0) {
-          await fetchData(lastPage);
-        }
         setInitialLoad(false);
         pushItem({ label: "AEM" });
         added = true;
@@ -98,14 +99,17 @@ export default function LoggingAemPage() {
     };
   }, [search]);
 
-  // Auto-refresh
+  // Auto-refresh: always reload latest rows (page 0 desc)
   useEffect(() => {
     if (refreshInterval <= 0 || initialLoad) return;
-    const interval = setInterval(() => {
-      fetchData(page, true);
+    const interval = setInterval(async () => {
+      const data = await fetchData(0, "desc", true);
+      if (data) {
+        setPage(Math.max(0, data.totalPages - 1));
+      }
     }, refreshInterval);
     return () => clearInterval(interval);
-  }, [refreshInterval, page, fetchData, initialLoad]);
+  }, [refreshInterval, pageSize, fetchData, initialLoad]);
 
   const handlePageSizeChange = useCallback((newPageSize: number) => {
     setPageSize(newPageSize);
@@ -142,7 +146,7 @@ export default function LoggingAemPage() {
       <div className="mt-4">
         <LoggingGrid
           gridItemList={pageData?.content || []}
-          page={page < 0 ? 0 : page}
+          page={Math.max(0, page)}
           totalPages={pageData?.totalPages || 0}
           totalElements={pageData?.totalElements || 0}
           pageSize={pageSize}

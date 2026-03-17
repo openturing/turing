@@ -41,7 +41,7 @@ export default function LoggingIndexingPage() {
   const debouncedContentId = useRef(contentId);
   const debouncedUrl = useRef(url);
 
-  const fetchData = useCallback(async (fetchPage: number, silent = false) => {
+  const fetchData = useCallback(async (fetchPage: number, sort: "asc" | "desc" = "asc", silent = false) => {
     try {
       const data = await turLoggingInstanceService.indexing({
         page: fetchPage,
@@ -52,7 +52,11 @@ export default function LoggingIndexingPage() {
         contentId: debouncedContentId.current || undefined,
         resultStatus: resultStatus || undefined,
         url: debouncedUrl.current || undefined,
+        sort,
       });
+      if (sort === "desc") {
+        data.content = [...data.content].reverse();
+      }
       setPageData(data);
       if (!silent) setError(null);
       return data;
@@ -62,16 +66,14 @@ export default function LoggingIndexingPage() {
     }
   }, [pageSize, dateFrom, dateTo, status, resultStatus]);
 
+  // Initial load: fetch page 0 desc (newest N rows), single request
   useEffect(() => {
     let added = false;
     const init = async () => {
-      const data = await fetchData(0);
+      const data = await fetchData(0, "desc");
       if (data) {
         const lastPage = Math.max(0, data.totalPages - 1);
         setPage(lastPage);
-        if (lastPage > 0) {
-          await fetchData(lastPage);
-        }
         setInitialLoad(false);
         pushItem({ label: "Indexing" });
         added = true;
@@ -83,6 +85,7 @@ export default function LoggingIndexingPage() {
     };
   }, []);
 
+  // Fetch on filter/page changes (skip initial load)
   useEffect(() => {
     if (initialLoad || page < 0) return;
     fetchData(page);
@@ -116,14 +119,17 @@ export default function LoggingIndexingPage() {
     };
   }, [url]);
 
-  // Auto-refresh
+  // Auto-refresh: always reload latest rows (page 0 desc)
   useEffect(() => {
     if (refreshInterval <= 0 || initialLoad) return;
-    const interval = setInterval(() => {
-      fetchData(page, true);
+    const interval = setInterval(async () => {
+      const data = await fetchData(0, "desc", true);
+      if (data) {
+        setPage(Math.max(0, data.totalPages - 1));
+      }
     }, refreshInterval);
     return () => clearInterval(interval);
-  }, [refreshInterval, page, fetchData, initialLoad]);
+  }, [refreshInterval, pageSize, fetchData, initialLoad]);
 
   const handlePageSizeChange = useCallback((newPageSize: number) => {
     setPageSize(newPageSize);
@@ -165,7 +171,7 @@ export default function LoggingIndexingPage() {
       <div className="mt-4">
         <IndexingLoggingGrid
           gridItemList={pageData?.content || []}
-          page={page < 0 ? 0 : page}
+          page={Math.max(0, page)}
           totalPages={pageData?.totalPages || 0}
           totalElements={pageData?.totalElements || 0}
           pageSize={pageSize}

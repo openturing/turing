@@ -71,8 +71,9 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo,
-            @RequestParam(required = false) String search) {
-        return getGeneralDocuments(serverCollectionName, page, pageSize, level, dateFrom, dateTo, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "asc") String sort) {
+        return getGeneralDocuments(serverCollectionName, page, pageSize, level, dateFrom, dateTo, search, sort);
     }
 
     @Operation(summary = "Indexing Logging")
@@ -85,9 +86,10 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String contentId,
             @RequestParam(required = false) String resultStatus,
-            @RequestParam(required = false) String url) {
+            @RequestParam(required = false) String url,
+            @RequestParam(defaultValue = "asc") String sort) {
         return getIndexingDocuments(indexingCollectionName, page, pageSize, dateFrom, dateTo,
-                status, contentId, resultStatus, url);
+                status, contentId, resultStatus, url, sort);
     }
 
     @Operation(summary = "AEM Logging")
@@ -98,13 +100,14 @@ public class TurLoggingAPI {
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo,
-            @RequestParam(required = false) String search) {
-        return getGeneralDocuments(aemCollectionName, page, pageSize, level, dateFrom, dateTo, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "asc") String sort) {
+        return getGeneralDocuments(aemCollectionName, page, pageSize, level, dateFrom, dateTo, search, sort);
     }
 
     private @NotNull Map<String, Object> getGeneralDocuments(String collectionName, int page, int pageSize,
             String level, String dateFrom, String dateTo,
-            String search) {
+            String search, String sort) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
@@ -130,10 +133,11 @@ public class TurLoggingAPI {
             long totalElements = collection.countDocuments(filter);
             int totalPages = (int) Math.ceil((double) totalElements / pageSize);
 
+            Bson sorting = "desc".equalsIgnoreCase(sort) ? Sorts.descending(DATE) : Sorts.ascending(DATE);
             int skip = page * pageSize;
             List<Document> documentList = new ArrayList<>();
             collection.find(filter)
-                    .sort(Sorts.ascending(DATE))
+                    .sort(sorting)
                     .skip(skip)
                     .limit(pageSize)
                     .forEach(documentList::add);
@@ -150,7 +154,7 @@ public class TurLoggingAPI {
     private @NotNull Map<String, Object> getIndexingDocuments(String collectionName, int page, int pageSize,
             String dateFrom, String dateTo,
             String status, String contentId,
-            String resultStatus, String url) {
+            String resultStatus, String url, String sort) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(CONTENT, Collections.emptyList());
         result.put(PAGE, page);
@@ -178,10 +182,11 @@ public class TurLoggingAPI {
             long totalElements = collection.countDocuments(filter);
             int totalPages = (int) Math.ceil((double) totalElements / pageSize);
 
+            Bson sorting = "desc".equalsIgnoreCase(sort) ? Sorts.descending(DATE) : Sorts.ascending(DATE);
             int skip = page * pageSize;
             List<Document> documentList = new ArrayList<>();
             collection.find(filter)
-                    .sort(Sorts.ascending(DATE))
+                    .sort(sorting)
                     .skip(skip)
                     .limit(pageSize)
                     .forEach(documentList::add);

@@ -10,6 +10,7 @@ export interface TurGeneralLoggingParams {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+  sort?: "asc" | "desc";
 }
 
 export interface TurIndexingLoggingParams {
@@ -21,6 +22,7 @@ export interface TurIndexingLoggingParams {
   contentId?: string;
   resultStatus?: string;
   url?: string;
+  sort?: "asc" | "desc";
 }
 
 export class TurLoggingInstanceService {
