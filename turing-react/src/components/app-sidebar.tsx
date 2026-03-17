@@ -40,21 +40,20 @@ const generativeAiItems = [
   { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },
   { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 
 const searchItems = [
   { title: "Search Engine", url: "/admin/se/instance", icon: IconZoomCode },
   { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconCompass },
-]
-const developerAndInfra = [
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
-  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
-  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
+
 ]
 
 const management = [
   { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
+  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
   { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
 
@@ -82,7 +81,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     () => [
       { label: "Generative AI", items: filterLlm(generativeAiItems) },
       { label: "Enterprise Search", items: searchItems },
-      { label: "Developer & Infrastructure", items: developerAndInfra },
       { label: "Management", items: management },
     ],
     [filterLlm]
