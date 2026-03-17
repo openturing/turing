@@ -20,7 +20,7 @@ import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
-import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.spec.McpClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.annotation.PreDestroy;
@@ -108,7 +108,7 @@ public class TurMcpToolCallbackService {
             ServerParameters params = ServerParameters.builder(server.getCommand())
                     .args(args)
                     .build();
-            return new StdioClientTransport(params, McpJsonMapper.getDefault());
+            return new StdioClientTransport(params, McpJsonDefaults.getMapper());
         }
     }
 

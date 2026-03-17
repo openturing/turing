@@ -1,23 +1,15 @@
 package com.viglet.turing.genai.provider.llm;
 
-import java.io.IOException;
 import java.util.Map;
 
-import org.apache.hc.client5.http.HttpRequestRetryStrategy;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.HttpRequest;
-import org.apache.hc.core5.http.HttpResponse;
-import org.apache.hc.core5.http.protocol.HttpContext;
-import org.apache.hc.core5.util.TimeValue;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
-import org.springframework.ai.anthropic.api.AnthropicApi;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
 
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -43,43 +35,16 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
 
-        var httpClient = HttpClients.custom()
-                .setRetryStrategy(new HttpRequestRetryStrategy() {
-                    @Override
-                    public boolean retryRequest(HttpRequest request, IOException exception,
-                            int execCount, HttpContext context) {
-                        return execCount <= 2; // retry up to 2 times on I/O errors
-                    }
-
-                    @Override
-                    public boolean retryRequest(HttpResponse response, int execCount,
-                            HttpContext context) {
-                        return false; // never retry on HTTP errors (429, 500, etc.)
-                    }
-
-                    @Override
-                    public TimeValue getRetryInterval(HttpResponse response, int execCount,
-                            HttpContext context) {
-                        return TimeValue.ofSeconds(1);
-                    }
-
-                    @Override
-                    public TimeValue getRetryInterval(HttpRequest request, IOException exception,
-                            int execCount, HttpContext context) {
-                        return TimeValue.ofSeconds(1);
-                    }
-                })
-                .build();
-        var requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        var restClientBuilder = RestClient.builder().requestFactory(requestFactory);
-
-        AnthropicApi anthropicApi = AnthropicApi.builder()
-                .baseUrl(resolveBaseUrl(firstNonBlank(
-                        optionsParser.stringValue(options, "baseUrl"),
-                        turLLMInstance.getUrl())))
+        var anthropicClientBuilder = AnthropicOkHttpClient.builder()
                 .apiKey(requireApiKey(decryptedApiKey, turLLMInstance))
-                .restClientBuilder(restClientBuilder)
-                .build();
+                .maxRetries(2);
+
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        if (!DEFAULT_BASE_URL.equals(baseUrl)) {
+            anthropicClientBuilder.baseUrl(baseUrl);
+        }
 
         AnthropicChatOptions.Builder optionsBuilder = AnthropicChatOptions.builder()
                 .model(resolveChatModelName(firstNonBlank(
@@ -106,8 +71,8 @@ public class TurAnthropicLlmProvider implements TurGenAiLlmProvider {
         }
 
         return AnthropicChatModel.builder()
-                .anthropicApi(anthropicApi)
-                .defaultOptions(optionsBuilder.build())
+                .anthropicClient(anthropicClientBuilder.build())
+                .options(optionsBuilder.build())
                 .build();
     }
 

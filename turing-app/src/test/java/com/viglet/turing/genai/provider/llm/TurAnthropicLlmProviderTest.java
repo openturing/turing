@@ -61,7 +61,6 @@ class TurAnthropicLlmProviderTest {
     @Test
     void testCreateChatModel_missingApiKey() {
         when(optionsParser.parse(any())).thenReturn(Map.of());
-        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn(null);
 
         assertThrows(IllegalStateException.class, () -> provider.createChatModel(instance, null));
     }
