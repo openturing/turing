@@ -4,7 +4,7 @@ import { ROUTES } from "@/app/routes.const"
 import { LoadProvider } from "@/components/loading-provider"
 import { SNSiteFieldGridList } from "@/components/sn/fields/field.grid.list"
 import { SubPageHeader } from "@/components/sub.page.header"
-import { useBreadcrumb } from "@/contexts/breadcrumb.context"
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
@@ -18,14 +18,9 @@ export default function SNSiteFieldListPage() {
     const [data, setSnField] = React.useState<TurSNSiteField[]>();
     const [statusFields, setStatusFields] = React.useState<TurSNStatusFields>();
     const [error, setError] = React.useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = React.useRef(false);
+    useSubPageBreadcrumb("Fields");
 
     React.useEffect(() => {
-        if (!breadcrumbAdded.current) {
-            pushItem({ label: "Fields" });
-            breadcrumbAdded.current = true;
-        }
         turSNFieldService.query(id).then(setSnField).catch(() => setError("Connection error or timeout while fetching SN field data."));
         turSNFieldService
             .getStatusFields(id)
@@ -34,15 +29,6 @@ export default function SNSiteFieldListPage() {
                 setError("Connection error or timeout while fetching SN field data.");
             });
     }, [id]);
-
-    React.useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
     return (
         <LoadProvider checkIsNotUndefined={data && statusFields} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/field`}>
             {data && statusFields && (

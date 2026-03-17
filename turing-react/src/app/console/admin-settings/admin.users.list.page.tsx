@@ -5,35 +5,21 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUsers } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const turAdminUserService = new TurAdminUserService();
 
 export default function AdminUsersListPage() {
     const [users, setUsers] = useState<TurUser[]>();
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    useSubPageBreadcrumb("Users");
 
     useEffect(() => {
-        if (!breadcrumbAdded.current) {
-            pushItem({ label: "Users" });
-            breadcrumbAdded.current = true;
-        }
         turAdminUserService.query()
             .then(setUsers)
             .catch(() => setError("Failed to load users."));
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
     }, []);
 
     const gridItemList = useGridAdapter(users, {

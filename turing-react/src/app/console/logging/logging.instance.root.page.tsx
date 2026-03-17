@@ -1,18 +1,11 @@
 import { ROUTES } from "@/app/routes.const";
 import { Page } from "@/components/page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconReceiptRupee } from "@tabler/icons-react";
-import { useEffect } from "react";
 
 export default function LoggingInstanceRootPage() {
-  const { pushItem, popItem } = useBreadcrumb();
-  useEffect(() => {
-    pushItem({ label: "Logging", href: `${ROUTES.LOGGING_INSTANCE}` });
-    return () => popItem();
-  }, []);
+  useSubPageBreadcrumb({ label: "Logging", href: `${ROUTES.LOGGING_INSTANCE}` });
   return (
     <Page turIcon={IconReceiptRupee} title="Logging" urlBase={ROUTES.LOGGING_INSTANCE} />
   )
 }
-
-

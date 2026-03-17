@@ -1,11 +1,12 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { IconDatabase, IconSettings, IconZoomCode } from "@tabler/icons-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -17,8 +18,7 @@ export default function SEInstancePage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
   const navigate = useNavigate();
   const urlBase = `${ROUTES.SE_INSTANCE}/${id}`;
 
@@ -42,30 +42,17 @@ export default function SEInstancePage() {
     if (id === "new") {
       setSeInstance({} as TurSEInstance);
       setIsNew(true);
-      if (!breadcrumbAdded.current) {
-        pushItem({ label: "New Search Engine" });
-        breadcrumbAdded.current = true;
-      }
+      setBreadcrumb([{ label: "New Search Engine" }]);
     } else {
       turSEInstanceService.get(id).then((instance) => {
         setSeInstance(instance);
-        if (!breadcrumbAdded.current) {
-          pushItem({ label: instance.title, href: `${ROUTES.SE_INSTANCE}/${instance.id}` });
-          breadcrumbAdded.current = true;
-        }
+        setBreadcrumb([{ label: instance.title, href: `${ROUTES.SE_INSTANCE}/${instance.id}` }]);
       }).catch(() => setError("Connection error or timeout while fetching SE instance."));
       setIsNew(false);
     }
   }, [id]);
 
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb(breadcrumb);
 
   async function onDelete() {
     try {

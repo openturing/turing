@@ -1,7 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model.ts";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
@@ -22,7 +23,7 @@ import {
     IconSparkles,
     IconSpeakerphone
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 const turSNSiteService = new TurSNSiteService();
@@ -38,8 +39,7 @@ export default function SNSitePage() {
     const navigate = useNavigate()
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     const data = useMemo(() => {
         if (isNew) {
@@ -139,18 +139,12 @@ export default function SNSitePage() {
                 setSnSite({} as TurSNSite);
                 setSnStatus(null);
                 setIsNew(true);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "New Site" });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "New Site" }]);
             }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation sites."));
         } else {
             turSNSiteService.get(id).then((site) => {
                 setSnSite(site);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: site.name, href: `${ROUTES.SN_INSTANCE}/${site.id}` });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: site.name, href: `${ROUTES.SN_INSTANCE}/${site.id}` }]);
             }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation site details."));
 
             turSNSiteService.getStatus(id)
@@ -163,14 +157,7 @@ export default function SNSitePage() {
         }
     }, [id]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
     async function onDelete() {
         try {

@@ -4,9 +4,10 @@ import { SNSiteMergeForm } from "@/components/sn/merge/sn.site.merge.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model";
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitMerge } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,42 +20,25 @@ export default function SNSiteMergeProvidersPage() {
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (mergeProviderId === "new") {
             turSNSiteMergeService.getStructure(id).then(setMergeProvider).catch(() => setError("Connection error or timeout while fetching merge provider structure."));
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` });
-                pushItem({ label: "New" });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label: "New" }]);
         } else {
             turSNSiteMergeService.get(id, mergeProviderId).then((merge) => {
                 setMergeProvider(merge);
-                if (!breadcrumbAdded.current) {
-                    const label = merge.providerFrom && merge.providerTo
-                        ? `${merge.providerFrom} → ${merge.providerTo}`
-                        : mergeProviderId;
-                    pushItem({ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` });
-                    pushItem({ label });
-                    breadcrumbAdded.current = true;
-                }
+                const label = merge.providerFrom && merge.providerTo
+                    ? `${merge.providerFrom} → ${merge.providerTo}`
+                    : mergeProviderId;
+                setBreadcrumb([{ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label }]);
             }).catch(() => setError("Connection error or timeout while fetching merge provider details."));
             setIsNew(false);
         }
     }, [id, mergeProviderId]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
     async function onDelete() {
         if (!mergeProvider) return;

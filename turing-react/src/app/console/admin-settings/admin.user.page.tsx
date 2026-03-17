@@ -2,11 +2,12 @@ import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { AdminUserForm } from "@/components/admin/admin.user.form";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { IconUser } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,40 +20,23 @@ export default function AdminUserPage() {
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (username === "new") {
             setUser({ username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser);
             setIsNew(true);
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` });
-                pushItem({ label: "New" });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` }, { label: "New" }]);
         } else {
             turAdminUserService.get(username).then((u) => {
                 setUser(u);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` });
-                    pushItem({ label: u.username });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` }, { label: u.username }]);
             }).catch(() => setError("Failed to load user."));
             setIsNew(false);
         }
     }, [username]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
     function onDelete() {
         turAdminUserService.delete(username).then((success) => {

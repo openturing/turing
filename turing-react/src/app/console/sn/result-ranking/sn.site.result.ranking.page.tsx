@@ -4,9 +4,10 @@ import { SNSiteResultRankingForm } from "@/components/sn/result-ranking/sn.site.
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model";
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconNumber123 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,39 +20,22 @@ export default function SNSiteResultRankingPage() {
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (resultRankingId === "new") {
             turSNRankingExpressionService.query(id).then(() => setResultRanking({} as TurSNRankingExpression)).catch(() => setError("Connection error or timeout while fetching result rankings."));
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` });
-                pushItem({ label: "New" });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: "New" }]);
         } else {
             turSNRankingExpressionService.get(id, resultRankingId).then((ranking) => {
                 setResultRanking(ranking);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` });
-                    pushItem({ label: ranking.name || resultRankingId });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: ranking.name || resultRankingId }]);
             }).catch(() => setError("Connection error or timeout while fetching result ranking details."));
             setIsNew(false);
         }
     }, [resultRankingId]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
     async function onDelete() {
         if (!resultRanking) return;
         try {

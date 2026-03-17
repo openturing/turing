@@ -4,9 +4,10 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useAemSourceService, useConnectorService } from "@/contexts/TuringServiceContext";
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitCommit } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,36 +20,23 @@ export default function IntegrationInstanceSourcePage() {
   const turIntegrationAemSourceService = useAemSourceService(id);
   const turIntegrationConnectorService = useConnectorService(id);
   const [open, setOpen] = useState(false);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
   useEffect(() => {
     if (sourceId !== "new") {
       turIntegrationAemSourceService.get(sourceId).then((source) => {
         setIntegrationAemSource(source);
-        if (!breadcrumbAdded.current && source.name) {
-          pushItem({ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` });
-          pushItem({ label: source.name });
-          breadcrumbAdded.current = true;
+        if (source.name) {
+          setBreadcrumb([{ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: source.name }]);
         }
       });
       setIsNew(false);
-    } else if (!breadcrumbAdded.current) {
-      pushItem({ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` });
-      pushItem({ label: "New" });
-      breadcrumbAdded.current = true;
+    } else {
+      setBreadcrumb([{ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: "New" }]);
     }
   }, [id, sourceId, turIntegrationAemSourceService]);
 
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb(breadcrumb);
   async function onDelete() {
     try {
       if (await turIntegrationAemSourceService.delete(integrationAemSource)) {

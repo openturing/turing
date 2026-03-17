@@ -2,11 +2,12 @@ import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { AdminGroupForm } from "@/components/admin/admin.group.form";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurGroup } from "@/models/auth/group";
 import { TurGroupService } from "@/services/auth/group.service";
 import { IconUsersGroup } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,40 +20,23 @@ export default function AdminGroupPage() {
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (groupId === "new") {
             setGroup({ id: "", name: "", description: "" } as TurGroup);
             setIsNew(true);
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` });
-                pushItem({ label: "New" });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: "New" }]);
         } else {
             turGroupService.get(groupId).then((g) => {
                 setGroup(g);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` });
-                    pushItem({ label: g.name });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: g.name }]);
             }).catch(() => setError("Failed to load group."));
             setIsNew(false);
         }
     }, [groupId]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
     function onDelete() {
         turGroupService.delete(group!.id).then((success) => {

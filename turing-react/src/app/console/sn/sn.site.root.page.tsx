@@ -1,18 +1,11 @@
 import { ROUTES } from "@/app/routes.const";
 import { Page } from "@/components/page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCompass } from "@tabler/icons-react";
-import { useEffect } from "react";
 
 export default function SNSiteRootPage() {
-  const { pushItem, popItem } = useBreadcrumb();
-  useEffect(() => {
-    pushItem({ label: "Semantic Navigation", href: `${ROUTES.SN_INSTANCE}` });
-    return () => popItem();
-  }, []);
+  useSubPageBreadcrumb({ label: "Semantic Navigation", href: `${ROUTES.SN_INSTANCE}` });
   return (
     <Page turIcon={IconCompass} title="Semantic Navigation" urlBase={ROUTES.SN_INSTANCE} urlNew={`${ROUTES.SN_INSTANCE}/new`} />
   )
 }
-
-

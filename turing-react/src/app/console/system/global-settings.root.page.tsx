@@ -1,15 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { Page } from "@/components/page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSettings } from "@tabler/icons-react";
-import { useEffect } from "react";
 
 export default function GlobalSettingsRootPage() {
-    const { pushItem, popItem } = useBreadcrumb();
-    useEffect(() => {
-        pushItem({ label: "Global Settings", href: ROUTES.GLOBAL_SETTINGS });
-        return () => popItem();
-    }, []);
+    useSubPageBreadcrumb({ label: "Global Settings", href: ROUTES.GLOBAL_SETTINGS });
     return (
         <Page turIcon={IconSettings} title="Global Settings" urlBase={ROUTES.GLOBAL_SETTINGS} />
     );

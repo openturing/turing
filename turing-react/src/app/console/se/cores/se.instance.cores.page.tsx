@@ -18,8 +18,8 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
@@ -271,24 +271,7 @@ export default function SEInstanceCoresPage() {
   const [searchParams] = useSearchParams();
   const [cores, setCores] = useState<TurSECoreInfo[]>();
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
-
-  useEffect(() => {
-    if (!breadcrumbAdded.current) {
-      pushItem({ label: "Cores" });
-      breadcrumbAdded.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb("Cores");
 
   const loadCores = () => {
     turSEInstanceService.getCores(id)

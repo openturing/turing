@@ -4,9 +4,10 @@ import { SNSiteCustomFacetForm } from "@/components/sn/facet/sn.site.custom.face
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteCustomFacet } from "@/models/sn/sn-site-custom-facet.model";
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconFilter } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,8 +20,7 @@ export default function SNSiteCustomFacetPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
   useEffect(() => {
     if (customFacetId === "new") {
@@ -33,33 +33,17 @@ export default function SNSiteCustomFacetPage() {
         items: [],
         fieldExtId: "",
       } as TurSNSiteCustomFacet);
-      if (!breadcrumbAdded.current) {
-        pushItem({ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` });
-        pushItem({ label: "New" });
-        breadcrumbAdded.current = true;
-      }
+      setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: "New" }]);
     } else {
       turSNSiteCustomFacetService.get(id, customFacetId).then((facet) => {
         setCustomFacet(facet);
-        if (!breadcrumbAdded.current) {
-          pushItem({ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` });
-          pushItem({ label: facet.name || customFacetId });
-          breadcrumbAdded.current = true;
-        }
+        setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: facet.name || customFacetId }]);
       }).catch(() => setError("Connection error or timeout while fetching custom facet details."));
       setIsNew(false);
     }
   }, [id, customFacetId]);
 
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb(breadcrumb);
 
   async function onDelete() {
     try {

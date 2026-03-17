@@ -6,33 +6,19 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
 import { TurTokenInstanceService } from "@/services/token/token.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCode } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const turTokenInstanceService = new TurTokenInstanceService();
 
 export default function TokenInstanceListPage() {
   const [tokenInstances, setTokenInstances] = useState<TurTokenInstance[]>();
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  useSubPageBreadcrumb("API Token");
 
   useEffect(() => {
-    if (!breadcrumbAdded.current) {
-      pushItem({ label: "API Token" });
-      breadcrumbAdded.current = true;
-    }
     turTokenInstanceService.query().then(setTokenInstances).catch(() => setError("Connection error or timeout while fetching api tokens."));
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
   }, []);
   const gridItemList = useGridAdapter(tokenInstances, {
     name: "title",

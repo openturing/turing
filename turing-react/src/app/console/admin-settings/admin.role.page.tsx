@@ -2,11 +2,12 @@ import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { AdminRoleForm } from "@/components/admin/admin.role.form";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurRole } from "@/models/auth/role";
 import { TurRoleService } from "@/services/auth/role.service";
 import { IconUserShield } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turRoleService = new TurRoleService();
@@ -16,40 +17,23 @@ export default function AdminRolePage() {
     const [role, setRole] = useState<TurRole>();
     const [isNew, setIsNew] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (roleId === "new") {
             setRole({ id: "", name: "", description: "" } as TurRole);
             setIsNew(true);
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` });
-                pushItem({ label: "New" });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: "New" }]);
         } else {
             turRoleService.get(roleId).then((r) => {
                 setRole(r);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` });
-                    pushItem({ label: r.name });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: r.name }]);
             }).catch(() => setError("Failed to load role."));
             setIsNew(false);
         }
     }, [roleId]);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
     return (
         <LoadProvider checkIsNotUndefined={role} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/roles/${roleId}`}>

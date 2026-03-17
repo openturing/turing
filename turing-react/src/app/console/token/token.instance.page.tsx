@@ -4,9 +4,10 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { TokenInstanceForm } from "@/components/token/token.instance.form";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
 import { TurTokenInstanceService } from "@/services/token/token.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCode } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,39 +20,22 @@ export default function TokenInstancePage() {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
   useEffect(() => {
     if (id === "new") {
       setIsNew(true);
-      if (!breadcrumbAdded.current) {
-        pushItem({ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` });
-        pushItem({ label: "New" });
-        breadcrumbAdded.current = true;
-      }
+      setBreadcrumb([{ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` }, { label: "New" }]);
     } else {
       turTokenInstanceService.get(id).then((token) => {
         setTokenInstance(token);
-        if (!breadcrumbAdded.current) {
-          pushItem({ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` });
-          pushItem({ label: token.title || id });
-          breadcrumbAdded.current = true;
-        }
+        setBreadcrumb([{ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` }, { label: token.title || id }]);
       }).catch(() => setError("Connection error or timeout while fetching Token instance."));
       setIsNew(false);
     }
   }, [id]);
 
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb(breadcrumb);
 
   function onDelete() {
     turTokenInstanceService.delete(tokenInstance).then((success) => {

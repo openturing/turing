@@ -4,9 +4,10 @@ import { SNSiteFieldForm } from "@/components/sn/fields/sn.site.field.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model";
 import { TurSNFieldService } from "@/services/sn/sn.field.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconAlignBoxCenterStretch } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,39 +20,22 @@ export default function SNSiteFieldPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
   useEffect(() => {
     if (fieldId === "new") {
       turSNFieldService.query(id).then(() => setSnField({} as TurSNSiteField)).catch(() => setError("Connection error or timeout while fetching fields."));
-      if (!breadcrumbAdded.current) {
-        pushItem({ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` });
-        pushItem({ label: "New" });
-        breadcrumbAdded.current = true;
-      }
+      setBreadcrumb([{ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: "New" }]);
     } else {
       turSNFieldService.get(id, fieldId).then((field) => {
         setSnField(field);
-        if (!breadcrumbAdded.current) {
-          pushItem({ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` });
-          pushItem({ label: field.name || fieldId });
-          breadcrumbAdded.current = true;
-        }
+        setBreadcrumb([{ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: field.name || fieldId }]);
       }).catch(() => setError("Connection error or timeout while fetching field details."));
       setIsNew(false);
     }
   }, [id, fieldId]);
 
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
+  useSubPageBreadcrumb(breadcrumb);
   async function onDelete() {
     if (!snField) return;
     try {

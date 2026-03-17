@@ -6,9 +6,9 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model";
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSpeakerphone } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -17,25 +17,11 @@ export default function SNSiteSpotlightListPage() {
     const { id } = useParams() as { id: string };
     const [spotlightList, setSpotlightList] = useState<TurSNSiteSpotlight[]>();
     const [error, setError] = useState<string | null>(null);
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    useSubPageBreadcrumb("Spotlight");
 
     useEffect(() => {
-        if (!breadcrumbAdded.current) {
-            pushItem({ label: "Spotlight" });
-            breadcrumbAdded.current = true;
-        }
         turSNSiteSpotlightService.query(id).then(setSpotlightList).catch(() => setError("Connection error or timeout while fetching spotlight."));
     }, [id]);
-
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
     const gridItemList = useGridAdapter(spotlightList, {
         name: "name",
         description: "description",

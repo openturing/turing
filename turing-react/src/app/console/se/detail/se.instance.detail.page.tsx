@@ -4,9 +4,9 @@ import { SEInstanceForm } from "@/components/se/se.instance.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSettings } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
@@ -16,14 +16,9 @@ export default function SEInstanceDetailPage() {
   const [seInstance, setSeInstance] = useState<TurSEInstance>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  useSubPageBreadcrumb("Settings");
 
   useEffect(() => {
-    if (!breadcrumbAdded.current) {
-      pushItem({ label: "Settings" });
-      breadcrumbAdded.current = true;
-    }
     if (id === "new") {
       setSeInstance({} as TurSEInstance);
     } else {
@@ -33,15 +28,6 @@ export default function SEInstanceDetailPage() {
       setIsNew(false);
     }
   }, [id]);
-
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
 
   return (
     <LoadProvider checkIsNotUndefined={seInstance} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}/detail`}>

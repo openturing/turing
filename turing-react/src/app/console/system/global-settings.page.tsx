@@ -27,8 +27,8 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { DurationInput } from "@/components/ui/duration-input";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
-import { useEffect, useRef, useState } from "react";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -50,24 +50,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
 };
 
 export default function GlobalSettingsPage() {
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
-
-    useEffect(() => {
-        if (!breadcrumbAdded.current) {
-            pushItem({ label: "Settings" });
-            breadcrumbAdded.current = true;
-        }
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb("Settings");
 
     const [settings, setSettings] = useState<TurGlobalSettings>(DEFAULT_SETTINGS);
     const form = useForm<TurGlobalSettings>({

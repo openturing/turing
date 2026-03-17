@@ -1,7 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model";
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import {
@@ -13,7 +14,7 @@ import {
     IconSettings,
     IconTools
 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -61,39 +62,25 @@ export default function IntegrationInstancePage() {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate()
     const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
 
     useEffect(() => {
         if (id === "new") {
             turIntegrationInstanceService.query().then(() => {
                 setIntegration({} as TurIntegrationInstance);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: "New Integration" });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: "New Integration" }]);
             }).catch(() => setError("Connection error or timeout while fetching Integration instances."));
             setIsNew(true);
         } else {
             turIntegrationInstanceService.get(id).then((integration) => {
                 setIntegration(integration);
-                if (!breadcrumbAdded.current) {
-                    pushItem({ label: integration.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${integration.id}` });
-                    breadcrumbAdded.current = true;
-                }
+                setBreadcrumb([{ label: integration.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${integration.id}` }]);
             }).catch(() => setError("Connection error or timeout while fetching Integration instance."));
             setIsNew(false);
         }
     }, []);
 
-    useEffect(() => {
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
-    }, []);
+    useSubPageBreadcrumb(breadcrumb);
 
 
 

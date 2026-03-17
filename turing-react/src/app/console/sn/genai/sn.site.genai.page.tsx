@@ -4,9 +4,9 @@ import { SNSiteGenAiForm } from "@/components/sn/genai/sn.site.genai.form";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSite } from "@/models/sn/sn-site.model";
 import { TurSNSiteService } from "@/services/sn/sn.service";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCpu2 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const turSNSiteService = new TurSNSiteService();
@@ -15,25 +15,11 @@ export default function SNSiteGenAIPage() {
   const { id } = useParams() as { id: string };
   const [snSite, setSnSite] = useState<TurSNSite>();
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
-  const breadcrumbAdded = useRef(false);
+  useSubPageBreadcrumb("Generative AI");
 
   useEffect(() => {
-    if (!breadcrumbAdded.current) {
-      pushItem({ label: "Generative AI" });
-      breadcrumbAdded.current = true;
-    }
     turSNSiteService.get(id).then(setSnSite).catch(() => setError("Connection error or timeout while fetching site data."));
   }, [id]);
-
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
 
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/genai`}>
