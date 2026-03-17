@@ -44,7 +44,7 @@
         <!-- Versions not managed by Spring Boot BOM -->
         <elasticsearch.version>9.3.1</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
-        <lucene.version>10.0.0</lucene.version>
+        <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <tika.version>3.2.3</tika.version>
     </properties>
@@ -371,7 +371,7 @@
             <dependency>
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
-                <version>3.51.2.0</version>
+                <version>3.51.3.0</version>
             </dependency>
             <dependency>
                 <groupId>org.jsoup</groupId>
