@@ -1,20 +1,21 @@
-import { useState } from "react"
-import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import rehypeHighlight from "rehype-highlight"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
+import { useState } from "react"
+import ReactMarkdown from "react-markdown"
+import rehypeHighlight from "rehype-highlight"
+import remarkGfm from "remark-gfm"
 import { type ChatMessage, formatFileSize } from "../chat.types"
 
 interface ChatMessageListProps {
   messages: ChatMessage[]
   loading: boolean
   assistantName: string
+  assistantAvatarUrl?: string | null
   endRef: React.RefObject<HTMLDivElement | null>
 }
 
-export function ChatMessageList({ messages, loading, assistantName, endRef }: ChatMessageListProps) {
+export function ChatMessageList({ messages, loading, assistantName, assistantAvatarUrl, endRef }: Readonly<ChatMessageListProps>) {
   const { user } = useCurrentUser()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -32,6 +33,9 @@ export function ChatMessageList({ messages, loading, assistantName, endRef }: Ch
             <GradientAvatar className="size-7">
               {message.role === "user" && user?.avatarUrl && (
                 <GradientAvatarImage src={user.avatarUrl} alt={user.username} />
+              )}
+              {message.role === "assistant" && assistantAvatarUrl && (
+                <GradientAvatarImage src={assistantAvatarUrl} alt={assistantName} />
               )}
               <GradientAvatarFallback variant={message.role === "assistant" ? "info" : "secondary"}>
                 {message.role === "assistant" ? <IconCpu2 className="size-4" /> : <IconUser className="size-4" />}

@@ -14,7 +14,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.method.MethodToolCallbackProvider;
+import java.util.HashSet;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +29,7 @@ import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurLoggingToolCallback;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
-import com.viglet.turing.genai.tool.TurSemanticNavToolService;
+import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
@@ -67,7 +67,7 @@ public class TurAIAgentChatAPI {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
-    private final TurSemanticNavToolService semanticNavToolService;
+    private final TurNativeToolService nativeToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurLLMTokenUsageService tokenUsageService;
 
@@ -75,14 +75,14 @@ public class TurAIAgentChatAPI {
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurSemanticNavToolService semanticNavToolService,
+            TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
             TurLLMTokenUsageService tokenUsageService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
-        this.semanticNavToolService = semanticNavToolService;
+        this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.tokenUsageService = tokenUsageService;
     }
@@ -129,11 +129,11 @@ public class TurAIAgentChatAPI {
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
         ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
 
-        // Semantic nav tools are always included
-        ToolCallback[] semanticCallbacks = MethodToolCallbackProvider.builder()
-                .toolObjects(semanticNavToolService)
-                .build()
-                .getToolCallbacks();
+        // Native tools: use only those selected for this agent (comma-separated in nativeTools field)
+        Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
+        ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
+                ? new ToolCallback[0]
+                : nativeToolService.getToolCallbacks(selectedNativeTools);
 
         // Only load MCP servers configured for this agent
         Set<TurMcpServer> agentMcpServers = agent.getMcpServers();
@@ -143,12 +143,12 @@ public class TurAIAgentChatAPI {
 
         ToolCallback[] allCallbacks = TurLoggingToolCallback.wrap(
                 Stream.concat(
-                        Arrays.stream(semanticCallbacks),
+                        Arrays.stream(nativeCallbacks),
                         Arrays.stream(mcpCallbacks)
                 ).toArray(ToolCallback[]::new));
 
-        log.info("[AgentChat] Agent '{}': {} tool callbacks ({} semantic + {} MCP)",
-                agent.getTitle(), allCallbacks.length, semanticCallbacks.length, mcpCallbacks.length);
+        log.info("[AgentChat] Agent '{}': {} tool callbacks ({} native + {} MCP)",
+                agent.getTitle(), allCallbacks.length, nativeCallbacks.length, mcpCallbacks.length);
 
         // Log tool names for debugging
         for (ToolCallback cb : allCallbacks) {
@@ -228,5 +228,19 @@ public class TurAIAgentChatAPI {
     private String resolveUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null ? auth.getName() : "anonymous";
+    }
+
+    private static Set<String> parseNativeTools(String nativeTools) {
+        if (nativeTools == null || nativeTools.isBlank()) {
+            return new HashSet<>();
+        }
+        Set<String> result = new HashSet<>();
+        for (String tool : nativeTools.split(",")) {
+            String trimmed = tool.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
     }
 }

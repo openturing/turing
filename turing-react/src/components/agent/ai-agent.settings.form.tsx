@@ -1,5 +1,6 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
+import { AvatarField } from "@/components/avatar-field"
 import {
   Form,
   FormControl,
@@ -15,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { IconFileText, IconInfoCircle, IconToggleLeft } from "@tabler/icons-react"
-import { useEffect } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -37,33 +38,59 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     defaultValues: value
   });
   const navigate = useNavigate()
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(value.avatarUrl ?? undefined)
 
   useEffect(() => {
     form.reset({
       ...value,
       description: value.description ?? "",
+      avatarUrl: value.avatarUrl ?? null,
       systemPrompt: value.systemPrompt ?? "",
+      nativeTools: value.nativeTools ?? null,
       llmInstances: value.llmInstances ?? [],
       mcpServers: value.mcpServers ?? [],
     });
+    setAvatarUrl(value.avatarUrl ?? undefined)
   }, [value])
 
+  const title = form.watch("title") ?? ""
+  const initials = useMemo(() => {
+    if (!title.trim()) return "AG"
+    const parts = title.trim().split(" ").filter(Boolean)
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+    return parts[0].charAt(0).toUpperCase() + (parts.at(-1)?.charAt(0).toUpperCase() ?? "")
+  }, [title])
+  const avatarSeed = useMemo(() => value.id || title.trim() || "ai-agent", [value.id, title])
+
+  const handleAvatarSelect = useCallback((url: string) => {
+    setAvatarUrl(url)
+    form.setValue("avatarUrl", url, { shouldDirty: true })
+    toast.success("Avatar selected.")
+  }, [form])
+
+  const handleAvatarRemove = useCallback(() => {
+    setAvatarUrl(undefined)
+    form.setValue("avatarUrl", null, { shouldDirty: true })
+    toast.success("Avatar removed.")
+  }, [form])
+
   async function onSubmit(agent: TurAIAgent) {
+    const payload: TurAIAgent = { ...agent, avatarUrl: avatarUrl ?? null }
     try {
       if (isNew) {
-        const result = await turAIAgentService.create(agent);
+        const result = await turAIAgentService.create(payload);
         if (result) {
-          toast.success(`The ${agent.title} AI Agent was saved`);
+          toast.success(`The ${payload.title} AI Agent was saved`);
           navigate(`${urlBase}/${result.id}/settings`);
         } else {
-          toast.error(`The ${agent.title} AI Agent was not saved`);
+          toast.error(`The ${payload.title} AI Agent was not saved`);
         }
       } else {
-        const result = await turAIAgentService.update(agent);
+        const result = await turAIAgentService.update(payload);
         if (result) {
-          toast.success(`The ${agent.title} AI Agent was updated`);
+          toast.success(`The ${payload.title} AI Agent was updated`);
         } else {
-          toast.error(`The ${agent.title} AI Agent was not updated`);
+          toast.error(`The ${payload.title} AI Agent was not updated`);
         }
       }
     } catch (error) {
@@ -79,6 +106,17 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title="General Information" description="Identity and purpose of this AI agent." />
             <SectionCard.Content>
+              <AvatarField
+                avatarUrl={avatarUrl}
+                initials={initials}
+                seed={avatarSeed}
+                onSelect={handleAvatarSelect}
+                onRemove={handleAvatarRemove}
+                className="mb-4"
+              >
+                <div className="text-sm font-medium">Agent Avatar</div>
+                <div className="text-xs text-muted-foreground">Used as the assistant avatar in this agent's chat tab.</div>
+              </AvatarField>
               <FormField
                 control={form.control}
                 name="title"
@@ -137,11 +175,6 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         onChange={field.onChange}
                         fieldRef={field.ref}
                         placeholder="You are a helpful assistant that..."
-                        variables={[
-                          { token: "{{question}}", label: "question" },
-                          { token: "{{information}}", label: "information" },
-                        ]}
-                        requireVariables
                         hint="This prompt is sent as a system message to the language model before every conversation. It defines the agent's behavior and personality."
                       />
                     </FormControl>

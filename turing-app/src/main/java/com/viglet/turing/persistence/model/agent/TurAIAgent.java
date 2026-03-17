@@ -40,12 +40,18 @@ public class TurAIAgent implements Serializable {
     @Column(nullable = true, length = 255)
     private String description;
 
+    @Column(length = 500)
+    private String avatarUrl;
+
     @Lob
     @Column(name = "system_prompt")
     private String systemPrompt;
 
     @Column(nullable = false)
     private int enabled;
+
+    @Column(length = 2000)
+    private String nativeTools;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "ai_agent_llm_instance",

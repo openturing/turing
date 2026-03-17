@@ -7,9 +7,9 @@ import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { PageHeader } from "@/components/page-header"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
+import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { IconMessageChatbot } from "@tabler/icons-react"
 import { type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
@@ -526,8 +526,8 @@ export default function ChatPage() {
           <>
             <div className="flex-1 overflow-y-auto">
               {currentAgentState.messages.length === 0
-                ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} />
-                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} endRef={agentEndRef} />
+                ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} agentAvatarUrl={activeAgent?.avatarUrl} />
+                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} assistantAvatarUrl={activeAgent?.avatarUrl} endRef={agentEndRef} />
               }
             </div>
             <div className="shrink-0 border-t bg-background">

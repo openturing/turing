@@ -1,4 +1,5 @@
 import { ModeToggle } from "@/components/mode-toggle"
+import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
@@ -60,7 +61,16 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
             onClick={() => onTabChange(`agent:${agent.id}`)}
             className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all whitespace-nowrap ${activeTab === `agent:${agent.id}` ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
-            <IconRobot className="size-4" />
+            {agent.avatarUrl ? (
+              <GradientAvatar className="size-5">
+                <GradientAvatarImage src={agent.avatarUrl} alt={agent.title} />
+                <GradientAvatarFallback className="text-[8px]">
+                  <IconRobot className="size-3" />
+                </GradientAvatarFallback>
+              </GradientAvatar>
+            ) : (
+              <IconRobot className="size-4" />
+            )}
             {agent.title}
           </button>
         ))}
