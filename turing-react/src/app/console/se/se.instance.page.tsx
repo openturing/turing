@@ -5,7 +5,7 @@ import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { IconDatabase, IconSettings, IconZoomCode } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ export default function SEInstancePage() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
   const navigate = useNavigate();
   const urlBase = `${ROUTES.SE_INSTANCE}/${id}`;
 
@@ -38,24 +39,33 @@ export default function SEInstancePage() {
   }, [isNew]);
 
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       setSeInstance({} as TurSEInstance);
       setIsNew(true);
-      pushItem({ label: "New Search Engine" });
-      added = true;
+      if (!breadcrumbAdded.current) {
+        pushItem({ label: "New Search Engine" });
+        breadcrumbAdded.current = true;
+      }
     } else {
       turSEInstanceService.get(id).then((instance) => {
         setSeInstance(instance);
-        pushItem({ label: instance.title, href: `${ROUTES.SE_INSTANCE}/${instance.id}` });
-        added = true;
+        if (!breadcrumbAdded.current) {
+          pushItem({ label: instance.title, href: `${ROUTES.SE_INSTANCE}/${instance.id}` });
+          breadcrumbAdded.current = true;
+        }
       }).catch(() => setError("Connection error or timeout while fetching SE instance."));
       setIsNew(false);
     }
-    return () => {
-      if (added) popItem();
-    };
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
 
   async function onDelete() {
     try {

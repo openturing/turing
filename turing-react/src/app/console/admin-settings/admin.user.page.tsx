@@ -6,7 +6,7 @@ import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { IconUser } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -20,24 +20,39 @@ export default function AdminUserPage() {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
     const { pushItem, popItem } = useBreadcrumb();
+    const breadcrumbAdded = useRef(false);
 
     useEffect(() => {
-        let added = false;
         if (username === "new") {
             setUser({ username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser);
             setIsNew(true);
-            pushItem({ label: "New User" });
-            added = true;
+            if (!breadcrumbAdded.current) {
+                pushItem({ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` });
+                pushItem({ label: "New" });
+                breadcrumbAdded.current = true;
+            }
         } else {
             turAdminUserService.get(username).then((u) => {
                 setUser(u);
-                pushItem({ label: u.username, href: `${ROUTES.ADMIN_ROOT}/users/${u.username}` });
-                added = true;
+                if (!breadcrumbAdded.current) {
+                    pushItem({ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` });
+                    pushItem({ label: u.username });
+                    breadcrumbAdded.current = true;
+                }
             }).catch(() => setError("Failed to load user."));
             setIsNew(false);
         }
-        return () => { if (added) popItem(); };
     }, [username]);
+
+    useEffect(() => {
+        return () => {
+            if (breadcrumbAdded.current) {
+                popItem();
+                popItem();
+                breadcrumbAdded.current = false;
+            }
+        };
+    }, []);
 
     function onDelete() {
         turAdminUserService.delete(username).then((success) => {

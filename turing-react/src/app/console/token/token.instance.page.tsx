@@ -4,8 +4,9 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { TokenInstanceForm } from "@/components/token/token.instance.form";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
 import { TurTokenInstanceService } from "@/services/token/token.service";
+import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconCode } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,15 +19,39 @@ export default function TokenInstancePage() {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { pushItem, popItem } = useBreadcrumb();
+  const breadcrumbAdded = useRef(false);
 
   useEffect(() => {
     if (id === "new") {
       setIsNew(true);
+      if (!breadcrumbAdded.current) {
+        pushItem({ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` });
+        pushItem({ label: "New" });
+        breadcrumbAdded.current = true;
+      }
     } else {
-      turTokenInstanceService.get(id).then(setTokenInstance).catch(() => setError("Connection error or timeout while fetching Token instance."));
+      turTokenInstanceService.get(id).then((token) => {
+        setTokenInstance(token);
+        if (!breadcrumbAdded.current) {
+          pushItem({ label: "API Token", href: `${ROUTES.ADMIN_TOKENS}` });
+          pushItem({ label: token.title || id });
+          breadcrumbAdded.current = true;
+        }
+      }).catch(() => setError("Connection error or timeout while fetching Token instance."));
       setIsNew(false);
     }
-  }, [id])
+  }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (breadcrumbAdded.current) {
+        popItem();
+        popItem();
+        breadcrumbAdded.current = false;
+      }
+    };
+  }, []);
 
   function onDelete() {
     turTokenInstanceService.delete(tokenInstance).then((success) => {
