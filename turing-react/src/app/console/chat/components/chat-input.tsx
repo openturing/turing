@@ -11,7 +11,7 @@ interface ChatInputProps {
   loading: boolean
   disabled: boolean
   placeholder: string
-  accentColor?: "blue" | "emerald"
+  accentColor?: "blue" | "emerald" | "violet"
   attachments?: {
     files: File[]
     onAdd: (files: FileList | File[]) => void
@@ -52,7 +52,11 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
     if (e.dataTransfer.files.length > 0 && attachments) attachments.onAdd(e.dataTransfer.files)
   }
 
-  const ringColor = accentColor === "emerald" ? "focus-within:ring-emerald-500/50 focus-within:border-emerald-500/50" : "focus-within:ring-blue-500/50 focus-within:border-blue-500/50"
+  const ringColor = accentColor === "emerald"
+    ? "focus-within:ring-emerald-500/50 focus-within:border-emerald-500/50"
+    : accentColor === "violet"
+      ? "focus-within:ring-violet-500/50 focus-within:border-violet-500/50"
+      : "focus-within:ring-blue-500/50 focus-within:border-blue-500/50"
   const hasContent = value.trim() || (attachments && attachments.files.length > 0)
 
   return (

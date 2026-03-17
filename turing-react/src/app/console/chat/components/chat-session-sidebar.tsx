@@ -1,4 +1,4 @@
-import { IconCompass, IconMessageCircle, IconTrash, IconX } from "@tabler/icons-react"
+import { IconCompass, IconMessageCircle, IconRobot, IconTrash, IconX } from "@tabler/icons-react"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import { formatRelativeTime } from "../chat.types"
 
@@ -34,7 +34,11 @@ export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, o
                 className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors flex items-start gap-2 group/session ${activeSessionId === session.id ? "bg-muted/80" : ""}`}
               >
                 <div className="shrink-0 pt-0.5">
-                  {session.tab === "chat" ? <IconMessageCircle className="size-3.5 text-muted-foreground" /> : <IconCompass className="size-3.5 text-emerald-500" />}
+                  {session.tab === "chat"
+                    ? <IconMessageCircle className="size-3.5 text-muted-foreground" />
+                    : session.tab === "semantic"
+                      ? <IconCompass className="size-3.5 text-emerald-500" />
+                      : <IconRobot className="size-3.5 text-violet-500" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="truncate">{session.title}</div>
