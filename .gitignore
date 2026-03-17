@@ -46,3 +46,6 @@ turing-js-sdk/node_modules/
 turing-js-sdk/dist/
 /.claude
 /turing-utils/scripts/index_test/__pycache__
+turing-js-sdk/js-sdk-lib/package-lock.json
+turing-js-sdk/js-sdk-sample/package-lock.json
+turing-react/package-lock.json
