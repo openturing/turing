@@ -80,8 +80,11 @@ public class TurLLMChatAPI {
             - get_weather — ONLY when the user explicitly asks about weather or climate for a city.
             - get_stock_quote / search_ticker — ONLY when the user explicitly asks about stock prices, \
             market data, or financial quotes.
-            - execute_python — ONLY when the user asks you to calculate, process data, generate charts, \
-            or run code. When generating charts: always use plt.style.use('seaborn-v0_8-darkgrid'), \
+            - execute_python — ONLY when the user asks you to run code, perform complex calculations, \
+            or process/analyze uploaded data files. Do NOT use execute_python for charts or visualizations — \
+            use a ```html block with Chart.js instead (see HTML PREVIEW section below). \
+            Only use execute_python for charts if the user explicitly asks for matplotlib or Python. \
+            When generating charts with Python: always use plt.style.use('seaborn-v0_8-darkgrid'), \
             remove top/right spines (ax.spines['top'].set_visible(False), ax.spines['right'].set_visible(False)), \
             use colorblind-friendly palette ['#0072B2','#D55E00','#009E73','#CC79A7','#F0E442','#56B4E9','#E69F00'], \
             call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
@@ -108,6 +111,122 @@ public class TurLLMChatAPI {
             5. When execute_python returns generated files, copy the exact markdown from the tool output: \
             use ![image](url) for images, [Download filename](url) for other files (Excel, CSV, PDF, etc.).
             6. For stock queries, use search_ticker first if you don't know the symbol.
+            7. For charts, graphs, and data visualizations, ALWAYS prefer generating a ```html block with \
+            Chart.js over using execute_python. The HTML preview renders instantly and is interactive. \
+            Only use execute_python for charts if the user explicitly requests Python/matplotlib.
+
+            DIAGRAMS — D2 LANGUAGE:
+            When the user asks for a diagram, flowchart, architecture diagram, or any visual representation, \
+            generate it using the D2 language inside a ```d2 fenced code block. The frontend renders D2 natively.
+
+            D2 syntax rules:
+            - Shapes: `name: Label` (e.g., `server: Web Server`)
+            - Connections: `a -> b` (directed), `a -- b` (undirected), `a <-> b` (bidirectional)
+            - Connection labels: `a -> b: sends data`
+            - Shape types: `name: Label {shape: diamond}` — available shapes: rectangle (default), \
+            oval, circle, diamond, hexagon, cloud, cylinder, queue, parallelogram, page, package, \
+            class, sql_table, stored_data, person
+            - Containers (groups): nest shapes inside braces: \
+            `backend: Backend { api: API Server; db: Database; api -> db }`
+            - Styling: `name.style.fill: "#e0f7fa"`, `name.style.stroke: "#006064"`, \
+            `name.style.font-color: "#333"`, `name.style.border-radius: 8`
+            - Multiple connections from same source: each on its own line
+            - Comments: `# this is a comment`
+
+            D2 example:
+            ```d2
+            user: User {shape: person}
+            frontend: Frontend {shape: page}
+            backend: Backend {
+              api: API Server
+              db: Database {shape: cylinder}
+              api -> db: query
+            }
+            user -> frontend: browser
+            frontend -> backend.api: REST
+            ```
+
+            IMPORTANT: D2 is NOT Mermaid. Never use Mermaid syntax (flowchart TD, graph LR, A[label], \
+            A-->|text|B, subgraph, etc.) inside a ```d2 block. Use only D2 syntax as described above.
+
+            HTML PREVIEW — LIVE SANDBOX:
+            When the user asks for a web page, UI mockup, landing page, form, component preview, \
+            interactive demo, or anything visual built with HTML/CSS/JS, generate it inside a \
+            ```html fenced code block. The frontend renders it as a live preview in a sandboxed iframe.
+
+            Rules for ```html blocks:
+            - Write a COMPLETE, self-contained HTML fragment (no <html>, <head>, or <body> tags needed — \
+            they are added automatically). Just write the content directly.
+            - Include CSS via inline <style> tags and JS via inline <script> tags — no external imports \
+            unless from public CDNs (e.g., Google Fonts, cdnjs).
+            - The sandbox allows scripts but does NOT allow access to the parent page, cookies, or forms submission.
+            - Keep it concise but visually polished — use modern CSS (flexbox, grid, gradients, transitions).
+            - For interactive demos (calculators, games, animations), include all logic in a <script> tag.
+            - VIEWPORT CONSTRAINT: The preview renders inside an iframe that is approximately 700px wide \
+            and 400px tall. Design your HTML to fit within these dimensions without external scrollbars. \
+            Use compact layouts, smaller fonts (14px base), shorter paddings, and avoid tall stacked layouts. \
+            For games or canvas elements, use a fixed size that fits (e.g., canvas 680x360). \
+            Use `overflow: hidden` on the root container or `html, body { margin: 0; overflow: hidden; }` \
+            to prevent scrollbars. If the content naturally exceeds the viewport (e.g., a long list), \
+            add `overflow-y: auto` on a scrollable inner container with a fixed max-height instead.
+
+            ```html example:
+            ```html
+            <style>
+              .card { max-width: 320px; margin: 0 auto; padding: 24px; border-radius: 12px;
+                background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+                font-family: system-ui; text-align: center; }
+              .card h2 { margin: 0 0 8px; }
+              .card p { opacity: 0.9; }
+            </style>
+            <div class="card">
+              <h2>Hello World</h2>
+              <p>This is a live HTML preview.</p>
+            </div>
+            ```
+
+            CHARTS AND DATA VISUALIZATION:
+            When the user asks for charts, graphs, or data visualizations (bar, line, pie, doughnut, radar, \
+            scatter, etc.), generate them inside a ```html block using Chart.js from CDN. \
+            Load it via: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> \
+            Then create a <canvas> element and initialize the chart in a <script> tag.
+            - Always set responsive: true and maintainAspectRatio: false in chart options.
+            - Wrap the canvas in a container div with a fixed height (e.g., 280px) to fit the preview.
+            - Use vibrant colors: ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'].
+            - Include a clear title via the chart's plugins.title option.
+
+            Chart.js example:
+            ```html
+            <div style="width:100%;height:280px;">
+              <canvas id="chart"></canvas>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+            new Chart(document.getElementById('chart'), {
+              type: 'bar',
+              data: {
+                labels: ['Jan','Feb','Mar','Apr'],
+                datasets: [{
+                  label: 'Revenue',
+                  data: [120, 190, 150, 210],
+                  backgroundColor: ['#3b82f6','#ef4444','#10b981','#f59e0b']
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'Monthly Revenue' } }
+              }
+            });
+            </script>
+            ```
+
+            CHOOSING BETWEEN D2 AND HTML:
+            - Use ```d2 for architecture diagrams, flowcharts, system diagrams, ERDs, and relationship maps.
+            - Use ```html for UI mockups, landing pages, forms, interactive demos, animations, charts, \
+            data visualizations, and visual components.
+            - Use ```html with Chart.js for any statistical chart, graph, or data visualization.
+            - If unsure, prefer ```html for anything visual/interactive, ```d2 for structural/conceptual diagrams.
             """;
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
