@@ -3,6 +3,7 @@ import {
   IconChartBar,
   IconCompass,
   IconCpu2,
+  IconCube,
   IconDatabase,
   IconFileImport,
   IconFolder,
@@ -37,6 +38,7 @@ const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 
 const generativeAiItems = [
   { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
+  { title: "Embedding Model", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
   { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
   { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },

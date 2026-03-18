@@ -1,5 +1,6 @@
 export { AdminRoutes } from "./admin.routes";
 export { AIAgentRoutes } from "./ai-agent.routes";
+export { EmbeddingModelRoutes } from "./embedding-model.routes";
 export { AssetRoutes } from "./asset.routes";
 export { ChatRoutes } from "./chat.routes";
 export { ExchangeRoutes } from "./exchange.routes";

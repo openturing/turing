@@ -7,6 +7,7 @@ import {
   AIAgentRoutes,
   AssetRoutes,
   ChatRoutes,
+  EmbeddingModelRoutes,
   ExchangeRoutes,
   GraphqlRoutes,
   IntegrationRoutes,
@@ -43,6 +44,7 @@ function App() {
                 {SERoutes}
                 {SNRoutes}
                 {StoreRoutes}
+                {EmbeddingModelRoutes}
                 {LLMRoutes}
                 {McpServerRoutes}
                 {AIAgentRoutes}

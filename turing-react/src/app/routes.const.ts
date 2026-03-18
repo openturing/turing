@@ -32,6 +32,8 @@ export const ROUTES = {
   AI_AGENT_ROOT: `${consolePath}/ai-agent`,
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
   ASSET_ROOT: `${consolePath}/asset`,
+  EMBEDDING_MODEL_ROOT: `${consolePath}/embedding-model`,
+  EMBEDDING_MODEL_INSTANCE: `${consolePath}/embedding-model/instance`,
   ADMIN_ROOT: `${consolePath}/admin-settings`,
   ADMIN_USERS: `${consolePath}/admin-settings/users`,
   ADMIN_GROUPS: `${consolePath}/admin-settings/groups`,
