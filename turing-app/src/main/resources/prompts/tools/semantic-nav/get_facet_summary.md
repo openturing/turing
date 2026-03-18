@@ -6,3 +6,5 @@ Args:
     siteName (str): Required. Site name.
     locale (str): Required. Search locale (e.g., 'pt_BR' or 'en').
     query (str): Optional. The search term to scope the summary. Use '*' for the entire site.
+Returns:
+    A summary of all facet fields and their value counts for the query.

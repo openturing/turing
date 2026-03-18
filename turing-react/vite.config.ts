@@ -14,15 +14,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            // Force Recharts and D3 into their own "charts" chunk
-            if (id.includes("recharts") || id.includes("d3")) {
-              return "vendor-charts";
-            }
-            // Force UI components (Radix) into their own chunk
-            if (id.includes("@radix-ui")) {
-              return "vendor-ui";
-            }
-            // Everything else in node_modules goes to a general vendor
+            if (id.includes("@terrastruct/d2")) return "vendor-d2";
+            if (id.includes("recharts") || id.includes("d3")) return "vendor-charts";
+            if (id.includes("@radix-ui")) return "vendor-ui";
+            if (id.includes("react-markdown") || id.includes("rehype") || id.includes("remark") || id.includes("unified") || id.includes("hast") || id.includes("mdast") || id.includes("micromark")) return "vendor-markdown";
+            if (id.includes("highlight.js")) return "vendor-highlight";
             return "vendor-lib";
           }
         },

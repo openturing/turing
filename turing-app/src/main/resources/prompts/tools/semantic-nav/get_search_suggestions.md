@@ -5,3 +5,5 @@ Args:
     siteName (str): Required. Name of the site.
     locale (str): Required. Use 'pt_BR' or 'en'.
     term (str): Required. The search term to get suggestions for.
+Returns:
+    Autocomplete suggestions and spelling corrections.

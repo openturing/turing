@@ -12,3 +12,5 @@ Args:
     locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
     text (str): Required. A phrase or sentence whose words will be searched individually
         (e.g., 'cursos engenharia computação', 'professores matemática').
+Returns:
+    Matching facet values for each word in the input phrase.

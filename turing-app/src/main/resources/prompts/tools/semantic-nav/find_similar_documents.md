@@ -4,3 +4,5 @@ Args:
     siteName (str): Required. Name of the site.
     locale (str): Required. Use 'pt_BR' or 'en'.
     documentId (str): Required. The document ID to find similar documents for.
+Returns:
+    A list of semantically similar documents with title, URL, and snippet.

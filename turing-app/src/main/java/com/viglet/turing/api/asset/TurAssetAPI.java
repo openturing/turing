@@ -48,6 +48,32 @@ public class TurAssetAPI {
 				.body(new InputStreamResource(stream));
 	}
 
+	@Operation(summary = "Preview an asset inline (no download header)")
+	@GetMapping("/preview")
+	public ResponseEntity<InputStreamResource> preview(@RequestParam String objectName) {
+		StatObjectResponse stat = turMinioService.statObject(objectName);
+		InputStream stream = turMinioService.downloadObject(objectName);
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + extractFileName(objectName) + "\"")
+				.header("X-Frame-Options", "ALLOWALL")
+				.header("Content-Security-Policy", "frame-ancestors *")
+				.contentType(MediaType.parseMediaType(stat.contentType()))
+				.contentLength(stat.size())
+				.body(new InputStreamResource(stream));
+	}
+
+	@Operation(summary = "Get asset metadata")
+	@GetMapping("/metadata")
+	public TurAssetItem metadata(@RequestParam String objectName) {
+		StatObjectResponse stat = turMinioService.statObject(objectName);
+		return new TurAssetItem(
+				objectName,
+				stat.size(),
+				stat.contentType(),
+				stat.lastModified() != null ? stat.lastModified().toString() : "",
+				false);
+	}
+
 	@Operation(summary = "Upload assets")
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> upload(@RequestParam("files") List<MultipartFile> files,

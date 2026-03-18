@@ -10,3 +10,5 @@ Args:
     siteName (str): Required. The site name.
     locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
     term (str): Required. A single word or short term to look for inside facet values.
+Returns:
+    Matching facet values across all fields for the given term.

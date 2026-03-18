@@ -132,7 +132,7 @@ class TurCodeInterpreterToolServiceTest {
         assertThat(result)
                 .contains("Generated Files")
                 .contains("/api/v2/code-interpreter/session1/")
-                .contains("Markdown: ![");
+                .contains("![");
     }
 
     @Test

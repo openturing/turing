@@ -7,3 +7,5 @@ Args:
     locale (str): Required. Use 'pt_BR' or 'en'.
     documentId (str): Required. The document ID to search within.
     termsToHighlight (str): Required. The search terms to find within the document.
+Returns:
+    Highlighted passages where the search terms appear. If highlighting is disabled on the site, fall back to get_document_details.

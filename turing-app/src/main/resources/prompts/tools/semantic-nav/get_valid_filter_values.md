@@ -5,3 +5,5 @@ Args:
     siteName (str): Required. Name of the site.
     locale (str): Required. Use 'pt_BR' or 'en'.
     fieldName (str): Required. The facet field name (e.g., 'temas', 'author', 'type').
+Returns:
+    The valid string values for the specified facet field.

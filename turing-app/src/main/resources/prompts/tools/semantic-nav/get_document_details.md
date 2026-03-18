@@ -5,3 +5,5 @@ Args:
     siteName (str): Required. Name of the site.
     locale (str): Required. Use 'pt_BR' or 'en'.
     documentId (str): Required. The document ID from a previous search result.
+Returns:
+    The full text content and complete metadata of the document.

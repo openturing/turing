@@ -31,4 +31,15 @@ export class TurAssetService {
   downloadUrl(objectName: string): string {
     return `${axios.defaults.baseURL ?? ""}/asset/download?objectName=${encodeURIComponent(objectName)}`;
   }
+
+  previewUrl(objectName: string): string {
+    return `${axios.defaults.baseURL ?? ""}/asset/preview?objectName=${encodeURIComponent(objectName)}`;
+  }
+
+  async metadata(objectName: string): Promise<TurAssetItem> {
+    const response = await axios.get<TurAssetItem>("/asset/metadata", {
+      params: { objectName },
+    });
+    return response.data;
+  }
 }

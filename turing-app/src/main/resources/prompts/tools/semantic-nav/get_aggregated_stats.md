@@ -8,3 +8,5 @@ Args:
     query (str): Required. The search query to scope the aggregation (e.g., 'Pos-Graduacao', '*' for all).
     facetField (str): Required. The field to aggregate by (e.g., 'area_conhecimento', 'type', 'author').
     filterQueries (str): Optional. Additional filters. Format: field_name:VALUE. Separate with pipe (|).
+Returns:
+    Counts and distributions grouped by the specified facet field.

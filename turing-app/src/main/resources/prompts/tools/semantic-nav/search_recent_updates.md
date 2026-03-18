@@ -8,3 +8,5 @@ Args:
     query (str): Required. The topic to search for. Use '*' for all recent content.
     rows (int): Optional. Number of recent results. Defaults to 5.
     filterQueries (str): Optional. Additional filters. Format: field_name:VALUE. Separate with pipe (|).
+Returns:
+    The most recent documents matching the query, sorted by date.
