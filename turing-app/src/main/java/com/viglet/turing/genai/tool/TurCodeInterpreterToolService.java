@@ -203,19 +203,15 @@ public class TurCodeInterpreterToolService {
 
         if (generatedFiles != null && generatedFiles.length > 0) {
             result.append("\n--- Generated Files ---\n");
+            result.append("IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
             for (File f : generatedFiles) {
                 String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName();
                 boolean isImage = isImageFile(f.getName());
-                result.append("- ").append(f.getName())
-                        .append(" (").append(formatFileSize(f.length())).append(")")
-                        .append("\n  URL: ").append(fileUrl)
-                        .append("\n  Markdown: ");
                 if (isImage) {
-                    result.append("![").append(f.getName()).append("](").append(fileUrl).append(")");
+                    result.append("![").append(f.getName()).append("](").append(fileUrl).append(")\n");
                 } else {
-                    result.append("[Download ").append(f.getName()).append("](").append(fileUrl).append(")");
+                    result.append("[Download ").append(f.getName()).append("](").append(fileUrl).append(")\n");
                 }
-                result.append("\n");
             }
         }
 
