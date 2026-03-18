@@ -32,11 +32,16 @@ public class TurMinioService {
 		this.configProperties = configProperties;
 	}
 
+	public boolean isEnabled() {
+		TurMinioProperty minio = configProperties.getMinio();
+		return minio != null && minio.isEnabled();
+	}
+
 	@PostConstruct
 	void init() {
 		TurMinioProperty minio = configProperties.getMinio();
-		if (minio == null || minio.getEndpoint() == null) {
-			log.warn("MinIO is not configured (turing.minio.endpoint is missing). Asset features are disabled.");
+		if (minio == null || !minio.isEnabled() || minio.getEndpoint() == null) {
+			log.info("MinIO is disabled (turing.minio.enabled=false). Asset features are disabled.");
 			return;
 		}
 		this.minioClient = MinioClient.builder()

@@ -12,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TurMinioProperty {
+	private boolean enabled;
 	private String endpoint;
 	private String accessKey;
 	private String secretKey;

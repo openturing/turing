@@ -31,6 +31,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { TurFeaturesService } from "@/services/system/features.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
@@ -62,10 +63,12 @@ const management = [
 ]
 
 const turLLMInstanceService = new TurLLMInstanceService();
+const turFeaturesService = new TurFeaturesService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
+  const [minioEnabled, setMinioEnabled] = React.useState(false);
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -73,6 +76,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
+    turFeaturesService.getFeatures().then((features) => {
+      setMinioEnabled(features.minioEnabled);
+    }).catch(() => setMinioEnabled(false));
   }, [])
 
   const filterLlm = React.useCallback(
@@ -81,13 +87,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [hasEnabledLlm]
   )
 
+  const filteredManagement = React.useMemo(
+    () => minioEnabled ? management : management.filter((item) => item.title !== "Assets"),
+    [minioEnabled]
+  )
+
   const navGroups = React.useMemo(
     () => [
       { label: "Generative AI", items: filterLlm(generativeAiItems) },
       { label: "Enterprise Search", items: searchItems },
-      { label: "Management", items: management },
+      { label: "Management", items: filteredManagement },
     ],
-    [filterLlm]
+    [filterLlm, filteredManagement]
   )
   return (
     <Sidebar collapsible="icon" {...props}>

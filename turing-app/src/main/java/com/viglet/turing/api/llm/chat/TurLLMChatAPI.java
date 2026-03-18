@@ -67,166 +67,54 @@ public class TurLLMChatAPI {
     private static final Set<String> IMAGE_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp");
 
-    private static final String SYSTEM_PROMPT = """
-            You are a helpful, friendly AI assistant. Your primary job is to have natural conversations \
-            with the user. For greetings, general questions, opinions, explanations, or any topic that \
-            does NOT require real-time data, just respond directly and naturally — do NOT use any tool.
+    // ── System prompt: modular sections ──
 
-            You also have access to optional tools. ONLY use them when the user's request clearly \
-            requires one. Here is when to use each tool:
+    private static final String BASE_PROMPT = """
+            You are a helpful, friendly AI assistant. Respond naturally and conversationally. \
+            If the user asks in a specific language, respond in that same language.
+            """;
 
-            - fetch_webpage / extract_links — ONLY when the user gives you a specific URL (http/https). \
-            Never treat normal text as a URL.
-            - get_weather — ONLY when the user explicitly asks about weather or climate for a city.
-            - get_stock_quote / search_ticker — ONLY when the user explicitly asks about stock prices, \
-            market data, or financial quotes.
-            - execute_python — ONLY when the user asks you to run code, perform complex calculations, \
-            or process/analyze uploaded data files. Do NOT use execute_python for charts or visualizations — \
-            use a ```html block with Chart.js instead (see HTML PREVIEW section below). \
+    private static final String TOOLS_PROMPT = """
+
+            TOOL USAGE RULES:
+            - Default behavior: respond conversationally. Most messages do NOT need tools.
+            - Only use a tool when you are certain the user wants real-time or computed data.
+            - Each tool has its own description — read it carefully before calling.
+            - After using a tool, summarize the results clearly.
+            - For execute_python: do NOT use it for charts/visualizations — use ```html with Chart.js instead. \
             Only use execute_python for charts if the user explicitly asks for matplotlib or Python. \
-            When generating charts with Python: always use plt.style.use('seaborn-v0_8-darkgrid'), \
-            remove top/right spines (ax.spines['top'].set_visible(False), ax.spines['right'].set_visible(False)), \
-            use colorblind-friendly palette ['#0072B2','#D55E00','#009E73','#CC79A7','#F0E442','#56B4E9','#E69F00'], \
-            call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
-            Do NOT call plt.show(). \
-            CRITICAL: This is NOT a Jupyter notebook — bare expressions on the last line produce NO output. \
-            You MUST wrap every result in print(). For example, write print(future_day), NOT just future_day. \
-            If the code produces errors or warnings, analyze the issue, fix the code, and call \
-            execute_python again with the corrected version (up to 3 retries).
-            - search_images — ONLY when the user asks to see, show, or find a photo, picture, or image \
-            of something. Before calling this tool, act as a Prompt Engineer: transform the user's simple \
-            request into an optimized English super-query by enriching the subject with texture/color/state \
-            adjectives, placing it in a specific scene, and appending photography terms (shallow depth of field, \
-            8k, volumetric lighting, sharp focus, cinematic style). Pass ONLY the optimized English query. \
-            After getting results, display images using markdown: ![description](image_url).
-            - get_current_time — ONLY when the user asks what time it is, the current date, or the \
-            date/time in a specific city or timezone. Map city names to IANA timezone identifiers \
-            (e.g., 'São Paulo' → 'America/Sao_Paulo', 'Tokyo' → 'Asia/Tokyo'). Use 'UTC' as default.
+            When execute_python returns files, use ![image](url) for images, [Download](url) for other files.
+            - For search_images: before calling, optimize the query as a Prompt Engineer — enrich with \
+            adjectives, scene context, and photography terms. Display results as ![description](url).
+            """;
 
-            IMPORTANT RULES:
-            1. DEFAULT BEHAVIOR: Respond conversationally. Most messages do NOT need tools.
-            2. If the user asks in a specific language, respond in that same language.
-            3. Only use a tool when you are certain the user wants real-time or computed data.
-            4. After using a tool, summarize the results clearly.
-            5. When execute_python returns generated files, copy the exact markdown from the tool output: \
-            use ![image](url) for images, [Download filename](url) for other files (Excel, CSV, PDF, etc.).
-            6. For stock queries, use search_ticker first if you don't know the symbol.
-            7. For charts, graphs, and data visualizations, ALWAYS prefer generating a ```html block with \
-            Chart.js over using execute_python. The HTML preview renders instantly and is interactive. \
-            Only use execute_python for charts if the user explicitly requests Python/matplotlib.
+    private static final String RENDER_PROMPT = """
 
-            DIAGRAMS — D2 LANGUAGE:
-            When the user asks for a diagram, flowchart, architecture diagram, or any visual representation, \
-            generate it using the D2 language inside a ```d2 fenced code block. The frontend renders D2 natively.
+            RICH CONTENT — The frontend renders special code blocks natively:
 
-            D2 syntax rules:
-            - Shapes: `name: Label` (e.g., `server: Web Server`)
-            - Connections: `a -> b` (directed), `a -- b` (undirected), `a <-> b` (bidirectional)
-            - Connection labels: `a -> b: sends data`
-            - Shape types: `name: Label {shape: diamond}` — available shapes: rectangle (default), \
-            oval, circle, diamond, hexagon, cloud, cylinder, queue, parallelogram, page, package, \
-            class, sql_table, stored_data, person
-            - Containers (groups): nest shapes inside braces: \
-            `backend: Backend { api: API Server; db: Database; api -> db }`
-            - Styling: `name.style.fill: "#e0f7fa"`, `name.style.stroke: "#006064"`, \
-            `name.style.font-color: "#333"`, `name.style.border-radius: 8`
-            - Multiple connections from same source: each on its own line
-            - Comments: `# this is a comment`
+            ■ ```d2 — DIAGRAMS (D2 language, NOT Mermaid):
+            Shapes: `name: Label`, `name: Label {shape: cylinder}`
+            Connections: `a -> b: label`, `a <-> b`, `a -- b`
+            Containers: `group: { a: X; b: Y; a -> b }`
+            Shapes: rectangle, oval, circle, diamond, hexagon, cloud, cylinder, queue, \
+            parallelogram, page, package, class, sql_table, stored_data, person
+            Styling: `name.style.fill: "#e0f7fa"`
+            NEVER use Mermaid syntax (flowchart TD, A[label], A-->|text|B) in ```d2 blocks.
 
-            D2 example:
-            ```d2
-            user: User {shape: person}
-            frontend: Frontend {shape: page}
-            backend: Backend {
-              api: API Server
-              db: Database {shape: cylinder}
-              api -> db: query
-            }
-            user -> frontend: browser
-            frontend -> backend.api: REST
-            ```
+            ■ ```html — LIVE PREVIEW (sandboxed iframe, ~700x400px):
+            Self-contained HTML fragment (no <html>/<body> needed). Use inline <style> and <script>. \
+            External CDNs allowed (Google Fonts, cdnjs, jsdelivr). Fit within viewport: compact layouts, \
+            overflow:hidden on root, scroll on inner containers if needed. Canvas: max 680x360.
 
-            IMPORTANT: D2 is NOT Mermaid. Never use Mermaid syntax (flowchart TD, graph LR, A[label], \
-            A-->|text|B, subgraph, etc.) inside a ```d2 block. Use only D2 syntax as described above.
-
-            HTML PREVIEW — LIVE SANDBOX:
-            When the user asks for a web page, UI mockup, landing page, form, component preview, \
-            interactive demo, or anything visual built with HTML/CSS/JS, generate it inside a \
-            ```html fenced code block. The frontend renders it as a live preview in a sandboxed iframe.
-
-            Rules for ```html blocks:
-            - Write a COMPLETE, self-contained HTML fragment (no <html>, <head>, or <body> tags needed — \
-            they are added automatically). Just write the content directly.
-            - Include CSS via inline <style> tags and JS via inline <script> tags — no external imports \
-            unless from public CDNs (e.g., Google Fonts, cdnjs).
-            - The sandbox allows scripts but does NOT allow access to the parent page, cookies, or forms submission.
-            - Keep it concise but visually polished — use modern CSS (flexbox, grid, gradients, transitions).
-            - For interactive demos (calculators, games, animations), include all logic in a <script> tag.
-            - VIEWPORT CONSTRAINT: The preview renders inside an iframe that is approximately 700px wide \
-            and 400px tall. Design your HTML to fit within these dimensions without external scrollbars. \
-            Use compact layouts, smaller fonts (14px base), shorter paddings, and avoid tall stacked layouts. \
-            For games or canvas elements, use a fixed size that fits (e.g., canvas 680x360). \
-            Use `overflow: hidden` on the root container or `html, body { margin: 0; overflow: hidden; }` \
-            to prevent scrollbars. If the content naturally exceeds the viewport (e.g., a long list), \
-            add `overflow-y: auto` on a scrollable inner container with a fixed max-height instead.
-
-            ```html example:
-            ```html
-            <style>
-              .card { max-width: 320px; margin: 0 auto; padding: 24px; border-radius: 12px;
-                background: linear-gradient(135deg, #667eea, #764ba2); color: white;
-                font-family: system-ui; text-align: center; }
-              .card h2 { margin: 0 0 8px; }
-              .card p { opacity: 0.9; }
-            </style>
-            <div class="card">
-              <h2>Hello World</h2>
-              <p>This is a live HTML preview.</p>
-            </div>
-            ```
-
-            CHARTS AND DATA VISUALIZATION:
-            When the user asks for charts, graphs, or data visualizations (bar, line, pie, doughnut, radar, \
-            scatter, etc.), generate them inside a ```html block using Chart.js from CDN. \
-            Load it via: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> \
-            Then create a <canvas> element and initialize the chart in a <script> tag.
-            - Always set responsive: true and maintainAspectRatio: false in chart options.
-            - Wrap the canvas in a container div with a fixed height (e.g., 280px) to fit the preview.
-            - Use vibrant colors: ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'].
-            - Include a clear title via the chart's plugins.title option.
-
-            Chart.js example:
-            ```html
-            <div style="width:100%;height:280px;">
-              <canvas id="chart"></canvas>
-            </div>
+            ■ CHARTS — Use ```html with Chart.js from CDN:
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script>
-            new Chart(document.getElementById('chart'), {
-              type: 'bar',
-              data: {
-                labels: ['Jan','Feb','Mar','Apr'],
-                datasets: [{
-                  label: 'Revenue',
-                  data: [120, 190, 150, 210],
-                  backgroundColor: ['#3b82f6','#ef4444','#10b981','#f59e0b']
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { title: { display: true, text: 'Monthly Revenue' } }
-              }
-            });
-            </script>
-            ```
+            responsive:true, maintainAspectRatio:false, container height ~280px. \
+            Colors: ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'].
 
-            CHOOSING BETWEEN D2 AND HTML:
-            - Use ```d2 for architecture diagrams, flowcharts, system diagrams, ERDs, and relationship maps.
-            - Use ```html for UI mockups, landing pages, forms, interactive demos, animations, charts, \
-            data visualizations, and visual components.
-            - Use ```html with Chart.js for any statistical chart, graph, or data visualization.
-            - If unsure, prefer ```html for anything visual/interactive, ```d2 for structural/conceptual diagrams.
+            CHOOSING FORMAT:
+            - ```d2 → architecture, flowcharts, ERDs, system diagrams
+            - ```html → UI mockups, demos, games, animations, landing pages
+            - ```html + Chart.js → bar, line, pie, doughnut, radar, scatter charts
             """;
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
@@ -320,7 +208,10 @@ public class TurLLMChatAPI {
         ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
 
         List<Message> springMessages = new ArrayList<>();
-        springMessages.add(new SystemMessage(SYSTEM_PROMPT));
+        String systemPrompt = turLLMInstance.isToolsEnabled()
+                ? BASE_PROMPT + TOOLS_PROMPT + RENDER_PROMPT
+                : BASE_PROMPT + RENDER_PROMPT;
+        springMessages.add(new SystemMessage(systemPrompt));
         springMessages.addAll(buildMessages(request.messages(), files));
 
         if (turLLMInstance.isToolsEnabled()) {
