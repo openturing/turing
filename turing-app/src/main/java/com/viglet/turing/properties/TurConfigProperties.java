@@ -14,5 +14,6 @@ public class TurConfigProperties {
 	private boolean keycloak;
 	private String allowedOrigins;
 	private TurSolrProperty solr;
+	private TurMinioProperty minio;
 
 }

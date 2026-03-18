@@ -5,6 +5,7 @@ import LoginPage from "./app/login/login.page"
 import {
   AdminRoutes,
   AIAgentRoutes,
+  AssetRoutes,
   ChatRoutes,
   ExchangeRoutes,
   GraphqlRoutes,
@@ -49,6 +50,7 @@ function App() {
                 {LoggingRoutes}
                 {ExchangeRoutes}
                 {GraphqlRoutes}
+                {AssetRoutes}
                 {ChatRoutes}
                 {TokenUsageRoutes}
                 {UserRoutes}

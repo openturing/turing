@@ -46,6 +46,7 @@
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <minio.version>8.5.17</minio.version>
         <tika.version>3.2.3</tika.version>
     </properties>
     <build>
@@ -534,6 +535,11 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
                 <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

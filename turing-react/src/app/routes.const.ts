@@ -31,6 +31,7 @@ export const ROUTES = {
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
   AI_AGENT_ROOT: `${consolePath}/ai-agent`,
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
+  ASSET_ROOT: `${consolePath}/asset`,
   ADMIN_ROOT: `${consolePath}/admin-settings`,
   ADMIN_USERS: `${consolePath}/admin-settings/users`,
   ADMIN_GROUPS: `${consolePath}/admin-settings/groups`,

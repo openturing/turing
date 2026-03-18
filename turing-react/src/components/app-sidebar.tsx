@@ -5,6 +5,7 @@ import {
   IconCpu2,
   IconDatabase,
   IconFileImport,
+  IconFolder,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
@@ -52,6 +53,7 @@ const searchItems = [
 ]
 
 const management = [
+  { title: "Assets", url: ROUTES.ASSET_ROOT, icon: IconFolder },
   { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
   { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
   { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
