@@ -1,6 +1,7 @@
 package com.viglet.turing.api.asset;
 
 import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
+import com.viglet.turing.service.asset.TurAssetEvent;
 import com.viglet.turing.service.asset.TurAssetTrainingService;
 import com.viglet.turing.service.asset.TurAssetTrainingState;
 import com.viglet.turing.service.asset.TurAssetTrainingStatus;
@@ -31,10 +32,13 @@ import java.util.Map;
 public class TurAssetAPI {
 	private final TurMinioService turMinioService;
 	private final TurAssetTrainingService turAssetTrainingService;
+	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-	public TurAssetAPI(TurMinioService turMinioService, TurAssetTrainingService turAssetTrainingService) {
+	public TurAssetAPI(TurMinioService turMinioService, TurAssetTrainingService turAssetTrainingService,
+					   org.springframework.context.ApplicationEventPublisher eventPublisher) {
 		this.turMinioService = turMinioService;
 		this.turAssetTrainingService = turAssetTrainingService;
+		this.eventPublisher = eventPublisher;
 	}
 
 	@Operation(summary = "List assets in a folder")
@@ -87,6 +91,9 @@ public class TurAssetAPI {
 									   @RequestParam(defaultValue = "") String prefix) {
 		for (MultipartFile file : files) {
 			turMinioService.uploadObject(file, prefix);
+			String objectName = (prefix != null && !prefix.isBlank() ? prefix : "") + file.getOriginalFilename();
+			String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+			eventPublisher.publishEvent(TurAssetEvent.uploaded(objectName, contentType, file.getSize()));
 		}
 		return ResponseEntity.ok().build();
 	}
@@ -102,6 +109,7 @@ public class TurAssetAPI {
 	@DeleteMapping
 	public ResponseEntity<Void> delete(@RequestParam String objectName) {
 		turMinioService.deleteObject(objectName);
+		eventPublisher.publishEvent(TurAssetEvent.deleted(objectName));
 		return ResponseEntity.ok().build();
 	}
 

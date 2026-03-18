@@ -1,7 +1,10 @@
 package com.viglet.turing.genai.provider.store;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chroma.vectorstore.ChromaApi;
 import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -12,6 +15,7 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
+@Slf4j
 @Component
 public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
@@ -36,33 +40,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String decryptedCredential) {
 
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-
-        ChromaApi chromaApi = ChromaApi.builder()
-                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl(),
-                        "http://localhost:8000"))
-                .build();
-
-        if (StringUtils.hasText(decryptedCredential)) {
-            if (decryptedCredential.startsWith("basic:")) {
-                String[] credentials = decryptedCredential.substring("basic:".length()).split(":", 2);
-                if (credentials.length == 2) {
-                    chromaApi = chromaApi.withBasicAuthCredentials(credentials[0], credentials[1]);
-                }
-            } else if (decryptedCredential.startsWith("token:")) {
-                chromaApi = chromaApi.withKeyToken(decryptedCredential.substring("token:".length()));
-            } else {
-                chromaApi = chromaApi.withKeyToken(decryptedCredential);
-            }
-        } else {
-            String keyToken = optionsParser.stringValue(options, "keyToken");
-            String basicUsername = optionsParser.stringValue(options, "basicUsername");
-            String basicPassword = optionsParser.stringValue(options, "basicPassword");
-            if (StringUtils.hasText(keyToken)) {
-                chromaApi = chromaApi.withKeyToken(keyToken);
-            } else if (StringUtils.hasText(basicUsername) && StringUtils.hasText(basicPassword)) {
-                chromaApi = chromaApi.withBasicAuthCredentials(basicUsername, basicPassword);
-            }
-        }
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
 
         String collectionName = firstNonBlank(
                 optionsParser.stringValue(options, "collectionName"),
@@ -89,6 +67,128 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             }
         }
         return null;
+    }
+
+    @Override
+    public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
+                                                         String decryptedCredential) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+
+        try {
+            List<ChromaApi.Collection> collections = chromaApi.listCollections(tenantName, databaseName);
+            List<TurStoreCollectionInfo> result = new ArrayList<>();
+            for (ChromaApi.Collection col : collections) {
+                long count = 0;
+                try {
+                    Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
+                    if (c != null) count = c;
+                } catch (Exception e) {
+                    log.warn("Failed to count embeddings for collection: {}", col.name(), e);
+                }
+                result.add(new TurStoreCollectionInfo(col.name(), col.id(), count));
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to list Chroma collections", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public void clearCollection(TurStoreInstance turStoreInstance,
+                                 String decryptedCredential,
+                                 String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        try {
+            // Delete and recreate the collection to clear all embeddings
+            chromaApi.deleteCollection(tenantName, databaseName, collectionName);
+            chromaApi.createCollection(tenantName, databaseName,
+                    new ChromaApi.CreateCollectionRequest(collectionName));
+            log.info("[Chroma] Cleared collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[Chroma] Failed to clear collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to clear collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteCollection(TurStoreInstance turStoreInstance,
+                                  String decryptedCredential,
+                                  String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        try {
+            chromaApi.deleteCollection(tenantName, databaseName, collectionName);
+            log.info("[Chroma] Deleted collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[Chroma] Failed to delete collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to delete collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteByMetadata(TurStoreInstance turStoreInstance,
+                                  String decryptedCredential,
+                                  String collectionName,
+                                  String metadataKey,
+                                  String metadataValue) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+
+        try {
+            // Get the collection to find its ID
+            ChromaApi.Collection collection = chromaApi.getCollection(tenantName, databaseName, collectionName);
+            if (collection == null) return;
+
+            Map<String, Object> where = Map.of(metadataKey, metadataValue);
+            var deleteRequest = new ChromaApi.DeleteEmbeddingsRequest(List.of(), where);
+            int deleted = chromaApi.deleteEmbeddings(tenantName, databaseName, collection.id(), deleteRequest);
+            log.info("[Chroma] Deleted {} embeddings where {}={} from collection {}",
+                    deleted, metadataKey, metadataValue, collectionName);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to delete embeddings by metadata: {}={}", metadataKey, metadataValue, e);
+        }
+    }
+
+    private ChromaApi buildChromaApi(TurStoreInstance turStoreInstance, String decryptedCredential,
+                                      Map<String, Object> options) {
+        ChromaApi chromaApi = ChromaApi.builder()
+                .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl(),
+                        "http://localhost:8000"))
+                .build();
+
+        if (StringUtils.hasText(decryptedCredential)) {
+            if (decryptedCredential.startsWith("basic:")) {
+                String[] credentials = decryptedCredential.substring("basic:".length()).split(":", 2);
+                if (credentials.length == 2) {
+                    chromaApi = chromaApi.withBasicAuthCredentials(credentials[0], credentials[1]);
+                }
+            } else if (decryptedCredential.startsWith("token:")) {
+                chromaApi = chromaApi.withKeyToken(decryptedCredential.substring("token:".length()));
+            } else {
+                chromaApi = chromaApi.withKeyToken(decryptedCredential);
+            }
+        } else {
+            String keyToken = optionsParser.stringValue(options, "keyToken");
+            String basicUsername = optionsParser.stringValue(options, "basicUsername");
+            String basicPassword = optionsParser.stringValue(options, "basicPassword");
+            if (StringUtils.hasText(keyToken)) {
+                chromaApi = chromaApi.withKeyToken(keyToken);
+            } else if (StringUtils.hasText(basicUsername) && StringUtils.hasText(basicPassword)) {
+                chromaApi = chromaApi.withBasicAuthCredentials(basicUsername, basicPassword);
+            }
+        }
+        return chromaApi;
     }
 
     private String firstNonBlank(String... values) {

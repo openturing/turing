@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
   FormControl,
@@ -32,7 +31,6 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
@@ -166,7 +164,6 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const form = useForm<TurStoreInstance>({
     defaultValues: value
   });
-  const [open, setOpen] = useState(false);
   const [storeProviderOptionsDraft, setStoreProviderOptionsDraft] = useState<StoreProviderOptionsDraft>(
     emptyStoreProviderOptionsDraft()
   )
@@ -268,38 +265,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     }
   }
 
-  async function onDelete() {
-    console.log("delete");
-    try {
-      if (await turStoreInstanceService.delete(value)) {
-        toast.success(`The ${value.title} Embedding Store was deleted`);
-        navigate(urlBase);
-      }
-      else {
-        toast.error(`The ${value.title} Embedding Store was not deleted`);
-      }
-
-    } catch (error) {
-      console.error("Form submission error", error);
-      toast.error(`The ${value.title} Embedding Store was not deleted`);
-    }
-    setOpen(false);
-  }
   return (
-    <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Embedding Store</CardTitle>
-          <CardAction>
-            {!isNew && <DialogDelete feature="embedding store" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
-          </CardAction>
-          <CardDescription>
-            Embedding store settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
@@ -583,15 +551,12 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   />
                 </SectionCard.Content>
               </SectionCard>
-              <FormActions>
-                <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                <FormActions.Submit />
-              </FormActions>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+        <FormActions>
+          <FormActions.Cancel onClick={() => navigate(urlBase)} />
+          <FormActions.Submit />
+        </FormActions>
+      </form>
+    </Form>
   )
 }
 

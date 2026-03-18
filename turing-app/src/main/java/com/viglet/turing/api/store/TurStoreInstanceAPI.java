@@ -23,6 +23,7 @@ package com.viglet.turing.api.store;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
+import com.viglet.turing.genai.provider.store.TurStoreCollectionInfo;
 import com.viglet.turing.persistence.dto.store.TurStoreInstanceDto;
 import com.viglet.turing.persistence.mapper.store.TurStoreInstanceMapper;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
@@ -53,14 +56,17 @@ public class TurStoreInstanceAPI {
     private final TurStoreInstanceRepository turStoreInstanceRepository;
     private final TurStoreInstanceMapper turStoreInstanceMapper;
     private final TurSecretCryptoService turSecretCryptoService;
+    private final TurGenAiStoreProviderFactory storeProviderFactory;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurStoreInstanceAPI(TurStoreInstanceRepository turStoreInstanceRepository,
             TurStoreInstanceMapper turStoreInstanceMapper,
-            TurSecretCryptoService turSecretCryptoService) {
+            TurSecretCryptoService turSecretCryptoService,
+            TurGenAiStoreProviderFactory storeProviderFactory) {
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turStoreInstanceMapper = turStoreInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
+        this.storeProviderFactory = storeProviderFactory;
     }
 
     @Operation(summary = "Embedding Store List")
@@ -116,6 +122,38 @@ public class TurStoreInstanceAPI {
     public boolean turStoreInstanceDelete(@PathVariable String id) {
         this.turStoreInstanceRepository.delete(id);
         return true;
+    }
+
+    @Operation(summary = "List collections in the Embedding Store")
+    @GetMapping("/{id}/collections")
+    public List<TurStoreCollectionInfo> turStoreInstanceCollections(@PathVariable String id) {
+        return turStoreInstanceRepository.findById(id).map(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            return provider.listCollections(instance, credential);
+        }).orElse(List.of());
+    }
+
+    @Operation(summary = "Clear all embeddings in a collection")
+    @DeleteMapping("/{id}/collections/{collectionName}/clear")
+    public ResponseEntity<Void> clearCollection(@PathVariable String id, @PathVariable String collectionName) {
+        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            provider.clearCollection(instance, credential, collectionName);
+        });
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Delete a collection")
+    @DeleteMapping("/{id}/collections/{collectionName}")
+    public ResponseEntity<Void> deleteCollection(@PathVariable String id, @PathVariable String collectionName) {
+        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            provider.deleteCollection(instance, credential, collectionName);
+        });
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Create a Embedding Store")

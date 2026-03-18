@@ -3,7 +3,6 @@ package com.viglet.turing.service.asset;
 import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
-import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -95,6 +94,45 @@ public class TurAssetTrainingService {
                         r -> r.getTrainedAt().toString()));
     }
 
+    /**
+     * Index a single file (called from event listener on upload).
+     */
+    public void indexSingleFile(String objectName, String contentType, long size) {
+        try {
+            String embModelId = globalSettingsService.getDefaultEmbeddingModelId();
+            String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
+            if (embModelId.isBlank() || storeId.isBlank()) {
+                log.warn("[AssetEvent] RAG enabled but embedding model/store not configured. Skipping: {}", objectName);
+                return;
+            }
+            TrainingContext ctx = buildTrainingContext(embModelId, storeId);
+            TurAssetItem item = new TurAssetItem(objectName, size, contentType, Instant.now().toString(), false);
+            processFile(item, ctx, embModelId, storeId);
+            log.info("[AssetEvent] Successfully indexed: {}", objectName);
+        } catch (Exception e) {
+            log.error("[AssetEvent] Failed to index file: {}", objectName, e);
+        }
+    }
+
+    /**
+     * Deindex a single file (called from event listener on delete).
+     */
+    public void deindexSingleFile(String objectName) {
+        try {
+            String embModelId = globalSettingsService.getDefaultEmbeddingModelId();
+            String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
+            if (embModelId.isBlank() || storeId.isBlank()) return;
+
+            TrainingContext ctx = buildTrainingContext(embModelId, storeId);
+            ctx.storeProvider.deleteByMetadata(ctx.storeInstance, ctx.storeCredential,
+                    ctx.collectionName, "objectName", objectName);
+            trainingRecordRepository.deleteById(objectName);
+            log.info("[AssetEvent] Successfully deindexed: {}", objectName);
+        } catch (Exception e) {
+            log.error("[AssetEvent] Failed to deindex file: {}", objectName, e);
+        }
+    }
+
     public TurAssetTrainingStatus startTraining() {
         TurAssetTrainingStatus current = status.get();
         if (current.state() == TurAssetTrainingState.RUNNING) {
@@ -117,7 +155,7 @@ public class TurAssetTrainingService {
         try {
             String embModelId = globalSettingsService.getDefaultEmbeddingModelId();
             String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
-            VectorStore vectorStore = buildVectorStore();
+            TrainingContext ctx = buildTrainingContext(embModelId, storeId);
             List<TurAssetItem> allFiles = minioService.listAllObjects();
 
             int total = allFiles.size();
@@ -129,7 +167,7 @@ public class TurAssetTrainingService {
 
             for (TurAssetItem file : allFiles) {
                 try {
-                    processFile(file, vectorStore, embModelId, storeId);
+                    processFile(file, ctx, embModelId, storeId);
                 } catch (Exception e) {
                     errors++;
                     log.warn("[AssetTraining] Failed to process file: {}", file.name(), e);
@@ -149,7 +187,15 @@ public class TurAssetTrainingService {
         }
     }
 
-    private void processFile(TurAssetItem file, VectorStore vectorStore,
+    private record TrainingContext(
+            VectorStore vectorStore,
+            com.viglet.turing.genai.provider.store.TurGenAiStoreProvider storeProvider,
+            TurStoreInstance storeInstance,
+            String storeCredential,
+            String collectionName
+    ) {}
+
+    private void processFile(TurAssetItem file, TrainingContext ctx,
                              String embModelId, String storeId) throws Exception {
         String objectName = file.name();
         String path = objectName.contains("/") ? objectName.substring(0, objectName.lastIndexOf('/') + 1) : "";
@@ -157,10 +203,16 @@ public class TurAssetTrainingService {
 
         log.info("[AssetTraining] Processing file: {} (type={}, size={})", objectName, file.contentType(), file.size());
 
+        // Delete old embeddings for this file before re-indexing
+        ctx.storeProvider.deleteByMetadata(ctx.storeInstance, ctx.storeCredential,
+                ctx.collectionName, "objectName", objectName);
+
         try (InputStream is = minioService.downloadObject(objectName)) {
             String text = TurFileUtils.parseDocument(is).orElse("");
             if (text.isBlank()) {
                 log.info("[AssetTraining] Skipped (no text extracted): {}", objectName);
+                // Remove stale training record if file no longer has text
+                trainingRecordRepository.deleteById(objectName);
                 return;
             }
             if (text.length() > MAX_TEXT_LENGTH) {
@@ -184,10 +236,10 @@ public class TurAssetTrainingService {
                     .toList();
 
             log.info("[AssetTraining] Adding {} chunks to embedding store: {}", documents.size(), objectName);
-            vectorStore.add(documents);
+            ctx.vectorStore.add(documents);
             log.info("[AssetTraining] Successfully stored {} chunks for: {}", documents.size(), objectName);
 
-            // Save training record
+            // Upsert training record (PK = objectName, so save() updates if exists)
             TurAssetTrainingRecord record = new TurAssetTrainingRecord();
             record.setObjectName(objectName);
             record.setObjectPath(path);
@@ -204,10 +256,7 @@ public class TurAssetTrainingService {
         }
     }
 
-    private VectorStore buildVectorStore() {
-        String embModelId = globalSettingsService.getDefaultEmbeddingModelId();
-        String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
-
+    private TrainingContext buildTrainingContext(String embModelId, String storeId) {
         if (embModelId.isBlank() || storeId.isBlank()) {
             throw new IllegalStateException("Embedding Model and Store must be configured in Global Settings.");
         }
@@ -219,16 +268,13 @@ public class TurAssetTrainingService {
             throw new IllegalStateException("Embedding Model '" + embModel.getModelName() + "' has no LLM instance.");
         }
 
-        // Create a detached copy of the LLM instance with the embedding model reference
-        // so the provider creates an embedding model with the correct name (e.g., "bge-m" instead of "llama3")
+        // Detached LLM instance copy with embedding model reference
         TurLLMInstance embLlmInstance = new TurLLMInstance();
         embLlmInstance.setId(llmInstance.getId());
         embLlmInstance.setUrl(llmInstance.getUrl());
         embLlmInstance.setApiKeyEncrypted(llmInstance.getApiKeyEncrypted());
-        // Do NOT copy providerOptionsJson — it may contain "embeddingModel" pointing to a different model
         embLlmInstance.setProviderOptionsJson(null);
         embLlmInstance.setTurLLMVendor(llmInstance.getTurLLMVendor());
-        // Use the embedding model reference as the model name
         String embModelRef = embModel.getModelReference();
         embLlmInstance.setModelName(
                 (embModelRef != null && !embModelRef.isBlank()) ? embModelRef : llmInstance.getModelName());
@@ -241,12 +287,13 @@ public class TurAssetTrainingService {
 
         TurStoreInstance storeInstance = storeInstanceRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalStateException("Embedding Store not found: " + storeId));
-        TurGenAiStoreProvider storeProvider = storeProviderFactory.getProvider(storeInstance);
+        var storeProvider = storeProviderFactory.getProvider(storeInstance);
         String storeCredential = secretCryptoService.decrypt(storeInstance.getCredentialEncrypted());
+        String collectionName = storeInstance.getCollectionName() != null
+                ? storeInstance.getCollectionName() : "turing";
 
         VectorStore vectorStore = storeProvider.createVectorStore(storeInstance, embeddingModel, storeCredential);
 
-        // ChromaVectorStore requires afterPropertiesSet() to initialize the collection
         if (vectorStore instanceof org.springframework.beans.factory.InitializingBean initBean) {
             try {
                 initBean.afterPropertiesSet();
@@ -255,7 +302,7 @@ public class TurAssetTrainingService {
             }
         }
 
-        return vectorStore;
+        return new TrainingContext(vectorStore, storeProvider, storeInstance, storeCredential, collectionName);
     }
 
     private List<String> splitText(String text) {
