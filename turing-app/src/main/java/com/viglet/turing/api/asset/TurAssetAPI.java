@@ -1,5 +1,9 @@
 package com.viglet.turing.api.asset;
 
+import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
+import com.viglet.turing.service.asset.TurAssetTrainingService;
+import com.viglet.turing.service.asset.TurAssetTrainingState;
+import com.viglet.turing.service.asset.TurAssetTrainingStatus;
 import com.viglet.turing.service.asset.TurMinioService;
 import io.minio.StatObjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST API for managing assets stored in MinIO.
@@ -25,9 +30,11 @@ import java.util.List;
 @Tag(name = "Assets", description = "Asset Management API (MinIO)")
 public class TurAssetAPI {
 	private final TurMinioService turMinioService;
+	private final TurAssetTrainingService turAssetTrainingService;
 
-	public TurAssetAPI(TurMinioService turMinioService) {
+	public TurAssetAPI(TurMinioService turMinioService, TurAssetTrainingService turAssetTrainingService) {
 		this.turMinioService = turMinioService;
+		this.turAssetTrainingService = turAssetTrainingService;
 	}
 
 	@Operation(summary = "List assets in a folder")
@@ -96,6 +103,28 @@ public class TurAssetAPI {
 	public ResponseEntity<Void> delete(@RequestParam String objectName) {
 		turMinioService.deleteObject(objectName);
 		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "Start AI training from assets")
+	@PostMapping("/train")
+	public ResponseEntity<TurAssetTrainingStatus> startTraining() {
+		TurAssetTrainingStatus result = turAssetTrainingService.startTraining();
+		if (result.state() == TurAssetTrainingState.RUNNING) {
+			return ResponseEntity.accepted().body(result);
+		}
+		return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(result);
+	}
+
+	@Operation(summary = "Get AI training status")
+	@GetMapping("/train/status")
+	public TurAssetTrainingStatus getTrainingStatus() {
+		return turAssetTrainingService.getStatus();
+	}
+
+	@Operation(summary = "Get training status for a list of assets")
+	@GetMapping("/train/records")
+	public Map<String, String> getTrainingRecords(@RequestParam List<String> objectNames) {
+		return turAssetTrainingService.getTrainedAtMap(objectNames);
 	}
 
 	private String extractFileName(String objectName) {

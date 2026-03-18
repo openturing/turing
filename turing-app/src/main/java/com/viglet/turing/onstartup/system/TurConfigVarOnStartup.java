@@ -41,6 +41,9 @@ public class TurConfigVarOnStartup {
 	public static final String LLM_CACHE_ENABLED = "GLOBAL_LLM_CACHE_ENABLED";
 	public static final String LLM_CACHE_TTL_MS = "GLOBAL_LLM_CACHE_TTL_MS";
 	public static final String LLM_CACHE_REGENERATE = "GLOBAL_LLM_CACHE_REGENERATE";
+	public static final String RAG_ENABLED = "GLOBAL_RAG_ENABLED";
+	public static final String DEFAULT_EMBEDDING_MODEL_ID = "GLOBAL_DEFAULT_EMBEDDING_MODEL";
+	public static final String DEFAULT_EMBEDDING_STORE_ID = "GLOBAL_DEFAULT_EMBEDDING_STORE";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -65,6 +68,9 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(LLM_CACHE_ENABLED, GLOBAL_PATH, "false");
 		ensureConfigVar(LLM_CACHE_TTL_MS, GLOBAL_PATH, "3600000");
 		ensureConfigVar(LLM_CACHE_REGENERATE, GLOBAL_PATH, "false");
+		ensureConfigVar(RAG_ENABLED, GLOBAL_PATH, "false");
+		ensureConfigVar(DEFAULT_EMBEDDING_MODEL_ID, GLOBAL_PATH, "");
+		ensureConfigVar(DEFAULT_EMBEDDING_STORE_ID, GLOBAL_PATH, "");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

@@ -26,8 +26,12 @@ import {
 } from "@/components/ui/table"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import type { TurAssetItem } from "@/models/asset/asset-item.model"
+import type { TurAssetTrainingStatus } from "@/models/asset/asset-training-status.model"
 import { TurAssetService } from "@/services/asset/asset.service"
+import { TurFeaturesService } from "@/services/system/features.service"
 import {
+  IconBrain,
+  IconCheck,
   IconChevronRight,
   IconCloudUpload,
   IconDownload,
@@ -35,6 +39,7 @@ import {
   IconFolder,
   IconFolderPlus,
   IconHome,
+  IconLoader2,
   IconTrash,
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -42,6 +47,7 @@ import { toast } from "sonner"
 import { AssetPreviewPanel } from "./asset-preview-panel"
 
 const turAssetService = new TurAssetService()
+const turFeaturesService = new TurFeaturesService()
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -77,6 +83,10 @@ export default function AssetPage() {
   const [folderDialogOpen, setFolderDialogOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
   const [selectedAsset, setSelectedAsset] = useState<TurAssetItem | null>(null)
+  const [ragEnabled, setRagEnabled] = useState(false)
+  const [trainingStatus, setTrainingStatus] = useState<TurAssetTrainingStatus | null>(null)
+  const [trainedMap, setTrainedMap] = useState<Record<string, string>>({})
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   useSubPageBreadcrumb("Assets")
 
@@ -87,6 +97,22 @@ export default function AssetPage() {
   }, [prefix])
 
   useEffect(() => { loadAssets() }, [loadAssets])
+
+  // Load training records for visible files
+  useEffect(() => {
+    if (!assets || !ragEnabled) return
+    const fileNames = assets.filter(a => !a.directory).map(a => a.name)
+    if (fileNames.length === 0) { setTrainedMap({}); return }
+    turAssetService.getTrainingRecords(fileNames).then(setTrainedMap).catch(() => setTrainedMap({}))
+  }, [assets, ragEnabled])
+
+  // Load feature flags
+  useEffect(() => {
+    turFeaturesService.getFeatures().then((f) => setRagEnabled(f.ragEnabled)).catch(() => setRagEnabled(false))
+  }, [])
+
+  // Stop polling on unmount
+  useEffect(() => () => { if (pollingRef.current) clearInterval(pollingRef.current) }, [])
 
   // Close preview when navigating folders
   useEffect(() => { setSelectedAsset(null) }, [prefix])
@@ -144,6 +170,37 @@ export default function AssetPage() {
     }
   }
 
+  const handleStartTraining = async () => {
+    try {
+      const result = await turAssetService.startTraining()
+      setTrainingStatus(result)
+      if (result.state === "RUNNING") {
+        toast.success("Training started.")
+        pollingRef.current = setInterval(async () => {
+          try {
+            const s = await turAssetService.getTrainingStatus()
+            setTrainingStatus(s)
+            if (s.state !== "RUNNING") {
+              if (pollingRef.current) clearInterval(pollingRef.current)
+              pollingRef.current = null
+              if (s.state === "COMPLETED") {
+                toast.success(`Training completed: ${s.processedCount} files indexed, ${s.errorCount} errors.`)
+              } else {
+                toast.error(`Training failed: ${s.errorMessage}`)
+              }
+            }
+          } catch { /* ignore polling errors */ }
+        }, 3000)
+      } else {
+        toast.error(result.errorMessage || "Training could not start.")
+      }
+    } catch {
+      toast.error("Failed to start training.")
+    }
+  }
+
+  const isTraining = trainingStatus?.state === "RUNNING"
+
   const breadcrumbs = prefixSegments(prefix)
 
   return (
@@ -162,6 +219,16 @@ export default function AssetPage() {
             <IconFolderPlus className="size-4! mr-1.5" />
             New Folder
           </Button>
+          {ragEnabled && (
+            <Button variant="outline" size="sm" disabled={isTraining} onClick={handleStartTraining}>
+              {isTraining
+                ? <IconLoader2 className="size-4! mr-1.5 animate-spin" />
+                : <IconBrain className="size-4! mr-1.5" />}
+              {isTraining
+                ? `Training... ${trainingStatus?.processedCount ?? 0}/${trainingStatus?.totalCount ?? 0}`
+                : "Train AI with Assets"}
+            </Button>
+          )}
         </div>
 
         {/* Breadcrumb navigation */}
@@ -199,6 +266,7 @@ export default function AssetPage() {
                       <TableHead className="w-[100px]">Size</TableHead>
                       <TableHead className="w-[120px]">Type</TableHead>
                       <TableHead className="w-[180px]">Last Modified</TableHead>
+                      {ragEnabled && <TableHead className="w-[60px] text-center">AI</TableHead>}
                       <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -220,6 +288,17 @@ export default function AssetPage() {
                         <TableCell className="text-muted-foreground">{asset.directory ? "—" : formatFileSize(asset.size)}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{asset.directory ? "Folder" : asset.contentType}</TableCell>
                         <TableCell className="text-muted-foreground text-xs">{asset.directory ? "—" : formatDate(asset.lastModified)}</TableCell>
+                        {ragEnabled && (
+                          <TableCell className="text-center">
+                            {!asset.directory && trainedMap[asset.name] ? (
+                              <span title={`Trained: ${formatDate(trainedMap[asset.name])}`} className="inline-flex items-center justify-center size-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                                <IconCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+                              </span>
+                            ) : !asset.directory ? (
+                              <span className="text-xs text-muted-foreground/50">—</span>
+                            ) : null}
+                          </TableCell>
+                        )}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                             {!asset.directory && (

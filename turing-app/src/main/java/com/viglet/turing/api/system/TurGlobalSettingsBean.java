@@ -26,4 +26,7 @@ public class TurGlobalSettingsBean {
     private String senderEmail;
     private String senderName;
     private String recipientEmail;
+    private boolean ragEnabled;
+    private String defaultEmbeddingModelId;
+    private String defaultEmbeddingStoreId;
 }

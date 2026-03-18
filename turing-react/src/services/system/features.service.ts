@@ -2,6 +2,7 @@ import axios from "axios"
 
 export interface FeaturesResponse {
   minioEnabled: boolean
+  ragEnabled: boolean
 }
 
 export class TurFeaturesService {

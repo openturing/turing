@@ -26,6 +26,7 @@ if /i "%MONGO_ENABLED%"=="true" set LOGGING_CONFIG=classpath:logback-spring-mong
 echo Starting Turing...
 echo   MongoDB: %MONGO_ENABLED%
 echo   Log level ^(com.viglet^): %LOG_LEVEL%
+echo   MinIO: %MINIO_ENABLED%
 echo.
 
 call mvn spring-boot:run -pl turing-app -Dskip.npm ^

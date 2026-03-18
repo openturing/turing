@@ -44,6 +44,9 @@ public class TurGlobalSettingsAPI {
                 .senderEmail(turGlobalSettingsService.getSenderEmail())
                 .senderName(turGlobalSettingsService.getSenderName())
                 .recipientEmail(turGlobalSettingsService.getRecipientEmail())
+                .ragEnabled(turGlobalSettingsService.isRagEnabled())
+                .defaultEmbeddingModelId(turGlobalSettingsService.getDefaultEmbeddingModelId())
+                .defaultEmbeddingStoreId(turGlobalSettingsService.getDefaultEmbeddingStoreId())
                 .build();
     }
 
@@ -73,6 +76,12 @@ public class TurGlobalSettingsAPI {
                         .updateSenderName(globalSettings.getSenderName()))
                 .recipientEmail(turGlobalSettingsService
                         .updateRecipientEmail(globalSettings.getRecipientEmail()))
+                .ragEnabled(turGlobalSettingsService
+                        .updateRagEnabled(globalSettings.isRagEnabled()))
+                .defaultEmbeddingModelId(turGlobalSettingsService
+                        .updateDefaultEmbeddingModelId(globalSettings.getDefaultEmbeddingModelId()))
+                .defaultEmbeddingStoreId(turGlobalSettingsService
+                        .updateDefaultEmbeddingStoreId(globalSettings.getDefaultEmbeddingStoreId()))
                 .build();
     }
 

@@ -83,6 +83,33 @@ public class TurMinioService {
 		return items;
 	}
 
+	public List<TurAssetItem> listAllObjects() {
+		if (minioClient == null) return List.of();
+		String bucket = getBucket();
+		List<TurAssetItem> items = new ArrayList<>();
+		var builder = ListObjectsArgs.builder()
+				.bucket(bucket)
+				.recursive(true);
+		Iterable<Result<Item>> results = minioClient.listObjects(builder.build());
+		for (Result<Item> result : results) {
+			try {
+				Item item = result.get();
+				if (!item.isDir()) {
+					ZonedDateTime lastModified = item.lastModified();
+					items.add(new TurAssetItem(
+							item.objectName(),
+							item.size(),
+							guessContentType(item.objectName()),
+							lastModified != null ? lastModified.toString() : "",
+							false));
+				}
+			} catch (Exception e) {
+				log.error("Error listing MinIO object", e);
+			}
+		}
+		return items;
+	}
+
 	public InputStream downloadObject(String objectName) {
 		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
 		try {
