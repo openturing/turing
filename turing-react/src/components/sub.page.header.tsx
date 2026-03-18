@@ -1,8 +1,6 @@
-import { IconPlus } from "@tabler/icons-react";
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { DialogDelete } from "./dialog.delete";
-import { GradientButton } from "./ui/gradient-button";
 import { Separator } from "./ui/separator";
 import { SidebarTrigger } from "./ui/sidebar";
 
@@ -11,13 +9,12 @@ interface Props {
   feature: string;
   name: string;
   description: string;
-  urlNew?: string;
   urlBase?: string;
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
-export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, description, urlNew, urlBase, onDelete, open, setOpen }) => {
+export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, description, urlBase, onDelete, open, setOpen }) => {
   const headerContent = (
     <div className="flex items-center gap-3">
       {Icon && (
@@ -52,14 +49,6 @@ export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, desc
           )}
         </div>
         <div className="flex items-center gap-2">
-          {urlNew !== undefined && (
-            <GradientButton asChild size="sm">
-              <NavLink to={urlNew} className="flex items-center gap-1.5">
-                <IconPlus className="size-4!" />
-                New {feature}
-              </NavLink>
-            </GradientButton>
-          )}
           {open !== undefined && onDelete !== undefined && setOpen !== undefined && (
             <DialogDelete feature={feature} name={name} onDelete={onDelete} open={open} setOpen={setOpen} />
           )}

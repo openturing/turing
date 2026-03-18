@@ -24,7 +24,9 @@ export default function LLMInstanceListPage() {
   return (
     <LoadProvider checkIsNotUndefined={llmInstances} error={error} tryAgainUrl={`${ROUTES.LLM_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.LLM_INSTANCE}/new`} label="Language Model" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconCpu2}

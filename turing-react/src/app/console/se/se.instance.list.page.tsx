@@ -30,7 +30,9 @@ export default function SEInstanceListPage() {
   return (
     <LoadProvider checkIsNotUndefined={seInstances} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.SE_INSTANCE}/new`} label="Search Engine" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconZoomCode}

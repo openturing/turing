@@ -24,7 +24,9 @@ export default function IntegrationInstanceListPage() {
   return (
     <LoadProvider checkIsNotUndefined={integrationInstances} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/new`} label="Integration" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconPlugConnectedX}

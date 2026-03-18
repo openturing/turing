@@ -6,6 +6,6 @@ import { IconDatabase } from "@tabler/icons-react";
 export default function StoreInstanceListPage() {
   useSubPageBreadcrumb({ label: "Embedding Store", href: `${ROUTES.STORE_INSTANCE}` });
   return (
-    <Page turIcon={IconDatabase} title="Embedding Store" urlBase={ROUTES.STORE_INSTANCE} urlNew={`${ROUTES.STORE_INSTANCE}/new`} />
+    <Page turIcon={IconDatabase} title="Embedding Store" urlBase={ROUTES.STORE_INSTANCE} />
   )
 }

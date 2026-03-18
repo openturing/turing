@@ -33,7 +33,9 @@ export default function SNSiteSpotlightListPage() {
                 <>
                     <SubPageHeader icon={IconSpeakerphone} name="Spotlight" feature="Spotlight"
                         description="Define content that will be featured in the term-based search." />
-                    <GridList gridItemList={gridItemList} />
+                    <GridList gridItemList={gridItemList}>
+                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} label="Spotlight" />
+                    </GridList>
                 </>
             ) : (
                 <BlankSlate

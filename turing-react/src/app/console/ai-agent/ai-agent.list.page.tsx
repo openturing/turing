@@ -25,7 +25,9 @@ export default function AIAgentListPage() {
   return (
     <LoadProvider checkIsNotUndefined={agents} error={error} tryAgainUrl={`${ROUTES.AI_AGENT_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.AI_AGENT_INSTANCE}/new`} label="AI Agent" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconRobot}

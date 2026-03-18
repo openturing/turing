@@ -23,9 +23,10 @@ import React from "react";
 
 interface Props {
     data: TurSNSiteLocale[]
+    children?: React.ReactNode
 }
 
-export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data }) => {
+export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }) => {
 
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -64,7 +65,8 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data }) => {
                     }
                     className="max-w-sm"
                 />
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                    {children}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size={"sm"}>

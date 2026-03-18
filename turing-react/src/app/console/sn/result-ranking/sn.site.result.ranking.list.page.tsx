@@ -34,9 +34,10 @@ export default function SNSiteResultRankingListPage() {
                     <SubPageHeader icon={IconNumber123}
                         name="Result Ranking"
                         feature="Result Ranking"
-                        description="Define content that will be featured in the term-based search."
-                        urlNew={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} />
-                    <GridList gridItemList={gridItemList} />
+                        description="Define content that will be featured in the term-based search." />
+                    <GridList gridItemList={gridItemList}>
+                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} label="Result Ranking" />
+                    </GridList>
                 </>
             ) : (
                 <BlankSlate

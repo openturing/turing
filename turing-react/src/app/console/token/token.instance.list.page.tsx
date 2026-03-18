@@ -32,10 +32,11 @@ export default function TokenInstanceListPage() {
         feature="API Token"
         name="API Token"
         description="Manage API tokens for external access."
-        urlNew={`${ROUTES.ADMIN_TOKENS}/new`}
       />
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.ADMIN_TOKENS}/new`} label="API Token" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconCode}

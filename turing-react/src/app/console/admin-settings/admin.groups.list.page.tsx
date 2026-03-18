@@ -35,9 +35,10 @@ export default function AdminGroupsListPage() {
                 feature="Groups"
                 name="Groups"
                 description="Organize users into groups with shared permissions."
-                urlNew={`${ROUTES.ADMIN_ROOT}/groups/new`}
             />
-            {groups && <GridList gridItemList={gridItemList} />}
+            {groups && <GridList gridItemList={gridItemList}>
+                <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/groups/new`} label="Group" />
+            </GridList>}
         </LoadProvider>
     );
 }

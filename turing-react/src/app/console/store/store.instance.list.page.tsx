@@ -25,7 +25,9 @@ export default function StoreInstanceListPage() {
   return (
     <LoadProvider checkIsNotUndefined={storeInstances} error={error} tryAgainUrl={`${ROUTES.STORE_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.STORE_INSTANCE}/new`} label="Embedding Store" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconDatabase}

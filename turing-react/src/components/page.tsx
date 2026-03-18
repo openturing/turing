@@ -5,14 +5,13 @@ interface MyComponentProps {
   turIcon?: React.ElementType;
   title: string;
   urlBase?: string;
-  urlNew?: string;
 }
 
 
-export const Page: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title, urlBase, urlNew }) => {
+export const Page: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title, urlBase }) => {
   return (
     <>
-      <PageHeader turIcon={TurIcon} title={title} urlBase={urlBase} urlNew={urlNew} />
+      <PageHeader turIcon={TurIcon} title={title} urlBase={urlBase} />
       <PageContent />
     </>
   )

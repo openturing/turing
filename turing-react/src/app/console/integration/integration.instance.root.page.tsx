@@ -6,6 +6,6 @@ import { IconPlugConnectedX } from "@tabler/icons-react";
 export default function IntegrationInstanceRootPage() {
   useSubPageBreadcrumb({ label: "Integration", href: `${ROUTES.INTEGRATION_INSTANCE}` });
   return (
-    <Page turIcon={IconPlugConnectedX} title="Integration" urlBase={ROUTES.INTEGRATION_INSTANCE} urlNew={`${ROUTES.INTEGRATION_INSTANCE}/new`} />
+    <Page turIcon={IconPlugConnectedX} title="Integration" urlBase={ROUTES.INTEGRATION_INSTANCE} />
   )
 }
