@@ -1,4 +1,5 @@
 import { Navigate, Route, useParams } from "react-router-dom"
+import SEInstanceCoreNewPage from "../console/se/cores/se.instance.core.new.page"
 import SEInstanceCoresPage from "../console/se/cores/se.instance.cores.page"
 import SEInstanceDetailPage from "../console/se/detail/se.instance.detail.page"
 import SEInstanceListPage from "../console/se/se.instance.list.page"
@@ -18,6 +19,7 @@ export const SERoutes = (
             <Route index element={<RedirectToSEDetail />} />
             <Route path="detail" element={<SEInstanceDetailPage />} />
             <Route path="cores" element={<SEInstanceCoresPage />} />
+            <Route path="cores/new" element={<SEInstanceCoreNewPage />} />
         </Route>
     </Route>
 )

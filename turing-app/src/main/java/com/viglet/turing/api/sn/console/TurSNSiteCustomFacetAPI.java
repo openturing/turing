@@ -54,6 +54,7 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -243,6 +244,8 @@ public class TurSNSiteCustomFacetAPI {
         item.setId(dto.getId());
         item.setLabel(dto.getLabel());
         item.setPosition(safeItemPositionDto(dto));
+        item.setOperator(Optional.ofNullable(dto.getOperator())
+                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN));
 
         if (TurSEFieldType.DATE.equals(fieldType)) {
             item.setRangeStart(null);
@@ -271,6 +274,8 @@ public class TurSNSiteCustomFacetAPI {
                     dto.setId(item.getId());
                     dto.setLabel(item.getLabel());
                     dto.setPosition(item.getPosition());
+                    dto.setOperator(Optional.ofNullable(item.getOperator())
+                            .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN));
                     dto.setRangeStart(item.getRangeStart());
                     dto.setRangeEnd(item.getRangeEnd());
                     dto.setRangeStartDate(formatIsoDate(item.getRangeStartDate()));
@@ -417,6 +422,7 @@ public class TurSNSiteCustomFacetAPI {
         private String id;
         private String label;
         private Integer position;
+        private TurSNSiteCustomFacetOperatorEnum operator;
         private BigDecimal rangeStart;
         private BigDecimal rangeEnd;
         private String rangeStartDate;

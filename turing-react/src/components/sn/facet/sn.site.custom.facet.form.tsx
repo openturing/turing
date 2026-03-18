@@ -2,8 +2,6 @@
 import { ROUTES } from "@/app/routes.const"
 import { BadgeFieldType } from "@/components/badge-field-type"
 import { SNSiteLabelTranslations } from "@/components/sn/facet/sn.site.label.translations"
-import { FormActions } from "../../ui/form-actions"
-import { SectionCard } from "../../ui/section-card"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -46,6 +44,7 @@ import type {
   TurSNSiteCustomFacet,
   TurSNSiteCustomFacetFieldOption,
   TurSNSiteCustomFacetItem,
+  TurSNSiteCustomFacetOperator,
 } from "@/models/sn/sn-site-custom-facet.model"
 import type { TurSNSiteFacetFieldTypes } from "@/models/sn/sn-site-facet.field.type"
 import { TurLocaleService } from "@/services/locale/locale.service"
@@ -66,13 +65,15 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { IconFilter, IconInfoCircle, IconLanguage, IconListDetails } from '@tabler/icons-react'
-import { GripVertical, PlusCircle } from 'lucide-react'
+import { GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteCustomFacetService = new TurSNSiteCustomFacetService();
 const turLocaleService = new TurLocaleService();
@@ -91,6 +92,13 @@ const facetTypes: { name: string; value: TurSNSiteFacetFieldTypes }[] = [
   { name: "Default", value: "DEFAULT" },
   { name: "And", value: "AND" },
   { name: "Or", value: "OR" },
+];
+
+const operatorOptions: { name: string; value: TurSNSiteCustomFacetOperator; description: string }[] = [
+  { name: "Between", value: "BETWEEN", description: "Value is within a range (start to end)" },
+  { name: "Equal", value: "EQUAL", description: "Value is exactly equal to" },
+  { name: "Greater than", value: "GREATER_THAN", description: "Value is greater than" },
+  { name: "Less than", value: "LESS_THAN", description: "Value is less than" },
 ];
 
 function isDateFieldType(fieldType?: string): boolean {
@@ -118,15 +126,24 @@ function toDateTimeLocalValue(value: string | null | undefined): string {
 }
 
 function normalizeItems(itemsToNormalize: TurSNSiteCustomFacetItem[], fieldType?: string): TurSNSiteCustomFacetItem[] {
-  const dateField = isDateFieldType(fieldType);
-  return itemsToNormalize.map((item, index) => ({
-    ...item,
-    position: index + 1,
-    rangeStart: dateField ? null : parseRangeValue(item.rangeStart),
-    rangeEnd: dateField ? null : parseRangeValue(item.rangeEnd),
-    rangeStartDate: dateField ? parseIsoDateValue(item.rangeStartDate) : null,
-    rangeEndDate: dateField ? parseIsoDateValue(item.rangeEndDate) : null,
-  }));
+  const isDate = isDateFieldType(fieldType);
+  return itemsToNormalize.map((item, index) => {
+    const op = item.operator ?? "BETWEEN";
+    let rangeStart = isDate ? null : parseRangeValue(item.rangeStart);
+    let rangeEnd = isDate ? null : parseRangeValue(item.rangeEnd);
+    let rangeStartDate = isDate ? parseIsoDateValue(item.rangeStartDate) : null;
+    let rangeEndDate = isDate ? parseIsoDateValue(item.rangeEndDate) : null;
+
+    if (op === "LESS_THAN") {
+      rangeStart = null;
+      rangeStartDate = null;
+    } else if (op === "EQUAL" || op === "GREATER_THAN") {
+      rangeEnd = null;
+      rangeEndDate = null;
+    }
+
+    return { ...item, position: index + 1, operator: op, rangeStart, rangeEnd, rangeStartDate, rangeEndDate };
+  });
 }
 
 function hasFilledRangeValues(itemsToCheck: TurSNSiteCustomFacetItem[]): boolean {
@@ -138,15 +155,37 @@ function hasFilledRangeValues(itemsToCheck: TurSNSiteCustomFacetItem[]): boolean
   });
 }
 
+function operatorLabel(operator?: TurSNSiteCustomFacetOperator): string {
+  return operatorOptions.find((o) => o.value === operator)?.name ?? "Between";
+}
+
+function formatItemSummary(item: TurSNSiteCustomFacetItem, isDateField: boolean): string {
+  const op = item.operator ?? "BETWEEN";
+  const startVal = isDateField
+    ? (item.rangeStartDate ? new Date(item.rangeStartDate).toLocaleString() : "—")
+    : (item.rangeStart ?? "—");
+  const endVal = isDateField
+    ? (item.rangeEndDate ? new Date(item.rangeEndDate).toLocaleString() : "—")
+    : (item.rangeEnd ?? "—");
+
+  switch (op) {
+    case "EQUAL": return `= ${startVal}`;
+    case "GREATER_THAN": return `> ${startVal}`;
+    case "LESS_THAN": return `< ${endVal}`;
+    case "BETWEEN":
+    default: return `${startVal} — ${endVal}`;
+  }
+}
+
 type ItemRowProps = {
   item: TurSNSiteCustomFacetItem;
   index: number;
   isDateField: boolean;
-  onUpdate: (index: number, key: keyof TurSNSiteCustomFacetItem, value: string) => void;
+  onEdit: (index: number) => void;
   onRemove: (index: number) => void;
 };
 
-const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onUpdate, onRemove }) => {
+const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onEdit, onRemove }) => {
   const {
     attributes,
     listeners,
@@ -170,33 +209,22 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onUpdate, o
         </button>
       </TableCell>
       <TableCell className="w-16">{index + 1}</TableCell>
+      <TableCell className="font-medium">{item.label || <span className="text-muted-foreground italic">No label</span>}</TableCell>
       <TableCell>
-        <Input
-          value={item.label ?? ""}
-          onChange={(event) => onUpdate(index, "label", event.target.value)}
-          placeholder="Item label"
-        />
+        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+          {operatorLabel(item.operator)}
+        </span>
       </TableCell>
-      <TableCell>
-        <Input
-          type={isDateField ? "datetime-local" : "number"}
-          step={isDateField ? undefined : "any"}
-          value={isDateField ? toDateTimeLocalValue(item.rangeStartDate) : (item.rangeStart ?? "")}
-          onChange={(event) => onUpdate(index, isDateField ? "rangeStartDate" : "rangeStart", event.target.value)}
-          placeholder="Start"
-        />
-      </TableCell>
-      <TableCell>
-        <Input
-          type={isDateField ? "datetime-local" : "number"}
-          step={isDateField ? undefined : "any"}
-          value={isDateField ? toDateTimeLocalValue(item.rangeEndDate) : (item.rangeEnd ?? "")}
-          onChange={(event) => onUpdate(index, isDateField ? "rangeEndDate" : "rangeEnd", event.target.value)}
-          placeholder="End"
-        />
-      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">{formatItemSummary(item, isDateField)}</TableCell>
       <TableCell className="w-24 text-right">
-        <Button type="button" variant="outline" onClick={() => onRemove(index)}>Remove</Button>
+        <div className="flex justify-end gap-1">
+          <Button type="button" variant="ghost" size="icon" onClick={() => onEdit(index)} title="Edit">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(index)} title="Remove">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -216,6 +244,11 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
   const [openFieldChangeDialog, setOpenFieldChangeDialog] = useState(false);
   const [pendingFieldExtId, setPendingFieldExtId] = useState<string | null>(null);
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [editingItem, setEditingItem] = useState<TurSNSiteCustomFacetItem>({
+    label: "", operator: "BETWEEN", rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+  });
   const navigate = useNavigate()
   const items = watch("items") ?? [];
   const selectedFieldExtId = watch("fieldExtId") ?? value.fieldExtId;
@@ -244,30 +277,44 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
     turLocaleService.query().then(setAvailableLocales);
   }, [])
 
-  function onItemUpdate(index: number, key: keyof TurSNSiteCustomFacetItem, rawValue: string) {
-    const updatedItems = [...items];
-    if (key === "rangeStart" || key === "rangeEnd") {
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [key]: parseRangeValue(rawValue),
-      };
-    } else if (key === "rangeStartDate" || key === "rangeEndDate") {
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [key]: parseIsoDateValue(rawValue),
-      };
-    } else {
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [key]: rawValue,
-      };
-    }
-    setValue("items", normalizeItems(updatedItems, selectedFieldType), { shouldDirty: true });
+  function onOpenAddItem() {
+    setEditingItemIndex(null);
+    setEditingItem({
+      label: "", operator: "BETWEEN", rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+    });
+    setItemModalOpen(true);
   }
 
-  function onAddItem() {
-    const updatedItems = [...items, { label: "", rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null }];
+  function onOpenEditItem(index: number) {
+    setEditingItemIndex(index);
+    setEditingItem({ ...items[index] });
+    setItemModalOpen(true);
+  }
+
+  function onSaveItem() {
+    const updatedItems = [...items];
+    if (editingItemIndex !== null) {
+      updatedItems[editingItemIndex] = editingItem;
+    } else {
+      updatedItems.push(editingItem);
+    }
     setValue("items", normalizeItems(updatedItems, selectedFieldType), { shouldDirty: true });
+    setItemModalOpen(false);
+  }
+
+  function onUpdateEditingItem(key: keyof TurSNSiteCustomFacetItem, rawValue: string) {
+    setEditingItem((prev) => {
+      if (key === "rangeStart" || key === "rangeEnd") {
+        return { ...prev, [key]: parseRangeValue(rawValue) };
+      }
+      if (key === "rangeStartDate" || key === "rangeEndDate") {
+        return { ...prev, [key]: parseIsoDateValue(rawValue) };
+      }
+      if (key === "operator") {
+        return { ...prev, operator: rawValue as TurSNSiteCustomFacetOperator };
+      }
+      return { ...prev, [key]: rawValue };
+    });
   }
 
   function onRemoveItem(index: number) {
@@ -341,6 +388,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
     }
 
     const invalidRange = (customFacet.items ?? []).find((item) => {
+      if ((item.operator ?? "BETWEEN") !== "BETWEEN") return false;
       if (dateField) {
         const start = parseIsoDateValue(item.rangeStartDate);
         const end = parseIsoDateValue(item.rangeEndDate);
@@ -375,7 +423,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
         const result = await turSNSiteCustomFacetService.create(snSiteId, payload);
         if (result) {
           toast.success(`The ${payload.name} Custom Facet was saved`);
-          navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/custom-facet`);
+          navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`);
         } else {
           toast.error(`The ${payload.name} Custom Facet was not saved`);
         }
@@ -414,32 +462,161 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={itemModalOpen} onOpenChange={setItemModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingItemIndex !== null ? "Edit Facet Item" : "Add Facet Item"}</DialogTitle>
+            <DialogDescription>
+              Define how this item filters search results.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Label</label>
+              <Input
+                value={editingItem.label ?? ""}
+                onChange={(e) => onUpdateEditingItem("label", e.target.value)}
+                placeholder="e.g., Under $100"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Operator</label>
+              <Select
+                value={editingItem.operator ?? "BETWEEN"}
+                onValueChange={(v) => onUpdateEditingItem("operator", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {operatorOptions.map((op) => (
+                    <SelectItem key={op.value} value={op.value}>
+                      <div>
+                        <span className="font-medium">{op.name}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{op.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(editingItem.operator ?? "BETWEEN") === "BETWEEN" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Start</label>
+                  <Input
+                    type={dateField ? "datetime-local" : "number"}
+                    step={dateField ? undefined : "any"}
+                    value={dateField ? toDateTimeLocalValue(editingItem.rangeStartDate) : (editingItem.rangeStart ?? "")}
+                    onChange={(e) => onUpdateEditingItem(dateField ? "rangeStartDate" : "rangeStart", e.target.value)}
+                    placeholder="Start value"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">End</label>
+                  <Input
+                    type={dateField ? "datetime-local" : "number"}
+                    step={dateField ? undefined : "any"}
+                    value={dateField ? toDateTimeLocalValue(editingItem.rangeEndDate) : (editingItem.rangeEnd ?? "")}
+                    onChange={(e) => onUpdateEditingItem(dateField ? "rangeEndDate" : "rangeEnd", e.target.value)}
+                    placeholder="End value"
+                  />
+                </div>
+              </div>
+            )}
+            {(editingItem.operator === "EQUAL" || editingItem.operator === "GREATER_THAN") && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Value</label>
+                <Input
+                  type={dateField ? "datetime-local" : "number"}
+                  step={dateField ? undefined : "any"}
+                  value={dateField ? toDateTimeLocalValue(editingItem.rangeStartDate) : (editingItem.rangeStart ?? "")}
+                  onChange={(e) => onUpdateEditingItem(dateField ? "rangeStartDate" : "rangeStart", e.target.value)}
+                  placeholder={editingItem.operator === "EQUAL" ? "Exact value" : "Minimum value"}
+                />
+              </div>
+            )}
+            {editingItem.operator === "LESS_THAN" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Value</label>
+                <Input
+                  type={dateField ? "datetime-local" : "number"}
+                  step={dateField ? undefined : "any"}
+                  value={dateField ? toDateTimeLocalValue(editingItem.rangeEndDate) : (editingItem.rangeEnd ?? "")}
+                  onChange={(e) => onUpdateEditingItem(dateField ? "rangeEndDate" : "rangeEnd", e.target.value)}
+                  placeholder="Maximum value"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setItemModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={onSaveItem}>
+              {editingItemIndex !== null ? "Save" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-            {/* Basic Information Section */}
-            <SectionCard variant="blue">
-              <SectionCard.Header icon={IconInfoCircle} title="Basic Information" description="Unique identifier for this custom facet." />
-              <SectionCard.Content>
+          {/* Basic Information Section */}
+          <SectionCard variant="blue">
+            <SectionCard.Header icon={IconInfoCircle} title="Basic Information" description="Unique identifier for this custom facet." />
+            <SectionCard.Content>
+              <FormField
+                control={control}
+                name="name"
+                rules={{
+                  required: "Please enter an identifier.",
+                  pattern: {
+                    value: FACET_NAME_PATTERN,
+                    message: "Use only letters, numbers, underscores (_), or hyphens (-).",
+                  },
+                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Identifier</FormLabel>
+                    <FormDescription>
+                      Give your facet a unique identifier using lowercase letters, numbers, underscores, or hyphens. This helps organize your search filters.
+                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="e.g., price_range"
+                        type="text"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+
+            </SectionCard.Content>
+          </SectionCard>
+
+          {/* Labels Section */}
+          <SectionCard variant="violet">
+            <SectionCard.Header icon={IconLanguage} title="Display Labels" description="Names shown to users when browsing filters." />
+            <SectionCard.Content>
+              <div>
                 <FormField
                   control={control}
-                  name="name"
-                  rules={{
-                    required: "Please enter an identifier.",
-                    pattern: {
-                      value: FACET_NAME_PATTERN,
-                      message: "Use only letters, numbers, underscores (_), or hyphens (-).",
-                    },
-                  }}
+                  name="defaultLabel"
+                  rules={{ required: true }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Identifier</FormLabel>
+                      <FormLabel>Default</FormLabel>
                       <FormDescription>
-                        Give your facet a unique identifier using lowercase letters, numbers, underscores, or hyphens. This helps organize your search filters.
+                        The name shown to users when browsing filters. Used when no language-specific label is available.
                       </FormDescription>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., price_range"
+                          value={field.value ?? ""}
+                          placeholder="e.g., Price Range"
                           type="text"
                         />
                       </FormControl>
@@ -447,76 +624,77 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                     </FormItem>
                   )}
                 />
+                <SNSiteLabelTranslations
+                  entries={labelEntries}
+                  locales={availableLocales}
+                  onAdd={addLabelEntry}
+                  onUpdate={updateLabelEntry}
+                  onRemove={removeLabelEntry}
+                />
+              </div>
+            </SectionCard.Content>
+          </SectionCard>
 
-
-              </SectionCard.Content>
-            </SectionCard>
-
-            {/* Labels Section */}
-            <SectionCard variant="violet">
-              <SectionCard.Header icon={IconLanguage} title="Display Labels" description="Names shown to users when browsing filters." />
-              <SectionCard.Content>
-                <div>
-                  <FormField
-                    control={control}
-                    name="defaultLabel"
-                    rules={{ required: true }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default</FormLabel>
-                        <FormDescription>
-                          The name shown to users when browsing filters. Used when no language-specific label is available.
-                        </FormDescription>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="e.g., Price Range"
-                            type="text"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <SNSiteLabelTranslations
-                    entries={labelEntries}
-                    locales={availableLocales}
-                    onAdd={addLabelEntry}
-                    onUpdate={updateLabelEntry}
-                    onRemove={removeLabelEntry}
-                  />
-                </div>
-              </SectionCard.Content>
-            </SectionCard>
-
-            {/* Facet Configuration Section */}
-            <SectionCard variant="emerald">
-              <SectionCard.Header icon={IconFilter} title="Facet Configuration" description="Field selection and operator settings." />
-              <SectionCard.Content>
+          {/* Facet Configuration Section */}
+          <SectionCard variant="emerald">
+            <SectionCard.Header icon={IconFilter} title="Facet Configuration" description="Field selection and operator settings." />
+            <SectionCard.Content>
+              <FormField
+                control={control}
+                name="fieldExtId"
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>Select a Field</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description >Choose the field that will serve as the foundation for this custom facet.</FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select onValueChange={onFieldChange} value={field.value || ""}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a field" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fieldOptions.map((fieldOption) => (
+                              <SelectItem key={fieldOption.id} value={fieldOption.id}>
+                                <div className="flex items-center justify-between gap-3">
+                                  <BadgeFieldType type={fieldOption.type} variation="short" />
+                                  <span>{fieldOption.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <div className="space-y-6">
+                {/* Facet Type Row */}
                 <FormField
                   control={control}
-                  name="fieldExtId"
-                  rules={{ required: true }}
+                  name="facetType"
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Select a Field</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description >Choose the field that will serve as the foundation for this custom facet.</FormItemTwoColumns.Description>
+                        <FormItemTwoColumns.Label>Operator between Facets</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description >
+                          Specifies how multiple facets are combined in search.
+                        </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
                         <FormControl>
-                          <Select onValueChange={onFieldChange} value={field.value || ""}>
+                          <Select onValueChange={field.onChange} value={field.value ?? "DEFAULT"}>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a field" />
+                              <SelectValue placeholder="Select facet type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {fieldOptions.map((fieldOption) => (
-                                <SelectItem key={fieldOption.id} value={fieldOption.id}>
-                                  <div className="flex items-center justify-between gap-3">
-                                    <BadgeFieldType type={fieldOption.type} variation="short" />
-                                    <span>{fieldOption.name}</span>
-                                  </div>
+                              {facetTypes.map((facetType) => (
+                                <SelectItem key={facetType.value} value={facetType.value}>
+                                  {facetType.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -527,130 +705,97 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                     </FormItemTwoColumns>
                   )}
                 />
-                <div className="space-y-6">
-                  {/* Facet Type Row */}
-                  <FormField
-                    control={control}
-                    name="facetType"
-                    render={({ field }) => (
-                      <FormItemTwoColumns>
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Operator between Facets</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description >
-                            Specifies how multiple facets are combined in search.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <FormControl>
-                            <Select onValueChange={field.onChange} value={field.value ?? "DEFAULT"}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select facet type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {facetTypes.map((facetType) => (
-                                  <SelectItem key={facetType.value} value={facetType.value}>
-                                    {facetType.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItemTwoColumns.Right>
-                      </FormItemTwoColumns>
-                    )}
-                  />
 
-                  {/* Facet Item Type Row */}
-                  <FormField
-                    control={control}
-                    name="facetItemType"
-                    render={({ field }) => (
-                      <FormItemTwoColumns>
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Operator between Facet Items</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description >
-                            Defines how multiple selected facet values are joined.
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <FormControl>
-                            <Select onValueChange={field.onChange} value={field.value ?? "DEFAULT"}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select item type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {facetTypes.map((facetType) => (
-                                  <SelectItem key={facetType.value} value={facetType.value}>
-                                    {facetType.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItemTwoColumns.Right>
-                      </FormItemTwoColumns>
-                    )}
-                  />
-                </div>
-              </SectionCard.Content>
-            </SectionCard>
+                {/* Facet Item Type Row */}
+                <FormField
+                  control={control}
+                  name="facetItemType"
+                  render={({ field }) => (
+                    <FormItemTwoColumns>
+                      <FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Label>Operator between Facet Items</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description >
+                          Defines how multiple selected facet values are joined.
+                        </FormItemTwoColumns.Description>
+                      </FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Right>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value ?? "DEFAULT"}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select item type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {facetTypes.map((facetType) => (
+                                <SelectItem key={facetType.value} value={facetType.value}>
+                                  {facetType.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItemTwoColumns.Right>
+                    </FormItemTwoColumns>
+                  )}
+                />
+              </div>
+            </SectionCard.Content>
+          </SectionCard>
 
-            {/* Facet Items Section */}
-            <SectionCard variant="amber">
-              <SectionCard.Header icon={IconListDetails} title="Facet Range Items" description="Custom range buckets for this filter." />
-              <SectionCard.Content>
-                <FormItem>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="grid gap-2">
-                      <FormLabel>Define Your Ranges</FormLabel>
-                      <FormDescription>Create custom range buckets for this filter. Drag items to reorder them—they'll appear in this order to users.</FormDescription>
-                    </div>
-                    <Button type="button" variant="outline" onClick={onAddItem}>
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Item
-                    </Button>
+          {/* Facet Items Section */}
+          <SectionCard variant="amber">
+            <SectionCard.Header icon={IconListDetails} title="Facet Items" description="Custom filter conditions for this facet." />
+            <SectionCard.Content>
+              <FormItem>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="grid gap-2">
+                    <FormLabel>Define Your Items</FormLabel>
+                    <FormDescription>Create custom filter conditions (between, equal, greater than, less than). Drag items to reorder.</FormDescription>
                   </div>
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                    <div className="rounded-md border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead className="w-10" />
-                            <TableHead className="w-16">Position</TableHead>
-                            <TableHead>Label</TableHead>
-                            <TableHead>Range Start</TableHead>
-                            <TableHead>Range End</TableHead>
-                            <TableHead className="w-24 text-right" />
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <SortableContext
-                            items={items.map((item, index) => item.id || `item-${index}`)}
-                            strategy={verticalListSortingStrategy}
-                          >
-                            {items.map((item, index) => (
-                              <ItemRow
-                                key={item.id || `item-${index}`}
-                                item={item}
-                                index={index}
-                                isDateField={dateField}
-                                onUpdate={onItemUpdate}
-                                onRemove={onRemoveItem}
-                              />
-                            ))}
-                          </SortableContext>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </DndContext>
-                </FormItem>
-              </SectionCard.Content>
-            </SectionCard>
+                  <Button type="button" variant="outline" onClick={onOpenAddItem}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="w-10" />
+                          <TableHead className="w-16">#</TableHead>
+                          <TableHead>Label</TableHead>
+                          <TableHead>Operator</TableHead>
+                          <TableHead>Condition</TableHead>
+                          <TableHead className="w-24 text-right" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <SortableContext
+                          items={items.map((item, index) => item.id || `item-${index}`)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {items.map((item, index) => (
+                            <ItemRow
+                              key={item.id || `item-${index}`}
+                              item={item}
+                              index={index}
+                              isDateField={dateField}
+                              onEdit={onOpenEditItem}
+                              onRemove={onRemoveItem}
+                            />
+                          ))}
+                        </SortableContext>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </DndContext>
+              </FormItem>
+            </SectionCard.Content>
+          </SectionCard>
 
           <FormActions>
-            <FormActions.Cancel onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/custom-facet`)} />
+            <FormActions.Cancel onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)} />
             <FormActions.Submit>{isNew ? "Create Facet" : "Save Changes"}</FormActions.Submit>
           </FormActions>
         </form>

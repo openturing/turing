@@ -17,6 +17,7 @@
 package com.viglet.turing.api.se;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -149,6 +150,26 @@ public class TurSEInstanceAPI {
                         return ResponseEntity.ok(cores);
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
+
+        @Operation(summary = "Create a new core/collection in a Search Engine")
+        @PostMapping("/{id}/cores")
+        public ResponseEntity<Void> turSEInstanceCreateCore(@PathVariable String id,
+                        @RequestBody TurSECreateCoreRequest request) {
+                if (request.name == null || request.name.isBlank()) {
+                        return ResponseEntity.badRequest().build();
+                }
+                if (request.locale == null || request.locale.isBlank()) {
+                        return ResponseEntity.badRequest().build();
+                }
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        Locale language = Locale.forLanguageTag(request.locale.replace("_", "-"));
+                        pluginFactory.getPluginForInstance(turSEInstance)
+                                        .createStandaloneIndex(turSEInstance, language, request.name.trim());
+                        return ResponseEntity.status(HttpStatus.CREATED).<Void>build();
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        }
+
+        public record TurSECreateCoreRequest(String name, String locale) {}
 
         @Operation(summary = "Delete a Solr core/collection from a Search Engine")
         @DeleteMapping("/{id}/cores/{core}")

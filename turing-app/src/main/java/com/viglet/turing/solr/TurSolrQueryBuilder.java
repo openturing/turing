@@ -67,6 +67,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -799,22 +800,41 @@ public class TurSolrQueryBuilder {
 
     private static String setRangeFilterQuery(String fieldName, TurSEFieldType fieldType,
             TurSNSiteCustomFacetItem item) {
-        String start;
-        String end;
+        var operator = Optional.ofNullable(item.getOperator())
+                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN);
 
         if (TurSEFieldType.DATE.equals(fieldType)) {
-            start = Optional.ofNullable(item.getRangeStartDate())
-                    .map(Instant::toString)
-                    .orElse("*");
-            end = Optional.ofNullable(item.getRangeEndDate())
-                    .map(Instant::toString)
-                    .orElse("*");
-        } else {
-            start = Optional.ofNullable(item.getRangeStart()).map(Number::toString).orElse("*");
-            end = Optional.ofNullable(item.getRangeEnd()).map(Number::toString).orElse("*");
+            return buildFilterQueryByOperator(fieldName, operator,
+                    Optional.ofNullable(item.getRangeStartDate()).map(Instant::toString).orElse(null),
+                    Optional.ofNullable(item.getRangeEndDate()).map(Instant::toString).orElse(null));
         }
 
-        return String.format("%s:[%s TO %s]", fieldName, start, end);
+        return buildFilterQueryByOperator(fieldName, operator,
+                Optional.ofNullable(item.getRangeStart()).map(Number::toString).orElse(null),
+                Optional.ofNullable(item.getRangeEnd()).map(Number::toString).orElse(null));
+    }
+
+    private static String buildFilterQueryByOperator(String fieldName,
+            TurSNSiteCustomFacetOperatorEnum operator, String startValue, String endValue) {
+        return switch (operator) {
+            case EQUAL -> {
+                String value = startValue != null ? startValue : (endValue != null ? endValue : "*");
+                yield String.format("%s:%s", fieldName, value);
+            }
+            case GREATER_THAN -> {
+                String start = startValue != null ? startValue : "*";
+                yield String.format("%s:{%s TO *]", fieldName, start);
+            }
+            case LESS_THAN -> {
+                String end = endValue != null ? endValue : "*";
+                yield String.format("%s:[* TO %s}", fieldName, end);
+            }
+            case BETWEEN -> {
+                String start = startValue != null ? startValue : "*";
+                String end = endValue != null ? endValue : "*";
+                yield String.format("%s:[%s TO %s]", fieldName, start, end);
+            }
+        };
     }
 
     private record CustomFacetFilterMapping(String customFacetName,

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-operator-to-custom-facet-item
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_custom_facet_item
+                columnName: operator
+      changes:
+        - addColumn:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: operator
+                  type: varchar(20)
+                  defaultValue: BETWEEN

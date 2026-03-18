@@ -60,6 +60,21 @@ public interface TurSearchEnginePlugin {
     void createIndex(TurSEInstance seInstance, TurSNSiteLocale siteLocale, String indexName,
             Map<String, TurSEFieldType> fieldTypes);
 
+    /**
+     * Creates a standalone index/core without requiring a site locale entity.
+     * Uses only the language to determine the configSet (Solr) or
+     * creates the index directly (Lucene/ES).
+     *
+     * @param seInstance the search engine instance
+     * @param language   the locale language (e.g., Locale.forLanguageTag("en"))
+     * @param indexName  the name for the new index/core
+     */
+    default void createStandaloneIndex(TurSEInstance seInstance, Locale language, String indexName) {
+        TurSNSiteLocale tempLocale = new TurSNSiteLocale();
+        tempLocale.setLanguage(language);
+        createIndex(seInstance, tempLocale, indexName, Map.of());
+    }
+
     void deleteIndex(TurSEInstance seInstance, String indexName);
 
     void clearIndex(TurSEInstance seInstance, String indexName);

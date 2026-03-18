@@ -31,6 +31,8 @@ import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -75,6 +77,10 @@ public class TurSNSiteCustomFacetItem implements Serializable {
 
     @Column(name = "range_end_date")
     private Instant rangeEndDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "operator", length = 20)
+    private TurSNSiteCustomFacetOperatorEnum operator;
 
     @ManyToOne
     @JoinColumn(name = "custom_facet_id", nullable = false)
