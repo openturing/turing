@@ -12,4 +12,7 @@ import java.util.List;
  */
 public interface TurAssetTrainingRecordRepository extends JpaRepository<TurAssetTrainingRecord, String> {
     List<TurAssetTrainingRecord> findByObjectNameIn(Collection<String> objectNames);
+    List<TurAssetTrainingRecord> findByFileNameContainingIgnoreCase(String keyword);
+    List<TurAssetTrainingRecord> findByContentType(String contentType);
+    long countByContentType(String contentType);
 }

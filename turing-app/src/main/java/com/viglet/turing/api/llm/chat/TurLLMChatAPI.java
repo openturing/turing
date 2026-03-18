@@ -47,6 +47,7 @@ import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
+import com.viglet.turing.genai.tool.TurRagSearchToolService;
 import com.viglet.turing.genai.tool.TurToolDescriptionCallback;
 import com.viglet.turing.genai.tool.TurToolDescriptionService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
@@ -101,6 +102,7 @@ public class TurLLMChatAPI {
     private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final TurImageSearchToolService imageSearchToolService;
     private final TurDateTimeToolService dateTimeToolService;
+    private final TurRagSearchToolService ragSearchToolService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurToolDescriptionService toolDescriptionService;
 
@@ -113,6 +115,7 @@ public class TurLLMChatAPI {
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurImageSearchToolService imageSearchToolService,
             TurDateTimeToolService dateTimeToolService,
+            TurRagSearchToolService ragSearchToolService,
             TurLLMTokenUsageService tokenUsageService,
             TurToolDescriptionService toolDescriptionService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -124,6 +127,7 @@ public class TurLLMChatAPI {
         this.codeInterpreterToolService = codeInterpreterToolService;
         this.imageSearchToolService = imageSearchToolService;
         this.dateTimeToolService = dateTimeToolService;
+        this.ragSearchToolService = ragSearchToolService;
         this.tokenUsageService = tokenUsageService;
         this.toolDescriptionService = toolDescriptionService;
     }
@@ -193,15 +197,23 @@ public class TurLLMChatAPI {
         springMessages.addAll(buildMessages(request.messages(), files));
 
         if (turLLMInstance.isToolsEnabled()) {
+            // Build base tool objects list, conditionally add RAG search
+            java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
+                    webCrawlerToolService, weatherToolService, financeToolService,
+                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService));
+            if (ragSearchToolService.isAvailable()) {
+                toolObjects.add(ragSearchToolService);
+            }
+
             ToolCallback[] toolCallbacks = TurToolDescriptionCallback.wrap(
                     MethodToolCallbackProvider.builder()
-                            .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
-                                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService)
+                            .toolObjects(toolObjects.toArray())
                             .build()
                             .getToolCallbacks(),
                     toolDescriptionService);
 
-            log.info("[Chat] Registered {} tool callbacks for LLM instance {}", toolCallbacks.length, id);
+            log.info("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
+                    toolCallbacks.length, id, ragSearchToolService.isAvailable());
 
             var chatOptions = DefaultToolCallingChatOptions.builder()
                     .toolCallbacks(toolCallbacks)
