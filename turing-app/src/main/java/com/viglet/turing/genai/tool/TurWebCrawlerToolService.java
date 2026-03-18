@@ -19,16 +19,7 @@ public class TurWebCrawlerToolService {
     private static final int MAX_BODY_LENGTH = 12_000;
     private static final int MAX_LINKS = 30;
 
-    @Tool(name = "fetch_webpage", description = """
-            Fetches a web page by URL and returns its text content.
-            Use this tool when the user asks about a URL, wants to read an article, \
-            or needs information from a specific web page.
-            Args:
-                url (str): The full URL to fetch (e.g., 'https://example.com/page'). Required.
-                includeLinks (str): Set to 'yes' to also include a list of links found on the page. \
-            Default is 'no'.
-            Returns:
-                The page title and main text content, optionally followed by links found on the page.""")
+    @Tool(name = "fetch_webpage", description = ".")
     public String fetchWebpage(String url, String includeLinks) {
         log.info("[WebCrawler Tool] fetch_webpage called: url={}, includeLinks={}", url, includeLinks);
         try {
@@ -100,15 +91,7 @@ public class TurWebCrawlerToolService {
         return text.contains(filterKeyword) || href.toLowerCase().contains(filterKeyword);
     }
 
-    @Tool(name = "extract_links", description = """
-            Extracts all links from a web page, optionally filtered by a keyword.
-            Use this tool to discover navigation, find sub-pages, or locate specific resources on a site.
-            Args:
-                url (str): The full URL to crawl (e.g., 'https://example.com'). Required.
-                filterKeyword (str): Optional keyword to filter links by text or URL. \
-            Use empty string to return all links.
-            Returns:
-                A list of links (text and URL) found on the page.""")
+    @Tool(name = "extract_links", description = ".")
     public String extractLinks(String url, String filterKeyword) {
         log.info("[WebCrawler Tool] extract_links called: url={}, filter={}", url, filterKeyword);
         try {

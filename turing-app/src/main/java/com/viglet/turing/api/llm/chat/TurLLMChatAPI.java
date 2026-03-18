@@ -2,10 +2,13 @@ package com.viglet.turing.api.llm.chat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
+
+import jakarta.annotation.PostConstruct;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
@@ -44,6 +47,8 @@ import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
+import com.viglet.turing.genai.tool.TurToolDescriptionCallback;
+import com.viglet.turing.genai.tool.TurToolDescriptionService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -67,55 +72,25 @@ public class TurLLMChatAPI {
     private static final Set<String> IMAGE_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp");
 
-    // ── System prompt: modular sections ──
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/base.md")
+    private org.springframework.core.io.Resource basePromptResource;
 
-    private static final String BASE_PROMPT = """
-            You are a helpful, friendly AI assistant. Respond naturally and conversationally. \
-            If the user asks in a specific language, respond in that same language.
-            """;
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/tools.md")
+    private org.springframework.core.io.Resource toolsPromptResource;
 
-    private static final String TOOLS_PROMPT = """
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/render.md")
+    private org.springframework.core.io.Resource renderPromptResource;
 
-            TOOL USAGE RULES:
-            - Default behavior: respond conversationally. Most messages do NOT need tools.
-            - Only use a tool when you are certain the user wants real-time or computed data.
-            - Each tool has its own description — read it carefully before calling.
-            - After using a tool, summarize the results clearly.
-            - For execute_python: do NOT use it for charts/visualizations — use ```html with Chart.js instead. \
-            Only use execute_python for charts if the user explicitly asks for matplotlib or Python. \
-            When execute_python returns files, use ![image](url) for images, [Download](url) for other files.
-            - For search_images: before calling, optimize the query as a Prompt Engineer — enrich with \
-            adjectives, scene context, and photography terms. Display results as ![description](url).
-            """;
+    private String basePrompt;
+    private String toolsPrompt;
+    private String renderPrompt;
 
-    private static final String RENDER_PROMPT = """
-
-            RICH CONTENT — The frontend renders special code blocks natively:
-
-            ■ ```d2 — DIAGRAMS (D2 language, NOT Mermaid):
-            Shapes: `name: Label`, `name: Label {shape: cylinder}`
-            Connections: `a -> b: label`, `a <-> b`, `a -- b`
-            Containers: `group: { a: X; b: Y; a -> b }`
-            Shapes: rectangle, oval, circle, diamond, hexagon, cloud, cylinder, queue, \
-            parallelogram, page, package, class, sql_table, stored_data, person
-            Styling: `name.style.fill: "#e0f7fa"`
-            NEVER use Mermaid syntax (flowchart TD, A[label], A-->|text|B) in ```d2 blocks.
-
-            ■ ```html — LIVE PREVIEW (sandboxed iframe, ~700x400px):
-            Self-contained HTML fragment (no <html>/<body> needed). Use inline <style> and <script>. \
-            External CDNs allowed (Google Fonts, cdnjs, jsdelivr). Fit within viewport: compact layouts, \
-            overflow:hidden on root, scroll on inner containers if needed. Canvas: max 680x360.
-
-            ■ CHARTS — Use ```html with Chart.js from CDN:
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            responsive:true, maintainAspectRatio:false, container height ~280px. \
-            Colors: ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'].
-
-            CHOOSING FORMAT:
-            - ```d2 → architecture, flowcharts, ERDs, system diagrams
-            - ```html → UI mockups, demos, games, animations, landing pages
-            - ```html + Chart.js → bar, line, pie, doughnut, radar, scatter charts
-            """;
+    @PostConstruct
+    void loadPrompts() throws IOException {
+        basePrompt = basePromptResource.getContentAsString(StandardCharsets.UTF_8);
+        toolsPrompt = toolsPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        renderPrompt = renderPromptResource.getContentAsString(StandardCharsets.UTF_8);
+    }
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
@@ -127,6 +102,7 @@ public class TurLLMChatAPI {
     private final TurImageSearchToolService imageSearchToolService;
     private final TurDateTimeToolService dateTimeToolService;
     private final TurLLMTokenUsageService tokenUsageService;
+    private final TurToolDescriptionService toolDescriptionService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
@@ -137,7 +113,8 @@ public class TurLLMChatAPI {
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurImageSearchToolService imageSearchToolService,
             TurDateTimeToolService dateTimeToolService,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurLLMTokenUsageService tokenUsageService,
+            TurToolDescriptionService toolDescriptionService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -148,6 +125,7 @@ public class TurLLMChatAPI {
         this.imageSearchToolService = imageSearchToolService;
         this.dateTimeToolService = dateTimeToolService;
         this.tokenUsageService = tokenUsageService;
+        this.toolDescriptionService = toolDescriptionService;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -209,17 +187,19 @@ public class TurLLMChatAPI {
 
         List<Message> springMessages = new ArrayList<>();
         String systemPrompt = turLLMInstance.isToolsEnabled()
-                ? BASE_PROMPT + TOOLS_PROMPT + RENDER_PROMPT
-                : BASE_PROMPT + RENDER_PROMPT;
+                ? basePrompt + toolsPrompt + renderPrompt
+                : basePrompt + renderPrompt;
         springMessages.add(new SystemMessage(systemPrompt));
         springMessages.addAll(buildMessages(request.messages(), files));
 
         if (turLLMInstance.isToolsEnabled()) {
-            ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
-                    .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
-                            codeInterpreterToolService, imageSearchToolService, dateTimeToolService)
-                    .build()
-                    .getToolCallbacks();
+            ToolCallback[] toolCallbacks = TurToolDescriptionCallback.wrap(
+                    MethodToolCallbackProvider.builder()
+                            .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
+                                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService)
+                            .build()
+                            .getToolCallbacks(),
+                    toolDescriptionService);
 
             log.info("[Chat] Registered {} tool callbacks for LLM instance {}", toolCallbacks.length, id);
 

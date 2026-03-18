@@ -83,11 +83,7 @@ public class TurSemanticNavToolService {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
     }
 
-    @Tool(name = "list_sites", description = """
-            Lists available Semantic Navigation sites.
-            ONLY use this if you do not know the siteName or need to verify available locales.
-            Args:
-                filterName (str): Optional. Filter sites by name. Use empty string for all.""")
+    @Tool(name = "list_sites", description = ".")
     public String listSites(String filterName) {
         log.info("[SemanticNav Tool] list_sites called with filterName={}", filterName);
         List<TurSNSite> sites = turSNSiteRepository.findAll(Sort.by("name"));
@@ -116,12 +112,7 @@ public class TurSemanticNavToolService {
         return result;
     }
 
-    @Tool(name = "get_site_fields", description = """
-            Retrieves valid facet fields for filtering a specific site.
-            ONLY call this if the user asks for specific filters (e.g., 'by author', 'only news')
-            and you need to know the exact field name to use in search_site.
-            Args:
-                siteName (str): Name of the site.""")
+    @Tool(name = "get_site_fields", description = ".")
     public String getSiteFields(String siteName) {
         log.info("[SemanticNav Tool] get_site_fields called with siteName={}", siteName);
         return turSNSiteRepository.findByNameIgnoreCase(siteName)
@@ -148,14 +139,7 @@ public class TurSemanticNavToolService {
                 .orElse("Site not found: " + siteName);
     }
 
-    @Tool(name = "get_valid_filter_values", description = """
-            Returns the exact, valid string values that can be used for a specific filter (facet) in search_site.
-            Use this tool BEFORE applying a filter in search_site if you are not 100% sure of the exact value name
-            in the database. This prevents hallucinating filter values.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                fieldName (str): Required. The facet field name (e.g., 'temas', 'author', 'type').""")
+    @Tool(name = "get_valid_filter_values", description = ".")
     public String getValidFilterValues(String siteName, String locale, String fieldName) {
         log.info("[SemanticNav Tool] get_valid_filter_values called: siteName={}, locale={}, fieldName={}",
                 siteName, locale, fieldName);
@@ -208,33 +192,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "search_site", description = """
-            Searches for content on a site. Returns compact results (ID, title, URL, snippet).
-            Use get_document_details to read the full content of a specific result.
-
-            MANDATORY WORKFLOW — follow these steps IN ORDER:
-            1. FIRST call 'discover_facet_values' (phrase) or 'lookup_facet_value' (single word)
-               to check which words match existing facet values.
-            2. THEN call 'search_site' using the results:
-               - Words that MATCHED a facet → put ONLY in 'filterQueries' (with exact value from facet)
-               - Words that DID NOT match any facet → put in 'query'
-               - If ALL words matched facets → use query='*'
-            3. NEVER put the same word in BOTH 'query' and 'filterQueries'. This causes redundant
-               filtering and returns poor results.
-            4. NEVER invent filter values. ONLY use exact values returned by the facet lookup tools.
-
-            Example: User says "graduação tecnologia"
-              → discover_facet_values finds: graduação→programas:Graduação, tecnologia→area-de-conhecimento:Tecnologia
-              → search_site(query='*', filterQueries='programas:Graduação|area-de-conhecimento:Tecnologia')
-
-            Args:
-                siteName (str): Required. Use 'educaction-stage-publish' as default if unknown.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                query (str): Required. Use '*' when all user terms are covered by filterQueries.
-                rows (int): Optional. Number of results. Defaults to 10.
-                page (int): Optional. Defaults to 1.
-                filterQueries (str): Optional. Format: field_name:VALUE. Separate with pipe (|).
-            """)
+    @Tool(name = "search_site", description = ".")
     public String searchSite(String siteName, String locale, String query,
             Integer rows, Integer page, String filterQueries) {
 
@@ -346,14 +304,7 @@ public class TurSemanticNavToolService {
         return value.length() > maxLength ? value.substring(0, maxLength) + "..." : value;
     }
 
-    @Tool(name = "get_document_details", description = """
-            Retrieves the full text and complete metadata of a single document using its ID.
-            Call this tool when the user asks for specific details about a document found in a
-            previous search, or if you need to read the full content to answer a complex question.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                documentId (str): Required. The document ID from a previous search result.""")
+    @Tool(name = "get_document_details", description = ".")
     public String getDocumentDetails(String siteName, String locale, String documentId) {
         log.info("[SemanticNav Tool] get_document_details called: siteName={}, locale={}, documentId={}",
                 siteName, locale, documentId);
@@ -396,14 +347,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "get_search_suggestions", description = """
-            Provides autocomplete suggestions and spelling corrections for a search query.
-            Use this tool ONLY if search_site returns 0 results, to check if the user misspelled a word.
-            Also useful to help the user refine their search terms.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                term (str): Required. The search term to get suggestions for.""")
+    @Tool(name = "get_search_suggestions", description = ".")
     public String getSearchSuggestions(String siteName, String locale, String term) {
         log.info("[SemanticNav Tool] get_search_suggestions called: siteName={}, locale={}, term={}",
                 siteName, locale, term);
@@ -456,13 +400,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "find_similar_documents", description = """
-            Finds documents that are semantically similar to a specific document (More Like This).
-            Use this when the user asks for recommendations, related articles, or 'more like this'.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                documentId (str): Required. The document ID to find similar documents for.""")
+    @Tool(name = "find_similar_documents", description = ".")
     public String findSimilarDocuments(String siteName, String locale, String documentId) {
         log.info("[SemanticNav Tool] find_similar_documents called: siteName={}, locale={}, documentId={}",
                 siteName, locale, documentId);
@@ -528,17 +466,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "get_aggregated_stats", description = """
-            Calculates totals and distributions for a specific category using facet aggregation.
-            Call this when the user asks 'how many', 'what is the distribution', 'count by category',
-            or wants statistical data about content WITHOUT needing to read the actual documents.
-            Much more efficient than reading all results and counting manually.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                query (str): Required. The search query to scope the aggregation (e.g., 'Pos-Graduacao', '*' for all).
-                facetField (str): Required. The field to aggregate by (e.g., 'area_conhecimento', 'type', 'author').
-                filterQueries (str): Optional. Additional filters. Format: field_name:VALUE. Separate with pipe (|).""")
+    @Tool(name = "get_aggregated_stats", description = ".")
     public String getAggregatedStats(String siteName, String locale, String query,
             String facetField, String filterQueries) {
         log.info(
@@ -635,16 +563,7 @@ public class TurSemanticNavToolService {
         return sb.toString();
     }
 
-    @Tool(name = "get_document_highlights", description = """
-            Extracts specific sentences or paragraphs from a document where the search terms appear.
-            Use this for precise questions about long documents (rules, regulations, chapters) to save context.
-            Instead of reading the full document, this returns only the relevant highlighted passages.
-            Requires highlighting to be enabled on the site.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                documentId (str): Required. The document ID to search within.
-                termsToHighlight (str): Required. The search terms to find within the document.""")
+    @Tool(name = "get_document_highlights", description = ".")
     public String getDocumentHighlights(String siteName, String locale,
             String documentId, String termsToHighlight) {
         log.info("[SemanticNav Tool] get_document_highlights called: siteName={}, locale={}, docId={}, terms='{}'",
@@ -749,16 +668,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "compare_items", description = """
-            Compares specific fields of two or more documents side-by-side in a structured table format.
-            Call this when the user asks for differences, similarities, or a comparison between courses,
-            articles, events, or any other content items.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                documentIds (str): Required. Comma-separated document IDs (2 to 5 IDs).
-                fieldsToCompare (str): Required. Comma-separated field names to compare
-                    (e.g., 'title,description,author,date,url').""")
+    @Tool(name = "compare_items", description = ".")
     public String compareItems(String siteName, String locale,
             String documentIds, String fieldsToCompare) {
         log.info("[SemanticNav Tool] compare_items called: siteName={}, locale={}, ids={}, fields={}",
@@ -884,17 +794,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "search_recent_updates", description = """
-            Retrieves the newest or most recently updated content about a topic.
-            Use this IMMEDIATELY when the user asks for 'latest', 'newest', 'recent news',
-            'updates', or 'what happened recently'. This tool handles date sorting automatically,
-            so the LLM does NOT need to build date filter queries.
-            Args:
-                siteName (str): Required. Name of the site.
-                locale (str): Required. Use 'pt_BR' or 'en'.
-                query (str): Required. The topic to search for. Use '*' for all recent content.
-                rows (int): Optional. Number of recent results. Defaults to 5.
-                filterQueries (str): Optional. Additional filters. Format: field_name:VALUE. Separate with pipe (|).""")
+    @Tool(name = "search_recent_updates", description = ".")
     public String searchRecentUpdates(String siteName, String locale, String query,
             Integer rows, String filterQueries) {
         log.info("[SemanticNav Tool] search_recent_updates called: siteName={}, locale={}, query='{}', rows={}, fq={}",
@@ -972,15 +872,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "get_facet_summary", description = """
-            Provides a statistical summary of ALL categories and attributes available for a given search query.
-            Call this tool when the user asks 'What types of X do you have?', 'How is the content organized?',
-            'What categories exist?', or wants a panoramic overview of available content without reading documents.
-            Unlike get_valid_filter_values (which returns values for ONE field), this returns ALL facet fields at once.
-            Args:
-                siteName (str): Required. Site name.
-                locale (str): Required. Search locale (e.g., 'pt_BR' or 'en').
-                query (str): Optional. The search term to scope the summary. Use '*' for the entire site.""")
+    @Tool(name = "get_facet_summary", description = ".")
     public String getFacetSummary(String siteName, String locale, String query) {
         log.info("[SemanticNav Tool] get_facet_summary called: siteName={}, locale={}, query='{}'",
                 siteName, locale, query);
@@ -1046,20 +938,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "search_by_date_range", description = """
-            Searches for documents within a specific date range.
-            Use this INSTEAD of search_site when the user asks for content from a specific period
-            (e.g., 'news from last year', 'events in October 2023', 'publications between March and June').
-            This tool handles date syntax automatically - the LLM only needs to provide simple YYYY-MM-DD dates.
-            Args:
-                siteName (str): Required. Site name.
-                locale (str): Required. Search locale (e.g., 'pt_BR' or 'en').
-                query (str): Required. The search term (or '*' for all content in the date range).
-                dateFieldName (str): Required. The name of the date field to filter on
-                    (must be discovered via get_site_fields, e.g., 'date', 'publication_date', 'modification_date').
-                startDate (str): Required. Start date in format YYYY-MM-DD.
-                endDate (str): Required. End date in format YYYY-MM-DD. Use the same date as startDate for a single day.
-                rows (int): Optional. Number of results. Defaults to 10.""")
+    @Tool(name = "search_by_date_range", description = ".")
     public String searchByDateRange(String siteName, String locale, String query,
             String dateFieldName, String startDate, String endDate, Integer rows) {
         log.info(
@@ -1144,19 +1023,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "lookup_facet_value", description = """
-            Looks up a SINGLE term across all available facets to find exact filter values in the database.
-            Uses word-stem matching so inflected forms (plurals, conjugations) also match.
-            CRITICAL: Call this BEFORE using 'filterQueries' in 'search_site' when you know a single keyword
-            but not the exact database value (e.g., 'docente', 'inovacao', 'silva').
-            IMPORTANT RULE: If the term matches a facet value, use it in 'filterQueries' and DO NOT repeat
-            the same term in the 'query' parameter of 'search_site'. Only use 'query' for words that did
-            not match any facet. This avoids redundant filtering and improves search precision.
-            For multi-word user phrases, prefer 'discover_facet_values' instead.
-            Args:
-                siteName (str): Required. The site name.
-                locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
-                term (str): Required. A single word or short term to look for inside facet values.""")
+    @Tool(name = "lookup_facet_value", description = ".")
     public String lookupFacetValue(String siteName, String locale, String term) {
         log.info("[SemanticNav Tool] lookup_facet_value called: siteName={}, locale={}, term='{}'",
                 siteName, locale, term);
@@ -1172,21 +1039,7 @@ public class TurSemanticNavToolService {
         }
     }
 
-    @Tool(name = "discover_facet_values", description = """
-            Splits a user phrase into individual words and searches ALL facets for values matching each word.
-            Uses word-stem matching for better recall (e.g., 'docentes' matches 'Docente').
-            CRITICAL USE CASE: When the user asks to filter by a phrase like 'cursos de engenharia' or
-            'professores de matemática', call this tool to discover which facet fields and values exist
-            for EACH word in the phrase. This prevents hallucinating filter values.
-            IMPORTANT RULE: Words that match a facet value MUST be used in 'filterQueries' and MUST NOT
-            be repeated in the 'query' parameter of 'search_site'. Only words that did NOT match any facet
-            should remain in the 'query'. This avoids redundant filtering and improves search precision.
-            For a single keyword, you may use 'lookup_facet_value' instead.
-            Args:
-                siteName (str): Required. The site name.
-                locale (str): Required. The locale (e.g., 'pt_BR' or 'en').
-                text (str): Required. A phrase or sentence whose words will be searched individually
-                    (e.g., 'cursos engenharia computação', 'professores matemática').""")
+    @Tool(name = "discover_facet_values", description = ".")
     public String discoverFacetValues(String siteName, String locale, String text) {
         log.info("[SemanticNav Tool] discover_facet_values called: siteName={}, locale={}, text='{}'",
                 siteName, locale, text);
