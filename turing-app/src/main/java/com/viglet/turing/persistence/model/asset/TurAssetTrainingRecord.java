@@ -28,7 +28,7 @@ public class TurAssetTrainingRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(length = 1024)
+    @Column(length = 768)
     private String objectName;
 
     @Column(length = 512)

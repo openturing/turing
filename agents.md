@@ -105,6 +105,7 @@ mvn clean install
 
 ### Common Pitfalls
 - `@Column(length=N)` must accommodate all enum/ID values (e.g., "AZURE_OPENAI" = 12 chars)
+- **MySQL primary key limit**: Max key length is 3072 bytes. With `utf8mb4` (4 bytes/char), `VARCHAR` PKs must be ≤ 768 chars. Example: `VARCHAR(1024)` PK fails on MySQL — use `VARCHAR(768)` instead
 - Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
 - Anthropic and Gemini providers don't support embedding — throw `UnsupportedOperationException`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing

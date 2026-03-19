@@ -13,7 +13,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: objectName
-                  type: varchar(1024)
+                  type: varchar(768)
                   constraints:
                     primaryKey: true
                     nullable: false
