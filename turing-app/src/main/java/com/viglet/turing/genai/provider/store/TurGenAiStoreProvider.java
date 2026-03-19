@@ -17,6 +17,17 @@ public interface TurGenAiStoreProvider {
             String decryptedCredential);
 
     /**
+     * Creates a VectorStore with a custom collection name override.
+     * Used when documents must be stored in a per-locale collection (e.g., the SN locale core name).
+     */
+    default VectorStore createVectorStore(TurStoreInstance turStoreInstance,
+            EmbeddingModel embeddingModel,
+            String decryptedCredential,
+            String collectionNameOverride) {
+        return createVectorStore(turStoreInstance, embeddingModel, decryptedCredential);
+    }
+
+    /**
      * Lists all collections in the vector store.
      * Providers that do not support collection listing return an empty list.
      */

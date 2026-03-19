@@ -21,6 +21,7 @@ package com.viglet.turing.persistence.model.sn.genai;
 import java.io.Serial;
 import java.io.Serializable;
 
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
@@ -59,6 +60,10 @@ public class TurSNSiteGenAi implements Serializable {
     @ManyToOne
     @JoinColumn(name = "store_instance_id")
     private TurStoreInstance turStoreInstance;
+
+    @ManyToOne
+    @JoinColumn(name = "embedding_model_instance_id")
+    private TurEmbeddingModel turEmbeddingModelInstance;
 
     @Lob
     @Column

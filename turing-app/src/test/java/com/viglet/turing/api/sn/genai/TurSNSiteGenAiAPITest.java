@@ -24,7 +24,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.viglet.turing.genai.TurGenAi;
+import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
@@ -40,7 +40,7 @@ class TurSNSiteGenAiAPITest {
     private TurSNSearchProcess turSNSearchProcess;
 
     @Mock
-    private TurGenAi turGenAi;
+    private TurSNGenAi turGenAi;
 
     @Mock
     private TurGenAiContextFactory turGenAiContextFactory;

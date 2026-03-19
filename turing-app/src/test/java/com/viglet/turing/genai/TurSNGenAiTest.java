@@ -10,19 +10,21 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
-class TurGenAiTest {
+class TurSNGenAiTest {
 
     @Test
     void shouldReturnDisabledMessageWhenContextIsDisabled() {
         TurSNSearchProcess turSNSearchProcess = mock(TurSNSearchProcess.class);
         TurGenAiContextFactory contextFactory = mock(TurGenAiContextFactory.class);
-        TurGenAi turGenAi = new TurGenAi(turSNSearchProcess, contextFactory);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNGenAi turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository);
         TurGenAiContext context = mock(TurGenAiContext.class);
         when(context.isEnabled()).thenReturn(false);
 
-        TurChatMessage result = turGenAi.assistant(context, "any question");
+        TurChatMessage result = turSNGenAi.assistant(context, "any question");
 
         assertFalse(result.isEnabled());
         assertEquals("AI configuration is not enabled", result.getText());
@@ -33,11 +35,12 @@ class TurGenAiTest {
     void shouldReturnEnabledMessageWithNullTextForWildcardSingleToken() {
         TurSNSearchProcess turSNSearchProcess = mock(TurSNSearchProcess.class);
         TurGenAiContextFactory contextFactory = mock(TurGenAiContextFactory.class);
-        TurGenAi turGenAi = new TurGenAi(turSNSearchProcess, contextFactory);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNGenAi turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository);
         TurGenAiContext context = mock(TurGenAiContext.class);
         when(context.isEnabled()).thenReturn(true);
 
-        TurChatMessage result = turGenAi.assistant(context, "*");
+        TurChatMessage result = turSNGenAi.assistant(context, "*");
 
         assertTrue(result.isEnabled());
         assertNull(result.getText());

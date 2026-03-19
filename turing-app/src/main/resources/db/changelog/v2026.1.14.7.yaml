@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-embedding-model-instance-to-sn-site-genai
+      author: alexandre
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: embedding_model_instance_id
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: embedding_model_instance_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_genai
+            baseColumnNames: embedding_model_instance_id
+            referencedTableName: embedding_model
+            referencedColumnNames: id
+            constraintName: fk_sn_site_genai_embedding_model

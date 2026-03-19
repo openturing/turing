@@ -1,21 +1,12 @@
 package com.viglet.turing.genai.tool;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
-import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
+import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
-import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
-import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
-import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.system.TurGlobalSettingsService;
-import com.viglet.turing.system.security.TurSecretCryptoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -38,26 +29,14 @@ public class TurRagSearchToolService {
     private static final Logger log = LoggerFactory.getLogger(TurRagSearchToolService.class);
 
     private final TurGlobalSettingsService globalSettingsService;
-    private final TurEmbeddingModelRepository embeddingModelRepository;
-    private final TurStoreInstanceRepository storeInstanceRepository;
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
-    private final TurGenAiStoreProviderFactory storeProviderFactory;
-    private final TurSecretCryptoService secretCryptoService;
+    private final TurRagContextBuilder ragContextBuilder;
     private final TurAssetTrainingRecordRepository trainingRecordRepository;
 
     public TurRagSearchToolService(TurGlobalSettingsService globalSettingsService,
-                                    TurEmbeddingModelRepository embeddingModelRepository,
-                                    TurStoreInstanceRepository storeInstanceRepository,
-                                    TurGenAiLlmProviderFactory llmProviderFactory,
-                                    TurGenAiStoreProviderFactory storeProviderFactory,
-                                    TurSecretCryptoService secretCryptoService,
+                                    TurRagContextBuilder ragContextBuilder,
                                     TurAssetTrainingRecordRepository trainingRecordRepository) {
         this.globalSettingsService = globalSettingsService;
-        this.embeddingModelRepository = embeddingModelRepository;
-        this.storeInstanceRepository = storeInstanceRepository;
-        this.llmProviderFactory = llmProviderFactory;
-        this.storeProviderFactory = storeProviderFactory;
-        this.secretCryptoService = secretCryptoService;
+        this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
     }
 
@@ -76,7 +55,9 @@ public class TurRagSearchToolService {
         int topK = (maxResults != null && maxResults > 0) ? Math.min(maxResults, 20) : 5;
 
         try {
-            VectorStore vectorStore = buildVectorStore();
+            VectorStore vectorStore = ragContextBuilder.buildFromGlobalSettings()
+                    .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."))
+                    .vectorStore();
 
             SearchRequest searchRequest = SearchRequest.builder()
                     .query(query)
@@ -202,10 +183,11 @@ public class TurRagSearchToolService {
             return "RAG is not enabled.";
         }
         try {
-            VectorStore vectorStore = buildVectorStore();
+            VectorStore vectorStore = ragContextBuilder.buildFromGlobalSettings()
+                    .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."))
+                    .vectorStore();
             int topK = (maxChunks != null && maxChunks > 0) ? Math.min(maxChunks, 50) : 10;
 
-            // Search specifically for this file's content
             SearchRequest request = SearchRequest.builder()
                     .query(fileName)
                     .topK(topK)
@@ -214,7 +196,6 @@ public class TurRagSearchToolService {
 
             List<Document> results = vectorStore.similaritySearch(request);
 
-            // Filter to only chunks from the matching file
             List<Document> fileChunks = results.stream()
                     .filter(d -> {
                         String docFileName = d.getMetadata().getOrDefault("fileName", "").toString();
@@ -249,49 +230,5 @@ public class TurRagSearchToolService {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
-    }
-
-    private VectorStore buildVectorStore() {
-        String embModelId = globalSettingsService.getDefaultEmbeddingModelId();
-        String storeId = globalSettingsService.getDefaultEmbeddingStoreId();
-
-        TurEmbeddingModel embModel = embeddingModelRepository.findById(embModelId)
-                .orElseThrow(() -> new IllegalStateException("Embedding Model not found: " + embModelId));
-        TurLLMInstance llmInstance = embModel.getTurLLMInstance();
-        if (llmInstance == null) {
-            throw new IllegalStateException("Embedding Model has no LLM instance.");
-        }
-
-        // Detached LLM instance with embedding model reference
-        TurLLMInstance embLlmInstance = new TurLLMInstance();
-        embLlmInstance.setId(llmInstance.getId());
-        embLlmInstance.setUrl(llmInstance.getUrl());
-        embLlmInstance.setApiKeyEncrypted(llmInstance.getApiKeyEncrypted());
-        embLlmInstance.setProviderOptionsJson(null);
-        embLlmInstance.setTurLLMVendor(llmInstance.getTurLLMVendor());
-        String embModelRef = embModel.getModelReference();
-        embLlmInstance.setModelName(
-                (embModelRef != null && !embModelRef.isBlank()) ? embModelRef : llmInstance.getModelName());
-
-        TurGenAiLlmProvider llmProvider = llmProviderFactory.getProvider(embLlmInstance);
-        String llmApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-        EmbeddingModel embeddingModel = llmProvider.createEmbeddingModel(embLlmInstance, llmApiKey);
-
-        TurStoreInstance storeInstance = storeInstanceRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalStateException("Embedding Store not found: " + storeId));
-        var storeProvider = storeProviderFactory.getProvider(storeInstance);
-        String storeCredential = secretCryptoService.decrypt(storeInstance.getCredentialEncrypted());
-
-        VectorStore vectorStore = storeProvider.createVectorStore(storeInstance, embeddingModel, storeCredential);
-
-        if (vectorStore instanceof org.springframework.beans.factory.InitializingBean initBean) {
-            try {
-                initBean.afterPropertiesSet();
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to initialize vector store", e);
-            }
-        }
-
-        return vectorStore;
     }
 }

@@ -97,6 +97,71 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         return builder.build();
     }
 
+    @Override
+    public VectorStore createVectorStore(TurStoreInstance turStoreInstance,
+            EmbeddingModel embeddingModel,
+            String decryptedCredential,
+            String collectionNameOverride) {
+
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        String baseUri = firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl());
+
+        ConnectParam.Builder connectBuilder = ConnectParam.newBuilder().withUri(baseUri);
+        if (StringUtils.hasText(decryptedCredential)) {
+            connectBuilder.withToken(decryptedCredential);
+        } else {
+            String token = optionsParser.stringValue(options, "token");
+            if (StringUtils.hasText(token)) {
+                connectBuilder.withToken(token);
+            }
+        }
+
+        String databaseName = optionsParser.stringValue(options, "databaseName");
+        if (StringUtils.hasText(databaseName)) {
+            connectBuilder.withDatabaseName(databaseName);
+        }
+
+        MilvusServiceClient milvusServiceClient = new MilvusServiceClient(connectBuilder.build());
+
+        String collectionName = StringUtils.hasText(collectionNameOverride)
+                ? collectionNameOverride
+                : firstNonBlank(
+                        optionsParser.stringValue(options, "collectionName"),
+                        turStoreInstance.getCollectionName(),
+                        DEFAULT_COLLECTION);
+        if (collectionName == null) {
+            collectionName = DEFAULT_COLLECTION;
+        }
+        boolean initializeSchema = Boolean.TRUE
+                .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
+
+        MilvusVectorStore.Builder builder = MilvusVectorStore.builder(milvusServiceClient, embeddingModel)
+                .collectionName(collectionName)
+                .initializeSchema(initializeSchema);
+
+        Integer embeddingDimension = optionsParser.intValue(options, "embeddingDimension");
+        if (embeddingDimension != null) {
+            builder.embeddingDimension(embeddingDimension);
+        }
+
+        String indexParameters = optionsParser.stringValue(options, "indexParameters");
+        if (StringUtils.hasText(indexParameters)) {
+            builder.indexParameters(indexParameters);
+        }
+
+        MetricType metricType = parseMetricType(optionsParser.stringValue(options, "metricType"));
+        if (metricType != null) {
+            builder.metricType(metricType);
+        }
+
+        IndexType indexType = parseIndexType(optionsParser.stringValue(options, "indexType"));
+        if (indexType != null) {
+            builder.indexType(indexType);
+        }
+
+        return builder.build();
+    }
+
     private MetricType parseMetricType(String value) {
         if (!StringUtils.hasText(value)) {
             return null;

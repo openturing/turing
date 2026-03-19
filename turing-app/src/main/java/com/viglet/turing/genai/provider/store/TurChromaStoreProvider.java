@@ -60,6 +60,34 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 .build();
     }
 
+    @Override
+    public VectorStore createVectorStore(TurStoreInstance turStoreInstance,
+            EmbeddingModel embeddingModel,
+            String decryptedCredential,
+            String collectionNameOverride) {
+
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+
+        String collectionName = StringUtils.hasText(collectionNameOverride)
+                ? collectionNameOverride
+                : firstNonBlank(
+                        optionsParser.stringValue(options, "collectionName"),
+                        turStoreInstance.getCollectionName(),
+                        DEFAULT_COLLECTION);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        boolean initializeSchema = Boolean.TRUE
+                .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
+
+        return ChromaVectorStore.builder(chromaApi, embeddingModel)
+                .collectionName(collectionName)
+                .tenantName(tenantName)
+                .databaseName(databaseName)
+                .initializeSchema(initializeSchema)
+                .build();
+    }
+
     @SafeVarargs
     private final <T> T firstNonNull(T... values) {
         for (T value : values) {

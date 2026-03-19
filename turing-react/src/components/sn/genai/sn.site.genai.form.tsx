@@ -25,11 +25,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { allVariablesPresent, SystemPromptEditor, type PromptVariable } from "@/components/ui/system-prompt-editor"
+import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurChatService } from "@/services/chat/chat.service"
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
@@ -47,6 +49,7 @@ import { Textarea } from "../../ui/textarea"
 const turSNSiteService = new TurSNSiteService();
 const turLLMInstanceService = new TurLLMInstanceService();
 const turStoreInstanceService = new TurStoreInstanceService();
+const turEmbeddingModelService = new TurEmbeddingModelService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turChatService = new TurChatService();
 
@@ -58,6 +61,9 @@ const DEFAULT_SYSTEM_PROMPT =
     "\n" +
     "Base your answer on the following information:\n" +
     "{{information}}";
+
+const DEFAULT_VALUE = "__default__";
+const NONE_VALUE = "__none__";
 
 interface Props {
     snSite: TurSNSite;
@@ -71,15 +77,19 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     });
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
+    const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
+    const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
 
     useEffect(() => {
         turLLMInstanceService.query().then(setLlmInstances);
         turStoreInstanceService.query().then(setStoreInstances);
+        turEmbeddingModelService.query().then(setEmbeddingModels);
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
+            setGlobalRagEnabled(settings.ragEnabled ?? false);
         });
     }, []);
 
@@ -153,6 +163,45 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     function handleOverwriteConfirm() {
         setShowOverwriteDialog(false);
         generateSitePrompt();
+    }
+
+    function getSelectValue(instance: { id: string } | null | undefined): string {
+        if (instance === undefined) return NONE_VALUE;
+        if (instance === null) return globalRagEnabled ? DEFAULT_VALUE : NONE_VALUE;
+        return instance.id;
+    }
+
+    function handleLlmChange(val: string) {
+        if (val === DEFAULT_VALUE) {
+            form.setValue("turLLMInstance", null as unknown as TurLLMInstance);
+        } else if (val === NONE_VALUE) {
+            form.setValue("turLLMInstance", undefined as unknown as TurLLMInstance);
+        } else {
+            const instance = llmInstances.find((i) => i.id === val);
+            form.setValue("turLLMInstance", instance ?? (undefined as unknown as TurLLMInstance));
+        }
+    }
+
+    function handleStoreChange(val: string) {
+        if (val === DEFAULT_VALUE) {
+            form.setValue("turStoreInstance", null as unknown as TurStoreInstance);
+        } else if (val === NONE_VALUE) {
+            form.setValue("turStoreInstance", undefined as unknown as TurStoreInstance);
+        } else {
+            const instance = storeInstances.find((i) => i.id === val);
+            form.setValue("turStoreInstance", instance ?? (undefined as unknown as TurStoreInstance));
+        }
+    }
+
+    function handleEmbeddingModelChange(val: string) {
+        if (val === DEFAULT_VALUE) {
+            form.setValue("turEmbeddingModelInstance", null as unknown as TurEmbeddingModel);
+        } else if (val === NONE_VALUE) {
+            form.setValue("turEmbeddingModelInstance", undefined as unknown as TurEmbeddingModel);
+        } else {
+            const instance = embeddingModels.find((i) => i.id === val);
+            form.setValue("turEmbeddingModelInstance", instance ?? (undefined as unknown as TurEmbeddingModel));
+        }
     }
 
     async function onSubmit(data: TurSNSiteGenAi) {
@@ -271,13 +320,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         {/* Section 3: Models */}
                         {enabled && (
                             <SectionCard variant="violet">
-                                <SectionCard.Header icon={IconBrain} title="AI Model & Embedding Store" description="Language model and vector store configuration." />
+                                <SectionCard.Header icon={IconBrain} title="AI Model & Embedding Configuration" description="Language model, embedding model, and vector store configuration." />
                                 <SectionCard.Content>
                                     {/* Language Model */}
                                     <FormField
                                         control={form.control}
                                         name="turLLMInstance"
-                                        rules={{ required: enabled && "Language model is required." }}
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
@@ -289,17 +337,17 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                 <FormItemTwoColumns.Right>
                                                     <FormControl>
                                                         <Select
-                                                            onValueChange={(val) => {
-                                                                const instance = llmInstances.find((i) => i.id === val);
-                                                                field.onChange(instance ?? null);
-                                                            }}
-                                                            value={field.value?.id || "__none__"}
+                                                            onValueChange={handleLlmChange}
+                                                            value={getSelectValue(field.value)}
                                                         >
                                                             <SelectTrigger className="w-full">
                                                                 <SelectValue placeholder="-- No Language Model --" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="__none__">-- No Language Model --</SelectItem>
+                                                                {globalRagEnabled && (
+                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                )}
+                                                                <SelectItem value={NONE_VALUE}>-- No Language Model --</SelectItem>
                                                                 {llmInstances.map((instance) => (
                                                                     <SelectItem key={instance.id} value={instance.id}>
                                                                         {instance.title}
@@ -318,7 +366,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                     <FormField
                                         control={form.control}
                                         name="turStoreInstance"
-                                        rules={{ required: enabled && "Embedding store is required." }}
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
@@ -330,20 +377,60 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                 <FormItemTwoColumns.Right>
                                                     <FormControl>
                                                         <Select
-                                                            onValueChange={(val) => {
-                                                                const instance = storeInstances.find((i) => i.id === val);
-                                                                field.onChange(instance ?? null);
-                                                            }}
-                                                            value={field.value?.id || "__none__"}
+                                                            onValueChange={handleStoreChange}
+                                                            value={getSelectValue(field.value)}
                                                         >
                                                             <SelectTrigger className="w-full">
                                                                 <SelectValue placeholder="-- No Embedding Store --" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="__none__">-- No Embedding Store --</SelectItem>
+                                                                {globalRagEnabled && (
+                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                )}
+                                                                <SelectItem value={NONE_VALUE}>-- No Embedding Store --</SelectItem>
                                                                 {storeInstances.map((instance) => (
                                                                     <SelectItem key={instance.id} value={instance.id}>
                                                                         {instance.title}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
+
+                                    {/* Embedding Model */}
+                                    <FormField
+                                        control={form.control}
+                                        name="turEmbeddingModelInstance"
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>Embedding Model</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        Select the LLM instance used for generating embeddings. This model converts text into vector representations for the embedding store.
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <Select
+                                                            onValueChange={handleEmbeddingModelChange}
+                                                            value={getSelectValue(field.value)}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="-- No Embedding Model --" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {globalRagEnabled && (
+                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                )}
+                                                                <SelectItem value={NONE_VALUE}>-- No Embedding Model --</SelectItem>
+                                                                {embeddingModels.map((model) => (
+                                                                    <SelectItem key={model.id} value={model.id}>
+                                                                        {model.modelName}
                                                                     </SelectItem>
                                                                 ))}
                                                             </SelectContent>
