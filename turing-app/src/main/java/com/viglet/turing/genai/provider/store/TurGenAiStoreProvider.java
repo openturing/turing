@@ -37,6 +37,15 @@ public interface TurGenAiStoreProvider {
     }
 
     /**
+     * Creates an empty collection in the vector store.
+     */
+    default void createCollection(TurStoreInstance turStoreInstance,
+                                   String decryptedCredential,
+                                   String collectionName) {
+        // No-op by default
+    }
+
+    /**
      * Deletes embeddings from a collection that match the given metadata key/value.
      * Used to remove old embeddings before re-indexing a file.
      */

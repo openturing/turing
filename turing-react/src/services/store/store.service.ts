@@ -5,6 +5,7 @@ export interface TurStoreCollectionInfo {
   name: string;
   id: string;
   documentCount: number;
+  chunkCount: number;
 }
 
 export class TurStoreInstanceService {
@@ -39,6 +40,10 @@ export class TurStoreInstanceService {
   async collections(id: string): Promise<TurStoreCollectionInfo[]> {
     const response = await axios.get<TurStoreCollectionInfo[]>(`/store/${id}/collections`);
     return response.data;
+  }
+
+  async createCollection(id: string, collectionName: string): Promise<void> {
+    await axios.post(`/store/${id}/collections/${encodeURIComponent(collectionName)}`);
   }
 
   async clearCollection(id: string, collectionName: string): Promise<void> {

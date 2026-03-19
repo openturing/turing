@@ -19,7 +19,6 @@
 package com.viglet.turing.genai;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ABSTRACT;
-import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.MODIFICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.PUBLICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
@@ -62,6 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class TurSNGenAi {
+    public static final String SOURCE_ID = "source_id";
     public static final String SITES = "sites";
     public static final String LOCALE = "locale";
     public static final String QUESTION = "question";
@@ -153,7 +153,7 @@ public class TurSNGenAi {
     private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
         List<Document> documents = TurRagUtils.createDocuments(text, metadata);
         context.getVectorStore().add(documents);
-        log.info("added document to embedding store: {}", metadata.get(ID));
+        log.info("added document to embedding store: {}", metadata.get(SOURCE_ID));
     }
 
     private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {
@@ -169,7 +169,7 @@ public class TurSNGenAi {
     @NotNull
     private Map<String, Object> setMetadata(TurSNJobItem jobItem) {
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put(ID, jobItem.getId());
+        metadata.put(SOURCE_ID, jobItem.getId());
         metadata.put(LOCALE, jobItem.getLocale().toString());
         metadata.put(SOURCE_APPS, jobItem.getProviderName());
         metadata.put(SITES, jobItem.getSiteNames().getFirst());

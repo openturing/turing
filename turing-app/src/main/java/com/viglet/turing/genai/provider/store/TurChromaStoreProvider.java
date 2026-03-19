@@ -99,6 +99,40 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
     }
 
     @Override
+    public void createCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        try {
+            ensureTenantAndDatabase(chromaApi, tenantName, databaseName);
+            chromaApi.createCollection(tenantName, databaseName,
+                    new ChromaApi.CreateCollectionRequest(collectionName));
+            log.info("[Chroma] Created collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[Chroma] Failed to create collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to create collection: " + collectionName, e);
+        }
+    }
+
+    private void ensureTenantAndDatabase(ChromaApi chromaApi, String tenantName, String databaseName) {
+        try {
+            chromaApi.createTenant(tenantName);
+            log.info("[Chroma] Created tenant: {}", tenantName);
+        } catch (Exception e) {
+            log.debug("[Chroma] Tenant '{}' already exists or creation skipped: {}", tenantName, e.getMessage());
+        }
+        try {
+            chromaApi.createDatabase(tenantName, databaseName);
+            log.info("[Chroma] Created database: {} in tenant: {}", databaseName, tenantName);
+        } catch (Exception e) {
+            log.debug("[Chroma] Database '{}' already exists or creation skipped: {}", databaseName, e.getMessage());
+        }
+    }
+
+    @Override
     public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
             String decryptedCredential) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
@@ -118,7 +152,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 } catch (Exception e) {
                     log.warn("Failed to count embeddings for collection: {}", col.name(), e);
                 }
-                result.add(new TurStoreCollectionInfo(col.name(), col.id(), count));
+                result.add(new TurStoreCollectionInfo(col.name(), col.id(), count, count));
             }
             return result;
         } catch (Exception e) {

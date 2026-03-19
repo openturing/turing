@@ -9,5 +9,6 @@ package com.viglet.turing.genai.provider.store;
 public record TurStoreCollectionInfo(
         String name,
         String id,
-        long documentCount
+        long documentCount,
+        long chunkCount
 ) {}

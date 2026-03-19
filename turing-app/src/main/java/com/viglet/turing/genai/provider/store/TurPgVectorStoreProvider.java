@@ -1,9 +1,11 @@
 package com.viglet.turing.genai.provider.store;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import javax.sql.DataSource;
+import jakarta.annotation.PreDestroy;
 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -37,9 +39,22 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
     private static final String DEFAULT_SCHEMA_NAME = "public";
 
     private final TurProviderOptionsParser optionsParser;
+    private final ConcurrentHashMap<String, HikariDataSource> dataSourceCache = new ConcurrentHashMap<>();
 
     public TurPgVectorStoreProvider(TurProviderOptionsParser optionsParser) {
         this.optionsParser = optionsParser;
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        dataSourceCache.values().forEach(ds -> {
+            try {
+                ds.close();
+            } catch (Exception e) {
+                log.warn("Failed to close PGVector datasource pool: {}", e.getMessage());
+            }
+        });
+        dataSourceCache.clear();
     }
 
     @Override
@@ -70,12 +85,13 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
 
-        String tableName = StringUtils.hasText(collectionNameOverride)
+        String rawTableName = StringUtils.hasText(collectionNameOverride)
                 ? collectionNameOverride
                 : firstNonBlank(
                         optionsParser.stringValue(options, "tableName"),
                         turStoreInstance.getCollectionName(),
                         DEFAULT_TABLE_NAME);
+        String tableName = sanitizeTableName(rawTableName);
 
         String schemaName = firstNonBlank(
                 optionsParser.stringValue(options, "schemaName"),
@@ -111,37 +127,196 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             String decryptedCredential,
             Map<String, Object> options) {
 
-        String jdbcUrl = firstNonBlank(
-                optionsParser.stringValue(options, "jdbcUrl"),
-                turStoreInstance.getUrl());
+        String cacheKey = turStoreInstance.getId();
+        HikariDataSource dataSource = dataSourceCache.computeIfAbsent(cacheKey, key -> {
+            String jdbcUrl = firstNonBlank(
+                    optionsParser.stringValue(options, "jdbcUrl"),
+                    turStoreInstance.getUrl());
 
-        String username = optionsParser.stringValue(options, "username");
-        String password = optionsParser.stringValue(options, "password");
+            String username = optionsParser.stringValue(options, "username");
+            String password = optionsParser.stringValue(options, "password");
 
-        if (StringUtils.hasText(decryptedCredential)) {
-            String[] parts = decryptedCredential.split(":", 2);
-            if (parts.length == 2) {
-                username = parts[0];
-                password = parts[1];
-            } else {
-                password = decryptedCredential;
+            if (StringUtils.hasText(decryptedCredential)) {
+                String[] parts = decryptedCredential.split(":", 2);
+                if (parts.length == 2) {
+                    username = parts[0];
+                    password = parts[1];
+                } else {
+                    password = decryptedCredential;
+                }
             }
-        }
 
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(jdbcUrl);
-        if (StringUtils.hasText(username)) {
-            config.setUsername(username);
-        }
-        if (StringUtils.hasText(password)) {
-            config.setPassword(password);
-        }
-        config.setMaximumPoolSize(5);
-        config.setMinimumIdle(1);
-        config.setPoolName("turing-pgvector-" + turStoreInstance.getId());
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(jdbcUrl);
+            if (StringUtils.hasText(username)) {
+                config.setUsername(username);
+            }
+            if (StringUtils.hasText(password)) {
+                config.setPassword(password);
+            }
+            config.setMaximumPoolSize(5);
+            config.setMinimumIdle(1);
+            config.setIdleTimeout(300000);
+            config.setMaxLifetime(600000);
+            config.setPoolName("turing-pgvector-" + key);
 
-        DataSource dataSource = new HikariDataSource(config);
+            return new HikariDataSource(config);
+        });
+
         return new JdbcTemplate(dataSource);
+    }
+
+    @Override
+    public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
+            String decryptedCredential) {
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+            String schemaName = firstNonBlank(
+                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+
+            String sql = """
+                    SELECT t.tablename
+                    FROM pg_tables t
+                    WHERE t.schemaname = ?
+                      AND EXISTS (
+                          SELECT 1 FROM information_schema.columns c
+                          WHERE c.table_schema = t.schemaname
+                            AND c.table_name = t.tablename
+                            AND c.column_name = 'embedding'
+                      )
+                    ORDER BY t.tablename
+                    """;
+
+            List<String> tableNames = jdbcTemplate.queryForList(sql, String.class, schemaName);
+            List<TurStoreCollectionInfo> result = new java.util.ArrayList<>();
+            for (String tableName : tableNames) {
+                String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
+                long chunkCount = 0;
+                long documentCount = 0;
+                try {
+                    Long count = jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM " + quotedTable, Long.class);
+                    chunkCount = count != null ? count : 0;
+                } catch (Exception e) {
+                    log.debug("Failed to count chunks for {}: {}", tableName, e.getMessage());
+                }
+                try {
+                    Long count = jdbcTemplate.queryForObject(
+                            "SELECT COUNT(DISTINCT COALESCE(metadata ->> 'source_id', metadata ->> 'id')) FROM "
+                                    + quotedTable
+                                    + " WHERE COALESCE(metadata ->> 'source_id', metadata ->> 'id') IS NOT NULL",
+                            Long.class);
+                    documentCount = count != null ? count : 0;
+                } catch (Exception e) {
+                    log.debug("Failed to count documents for {}: {}", tableName, e.getMessage());
+                }
+                if (documentCount == 0) {
+                    documentCount = chunkCount;
+                }
+                result.add(new TurStoreCollectionInfo(tableName, tableName, documentCount, chunkCount));
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to list PGVector collections", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public void createCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+            String schemaName = firstNonBlank(
+                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+
+            jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector");
+            jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS hstore");
+            jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"");
+
+            String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
+            String sql = "CREATE TABLE IF NOT EXISTS " + quotedTable + " ("
+                    + "id uuid DEFAULT uuid_generate_v4() PRIMARY KEY, "
+                    + "content text, "
+                    + "metadata json, "
+                    + "embedding vector"
+                    + ")";
+            jdbcTemplate.execute(sql);
+            log.info("[PGVector] Created collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[PGVector] Failed to create collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to create collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void clearCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+            String schemaName = firstNonBlank(
+                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+
+            String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
+            jdbcTemplate.execute("DELETE FROM " + quotedTable);
+            log.info("[PGVector] Cleared collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[PGVector] Failed to clear collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to clear collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+            String schemaName = firstNonBlank(
+                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+
+            String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
+            jdbcTemplate.execute("DROP TABLE IF EXISTS " + quotedTable);
+            log.info("[PGVector] Deleted collection: {}", collectionName);
+        } catch (Exception e) {
+            log.error("[PGVector] Failed to delete collection: {}", collectionName, e);
+            throw new RuntimeException("Failed to delete collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteByMetadata(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            String metadataKey,
+            String metadataValue) {
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+            String schemaName = firstNonBlank(
+                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+
+            String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
+            String sql = "DELETE FROM " + quotedTable + " WHERE metadata ->> ? = ?";
+            int deleted = jdbcTemplate.update(sql, metadataKey, metadataValue);
+            log.info("[PGVector] Deleted {} rows where {}={} from {}", deleted, metadataKey, metadataValue, collectionName);
+        } catch (Exception e) {
+            log.warn("[PGVector] Failed to delete by metadata: {}={}", metadataKey, metadataValue, e);
+        }
+    }
+
+    private String sanitizeTableName(String name) {
+        return name.replaceAll("[^a-zA-Z0-9_]", "_");
+    }
+
+    private String quoteIdentifier(String identifier) {
+        return "\"" + identifier.replace("\"", "\"\"") + "\"";
     }
 
     @Override

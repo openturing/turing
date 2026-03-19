@@ -134,6 +134,17 @@ public class TurStoreInstanceAPI {
         }).orElse(List.of());
     }
 
+    @Operation(summary = "Create a collection")
+    @PostMapping("/{id}/collections/{collectionName}")
+    public ResponseEntity<Void> createCollection(@PathVariable String id, @PathVariable String collectionName) {
+        turStoreInstanceRepository.findById(id).ifPresent(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            provider.createCollection(instance, credential, collectionName);
+        });
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "Clear all embeddings in a collection")
     @DeleteMapping("/{id}/collections/{collectionName}/clear")
     public ResponseEntity<Void> clearCollection(@PathVariable String id, @PathVariable String collectionName) {

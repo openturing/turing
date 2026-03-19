@@ -3,6 +3,16 @@ import { LoadProvider } from "@/components/loading-provider"
 import { SubPageHeader } from "@/components/sub.page.header"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { GradientButton } from "@/components/ui/gradient-button"
+import { Input } from "@/components/ui/input"
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,7 +22,7 @@ import {
 } from "@/components/ui/table"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { type TurStoreCollectionInfo, TurStoreInstanceService } from "@/services/store/store.service"
-import { IconDatabase, IconEraser, IconLayersSubtract, IconTrash } from "@tabler/icons-react"
+import { IconDatabase, IconEraser, IconLayersSubtract, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -47,6 +57,7 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
       </TableCell>
       <TableCell className="text-muted-foreground text-xs font-mono">{col.id}</TableCell>
       <TableCell className="text-right font-medium tabular-nums">{col.documentCount.toLocaleString()}</TableCell>
+      <TableCell className="text-right font-medium tabular-nums">{col.chunkCount.toLocaleString()}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
           <DialogDelete
@@ -82,6 +93,59 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
   )
 }
 
+function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: string; onCreated: () => void }>) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [creating, setCreating] = useState(false)
+
+  const handleCreate = () => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setCreating(true)
+    turStoreInstanceService.createCollection(storeId, trimmed)
+      .then(() => {
+        toast.success(`Collection "${trimmed}" created.`)
+        setName("")
+        setOpen(false)
+        onCreated()
+      })
+      .catch(() => toast.error(`Failed to create collection "${trimmed}".`))
+      .finally(() => setCreating(false))
+  }
+
+  return (
+    <>
+      <GradientButton variant="outline" onClick={() => setOpen(true)}>
+        <IconPlus className="size-4" />
+        New Collection
+      </GradientButton>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Collection</DialogTitle>
+            <DialogDescription>
+              Enter a name for the new vector collection.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="e.g., vector_store"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleCreate() }}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <GradientButton onClick={handleCreate} disabled={!name.trim() || creating}>
+              {creating ? "Creating..." : "Create"}
+            </GradientButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
 export default function StoreInstanceCollectionsPage() {
   const { id } = useParams() as { id: string }
   const [collections, setCollections] = useState<TurStoreCollectionInfo[]>()
@@ -97,6 +161,7 @@ export default function StoreInstanceCollectionsPage() {
   useEffect(() => { loadCollections() }, [loadCollections])
 
   const totalDocuments = collections?.reduce((sum, c) => sum + c.documentCount, 0) ?? 0
+  const totalChunks = collections?.reduce((sum, c) => sum + c.chunkCount, 0) ?? 0
 
   return (
     <LoadProvider checkIsNotUndefined={collections} error={error}>
@@ -104,18 +169,27 @@ export default function StoreInstanceCollectionsPage() {
         description="Vector collections stored in this instance." />
 
       <div className="px-4 lg:px-6 space-y-4">
-        {collections && collections.length > 0 && (
+        <div className="flex items-center justify-between gap-4">
           <div className="flex gap-4">
-            <div className="rounded-lg bg-muted/40 px-4 py-3">
-              <span className="text-xs text-muted-foreground">Collections</span>
-              <p className="text-lg font-semibold">{collections.length}</p>
-            </div>
-            <div className="rounded-lg bg-muted/40 px-4 py-3">
-              <span className="text-xs text-muted-foreground">Total Documents</span>
-              <p className="text-lg font-semibold">{totalDocuments.toLocaleString()}</p>
-            </div>
+            {collections && collections.length > 0 && (
+              <>
+                <div className="rounded-lg bg-muted/40 px-4 py-3">
+                  <span className="text-xs text-muted-foreground">Collections</span>
+                  <p className="text-lg font-semibold">{collections.length}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-4 py-3">
+                  <span className="text-xs text-muted-foreground">Total Documents</span>
+                  <p className="text-lg font-semibold">{totalDocuments.toLocaleString()}</p>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-4 py-3">
+                  <span className="text-xs text-muted-foreground">Total Chunks</span>
+                  <p className="text-lg font-semibold">{totalChunks.toLocaleString()}</p>
+                </div>
+              </>
+            )}
           </div>
-        )}
+          <CreateCollectionDialog storeId={id} onCreated={loadCollections} />
+        </div>
 
         {collections && collections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -129,7 +203,8 @@ export default function StoreInstanceCollectionsPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead className="w-[200px]">ID</TableHead>
-                  <TableHead className="w-[150px] text-right">Documents</TableHead>
+                  <TableHead className="w-[120px] text-right">Documents</TableHead>
+                  <TableHead className="w-[120px] text-right">Chunks</TableHead>
                   <TableHead className="w-[100px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
