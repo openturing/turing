@@ -39,10 +39,20 @@ function splitContent(content: string): ContentSegment[] {
   return segments
 }
 
+function encodeMarkdownLinkUrls(text: string): string {
+  return text.replaceAll(
+    /\[([^\]]*)\]\(([^)]+)\)/g,
+    (_match, label: string, url: string) => {
+      const encoded = url.replaceAll(" ", "%20")
+      return `[${label}](<${encoded}>)`
+    }
+  )
+}
+
 function MarkdownBlock({ text }: Readonly<{ text: string }>) {
   return (
     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-      {text}
+      {encodeMarkdownLinkUrls(text)}
     </ReactMarkdown>
   )
 }

@@ -16,8 +16,13 @@ Do NOT use this tool for:
 After receiving results, synthesize the information into a clear answer.
 Always cite the source file name when quoting or referencing document content.
 
+MANDATORY — At the end of the tool result there is a REFERENCES section with pre-built
+markdown links. You MUST copy those links EXACTLY as-is into a **References:** section
+at the end of your answer. Do NOT modify the URLs. Do NOT add a domain or https prefix.
+The links are relative paths that work directly in the browser.
+
 Args:
     query (str): Required. The search query in natural language.
     maxResults (int): Optional. Number of results to return (1-20). Default: 5.
 Returns:
-    Relevant document chunks with file name, path, and content.
+    Relevant document chunks with file path, content, and pre-built reference links.

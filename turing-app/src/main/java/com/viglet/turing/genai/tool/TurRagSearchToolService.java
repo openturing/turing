@@ -12,6 +12,8 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,19 +77,29 @@ public class TurRagSearchToolService {
             StringBuilder sb = new StringBuilder();
             sb.append("Found ").append(results.size()).append(" relevant document(s):\n\n");
 
+            java.util.LinkedHashMap<String, String> fileLinks = new java.util.LinkedHashMap<>();
+
             for (int i = 0; i < results.size(); i++) {
                 Document doc = results.get(i);
-                String fileName = doc.getMetadata().getOrDefault("fileName", "unknown").toString();
                 String objectName = doc.getMetadata().getOrDefault("objectName", "").toString();
                 String contentType = doc.getMetadata().getOrDefault("contentType", "").toString();
 
+                String downloadUrl = "/api/asset/download?objectName="
+                        + URLEncoder.encode(objectName, StandardCharsets.UTF_8);
+
+                fileLinks.putIfAbsent(objectName, downloadUrl);
+
                 sb.append("--- Document ").append(i + 1).append(" ---\n");
-                sb.append("File: ").append(fileName).append("\n");
-                sb.append("Path: ").append(objectName).append("\n");
+                sb.append("File: ").append(objectName).append("\n");
                 if (!contentType.isBlank()) {
                     sb.append("Type: ").append(contentType).append("\n");
                 }
                 sb.append("Content:\n").append(doc.getText()).append("\n\n");
+            }
+
+            sb.append("REFERENCES (copy these markdown links verbatim to your response):\n");
+            for (var entry : fileLinks.entrySet()) {
+                sb.append("- [").append(entry.getKey()).append("](").append(entry.getValue()).append(")\n");
             }
 
             return sb.toString();

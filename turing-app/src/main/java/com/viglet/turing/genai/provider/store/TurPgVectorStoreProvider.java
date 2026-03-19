@@ -203,9 +203,16 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
                 }
                 try {
                     Long count = jdbcTemplate.queryForObject(
-                            "SELECT COUNT(DISTINCT COALESCE(metadata ->> 'source_id', metadata ->> 'id')) FROM "
-                                    + quotedTable
-                                    + " WHERE COALESCE(metadata ->> 'source_id', metadata ->> 'id') IS NOT NULL",
+                            "SELECT COUNT(DISTINCT COALESCE("
+                                    + "metadata ->> 'source_id', "
+                                    + "metadata ->> 'objectName', "
+                                    + "metadata ->> 'fileName'"
+                                    + ")) FROM " + quotedTable
+                                    + " WHERE COALESCE("
+                                    + "metadata ->> 'source_id', "
+                                    + "metadata ->> 'objectName', "
+                                    + "metadata ->> 'fileName'"
+                                    + ") IS NOT NULL",
                             Long.class);
                     documentCount = count != null ? count : 0;
                 } catch (Exception e) {
