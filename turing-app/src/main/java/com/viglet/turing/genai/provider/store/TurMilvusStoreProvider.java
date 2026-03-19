@@ -129,6 +129,33 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         return null;
     }
 
+    @Override
+    public java.util.Map<String, String> getSystemInfo(TurStoreInstance turStoreInstance,
+                                                        String decryptedCredential) {
+        var info = new java.util.LinkedHashMap<String, String>();
+        info.put("store", "Milvus");
+        try {
+            java.util.Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            String baseUri = firstNonBlank(optionsParser.stringValue(options, "baseUrl"),
+                    turStoreInstance.getUrl());
+            ConnectParam.Builder connectBuilder = ConnectParam.newBuilder().withUri(baseUri);
+            if (StringUtils.hasText(decryptedCredential)) {
+                connectBuilder.withToken(decryptedCredential);
+            }
+            MilvusServiceClient client = new MilvusServiceClient(connectBuilder.build());
+            var resp = client.getVersion();
+            if (resp.getStatus() == io.milvus.param.R.Status.Success.getCode()) {
+                info.put("version", resp.getData().getVersion());
+            }
+            client.close();
+            info.put("status", "UP");
+        } catch (Exception e) {
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
+        }
+        return info;
+    }
+
     private String firstNonBlank(String... values) {
         for (String value : values) {
             if (StringUtils.hasText(value)) {

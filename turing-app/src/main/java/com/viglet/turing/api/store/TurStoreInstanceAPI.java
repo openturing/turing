@@ -156,6 +156,17 @@ public class TurStoreInstanceAPI {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Get system information for an Embedding Store instance")
+    @GetMapping("/{id}/system-info")
+    public ResponseEntity<java.util.Map<String, String>> turStoreInstanceSystemInfo(@PathVariable String id) {
+        return turStoreInstanceRepository.findById(id).map(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            java.util.Map<String, String> info = provider.getSystemInfo(instance, credential);
+            return ResponseEntity.ok(info);
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @Operation(summary = "Create a Embedding Store")
     @PostMapping
     public TurStoreInstanceDto turStoreInstanceAdd(@RequestBody Map<String, Object> payload) {

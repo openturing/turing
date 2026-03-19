@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chroma.vectorstore.ChromaApi;
 import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -14,6 +13,8 @@ import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -71,7 +72,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
     @Override
     public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
-                                                         String decryptedCredential) {
+            String decryptedCredential) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
         String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
@@ -84,7 +85,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 long count = 0;
                 try {
                     Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
-                    if (c != null) count = c;
+                    if (c != null)
+                        count = c;
                 } catch (Exception e) {
                     log.warn("Failed to count embeddings for collection: {}", col.name(), e);
                 }
@@ -99,8 +101,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
     @Override
     public void clearCollection(TurStoreInstance turStoreInstance,
-                                 String decryptedCredential,
-                                 String collectionName) {
+            String decryptedCredential,
+            String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
         String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
@@ -119,8 +121,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
     @Override
     public void deleteCollection(TurStoreInstance turStoreInstance,
-                                  String decryptedCredential,
-                                  String collectionName) {
+            String decryptedCredential,
+            String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
         String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
@@ -136,10 +138,10 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
     @Override
     public void deleteByMetadata(TurStoreInstance turStoreInstance,
-                                  String decryptedCredential,
-                                  String collectionName,
-                                  String metadataKey,
-                                  String metadataValue) {
+            String decryptedCredential,
+            String collectionName,
+            String metadataKey,
+            String metadataValue) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
         String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
@@ -148,7 +150,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         try {
             // Get the collection to find its ID
             ChromaApi.Collection collection = chromaApi.getCollection(tenantName, databaseName, collectionName);
-            if (collection == null) return;
+            if (collection == null)
+                return;
 
             Map<String, Object> where = Map.of(metadataKey, metadataValue);
             var deleteRequest = new ChromaApi.DeleteEmbeddingsRequest(List.of(), where);
@@ -161,7 +164,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
     }
 
     private ChromaApi buildChromaApi(TurStoreInstance turStoreInstance, String decryptedCredential,
-                                      Map<String, Object> options) {
+            Map<String, Object> options) {
         ChromaApi chromaApi = ChromaApi.builder()
                 .baseUrl(firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl(),
                         "http://localhost:8000"))
@@ -189,6 +192,34 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             }
         }
         return chromaApi;
+    }
+
+    @Override
+    public Map<String, String> getSystemInfo(TurStoreInstance turStoreInstance,
+            String decryptedCredential) {
+        var info = new java.util.LinkedHashMap<String, String>();
+        info.put("store", "ChromaDB");
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            String baseUrl = firstNonBlank(optionsParser.stringValue(options, "baseUrl"),
+                    turStoreInstance.getUrl(), "http://localhost:8000");
+            var request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(baseUrl + "/api/v2/version"))
+                    .GET().build();
+            var response = java.net.http.HttpClient.newHttpClient()
+                    .send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            String body = response.body();
+            if (body != null) {
+                body = body.replace("\"", "").trim();
+                info.put("version", body);
+            }
+            info.put("status", "UP");
+        } catch (Exception e) {
+            log.warn("Failed to retrieve ChromaDB version: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
+        }
+        return info;
     }
 
     private String firstNonBlank(String... values) {

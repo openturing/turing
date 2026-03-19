@@ -17,8 +17,27 @@ export default defineConfig({
             if (id.includes("@terrastruct/d2")) return "vendor-d2";
             if (id.includes("recharts") || id.includes("d3")) return "vendor-charts";
             if (id.includes("@radix-ui")) return "vendor-ui";
-            if (id.includes("react-markdown") || id.includes("rehype") || id.includes("remark") || id.includes("unified") || id.includes("hast") || id.includes("mdast") || id.includes("micromark")) return "vendor-markdown";
-            if (id.includes("highlight.js")) return "vendor-highlight";
+            if (
+              id.includes("react-markdown") ||
+              id.includes("rehype") ||
+              id.includes("remark") ||
+              id.includes("unified") ||
+              id.includes("hast") ||
+              id.includes("mdast") ||
+              id.includes("micromark") ||
+              id.includes("highlight.js") ||
+              id.includes("lowlight") ||
+              id.includes("unist-") ||
+              id.includes("vfile") ||
+              id.includes("devlop") ||
+              id.includes("property-information") ||
+              id.includes("space-separated-tokens") ||
+              id.includes("comma-separated-tokens") ||
+              id.includes("estree-") ||
+              id.includes("style-to-js") ||
+              id.includes("html-url-attributes")
+            )
+              return "vendor-markdown";
             return "vendor-lib";
           }
         },

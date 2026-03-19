@@ -48,4 +48,8 @@ export class TurStoreInstanceService {
   async deleteCollection(id: string, collectionName: string): Promise<void> {
     await axios.delete(`/store/${id}/collections/${encodeURIComponent(collectionName)}`);
   }
+  async getSystemInfo(id: string): Promise<Record<string, string>> {
+    const response = await axios.get<Record<string, string>>(`/store/${id}/system-info`);
+    return response.data;
+  }
 }

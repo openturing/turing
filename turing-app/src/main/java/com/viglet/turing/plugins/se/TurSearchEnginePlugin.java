@@ -121,4 +121,13 @@ public interface TurSearchEnginePlugin {
     // ---- Monitoring ------------------------------------------------------
 
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);
+
+    /**
+     * Returns system information about the search engine instance,
+     * such as version, OS, JVM info, etc.
+     * Keys and values are engine-specific.
+     */
+    default Map<String, String> getSystemInfo(TurSEInstance seInstance) {
+        return Map.of("engine", getPluginType(), "status", "UP");
+    }
 }

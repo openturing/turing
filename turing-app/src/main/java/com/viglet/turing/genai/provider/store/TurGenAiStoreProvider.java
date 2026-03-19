@@ -6,6 +6,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TurGenAiStoreProvider {
 
@@ -52,5 +53,14 @@ public interface TurGenAiStoreProvider {
                                    String decryptedCredential,
                                    String collectionName) {
         // No-op by default
+    }
+
+    /**
+     * Returns system information about the store instance,
+     * such as version, backend type, etc.
+     */
+    default Map<String, String> getSystemInfo(TurStoreInstance turStoreInstance,
+                                               String decryptedCredential) {
+        return Map.of("store", getPluginType(), "status", "UP");
     }
 }

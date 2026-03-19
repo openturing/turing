@@ -5,7 +5,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurStoreInstanceService } from "@/services/store/store.service"
-import { IconDatabase, IconLayersSubtract, IconSettings } from "@tabler/icons-react"
+import { IconDatabase, IconInfoCircle, IconLayersSubtract, IconSettings } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -34,6 +34,7 @@ export default function StoreInstancePage() {
       navMain: [
         { title: "Settings", url: "/detail", icon: IconSettings },
         { title: "Collections", url: "/collections", icon: IconLayersSubtract },
+        { title: "System Information", url: "/system-info", icon: IconInfoCircle },
       ],
     }
   }, [isNew])

@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(12)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(15)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -72,6 +72,15 @@ class TurConfigVarOnStartupTest {
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_RECIPIENT_EMAIL".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_RAG_ENABLED".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "false".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_EMBEDDING_MODEL".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_EMBEDDING_STORE".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
     }

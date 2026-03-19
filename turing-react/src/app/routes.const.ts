@@ -40,4 +40,5 @@ export const ROUTES = {
   ADMIN_ROLES: `${consolePath}/admin-settings/roles`,
   ADMIN_SETTINGS: `${consolePath}/admin-settings/settings`,
   ADMIN_TOKENS: `${consolePath}/admin-settings/tokens`,
+  ADMIN_SYSTEM_INFO: `${consolePath}/admin-settings/system-info`,
 };

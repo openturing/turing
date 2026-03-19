@@ -192,6 +192,17 @@ public class TurSEInstanceAPI {
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
         }
 
+        @Operation(summary = "Get system information for a Search Engine instance")
+        @GetMapping("/{id}/system-info")
+        public ResponseEntity<java.util.Map<String, String>> turSEInstanceSystemInfo(@PathVariable String id) {
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        java.util.Map<String, String> info = pluginFactory
+                                        .getPluginForInstance(turSEInstance)
+                                        .getSystemInfo(turSEInstance);
+                        return ResponseEntity.ok(info);
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        }
+
         @GetMapping("/{id}/{core}/select")
         public ResponseEntity<TurSEResults> turSEInstanceSelect(@PathVariable String id, @PathVariable String core,
                         @ModelAttribute TurSNSearchParams turSNSearchParams) {

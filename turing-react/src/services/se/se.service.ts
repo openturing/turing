@@ -44,6 +44,10 @@ export class TurSEInstanceService {
   async clearCore(id: string, core: string): Promise<void> {
     await axios.delete(`/se/${id}/cores/${core}/documents`);
   }
+  async getSystemInfo(id: string): Promise<Record<string, string>> {
+    const response = await axios.get<Record<string, string>>(`/se/${id}/system-info`);
+    return response.data;
+  }
 }
 
 export class TurSEVendorService {

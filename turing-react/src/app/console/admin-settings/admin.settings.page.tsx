@@ -3,6 +3,7 @@ import { SubPage } from "@/components/sub.page";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import {
     IconCode,
+    IconInfoCircle,
     IconSettings,
     IconShieldCog,
     IconUsers,
@@ -51,7 +52,11 @@ export default function AdminSettingsPage() {
                 url: "/tokens",
                 icon: IconCode,
             },
-
+            {
+                title: "System Information",
+                url: "/system-info",
+                icon: IconInfoCircle,
+            },
         ],
     }), [isKeycloak]);
 
