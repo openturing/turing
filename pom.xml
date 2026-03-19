@@ -46,7 +46,7 @@
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <minio.version>8.5.17</minio.version>
+        <minio.version>8.6.0</minio.version>
         <tika.version>3.2.3</tika.version>
     </properties>
     <build>
