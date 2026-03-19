@@ -36,9 +36,10 @@ export default function AdminUsersListPage() {
                 feature="Users"
                 name="Users"
                 description="Manage user accounts and access."
-                urlNew={`${ROUTES.ADMIN_ROOT}/users/new`}
             />
-            {users && <GridList gridItemList={gridItemList} />}
+            {users && <GridList gridItemList={gridItemList}>
+                <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/users/new`} label="User" />
+            </GridList>}
         </LoadProvider>
     );
 }

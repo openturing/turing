@@ -5,6 +5,7 @@ import AIAgentRootPage from "../console/ai-agent/ai-agent.root.page"
 import AIAgentSettingsPage from "../console/ai-agent/settings/ai-agent.settings.page"
 import AIAgentLlmPage from "../console/ai-agent/llm/ai-agent.llm.page"
 import AIAgentMcpPage from "../console/ai-agent/mcp/ai-agent.mcp.page"
+import AIAgentToolsPage from "../console/ai-agent/tools/ai-agent.tools.page"
 import { ROUTES } from "../routes.const"
 
 function RedirectToAIAgentSettings() {
@@ -21,6 +22,7 @@ export const AIAgentRoutes = (
             <Route path="settings" element={<AIAgentSettingsPage />} />
             <Route path="llm" element={<AIAgentLlmPage />} />
             <Route path="mcp" element={<AIAgentMcpPage />} />
+            <Route path="tools" element={<AIAgentToolsPage />} />
         </Route>
     </Route>
 )

@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -127,7 +128,7 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
 
     @Override
     public List<TurSECoreInfo> listIndexes(TurSEInstance seInstance) {
-        return Collections.emptyList();
+        return TurElasticsearchUtils.listIndexes(seInstance.getEndpointUrl());
     }
 
     // ---- Schema management (schema-less -> no-op) ------------------------
@@ -193,5 +194,36 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
     public long getDocumentTotal(TurSNSiteLocale turSNSiteLocale) {
         return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
                 .map(turElasticsearch::getDocumentTotal).orElse(0L);
+    }
+
+    // ---- System info -----------------------------------------------------
+
+    @Override
+    public Map<String, String> getSystemInfo(TurSEInstance seInstance) {
+        var info = new LinkedHashMap<String, String>();
+        info.put("engine", "Elasticsearch");
+        try {
+            String baseUrl = seInstance.getEndpointUrl();
+            var request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(baseUrl))
+                    .GET().build();
+            var response = java.net.http.HttpClient.newHttpClient()
+                    .send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var root = mapper.readTree(response.body());
+            var version = root.path("version");
+            if (!version.isMissingNode()) {
+                info.put("version", version.path("number").asText(""));
+                info.put("luceneVersion", version.path("lucene_version").asText(""));
+                info.put("buildType", version.path("build_type").asText(""));
+            }
+            info.put("clusterName", root.path("cluster_name").asText(""));
+            info.put("status", "UP");
+        } catch (Exception e) {
+            log.warn("Failed to retrieve Elasticsearch system info: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
+        }
+        return info;
     }
 }

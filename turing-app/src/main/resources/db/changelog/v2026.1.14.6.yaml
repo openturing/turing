@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-asset-training-record
+      author: alexandre
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: asset_training_record
+      changes:
+        - createTable:
+            tableName: asset_training_record
+            columns:
+              - column:
+                  name: objectName
+                  type: varchar(768)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: objectPath
+                  type: varchar(512)
+              - column:
+                  name: fileName
+                  type: varchar(255)
+              - column:
+                  name: contentType
+                  type: varchar(100)
+              - column:
+                  name: fileSize
+                  type: bigint
+              - column:
+                  name: chunkCount
+                  type: int
+              - column:
+                  name: trainedAt
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: embeddingModelId
+                  type: varchar(255)
+              - column:
+                  name: embeddingStoreId
+                  type: varchar(255)

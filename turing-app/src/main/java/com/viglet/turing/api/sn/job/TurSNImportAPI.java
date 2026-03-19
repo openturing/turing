@@ -44,7 +44,7 @@ import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.indexing.TurIndexingStatus;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
-import com.viglet.turing.genai.TurGenAi;
+import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.logging.TurLoggingUtils;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.sn.TurSNConstants;
@@ -63,10 +63,10 @@ import tools.jackson.databind.json.JsonMapper;
 public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
     private final TurSNSiteRepository turSNSiteRepository;
-    private final TurGenAi turGenAi;
+    private final TurSNGenAi turGenAi;
 
     public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate, TurSNSiteRepository turSNSiteRepository,
-            TurGenAi turGenAi) {
+            TurSNGenAi turGenAi) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turGenAi = turGenAi;

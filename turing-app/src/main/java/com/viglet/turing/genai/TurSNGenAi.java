@@ -19,7 +19,6 @@
 package com.viglet.turing.genai;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ABSTRACT;
-import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.MODIFICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.PUBLICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
@@ -31,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
@@ -44,26 +44,39 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * RAG service for Semantic Navigation sites.
+ * Handles document indexing into embedding store and RAG-based chat responses.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.1.14
+ */
 @Slf4j
 @Component
-public class TurGenAi {
+public class TurSNGenAi {
+    public static final String SOURCE_ID = "source_id";
     public static final String SITES = "sites";
     public static final String LOCALE = "locale";
     public static final String QUESTION = "question";
     public static final String INFORMATION = "information";
-    public static final int CHUNK_SIZE = 1024;
     public static final String DEFAULT_PROMPT = "Use the provided information to answer the question.\nQuestion: {question}\nInformation: {information}";
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurGenAiContextFactory turGenAiContextFactory;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
-    public TurGenAi(TurSNSearchProcess turSNSearchProcess,
-            TurGenAiContextFactory turGenAiContextFactory) {
+    public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
+            TurGenAiContextFactory turGenAiContextFactory,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -112,21 +125,35 @@ public class TurGenAi {
     public void addDocuments(TurSNJobItems turSNJobItems) {
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
                 .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresent(turSNSite -> {
-                    TurGenAiContext context = turGenAiContextFactory.build(turSNSite.getTurSNSiteGenAi());
-                    if (context.isEnabled()) {
-                        StringBuilder sb = new StringBuilder();
-                        addAttributes(context, jobItem, sb);
-                        addDocument(context, sb.toString(), setMetadata(jobItem));
+                    if (turSNSite.getTurSNSiteGenAi() != null && turSNSite.getTurSNSiteGenAi().isEnabled()) {
+                        String collectionName = resolveCollectionName(turSNSite, jobItem);
+                        TurGenAiContext context = turGenAiContextFactory.build(
+                                turSNSite.getTurSNSiteGenAi(), collectionName);
+                        if (context.isEnabled()) {
+                            StringBuilder sb = new StringBuilder();
+                            addAttributes(context, jobItem, sb);
+                            addDocument(context, sb.toString(), setMetadata(jobItem));
+                        }
                     }
                 })));
     }
 
+    private String resolveCollectionName(TurSNSite turSNSite, TurSNJobItem jobItem) {
+        if (jobItem.getLocale() != null) {
+            Locale locale = jobItem.getLocale();
+            TurSNSiteLocale siteLocale = turSNSiteLocaleRepository
+                    .findByTurSNSiteAndLanguage(turSNSite, locale);
+            if (siteLocale != null && siteLocale.getCore() != null) {
+                return siteLocale.getCore();
+            }
+        }
+        return null;
+    }
+
     private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
-        List<Document> documents = splitText(text, CHUNK_SIZE).stream()
-                .map(chunk -> new Document(chunk, metadata))
-                .toList();
+        List<Document> documents = TurRagUtils.createDocuments(text, metadata);
         context.getVectorStore().add(documents);
-        log.info("added document to embedding store: {}", metadata.get(ID));
+        log.info("added document to embedding store: {}", metadata.get(SOURCE_ID));
     }
 
     private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {
@@ -142,7 +169,7 @@ public class TurGenAi {
     @NotNull
     private Map<String, Object> setMetadata(TurSNJobItem jobItem) {
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put(ID, jobItem.getId());
+        metadata.put(SOURCE_ID, jobItem.getId());
         metadata.put(LOCALE, jobItem.getLocale().toString());
         metadata.put(SOURCE_APPS, jobItem.getProviderName());
         metadata.put(SITES, jobItem.getSiteNames().getFirst());
@@ -160,21 +187,5 @@ public class TurGenAi {
 
     private String resolvePromptTemplate(String configuredPrompt) {
         return (configuredPrompt == null || configuredPrompt.isBlank()) ? DEFAULT_PROMPT : configuredPrompt;
-    }
-
-    private List<String> splitText(String text, int chunkSize) {
-        if (text == null || text.isBlank()) {
-            return List.of();
-        }
-        if (text.length() <= chunkSize) {
-            return List.of(text);
-        }
-        int chunks = (int) Math.ceil((double) text.length() / chunkSize);
-        List<String> result = new java.util.ArrayList<>(chunks);
-        for (int start = 0; start < text.length(); start += chunkSize) {
-            int end = Math.min(text.length(), start + chunkSize);
-            result.add(text.substring(start, end));
-        }
-        return result;
     }
 }

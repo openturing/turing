@@ -90,9 +90,10 @@ interface SNSiteFacetDraggableListProps {
     siteId: string;
     tableData: TurSNSiteFacetOrdering[];
     setTableData: React.Dispatch<React.SetStateAction<TurSNSiteFacetOrdering[]>>;
+    children?: React.ReactNode;
 }
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
-export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData }) => {
+export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children }) => {
 
 
     const sensors = useSensors(useSensor(PointerSensor));
@@ -126,6 +127,7 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
 
     return (
         <div className='px-6'>
+            {children && <div className="flex items-center justify-end gap-2 mb-4">{children}</div>}
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}

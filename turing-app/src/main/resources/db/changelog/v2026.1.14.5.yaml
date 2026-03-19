@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-embedding-model-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: embedding_model
+      changes:
+        - createTable:
+            tableName: embedding_model
+            columns:
+              - column:
+                  name: id
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(255)
+              - column:
+                  name: providerType
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: llm_instance_id
+                  type: varchar(36)
+              - column:
+                  name: modelName
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modelReference
+                  type: varchar(255)
+              - column:
+                  name: batchSize
+                  type: int
+              - column:
+                  name: enableGpu
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: modelPath
+                  type: varchar(500)
+              - column:
+                  name: tokenizerPath
+                  type: varchar(500)
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: embedding_model
+            baseColumnNames: llm_instance_id
+            referencedTableName: llm_instance
+            referencedColumnNames: id
+            constraintName: fk_embedding_model_llm_instance
+            onDelete: SET NULL

@@ -14,4 +14,7 @@ export interface TurGlobalSettings {
   senderEmail?: string;
   senderName?: string;
   recipientEmail?: string;
+  ragEnabled?: boolean;
+  defaultEmbeddingModelId?: string;
+  defaultEmbeddingStoreId?: string;
 }

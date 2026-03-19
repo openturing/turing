@@ -117,6 +117,12 @@ turing:
       ttl:
         seconds: 86400000
       enabled: false
+  minio:
+    enabled: false
+    endpoint: http://localhost:9000
+    access-key: admin
+    secret-key: minha_senha_forte
+    bucket: turing-assets
   mongodb:
     enabled: false
     uri: mongodb://localhost:27017

@@ -5,7 +5,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
-import { IconDatabase, IconSettings, IconZoomCode } from "@tabler/icons-react";
+import { IconDatabase, IconInfoCircle, IconSettings, IconZoomCode } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export default function SEInstancePage() {
       navMain: [
         { title: "Settings", url: "/detail", icon: IconSettings },
         { title: "Cores", url: "/cores", icon: IconDatabase },
+        { title: "System Information", url: "/system-info", icon: IconInfoCircle },
       ],
     };
   }, [isNew]);

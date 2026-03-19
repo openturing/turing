@@ -1,10 +1,9 @@
-import { IconDeviceFloppy, IconLoader2, IconLock, IconPalette, IconTrash } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconLoader2, IconLock } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { DiceBearAvatarPicker } from "@/components/dicebear-avatar-picker"
+import { AvatarField } from "@/components/avatar-field"
 import { Button } from "@/components/ui/button"
-import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -25,7 +24,6 @@ export default function UserAccountPage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined)
-  const [pickerOpen, setPickerOpen] = useState(false)
 
   useEffect(() => {
     turUserService.get().then((currentUser) => {
@@ -124,48 +122,17 @@ export default function UserAccountPage() {
       <h1 className="text-2xl font-semibold mb-6">Account Settings</h1>
 
       {/* Avatar + username */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="relative group">
-          <GradientAvatar className="size-16">
-            {avatarUrl
-              ? <GradientAvatarImage src={avatarUrl} alt={user.username} />
-              : null
-            }
-            <GradientAvatarFallback className="text-lg">{initials}</GradientAvatarFallback>
-          </GradientAvatar>
-          <button
-            type="button"
-            title="Choose avatar"
-            onClick={() => setPickerOpen(true)}
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-          >
-            <IconPalette className="size-5 text-white" />
-          </button>
-        </div>
-        <div>
-          <div className="text-lg font-medium">{firstName} {lastName}</div>
-          <div className="text-sm text-muted-foreground">@{user.username}</div>
-          <div className="flex items-center gap-2 mt-1">
-            <button
-              type="button"
-              onClick={() => setPickerOpen(true)}
-              className="text-xs text-primary hover:underline cursor-pointer"
-            >
-              Choose avatar
-            </button>
-            {avatarUrl && (
-              <button
-                type="button"
-                onClick={handleAvatarRemove}
-                className="text-xs text-destructive hover:underline cursor-pointer flex items-center gap-0.5"
-              >
-                <IconTrash className="size-3" />
-                Remove
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <AvatarField
+        avatarUrl={avatarUrl}
+        initials={initials}
+        seed={user.username}
+        onSelect={handleAvatarSelect}
+        onRemove={handleAvatarRemove}
+        className="mb-8"
+      >
+        <div className="text-lg font-medium">{firstName} {lastName}</div>
+        <div className="text-sm text-muted-foreground">@{user.username}</div>
+      </AvatarField>
 
       {/* Profile fields */}
       <div className="space-y-4">
@@ -214,14 +181,6 @@ export default function UserAccountPage() {
         </Button>
       </div>
 
-      {/* DiceBear Avatar Picker Dialog */}
-      <DiceBearAvatarPicker
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={handleAvatarSelect}
-        defaultSeed={user.username}
-        currentAvatarUrl={avatarUrl}
-      />
     </div>
   )
 }

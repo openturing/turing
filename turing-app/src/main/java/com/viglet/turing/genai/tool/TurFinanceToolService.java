@@ -36,17 +36,7 @@ public class TurFinanceToolService {
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
-    @Tool(name = "get_stock_quote", description = """
-            Gets the current stock price and market data for a given ticker symbol.
-            Use this tool when the user asks about stock prices, market data, or financial quotes.
-            Args:
-                symbol (str): Stock ticker symbol (e.g., 'AAPL' for Apple, 'GOOGL' for Google, \
-            'PETR4.SA' for Petrobras, '^BVSP' for Bovespa index, '^GSPC' for S&P 500, \
-            '^DJI' for Dow Jones, 'BTC-USD' for Bitcoin, 'BRL=X' for USD/BRL exchange rate). Required.
-                range (str): Time range for historical data. Options: '1d', '5d', '1mo', '3mo', '6mo', \
-            '1y'. Default: '5d'.
-            Returns:
-                Current price, change, volume, and recent price history.""")
+    @Tool(name = "get_stock_quote", description = ".")
     public String getStockQuote(String symbol, String range) {
         log.info("[Finance Tool] get_stock_quote called: symbol={}, range={}", symbol, range);
         range = normalizeRange(range);
@@ -215,14 +205,7 @@ public class TurFinanceToolService {
                 : "N/A";
     }
 
-    @Tool(name = "search_ticker", description = """
-            Searches for a stock ticker symbol by company name or keyword.
-            Use this tool when the user mentions a company name but not the ticker symbol, \
-            or when you need to find the correct ticker for a stock, index, or cryptocurrency.
-            Args:
-                query (str): Company name or search keyword (e.g., 'Apple', 'Petrobras', 'Bitcoin'). Required.
-            Returns:
-                A list of matching ticker symbols with company name, exchange, and type.""")
+    @Tool(name = "search_ticker", description = ".")
     public String searchTicker(String query) {
         log.info("[Finance Tool] search_ticker called: query={}", query);
         try {

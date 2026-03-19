@@ -1,12 +1,15 @@
-import { IconCompass, IconCpu2 } from "@tabler/icons-react"
+import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
+import { IconCompass, IconCpu2, IconRobot } from "@tabler/icons-react"
 
 interface ChatEmptyStateProps {
-  variant: "chat" | "semantic"
+  variant: "chat" | "semantic" | "agent"
   selectedInstance?: TurLLMInstance
+  agentTitle?: string
+  agentAvatarUrl?: string | null
 }
 
-export function ChatEmptyState({ variant, selectedInstance }: ChatEmptyStateProps) {
+export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentAvatarUrl }: ChatEmptyStateProps) {
   if (variant === "chat") {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
@@ -23,17 +26,44 @@ export function ChatEmptyState({ variant, selectedInstance }: ChatEmptyStateProp
     )
   }
 
+  if (variant === "semantic") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
+        <div className="rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 p-4 dark:from-emerald-500 dark:to-teal-500">
+          <IconCompass className="size-8 text-white" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">Semantic Navigation</h2>
+          <p className="text-muted-foreground text-sm max-w-md">
+            {selectedInstance
+              ? `Ask questions about your indexed content. Using ${selectedInstance.title}.`
+              : "Select a language model to start exploring."}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-      <div className="rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 p-4 dark:from-emerald-500 dark:to-teal-500">
-        <IconCompass className="size-8 text-white" />
-      </div>
+      {agentAvatarUrl ? (
+        <GradientAvatar className="size-16">
+          <GradientAvatarImage src={agentAvatarUrl} alt={agentTitle ?? "AI Agent"} />
+          <GradientAvatarFallback className="text-xl">
+            <IconRobot className="size-8" />
+          </GradientAvatarFallback>
+        </GradientAvatar>
+      ) : (
+        <div className="rounded-full bg-gradient-to-br from-violet-600 to-purple-600 p-4 dark:from-violet-500 dark:to-purple-500">
+          <IconRobot className="size-8 text-white" />
+        </div>
+      )}
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Semantic Navigation</h2>
+        <h2 className="text-2xl font-semibold mb-2">{agentTitle ?? "AI Agent"}</h2>
         <p className="text-muted-foreground text-sm max-w-md">
           {selectedInstance
-            ? `Ask questions about your indexed content. Using ${selectedInstance.title}.`
-            : "Select a language model to start exploring."}
+            ? `Using ${selectedInstance.title}. Ask anything this agent can help with.`
+            : "Select a language model to start."}
         </p>
       </div>
     </div>

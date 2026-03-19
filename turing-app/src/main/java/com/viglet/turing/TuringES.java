@@ -35,6 +35,7 @@ import tools.jackson.datatype.hibernate7.Hibernate7Module;
 @EnableJms
 @EnableCaching
 @EnableScheduling
+@org.springframework.scheduling.annotation.EnableAsync
 public class TuringES {
     public static final String UTF_8 = "UTF-8";
 

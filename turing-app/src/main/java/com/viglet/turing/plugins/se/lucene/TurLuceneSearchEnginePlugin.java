@@ -30,6 +30,7 @@ import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -186,5 +187,17 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         return 0L;
                     }
                 }).orElse(0L);
+    }
+
+    // ---- System info -----------------------------------------------------
+
+    @Override
+    public Map<String, String> getSystemInfo(TurSEInstance seInstance) {
+        var info = new LinkedHashMap<String, String>();
+        info.put("engine", "Apache Lucene (embedded)");
+        info.put("status", "UP");
+        info.put("version", org.apache.lucene.util.Version.LATEST.toString());
+        info.put("indexPath", seInstance.getEndpointUrl());
+        return info;
     }
 }

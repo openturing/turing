@@ -4,7 +4,7 @@ import { SubPage } from "@/components/sub.page";
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
-import { IconCpu2, IconRobot, IconServer2, IconSettings } from "@tabler/icons-react";
+import { IconCpu2, IconRobot, IconServer2, IconSettings, IconTool } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function AIAgentPage() {
       navMain: [
         { title: "Settings", url: "/settings", icon: IconSettings },
         { title: "Language Models", url: "/llm", icon: IconCpu2 },
+        { title: "Native Tools", url: "/tools", icon: IconTool },
         { title: "MCP Servers", url: "/mcp", icon: IconServer2 },
       ],
     };

@@ -366,7 +366,7 @@ interface Props {
     data: TurSNSiteField[];
     setSnField: React.Dispatch<React.SetStateAction<TurSNSiteField[]>>;
 }
-export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField }) => {
+export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, children }) => {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -479,7 +479,8 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                     }
                     className="max-w-sm"
                 />
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                    {children}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size="sm">

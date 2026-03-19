@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
   FormControl,
@@ -24,7 +23,9 @@ import {
   Textarea
 } from "@/components/ui/textarea"
 import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
+import type { TurStoreVendor } from "@/models/store/store-vendor.model.ts"
 import { TurStoreInstanceService } from "@/services/store/store.service"
+import { TurStoreVendorService } from "@/services/store/store-vendor.service"
 import { IconAdjustments, IconBuildingStore, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import {
@@ -32,12 +33,12 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 const turStoreInstanceService = new TurStoreInstanceService();
+const turStoreVendorService = new TurStoreVendorService();
 const urlBase = ROUTES.STORE_INSTANCE
 interface Props {
   value: TurStoreInstance;
@@ -58,6 +59,10 @@ type StoreProviderOptionsDraft = {
   metricType: string;
   indexType: string;
   indexParameters: string;
+  // PGVector-specific
+  schemaName: string;
+  pgUsername: string;
+  pgPassword: string;
 }
 
 const emptyStoreProviderOptionsDraft = (): StoreProviderOptionsDraft => ({
@@ -73,7 +78,10 @@ const emptyStoreProviderOptionsDraft = (): StoreProviderOptionsDraft => ({
   embeddingDimension: "",
   metricType: "",
   indexType: "",
-  indexParameters: ""
+  indexParameters: "",
+  schemaName: "",
+  pgUsername: "",
+  pgPassword: "",
 })
 
 const toText = (value: unknown) => value == null ? "" : String(value)
@@ -108,10 +116,13 @@ const parseStoreProviderOptionsDraft = (jsonValue?: string): StoreProviderOption
     basicPassword: toText(parsed.basicPassword),
     token: toText(parsed.token),
     initializeSchema: typeof parsed.initializeSchema === "boolean" ? parsed.initializeSchema : true,
-    embeddingDimension: toText(parsed.embeddingDimension),
-    metricType: toText(parsed.metricType),
+    embeddingDimension: toText(parsed.embeddingDimension ?? parsed.dimensions),
+    metricType: toText(parsed.metricType ?? parsed.distanceType),
     indexType: toText(parsed.indexType),
-    indexParameters: toText(parsed.indexParameters)
+    indexParameters: toText(parsed.indexParameters),
+    schemaName: toText(parsed.schemaName),
+    pgUsername: toText(parsed.username),
+    pgPassword: "",
   }
 }
 
@@ -139,12 +150,12 @@ const buildStoreProviderOptionsFromDraft = (vendorId: string | undefined, draft:
     }
   }
 
-  putText("baseUrl", draft.baseUrl)
-  putText("collectionName", draft.collectionName)
-  putText("databaseName", draft.databaseName)
   options.initializeSchema = draft.initializeSchema
 
   if (vendorId === "CHROMA") {
+    putText("baseUrl", draft.baseUrl)
+    putText("collectionName", draft.collectionName)
+    putText("databaseName", draft.databaseName)
     putText("tenantName", draft.tenantName)
     putText("keyToken", draft.keyToken)
     putText("basicUsername", draft.basicUsername)
@@ -152,11 +163,25 @@ const buildStoreProviderOptionsFromDraft = (vendorId: string | undefined, draft:
   }
 
   if (vendorId === "MILVUS") {
+    putText("baseUrl", draft.baseUrl)
+    putText("collectionName", draft.collectionName)
+    putText("databaseName", draft.databaseName)
     putText("token", draft.token)
     putNumber("embeddingDimension", draft.embeddingDimension)
     putText("metricType", draft.metricType)
     putText("indexType", draft.indexType)
     putText("indexParameters", draft.indexParameters)
+  }
+
+  if (vendorId === "PGVECTOR") {
+    putText("jdbcUrl", draft.baseUrl)
+    putText("tableName", draft.collectionName)
+    putText("schemaName", draft.schemaName)
+    putText("username", draft.pgUsername)
+    putText("password", draft.pgPassword)
+    putNumber("dimensions", draft.embeddingDimension)
+    putText("distanceType", draft.metricType)
+    putText("indexType", draft.indexType)
   }
 
   return options
@@ -166,12 +191,16 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const form = useForm<TurStoreInstance>({
     defaultValues: value
   });
-  const [open, setOpen] = useState(false);
   const [storeProviderOptionsDraft, setStoreProviderOptionsDraft] = useState<StoreProviderOptionsDraft>(
     emptyStoreProviderOptionsDraft()
   )
+  const [vendors, setVendors] = useState<TurStoreVendor[]>([]);
   const selectedVendorId = form.watch("turStoreVendor.id");
   const navigate = useNavigate()
+
+  useEffect(() => {
+    turStoreVendorService.query().then(setVendors);
+  }, []);
 
   useEffect(() => {
     form.reset({
@@ -191,6 +220,10 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("url", "http://localhost:19530", { shouldDirty: true });
       form.setValue("collectionName", "turing", { shouldDirty: true });
     }
+    if (vendorId === "PGVECTOR") {
+      form.setValue("url", "jdbc:postgresql://localhost:5432/turing", { shouldDirty: true });
+      form.setValue("collectionName", "vector_store", { shouldDirty: true });
+    }
   }
 
   const setStoreDraftValue = (key: keyof StoreProviderOptionsDraft, fieldValue: string | boolean) => {
@@ -203,6 +236,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const getProviderOptionsPlaceholder = (vendorId?: string) => {
     if (vendorId === "MILVUS") {
       return '{\n  "baseUrl": "http://localhost:19530",\n  "token": "username:password",\n  "databaseName": "default",\n  "collectionName": "turing",\n  "initializeSchema": true,\n  "embeddingDimension": 1024,\n  "metricType": "COSINE",\n  "indexType": "HNSW",\n  "indexParameters": "{\\"M\\":16,\\"efConstruction\\":200}"\n}'
+    }
+    if (vendorId === "PGVECTOR") {
+      return '{\n  "jdbcUrl": "jdbc:postgresql://localhost:5432/turing",\n  "username": "postgres",\n  "password": "password",\n  "tableName": "vector_store",\n  "schemaName": "public",\n  "dimensions": 1536,\n  "distanceType": "COSINE_DISTANCE",\n  "indexType": "HNSW",\n  "initializeSchema": true\n}'
     }
     return '{\n  "baseUrl": "http://localhost:8000",\n  "collectionName": "turing",\n  "tenantName": "default_tenant",\n  "databaseName": "default_database",\n  "initializeSchema": true,\n  "keyToken": "token-value"\n}'
   }
@@ -268,38 +304,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     }
   }
 
-  async function onDelete() {
-    console.log("delete");
-    try {
-      if (await turStoreInstanceService.delete(value)) {
-        toast.success(`The ${value.title} Embedding Store was deleted`);
-        navigate(urlBase);
-      }
-      else {
-        toast.error(`The ${value.title} Embedding Store was not deleted`);
-      }
-
-    } catch (error) {
-      console.error("Form submission error", error);
-      toast.error(`The ${value.title} Embedding Store was not deleted`);
-    }
-    setOpen(false);
-  }
   return (
-    <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Embedding Store</CardTitle>
-          <CardAction>
-            {!isNew && <DialogDelete feature="embedding store" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
-          </CardAction>
-          <CardDescription>
-            Embedding store settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
@@ -383,12 +390,11 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem key="CHROMA" value="CHROMA">
-                                  Chroma
-                                </SelectItem>
-                                <SelectItem key="MILVUS" value="MILVUS">
-                                  Milvus
-                                </SelectItem>
+                                {vendors.map((vendor) => (
+                                  <SelectItem key={vendor.id} value={vendor.id}>
+                                    {vendor.title}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -524,6 +530,17 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         <Input placeholder="Index Parameters (JSON string)" value={storeProviderOptionsDraft.indexParameters} onChange={(event) => setStoreDraftValue("indexParameters", event.target.value)} className="md:col-span-2" />
                       </div>
                     )}
+
+                    {selectedVendorId === "PGVECTOR" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input placeholder="Username" value={storeProviderOptionsDraft.pgUsername} onChange={(event) => setStoreDraftValue("pgUsername", event.target.value)} />
+                        <Input placeholder="Password" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.pgPassword} onChange={(event) => setStoreDraftValue("pgPassword", event.target.value)} />
+                        <Input placeholder="Schema Name (e.g. public)" value={storeProviderOptionsDraft.schemaName} onChange={(event) => setStoreDraftValue("schemaName", event.target.value)} />
+                        <Input placeholder="Dimensions (e.g. 1536)" type="number" value={storeProviderOptionsDraft.embeddingDimension} onChange={(event) => setStoreDraftValue("embeddingDimension", event.target.value)} />
+                        <Input placeholder="Distance Type (e.g. COSINE_DISTANCE)" value={storeProviderOptionsDraft.metricType} onChange={(event) => setStoreDraftValue("metricType", event.target.value)} />
+                        <Input placeholder="Index Type (e.g. HNSW)" value={storeProviderOptionsDraft.indexType} onChange={(event) => setStoreDraftValue("indexType", event.target.value)} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="w-full">
@@ -583,15 +600,12 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   />
                 </SectionCard.Content>
               </SectionCard>
-              <FormActions>
-                <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                <FormActions.Submit />
-              </FormActions>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+        <FormActions>
+          <FormActions.Cancel onClick={() => navigate(urlBase)} />
+          <FormActions.Submit />
+        </FormActions>
+      </form>
+    </Form>
   )
 }
 

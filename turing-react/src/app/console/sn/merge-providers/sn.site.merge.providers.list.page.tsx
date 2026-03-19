@@ -33,7 +33,9 @@ export default function SNSiteMergeProvidersListPage() {
                 <>
                     <SubPageHeader icon={IconGitMerge} name="Merge Providers" feature="Merge Providers"
                         description="Unify different sources contents." />
-                    <GridList gridItemList={gridItemList} />
+                    <GridList gridItemList={gridItemList}>
+                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} label="Merge Provider" />
+                    </GridList>
                 </>
             ) : (
                 <BlankSlate

@@ -54,6 +54,14 @@ public class TurStoreVendorOnStartup {
 			milvus.setTitle("Milvus");
 			milvus.setWebsite("https://milvus.io/");
 			turStoreVendorRepository.save(milvus);
+
+			TurStoreVendor pgvector = new TurStoreVendor();
+			pgvector.setId("PGVECTOR");
+			pgvector.setDescription("PGVector");
+			pgvector.setPlugin("pgvector");
+			pgvector.setTitle("PGVector");
+			pgvector.setWebsite("https://github.com/pgvector/pgvector");
+			turStoreVendorRepository.save(pgvector);
 		}
 	}
 }

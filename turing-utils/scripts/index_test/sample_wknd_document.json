@@ -3,9 +3,6 @@
     "title": "WKND Example Article 1",
     "modification_date": "2026-03-09T10:30:00Z",
     "abstract": "Sample content for Turing indexing test.",
-    "price12": "19.92,USD",
-    "rating": 4.5,
-    "latitude": 37.7749123459,
-    "longitude": -122.4194123459,
+    "price": "10000",
     "url": "https://www.example.com/wknd/example-article-1"
 }

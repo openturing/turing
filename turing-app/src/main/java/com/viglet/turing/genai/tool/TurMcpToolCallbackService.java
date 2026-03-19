@@ -37,11 +37,33 @@ public class TurMcpToolCallbackService {
         this.mcpServerRepository = mcpServerRepository;
     }
 
+    /**
+     * Get tool callbacks only for the specified MCP servers (filtered by agent configuration).
+     */
+    public ToolCallback[] getToolCallbacks(Set<TurMcpServer> mcpServers) {
+        if (mcpServers == null || mcpServers.isEmpty()) {
+            return new ToolCallback[0];
+        }
+        Set<String> allowedIds = mcpServers.stream()
+                .map(TurMcpServer::getId)
+                .collect(Collectors.toSet());
+
+        List<TurMcpServer> enabledServers = mcpServerRepository.findAll().stream()
+                .filter(s -> s.getEnabled() == 1 && allowedIds.contains(s.getId()))
+                .toList();
+
+        return getToolCallbacksForServers(enabledServers);
+    }
+
     public ToolCallback[] getToolCallbacks() {
         List<TurMcpServer> enabledServers = mcpServerRepository.findAll().stream()
                 .filter(s -> s.getEnabled() == 1)
                 .toList();
 
+        return getToolCallbacksForServers(enabledServers);
+    }
+
+    private ToolCallback[] getToolCallbacksForServers(List<TurMcpServer> enabledServers) {
         if (enabledServers.isEmpty()) {
             return new ToolCallback[0];
         }

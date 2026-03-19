@@ -25,7 +25,9 @@ export default function McpServerListPage() {
   return (
     <LoadProvider checkIsNotUndefined={mcpServers} error={error} tryAgainUrl={`${ROUTES.MCP_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList gridItemList={gridItemList} />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.MCP_INSTANCE}/new`} label="MCP Server" />
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconServer2}

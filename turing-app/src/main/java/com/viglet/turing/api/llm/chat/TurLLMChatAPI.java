@@ -2,10 +2,13 @@ package com.viglet.turing.api.llm.chat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
+
+import jakarta.annotation.PostConstruct;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
@@ -44,6 +47,9 @@ import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
+import com.viglet.turing.genai.tool.TurRagSearchToolService;
+import com.viglet.turing.genai.tool.TurToolDescriptionCallback;
+import com.viglet.turing.genai.tool.TurToolDescriptionService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -67,48 +73,25 @@ public class TurLLMChatAPI {
     private static final Set<String> IMAGE_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp");
 
-    private static final String SYSTEM_PROMPT = """
-            You are a helpful, friendly AI assistant. Your primary job is to have natural conversations \
-            with the user. For greetings, general questions, opinions, explanations, or any topic that \
-            does NOT require real-time data, just respond directly and naturally — do NOT use any tool.
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/base.md")
+    private org.springframework.core.io.Resource basePromptResource;
 
-            You also have access to optional tools. ONLY use them when the user's request clearly \
-            requires one. Here is when to use each tool:
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/tools.md")
+    private org.springframework.core.io.Resource toolsPromptResource;
 
-            - fetch_webpage / extract_links — ONLY when the user gives you a specific URL (http/https). \
-            Never treat normal text as a URL.
-            - get_weather — ONLY when the user explicitly asks about weather or climate for a city.
-            - get_stock_quote / search_ticker — ONLY when the user explicitly asks about stock prices, \
-            market data, or financial quotes.
-            - execute_python — ONLY when the user asks you to calculate, process data, generate charts, \
-            or run code. When generating charts: always use plt.style.use('seaborn-v0_8-darkgrid'), \
-            remove top/right spines (ax.spines['top'].set_visible(False), ax.spines['right'].set_visible(False)), \
-            use colorblind-friendly palette ['#0072B2','#D55E00','#009E73','#CC79A7','#F0E442','#56B4E9','#E69F00'], \
-            call plt.tight_layout() then plt.savefig('output.png', dpi=150, bbox_inches='tight'). \
-            Do NOT call plt.show(). \
-            CRITICAL: This is NOT a Jupyter notebook — bare expressions on the last line produce NO output. \
-            You MUST wrap every result in print(). For example, write print(future_day), NOT just future_day. \
-            If the code produces errors or warnings, analyze the issue, fix the code, and call \
-            execute_python again with the corrected version (up to 3 retries).
-            - search_images — ONLY when the user asks to see, show, or find a photo, picture, or image \
-            of something. Before calling this tool, act as a Prompt Engineer: transform the user's simple \
-            request into an optimized English super-query by enriching the subject with texture/color/state \
-            adjectives, placing it in a specific scene, and appending photography terms (shallow depth of field, \
-            8k, volumetric lighting, sharp focus, cinematic style). Pass ONLY the optimized English query. \
-            After getting results, display images using markdown: ![description](image_url).
-            - get_current_time — ONLY when the user asks what time it is, the current date, or the \
-            date/time in a specific city or timezone. Map city names to IANA timezone identifiers \
-            (e.g., 'São Paulo' → 'America/Sao_Paulo', 'Tokyo' → 'Asia/Tokyo'). Use 'UTC' as default.
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/render.md")
+    private org.springframework.core.io.Resource renderPromptResource;
 
-            IMPORTANT RULES:
-            1. DEFAULT BEHAVIOR: Respond conversationally. Most messages do NOT need tools.
-            2. If the user asks in a specific language, respond in that same language.
-            3. Only use a tool when you are certain the user wants real-time or computed data.
-            4. After using a tool, summarize the results clearly.
-            5. When execute_python returns generated files, copy the exact markdown from the tool output: \
-            use ![image](url) for images, [Download filename](url) for other files (Excel, CSV, PDF, etc.).
-            6. For stock queries, use search_ticker first if you don't know the symbol.
-            """;
+    private String basePrompt;
+    private String toolsPrompt;
+    private String renderPrompt;
+
+    @PostConstruct
+    void loadPrompts() throws IOException {
+        basePrompt = basePromptResource.getContentAsString(StandardCharsets.UTF_8);
+        toolsPrompt = toolsPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        renderPrompt = renderPromptResource.getContentAsString(StandardCharsets.UTF_8);
+    }
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
@@ -119,7 +102,9 @@ public class TurLLMChatAPI {
     private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final TurImageSearchToolService imageSearchToolService;
     private final TurDateTimeToolService dateTimeToolService;
+    private final TurRagSearchToolService ragSearchToolService;
     private final TurLLMTokenUsageService tokenUsageService;
+    private final TurToolDescriptionService toolDescriptionService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
@@ -130,7 +115,9 @@ public class TurLLMChatAPI {
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurImageSearchToolService imageSearchToolService,
             TurDateTimeToolService dateTimeToolService,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurRagSearchToolService ragSearchToolService,
+            TurLLMTokenUsageService tokenUsageService,
+            TurToolDescriptionService toolDescriptionService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -140,7 +127,9 @@ public class TurLLMChatAPI {
         this.codeInterpreterToolService = codeInterpreterToolService;
         this.imageSearchToolService = imageSearchToolService;
         this.dateTimeToolService = dateTimeToolService;
+        this.ragSearchToolService = ragSearchToolService;
         this.tokenUsageService = tokenUsageService;
+        this.toolDescriptionService = toolDescriptionService;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -201,17 +190,30 @@ public class TurLLMChatAPI {
         ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
 
         List<Message> springMessages = new ArrayList<>();
-        springMessages.add(new SystemMessage(SYSTEM_PROMPT));
+        String systemPrompt = turLLMInstance.isToolsEnabled()
+                ? basePrompt + toolsPrompt + renderPrompt
+                : basePrompt + renderPrompt;
+        springMessages.add(new SystemMessage(systemPrompt));
         springMessages.addAll(buildMessages(request.messages(), files));
 
         if (turLLMInstance.isToolsEnabled()) {
-            ToolCallback[] toolCallbacks = MethodToolCallbackProvider.builder()
-                    .toolObjects(webCrawlerToolService, weatherToolService, financeToolService,
-                            codeInterpreterToolService, imageSearchToolService, dateTimeToolService)
-                    .build()
-                    .getToolCallbacks();
+            // Build base tool objects list, conditionally add RAG search
+            java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
+                    webCrawlerToolService, weatherToolService, financeToolService,
+                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService));
+            if (ragSearchToolService.isAvailable()) {
+                toolObjects.add(ragSearchToolService);
+            }
 
-            log.info("[Chat] Registered {} tool callbacks for LLM instance {}", toolCallbacks.length, id);
+            ToolCallback[] toolCallbacks = TurToolDescriptionCallback.wrap(
+                    MethodToolCallbackProvider.builder()
+                            .toolObjects(toolObjects.toArray())
+                            .build()
+                            .getToolCallbacks(),
+                    toolDescriptionService);
+
+            log.info("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
+                    toolCallbacks.length, id, ragSearchToolService.isAvailable());
 
             var chatOptions = DefaultToolCallingChatOptions.builder()
                     .toolCallbacks(toolCallbacks)

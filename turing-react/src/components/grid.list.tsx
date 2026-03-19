@@ -21,13 +21,35 @@ import type { TurGridItem } from "@/models/ui/grid-item";
 import React from "react";
 import { GradientButton } from "./ui/gradient-button";
 import { Input } from "./ui/input";
-import { IconChevronRight, IconSearch } from "@tabler/icons-react";
+import { IconChevronRight, IconPlus, IconSearch } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 
 interface Props {
     gridItemList: TurGridItem[];
-    actions?: ReactNode;
+    children?: ReactNode;
 }
+
+interface NewButtonProps {
+    to: string;
+    label: string;
+}
+
+const GridListNewButton: React.FC<NewButtonProps> = ({ to, label }) => (
+    <GradientButton asChild size="sm">
+        <NavLink to={to} className="flex items-center gap-1.5">
+            <IconPlus className="size-4!" />
+            New {label}
+        </NavLink>
+    </GradientButton>
+);
+
+interface ActionProps {
+    children: ReactNode;
+}
+
+const GridListAction: React.FC<ActionProps> = ({ children }) => (
+    <>{children}</>
+);
 
 const GRADIENT_PAIRS = [
     "from-blue-500 to-indigo-500",
@@ -63,7 +85,7 @@ const columns: ColumnDef<TurGridItem>[] = [
     { accessorKey: "url", header: "URL" },
 ];
 
-export const GridList: React.FC<Props> = ({ gridItemList, actions }) => {
+const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 12,
@@ -107,7 +129,7 @@ export const GridList: React.FC<Props> = ({ gridItemList, actions }) => {
                 <span className="text-sm text-muted-foreground">
                     {table.getFilteredRowModel().rows.length} item{table.getFilteredRowModel().rows.length !== 1 && "s"}
                 </span>
-                {actions && <div className="flex items-center gap-2 ml-auto">{actions}</div>}
+                {children && <div className="flex items-center gap-2 ml-auto">{children}</div>}
             </div>
 
             {rows.length > 0 ? (
@@ -206,3 +228,8 @@ export const GridList: React.FC<Props> = ({ gridItemList, actions }) => {
         </div>
     );
 };
+
+export const GridList = Object.assign(GridListComponent, {
+    NewButton: GridListNewButton,
+    Action: GridListAction,
+});

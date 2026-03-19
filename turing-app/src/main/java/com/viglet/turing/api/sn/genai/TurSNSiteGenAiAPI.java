@@ -32,9 +32,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.genai.TurChatMessage;
-import com.viglet.turing.genai.TurGenAi;
+import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,15 +45,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Semantic Navigation with Generative AI", description = "Semantic Navigation with Generative AI API")
 public class TurSNSiteGenAiAPI {
 	private final TurSNSearchProcess turSNSearchProcess;
-	private final TurGenAi turGenAi;
+	private final TurSNGenAi turGenAi;
 	private final TurGenAiContextFactory turGenAiContextFactory;
+	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
-			TurGenAi turGenAi,
-			TurGenAiContextFactory turGenAiContextFactory) {
+			TurSNGenAi turGenAi,
+			TurGenAiContextFactory turGenAiContextFactory,
+			TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
+		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 	}
 
 	@GetMapping
@@ -68,7 +72,14 @@ public class TurSNSiteGenAiAPI {
 							.text("Language Model is not enabled for this site.")
 							.build();
 				}
-				TurGenAiContext turGenAiContext = turGenAiContextFactory.build(turSNSiteGenAI);
+				String collectionName = null;
+				var siteLocale = turSNSiteLocaleRepository
+						.findByTurSNSiteAndLanguage(site, locale);
+				if (siteLocale != null) {
+					collectionName = siteLocale.getCore();
+				}
+				TurGenAiContext turGenAiContext = turGenAiContextFactory
+						.build(turSNSiteGenAI, collectionName);
 				return turGenAi.assistant(turGenAiContext, q);
 			}).orElse(TurChatMessage.builder().text("Couldn't find site name.").build());
 		}

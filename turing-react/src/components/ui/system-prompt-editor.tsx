@@ -1,6 +1,9 @@
-import { IconInfoCircle } from "@tabler/icons-react";
+import { IconEye, IconInfoCircle, IconPencil } from "@tabler/icons-react";
 import { PlusCircle } from "lucide-react";
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import remarkGfm from "remark-gfm";
 import { Textarea } from "./textarea";
 
 // ---------------------------------------------------------------------------
@@ -68,6 +71,7 @@ export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
   requireVariables = false,
 }) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
+  const [mode, setMode] = useState<"write" | "preview">("write");
 
   const setRef = useCallback((el: HTMLTextAreaElement | null) => {
     (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
@@ -103,33 +107,80 @@ export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
     }));
   }, [variables, value]);
 
+  const rowHeight = rows * 1.625;
+
   return (
     <div className="space-y-2">
-      {/* Variable insertion buttons */}
-      {variables && variables.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {variables.map((v) => (
-            <button
-              key={v.token}
-              type="button"
-              onClick={() => insertVariable(v.token)}
-              className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono dark:text-amber-400 dark:border-amber-400/20"
-            >
-              <PlusCircle className="w-3 h-3" /> {v.token}
-            </button>
-          ))}
+      {/* Toolbar: variable buttons + write/preview toggle */}
+      <div className="flex items-center justify-between gap-2">
+        {variables && variables.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {variables.map((v) => (
+              <button
+                key={v.token}
+                type="button"
+                onClick={() => { setMode("write"); insertVariable(v.token); }}
+                className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono dark:text-amber-400 dark:border-amber-400/20"
+              >
+                <PlusCircle className="w-3 h-3" /> {v.token}
+              </button>
+            ))}
+          </div>
+        ) : <div />}
+
+        <div className="flex items-center rounded-md border bg-muted/50 p-0.5 gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setMode("write")}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "write"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <IconPencil className="size-3.5" />
+            Write
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "preview"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            <IconEye className="size-3.5" />
+            Preview
+          </button>
         </div>
+      </div>
+
+      {/* Write mode: Textarea */}
+      {mode === "write" && (
+        <Textarea
+          ref={setRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={rows}
+          placeholder={placeholder}
+          className="font-mono text-sm leading-relaxed resize-y"
+        />
       )}
 
-      {/* Textarea */}
-      <Textarea
-        ref={setRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={rows}
-        placeholder={placeholder}
-        className="font-mono text-sm leading-relaxed resize-y"
-      />
+      {/* Preview mode: Rendered Markdown */}
+      {mode === "preview" && (
+        <div
+          className="rounded-md border bg-background px-3 py-2 overflow-y-auto prose prose-sm dark:prose-invert prose-neutral max-w-none break-words prose-p:my-2 prose-pre:my-2 prose-ul:my-2 prose-ol:my-2 prose-headings:my-3 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg"
+          style={{ minHeight: `${rowHeight}rem` }}
+        >
+          {value.trim() ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+              {value}
+            </ReactMarkdown>
+          ) : (
+            <p className="text-muted-foreground/50 italic text-sm">{placeholder}</p>
+          )}
+        </div>
+      )}
 
       {/* Variable validation badges */}
       {requireVariables && variables && variables.length > 0 && (

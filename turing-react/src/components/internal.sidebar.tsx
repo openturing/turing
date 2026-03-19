@@ -159,7 +159,10 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               {data?.navMain &&
-                renderNavItems(data.navMain, urlBase, pathname, isCollapsed)}
+                renderNavItems(
+                  isNew ? data.navMain.filter((item) => item.url === "/detail") : data.navMain,
+                  urlBase, pathname, isCollapsed
+                )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -9,6 +9,7 @@ import {
     IconAdjustmentsSearch,
     IconGitCommit,
     IconGraph,
+    IconInfoCircle,
     IconListCheck,
     IconPlugConnectedX,
     IconSettings,
@@ -50,6 +51,11 @@ const data = {
             title: "Double Check",
             url: "/double-check",
             icon: IconListCheck,
+        },
+        {
+            title: "System Information",
+            url: "/system-info",
+            icon: IconInfoCircle,
         },
     ],
 }

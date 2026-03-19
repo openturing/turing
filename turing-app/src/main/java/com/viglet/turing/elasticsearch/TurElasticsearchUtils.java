@@ -18,10 +18,13 @@ package com.viglet.turing.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch.cat.IndicesResponse;
+import co.elastic.clients.elasticsearch.cat.indices.IndicesRecord;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
+import com.viglet.turing.solr.bean.TurSECoreInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -29,7 +32,9 @@ import org.elasticsearch.client.RestClient;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -153,6 +158,38 @@ public class TurElasticsearchUtils {
             log.error("Failed to delete Elasticsearch index '{}' at {}: {}", indexName, endpointUrl,
                     e.getMessage(), e);
         }
+    }
+
+    /**
+     * Lists all non-hidden Elasticsearch indices with their document counts.
+     *
+     * @param endpointUrl the Elasticsearch endpoint URL
+     * @return list of index info (name + doc count), empty list on error
+     */
+    public static List<TurSECoreInfo> listIndexes(String endpointUrl) {
+        List<TurSECoreInfo> result = new ArrayList<>();
+        try (RestClient restClient = buildRestClient(endpointUrl);
+             RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+             ElasticsearchClient client = new ElasticsearchClient(transport)) {
+            IndicesResponse catResponse = client.cat().indices();
+            for (IndicesRecord record : catResponse.indices()) {
+                String indexName = record.index();
+                if (indexName != null && !indexName.startsWith(".")) {
+                    long docCount = 0;
+                    if (record.docsCount() != null) {
+                        try {
+                            docCount = Long.parseLong(record.docsCount());
+                        } catch (NumberFormatException ignored) {
+                            // keep 0
+                        }
+                    }
+                    result.add(new TurSECoreInfo(indexName, docCount, List.of()));
+                }
+            }
+        } catch (IOException e) {
+            log.error("Failed to list Elasticsearch indices at {}: {}", endpointUrl, e.getMessage(), e);
+        }
+        return result;
     }
 
     private static RestClient buildRestClient(String endpointUrl) {

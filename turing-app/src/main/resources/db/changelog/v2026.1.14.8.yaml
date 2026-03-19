@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-pgvector-store-vendor
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          - sqlCheck:
+              expectedResult: "0"
+              sql: "SELECT COUNT(*) FROM store_vendor"
+      changes:
+        - insert:
+            tableName: store_vendor
+            columns:
+              - column:
+                  name: id
+                  value: PGVECTOR
+              - column:
+                  name: description
+                  value: PGVector
+              - column:
+                  name: plugin
+                  value: pgvector
+              - column:
+                  name: title
+                  value: PGVector
+              - column:
+                  name: website
+                  value: https://github.com/pgvector/pgvector

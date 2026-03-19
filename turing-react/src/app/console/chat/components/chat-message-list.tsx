@@ -1,20 +1,76 @@
-import { useState } from "react"
-import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import rehypeHighlight from "rehype-highlight"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
+import { useMemo, useState } from "react"
+import ReactMarkdown from "react-markdown"
+import rehypeHighlight from "rehype-highlight"
+import remarkGfm from "remark-gfm"
 import { type ChatMessage, formatFileSize } from "../chat.types"
+import { D2Diagram } from "./d2-diagram"
+import { SandboxPlayer } from "./sandbox-player"
 
 interface ChatMessageListProps {
   messages: ChatMessage[]
   loading: boolean
   assistantName: string
+  assistantAvatarUrl?: string | null
   endRef: React.RefObject<HTMLDivElement | null>
 }
 
-export function ChatMessageList({ messages, loading, assistantName, endRef }: ChatMessageListProps) {
+type ContentSegment =
+  | { type: "markdown"; text: string }
+  | { type: "d2"; code: string }
+  | { type: "html"; code: string }
+
+const SPECIAL_BLOCK_RE = /```(d2|html)\n([\s\S]*?)```/g
+
+function splitContent(content: string): ContentSegment[] {
+  const segments: ContentSegment[] = []
+  let lastIndex = 0
+  for (const match of content.matchAll(SPECIAL_BLOCK_RE)) {
+    const before = content.slice(lastIndex, match.index)
+    if (before) segments.push({ type: "markdown", text: before })
+    const lang = match[1] as "d2" | "html"
+    segments.push({ type: lang, code: match[2].replace(/\n$/, "") })
+    lastIndex = match.index + match[0].length
+  }
+  const after = content.slice(lastIndex)
+  if (after) segments.push({ type: "markdown", text: after })
+  return segments
+}
+
+function encodeMarkdownLinkUrls(text: string): string {
+  return text.replaceAll(
+    /\[([^\]]*)\]\(([^)]+)\)/g,
+    (_match, label: string, url: string) => {
+      const encoded = url.replaceAll(" ", "%20")
+      return `[${label}](<${encoded}>)`
+    }
+  )
+}
+
+function MarkdownBlock({ text }: Readonly<{ text: string }>) {
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+      {encodeMarkdownLinkUrls(text)}
+    </ReactMarkdown>
+  )
+}
+
+function AssistantContent({ content }: Readonly<{ content: string }>) {
+  const segments = useMemo(() => splitContent(content), [content])
+  return (
+    <>
+      {segments.map((seg, i) =>
+        seg.type === "d2" ? <D2Diagram key={i} code={seg.code} />
+        : seg.type === "html" ? <SandboxPlayer key={i} htmlCode={seg.code} />
+        : <MarkdownBlock key={i} text={seg.text} />
+      )}
+    </>
+  )
+}
+
+export function ChatMessageList({ messages, loading, assistantName, assistantAvatarUrl, endRef }: Readonly<ChatMessageListProps>) {
   const { user } = useCurrentUser()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -32,6 +88,9 @@ export function ChatMessageList({ messages, loading, assistantName, endRef }: Ch
             <GradientAvatar className="size-7">
               {message.role === "user" && user?.avatarUrl && (
                 <GradientAvatarImage src={user.avatarUrl} alt={user.username} />
+              )}
+              {message.role === "assistant" && assistantAvatarUrl && (
+                <GradientAvatarImage src={assistantAvatarUrl} alt={assistantName} />
               )}
               <GradientAvatarFallback variant={message.role === "assistant" ? "info" : "secondary"}>
                 {message.role === "assistant" ? <IconCpu2 className="size-4" /> : <IconUser className="size-4" />}
@@ -66,9 +125,7 @@ export function ChatMessageList({ messages, loading, assistantName, endRef }: Ch
                 >
                   {copiedId === message.id ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}
                 </button>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                  {message.content}
-                </ReactMarkdown>
+                <AssistantContent content={message.content} />
               </div>
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</div>

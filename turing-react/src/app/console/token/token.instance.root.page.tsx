@@ -6,6 +6,6 @@ import { IconCode } from "@tabler/icons-react";
 export default function TokenInstanceRootPage() {
   useSubPageBreadcrumb({ label: "API Token", href: `${ROUTES.TOKEN_INSTANCE}` });
   return (
-    <Page turIcon={IconCode} title="API Token" urlBase={ROUTES.TOKEN_INSTANCE} urlNew={`${ROUTES.TOKEN_INSTANCE}/new`} />
+    <Page turIcon={IconCode} title="API Token" urlBase={ROUTES.TOKEN_INSTANCE} />
   )
 }

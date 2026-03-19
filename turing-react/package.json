@@ -39,6 +39,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-table": "^8.21.3",
+    "@terrastruct/d2": "^0.1.33",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -64,6 +65,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/crypto-js": "^4.2.2",
+    "@types/hast": "^3.0.4",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

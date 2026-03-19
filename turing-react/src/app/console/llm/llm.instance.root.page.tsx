@@ -6,6 +6,6 @@ import { IconCpu2 } from "@tabler/icons-react";
 export default function LLMInstanceRootPage() {
   useSubPageBreadcrumb({ label: "Language Model", href: `${ROUTES.LLM_INSTANCE}` });
   return (
-    <Page turIcon={IconCpu2} title="Language Model" urlBase={ROUTES.LLM_INSTANCE} urlNew={`${ROUTES.LLM_INSTANCE}/new`} />
+    <Page turIcon={IconCpu2} title="Language Model" urlBase={ROUTES.LLM_INSTANCE} />
   )
 }

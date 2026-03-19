@@ -6,6 +6,6 @@ import { IconServer2 } from "@tabler/icons-react";
 export default function McpServerRootPage() {
   useSubPageBreadcrumb({ label: "MCP Server", href: `${ROUTES.MCP_INSTANCE}` });
   return (
-    <Page turIcon={IconServer2} title="MCP Server" urlBase={ROUTES.MCP_INSTANCE} urlNew={`${ROUTES.MCP_INSTANCE}/new`} />
+    <Page turIcon={IconServer2} title="MCP Server" urlBase={ROUTES.MCP_INSTANCE} />
   )
 }

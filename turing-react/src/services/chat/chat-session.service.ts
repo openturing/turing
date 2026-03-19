@@ -7,10 +7,12 @@ const STORE_NAME = "sessions"
 export interface ChatSession {
   id: string
   title: string
-  tab: "chat" | "semantic"
+  tab: string
   llmId: string
   llmTitle?: string
   modelName?: string
+  agentId?: string
+  agentTitle?: string
   messages: (ChatMessageItem & { id: string; attachments?: { name: string; type: string; size: number }[] })[]
   createdAt: number
   updatedAt: number

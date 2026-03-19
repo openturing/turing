@@ -220,4 +220,55 @@ public class TurGlobalSettingsService {
         turConfigVarRepository.save(configVar);
         return value;
     }
+
+    public boolean isRagEnabled() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_ENABLED)
+                .map(TurConfigVar::getValue)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+    }
+
+    public boolean updateRagEnabled(boolean enabled) {
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_ENABLED)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.RAG_ENABLED);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(String.valueOf(enabled));
+        turConfigVarRepository.save(configVar);
+        return enabled;
+    }
+
+    public String getDefaultEmbeddingModelId() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateDefaultEmbeddingModelId(String id) {
+        String value = id == null ? "" : id.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
+    public String getDefaultEmbeddingStoreId() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateDefaultEmbeddingStoreId(String id) {
+        String value = id == null ? "" : id.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.DEFAULT_EMBEDDING_STORE_ID);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
 }

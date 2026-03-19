@@ -39,7 +39,7 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
     })
   }, [turChatService])
 
-  const saveAfterResponse = useCallback(async (tab: "chat" | "semantic", msgs: ChatMessage[], llmId: string) => {
+  const saveAfterResponse = useCallback(async (tab: string, msgs: ChatMessage[], llmId: string) => {
     if (msgs.length === 0) return
 
     const instance = getLlmTitle(llmId)

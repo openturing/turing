@@ -1,4 +1,4 @@
-import { IconCheck, IconDice5, IconPalette } from "@tabler/icons-react"
+import { IconCheck, IconDice5, IconSearch, IconPalette } from "@tabler/icons-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -37,6 +37,12 @@ const DICEBEAR_STYLES = [
   { id: "shapes", label: "Shapes" },
   { id: "thumbs", label: "Thumbs" },
 ] as const
+
+const SUGGESTED_KEYWORDS = [
+  "cat", "dog", "robot", "space", "ocean", "forest",
+  "fire", "moon", "star", "cloud", "music", "ninja",
+  "pixel", "dragon", "zen", "code", "coffee", "winter",
+]
 
 type DiceBearStyle = (typeof DICEBEAR_STYLES)[number]["id"]
 
@@ -113,6 +119,10 @@ export function DiceBearAvatarPicker({
     generatePreviewSeeds()
   }
 
+  const handleKeywordClick = (keyword: string) => {
+    setSeed(keyword)
+  }
+
   const handleConfirm = () => {
     onSelect(selectedUrl)
     onOpenChange(false)
@@ -127,7 +137,7 @@ export function DiceBearAvatarPicker({
             Choose Your Avatar
           </DialogTitle>
           <DialogDescription>
-            Pick a style and customize your unique avatar powered by DiceBear.
+            Search by keyword, pick a style and customize your unique avatar.
           </DialogDescription>
         </DialogHeader>
 
@@ -150,20 +160,43 @@ export function DiceBearAvatarPicker({
             </div>
           </div>
 
-          {/* Seed input + randomize */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1 space-y-1.5">
-              <Label htmlFor="seed">Seed</Label>
-              <Input
-                id="seed"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                placeholder="Type a name or word..."
-              />
+          {/* Search input + randomize */}
+          <div className="space-y-2">
+            <Label htmlFor="avatar-search">Search by keyword</Label>
+            <div className="flex items-end gap-2">
+              <div className="relative flex-1">
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  id="avatar-search"
+                  value={seed}
+                  onChange={(e) => setSeed(e.target.value)}
+                  placeholder="Type a keyword... e.g. cat, robot, space"
+                  className="pl-9"
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={handleRandomize} title="Randomize">
+                <IconDice5 className="size-4" />
+              </Button>
             </div>
-            <Button variant="outline" size="icon" onClick={handleRandomize} title="Randomize">
-              <IconDice5 className="size-4" />
-            </Button>
+
+            {/* Keyword suggestions */}
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_KEYWORDS.map((keyword) => (
+                <button
+                  key={keyword}
+                  type="button"
+                  onClick={() => handleKeywordClick(keyword)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer",
+                    seed === keyword
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  {keyword}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Style selector */}

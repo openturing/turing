@@ -1,0 +1,67 @@
+package com.viglet.turing.persistence.model.embedding;
+
+import java.io.Serial;
+import java.io.Serializable;
+
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * The persistent class for the embedding_model database table.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.1.14
+ */
+@Getter
+@Setter
+@Entity
+@Table(name = "embedding_model")
+public class TurEmbeddingModel implements Serializable {
+	@Serial
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@TurAssignableUuidGenerator
+	@Column(name = "id", updatable = false, nullable = false)
+	private String id;
+
+	@Column(nullable = false, length = 255)
+	private String modelName;
+
+	@Column(length = 255)
+	private String description;
+
+	@Column(nullable = false, length = 50)
+	private String providerType;
+
+	@ManyToOne
+	@JoinColumn(name = "llm_instance_id")
+	private TurLLMInstance turLLMInstance;
+
+	@Column(length = 255)
+	private String modelReference;
+
+	@Column
+	private Integer batchSize;
+
+	@Column(nullable = false)
+	private boolean enableGpu;
+
+	@Column(length = 500)
+	private String modelPath;
+
+	@Column(length = 500)
+	private String tokenizerPath;
+
+	@Column(nullable = false)
+	private int enabled;
+}

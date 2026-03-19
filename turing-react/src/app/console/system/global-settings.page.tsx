@@ -21,9 +21,13 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconBrain, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
+import { IconBrain, IconDatabase, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
+import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
+import type { TurStoreInstance } from "@/models/store/store-instance.model";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service";
+import { TurStoreInstanceService } from "@/services/store/store.service";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { DurationInput } from "@/components/ui/duration-input";
@@ -34,6 +38,8 @@ import { toast } from "sonner";
 
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turLLMInstanceService = new TurLLMInstanceService();
+const turEmbeddingModelService = new TurEmbeddingModelService();
+const turStoreInstanceService = new TurStoreInstanceService();
 
 const DEFAULT_SETTINGS: TurGlobalSettings = {
     decimalSeparator: "DOT",
@@ -47,6 +53,9 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     senderEmail: "",
     senderName: "",
     recipientEmail: "",
+    ragEnabled: false,
+    defaultEmbeddingModelId: "",
+    defaultEmbeddingStoreId: "",
 };
 
 export default function GlobalSettingsPage() {
@@ -61,14 +70,20 @@ export default function GlobalSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isSendingTest, setIsSendingTest] = useState(false);
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
+    const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
+    const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
 
     useEffect(() => {
         Promise.all([
             turGlobalSettingsService.query(),
             turLLMInstanceService.query(),
+            turEmbeddingModelService.query(),
+            turStoreInstanceService.query(),
         ])
-            .then(([loadedSettings, instances]) => {
+            .then(([loadedSettings, instances, embModels, stores]) => {
                 setLlmInstances(instances.filter((i) => i.enabled === 1));
+                setEmbeddingModels(embModels.filter((m) => m.enabled === 1));
+                setStoreInstances(stores.filter((s) => s.enabled === 1));
                 setSettings(loadedSettings);
             })
             .catch(() => {
@@ -113,6 +128,7 @@ export default function GlobalSettingsPage() {
         decimalSeparator === "COMMA" ? "150,75,BRL" : "150.75,BRL";
 
     const llmCacheEnabled = form.watch("llmCacheEnabled") ?? false;
+    const ragEnabled = form.watch("ragEnabled") ?? false;
 
     return (
         <>
@@ -295,6 +311,114 @@ export default function GlobalSettingsPage() {
                                                             disabled={isLoading}
                                                         />
                                                     </FormControl>
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
+                                </>
+                            )}
+                        </SectionCard.Content>
+                    </SectionCard>
+
+                    <SectionCard variant="emerald">
+                        <SectionCard.Header icon={IconDatabase} title="RAG Settings" description="Retrieval-Augmented Generation for asset indexing and knowledge base." />
+                        <SectionCard.Content>
+                            <FormField
+                                control={form.control}
+                                name="ragEnabled"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>Enable Global RAG</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                Enables automatic embedding indexing of files stored in Assets (MinIO).
+                                                Requires an Embedding Model and Store to be configured below.
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <GradientSwitch
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isLoading}
+                                                />
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            {ragEnabled && (
+                                <>
+                                    <FormField
+                                        control={form.control}
+                                        name="defaultEmbeddingModelId"
+                                        rules={{ required: ragEnabled ? "Embedding Model is required when RAG is enabled" : false }}
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>Default Embedding Model</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        Model used to generate vector embeddings for asset content.
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <Select
+                                                            onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                                                            value={field.value || "none"}
+                                                            disabled={isLoading}
+                                                        >
+                                                            <SelectTrigger className="w-full max-w-xs">
+                                                                <SelectValue placeholder="Select an Embedding Model..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">None</SelectItem>
+                                                                {embeddingModels.map((model) => (
+                                                                    <SelectItem key={model.id} value={model.id}>
+                                                                        {model.modelName}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItemTwoColumns.Right>
+                                            </FormItemTwoColumns>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="defaultEmbeddingStoreId"
+                                        rules={{ required: ragEnabled ? "Embedding Store is required when RAG is enabled" : false }}
+                                        render={({ field }) => (
+                                            <FormItemTwoColumns>
+                                                <FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Label>Default Embedding Store</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Description>
+                                                        Vector database where asset embeddings are stored and queried.
+                                                    </FormItemTwoColumns.Description>
+                                                </FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Right>
+                                                    <FormControl>
+                                                        <Select
+                                                            onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                                                            value={field.value || "none"}
+                                                            disabled={isLoading}
+                                                        >
+                                                            <SelectTrigger className="w-full max-w-xs">
+                                                                <SelectValue placeholder="Select an Embedding Store..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">None</SelectItem>
+                                                                {storeInstances.map((store) => (
+                                                                    <SelectItem key={store.id} value={store.id}>
+                                                                        {store.title}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormMessage />
                                                 </FormItemTwoColumns.Right>
                                             </FormItemTwoColumns>
                                         )}

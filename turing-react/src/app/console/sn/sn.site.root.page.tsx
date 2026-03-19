@@ -6,6 +6,6 @@ import { IconCompass } from "@tabler/icons-react";
 export default function SNSiteRootPage() {
   useSubPageBreadcrumb({ label: "Semantic Navigation", href: `${ROUTES.SN_INSTANCE}` });
   return (
-    <Page turIcon={IconCompass} title="Semantic Navigation" urlBase={ROUTES.SN_INSTANCE} urlNew={`${ROUTES.SN_INSTANCE}/new`} />
+    <Page turIcon={IconCompass} title="Semantic Navigation" urlBase={ROUTES.SN_INSTANCE} />
   )
 }

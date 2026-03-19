@@ -1,9 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
-import { DiceBearAvatarPicker } from "@/components/dicebear-avatar-picker";
+import { AvatarField } from "@/components/avatar-field";
 import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
-import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar";
 import { Input } from "@/components/ui/input";
 import { FormActions } from "@/components/ui/form-actions";
 import { SectionCard } from "@/components/ui/section-card";
@@ -15,8 +14,8 @@ import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { TurGroupService } from "@/services/auth/group.service";
 import { TurUserService } from "@/services/auth/user.service";
 import {
-    IconLock, IconMail, IconPalette, IconPlus, IconSearch, IconTrash,
-    IconUser, IconUserShield, IconUsersGroup, IconX, IconCheck,
+    IconCheck, IconLock, IconMail, IconPlus, IconSearch,
+    IconUser, IconUserShield, IconUsersGroup, IconX,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -39,7 +38,6 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
     const [userGroups, setUserGroups] = useState<TurGroup[]>([]);
     const [groupSearch, setGroupSearch] = useState("");
     const [avatarUrl, setAvatarUrl] = useState<string | undefined>(value.avatarUrl ?? undefined);
-    const [pickerOpen, setPickerOpen] = useState(false);
 
     useEffect(() => {
         form.reset(value);
@@ -171,48 +169,16 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                     <SectionCard variant="slate">
                         <SectionCard.Header icon={IconUser} title="Avatar" description="Profile picture for this user." />
                         <SectionCard.Content>
-                            <div className="flex items-center gap-4">
-                                <div className="relative group">
-                                    <GradientAvatar className="size-16">
-                                        {avatarUrl
-                                            ? <GradientAvatarImage src={avatarUrl} alt={username} />
-                                            : null
-                                        }
-                                        <GradientAvatarFallback className="text-lg">{initials}</GradientAvatarFallback>
-                                    </GradientAvatar>
-                                    <button
-                                        type="button"
-                                        title="Choose avatar"
-                                        onClick={() => setPickerOpen(true)}
-                                        className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                    >
-                                        <IconPalette className="size-5 text-white" />
-                                    </button>
-                                </div>
-                                <div>
-                                    <div className="text-sm font-medium">{firstName} {lastName}</div>
-                                    {username && <div className="text-xs text-muted-foreground">@{username}</div>}
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => setPickerOpen(true)}
-                                            className="text-xs text-primary hover:underline cursor-pointer"
-                                        >
-                                            Choose avatar
-                                        </button>
-                                        {avatarUrl && (
-                                            <button
-                                                type="button"
-                                                onClick={handleAvatarRemove}
-                                                className="text-xs text-destructive hover:underline cursor-pointer flex items-center gap-0.5"
-                                            >
-                                                <IconTrash className="size-3" />
-                                                Remove
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                            <AvatarField
+                                avatarUrl={avatarUrl}
+                                initials={initials}
+                                seed={username || "user"}
+                                onSelect={handleAvatarSelect}
+                                onRemove={handleAvatarRemove}
+                            >
+                                <div className="text-sm font-medium">{firstName} {lastName}</div>
+                                {username && <div className="text-xs text-muted-foreground">@{username}</div>}
+                            </AvatarField>
                         </SectionCard.Content>
                     </SectionCard>
 
@@ -439,13 +405,6 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                 </form>
             </Form>
 
-            <DiceBearAvatarPicker
-                open={pickerOpen}
-                onOpenChange={setPickerOpen}
-                onSelect={handleAvatarSelect}
-                defaultSeed={username || "user"}
-                currentAvatarUrl={avatarUrl}
-            />
         </div>
     );
 };

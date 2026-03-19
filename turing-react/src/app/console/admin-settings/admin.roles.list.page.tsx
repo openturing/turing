@@ -35,9 +35,10 @@ export default function AdminRolesListPage() {
                 feature="Roles"
                 name="Roles"
                 description="Define roles and their associated permissions."
-                urlNew={`${ROUTES.ADMIN_ROOT}/roles/new`}
             />
-            {roles && <GridList gridItemList={gridItemList} />}
+            {roles && <GridList gridItemList={gridItemList}>
+                <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/roles/new`} label="Role" />
+            </GridList>}
         </LoadProvider>
     );
 }

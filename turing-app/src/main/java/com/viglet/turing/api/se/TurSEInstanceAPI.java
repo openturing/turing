@@ -17,6 +17,7 @@
 package com.viglet.turing.api.se;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -150,6 +151,26 @@ public class TurSEInstanceAPI {
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
 
+        @Operation(summary = "Create a new core/collection in a Search Engine")
+        @PostMapping("/{id}/cores")
+        public ResponseEntity<Void> turSEInstanceCreateCore(@PathVariable String id,
+                        @RequestBody TurSECreateCoreRequest request) {
+                if (request.name == null || request.name.isBlank()) {
+                        return ResponseEntity.badRequest().build();
+                }
+                if (request.locale == null || request.locale.isBlank()) {
+                        return ResponseEntity.badRequest().build();
+                }
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        Locale language = Locale.forLanguageTag(request.locale.replace("_", "-"));
+                        pluginFactory.getPluginForInstance(turSEInstance)
+                                        .createStandaloneIndex(turSEInstance, language, request.name.trim());
+                        return ResponseEntity.status(HttpStatus.CREATED).<Void>build();
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        }
+
+        public record TurSECreateCoreRequest(String name, String locale) {}
+
         @Operation(summary = "Delete a Solr core/collection from a Search Engine")
         @DeleteMapping("/{id}/cores/{core}")
         public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
@@ -169,6 +190,17 @@ public class TurSEInstanceAPI {
                         pluginFactory.getPluginForInstance(turSEInstance).clearIndex(turSEInstance, core);
                         return ResponseEntity.noContent().<Void>build();
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
+        }
+
+        @Operation(summary = "Get system information for a Search Engine instance")
+        @GetMapping("/{id}/system-info")
+        public ResponseEntity<java.util.Map<String, String>> turSEInstanceSystemInfo(@PathVariable String id) {
+                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                        java.util.Map<String, String> info = pluginFactory
+                                        .getPluginForInstance(turSEInstance)
+                                        .getSystemInfo(turSEInstance);
+                        return ResponseEntity.ok(info);
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         }
 
         @GetMapping("/{id}/{core}/select")

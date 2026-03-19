@@ -6,6 +6,8 @@ import "./chat-highlight.css"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { PageHeader } from "@/components/page-header"
+import type { TurAIAgent } from "@/models/agent/ai-agent.model"
+import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
 import { IconMessageChatbot } from "@tabler/icons-react"
@@ -19,9 +21,22 @@ import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
 import { useLlmInstances } from "./hooks/use-llm-instances"
 
+const turAIAgentService = new TurAIAgentService()
+
+interface AgentTabState {
+  messages: ChatMessage[]
+  input: string
+  loading: boolean
+  compacting: boolean
+}
+
 export default function ChatPage() {
-  const [activeTab, setActiveTab] = useState<"chat" | "semantic">("chat")
+  const [activeTab, setActiveTab] = useState<string>("chat")
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // AI Agents
+  const [agents, setAgents] = useState<TurAIAgent[]>([])
+  const [agentStates, setAgentStates] = useState<Record<string, AgentTabState>>({})
 
   // Chat tab state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
@@ -38,14 +53,60 @@ export default function ChatPage() {
   const [semCompacting, setSemCompacting] = useState(false)
   const semEndRef = useRef<HTMLDivElement>(null)
 
+  // Agent tab ref
+  const agentEndRef = useRef<HTMLDivElement>(null)
+
   // Refs for latest messages (used in async callbacks)
   const chatMessagesRef = useRef(chatMessages)
   chatMessagesRef.current = chatMessages
   const semMessagesRef = useRef(semMessages)
   semMessagesRef.current = semMessages
+  const agentStatesRef = useRef(agentStates)
+  agentStatesRef.current = agentStates
 
   // Hooks
   const { llmInstances, loaded, selectedLlmId, selectedInstance, contextWindow, selectLlm, turChatService } = useLlmInstances()
+
+  // Load AI Agents
+  useEffect(() => {
+    turAIAgentService.query().then((all) => {
+      const enabled = all.filter((a) => a.enabled === 1)
+      setAgents(enabled)
+    }).catch((err) => console.warn("Failed to load AI agents:", err))
+  }, [])
+
+  // Active agent (if on agent tab)
+  const activeAgentId = activeTab.startsWith("agent:") ? activeTab.slice(6) : null
+  const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null
+
+  // LLM instances filtered by active agent
+  const visibleLlmInstances = useMemo(() => {
+    if (!activeAgent) return llmInstances
+    const agentLlmIds = new Set(activeAgent.llmInstances.map((l) => l.id))
+    return llmInstances.filter((i) => agentLlmIds.has(i.id))
+  }, [activeAgent, llmInstances])
+
+  // Auto-select first valid LLM when switching to an agent tab
+  useEffect(() => {
+    if (activeAgent && visibleLlmInstances.length > 0) {
+      const currentValid = visibleLlmInstances.some((i) => i.id === selectedLlmId)
+      if (!currentValid) {
+        selectLlm(visibleLlmInstances[0].id)
+      }
+    }
+  }, [activeAgent, visibleLlmInstances, selectedLlmId, selectLlm])
+
+  // Get or init agent state
+  const getAgentState = useCallback((agentId: string): AgentTabState => {
+    return agentStates[agentId] ?? { messages: [], input: "", loading: false, compacting: false }
+  }, [agentStates])
+
+  const updateAgentState = useCallback((agentId: string, update: Partial<AgentTabState>) => {
+    setAgentStates((prev) => ({
+      ...prev,
+      [agentId]: { ...prev[agentId] ?? { messages: [], input: "", loading: false, compacting: false }, ...update },
+    }))
+  }, [])
 
   const getLlmTitle = useCallback((llmId: string) => {
     const inst = llmInstances.find((i) => i.id === llmId)
@@ -63,6 +124,9 @@ export default function ChatPage() {
   useEffect(() => {
     if (activeTab === "semantic") semEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [semMessages, activeTab])
+  useEffect(() => {
+    if (activeAgentId) agentEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [agentStates, activeAgentId, activeTab])
 
   // Context usage
   const chatContextUsage = useMemo(() => {
@@ -74,6 +138,13 @@ export default function ChatPage() {
     const tokens = estimateTokens(semMessages.map((m) => m.content).join(""))
     return { tokens, percentage: Math.min(Math.round((tokens / contextWindow) * 100), 100) }
   }, [semMessages, contextWindow])
+
+  const agentContextUsage = useMemo(() => {
+    if (!activeAgentId) return { tokens: 0, percentage: 0 }
+    const state = getAgentState(activeAgentId)
+    const tokens = estimateTokens(state.messages.map((m) => m.content).join(""))
+    return { tokens, percentage: Math.min(Math.round((tokens / contextWindow) * 100), 100) }
+  }, [activeAgentId, agentStates, contextWindow, getAgentState])
 
   // ── Chat tab handlers ──
 
@@ -189,13 +260,111 @@ export default function ChatPage() {
     )
   }
 
+  // ── Agent tab handlers ──
+
+  const handleAgentSend = async () => {
+    if (!activeAgentId || !selectedLlmId) return
+    const state = getAgentState(activeAgentId)
+    const trimmed = state.input.trim()
+    if (!trimmed || state.loading) return
+
+    const userMessage: ChatMessage = { id: generateId(), role: "user", content: trimmed }
+    const assistantId = generateId()
+    const updated = [...state.messages, userMessage]
+
+    updateAgentState(activeAgentId, {
+      messages: [...updated, { id: assistantId, role: "assistant", content: "" }],
+      input: "",
+      loading: true,
+    })
+
+    const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
+    const llmId = selectedLlmId
+    const agentId = activeAgentId
+    const agentTitle = activeAgent?.title
+
+    await turChatService.sendAgentStream(
+      agentId,
+      llmId,
+      apiMessages,
+      (token) => {
+        setAgentStates((prev) => {
+          const s = prev[agentId] ?? { messages: [], input: "", loading: true, compacting: false }
+          return {
+            ...prev,
+            [agentId]: {
+              ...s,
+              messages: s.messages.map((msg) =>
+                msg.id === assistantId ? { ...msg, content: msg.content + token } : msg
+              ),
+            },
+          }
+        })
+      },
+      () => {
+        setAgentStates((prev) => {
+          const s = prev[agentId]
+          return s ? { ...prev, [agentId]: { ...s, loading: false } } : prev
+        })
+        setTimeout(() => {
+          const currentMsgs = agentStatesRef.current[agentId]?.messages ?? []
+          saveAfterResponse(`agent:${agentId}`, currentMsgs, llmId)
+        }, 0)
+      },
+      (error) => {
+        console.error(error)
+        toast.error(`Failed to get a response from ${agentTitle ?? "AI Agent"}.`)
+        setAgentStates((prev) => {
+          const s = prev[agentId]
+          if (!s) return prev
+          return {
+            ...prev,
+            [agentId]: {
+              ...s,
+              loading: false,
+              messages: s.messages.filter((msg) => msg.id !== assistantId || msg.content !== ""),
+            },
+          }
+        })
+      },
+    )
+  }
+
+  const handleAgentCompact = async () => {
+    if (!activeAgentId || !selectedLlmId) return
+    const state = getAgentState(activeAgentId)
+    if (state.loading || state.compacting || state.messages.length < 4) return
+
+    updateAgentState(activeAgentId, { compacting: true })
+    const text = state.messages.map((m) => `${m.role}: ${m.content}`).join("\n\n")
+    let summary = ""
+    const agentId = activeAgentId
+
+    await turChatService.sendAgentStream(
+      agentId,
+      selectedLlmId,
+      [{ role: "user", content: `Summarize the following conversation concisely, preserving key facts, decisions, and context needed to continue the conversation. Write the summary in the same language as the conversation.\n\n${text}` }],
+      (token) => { summary += token },
+      () => {
+        updateAgentState(agentId, {
+          messages: [{ id: generateId(), role: "assistant", content: `**[Context compacted]**\n\n${summary}` }],
+          compacting: false,
+        })
+        toast.success("Context compacted successfully.")
+      },
+      (error) => { console.error(error); toast.error("Failed to compact context."); updateAgentState(agentId, { compacting: false }) },
+    )
+  }
+
   // ── Shared handlers ──
 
   const handleNewChat = () => {
     if (activeTab === "chat") {
       setChatMessages([]); setChatInput(""); setAttachedFiles([])
-    } else {
+    } else if (activeTab === "semantic") {
       setSemMessages([]); setSemInput("")
+    } else if (activeAgentId) {
+      updateAgentState(activeAgentId, { messages: [], input: "" })
     }
     resetSession()
     setSidebarOpen(true)
@@ -205,6 +374,7 @@ export default function ChatPage() {
     selectLlm(v)
     setChatMessages([]); setChatInput(""); setAttachedFiles([])
     setSemMessages([]); setSemInput("")
+    setAgentStates({})
     resetSession()
   }
 
@@ -215,9 +385,12 @@ export default function ChatPage() {
       setChatMessages(session.messages as ChatMessage[])
       setChatInput("")
       setAttachedFiles([])
-    } else {
+    } else if (session.tab === "semantic") {
       setSemMessages(session.messages as ChatMessage[])
       setSemInput("")
+    } else if (session.tab.startsWith("agent:")) {
+      const agentId = session.tab.slice(6)
+      updateAgentState(agentId, { messages: session.messages as ChatMessage[], input: "" })
     }
     if (session.llmId && llmInstances.some((i) => i.id === session.llmId)) {
       selectLlm(session.llmId)
@@ -226,9 +399,10 @@ export default function ChatPage() {
   }
 
   // Derived
-  const messages = activeTab === "chat" ? chatMessages : semMessages
+  const currentAgentState = activeAgentId ? getAgentState(activeAgentId) : null
+  const messages = activeTab === "chat" ? chatMessages : activeTab === "semantic" ? semMessages : currentAgentState?.messages ?? []
   const isEmpty = messages.length === 0
-  const assistantName = selectedInstance?.title ?? "Assistant"
+  const assistantName = activeAgent?.title ?? selectedInstance?.title ?? "Assistant"
   const modelLabel = selectedInstance ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}` : "No model selected"
 
   if (loaded && llmInstances.length === 0) {
@@ -261,12 +435,13 @@ export default function ChatPage() {
         <ChatHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          llmInstances={llmInstances}
+          llmInstances={visibleLlmInstances}
           selectedLlmId={selectedLlmId}
           onModelChange={handleModelChange}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           hasMessages={!isEmpty}
           onNewChat={handleNewChat}
+          agents={agents}
         />
 
         {/* Chat Tab */}
@@ -338,6 +513,44 @@ export default function ChatPage() {
                       compacting={semCompacting}
                       canCompact={!semLoading && semMessages.length >= 4}
                       onCompact={handleSemCompact}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Agent Tabs */}
+        {activeAgentId && currentAgentState && (
+          <>
+            <div className="flex-1 overflow-y-auto">
+              {currentAgentState.messages.length === 0
+                ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} agentAvatarUrl={activeAgent?.avatarUrl} />
+                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} assistantAvatarUrl={activeAgent?.avatarUrl} endRef={agentEndRef} />
+              }
+            </div>
+            <div className="shrink-0 border-t bg-background">
+              <div className="max-w-3xl mx-auto px-4 py-4">
+                <ChatInput
+                  value={currentAgentState.input}
+                  onChange={(v) => updateAgentState(activeAgentId, { input: v })}
+                  onSend={handleAgentSend}
+                  loading={currentAgentState.loading}
+                  disabled={!selectedLlmId}
+                  placeholder={selectedLlmId ? `Ask ${activeAgent?.title ?? "the agent"}...` : "Select a model to start..."}
+                  accentColor="violet"
+                />
+                <div className="flex items-center justify-between mt-2 gap-4">
+                  <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
+                  {currentAgentState.messages.length > 0 && (
+                    <ContextBar
+                      tokens={agentContextUsage.tokens}
+                      percentage={agentContextUsage.percentage}
+                      contextWindow={contextWindow}
+                      compacting={currentAgentState.compacting}
+                      canCompact={!currentAgentState.loading && currentAgentState.messages.length >= 4}
+                      onCompact={handleAgentCompact}
                     />
                   )}
                 </div>

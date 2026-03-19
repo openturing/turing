@@ -220,6 +220,48 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         }
     }
 
+    // ---- System info -----------------------------------------------------
+
+    @Override
+    public Map<String, String> getSystemInfo(TurSEInstance seInstance) {
+        var info = new java.util.LinkedHashMap<String, String>();
+        info.put("engine", "Apache Solr");
+        try {
+            String solrUrl = getSolrUrl(seInstance);
+            var request = java.net.http.HttpRequest.newBuilder()
+                    .uri(URI.create(solrUrl + "/solr/admin/info/system"))
+                    .GET().build();
+            var response = java.net.http.HttpClient.newHttpClient()
+                    .send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+            String json = response.body();
+            if (json != null) {
+                var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                var root = mapper.readTree(json);
+                var lucene = root.path("lucene");
+                if (!lucene.isMissingNode()) {
+                    info.put("version", lucene.path("solr-spec-version").asText(""));
+                    info.put("luceneVersion", lucene.path("lucene-spec-version").asText(""));
+                }
+                var system = root.path("system");
+                if (!system.isMissingNode()) {
+                    info.put("os", system.path("name").asText("") + " "
+                            + system.path("version").asText(""));
+                }
+                var jvm = root.path("jvm");
+                if (!jvm.isMissingNode()) {
+                    info.put("javaVersion", jvm.path("version").asText(""));
+                    info.put("jvmMemory", jvm.path("memory").path("raw").path("used").asText(""));
+                }
+            }
+            info.put("status", "UP");
+        } catch (Exception e) {
+            log.warn("Failed to retrieve Solr system info: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
+        }
+        return info;
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private static String getSolrUrl(TurSEInstance seInstance) {

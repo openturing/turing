@@ -13,6 +13,7 @@ import {
   IconChevronDown,
   IconDatabase,
   IconEraser,
+  IconPlus,
   IconSearch,
   IconServer,
   IconTrash,
@@ -268,6 +269,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
 
 export default function SEInstanceCoresPage() {
   const { id } = useParams() as { id: string };
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cores, setCores] = useState<TurSECoreInfo[]>();
   const [error, setError] = useState<string | null>(null);
@@ -325,24 +327,30 @@ export default function SEInstanceCoresPage() {
             description="Solr cores and collections available in this Search Engine."
           />
           <div className="px-6 pb-6 space-y-4">
-            <div className="relative">
-              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Search cores..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-9"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Clear search"
-                >
-                  <IconX className="size-4" />
-                </button>
-              )}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder="Search cores..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <IconX className="size-4" />
+                  </button>
+                )}
+              </div>
+              <Button variant="outline" onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores/new`)}>
+                <IconPlus className="size-4 mr-2" />
+                New Core
+              </Button>
             </div>
             {groups.length > 0 ? (
               <div className="space-y-2">
@@ -366,9 +374,9 @@ export default function SEInstanceCoresPage() {
         <BlankSlate
           icon={IconDatabase}
           title="No cores or collections found."
-          description="Make sure the Search Engine is running and accessible at the configured endpoint."
-          buttonText="Refresh"
-          urlNew={`${ROUTES.SE_INSTANCE}/${id}/cores`}
+          description="Create a new core or make sure the Search Engine is running and accessible at the configured endpoint."
+          buttonText="New Core"
+          urlNew={`${ROUTES.SE_INSTANCE}/${id}/cores/new`}
         />
       )}
     </LoadProvider>

@@ -1,5 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate.tsx";
+import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteMultiLanguageDataTable } from "@/components/sn/locales/sn.site.locale.data.table.tsx";
 import { SubPageHeader } from "@/components/sub.page.header";
@@ -26,9 +27,10 @@ export default function SNSiteMultiLanguageListPage() {
             {data && data.length > 0 ? (
                 <>
                     <SubPageHeader icon={IconLanguage} name="Multi Language" feature="Multi Language"
-                        description="Define Multi Languages."
-                        urlNew={`${ROUTES.SN_INSTANCE}/${id}/locale/new`} />
-                    <SNSiteMultiLanguageDataTable data={data} />
+                        description="Define Multi Languages." />
+                    <SNSiteMultiLanguageDataTable data={data}>
+                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/locale/new`} label="Language" />
+                    </SNSiteMultiLanguageDataTable>
                 </>
             ) : (
                 < BlankSlate

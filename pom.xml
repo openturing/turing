@@ -46,6 +46,8 @@
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <minio.version>8.6.0</minio.version>
+        <okhttp.version>4.12.0</okhttp.version>
         <tika.version>3.2.3</tika.version>
     </properties>
     <build>
@@ -534,6 +536,16 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
                 <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

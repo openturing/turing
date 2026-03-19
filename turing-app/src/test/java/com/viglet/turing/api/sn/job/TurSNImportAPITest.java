@@ -37,7 +37,7 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
-import com.viglet.turing.genai.TurGenAi;
+import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -54,7 +54,7 @@ class TurSNImportAPITest {
     private TurSNSiteRepository turSNSiteRepository;
 
     @Mock
-    private TurGenAi turGenAi;
+    private TurSNGenAi turGenAi;
 
     @InjectMocks
     private TurSNImportAPI api;

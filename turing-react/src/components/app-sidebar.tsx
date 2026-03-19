@@ -3,8 +3,10 @@ import {
   IconChartBar,
   IconCompass,
   IconCpu2,
+  IconCube,
   IconDatabase,
   IconFileImport,
+  IconFolder,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
@@ -29,6 +31,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useCurrentUser } from "@/contexts/user.context"
+import { TurFeaturesService } from "@/services/system/features.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 
@@ -36,33 +39,36 @@ const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 
 const generativeAiItems = [
   { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
+  { title: "Embedding Model", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
   { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
   { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },
   { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 
 const searchItems = [
   { title: "Search Engine", url: "/admin/se/instance", icon: IconZoomCode },
   { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconCompass },
-]
-const developerAndInfra = [
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
-  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
-  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
+
 ]
 
 const management = [
+  { title: "Assets", url: ROUTES.ASSET_ROOT, icon: IconFolder },
   { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
+  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
   { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
 
 const turLLMInstanceService = new TurLLMInstanceService();
+const turFeaturesService = new TurFeaturesService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
+  const [minioEnabled, setMinioEnabled] = React.useState(false);
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -70,6 +76,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     turLLMInstanceService.query().then((instances) => {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
+    turFeaturesService.getFeatures().then((features) => {
+      setMinioEnabled(features.minioEnabled);
+    }).catch(() => setMinioEnabled(false));
   }, [])
 
   const filterLlm = React.useCallback(
@@ -78,14 +87,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [hasEnabledLlm]
   )
 
+  const filteredManagement = React.useMemo(
+    () => minioEnabled ? management : management.filter((item) => item.title !== "Assets"),
+    [minioEnabled]
+  )
+
   const navGroups = React.useMemo(
     () => [
       { label: "Generative AI", items: filterLlm(generativeAiItems) },
       { label: "Enterprise Search", items: searchItems },
-      { label: "Developer & Infrastructure", items: developerAndInfra },
-      { label: "Management", items: management },
+      { label: "Management", items: filteredManagement },
     ],
-    [filterLlm]
+    [filterLlm, filteredManagement]
   )
   return (
     <Sidebar collapsible="icon" {...props}>

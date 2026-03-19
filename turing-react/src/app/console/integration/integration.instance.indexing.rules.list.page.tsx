@@ -37,9 +37,10 @@ export default function IntegrationInstanceIndexingRulesListPage() {
     <LoadProvider checkIsNotUndefined={integrationIndexingRules} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule`}>
       {gridItemList.length > 0 ? (<>
         <SubPageHeader icon={IconGitCommit} name="Indexing Rules" feature="Indexing Rules"
-          description="Establish guidelines for how the indexing process will operate."
-          urlNew={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule/new`} />
-        <GridList gridItemList={gridItemList} />
+          description="Establish guidelines for how the indexing process will operate." />
+        <GridList gridItemList={gridItemList}>
+          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule/new`} label="Indexing Rule" />
+        </GridList>
       </>) : (
         <BlankSlate
           icon={IconGitCommit}

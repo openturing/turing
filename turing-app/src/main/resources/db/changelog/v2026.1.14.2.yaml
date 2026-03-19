@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026.1.14.2-01
+      author: turing
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: avatarUrl
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: avatarUrl
+                  type: varchar(500)

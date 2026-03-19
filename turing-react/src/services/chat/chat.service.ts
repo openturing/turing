@@ -241,4 +241,101 @@ export class TurChatService {
     );
     return response.data;
   }
+
+  async sendAgentStream(
+    agentId: string,
+    llmInstanceId: string,
+    messages: ChatMessageItem[],
+    onToken: (token: string) => void,
+    onDone: () => void,
+    onError: (error: Error) => void,
+  ): Promise<void> {
+    const baseURL = axios.defaults.baseURL ?? "";
+    const url = `${baseURL}/v2/ai-agent/${agentId}/chat`;
+    const csrfToken = await ensureCsrfToken();
+
+    const headers: Record<string, string> = {
+      Accept: "text/event-stream",
+      "Content-Type": "application/json",
+    };
+    if (csrfToken) {
+      headers["X-XSRF-TOKEN"] = csrfToken;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ llmInstanceId, messages }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 && !globalThis.location.pathname.startsWith("/login")) {
+          const returnUrl = globalThis.location.pathname + globalThis.location.search;
+          globalThis.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const jsonStr = line.slice(5).trim();
+            if (!jsonStr) continue;
+            try {
+              const parsed = JSON.parse(jsonStr) as ChatResponse;
+              if (parsed.content) {
+                onToken(parsed.content);
+              }
+            } catch {
+              // skip malformed JSON chunks
+            }
+          }
+        }
+      }
+
+      if (buffer.startsWith("data:")) {
+        const jsonStr = buffer.slice(5).trim();
+        if (jsonStr) {
+          try {
+            const parsed = JSON.parse(jsonStr) as ChatResponse;
+            if (parsed.content) {
+              onToken(parsed.content);
+            }
+          } catch {
+            // skip
+          }
+        }
+      }
+
+      onDone();
+    } catch (err) {
+      onError(err instanceof Error ? err : new Error(String(err)));
+    }
+  }
+
+  async fetchAgentContextInfo(agentId: string, llmInstanceId: string): Promise<ContextInfoResponse> {
+    const response = await axios.get<ContextInfoResponse>(
+      `/v2/ai-agent/${agentId}/chat/context-info`,
+      { params: { llmInstanceId } },
+    );
+    return response.data;
+  }
 }

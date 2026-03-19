@@ -1,9 +1,12 @@
 import type { TurSNSiteFacetFieldTypes } from "./sn-site-facet.field.type";
 
+export type TurSNSiteCustomFacetOperator = "BETWEEN" | "EQUAL" | "GREATER_THAN" | "LESS_THAN";
+
 export interface TurSNSiteCustomFacetItem {
   id?: string;
   label: string;
   position?: number;
+  operator?: TurSNSiteCustomFacetOperator;
   rangeStart?: number | null;
   rangeEnd?: number | null;
   rangeStartDate?: string | null;

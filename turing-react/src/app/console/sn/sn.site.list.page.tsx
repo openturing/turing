@@ -52,9 +52,9 @@ export default function SNSiteListPage() {
   return (
     <LoadProvider checkIsNotUndefined={snInstances} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}`}>
       {gridItemList.length > 0 ? (
-        <GridList
-          gridItemList={gridItemList ?? []}
-          actions={
+        <GridList gridItemList={gridItemList ?? []}>
+          <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/new`} label="Semantic Navigation" />
+          <GridList.Action>
             <GradientButton
               variant="outline"
               size="sm"
@@ -65,8 +65,8 @@ export default function SNSiteListPage() {
               <IconDownload className="h-4 w-4" />
               {exporting ? "Exporting..." : "Export All"}
             </GradientButton>
-          }
-        />
+          </GridList.Action>
+        </GridList>
       ) : (
         <BlankSlate
           icon={IconSearch}
