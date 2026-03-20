@@ -823,11 +823,11 @@ public class TurSolrQueryBuilder {
             }
             case GREATER_THAN -> {
                 String start = startValue != null ? startValue : "*";
-                yield String.format("%s:{%s TO *]", fieldName, start);
+                yield String.format("%s:[%s TO *]", fieldName, start);
             }
             case LESS_THAN -> {
                 String end = endValue != null ? endValue : "*";
-                yield String.format("%s:[* TO %s}", fieldName, end);
+                yield String.format("%s:[* TO %s]", fieldName, end);
             }
             case BETWEEN -> {
                 String start = startValue != null ? startValue : "*";
