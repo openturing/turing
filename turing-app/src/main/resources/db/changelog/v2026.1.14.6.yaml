@@ -2,7 +2,6 @@ databaseChangeLog:
   - changeSet:
       id: create-asset-training-record
       author: alexandre
-      validCheckSum: 9:3c974905f276fea9bd8eff099bd17f58
       preConditions:
         - onFail: MARK_RAN
         - not:
