@@ -4,6 +4,7 @@ import IntegrationInstanceDoubleCheckPage from "../console/integration/integrati
 import IntegrationInstanceSystemInfoPage from "../console/integration/integration.instance.system-info.page"
 import IntegrationInstanceIndexAdminPage from "../console/integration/integration.instance.indexing.manager.page"
 import IntegrationInstanceIndexingRulesListPage from "../console/integration/integration.instance.indexing.rules.list.page"
+import IntegrationInstanceIndexingStatsPage from "../console/integration/integration.instance.indexing.stats.page"
 import IntegrationInstanceIndexingRulesPage from "../console/integration/integration.instance.indexing.rules.page"
 import IntegrationInstanceListPage from "../console/integration/integration.instance.list.page"
 import IntegrationInstanceMonitoringPage from "../console/integration/integration.instance.monitoring.page"
@@ -35,6 +36,7 @@ export const IntegrationRoutes = (
                 <Route index element={<Navigate to="all" replace />} />
                 <Route path=":source" element={<IntegrationInstanceMonitoringPage />} />
             </Route>
+            <Route path="indexing-stats" element={<IntegrationInstanceIndexingStatsPage />} />
             <Route path="double-check" element={<IntegrationInstanceDoubleCheckPage />} />
             <Route path="system-info" element={<IntegrationInstanceSystemInfoPage />} />
         </Route>

@@ -7,6 +7,7 @@ import type { TurIntegrationInstance } from "@/models/integration/integration-in
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import {
     IconAdjustmentsSearch,
+    IconChartBar,
     IconGitCommit,
     IconGraph,
     IconInfoCircle,
@@ -46,6 +47,11 @@ const data = {
             title: "Monitoring",
             url: "/monitoring",
             icon: IconGraph,
+        },
+        {
+            title: "Indexing Stats",
+            url: "/indexing-stats",
+            icon: IconChartBar,
         },
         {
             title: "Double Check",
