@@ -20,6 +20,9 @@ package com.viglet.turing.bean;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Setter
 @Getter
 public class TurCurrentUser {
@@ -30,4 +33,5 @@ public class TurCurrentUser {
 	private String email;
 	private boolean hasAvatar;
 	private String avatarUrl;
+	private List<String> privileges = new ArrayList<>();
 }

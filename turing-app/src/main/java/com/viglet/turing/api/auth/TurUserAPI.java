@@ -47,6 +47,7 @@ import com.viglet.turing.persistence.mapper.auth.TurUserMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 
@@ -74,18 +75,34 @@ public class TurUserAPI {
     private final PasswordEncoder passwordEncoder;
     private final TurUserRepository turUserRepository;
     private final TurGroupRepository turGroupRepository;
+    private final TurRoleRepository turRoleRepository;
     private final TurConfigProperties turConfigProperties;
     private final TurUserMapper turUserMapper;
 
     public TurUserAPI(PasswordEncoder passwordEncoder, TurUserRepository turUserRepository,
             TurGroupRepository turGroupRepository,
+            TurRoleRepository turRoleRepository,
             TurConfigProperties turConfigProperties,
             TurUserMapper turUserMapper) {
         this.passwordEncoder = passwordEncoder;
         this.turUserRepository = turUserRepository;
         this.turGroupRepository = turGroupRepository;
+        this.turRoleRepository = turRoleRepository;
         this.turConfigProperties = turConfigProperties;
         this.turUserMapper = turUserMapper;
+    }
+
+    private List<String> resolvePrivileges(TurUser turUser) {
+        var groups = turGroupRepository.findByTurUsersContaining(turUser);
+        var privileges = new java.util.LinkedHashSet<String>();
+        for (var group : groups) {
+            for (var role : turRoleRepository.findByTurGroupsContaining(group)) {
+                for (var privilege : role.getTurPrivileges()) {
+                    privileges.add(privilege.getName());
+                }
+            }
+        }
+        return new java.util.ArrayList<>(privileges);
     }
 
     private String currentUsername() {
@@ -142,6 +159,7 @@ public class TurUserAPI {
         turCurrentUser.setEmail(turUser.getEmail());
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
+        turCurrentUser.setPrivileges(resolvePrivileges(turUser));
         return turCurrentUser;
     }
 
@@ -189,6 +207,7 @@ public class TurUserAPI {
         turCurrentUser.setAdmin(isKeycloakAdmin);
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
+        turCurrentUser.setPrivileges(resolvePrivileges(turUser));
         return turCurrentUser;
     }
 

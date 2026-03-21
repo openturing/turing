@@ -539,7 +539,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               Example: "MISTRAL", "gpt-3.5-turbo"
                             </div>
                             <FormControl>
-                              <Input placeholder="Specify the model name" type="text" className="w-full" {...field} />
+                              <Input placeholder="Specify the model name" type="text" autoComplete="one-time-code" className="w-full" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -562,7 +562,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                 placeholder="Enter API key"
                                 type="password"
                                 className="w-full"
-                                autoComplete="new-password"
+                                autoComplete="one-time-code"
                                 {...field}
                                 value={field.value ?? ""}
                               />

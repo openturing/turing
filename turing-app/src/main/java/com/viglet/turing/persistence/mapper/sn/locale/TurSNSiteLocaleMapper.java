@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.sn.locale.TurSNSiteLocaleDto;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 import java.util.Set;
@@ -17,4 +19,7 @@ public interface TurSNSiteLocaleMapper {
     List<TurSNSiteLocaleDto> toDtoList(List<TurSNSiteLocale> entities);
 
     Set<TurSNSiteLocaleDto> toDtoSet(Set<TurSNSiteLocale> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurSNSiteLocale source, @MappingTarget TurSNSiteLocale target);
 }

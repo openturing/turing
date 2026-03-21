@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,6 +84,7 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public List<TurSNSiteDto> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
             return turSNSiteMapper.toDtoList(this.turSNSiteRepository
@@ -96,6 +98,7 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Semantic Navigation Site structure")
     @GetMapping("/structure")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public TurSNSiteDto turSNSiteStructure() {
         TurSNSite turSNSite = new TurSNSite();
         turSNSite.setFacetSort(TurSNSiteFacetSortEnum.COUNT);
@@ -108,12 +111,14 @@ public class TurSNSiteAPI {
     @Operation(summary = "Show a Semantic Navigation Site")
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public TurSNSiteDto turSNSiteGet(@PathVariable String id) {
         return turSNSiteMapper.toDto(this.turSNSiteRepository.findByIdNoCache(id).orElse(new TurSNSite()));
     }
 
     @Operation(summary = "Update a Semantic Navigation Site")
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "SN_EDIT"})
     public TurSNSiteDto turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
@@ -166,6 +171,7 @@ public class TurSNSiteAPI {
     @Transactional
     @Operation(summary = "Delete a Semantic Navigation Site")
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "SN_DELETE"})
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site -> {
@@ -189,6 +195,7 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Create a Semantic Navigation Site")
     @PostMapping
+    @Secured({"ROLE_ADMIN", "SN_CREATE"})
     public TurSNSiteDto turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         if (turSNSite.getTurSNSiteGenAi() != null) {
@@ -201,6 +208,7 @@ public class TurSNSiteAPI {
     }
 
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public StreamingResponseBody turSNSiteExportAll(HttpServletResponse response) {
 
         try {
@@ -212,6 +220,7 @@ public class TurSNSiteAPI {
     }
 
     @GetMapping(value = "/{id}/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public StreamingResponseBody turSNSiteExport(@PathVariable String id, HttpServletResponse response) {
 
         try {
@@ -224,6 +233,7 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Semantic Navigation Site Monitoring Status")
     @GetMapping("/{id}/monitoring")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatus(@PathVariable String id) {
         return this.turSNSiteRepository.findById(id).map(turSNSite -> {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();

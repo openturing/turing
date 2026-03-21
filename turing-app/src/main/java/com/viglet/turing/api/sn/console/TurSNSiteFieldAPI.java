@@ -79,14 +79,11 @@ public class TurSNSiteFieldAPI {
 	@PutMapping("/{id}")
 	public TurSNSiteFieldDto turSNSiteFieldUpdate(@PathVariable String snSiteId, @PathVariable String id,
 			@RequestBody TurSNSiteFieldDto turSNSiteFieldDto) {
-		TurSNSiteField turSNSiteField = turSNSiteFieldMapper.toEntity(turSNSiteFieldDto);
-		return this.turSNSiteFieldRepository.findById(id).map(turSNSiteFieldEdit -> {
-			turSNSiteFieldEdit.setDescription(turSNSiteField.getDescription());
-			turSNSiteFieldEdit.setMultiValued(turSNSiteField.getMultiValued());
-			turSNSiteFieldEdit.setName(turSNSiteField.getName());
-			turSNSiteFieldEdit.setType(turSNSiteField.getType());
-			this.turSNSiteFieldRepository.save(turSNSiteFieldEdit);
-			return turSNSiteFieldMapper.toDto(turSNSiteFieldEdit);
+		TurSNSiteField source = turSNSiteFieldMapper.toEntity(turSNSiteFieldDto);
+		return turSNSiteFieldRepository.findById(id).map(existing -> {
+			turSNSiteFieldMapper.updateEntity(source, existing);
+			turSNSiteFieldRepository.save(existing);
+			return turSNSiteFieldMapper.toDto(existing);
 		}).orElse(new TurSNSiteFieldDto());
 
 	}

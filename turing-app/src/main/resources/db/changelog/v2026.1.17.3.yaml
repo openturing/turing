@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-description-column-to-auth-privilege
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: auth_privilege
+            columnName: description
+      changes:
+        - addColumn:
+            tableName: auth_privilege
+            columns:
+              - column:
+                  name: description
+                  type: varchar(255)
+
+  - changeSet:
+      id: add-category-column-to-auth-privilege
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: auth_privilege
+            columnName: category
+      changes:
+        - addColumn:
+            tableName: auth_privilege
+            columns:
+              - column:
+                  name: category
+                  type: varchar(50)

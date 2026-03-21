@@ -2,6 +2,7 @@ package com.viglet.turing.api.intent;
 
 import java.util.List;
 
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +43,7 @@ public class TurIntentAPI {
 
     @Operation(summary = "Intent List")
     @GetMapping
+    @Secured({"ROLE_ADMIN", "INTENT_VIEW"})
     public List<TurIntentDto> turIntentList() {
         return turIntentMapper
                 .toDtoList(turIntentRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
@@ -49,6 +51,7 @@ public class TurIntentAPI {
 
     @Operation(summary = "Intent List (enabled only, ordered by sortOrder)")
     @GetMapping("/enabled")
+    @Secured({"ROLE_ADMIN", "INTENT_VIEW"})
     public List<TurIntentDto> turIntentListEnabled() {
         return turIntentMapper
                 .toDtoList(turIntentRepository.findByEnabledOrderBySortOrderAsc(1));
@@ -56,12 +59,14 @@ public class TurIntentAPI {
 
     @Operation(summary = "Intent structure")
     @GetMapping("/structure")
+    @Secured({"ROLE_ADMIN", "INTENT_VIEW"})
     public TurIntentDto turIntentStructure() {
         return turIntentMapper.toDto(new TurIntent());
     }
 
     @Operation(summary = "Show an Intent")
     @GetMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "INTENT_VIEW"})
     public TurIntentDto turIntentGet(@PathVariable String id) {
         return turIntentMapper
                 .toDto(turIntentRepository.findById(id).orElse(new TurIntent()));
@@ -69,16 +74,12 @@ public class TurIntentAPI {
 
     @Operation(summary = "Update an Intent")
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "INTENT_EDIT"})
     public TurIntentDto turIntentUpdate(@PathVariable String id,
                                         @RequestBody TurIntentDto turIntentDto) {
-        TurIntent incoming = turIntentMapper.toEntity(turIntentDto);
+        TurIntent source = turIntentMapper.toEntity(turIntentDto);
         return turIntentRepository.findById(id).map(existing -> {
-            existing.setTitle(incoming.getTitle());
-            existing.setDescription(incoming.getDescription());
-            existing.setIcon(incoming.getIcon());
-            existing.setEnabled(incoming.getEnabled());
-            existing.setSortOrder(incoming.getSortOrder());
-            existing.setActions(incoming.getActions());
+            turIntentMapper.updateEntity(source, existing);
             turIntentRepository.save(existing);
             return turIntentMapper.toDto(existing);
         }).orElse(new TurIntentDto());
@@ -87,6 +88,7 @@ public class TurIntentAPI {
     @Transactional
     @Operation(summary = "Delete an Intent")
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "INTENT_DELETE"})
     public boolean turIntentDelete(@PathVariable String id) {
         turIntentRepository.delete(id);
         return true;
@@ -94,6 +96,7 @@ public class TurIntentAPI {
 
     @Operation(summary = "Create an Intent")
     @PostMapping
+    @Secured({"ROLE_ADMIN", "INTENT_CREATE"})
     public TurIntentDto turIntentAdd(@RequestBody TurIntentDto turIntentDto) {
         TurIntent turIntent = turIntentMapper.toEntity(turIntentDto);
         turIntent.setActions(turIntentDto.getActions());

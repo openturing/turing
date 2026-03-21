@@ -30,6 +30,13 @@ public class TurPrivilege implements Serializable {
 
     private String name;
 
+    @Column(length = 255)
+    private String description;
+
+    @Column(length = 50)
+    private String category;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToMany(mappedBy = "turPrivileges")
     private Collection<TurRole> turRoles = new HashSet<>();
 

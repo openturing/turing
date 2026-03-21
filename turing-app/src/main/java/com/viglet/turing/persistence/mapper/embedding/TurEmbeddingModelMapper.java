@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.embedding.TurEmbeddingModelDto;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
@@ -20,4 +22,7 @@ public interface TurEmbeddingModelMapper {
     TurEmbeddingModel toEntity(TurEmbeddingModelDto dto);
 
     List<TurEmbeddingModelDto> toDtoList(List<TurEmbeddingModel> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurEmbeddingModel source, @MappingTarget TurEmbeddingModel target);
 }

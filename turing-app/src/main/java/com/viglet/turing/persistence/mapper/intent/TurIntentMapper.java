@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import com.viglet.turing.persistence.dto.intent.TurIntentDto;
 import com.viglet.turing.persistence.model.intent.TurIntent;
@@ -17,4 +19,7 @@ public interface TurIntentMapper {
     TurIntentDto toDto(TurIntent entity);
     TurIntent toEntity(TurIntentDto dto);
     List<TurIntentDto> toDtoList(List<TurIntent> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurIntent source, @MappingTarget TurIntent target);
 }

@@ -57,6 +57,9 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
                     Set<TurRole> roles = turRoleRepository.findByTurGroupsContaining(group);
                     for (TurRole role : roles) {
                         authorities.add(new SimpleGrantedAuthority(role.getName()));
+                        for (var privilege : role.getTurPrivileges()) {
+                            authorities.add(new SimpleGrantedAuthority(privilege.getName()));
+                        }
                     }
                 }
             }

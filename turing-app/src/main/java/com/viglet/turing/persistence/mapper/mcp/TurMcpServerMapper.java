@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.mcp.TurMcpServerDto;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 import java.util.Set;
@@ -17,4 +19,7 @@ public interface TurMcpServerMapper {
     List<TurMcpServerDto> toDtoList(List<TurMcpServer> entities);
 
     Set<TurMcpServerDto> toDtoSet(Set<TurMcpServer> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurMcpServer source, @MappingTarget TurMcpServer target);
 }

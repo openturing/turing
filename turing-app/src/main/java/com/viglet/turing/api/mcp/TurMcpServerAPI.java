@@ -58,19 +58,11 @@ public class TurMcpServerAPI {
     @PutMapping("/{id}")
     public TurMcpServerDto turMcpServerUpdate(@PathVariable String id,
             @RequestBody TurMcpServerDto turMcpServerDto) {
-        TurMcpServer turMcpServer = turMcpServerMapper.toEntity(turMcpServerDto);
-        return turMcpServerRepository.findById(id).map(turMcpServerEdit -> {
-            turMcpServerEdit.setTitle(turMcpServer.getTitle());
-            turMcpServerEdit.setDescription(turMcpServer.getDescription());
-            turMcpServerEdit.setIcon(turMcpServer.getIcon());
-            turMcpServerEdit.setUrl(turMcpServer.getUrl());
-            turMcpServerEdit.setCommand(turMcpServer.getCommand());
-            turMcpServerEdit.setArgs(turMcpServer.getArgs());
-            turMcpServerEdit.setType(turMcpServer.getType());
-            turMcpServerEdit.setConnectionType(turMcpServer.getConnectionType());
-            turMcpServerEdit.setEnabled(turMcpServer.getEnabled());
-            this.turMcpServerRepository.save(turMcpServerEdit);
-            return turMcpServerMapper.toDto(turMcpServerEdit);
+        TurMcpServer source = turMcpServerMapper.toEntity(turMcpServerDto);
+        return turMcpServerRepository.findById(id).map(existing -> {
+            turMcpServerMapper.updateEntity(source, existing);
+            turMcpServerRepository.save(existing);
+            return turMcpServerMapper.toDto(existing);
         }).orElse(new TurMcpServerDto());
     }
 

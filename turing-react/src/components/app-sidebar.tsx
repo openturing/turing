@@ -38,6 +38,17 @@ import { TurLogo } from "./logo/tur-logo"
 
 const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 
+/** Maps sidebar item titles to the privilege required to view them. */
+const ITEM_PRIVILEGE: Record<string, string> = {
+  "Language Model": "LLM_VIEW",
+  "Embedding Model": "EMBEDDING_VIEW",
+  "Embedding Store": "STORE_VIEW",
+  "AI Agent": "AI_AGENT_VIEW",
+  "Intent": "INTENT_VIEW",
+  "Search Engine": "SE_VIEW",
+  "Semantic Navigation": "SN_VIEW",
+}
+
 const generativeAiItems = [
   { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
   { title: "Embedding Model", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
@@ -54,7 +65,6 @@ const searchItems = [
   { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconCompass },
   { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
   { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
-
 ]
 
 const management = [
@@ -83,13 +93,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }).catch(() => setMinioEnabled(false));
   }, [])
 
-  const filterLlm = React.useCallback(
-    (items: typeof generativeAiItems) =>
-      items.filter((item) => !LLM_ONLY_TITLES.has(item.title) || hasEnabledLlm),
-    [hasEnabledLlm]
+  const isAdmin = !!user?.admin
+  const userPrivileges = React.useMemo(() => new Set(user?.privileges ?? []), [user?.privileges])
+
+  const hasPrivilege = React.useCallback(
+    (title: string) => {
+      if (isAdmin) return true
+      const required = ITEM_PRIVILEGE[title]
+      return !required || userPrivileges.has(required)
+    },
+    [isAdmin, userPrivileges]
   )
 
-  const isAdmin = !!user?.admin
+  const filterItems = React.useCallback(
+    (items: typeof generativeAiItems) =>
+      items.filter((item) => {
+        if (LLM_ONLY_TITLES.has(item.title) && !hasEnabledLlm) return false
+        return hasPrivilege(item.title)
+      }),
+    [hasEnabledLlm, hasPrivilege]
+  )
 
   const filteredManagement = React.useMemo(
     () => management.filter((item) => {
@@ -102,11 +125,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navGroups = React.useMemo(
     () => [
-      { label: "Generative AI", items: filterLlm(generativeAiItems) },
-      { label: "Enterprise Search", items: searchItems },
+      { label: "Generative AI", items: filterItems(generativeAiItems) },
+      { label: "Enterprise Search", items: filterItems(searchItems) },
       { label: "Management", items: filteredManagement },
-    ],
-    [filterLlm, filteredManagement]
+    ].filter((g) => g.items.length > 0),
+    [filterItems, filteredManagement]
   )
   return (
     <Sidebar collapsible="icon" {...props}>

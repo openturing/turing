@@ -79,17 +79,11 @@ public class TurIntegrationInstanceAPI {
 	@PutMapping("/{id}")
 	public TurIntegrationInstanceDto turIntegrationInstanceUpdate(@PathVariable String id,
 			@RequestBody TurIntegrationInstanceDto turIntegrationInstanceDto) {
-		TurIntegrationInstance turIntegrationInstance = turIntegrationInstanceMapper
-				.toEntity(turIntegrationInstanceDto);
-		return turIntegrationInstanceRepository.findById(id).map(turIntegrationInstanceEdit -> {
-			turIntegrationInstanceEdit.setTitle(turIntegrationInstance.getTitle());
-			turIntegrationInstanceEdit.setDescription(turIntegrationInstance.getDescription());
-			turIntegrationInstanceEdit.setIcon(turIntegrationInstance.getIcon());
-			turIntegrationInstanceEdit.setVendor(turIntegrationInstance.getVendor());
-			turIntegrationInstanceEdit.setEndpoint(turIntegrationInstance.getEndpoint());
-			turIntegrationInstanceEdit.setEnabled(turIntegrationInstance.getEnabled());
-			this.turIntegrationInstanceRepository.save(turIntegrationInstanceEdit);
-			return turIntegrationInstanceMapper.toDto(turIntegrationInstanceEdit);
+		TurIntegrationInstance source = turIntegrationInstanceMapper.toEntity(turIntegrationInstanceDto);
+		return turIntegrationInstanceRepository.findById(id).map(existing -> {
+			turIntegrationInstanceMapper.updateEntity(source, existing);
+			turIntegrationInstanceRepository.save(existing);
+			return turIntegrationInstanceMapper.toDto(existing);
 		}).orElse(new TurIntegrationInstanceDto());
 
 	}

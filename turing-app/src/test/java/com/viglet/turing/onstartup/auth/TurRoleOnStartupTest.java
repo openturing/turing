@@ -35,7 +35,7 @@ class TurRoleOnStartupTest {
     void shouldCreatePrivilegeWhenNotFound() {
         when(turPrivilegeRepository.findByName("READ_PRIVILEGE")).thenReturn(null);
 
-        TurPrivilege privilege = turRoleOnStartup.createPrivilegeIfNotFound("READ_PRIVILEGE");
+        TurPrivilege privilege = turRoleOnStartup.createPrivilegeIfNotFound("READ_PRIVILEGE", "Legacy read", "SYSTEM");
 
         assertNotNull(privilege);
         assertEquals("READ_PRIVILEGE", privilege.getName());
@@ -45,9 +45,11 @@ class TurRoleOnStartupTest {
     @Test
     void shouldNotCreatePrivilegeWhenAlreadyExists() {
         TurPrivilege existing = new TurPrivilege("WRITE_PRIVILEGE");
+        existing.setDescription("Legacy write");
+        existing.setCategory("SYSTEM");
         when(turPrivilegeRepository.findByName("WRITE_PRIVILEGE")).thenReturn(existing);
 
-        TurPrivilege privilege = turRoleOnStartup.createPrivilegeIfNotFound("WRITE_PRIVILEGE");
+        TurPrivilege privilege = turRoleOnStartup.createPrivilegeIfNotFound("WRITE_PRIVILEGE", "Legacy write", "SYSTEM");
 
         assertEquals(existing, privilege);
         verify(turPrivilegeRepository, never()).save(org.mockito.ArgumentMatchers.any(TurPrivilege.class));
@@ -69,14 +71,12 @@ class TurRoleOnStartupTest {
 
     @Test
     void shouldCreateDefaultRowsForAdminAndUserRoles() {
-        when(turPrivilegeRepository.findByName("READ_PRIVILEGE")).thenReturn(null);
-        when(turPrivilegeRepository.findByName("WRITE_PRIVILEGE")).thenReturn(null);
-        when(turRoleRepository.findByName("ROLE_ADMIN")).thenReturn(null);
-        when(turRoleRepository.findByName("ROLE_USER")).thenReturn(null);
+        when(turPrivilegeRepository.findByName(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
+        when(turRoleRepository.findByName(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
 
         turRoleOnStartup.createDefaultRows();
 
-        verify(turPrivilegeRepository, org.mockito.Mockito.times(2))
+        verify(turPrivilegeRepository, org.mockito.Mockito.atLeast(2))
                 .save(org.mockito.ArgumentMatchers.any(TurPrivilege.class));
         verify(turRoleRepository, org.mockito.Mockito.times(2)).save(org.mockito.ArgumentMatchers.any(TurRole.class));
     }

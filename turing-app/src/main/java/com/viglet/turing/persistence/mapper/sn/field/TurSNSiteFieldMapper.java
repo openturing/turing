@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldDto;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 import java.util.Set;
@@ -17,4 +19,7 @@ public interface TurSNSiteFieldMapper {
     List<TurSNSiteFieldDto> toDtoList(List<TurSNSiteField> entities);
 
     Set<TurSNSiteFieldDto> toDtoSet(Set<TurSNSiteField> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurSNSiteField source, @MappingTarget TurSNSiteField target);
 }

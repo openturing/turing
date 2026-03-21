@@ -43,6 +43,7 @@ import com.viglet.turing.persistence.mapper.auth.TurUserMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 
@@ -61,6 +62,9 @@ class TurUserAPITest {
     private TurGroupRepository turGroupRepository;
 
     @Mock
+    private TurRoleRepository turRoleRepository;
+
+    @Mock
     private TurConfigProperties turConfigProperties;
 
     @Spy
@@ -74,6 +78,17 @@ class TurUserAPITest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(turUserAPI).build();
+    }
+
+    private void setAuthenticatedUser(String username, String... roles) {
+        var authorities = new java.util.ArrayList<SimpleGrantedAuthority>();
+        for (String role : roles) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
+        Authentication auth = new UsernamePasswordAuthenticationToken(username, "password", authorities);
+        SecurityContext context = mock(SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(context);
     }
 
     @AfterEach
@@ -152,6 +167,15 @@ class TurUserAPITest {
 
         when(turConfigProperties.isKeycloak()).thenReturn(true);
 
+        TurUser kcUser = new TurUser();
+        kcUser.setUsername("kcuser");
+        when(turUserRepository.findByUsername("kcuser")).thenReturn(kcUser);
+
+        TurGroup adminGroup = new TurGroup();
+        adminGroup.setName("Administrator");
+        when(turGroupRepository.findByTurUsersContaining(kcUser))
+                .thenReturn(new HashSet<>(Collections.singletonList(adminGroup)));
+
         mockMvc.perform(get("/api/v2/user/current"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("kcuser"))
@@ -161,6 +185,8 @@ class TurUserAPITest {
 
     @Test
     void testTurUserEdit_Found() throws Exception {
+        setAuthenticatedUser("testuser", "ROLE_ADMIN");
+
         TurUser user = new TurUser();
         user.setUsername("testuser");
 
@@ -174,15 +200,19 @@ class TurUserAPITest {
 
     @Test
     void testTurUserEdit_NotFound() throws Exception {
+        setAuthenticatedUser("nonexistent", "ROLE_ADMIN");
+
         when(turUserRepository.findByUsername("nonexistent")).thenReturn(null);
 
         mockMvc.perform(get("/api/v2/user/nonexistent"))
-                .andExpect(status().isOk()) // The API returns a new TurUser
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").doesNotExist());
     }
 
     @Test
     void testTurUserUpdate_Found() throws Exception {
+        setAuthenticatedUser("testuser");
+
         TurUser userEdit = new TurUser();
         userEdit.setUsername("testuser");
 

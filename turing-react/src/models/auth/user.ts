@@ -10,4 +10,5 @@ export type TurUser = {
   hasAvatar?: boolean;
   avatarUrl?: string;
   turGroups?: TurGroup[];
+  privileges?: string[];
 };

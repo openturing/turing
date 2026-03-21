@@ -2,6 +2,7 @@ package com.viglet.turing.api.embedding;
 
 import java.util.List;
 
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,7 @@ public class TurEmbeddingModelAPI {
 
     @Operation(summary = "Embedding Model List")
     @GetMapping
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public List<TurEmbeddingModelDto> turEmbeddingModelList() {
         return turEmbeddingModelMapper
                 .toDtoList(this.turEmbeddingModelRepository.findAll(Sort.by(Sort.Order.asc("modelName").ignoreCase())));
@@ -50,12 +52,14 @@ public class TurEmbeddingModelAPI {
 
     @Operation(summary = "Embedding Model structure")
     @GetMapping("/structure")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public TurEmbeddingModelDto turEmbeddingModelStructure() {
         return turEmbeddingModelMapper.toDto(new TurEmbeddingModel());
     }
 
     @Operation(summary = "Show an Embedding Model")
     @GetMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_VIEW"})
     public TurEmbeddingModelDto turEmbeddingModelGet(@PathVariable String id) {
         return turEmbeddingModelMapper
                 .toDto(this.turEmbeddingModelRepository.findById(id).orElse(new TurEmbeddingModel()));
@@ -63,21 +67,12 @@ public class TurEmbeddingModelAPI {
 
     @Operation(summary = "Update an Embedding Model")
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_EDIT"})
     public TurEmbeddingModelDto turEmbeddingModelUpdate(@PathVariable String id,
             @RequestBody TurEmbeddingModel turEmbeddingModel) {
         return turEmbeddingModelRepository.findById(id).map(existing -> {
-            existing.setModelName(turEmbeddingModel.getModelName());
-            existing.setDescription(turEmbeddingModel.getDescription());
-            existing.setIcon(turEmbeddingModel.getIcon());
-            existing.setProviderType(turEmbeddingModel.getProviderType());
-            existing.setTurLLMInstance(turEmbeddingModel.getTurLLMInstance());
-            existing.setModelReference(turEmbeddingModel.getModelReference());
-            existing.setBatchSize(turEmbeddingModel.getBatchSize());
-            existing.setEnableGpu(turEmbeddingModel.isEnableGpu());
-            existing.setModelPath(turEmbeddingModel.getModelPath());
-            existing.setTokenizerPath(turEmbeddingModel.getTokenizerPath());
-            existing.setEnabled(turEmbeddingModel.getEnabled());
-            this.turEmbeddingModelRepository.save(existing);
+            turEmbeddingModelMapper.updateEntity(turEmbeddingModel, existing);
+            turEmbeddingModelRepository.save(existing);
             return turEmbeddingModelMapper.toDto(existing);
         }).orElse(new TurEmbeddingModelDto());
     }
@@ -85,6 +80,7 @@ public class TurEmbeddingModelAPI {
     @Transactional
     @Operation(summary = "Delete an Embedding Model")
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "EMBEDDING_DELETE"})
     public boolean turEmbeddingModelDelete(@PathVariable String id) {
         this.turEmbeddingModelRepository.delete(id);
         return true;
@@ -92,6 +88,7 @@ public class TurEmbeddingModelAPI {
 
     @Operation(summary = "Create an Embedding Model")
     @PostMapping
+    @Secured({"ROLE_ADMIN", "EMBEDDING_CREATE"})
     public TurEmbeddingModelDto turEmbeddingModelAdd(@RequestBody TurEmbeddingModel turEmbeddingModel) {
         this.turEmbeddingModelRepository.save(turEmbeddingModel);
         return turEmbeddingModelMapper.toDto(turEmbeddingModel);

@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.se.TurSEInstanceDto;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 import java.util.Set;
@@ -17,4 +19,7 @@ public interface TurSEInstanceMapper {
     List<TurSEInstanceDto> toDtoList(List<TurSEInstance> entities);
 
     Set<TurSEInstanceDto> toDtoSet(Set<TurSEInstance> entities);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntity(TurSEInstance source, @MappingTarget TurSEInstance target);
 }

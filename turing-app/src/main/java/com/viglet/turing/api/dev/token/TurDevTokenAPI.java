@@ -72,12 +72,11 @@ public class TurDevTokenAPI {
 	@Operation(summary = "Update a Developer Token")
 	@PutMapping("/{id}")
 	public TurDevTokenDto turDevTokenUpdate(@PathVariable String id, @RequestBody TurDevTokenDto turDevTokenDto) {
-		TurDevToken turDevToken = turDevTokenMapper.toEntity(turDevTokenDto);
-		return this.turDevTokenRepository.findById(id).map(turDevTokenEdit -> {
-			turDevTokenEdit.setDescription(turDevToken.getDescription());
-			turDevTokenEdit.setTitle(turDevToken.getTitle());
-			this.turDevTokenRepository.save(turDevTokenEdit);
-			return turDevTokenMapper.toDto(turDevTokenEdit);
+		TurDevToken source = turDevTokenMapper.toEntity(turDevTokenDto);
+		return turDevTokenRepository.findById(id).map(existing -> {
+			turDevTokenMapper.updateEntity(source, existing);
+			turDevTokenRepository.save(existing);
+			return turDevTokenMapper.toDto(existing);
 		}).orElse(new TurDevTokenDto());
 
 	}

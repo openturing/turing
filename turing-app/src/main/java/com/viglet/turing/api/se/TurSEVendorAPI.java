@@ -69,14 +69,11 @@ public class TurSEVendorAPI {
 	@Operation(summary = "Update a Search Engine Vendor")
 	@PutMapping("/{id}")
 	public TurSEVendorDto turSEVendorUpdate(@PathVariable String id, @RequestBody TurSEVendorDto turSEVendorDto) {
-		TurSEVendor turSEVendor = turSEVendorMapper.toEntity(turSEVendorDto);
-		return this.turSEVendorRepository.findById(id).map(turSEVendorEdit -> {
-			turSEVendorEdit.setDescription(turSEVendor.getDescription());
-			turSEVendorEdit.setPlugin(turSEVendor.getPlugin());
-			turSEVendorEdit.setTitle(turSEVendor.getTitle());
-			turSEVendorEdit.setWebsite(turSEVendor.getWebsite());
-			this.turSEVendorRepository.save(turSEVendorEdit);
-			return turSEVendorMapper.toDto(turSEVendorEdit);
+		TurSEVendor source = turSEVendorMapper.toEntity(turSEVendorDto);
+		return turSEVendorRepository.findById(id).map(existing -> {
+			turSEVendorMapper.updateEntity(source, existing);
+			turSEVendorRepository.save(existing);
+			return turSEVendorMapper.toDto(existing);
 		}).orElse(new TurSEVendorDto());
 
 	}

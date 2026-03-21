@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +48,7 @@ public class TurAIAgentAPI {
 
     @Operation(summary = "AI Agent List")
     @GetMapping
+    @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
     public List<TurAIAgentDto> turAIAgentList() {
         return turAIAgentMapper
                 .toDtoList(this.turAIAgentRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
@@ -54,12 +56,14 @@ public class TurAIAgentAPI {
 
     @Operation(summary = "AI Agent structure")
     @GetMapping("/structure")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
     public TurAIAgentDto turAIAgentStructure() {
         return turAIAgentMapper.toDto(new TurAIAgent());
     }
 
     @Operation(summary = "Show an AI Agent")
     @GetMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
     public TurAIAgentDto turAIAgentGet(@PathVariable String id) {
         return turAIAgentMapper
                 .toDto(this.turAIAgentRepository.findById(id).orElse(new TurAIAgent()));
@@ -67,6 +71,7 @@ public class TurAIAgentAPI {
 
     @Operation(summary = "Update an AI Agent")
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_EDIT"})
     public TurAIAgentDto turAIAgentUpdate(@PathVariable String id,
             @RequestBody TurAIAgentDto turAIAgentDto) {
         TurAIAgent turAIAgent = turAIAgentMapper.toEntity(turAIAgentDto);
@@ -89,6 +94,7 @@ public class TurAIAgentAPI {
     @Transactional
     @Operation(summary = "Delete an AI Agent")
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "AI_AGENT_DELETE"})
     public boolean turAIAgentDelete(@PathVariable String id) {
         this.turAIAgentRepository.delete(id);
         return true;
@@ -96,6 +102,7 @@ public class TurAIAgentAPI {
 
     @Operation(summary = "Create an AI Agent")
     @PostMapping
+    @Secured({"ROLE_ADMIN", "AI_AGENT_CREATE"})
     public TurAIAgentDto turAIAgentAdd(@RequestBody TurAIAgentDto turAIAgentDto) {
         TurAIAgent turAIAgent = turAIAgentMapper.toEntity(turAIAgentDto);
         turAIAgent.setLlmInstances(resolveRelations(

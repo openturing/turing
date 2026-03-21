@@ -66,14 +66,11 @@ public class TurLLMVendorAPI {
 	@Operation(summary = "Update a Large Language Model Vendor")
 	@PutMapping("/{id}")
 	public TurLLMVendorDto turLLMVendorUpdate(@PathVariable String id, @RequestBody TurLLMVendorDto turLLMVendorDto) {
-		TurLLMVendor turLLMVendor = turLLMVendorMapper.toEntity(turLLMVendorDto);
-		return this.turLLMVendorRepository.findById(id).map(turLLMVendorEdit -> {
-			turLLMVendorEdit.setDescription(turLLMVendor.getDescription());
-			turLLMVendorEdit.setPlugin(turLLMVendor.getPlugin());
-			turLLMVendorEdit.setTitle(turLLMVendor.getTitle());
-			turLLMVendorEdit.setWebsite(turLLMVendor.getWebsite());
-			this.turLLMVendorRepository.save(turLLMVendorEdit);
-			return turLLMVendorMapper.toDto(turLLMVendorEdit);
+		TurLLMVendor source = turLLMVendorMapper.toEntity(turLLMVendorDto);
+		return turLLMVendorRepository.findById(id).map(existing -> {
+			turLLMVendorMapper.updateEntity(source, existing);
+			turLLMVendorRepository.save(existing);
+			return turLLMVendorMapper.toDto(existing);
 		}).orElse(new TurLLMVendorDto());
 
 	}

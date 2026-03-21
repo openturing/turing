@@ -92,14 +92,11 @@ public class TurSNSiteLocaleAPI {
 	public TurSNSiteLocaleDto turSNSiteLocaleUpdate(@PathVariable String id,
 			@RequestBody TurSNSiteLocaleDto turSNSiteLocaleDto,
 			@PathVariable String snSiteId) {
-		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleMapper.toEntity(turSNSiteLocaleDto);
-		return this.turSNSiteLocaleRepository.findById(id).map(turSNSiteLocaleEdit -> {
-			turSNSiteLocaleEdit.setCore(turSNSiteLocale.getCore());
-			turSNSiteLocaleEdit.setLanguage(turSNSiteLocale.getLanguage());
-			turSNSiteLocaleEdit.setTurSNSite(turSNSiteLocale.getTurSNSite());
-
-			turSNSiteLocaleRepository.save(turSNSiteLocaleEdit);
-			return turSNSiteLocaleMapper.toDto(turSNSiteLocaleEdit);
+		TurSNSiteLocale source = turSNSiteLocaleMapper.toEntity(turSNSiteLocaleDto);
+		return turSNSiteLocaleRepository.findById(id).map(existing -> {
+			turSNSiteLocaleMapper.updateEntity(source, existing);
+			turSNSiteLocaleRepository.save(existing);
+			return turSNSiteLocaleMapper.toDto(existing);
 		}).orElse(new TurSNSiteLocaleDto());
 
 	}

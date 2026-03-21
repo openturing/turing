@@ -4,6 +4,8 @@ import com.viglet.turing.persistence.dto.system.TurLocaleDto;
 import com.viglet.turing.persistence.model.system.TurLocale;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 import java.util.Set;
@@ -17,4 +19,7 @@ public interface TurLocaleMapper {
     List<TurLocaleDto> toDtoList(List<TurLocale> entities);
 
     Set<TurLocaleDto> toDtoSet(Set<TurLocale> entities);
+
+    @Mapping(target = "initials", ignore = true)
+    void updateEntity(TurLocale source, @MappingTarget TurLocale target);
 }

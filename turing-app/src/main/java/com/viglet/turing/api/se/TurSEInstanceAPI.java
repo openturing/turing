@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,6 +78,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Search Engine List")
         @GetMapping
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public List<TurSEInstanceDto> turSEInstanceList() {
                 return turSEInstanceMapper
                                 .toDtoList(this.turSEInstanceRepository
@@ -85,6 +87,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Search Engine structure")
         @GetMapping("/structure")
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public TurSEInstanceDto turSearchEngineStructure() {
                 TurSEInstance turSEInstance = new TurSEInstance();
                 turSEInstance.setTurSEVendor(new TurSEVendor());
@@ -94,6 +97,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Show a Search Engine")
         @GetMapping("/{id}")
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public TurSEInstanceDto turSEInstanceGet(@PathVariable String id) {
                 return turSEInstanceMapper
                                 .toDto(this.turSEInstanceRepository.findById(id).orElse(new TurSEInstance()));
@@ -101,18 +105,14 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Update a Search Engine")
         @PutMapping("/{id}")
+        @Secured({"ROLE_ADMIN", "SE_EDIT"})
         public TurSEInstanceDto turSEInstanceUpdate(@PathVariable String id,
                         @RequestBody TurSEInstanceDto turSEInstanceDto) {
-                TurSEInstance turSEInstance = turSEInstanceMapper.toEntity(turSEInstanceDto);
-                return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
-                        turSEInstanceEdit.setTitle(turSEInstance.getTitle());
-                        turSEInstanceEdit.setDescription(turSEInstance.getDescription());
-                        turSEInstanceEdit.setIcon(turSEInstance.getIcon());
-                        turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
-                        turSEInstanceEdit.setEndpointUrl(turSEInstance.getEndpointUrl());
-                        turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());
-                        this.turSEInstanceRepository.save(turSEInstanceEdit);
-                        return turSEInstanceMapper.toDto(turSEInstanceEdit);
+                TurSEInstance source = turSEInstanceMapper.toEntity(turSEInstanceDto);
+                return turSEInstanceRepository.findById(id).map(existing -> {
+                        turSEInstanceMapper.updateEntity(source, existing);
+                        turSEInstanceRepository.save(existing);
+                        return turSEInstanceMapper.toDto(existing);
                 }).orElse(new TurSEInstanceDto());
 
         }
@@ -120,6 +120,7 @@ public class TurSEInstanceAPI {
         @Transactional
         @Operation(summary = "Delete a Search Engine")
         @DeleteMapping("/{id}")
+        @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public boolean turSEInstanceDelete(@PathVariable String id) {
                 this.turSEInstanceRepository.delete(id);
                 return true;
@@ -127,6 +128,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Create a Search Engine")
         @PostMapping
+        @Secured({"ROLE_ADMIN", "SE_CREATE"})
         public TurSEInstanceDto turSEInstanceAdd(@RequestBody TurSEInstanceDto turSEInstanceDto) {
                 TurSEInstance turSEInstance = turSEInstanceMapper.toEntity(turSEInstanceDto);
                 this.turSEInstanceRepository.save(turSEInstance);
@@ -136,6 +138,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "List Solr cores/collections for a Search Engine")
         @GetMapping("/{id}/cores")
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<List<TurSECoreInfo>> turSEInstanceCores(@PathVariable String id) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
                         List<TurSECoreInfo> cores = pluginFactory.getPluginForInstance(turSEInstance).listIndexes(turSEInstance).stream()
@@ -154,6 +157,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Create a new core/collection in a Search Engine")
         @PostMapping("/{id}/cores")
+        @Secured({"ROLE_ADMIN", "SE_CREATE"})
         public ResponseEntity<Void> turSEInstanceCreateCore(@PathVariable String id,
                         @RequestBody TurSECreateCoreRequest request) {
                 if (request.name == null || request.name.isBlank()) {
@@ -174,6 +178,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Delete a Solr core/collection from a Search Engine")
         @DeleteMapping("/{id}/cores/{core}")
+        @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
                         if (!turSNSiteLocaleRepository.findByCore(core).isEmpty()) {
@@ -186,6 +191,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Remove all documents from a Solr core/collection")
         @DeleteMapping("/{id}/cores/{core}/documents")
+        @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public ResponseEntity<Void> turSEInstanceClearCore(@PathVariable String id, @PathVariable String core) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
                         pluginFactory.getPluginForInstance(turSEInstance).clearIndex(turSEInstance, core);
@@ -195,6 +201,7 @@ public class TurSEInstanceAPI {
 
         @Operation(summary = "Get system information for a Search Engine instance")
         @GetMapping("/{id}/system-info")
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<java.util.Map<String, String>> turSEInstanceSystemInfo(@PathVariable String id) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {
                         java.util.Map<String, String> info = pluginFactory
@@ -205,6 +212,7 @@ public class TurSEInstanceAPI {
         }
 
         @GetMapping("/{id}/{core}/select")
+        @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<TurSEResults> turSEInstanceSelect(@PathVariable String id, @PathVariable String core,
                         @ModelAttribute TurSNSearchParams turSNSearchParams) {
                 return turSEInstanceRepository.findById(id).map(turSEInstance -> {

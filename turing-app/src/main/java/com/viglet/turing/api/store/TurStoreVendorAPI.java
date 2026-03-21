@@ -71,14 +71,11 @@ public class TurStoreVendorAPI {
 	@PutMapping("/{id}")
 	public TurStoreVendorDto turStoreVendorUpdate(@PathVariable String id,
 			@RequestBody TurStoreVendorDto turStoreVendorDto) {
-		TurStoreVendor turStoreVendor = turStoreVendorMapper.toEntity(turStoreVendorDto);
-		return this.turStoreVendorRepository.findById(id).map(turStoreVendorEdit -> {
-			turStoreVendorEdit.setDescription(turStoreVendor.getDescription());
-			turStoreVendorEdit.setPlugin(turStoreVendor.getPlugin());
-			turStoreVendorEdit.setTitle(turStoreVendor.getTitle());
-			turStoreVendorEdit.setWebsite(turStoreVendor.getWebsite());
-			this.turStoreVendorRepository.save(turStoreVendorEdit);
-			return turStoreVendorMapper.toDto(turStoreVendorEdit);
+		TurStoreVendor source = turStoreVendorMapper.toEntity(turStoreVendorDto);
+		return turStoreVendorRepository.findById(id).map(existing -> {
+			turStoreVendorMapper.updateEntity(source, existing);
+			turStoreVendorRepository.save(existing);
+			return turStoreVendorMapper.toDto(existing);
 		}).orElse(new TurStoreVendorDto());
 
 	}

@@ -65,11 +65,14 @@ public class TurCustomUserDetailsService implements UserDetailsService {
                 turRoles.addAll(turRoleRepository.findByTurGroupsContaining(turGroup));
             }
 
-            List<String> roles = new ArrayList<>();
+            List<String> authorities = new ArrayList<>();
             for (TurRole turRole : turRoles) {
-                roles.add(turRole.getName());
+                authorities.add(turRole.getName());
+                for (var privilege : turRole.getTurPrivileges()) {
+                    authorities.add(privilege.getName());
+                }
             }
-            return new TurCustomUserDetails(turUser, roles);
+            return new TurCustomUserDetails(turUser, authorities);
         }
     }
 }

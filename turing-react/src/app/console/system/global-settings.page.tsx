@@ -194,6 +194,7 @@ export default function GlobalSettingsPage() {
                                             <Input
                                                 className="max-w-md font-mono text-sm"
                                                 placeholder="/usr/bin/python3"
+                                                autoComplete="one-time-code"
                                                 disabled={isLoading}
                                                 {...field}
                                                 value={field.value ?? ""}

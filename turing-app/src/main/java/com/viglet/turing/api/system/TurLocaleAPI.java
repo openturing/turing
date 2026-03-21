@@ -69,12 +69,11 @@ public class TurLocaleAPI {
 	@Operation(summary = "Update a Locle")
 	@PutMapping("/{id}")
 	public TurLocaleDto turLocaleUpdate(@PathVariable Locale id, @RequestBody TurLocaleDto turLocaleDto) {
-		TurLocale turLocale = turLocaleMapper.toEntity(turLocaleDto);
-		return this.turLocaleRepository.findById(id).map(turLocaleEdit -> {
-			turLocaleEdit.setEn(turLocale.getEn());
-			turLocaleEdit.setPt(turLocale.getPt());
-			this.turLocaleRepository.save(turLocaleEdit);
-			return turLocaleMapper.toDto(turLocaleEdit);
+		TurLocale source = turLocaleMapper.toEntity(turLocaleDto);
+		return turLocaleRepository.findById(id).map(existing -> {
+			turLocaleMapper.updateEntity(source, existing);
+			turLocaleRepository.save(existing);
+			return turLocaleMapper.toDto(existing);
 		}).orElse(new TurLocaleDto());
 
 	}

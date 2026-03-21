@@ -53,22 +53,33 @@ public class TurRoleAPI {
 		this.turRoleMapper = turRoleMapper;
 	}
 
+	@Transactional
 	@GetMapping
 	public List<TurRoleDto> turRoleList() {
 		return turRoleMapper.toDtoList(turRoleRepository.findAll());
 	}
 
+	@Transactional
 	@GetMapping("/{id}")
 	public TurRoleDto turRoleEdit(@PathVariable String id) {
 		return turRoleMapper
 				.toDto(turRoleRepository.findById(id).orElse(new com.viglet.turing.persistence.model.auth.TurRole()));
 	}
 
+	@Transactional
 	@PutMapping("/{id}")
 	public TurRoleDto turRoleUpdate(@PathVariable String id, @RequestBody TurRoleDto turRoleDto) {
-		com.viglet.turing.persistence.model.auth.TurRole turRole = turRoleMapper.toEntity(turRoleDto);
-		turRoleRepository.save(turRole);
-		return turRoleMapper.toDto(turRole);
+		return turRoleRepository.findById(id).map(existing -> {
+			existing.setName(turRoleDto.getName());
+			existing.setDescription(turRoleDto.getDescription());
+			existing.setTurPrivileges(turRoleMapper.toEntity(turRoleDto).getTurPrivileges());
+			turRoleRepository.save(existing);
+			return turRoleMapper.toDto(existing);
+		}).orElseGet(() -> {
+			com.viglet.turing.persistence.model.auth.TurRole turRole = turRoleMapper.toEntity(turRoleDto);
+			turRoleRepository.save(turRole);
+			return turRoleMapper.toDto(turRole);
+		});
 	}
 
 	@Transactional

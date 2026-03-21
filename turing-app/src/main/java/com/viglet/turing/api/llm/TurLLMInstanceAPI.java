@@ -42,6 +42,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.annotation.Secured;
 
 @RestController
 @RequestMapping("/api/llm")
@@ -60,6 +61,7 @@ public class TurLLMInstanceAPI {
         this.turSecretCryptoService = turSecretCryptoService;
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_VIEW"})
     @Operation(summary = "Large Language Model List")
     @GetMapping
     public List<TurLLMInstanceDto> turLLMInstanceList() {
@@ -67,6 +69,7 @@ public class TurLLMInstanceAPI {
                 .toDtoList(this.turLLMInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_CREATE"})
     @Operation(summary = "Large Language Model structure")
     @GetMapping("/structure")
     public TurLLMInstanceDto turLLMInstanceStructure() {
@@ -76,12 +79,14 @@ public class TurLLMInstanceAPI {
 
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_VIEW"})
     @Operation(summary = "Show a Large Language Model")
     @GetMapping("/{id}")
     public TurLLMInstanceDto turLLMInstanceGet(@PathVariable String id) {
         return turLLMInstanceMapper.toDto(this.turLLMInstanceRepository.findById(id).orElse(new TurLLMInstance()));
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_EDIT"})
     @Operation(summary = "Update a Large Language Model")
     @PutMapping("/{id}")
     public TurLLMInstanceDto turLLMInstanceUpdate(@PathVariable String id, @RequestBody Map<String, Object> payload) {
@@ -117,6 +122,7 @@ public class TurLLMInstanceAPI {
 
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_DELETE"})
     @Transactional
     @Operation(summary = "Delete a Large Language Model")
     @DeleteMapping("/{id}")
@@ -125,6 +131,7 @@ public class TurLLMInstanceAPI {
         return true;
     }
 
+    @Secured({"ROLE_ADMIN", "LLM_CREATE"})
     @Operation(summary = "Create a Large Language Model")
     @PostMapping
     public TurLLMInstanceDto turLLMInstanceAdd(@RequestBody Map<String, Object> payload) {

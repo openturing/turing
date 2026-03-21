@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -71,6 +72,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Embedding Store List")
     @GetMapping
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public List<TurStoreInstanceDto> turStoreInstanceList() {
         return turStoreInstanceMapper
                 .toDtoList(this.turStoreInstanceRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
@@ -78,6 +80,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Embedding Store structure")
     @GetMapping("/structure")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public TurStoreInstanceDto turEmbeddingStoreInstanceStructure() {
         TurStoreInstance turStoreInstance = new TurStoreInstance();
         turStoreInstance.setTurStoreVendor(new TurStoreVendor());
@@ -87,6 +90,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Show a Embedding Store")
     @GetMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public TurStoreInstanceDto turStoreInstanceGet(@PathVariable String id) {
         return turStoreInstanceMapper
                 .toDto(this.turStoreInstanceRepository.findById(id).orElse(new TurStoreInstance()));
@@ -94,6 +98,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Update a Embedding Store")
     @PutMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "STORE_EDIT"})
     public TurStoreInstanceDto turStoreInstanceUpdate(@PathVariable String id,
             @RequestBody Map<String, Object> payload) {
         TurStoreInstance turStoreInstance = objectMapper.convertValue(payload, TurStoreInstance.class);
@@ -120,6 +125,7 @@ public class TurStoreInstanceAPI {
     @Transactional
     @Operation(summary = "Delete a Embedding Store")
     @DeleteMapping("/{id}")
+    @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public boolean turStoreInstanceDelete(@PathVariable String id) {
         this.turStoreInstanceRepository.delete(id);
         return true;
@@ -127,6 +133,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "List collections in the Embedding Store")
     @GetMapping("/{id}/collections")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public List<TurStoreCollectionInfo> turStoreInstanceCollections(@PathVariable String id) {
         return turStoreInstanceRepository.findById(id).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
@@ -137,6 +144,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Create a collection")
     @PostMapping("/{id}/collections/{collectionName}")
+    @Secured({"ROLE_ADMIN", "STORE_CREATE"})
     public ResponseEntity<Void> createCollection(@PathVariable String id, @PathVariable String collectionName) {
         turStoreInstanceRepository.findById(id).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
@@ -148,6 +156,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Clear all embeddings in a collection")
     @DeleteMapping("/{id}/collections/{collectionName}/clear")
+    @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public ResponseEntity<Void> clearCollection(@PathVariable String id, @PathVariable String collectionName) {
         turStoreInstanceRepository.findById(id).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
@@ -159,6 +168,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Delete a collection")
     @DeleteMapping("/{id}/collections/{collectionName}")
+    @Secured({"ROLE_ADMIN", "STORE_DELETE"})
     public ResponseEntity<Void> deleteCollection(@PathVariable String id, @PathVariable String collectionName) {
         turStoreInstanceRepository.findById(id).ifPresent(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
@@ -170,6 +180,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Get system information for an Embedding Store instance")
     @GetMapping("/{id}/system-info")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
     public ResponseEntity<java.util.Map<String, String>> turStoreInstanceSystemInfo(@PathVariable String id) {
         return turStoreInstanceRepository.findById(id).map(instance -> {
             var provider = storeProviderFactory.getProvider(instance);
@@ -181,6 +192,7 @@ public class TurStoreInstanceAPI {
 
     @Operation(summary = "Create a Embedding Store")
     @PostMapping
+    @Secured({"ROLE_ADMIN", "STORE_CREATE"})
     public TurStoreInstanceDto turStoreInstanceAdd(@RequestBody Map<String, Object> payload) {
         TurStoreInstance turStoreInstance = objectMapper.convertValue(payload, TurStoreInstance.class);
         String credential = payload.get("credential") instanceof String credentialValue ? credentialValue : null;

@@ -65,6 +65,7 @@ public class TurRole implements Serializable {
 	@Column
 	private String description;
 
+	@com.fasterxml.jackson.annotation.JsonIgnore
 	@ManyToMany(mappedBy = "turRoles")
 	private Collection<TurGroup> turGroups = new HashSet<>();
 
