@@ -17,7 +17,7 @@ import { ChatHeader } from "./components/chat-header"
 import { ChatInput } from "./components/chat-input"
 import { ChatMessageList } from "./components/chat-message-list"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
-import { ChatSuggestions } from "./components/chat-suggestions"
+import { ChatStarter } from "./components/chat-starter"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
 import { useLlmInstances } from "./hooks/use-llm-instances"
@@ -151,6 +151,54 @@ export default function ChatPage() {
 
   const addFiles = (newFiles: FileList | File[]) => setAttachedFiles((prev) => [...prev, ...Array.from(newFiles)])
   const removeFile = (index: number) => setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
+
+  const sendChatPrompt = useCallback(async (prompt: string) => {
+    if ((!prompt.trim() && attachedFiles.length === 0) || chatLoading || !selectedLlmId) return
+
+    const filesToSend = [...attachedFiles]
+    const content = prompt.trim() || (filesToSend.length > 0 ? `[${filesToSend.map((f) => f.name).join(", ")}]` : "")
+    const userMessage: ChatMessage = {
+      id: generateId(),
+      role: "user",
+      content,
+      attachments: filesToSend.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+    }
+    const assistantId = generateId()
+    const updated = [...chatMessagesRef.current, userMessage]
+    setChatMessages([...updated, { id: assistantId, role: "assistant", content: "" }])
+    setChatInput("")
+    setAttachedFiles([])
+    setChatLoading(true)
+
+    const apiMessages: ChatMessageItem[] = updated.map(({ role, content: c }) => ({ role, content: c }))
+    const llmId = selectedLlmId
+
+    await turChatService.sendStream(
+      llmId,
+      apiMessages,
+      (token) => setChatMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
+      () => {
+        setChatLoading(false)
+        setTimeout(() => saveAfterResponse("chat", chatMessagesRef.current, llmId), 0)
+      },
+      (error) => {
+        console.error(error)
+        toast.error("Failed to get a response. Please check your LLM configuration.")
+        setChatMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
+        setChatLoading(false)
+      },
+      filesToSend.length > 0 ? filesToSend : undefined,
+    )
+  }, [attachedFiles, chatLoading, selectedLlmId, turChatService, saveAfterResponse])
+
+  // Auto-send initial prompt from sessionStorage (set by home page ChatStarter)
+  useEffect(() => {
+    const prompt = sessionStorage.getItem("turing-chat-initial-prompt")
+    if (prompt && selectedLlmId) {
+      sessionStorage.removeItem("turing-chat-initial-prompt")
+      sendChatPrompt(prompt)
+    }
+  }, [selectedLlmId, sendChatPrompt])
 
   const handleChatSend = async () => {
     const trimmed = chatInput.trim()
@@ -422,7 +470,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] max-h-screen">
+    <div className="flex h-[calc(100vh-5rem)] max-h-screen">
       <ChatSessionSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -450,29 +498,12 @@ export default function ChatPage() {
           <>
             {isEmpty ? (
               <div className="flex-1 flex flex-col items-center justify-center px-4">
-                <div className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 p-4 dark:from-blue-500 dark:to-indigo-500 mb-4">
-                  <IconMessageChatbot className="size-8 text-white" />
-                </div>
-                <h2 className="text-2xl font-semibold mb-1">How can I help you today?</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  {selectedInstance ? `Using ${selectedInstance.title} (${selectedInstance.turLLMVendor?.id ?? ""})` : "Select a language model to start chatting."}
-                </p>
-                <div className="w-full max-w-2xl">
-                  <ChatInput
-                    value={chatInput}
-                    onChange={setChatInput}
-                    onSend={handleChatSend}
-                    loading={chatLoading}
-                    disabled={!selectedLlmId}
-                    placeholder={selectedLlmId ? "Send a message..." : "Select a model to start..."}
-                    accentColor="blue"
-                    attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
-                  />
-                  <div className="flex items-center justify-center mt-2">
-                    <span className="text-xs text-muted-foreground">{modelLabel}</span>
-                  </div>
-                </div>
-                <ChatSuggestions onSelectPrompt={(prompt) => { setChatInput(prompt) }} />
+                <ChatStarter
+                  defaultLlmId={selectedLlmId}
+                  modelLabel={selectedInstance ? `Using ${selectedInstance.title} (${selectedInstance.turLLMVendor?.id ?? ""})` : "Select a language model to start chatting."}
+                  onSendInPlace={sendChatPrompt}
+                  attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
+                />
               </div>
             ) : (
               <>

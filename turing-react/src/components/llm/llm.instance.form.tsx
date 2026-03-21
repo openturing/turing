@@ -560,8 +560,8 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             <FormControl>
                               <Input
                                 placeholder="Enter API key"
-                                type="password"
-                                className="w-full"
+                                type="text"
+                                className="w-full [-webkit-text-security:disc]"
                                 autoComplete="one-time-code"
                                 {...field}
                                 value={field.value ?? ""}

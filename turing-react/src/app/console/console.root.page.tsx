@@ -1,3 +1,4 @@
+import { AppFooter } from "@/components/app-footer";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   SidebarInset,
@@ -22,6 +23,7 @@ export default function ConsoleRootPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <Outlet />
+        <AppFooter />
       </SidebarInset>
     </SidebarProvider>
     </UserProvider>

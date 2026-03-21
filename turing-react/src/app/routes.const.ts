@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: "/login",
   LOGOUT: "/logout",
   CONSOLE: consolePath,
+  HOME: `${consolePath}/home`,
   SN_SEARCH: `/sn`,
   SN_ROOT: `${consolePath}/sn`,
   SN_INSTANCE: `${consolePath}/sn/instance`,

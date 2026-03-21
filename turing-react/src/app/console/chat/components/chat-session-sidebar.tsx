@@ -26,12 +26,14 @@ export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, o
         ) : (
           <div className="py-1">
             {sessions.map((session) => (
-              <button
+              <div
                 key={session.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onRestore(session)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onRestore(session) }}
                 title={session.title}
-                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors flex items-start gap-2 group/session ${activeSessionId === session.id ? "bg-muted/80" : ""}`}
+                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors flex items-start gap-2 group/session cursor-pointer ${activeSessionId === session.id ? "bg-muted/80" : ""}`}
               >
                 <div className="shrink-0 pt-0.5">
                   {session.tab === "chat"
@@ -53,13 +55,13 @@ export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, o
                 </div>
                 <button
                   type="button"
-                  onClick={(e) => onDelete(e, session.id)}
+                  onClick={(e) => { e.stopPropagation(); onDelete(e, session.id) }}
                   title="Delete session"
                   className="shrink-0 opacity-0 group-hover/session:opacity-100 text-muted-foreground hover:text-destructive transition-all p-0.5"
                 >
                   <IconTrash className="size-3.5" />
                 </button>
-              </button>
+              </div>
             ))}
           </div>
         )}

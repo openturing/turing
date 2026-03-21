@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom"
 import ConsoleRootPage from "./app/console/console.root.page"
 import RealTimeDashboardPage from "./app/console/dashboard/dashboard.page"
+import HomePage from "./app/console/home/home.page"
 import LoginPage from "./app/login/login.page"
 import {
   AdminRoutes,
@@ -41,7 +42,8 @@ function App() {
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
-                <Route index element={<Navigate to={ROUTES.SN_INSTANCE} replace />} />
+                <Route index element={<Navigate to={ROUTES.HOME} replace />} />
+                <Route path="home" element={<HomePage />} />
                 {SERoutes}
                 {SNRoutes}
                 {StoreRoutes}
