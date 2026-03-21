@@ -29,14 +29,12 @@ export default function SNSiteSpotlightListPage() {
     });
     return (
         <LoadProvider checkIsNotUndefined={spotlightList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/spotlight`}>
+            <SubPageHeader icon={IconSpeakerphone} name="Spotlight" feature="Spotlight"
+                description="Define content that will be featured in the term-based search.">
+                <SubPageHeader.Action label="New Spotlight" href={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} />
+            </SubPageHeader>
             {spotlightList && spotlightList.length > 0 ? (
-                <>
-                    <SubPageHeader icon={IconSpeakerphone} name="Spotlight" feature="Spotlight"
-                        description="Define content that will be featured in the term-based search." />
-                    <GridList gridItemList={gridItemList}>
-                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} label="Spotlight" />
-                    </GridList>
-                </>
+                <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconSpeakerphone}

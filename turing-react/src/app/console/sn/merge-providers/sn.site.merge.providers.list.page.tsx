@@ -29,14 +29,12 @@ export default function SNSiteMergeProvidersListPage() {
     });
     return (
         <LoadProvider checkIsNotUndefined={mergeProviderList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/merge-providers`}>
+            <SubPageHeader icon={IconGitMerge} name="Merge Providers" feature="Merge Providers"
+                description="Unify different sources contents.">
+                <SubPageHeader.Action label="New Merge Provider" href={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} />
+            </SubPageHeader>
             {mergeProviderList && mergeProviderList.length > 0 ? (
-                <>
-                    <SubPageHeader icon={IconGitMerge} name="Merge Providers" feature="Merge Providers"
-                        description="Unify different sources contents." />
-                    <GridList gridItemList={gridItemList}>
-                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} label="Merge Provider" />
-                    </GridList>
-                </>
+                <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconGitMerge}

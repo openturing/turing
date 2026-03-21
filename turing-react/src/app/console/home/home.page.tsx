@@ -24,6 +24,8 @@ import { NavLink } from "react-router-dom"
 import { useEffect, useMemo, useState } from "react"
 import type { Icon } from "@tabler/icons-react"
 import { TurLogo } from "@/components/logo/tur-logo"
+import { PageHeader } from "@/components/page-header"
+import { IconHome } from "@tabler/icons-react"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { ChatStarter } from "@/app/console/chat/components/chat-starter"
@@ -133,6 +135,8 @@ export default function HomePage() {
   const firstName = user?.firstName || user?.username || "there"
 
   return (
+    <>
+    <PageHeader turIcon={IconHome} title="Home" />
     <div className="px-6 py-8 max-w-7xl mx-auto">
       {/* Hero */}
       <div className="mb-10">
@@ -193,5 +197,6 @@ export default function HomePage() {
       </div>
 
     </div>
+    </>
   )
 }

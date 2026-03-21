@@ -1,4 +1,5 @@
-import { IconDeviceFloppy, IconLoader2, IconLock } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconLoader2, IconLock, IconUser } from "@tabler/icons-react"
+import { PageHeader } from "@/components/page-header"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -118,8 +119,9 @@ export default function UserAccountPage() {
   }
 
   return (
+    <>
+    <PageHeader turIcon={IconUser} title="Account Settings" />
     <div className="max-w-2xl mx-auto py-8 px-6">
-      <h1 className="text-2xl font-semibold mb-6">Account Settings</h1>
 
       {/* Avatar + username */}
       <AvatarField
@@ -182,5 +184,6 @@ export default function UserAccountPage() {
       </div>
 
     </div>
+    </>
   )
 }

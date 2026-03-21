@@ -66,10 +66,15 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                 </button>
             </TableCell>
-            <TableCell className="w-24 font-medium">{row.facetPosition}</TableCell>
-            <TableCell className="text-muted-foreground">{row.name}</TableCell>
-            <TableCell className="text-muted-foreground text-center"><BadgeColorful text={row.customFacet ? 'Custom Facet' : 'Faceted Field'} className="w-24" /></TableCell>
-            <TableCell>{row.facetName}</TableCell>
+            <TableCell className="text-muted-foreground">
+                <div className="flex items-center gap-2">
+                    <span title={row.customFacet ? 'Custom Facet' : 'Faceted Field'}>
+                        <BadgeColorful text={row.customFacet ? 'CF' : 'FF'} className="w-7 text-[10px]" />
+                    </span>
+                    <span>{row.name}</span>
+                </div>
+            </TableCell>
+            <TableCell className="hidden md:table-cell">{row.facetName}</TableCell>
             <TableCell className="text-muted-foreground">
                 <GradientButton
                     asChild
@@ -138,10 +143,8 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12"></TableHead>
-                                <TableHead className="w-24">Position</TableHead>
                                 <TableHead>Identifier</TableHead>
-                                <TableHead className="text-center">Type</TableHead>
-                                <TableHead>Facet Name</TableHead>
+                                <TableHead className="hidden md:table-cell">Facet Name</TableHead>
                                 <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>

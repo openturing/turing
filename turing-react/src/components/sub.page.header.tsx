@@ -1,8 +1,26 @@
+import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { DialogDelete } from "./dialog.delete";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { GradientButton } from "./ui/gradient-button";
 import { Separator } from "./ui/separator";
 import { SidebarTrigger, useSidebar } from "./ui/sidebar";
+
+/* ── Composite sub-components (markers) ── */
+
+interface ActionProps {
+  label: string;
+  icon?: React.ElementType;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
+const SubPageHeaderAction: React.FC<ActionProps> = () => null;
+SubPageHeaderAction.displayName = "SubPageHeaderAction";
+
+/* ── Main component ── */
 
 interface Props {
   icon: React.ElementType
@@ -13,9 +31,20 @@ interface Props {
   onDelete?: () => void;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  children?: React.ReactNode;
 }
-export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, description, urlBase, onDelete, open, setOpen }) => {
+
+const SubPageHeaderComponent: React.FC<Props> = ({ icon: Icon, feature, name, description, urlBase, onDelete, open, setOpen, children }) => {
   const { isMobile, toggleSidebar } = useSidebar();
+  const navigate = useNavigate();
+
+  // Extract actions from marker children
+  const actions: ActionProps[] = [];
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement(child) && (child.type as any)?.displayName === "SubPageHeaderAction") {
+      actions.push(child.props as ActionProps);
+    }
+  });
 
   const iconElement = Icon && (
     <div
@@ -42,7 +71,6 @@ export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, desc
   return (
     <header className="mb-5">
       <div className="flex w-full items-center gap-3 px-4 lg:px-6">
-        {/* Desktop: sidebar trigger + separator */}
         <div className="hidden md:flex items-center gap-1">
           <SidebarTrigger className="-ml-1" />
           <Separator
@@ -60,6 +88,34 @@ export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, desc
           )}
         </div>
         <div className="flex items-center gap-2">
+          {actions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <GradientButton variant="outline" size="sm" className="gap-1.5">
+                  <IconDotsVertical className="size-4" />
+                  <span className="hidden sm:inline">Actions</span>
+                </GradientButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {actions.map((action) => {
+                  const ActionIcon = action.icon ?? IconPlus;
+                  return (
+                    <DropdownMenuItem
+                      key={action.label}
+                      disabled={action.disabled}
+                      onClick={() => {
+                        if (action.href) navigate(action.href);
+                        if (action.onClick) action.onClick();
+                      }}
+                    >
+                      <ActionIcon className="size-4 mr-2" />
+                      {action.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {open !== undefined && onDelete !== undefined && setOpen !== undefined && (
             <DialogDelete feature={feature} name={name} onDelete={onDelete} open={open} setOpen={setOpen} />
           )}
@@ -69,3 +125,7 @@ export const SubPageHeader: React.FC<Props> = ({ icon: Icon, feature, name, desc
     </header>
   )
 }
+
+export const SubPageHeader = Object.assign(SubPageHeaderComponent, {
+  Action: SubPageHeaderAction,
+});

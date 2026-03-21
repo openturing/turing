@@ -12,6 +12,12 @@ import { Icon } from "@iconify/react";
 
 import { Card } from "@/components/ui/card";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -22,8 +28,8 @@ import type { TurGridItem } from "@/models/ui/grid-item";
 import React from "react";
 import { GradientButton } from "./ui/gradient-button";
 import { Input } from "./ui/input";
-import { IconChevronRight, IconPlus, IconSearch } from "@tabler/icons-react";
-import { NavLink } from "react-router-dom";
+import { IconChevronRight, IconDotsVertical, IconPlus, IconSearch } from "@tabler/icons-react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 interface Props {
     gridItemList: TurGridItem[];
@@ -35,22 +41,17 @@ interface NewButtonProps {
     label: string;
 }
 
-const GridListNewButton: React.FC<NewButtonProps> = ({ to, label }) => (
-    <GradientButton asChild size="sm">
-        <NavLink to={to} className="flex items-center gap-1.5">
-            <IconPlus className="size-4!" />
-            New {label}
-        </NavLink>
-    </GradientButton>
-);
+// Marker component — rendered inside DropdownMenuContent by GridListComponent
+const GridListNewButton: React.FC<NewButtonProps> = () => null;
+GridListNewButton.displayName = "GridListNewButton";
 
 interface ActionProps {
     children: ReactNode;
 }
 
-const GridListAction: React.FC<ActionProps> = ({ children }) => (
-    <>{children}</>
-);
+// Marker component — children rendered inside DropdownMenuContent by GridListComponent
+const GridListAction: React.FC<ActionProps> = () => null;
+GridListAction.displayName = "GridListAction";
 
 const GRADIENT_PAIRS = [
     "from-blue-500 to-indigo-500",
@@ -87,6 +88,31 @@ const columns: ColumnDef<TurGridItem>[] = [
 ];
 
 const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
+    const navigate = useNavigate();
+
+    // Extract action definitions from marker children
+    const actions: { key: string; render: () => ReactNode }[] = [];
+    React.Children.forEach(children, (child) => {
+        if (!React.isValidElement(child)) return;
+        if ((child.type as any)?.displayName === "GridListNewButton") {
+            const { to, label } = child.props as NewButtonProps;
+            actions.push({
+                key: `new-${label}`,
+                render: () => (
+                    <DropdownMenuItem onClick={() => navigate(to)}>
+                        <IconPlus className="size-4 mr-2" />
+                        New {label}
+                    </DropdownMenuItem>
+                ),
+            });
+        } else if ((child.type as any)?.displayName === "GridListAction") {
+            const { children: actionChildren } = child.props as ActionProps;
+            actions.push({
+                key: `action-${actions.length}`,
+                render: () => <>{actionChildren}</>,
+            });
+        }
+    });
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 12,
@@ -127,10 +153,24 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         className="pl-9"
                     />
                 </div>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
                     {table.getFilteredRowModel().rows.length} item{table.getFilteredRowModel().rows.length !== 1 && "s"}
                 </span>
-                {children && <div className="flex items-center gap-2 ml-auto">{children}</div>}
+                {actions.length > 0 && (
+                    <div className="ml-auto">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <GradientButton variant="outline" size="sm" className="gap-1.5">
+                                    <IconDotsVertical className="size-4" />
+                                    <span className="hidden sm:inline">Actions</span>
+                                </GradientButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {actions.map((a) => <React.Fragment key={a.key}>{a.render()}</React.Fragment>)}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
             </div>
 
             {rows.length > 0 ? (

@@ -1,5 +1,4 @@
 import { ROUTES } from "@/app/routes.const";
-import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteFacetDraggableList } from "@/components/sn/facet/sn.site.facet.draggable.list";
 import { SubPageHeader } from "@/components/sub.page.header";
@@ -26,14 +25,14 @@ export default function SNSiteFacetListPage() {
         icon={IconFilter}
         name="Facet"
         feature="Facet"
-        description="Edit and order the facets of the search."
-      />
+        description="Edit and order the facets of the search.">
+        <SubPageHeader.Action label="New Custom Facet" href={`${ROUTES.SN_INSTANCE}/${siteId}/facet/custom/new`} />
+      </SubPageHeader>
       {tableData && <SNSiteFacetDraggableList
         siteId={siteId}
         tableData={tableData}
-        setTableData={setTableData as React.Dispatch<React.SetStateAction<TurSNSiteFacetOrdering[]>>}>
-        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${siteId}/facet/custom/new`} label="Custom Facet" />
-      </SNSiteFacetDraggableList>}
+        setTableData={setTableData as React.Dispatch<React.SetStateAction<TurSNSiteFacetOrdering[]>>}
+      />}
     </LoadProvider>
   )
 }

@@ -95,10 +95,10 @@ export const BadgeFieldType: React.FC<FieldTypeBadgeProps> = ({ type, variation 
     return (
         <Badge
             variant="outline"
-            className={`justify-center inline-flex items-center font-semibold whitespace-nowrap transition-colors ${isShort ? "w-8 px-0 py-1" : "w-24 gap-2 py-1"} ${config.className}`}
+            className={`justify-center inline-flex items-center font-semibold whitespace-nowrap transition-colors ${isShort ? "w-8 px-0 py-1" : "w-auto md:w-24 gap-1 md:gap-2 py-1 px-2 md:px-3"} ${config.className}`}
         >
             {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-            {!isShort && <span>{config.label}</span>}
+            {!isShort && <span className="hidden md:inline">{config.label}</span>}
         </Badge>
     );
 };

@@ -1,7 +1,6 @@
 import * as React from "react"
 
 import { ROUTES } from "@/app/routes.const"
-import { GridList } from "@/components/grid.list"
 import { LoadProvider } from "@/components/loading-provider"
 import { SNSiteFieldGridList } from "@/components/sn/fields/field.grid.list"
 import { SubPageHeader } from "@/components/sub.page.header"
@@ -38,10 +37,10 @@ export default function SNSiteFieldListPage() {
                         icon={IconAlignBoxCenterStretch}
                         name="Field"
                         feature="Field"
-                        description="Custom Search Engine Fields." />
-                    <SNSiteFieldGridList id={id} statusFields={statusFields} data={data} setSnField={setSnField as React.Dispatch<React.SetStateAction<TurSNSiteField[]>>}>
-                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/field/new`} label="Field" />
-                    </SNSiteFieldGridList>
+                        description="Custom Search Engine Fields.">
+                        <SubPageHeader.Action label="New Field" href={`${ROUTES.SN_INSTANCE}/${id}/field/new`} />
+                    </SubPageHeader>
+                    <SNSiteFieldGridList id={id} statusFields={statusFields} data={data} setSnField={setSnField as React.Dispatch<React.SetStateAction<TurSNSiteField[]>>} />
                 </>
             )}
         </LoadProvider>

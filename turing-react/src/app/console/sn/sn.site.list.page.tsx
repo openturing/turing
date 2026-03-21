@@ -2,7 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
@@ -56,16 +56,10 @@ export default function SNSiteListPage() {
         <GridList gridItemList={gridItemList ?? []}>
           <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/new`} label="Semantic Navigation" />
           <GridList.Action>
-            <GradientButton
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleExportAll}
-              disabled={exporting}
-            >
-              <IconDownload className="h-4 w-4" />
+            <DropdownMenuItem onClick={handleExportAll} disabled={exporting}>
+              <IconDownload className="size-4 mr-2" />
               {exporting ? "Exporting..." : "Export All"}
-            </GradientButton>
+            </DropdownMenuItem>
           </GridList.Action>
         </GridList>
       ) : (

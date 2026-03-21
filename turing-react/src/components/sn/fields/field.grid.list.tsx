@@ -18,7 +18,6 @@ import {
 } from "lucide-react"
 import * as React from "react"
 
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -169,28 +168,6 @@ const buildColumns = (
     onToggle: (fieldId: string, key: FieldToggleKey, checked: boolean) => void,
     isSavingField: (fieldId: string) => boolean
 ): ColumnDef<TurSNSiteField>[] => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-        },
         {
             accessorKey: "name",
             header: ({ column }) => {
@@ -371,9 +348,16 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({})
-    const [rowSelection, setRowSelection] = React.useState({})
+        React.useState<VisibilityState>(isMobile ? {
+            multiValued: false,
+            mlt: false,
+            facet: false,
+            secondaryFacet: false,
+            hl: false,
+            enabled: false,
+        } : {})
     const [savingFieldIds, setSavingFieldIds] = React.useState<Set<string>>(
         new Set()
     );
@@ -454,12 +438,10 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
         state: {
             sorting,
             columnFilters,
             columnVisibility,
-            rowSelection,
         },
         initialState: {
             pagination: {
@@ -483,7 +465,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                     {children}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <GradientButton variant="outline" size="sm">
+                            <GradientButton variant="outline" size="sm" className="hidden md:inline-flex">
                                 <IconColumns3Filled /> Columns <ChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>
@@ -561,8 +543,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
+                    {table.getFilteredRowModel().rows.length} row(s).
                 </div>
                 <div className="space-x-2">
                     <GradientButton

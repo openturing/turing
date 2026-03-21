@@ -32,8 +32,9 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({})
+        React.useState<VisibilityState>(isMobile ? { core: false } : {})
     const [rowSelection, setRowSelection] = React.useState({})
 
     const table = useReactTable({
@@ -69,7 +70,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
                     {children}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <GradientButton variant="outline" size={"sm"}>
+                            <GradientButton variant="outline" size={"sm"} className="hidden md:inline-flex">
                                 <IconColumns3Filled /> Columns <ChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>

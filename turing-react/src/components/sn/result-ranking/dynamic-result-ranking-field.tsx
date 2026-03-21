@@ -42,23 +42,25 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
     };
 
     return (
-        <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-col gap-3 w-full">
             {fields.map((field, index) => {
                 const fieldErrors = (errors?.[fieldName] as any)?.[index];
                 return (
-                    <div key={field.id} className="flex flex-col">
-                        <div className="flex items-start gap-2">
+                    <div key={field.id} className="rounded-lg border bg-muted/30 p-3">
+                        <div className="grid grid-cols-1 md:grid-cols-[200px_120px_1fr_auto] gap-2 items-start">
+                            {/* Field select */}
                             <Controller
                                 control={control}
                                 name={`${fieldName}.${index}.attribute`}
                                 rules={{ required: "Attribute is required." }}
                                 render={({ field: controllerField }) => (
-                                    <div className="w-48 shrink-0">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">Field</span>
                                         <Select
                                             onValueChange={controllerField.onChange}
                                             value={controllerField.value === null ? '' : String(controllerField.value)}
                                         >
-                                            <SelectTrigger className={`w-full ${fieldErrors?.attribute ? "border-destructive" : ""}`}>
+                                            <SelectTrigger className={fieldErrors?.attribute ? "border-destructive" : ""}>
                                                 <SelectValue placeholder="Choose the field" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -75,22 +77,24 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                                     </div>
                                 )}
                             />
+                            {/* Condition select */}
                             <Controller
                                 control={control}
                                 name={`${fieldName}.${index}.condition`}
                                 rules={{ required: "Condition is required." }}
                                 render={({ field: controllerField }) => (
-                                    <div className="w-32 shrink-0">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">Condition</span>
                                         <Select
                                             onValueChange={(value) => controllerField.onChange(Number(value))}
                                             value={controllerField.value === null ? '' : String(controllerField.value)}
                                         >
-                                            <SelectTrigger className={`w-full ${fieldErrors?.condition ? "border-destructive" : ""}`}>
-                                                <SelectValue placeholder="Choose..." />
+                                            <SelectTrigger className={fieldErrors?.condition ? "border-destructive" : ""}>
+                                                <SelectValue placeholder="Condition" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem key="1" value="1">Is</SelectItem>
-                                                <SelectItem key="2" value="2">Is not</SelectItem>
+                                                <SelectItem value="1">Is</SelectItem>
+                                                <SelectItem value="2">Is not</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {fieldErrors?.condition && (
@@ -99,9 +103,11 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                                     </div>
                                 )}
                             />
-                            <div className="grow">
+                            {/* Value input */}
+                            <div>
+                                <span className="text-xs text-muted-foreground mb-1 block md:hidden">Value</span>
                                 <Input
-                                    className={`grow ${fieldErrors?.value ? "border-destructive" : ""}`}
+                                    className={fieldErrors?.value ? "border-destructive" : ""}
                                     placeholder="Value"
                                     {...register(`${fieldName}.${index}.value`, { required: "Value is required." })}
                                 />
@@ -109,24 +115,29 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                                     <p className="text-xs text-destructive mt-1">{fieldErrors.value.message}</p>
                                 )}
                             </div>
-                            <GradientButton
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => remove(index)}
-                                aria-label="Remove the field"
-                                type="button"
-                            >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                            </GradientButton>
+                            {/* Delete button */}
+                            <div className="flex md:items-start md:pt-0 justify-end">
+                                <GradientButton
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => remove(index)}
+                                    aria-label="Remove condition"
+                                    title="Remove condition"
+                                    type="button"
+                                    className="text-destructive hover:text-destructive"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </GradientButton>
+                            </div>
                         </div>
                     </div>
                 );
             })}
 
-            <div className="mt-2">
-                <GradientButton variant="outline" onClick={handleAddField} type="button">
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add
+            <div>
+                <GradientButton variant="outline" onClick={handleAddField} type="button" size="sm">
+                    <PlusCircle className="h-4 w-4 mr-1.5" />
+                    Add Condition
                 </GradientButton>
             </div>
             {errors?.[fieldName]?.root?.message && (

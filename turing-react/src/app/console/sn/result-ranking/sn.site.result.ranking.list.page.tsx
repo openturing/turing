@@ -29,16 +29,14 @@ export default function SNSiteResultRankingListPage() {
     });
     return (
         <LoadProvider checkIsNotUndefined={rankingList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/result-ranking`}>
+            <SubPageHeader icon={IconNumber123}
+                name="Result Ranking"
+                feature="Result Ranking"
+                description="Define content that will be featured in the term-based search.">
+                <SubPageHeader.Action label="New Result Ranking" href={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} />
+            </SubPageHeader>
             {rankingList && rankingList.length > 0 ? (
-                <>
-                    <SubPageHeader icon={IconNumber123}
-                        name="Result Ranking"
-                        feature="Result Ranking"
-                        description="Define content that will be featured in the term-based search." />
-                    <GridList gridItemList={gridItemList}>
-                        <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} label="Result Ranking" />
-                    </GridList>
-                </>
+                <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconNumber123}
