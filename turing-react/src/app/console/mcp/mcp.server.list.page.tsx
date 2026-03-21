@@ -20,7 +20,8 @@ export default function McpServerListPage() {
   const gridItemList = useGridAdapter(mcpServers, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.MCP_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.MCP_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
   return (
     <LoadProvider checkIsNotUndefined={mcpServers} error={error} tryAgainUrl={`${ROUTES.MCP_INSTANCE}`}>

@@ -12,9 +12,7 @@ import {
 import {
   Input
 } from "@/components/ui/input"
-import {
-  Textarea
-} from "@/components/ui/textarea"
+import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model"
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service"
 import { IconFilter, IconInfoCircle, IconScale } from "@tabler/icons-react"
@@ -116,16 +114,20 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormDescription>
-                        Briefly summarize the purpose of this ranking expression.
-                      </FormDescription>
                       <FormControl>
-                        <Textarea
+                        <SmartDescription
+                          value={field.value}
+                          onChange={field.onChange}
                           placeholder="Purpose of this ranking expression"
-                          className="resize-none"
-                          {...field}
-                        />
+                          maxLength={500}
+                          title={form.watch("name")}
+                          entityType="Ranking Expression"
+                        >
+                          <SmartDescription.Label>Description</SmartDescription.Label>
+                          <SmartDescription.Description>
+                            Briefly summarize the purpose of this ranking expression.
+                          </SmartDescription.Description>
+                        </SmartDescription>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -18,9 +18,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
 import { TurSEInstanceService } from "@/services/se/se.service"
@@ -33,6 +30,8 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { IconPicker } from "../ui/icon-picker"
+import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { Skeleton } from "../ui/skeleton"
 import { IconSettings, IconSearch } from "@tabler/icons-react"
@@ -144,24 +143,41 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                       }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormDescription>
-                            Provide a concise summary describing the purpose or scope of this semantic navigation site. This helps users and agents understand its content focus.
-                          </FormDescription>
                           <FormControl>
-                            <Textarea
+                            <SmartDescription
+                              value={field.value}
+                              onChange={field.onChange}
                               placeholder="Describe this site"
-                              className="resize-none"
                               maxLength={500}
-                              {...field}
-                            />
+                              title={form.watch("name")}
+                              entityType="Semantic Navigation Site"
+                            >
+                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Description>
+                                Provide a concise summary describing the purpose or scope of this semantic navigation site.
+                              </SmartDescription.Description>
+                            </SmartDescription>
                           </FormControl>
-                          <div className="flex justify-between">
-                            <FormMessage />
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              {(field.value?.length ?? 0)}/500
-                            </span>
-                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <IconPicker
+                              value={field.value}
+                              onChange={(icon) => field.onChange(icon)}
+                              onRemove={() => field.onChange(null)}
+                              title={form.watch("name")}
+                              description={form.watch("description")}
+                            >
+                              <IconPicker.Label>Icon</IconPicker.Label>
+                            </IconPicker>
+                          </FormControl>
                         </FormItem>
                       )}
                     />

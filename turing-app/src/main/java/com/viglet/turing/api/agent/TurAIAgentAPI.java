@@ -73,7 +73,7 @@ public class TurAIAgentAPI {
         return turAIAgentRepository.findById(id).map(agentEdit -> {
             agentEdit.setTitle(turAIAgent.getTitle());
             agentEdit.setDescription(turAIAgent.getDescription());
-            agentEdit.setAvatarUrl(turAIAgent.getAvatarUrl());
+            agentEdit.setIcon(turAIAgent.getIcon());
             agentEdit.setSystemPrompt(turAIAgent.getSystemPrompt());
             agentEdit.setEnabled(turAIAgent.getEnabled());
             agentEdit.setNativeTools(turAIAgent.getNativeTools());

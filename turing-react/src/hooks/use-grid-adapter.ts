@@ -7,6 +7,7 @@ interface GridAdapterConfig<T> {
   name: FieldExtractor<T>;
   description: FieldExtractor<T>;
   url: (item: T) => string;
+  icon?: FieldExtractor<T>;
 }
 
 export function useGridAdapter<T>(
@@ -39,6 +40,7 @@ export function useGridAdapter<T>(
       name: resolveField(item, config.name),
       description: resolveField(item, config.description),
       url: config.url(item),
+      icon: config.icon ? resolveField(item, config.icon) || null : null,
     }));
   }, [data]);
 }

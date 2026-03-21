@@ -58,8 +58,11 @@ public class TurLLMInstance implements Serializable {
 	@Column(nullable = false, length = 100)
 	private String title;
 
-	@Column(nullable = true, length = 100)
+	@Column(nullable = true, length = 500)
 	private String description;
+
+	@Column(length = 150)
+	private String icon;
 
 	@Column(nullable = false)
 	private int enabled;

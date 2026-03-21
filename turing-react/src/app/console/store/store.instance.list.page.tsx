@@ -20,7 +20,8 @@ export default function StoreInstanceListPage() {
   const gridItemList = useGridAdapter(storeInstances, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.STORE_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.STORE_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
   return (
     <LoadProvider checkIsNotUndefined={storeInstances} error={error} tryAgainUrl={`${ROUTES.STORE_INSTANCE}`}>

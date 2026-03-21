@@ -12,4 +12,5 @@ export interface TurEmbeddingModel {
   modelPath?: string;
   tokenizerPath?: string;
   enabled: number;
+  icon?: string | null;
 }

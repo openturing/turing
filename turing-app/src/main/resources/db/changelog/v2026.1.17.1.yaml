@@ -1,0 +1,151 @@
+databaseChangeLog:
+  # Add icon column to all main entities
+  - changeSet:
+      id: add-icon-column-to-llm-instance
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: llm_instance
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: llm_instance
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-se-instance
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: se_instance
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: se_instance
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-embedding-model
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: embedding_model
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: embedding_model
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-store-instance
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: store_instance
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: store_instance
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-ai-agent
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: ai_agent
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-sn-site
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: sn_site
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: sn_site
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-mcp-server
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: mcp_server
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: mcp_server
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  - changeSet:
+      id: add-icon-column-to-integration-instance
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: integration_instance
+            columnName: icon
+      changes:
+        - addColumn:
+            tableName: integration_instance
+            columns:
+              - column:
+                  name: icon
+                  type: varchar(150)
+
+  # Drop avatarUrl from ai_agent (replaced by icon)
+  - changeSet:
+      id: drop-avatarUrl-column-from-ai-agent
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        columnExists:
+          tableName: ai_agent
+          columnName: avatarUrl
+      changes:
+        - dropColumn:
+            tableName: ai_agent
+            columnName: avatarUrl

@@ -8,4 +8,5 @@ export interface TurSEInstance {
   turSEVendor: TurSEVendor;
   language: string;
   enabled: number;
+  icon?: string | null;
 }

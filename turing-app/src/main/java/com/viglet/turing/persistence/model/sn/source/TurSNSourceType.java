@@ -28,7 +28,7 @@ public class TurSNSourceType implements Serializable {
 	private String id;
 	@Column(nullable = false, length = 50)
 	private String name;
-	@Column(nullable = true, length = 255)
+	@Column(nullable = true, length = 500)
 	private String description;
 
 }

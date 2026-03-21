@@ -1,6 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { AvatarField } from "@/components/avatar-field"
 import {
   Form,
   FormControl,
@@ -12,18 +11,19 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
-import { Textarea } from "@/components/ui/textarea"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { IconFileText, IconInfoCircle, IconToggleLeft } from "@tabler/icons-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
+import { SmartDescription } from "../ui/smart-description"
 
 const turAIAgentService = new TurAIAgentService();
 const urlBase = ROUTES.AI_AGENT_INSTANCE
@@ -38,44 +38,20 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     defaultValues: value
   });
   const navigate = useNavigate()
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(value.avatarUrl ?? undefined)
 
   useEffect(() => {
     form.reset({
       ...value,
       description: value.description ?? "",
-      avatarUrl: value.avatarUrl ?? null,
       systemPrompt: value.systemPrompt ?? "",
       nativeTools: value.nativeTools ?? null,
       llmInstances: value.llmInstances ?? [],
       mcpServers: value.mcpServers ?? [],
     });
-    setAvatarUrl(value.avatarUrl ?? undefined)
   }, [value])
 
-  const title = form.watch("title") ?? ""
-  const initials = useMemo(() => {
-    if (!title.trim()) return "AG"
-    const parts = title.trim().split(" ").filter(Boolean)
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-    return parts[0].charAt(0).toUpperCase() + (parts.at(-1)?.charAt(0).toUpperCase() ?? "")
-  }, [title])
-  const avatarSeed = useMemo(() => value.id || title.trim() || "ai-agent", [value.id, title])
-
-  const handleAvatarSelect = useCallback((url: string) => {
-    setAvatarUrl(url)
-    form.setValue("avatarUrl", url, { shouldDirty: true })
-    toast.success("Avatar selected.")
-  }, [form])
-
-  const handleAvatarRemove = useCallback(() => {
-    setAvatarUrl(undefined)
-    form.setValue("avatarUrl", null, { shouldDirty: true })
-    toast.success("Avatar removed.")
-  }, [form])
-
   async function onSubmit(agent: TurAIAgent) {
-    const payload: TurAIAgent = { ...agent, avatarUrl: avatarUrl ?? null }
+    const payload: TurAIAgent = { ...agent }
     try {
       if (isNew) {
         const result = await turAIAgentService.create(payload);
@@ -106,17 +82,6 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title="General Information" description="Identity and purpose of this AI agent." />
             <SectionCard.Content>
-              <AvatarField
-                avatarUrl={avatarUrl}
-                initials={initials}
-                seed={avatarSeed}
-                onSelect={handleAvatarSelect}
-                onRemove={handleAvatarRemove}
-                className="mb-4"
-              >
-                <div className="text-sm font-medium">Agent Avatar</div>
-                <div className="text-xs text-muted-foreground">Used as the assistant avatar in this agent's chat tab.</div>
-              </AvatarField>
               <FormField
                 control={form.control}
                 name="title"
@@ -143,14 +108,41 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormDescription>
-                      Summarize the purpose or intended use of this AI agent.
-                    </FormDescription>
                     <FormControl>
-                      <Textarea placeholder="Describe what this agent does..." className="resize-none" {...field} />
+                      <SmartDescription
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Describe what this agent does..."
+                        maxLength={500}
+                        title={form.watch("title")}
+                        entityType="AI Agent"
+                      >
+                        <SmartDescription.Label>Description</SmartDescription.Label>
+                        <SmartDescription.Description>
+                          Summarize the purpose or intended use of this AI agent.
+                        </SmartDescription.Description>
+                      </SmartDescription>
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <IconPicker
+                        value={field.value}
+                        onChange={(icon) => field.onChange(icon)}
+                        onRemove={() => field.onChange(null)}
+                        title={form.watch("title")}
+                        description={form.watch("description")}
+                      >
+                        <IconPicker.Label>Icon</IconPicker.Label>
+                      </IconPicker>
+                    </FormControl>
                   </FormItem>
                 )}
               />

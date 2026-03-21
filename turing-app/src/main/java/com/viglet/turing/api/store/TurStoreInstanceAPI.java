@@ -101,6 +101,7 @@ public class TurStoreInstanceAPI {
         return turStoreInstanceRepository.findById(id).map(turStoreInstanceEdit -> {
             turStoreInstanceEdit.setTitle(turStoreInstance.getTitle());
             turStoreInstanceEdit.setDescription(turStoreInstance.getDescription());
+            turStoreInstanceEdit.setIcon(turStoreInstance.getIcon());
             turStoreInstanceEdit.setTurStoreVendor(turStoreInstance.getTurStoreVendor());
             turStoreInstanceEdit.setUrl(turStoreInstance.getUrl());
             turStoreInstanceEdit.setEnabled(turStoreInstance.getEnabled());

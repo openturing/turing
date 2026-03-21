@@ -21,7 +21,8 @@ export default function EmbeddingModelListPage() {
   const gridItemList = useGridAdapter(models, {
     name: "modelName",
     description: "description",
-    url: (item) => `${ROUTES.EMBEDDING_MODEL_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.EMBEDDING_MODEL_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
 
   return (

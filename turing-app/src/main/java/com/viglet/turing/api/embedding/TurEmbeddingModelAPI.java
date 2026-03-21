@@ -68,6 +68,7 @@ public class TurEmbeddingModelAPI {
         return turEmbeddingModelRepository.findById(id).map(existing -> {
             existing.setModelName(turEmbeddingModel.getModelName());
             existing.setDescription(turEmbeddingModel.getDescription());
+            existing.setIcon(turEmbeddingModel.getIcon());
             existing.setProviderType(turEmbeddingModel.getProviderType());
             existing.setTurLLMInstance(turEmbeddingModel.getTurLLMInstance());
             existing.setModelReference(turEmbeddingModel.getModelReference());

@@ -36,7 +36,9 @@ import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
+import { SmartDescription } from "../ui/smart-description"
 const turStoreInstanceService = new TurStoreInstanceService();
 const turStoreVendorService = new TurStoreVendorService();
 const urlBase = ROUTES.STORE_INSTANCE
@@ -340,18 +342,43 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormDescription>
-                            Summarize the purpose or intended use of this embedding store.
-                          </FormDescription>
                           <FormControl>
-                            <Textarea
+                            <SmartDescription
+                              value={field.value}
+                              onChange={field.onChange}
                               placeholder="Enter a brief description"
-                              className="resize-none"
-                              {...field}
-                            />
+                              maxLength={500}
+                              title={form.watch("title")}
+                              entityType="Embedding Store"
+                            >
+                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Description>
+                                Summarize the purpose or intended use of this embedding store.
+                              </SmartDescription.Description>
+                            </SmartDescription>
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <IconPicker
+                              value={field.value}
+                              onChange={(icon) => field.onChange(icon)}
+                              onRemove={() => field.onChange(null)}
+                              title={form.watch("title")}
+                              description={form.watch("description")}
+                            >
+                              <IconPicker.Label>Icon</IconPicker.Label>
+                            </IconPicker>
+                          </FormControl>
                         </FormItem>
                       )}
                     />

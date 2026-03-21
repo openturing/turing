@@ -5,4 +5,5 @@ export type TurIntegrationInstance = {
   endpoint: string;
   vendor: string;
   enabled: number;
+  icon?: string | null;
 };

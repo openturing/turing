@@ -90,6 +90,7 @@ public class TurLLMInstanceAPI {
         return turLLMInstanceRepository.findById(id).map(turLLMInstanceEdit -> {
             turLLMInstanceEdit.setTitle(turLLMInstance.getTitle());
             turLLMInstanceEdit.setDescription(turLLMInstance.getDescription());
+            turLLMInstanceEdit.setIcon(turLLMInstance.getIcon());
             turLLMInstanceEdit.setTurLLMVendor(turLLMInstance.getTurLLMVendor());
             turLLMInstanceEdit.setUrl(turLLMInstance.getUrl());
             turLLMInstanceEdit.setEnabled(turLLMInstance.getEnabled());

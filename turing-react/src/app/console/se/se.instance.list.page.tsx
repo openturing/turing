@@ -25,6 +25,7 @@ export default function SEInstanceListPage() {
     name: "title",
     description: "description",
     url: (item) => `${ROUTES.SE_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
 
   return (

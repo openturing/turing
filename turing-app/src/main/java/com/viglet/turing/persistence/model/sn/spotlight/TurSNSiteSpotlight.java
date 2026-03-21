@@ -70,7 +70,7 @@ public class TurSNSiteSpotlight implements Serializable {
     private String name;
 
     @Setter
-    @Column
+    @Column(length = 500)
     private String description;
 
     @Setter

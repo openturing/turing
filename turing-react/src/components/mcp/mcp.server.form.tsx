@@ -20,9 +20,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft } from "@tabler/icons-react"
@@ -36,7 +33,9 @@ import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
+import { SmartDescription } from "../ui/smart-description"
 
 const turMcpServerService = new TurMcpServerService();
 const urlBase = ROUTES.MCP_INSTANCE
@@ -162,18 +161,43 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormDescription>
-                            Summarize the purpose or intended use of this MCP server.
-                          </FormDescription>
                           <FormControl>
-                            <Textarea
+                            <SmartDescription
+                              value={field.value}
+                              onChange={field.onChange}
                               placeholder="Enter a brief description"
-                              className="resize-none"
-                              {...field}
-                            />
+                              maxLength={500}
+                              title={form.watch("title")}
+                              entityType="MCP Server"
+                            >
+                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Description>
+                                Summarize the purpose or intended use of this MCP server.
+                              </SmartDescription.Description>
+                            </SmartDescription>
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="w-full">
+                    <FormField
+                      control={form.control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <IconPicker
+                              value={field.value}
+                              onChange={(icon) => field.onChange(icon)}
+                              onRemove={() => field.onChange(null)}
+                              title={form.watch("title")}
+                              description={form.watch("description")}
+                            >
+                              <IconPicker.Label>Icon</IconPicker.Label>
+                            </IconPicker>
+                          </FormControl>
                         </FormItem>
                       )}
                     />

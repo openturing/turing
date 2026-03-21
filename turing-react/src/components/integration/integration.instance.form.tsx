@@ -19,9 +19,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts"
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service"
 import { useEffect } from "react"
@@ -31,6 +28,8 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { IconPicker } from "../ui/icon-picker"
+import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { FormActions } from "../ui/form-actions"
 import { IconSettings, IconPlug } from "@tabler/icons-react"
@@ -104,18 +103,41 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Short Description</FormLabel>
-                      <FormDescription>
-                        Briefly explain what this integration does or why you’re setting it up.
-                      </FormDescription>
                       <FormControl>
-                        <Textarea
+                        <SmartDescription
+                          value={field.value}
+                          onChange={field.onChange}
                           placeholder="Describe the integration’s purpose or what it connects."
-                          className="resize-none"
-                          {...field}
-                        />
+                          maxLength={500}
+                          title={form.watch("title")}
+                          entityType="Integration"
+                        >
+                          <SmartDescription.Label>Short Description</SmartDescription.Label>
+                          <SmartDescription.Description>
+                            Briefly explain what this integration does or why you’re setting it up.
+                          </SmartDescription.Description>
+                        </SmartDescription>
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <IconPicker
+                          value={field.value}
+                          onChange={(icon) => field.onChange(icon)}
+                          onRemove={() => field.onChange(null)}
+                          title={form.watch("title")}
+                          description={form.watch("description")}
+                        >
+                          <IconPicker.Label>Icon</IconPicker.Label>
+                        </IconPicker>
+                      </FormControl>
                     </FormItem>
                   )}
                 />

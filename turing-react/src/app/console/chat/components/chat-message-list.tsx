@@ -1,3 +1,4 @@
+import { Icon } from "@iconify/react"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
 import { useCurrentUser } from "@/contexts/user.context"
 import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
@@ -13,7 +14,7 @@ interface ChatMessageListProps {
   messages: ChatMessage[]
   loading: boolean
   assistantName: string
-  assistantAvatarUrl?: string | null
+  assistantIcon?: string | null
   endRef: React.RefObject<HTMLDivElement | null>
 }
 
@@ -70,7 +71,7 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
   )
 }
 
-export function ChatMessageList({ messages, loading, assistantName, assistantAvatarUrl, endRef }: Readonly<ChatMessageListProps>) {
+export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef }: Readonly<ChatMessageListProps>) {
   const { user } = useCurrentUser()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -89,11 +90,11 @@ export function ChatMessageList({ messages, loading, assistantName, assistantAva
               {message.role === "user" && user?.avatarUrl && (
                 <GradientAvatarImage src={user.avatarUrl} alt={user.username} />
               )}
-              {message.role === "assistant" && assistantAvatarUrl && (
-                <GradientAvatarImage src={assistantAvatarUrl} alt={assistantName} />
-              )}
               <GradientAvatarFallback variant={message.role === "assistant" ? "info" : "secondary"}>
-                {message.role === "assistant" ? <IconCpu2 className="size-4" /> : <IconUser className="size-4" />}
+                {message.role === "assistant"
+                  ? (assistantIcon ? <Icon icon={assistantIcon} className="size-4" /> : <IconCpu2 className="size-4" />)
+                  : <IconUser className="size-4" />
+                }
               </GradientAvatarFallback>
             </GradientAvatar>
           </div>

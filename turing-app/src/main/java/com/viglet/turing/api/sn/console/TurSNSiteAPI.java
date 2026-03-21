@@ -119,6 +119,7 @@ public class TurSNSiteAPI {
         return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
+            turSNSiteEdit.setIcon(turSNSite.getIcon());
             turSNSiteEdit.setTurSEInstance(turSNSite.getTurSEInstance());
             turSNSiteEdit.setThesaurus(turSNSite.getThesaurus());
             turSNSiteEdit.setFacet(turSNSite.getFacet());

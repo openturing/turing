@@ -37,8 +37,11 @@ public class TurEmbeddingModel implements Serializable {
 	@Column(nullable = false, length = 255)
 	private String modelName;
 
-	@Column(length = 255)
+	@Column(length = 500)
 	private String description;
+
+	@Column(length = 150)
+	private String icon;
 
 	@Column(nullable = false, length = 50)
 	private String providerType;

@@ -20,7 +20,8 @@ export default function AIAgentListPage() {
   const gridItemList = useGridAdapter(agents, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.AI_AGENT_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.AI_AGENT_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
   return (
     <LoadProvider checkIsNotUndefined={agents} error={error} tryAgainUrl={`${ROUTES.AI_AGENT_INSTANCE}`}>

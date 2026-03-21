@@ -61,7 +61,7 @@ public class TurSNSiteField implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String name;
 
-	@Column
+	@Column(length = 500)
 	private String description;
 
 	@Column(nullable = false)

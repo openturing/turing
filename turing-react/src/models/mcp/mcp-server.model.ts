@@ -8,4 +8,5 @@ export interface TurMcpServer {
   type: "ASYNC" | "SYNC";
   connectionType: "HTTP" | "COMMAND";
   enabled: number;
+  icon?: string | null;
 }

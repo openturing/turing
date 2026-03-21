@@ -24,7 +24,8 @@ export default function SNSiteListPage() {
   const gridItemList = useGridAdapter(snInstances, {
     name: "name",
     description: "description",
-    url: (item) => `${ROUTES.SN_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.SN_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
 
   const handleExportAll = useCallback(async () => {

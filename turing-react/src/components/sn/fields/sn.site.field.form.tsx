@@ -25,9 +25,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Textarea
-} from "@/components/ui/textarea"
+import { SmartDescription } from "@/components/ui/smart-description"
 import { useGlobalDecimalSeparator } from "@/hooks/use-global-decimal-separator"
 import type { TurSNFieldType } from "@/models/sn/sn-field-type.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
@@ -245,12 +243,21 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   name="description"
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel>Description</FormLabel>
-                      <FormDescription>
-                        Brief explanation of the field's purpose or usage.
-                      </FormDescription>
                       <FormControl>
-                        <Textarea placeholder="Description" className="resize-none w-full" {...field} />
+                        <SmartDescription
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Description"
+                          className="w-full"
+                          maxLength={500}
+                          title={form.watch("name")}
+                          entityType="Search Field"
+                        >
+                          <SmartDescription.Label>Description</SmartDescription.Label>
+                          <SmartDescription.Description>
+                            Brief explanation of the field's purpose or usage.
+                          </SmartDescription.Description>
+                        </SmartDescription>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -1,0 +1,118 @@
+databaseChangeLog:
+  # Expand description columns to 500 chars for all entities
+  - changeSet:
+      id: expand-description-to-500-llm-instance
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: llm_instance
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-se-instance
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: se_instance
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-embedding-model
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: embedding_model
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-store-instance
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: store_instance
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-ai-agent
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: ai_agent
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-mcp-server
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: mcp_server
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-integration-instance
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: integration_instance
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-ranking-expression
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_ranking_expression
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-site-merge-provider
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_site_merge_provider
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-site-spotlight
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_site_spotlight
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-site-field
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_site_field
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-site-field-ext
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_site_field_ext
+            columnName: description
+            newDataType: varchar(500)
+
+  - changeSet:
+      id: expand-description-to-500-sn-source-type
+      author: alexandre
+      changes:
+        - modifyDataType:
+            tableName: sn_source_type
+            columnName: description
+            newDataType: varchar(500)

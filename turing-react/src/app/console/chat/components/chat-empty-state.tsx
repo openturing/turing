@@ -1,4 +1,4 @@
-import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/components/ui/gradient-avatar"
+import { Icon } from "@iconify/react"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import { IconCompass, IconCpu2, IconRobot } from "@tabler/icons-react"
 
@@ -6,14 +6,14 @@ interface ChatEmptyStateProps {
   variant: "chat" | "semantic" | "agent"
   selectedInstance?: TurLLMInstance
   agentTitle?: string
-  agentAvatarUrl?: string | null
+  agentIcon?: string | null
 }
 
-export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentAvatarUrl }: ChatEmptyStateProps) {
+export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentIcon }: ChatEmptyStateProps) {
   if (variant === "chat") {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-        <div className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 p-4 dark:from-blue-500 dark:to-indigo-500">
+        <div className="rounded-full bg-linear-to-br from-blue-600 to-indigo-600 p-4 dark:from-blue-500 dark:to-indigo-500">
           <IconCpu2 className="size-8 text-white" />
         </div>
         <div>
@@ -29,7 +29,7 @@ export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentAva
   if (variant === "semantic") {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-        <div className="rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 p-4 dark:from-emerald-500 dark:to-teal-500">
+        <div className="rounded-full bg-linear-to-br from-emerald-600 to-teal-600 p-4 dark:from-emerald-500 dark:to-teal-500">
           <IconCompass className="size-8 text-white" />
         </div>
         <div>
@@ -46,18 +46,13 @@ export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentAva
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-      {agentAvatarUrl ? (
-        <GradientAvatar className="size-16">
-          <GradientAvatarImage src={agentAvatarUrl} alt={agentTitle ?? "AI Agent"} />
-          <GradientAvatarFallback className="text-xl">
-            <IconRobot className="size-8" />
-          </GradientAvatarFallback>
-        </GradientAvatar>
-      ) : (
-        <div className="rounded-full bg-gradient-to-br from-violet-600 to-purple-600 p-4 dark:from-violet-500 dark:to-purple-500">
+      <div className="rounded-full bg-linear-to-br from-violet-600 to-purple-600 p-4 dark:from-violet-500 dark:to-purple-500">
+        {agentIcon ? (
+          <Icon icon={agentIcon} className="size-8 text-white" />
+        ) : (
           <IconRobot className="size-8 text-white" />
-        </div>
-      )}
+        )}
+      </div>
       <div>
         <h2 className="text-2xl font-semibold mb-2">{agentTitle ?? "AI Agent"}</h2>
         <p className="text-muted-foreground text-sm max-w-md">

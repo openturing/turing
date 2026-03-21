@@ -38,6 +38,8 @@ import { toast } from "sonner"
 import { DialogDelete } from "../dialog.delete"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { IconPicker } from "../ui/icon-picker"
+import { SmartDescription } from "../ui/smart-description"
 const turLLMInstanceService = new TurLLMInstanceService();
 const turLLMVendorService = new TurLLMVendorService();
 const urlBase = ROUTES.LLM_INSTANCE
@@ -454,19 +456,45 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="description"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Description</FormLabel>
-                            <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Provide a concise summary for this instance.
-                            </div>
                             <FormControl>
-                              <Textarea
+                              <SmartDescription
+                                value={field.value}
+                                onChange={field.onChange}
                                 placeholder="Add a description"
-                                className="resize-none w-full"
+                                className="w-full"
                                 rows={2}
-                                {...field}
-                              />
+                                maxLength={500}
+                                title={form.watch("title")}
+                                entityType="Language Model"
+                              >
+                                <SmartDescription.Label>Description</SmartDescription.Label>
+                                <SmartDescription.Description>
+                                  Provide a concise summary for this instance.
+                                </SmartDescription.Description>
+                              </SmartDescription>
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="w-full">
+                      <FormField
+                        control={form.control}
+                        name="icon"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <IconPicker
+                                value={field.value}
+                                onChange={(icon) => field.onChange(icon)}
+                                onRemove={() => field.onChange(null)}
+                                title={form.watch("title")}
+                                description={form.watch("description")}
+                              >
+                                <IconPicker.Label>Icon</IconPicker.Label>
+                              </IconPicker>
+                            </FormControl>
                           </FormItem>
                         )}
                       />

@@ -84,6 +84,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column(nullable = true, length = 500)
 	private String description;
 
+	@Column(length = 150)
+	private String icon;
+
 	/**
 	 * Number of results per page
 	 */

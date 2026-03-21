@@ -1,5 +1,6 @@
 import {
   IconBrandGraphql,
+  IconBulb,
   IconChartBar,
   IconCompass,
   IconCpu2,
@@ -43,6 +44,7 @@ const generativeAiItems = [
   { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
   { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
   { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },
+  { title: "Intent", url: ROUTES.INTENT_INSTANCE, icon: IconBulb },
   { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
   { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]

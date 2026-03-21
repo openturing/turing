@@ -84,6 +84,7 @@ public class TurIntegrationInstanceAPI {
 		return turIntegrationInstanceRepository.findById(id).map(turIntegrationInstanceEdit -> {
 			turIntegrationInstanceEdit.setTitle(turIntegrationInstance.getTitle());
 			turIntegrationInstanceEdit.setDescription(turIntegrationInstance.getDescription());
+			turIntegrationInstanceEdit.setIcon(turIntegrationInstance.getIcon());
 			turIntegrationInstanceEdit.setVendor(turIntegrationInstance.getVendor());
 			turIntegrationInstanceEdit.setEndpoint(turIntegrationInstance.getEndpoint());
 			turIntegrationInstanceEdit.setEnabled(turIntegrationInstance.getEnabled());

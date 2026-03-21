@@ -10,4 +10,5 @@ export interface TurStoreInstance {
   collectionName?: string;
   credential?: string;
   providerOptionsJson?: string;
+  icon?: string | null;
 }

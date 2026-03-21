@@ -1,0 +1,233 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-intent-table
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: intent
+      changes:
+        - createTable:
+            tableName: intent
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(500)
+              - column:
+                  name: icon
+                  type: varchar(150)
+              - column:
+                  name: enabled
+                  type: int
+                  constraints:
+                    nullable: false
+                  defaultValueNumeric: 1
+              - column:
+                  name: sortOrder
+                  type: int
+                  defaultValueNumeric: 0
+
+  - changeSet:
+      id: create-intent-action-table
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: intent_action
+      changes:
+        - createTable:
+            tableName: intent_action
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: label
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: prompt
+                  type: longtext
+              - column:
+                  name: sortOrder
+                  type: int
+                  defaultValueNumeric: 0
+              - column:
+                  name: intent_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: intent_action
+            baseColumnNames: intent_id
+            referencedTableName: intent
+            referencedColumnNames: id
+            constraintName: fk_intent_action_intent
+            onDelete: CASCADE
+
+  - changeSet:
+      id: seed-intent-data
+      author: alexandre
+      preConditions:
+        onFail: MARK_RAN
+        sqlCheck:
+          expectedResult: "0"
+          sql: "SELECT COUNT(*) FROM intent"
+      changes:
+        - insert:
+            tableName: intent
+            columns:
+              - column: { name: id, value: "intent-productivity" }
+              - column: { name: title, value: "Boost my work productivity" }
+              - column: { name: description, value: "Prompts to help you be more productive at work" }
+              - column: { name: icon, value: "lucide:briefcase" }
+              - column: { name: enabled, valueNumeric: 1 }
+              - column: { name: sortOrder, valueNumeric: 0 }
+        - insert:
+            tableName: intent
+            columns:
+              - column: { name: id, value: "intent-learn" }
+              - column: { name: title, value: "Learn something new" }
+              - column: { name: description, value: "Prompts to help you learn and study" }
+              - column: { name: icon, value: "lucide:graduation-cap" }
+              - column: { name: enabled, valueNumeric: 1 }
+              - column: { name: sortOrder, valueNumeric: 1 }
+        - insert:
+            tableName: intent
+            columns:
+              - column: { name: id, value: "intent-content" }
+              - column: { name: title, value: "Create or improve content" }
+              - column: { name: description, value: "Prompts for content creation and enhancement" }
+              - column: { name: icon, value: "lucide:pen-tool" }
+              - column: { name: enabled, valueNumeric: 1 }
+              - column: { name: sortOrder, valueNumeric: 2 }
+        - insert:
+            tableName: intent
+            columns:
+              - column: { name: id, value: "intent-health" }
+              - column: { name: title, value: "Health & Mindset" }
+              - column: { name: description, value: "Prompts for wellness, fitness and mental health" }
+              - column: { name: icon, value: "lucide:heart-pulse" }
+              - column: { name: enabled, valueNumeric: 1 }
+              - column: { name: sortOrder, valueNumeric: 3 }
+
+        # Actions for "Boost my work productivity"
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-daily-schedule" }
+              - column: { name: label, value: "Create daily schedule" }
+              - column: { name: prompt, value: "Act as a time management expert. Create a detailed daily schedule for an 8-hour workday, prioritizing Deep Work blocks and strategic breaks." }
+              - column: { name: sortOrder, valueNumeric: 0 }
+              - column: { name: intent_id, value: "intent-productivity" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-difficult-email" }
+              - column: { name: label, value: "Draft a difficult email" }
+              - column: { name: prompt, value: "I need to write a professional yet firm email to follow up on a project that is two weeks overdue, maintaining a polite but assertive tone." }
+              - column: { name: sortOrder, valueNumeric: 1 }
+              - column: { name: intent_id, value: "intent-productivity" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-meeting-agenda" }
+              - column: { name: label, value: "Prepare meeting agenda" }
+              - column: { name: prompt, value: "Create a 30-minute meeting agenda for a team sync about new processes, ensuring all key points are covered and action items are assigned." }
+              - column: { name: sortOrder, valueNumeric: 2 }
+              - column: { name: intent_id, value: "intent-productivity" }
+
+        # Actions for "Learn something new"
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-explain-topics" }
+              - column: { name: label, value: "Explain complex topics" }
+              - column: { name: prompt, value: "I'd like you to explain a topic in the simplest way possible, as if I were 10 years old, using everyday analogies. Before we start, what topic would you like me to break down for you?" }
+              - column: { name: sortOrder, valueNumeric: 0 }
+              - column: { name: intent_id, value: "intent-learn" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-study-plan" }
+              - column: { name: label, value: "30-day study plan" }
+              - column: { name: prompt, value: "I'll create a 30-day study roadmap tailored for a beginner, broken down by weeks with suggested resources. To get started, what subject would you like to learn?" }
+              - column: { name: sortOrder, valueNumeric: 1 }
+              - column: { name: intent_id, value: "intent-learn" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-test-knowledge" }
+              - column: { name: label, value: "Test my knowledge" }
+              - column: { name: prompt, value: "I'll generate 5 multiple-choice questions to test your knowledge, with detailed explanations at the end. Which subject would you like to be quizzed on?" }
+              - column: { name: sortOrder, valueNumeric: 2 }
+              - column: { name: intent_id, value: "intent-learn" }
+
+        # Actions for "Create or improve content"
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-social-media" }
+              - column: { name: label, value: "Social Media Ideas" }
+              - column: { name: prompt, value: "I'll come up with 5 creative post ideas for Instagram or LinkedIn aimed at driving engagement and authority. What niche or industry should I focus on?" }
+              - column: { name: sortOrder, valueNumeric: 0 }
+              - column: { name: intent_id, value: "intent-content" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-proofread" }
+              - column: { name: label, value: "Proofread & Enhance" }
+              - column: { name: prompt, value: "I'll review your text for grammatical errors and suggest improvements for better flow and tone. Please paste the text you'd like me to proofread." }
+              - column: { name: sortOrder, valueNumeric: 1 }
+              - column: { name: intent_id, value: "intent-content" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-video-script" }
+              - column: { name: label, value: "Video Scripting" }
+              - column: { name: prompt, value: "I'll write a short 60-second script for a TikTok or Reels video highlighting key benefits. What product or service should the script be about?" }
+              - column: { name: sortOrder, valueNumeric: 2 }
+              - column: { name: intent_id, value: "intent-content" }
+
+        # Actions for "Health & Mindset"
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-meditation" }
+              - column: { name: label, value: "Quick Meditation Guide" }
+              - column: { name: prompt, value: "Write a step-by-step 5-minute guided meditation script focused on reducing anxiety before a big presentation." }
+              - column: { name: sortOrder, valueNumeric: 0 }
+              - column: { name: intent_id, value: "intent-health" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-meal-ideas" }
+              - column: { name: label, value: "Rapid Meal Ideas" }
+              - column: { name: prompt, value: "Suggest 3 healthy and practical meals that can be prepared in under 15 minutes using basic pantry staples." }
+              - column: { name: sortOrder, valueNumeric: 1 }
+              - column: { name: intent_id, value: "intent-health" }
+        - insert:
+            tableName: intent_action
+            columns:
+              - column: { name: id, value: "action-workout" }
+              - column: { name: label, value: "At-home Workout" }
+              - column: { name: prompt, value: "Design a 20-minute bodyweight HIIT routine that requires no equipment and can be done in a small space." }
+              - column: { name: sortOrder, valueNumeric: 2 }
+              - column: { name: intent_id, value: "intent-health" }

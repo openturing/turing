@@ -107,6 +107,7 @@ public class TurSEInstanceAPI {
                 return turSEInstanceRepository.findById(id).map(turSEInstanceEdit -> {
                         turSEInstanceEdit.setTitle(turSEInstance.getTitle());
                         turSEInstanceEdit.setDescription(turSEInstance.getDescription());
+                        turSEInstanceEdit.setIcon(turSEInstance.getIcon());
                         turSEInstanceEdit.setTurSEVendor(turSEInstance.getTurSEVendor());
                         turSEInstanceEdit.setEndpointUrl(turSEInstance.getEndpointUrl());
                         turSEInstanceEdit.setEnabled(turSEInstance.getEnabled());

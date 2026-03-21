@@ -37,11 +37,11 @@ public class TurAIAgent implements Serializable {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(nullable = true, length = 255)
+    @Column(nullable = true, length = 500)
     private String description;
 
-    @Column(length = 500)
-    private String avatarUrl;
+    @Column(length = 150)
+    private String icon;
 
     @Lob
     @Column(name = "system_prompt")

@@ -21,6 +21,7 @@ import {
 import { FormActions } from "@/components/ui/form-actions"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
+import { SmartDescription } from "@/components/ui/smart-description"
 import { Label } from "@/components/ui/label"
 import { SectionCard } from "@/components/ui/section-card"
 import {
@@ -199,12 +200,19 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Merge Description</FormLabel>
-                                    <FormDescription>
-                                        Add a short note to help you and your team understand the purpose of this merge.
-                                    </FormDescription>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. Sync user profiles for analytics" type="text" />
+                                        <SmartDescription
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="e.g. Sync user profiles for analytics"
+                                            maxLength={500}
+                                            entityType="Merge Provider"
+                                        >
+                                            <SmartDescription.Label>Merge Description</SmartDescription.Label>
+                                            <SmartDescription.Description>
+                                                Add a short note to help you and your team understand the purpose of this merge.
+                                            </SmartDescription.Description>
+                                        </SmartDescription>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

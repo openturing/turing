@@ -22,6 +22,7 @@ import {
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
+import { SmartDescription } from "@/components/ui/smart-description"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     Table,
@@ -246,12 +247,20 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
-                                        <FormDescription>
-                                            Add a short description so others know what this spotlight is about.
-                                        </FormDescription>
                                         <FormControl>
-                                            <Input {...field} placeholder="e.g. Curated resources for AI adoption" type="text" />
+                                            <SmartDescription
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="e.g. Curated resources for AI adoption"
+                                                maxLength={500}
+                                                title={form.watch("name")}
+                                                entityType="Spotlight"
+                                            >
+                                                <SmartDescription.Label>Description</SmartDescription.Label>
+                                                <SmartDescription.Description>
+                                                    Add a short description so others know what this spotlight is about.
+                                                </SmartDescription.Description>
+                                            </SmartDescription>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

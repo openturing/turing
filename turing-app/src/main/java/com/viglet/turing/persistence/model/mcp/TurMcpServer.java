@@ -30,8 +30,11 @@ public class TurMcpServer implements Serializable {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(nullable = true, length = 255)
+    @Column(nullable = true, length = 500)
     private String description;
+
+    @Column(length = 150)
+    private String icon;
 
     @Column
     private String url;

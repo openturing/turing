@@ -5,6 +5,7 @@ import LoginPage from "./app/login/login.page"
 import {
   AdminRoutes,
   AIAgentRoutes,
+  IntentRoutes,
   AssetRoutes,
   ChatRoutes,
   EmbeddingModelRoutes,
@@ -48,6 +49,7 @@ function App() {
                 {LLMRoutes}
                 {McpServerRoutes}
                 {AIAgentRoutes}
+                {IntentRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}

@@ -19,7 +19,8 @@ export default function LLMInstanceListPage() {
   const gridItemList = useGridAdapter(llmInstances, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.LLM_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.LLM_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
   return (
     <LoadProvider checkIsNotUndefined={llmInstances} error={error} tryAgainUrl={`${ROUTES.LLM_INSTANCE}`}>

@@ -36,4 +36,5 @@ export type TurSNSite = {
   wildcardAlways: number;
   exactMatch: number;
   turSNSiteGenAi: TurSNSiteGenAi;
+  icon?: string | null;
 };

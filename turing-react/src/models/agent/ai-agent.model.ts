@@ -5,10 +5,10 @@ export interface TurAIAgent {
   id: string;
   title: string;
   description: string;
-  avatarUrl?: string | null;
   systemPrompt?: string;
   enabled: number;
   nativeTools?: string | null;
   llmInstances: TurLLMInstance[];
   mcpServers: TurMcpServer[];
+  icon?: string | null;
 }

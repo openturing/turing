@@ -62,6 +62,7 @@ public class TurMcpServerAPI {
         return turMcpServerRepository.findById(id).map(turMcpServerEdit -> {
             turMcpServerEdit.setTitle(turMcpServer.getTitle());
             turMcpServerEdit.setDescription(turMcpServer.getDescription());
+            turMcpServerEdit.setIcon(turMcpServer.getIcon());
             turMcpServerEdit.setUrl(turMcpServer.getUrl());
             turMcpServerEdit.setCommand(turMcpServer.getCommand());
             turMcpServerEdit.setArgs(turMcpServer.getArgs());

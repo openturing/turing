@@ -8,6 +8,7 @@ import {
     type SortingState,
 } from "@tanstack/react-table";
 import { type ReactNode, useState } from "react";
+import { Icon } from "@iconify/react";
 
 import { Card } from "@/components/ui/card";
 import {
@@ -138,6 +139,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         const name: string = row.getValue("name");
                         const description: string = row.getValue("description");
                         const url: string = row.getValue("url");
+                        const icon: string | undefined = row.original.icon ?? undefined;
                         const gradient = getGradient(name);
                         const initials = getInitials(name);
 
@@ -147,7 +149,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                     <div className={`h-1.5 bg-linear-to-r ${gradient} opacity-70 group-hover:opacity-100 transition-opacity`} />
                                     <div className="p-4 flex items-start gap-3">
                                         <div className={`shrink-0 w-10 h-10 rounded-lg bg-linear-to-br ${gradient} flex items-center justify-center text-white text-sm font-semibold shadow-sm`}>
-                                            {initials}
+                                            {icon ? <Icon icon={icon} className="size-5" /> : initials}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-medium text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

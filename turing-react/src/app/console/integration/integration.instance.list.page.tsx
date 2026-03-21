@@ -19,7 +19,8 @@ export default function IntegrationInstanceListPage() {
   const gridItemList = useGridAdapter(integrationInstances, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.INTEGRATION_INSTANCE}/${item.id}`
+    url: (item) => `${ROUTES.INTEGRATION_INSTANCE}/${item.id}`,
+    icon: "icon",
   });
   return (
     <LoadProvider checkIsNotUndefined={integrationInstances} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}`}>

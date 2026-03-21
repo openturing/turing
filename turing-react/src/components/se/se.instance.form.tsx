@@ -19,9 +19,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts"
 import type { TurSEVendor } from "@/models/se/se-vendor.model.ts"
 import { TurSEInstanceService, TurSEVendorService } from "@/services/se/se.service"
@@ -34,6 +31,8 @@ import { toast } from "sonner"
 import { IconPlug, IconSettings } from "@tabler/icons-react"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { IconPicker } from "../ui/icon-picker"
+import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 const turSEInstanceService = new TurSEInstanceService();
 const turSEVendorService = new TurSEVendorService();
@@ -130,18 +129,41 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormDescription>
-                            Briefly describe the purpose or scope of this search engine.
-                          </FormDescription>
                           <FormControl>
-                            <Textarea
+                            <SmartDescription
+                              value={field.value}
+                              onChange={field.onChange}
                               placeholder="Add a description"
-                              className="resize-none"
-                              {...field}
-                            />
+                              maxLength={500}
+                              title={form.watch("title")}
+                              entityType="Search Engine"
+                            >
+                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Description>
+                                Briefly describe the purpose or scope of this search engine.
+                              </SmartDescription.Description>
+                            </SmartDescription>
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="icon"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <IconPicker
+                              value={field.value}
+                              onChange={(icon) => field.onChange(icon)}
+                              onRemove={() => field.onChange(null)}
+                              title={form.watch("title")}
+                              description={form.watch("description")}
+                            >
+                              <IconPicker.Label>Icon</IconPicker.Label>
+                            </IconPicker>
+                          </FormControl>
                         </FormItem>
                       )}
                     />

@@ -70,7 +70,7 @@ public class TurSNSiteMergeProviders implements Serializable {
 	@Column(nullable = false, length = 5)
 	private Locale locale;
 
-	@Column
+	@Column(length = 500)
 	private String description;
 
 	@Column(nullable = false, length = 50)

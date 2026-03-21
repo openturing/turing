@@ -76,7 +76,7 @@ public class TurSNSiteFieldExt implements Serializable {
     private String externalId;
     @Column(nullable = false, length = 50)
     private String name;
-    @Column
+    @Column(length = 500)
     private String description;
     @Column(length = 50)
     private String facetName;

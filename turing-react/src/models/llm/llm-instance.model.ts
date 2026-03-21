@@ -24,4 +24,5 @@ export interface TurLLMInstance {
   toolsEnabled: boolean;
   apiKey?: string;
   providerOptionsJson?: string;
+  icon?: string | null;
 }

@@ -71,7 +71,7 @@ public class TurSNRankingExpression extends TurAuditable<String> implements Seri
 	private String name;
 
 	@Setter
-	@Column
+	@Column(length = 500)
 	private String description;
 	@Setter
 	@Column

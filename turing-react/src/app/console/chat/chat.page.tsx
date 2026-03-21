@@ -17,6 +17,7 @@ import { ChatHeader } from "./components/chat-header"
 import { ChatInput } from "./components/chat-input"
 import { ChatMessageList } from "./components/chat-message-list"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
+import { ChatSuggestions } from "./components/chat-suggestions"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
 import { useLlmInstances } from "./hooks/use-llm-instances"
@@ -447,39 +448,64 @@ export default function ChatPage() {
         {/* Chat Tab */}
         {activeTab === "chat" && (
           <>
-            <div className="flex-1 overflow-y-auto">
-              {isEmpty
-                ? <ChatEmptyState variant="chat" selectedInstance={selectedInstance} />
-                : <ChatMessageList messages={chatMessages} loading={chatLoading} assistantName={assistantName} endRef={chatEndRef} />
-              }
-            </div>
-            <div className="shrink-0 border-t bg-background">
-              <div className="max-w-3xl mx-auto px-4 py-4">
-                <ChatInput
-                  value={chatInput}
-                  onChange={setChatInput}
-                  onSend={handleChatSend}
-                  loading={chatLoading}
-                  disabled={!selectedLlmId}
-                  placeholder={selectedLlmId ? "Send a message..." : "Select a model to start..."}
-                  accentColor="blue"
-                  attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
-                />
-                <div className="flex items-center justify-between mt-2 gap-4">
-                  <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
-                  {!isEmpty && (
-                    <ContextBar
-                      tokens={chatContextUsage.tokens}
-                      percentage={chatContextUsage.percentage}
-                      contextWindow={contextWindow}
-                      compacting={chatCompacting}
-                      canCompact={!chatLoading && chatMessages.length >= 4}
-                      onCompact={handleChatCompact}
-                    />
-                  )}
+            {isEmpty ? (
+              <div className="flex-1 flex flex-col items-center justify-center px-4">
+                <div className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 p-4 dark:from-blue-500 dark:to-indigo-500 mb-4">
+                  <IconMessageChatbot className="size-8 text-white" />
                 </div>
+                <h2 className="text-2xl font-semibold mb-1">How can I help you today?</h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  {selectedInstance ? `Using ${selectedInstance.title} (${selectedInstance.turLLMVendor?.id ?? ""})` : "Select a language model to start chatting."}
+                </p>
+                <div className="w-full max-w-2xl">
+                  <ChatInput
+                    value={chatInput}
+                    onChange={setChatInput}
+                    onSend={handleChatSend}
+                    loading={chatLoading}
+                    disabled={!selectedLlmId}
+                    placeholder={selectedLlmId ? "Send a message..." : "Select a model to start..."}
+                    accentColor="blue"
+                    attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
+                  />
+                  <div className="flex items-center justify-center mt-2">
+                    <span className="text-xs text-muted-foreground">{modelLabel}</span>
+                  </div>
+                </div>
+                <ChatSuggestions onSelectPrompt={(prompt) => { setChatInput(prompt) }} />
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto">
+                  <ChatMessageList messages={chatMessages} loading={chatLoading} assistantName={assistantName} endRef={chatEndRef} />
+                </div>
+                <div className="shrink-0 border-t bg-background">
+                  <div className="max-w-3xl mx-auto px-4 py-4">
+                    <ChatInput
+                      value={chatInput}
+                      onChange={setChatInput}
+                      onSend={handleChatSend}
+                      loading={chatLoading}
+                      disabled={!selectedLlmId}
+                      placeholder={selectedLlmId ? "Send a message..." : "Select a model to start..."}
+                      accentColor="blue"
+                      attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
+                    />
+                    <div className="flex items-center justify-between mt-2 gap-4">
+                      <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
+                      <ContextBar
+                        tokens={chatContextUsage.tokens}
+                        percentage={chatContextUsage.percentage}
+                        contextWindow={contextWindow}
+                        compacting={chatCompacting}
+                        canCompact={!chatLoading && chatMessages.length >= 4}
+                        onCompact={handleChatCompact}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -526,8 +552,8 @@ export default function ChatPage() {
           <>
             <div className="flex-1 overflow-y-auto">
               {currentAgentState.messages.length === 0
-                ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} agentAvatarUrl={activeAgent?.avatarUrl} />
-                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} assistantAvatarUrl={activeAgent?.avatarUrl} endRef={agentEndRef} />
+                ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} agentIcon={activeAgent?.icon} />
+                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} assistantIcon={activeAgent?.icon} endRef={agentEndRef} />
               }
             </div>
             <div className="shrink-0 border-t bg-background">
