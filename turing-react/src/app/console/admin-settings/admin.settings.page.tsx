@@ -1,6 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { SubPage } from "@/components/sub.page";
-import { TurAuthorizationService } from "@/services/auth/authorization.service";
+import { useCurrentUser } from "@/contexts/user.context";
 import {
     IconCode,
     IconInfoCircle,
@@ -10,18 +10,13 @@ import {
     IconUsersGroup,
     IconUserShield,
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
-
-const turAuthorizationService = new TurAuthorizationService();
+import { useMemo } from "react";
 
 export default function AdminSettingsPage() {
-    const [isKeycloak, setIsKeycloak] = useState(true);
+    const { user } = useCurrentUser();
+    const isAdmin = !!user?.admin;
 
-    useEffect(() => {
-        turAuthorizationService.discovery().then((d) => {
-            setIsKeycloak(d.keycloak);
-        });
-    }, []);
+    const showAuthManagement = isAdmin;
 
     const data = useMemo(() => ({
         navMain: [
@@ -30,7 +25,7 @@ export default function AdminSettingsPage() {
                 url: "/settings",
                 icon: IconSettings,
             },
-            ...(isKeycloak ? [] : [
+            ...(showAuthManagement ? [
                 {
                     title: "Users",
                     url: "/users",
@@ -46,7 +41,7 @@ export default function AdminSettingsPage() {
                     url: "/roles",
                     icon: IconUserShield,
                 },
-            ]),
+            ] : []),
             {
                 title: "API Token",
                 url: "/tokens",
@@ -58,7 +53,7 @@ export default function AdminSettingsPage() {
                 icon: IconInfoCircle,
             },
         ],
-    }), [isKeycloak]);
+    }), [showAuthManagement]);
 
     return (
         <SubPage

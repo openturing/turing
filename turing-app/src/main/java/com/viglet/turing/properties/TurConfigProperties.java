@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class TurConfigProperties {
 	private boolean multiTenant;
 	private boolean keycloak;
+	private String keycloakAdminId;
 	private String allowedOrigins;
 	private TurSolrProperty solr;
 	private TurMinioProperty minio;

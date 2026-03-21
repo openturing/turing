@@ -100,6 +100,7 @@ turing:
   allowedOrigins: http://localhost:4200,http://localhost:5173
   multi-tenant: false
   keycloak: false
+  keycloak-admin-id:
   url: http://localhost:2700
   open-browser: true
   jms.concurrency: 1-1

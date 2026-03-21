@@ -21,8 +21,6 @@
 
 package com.viglet.turing.spring.security;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -86,7 +84,8 @@ public class TurSecurityConfigProduction {
                         TurAuthTokenHeaderFilter turAuthTokenHeaderFilter,
                         TurLogoutHandler turLogoutHandler,
                         TurConfigProperties turConfigProperties,
-                        TurAuthenticationEntryPoint turAuthenticationEntryPoint) {
+                        TurAuthenticationEntryPoint turAuthenticationEntryPoint,
+                        TurOAuth2UserService turOAuth2UserService) {
 
                 http.headers(header -> header.frameOptions(
                                 frameOptions -> frameOptions.disable()
@@ -121,7 +120,8 @@ public class TurSecurityConfigProduction {
                         String keycloakUrlFormat = String.format(
                                         "%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
                                         issuerUri, clientId, turingUrl);
-                        http.oauth2Login(withDefaults());
+                        http.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(
+                                        userInfo -> userInfo.userService(turOAuth2UserService)));
                         http.authorizeHttpRequests(authorizeRequests -> {
                                 authorizeRequests.requestMatchers(
                                                 mvc.matcher(ERROR_PATH),

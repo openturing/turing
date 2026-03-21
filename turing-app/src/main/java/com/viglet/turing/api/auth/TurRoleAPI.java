@@ -37,7 +37,9 @@ import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.annotation.Secured;
 
+@Secured("ROLE_ADMIN")
 @RestController
 @RequestMapping("/api/v2/role")
 @Tag(name = "Role", description = "Role API")

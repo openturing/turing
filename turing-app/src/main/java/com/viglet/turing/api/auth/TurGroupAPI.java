@@ -43,7 +43,9 @@ import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.annotation.Secured;
 
+@Secured("ROLE_ADMIN")
 @RestController
 @RequestMapping("/api/v2/group")
 @Tag(name = "Group", description = "Group API")

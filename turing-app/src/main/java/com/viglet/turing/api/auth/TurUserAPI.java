@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -87,6 +88,21 @@ public class TurUserAPI {
         this.turUserMapper = turUserMapper;
     }
 
+    private String currentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private boolean isAdminOrSelf(String username) {
+        return isAdmin() || currentUsername().equals(username);
+    }
+
+    @Secured("ROLE_ADMIN")
     @GetMapping
     public List<TurUserDto> turUserList() {
         return turUserMapper.toDtoList(turUserRepository.findAll());
@@ -154,30 +170,47 @@ public class TurUserAPI {
             turUserRepository.save(turUser);
         }
 
+        boolean isKeycloakAdmin = false;
+        var groups = turGroupRepository.findByTurUsersContaining(turUser);
+        if (groups != null) {
+            for (TurGroup turGroup : groups) {
+                if (ADMINISTRATOR.equals(turGroup.getName())) {
+                    isKeycloakAdmin = true;
+                    break;
+                }
+            }
+        }
+
         TurCurrentUser turCurrentUser = new TurCurrentUser();
         turCurrentUser.setUsername(username);
         turCurrentUser.setFirstName(firstName);
         turCurrentUser.setLastName(lastName);
         turCurrentUser.setEmail(email);
-        turCurrentUser.setAdmin(true);
+        turCurrentUser.setAdmin(isKeycloakAdmin);
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
         return turCurrentUser;
     }
 
     @GetMapping("/{username}")
-    public TurUserDto turUserEdit(@PathVariable String username) {
+    public ResponseEntity<TurUserDto> turUserEdit(@PathVariable String username) {
+        if (!isAdminOrSelf(username)) {
+            return ResponseEntity.status(403).build();
+        }
         TurUser turUser = turUserRepository.findByUsername(username);
         TurUser user = Optional.ofNullable(turUser).map(currentUser -> {
             currentUser.setPassword(null);
             currentUser.setTurGroups(turGroupRepository.findByTurUsersContaining(currentUser));
             return currentUser;
         }).orElseGet(TurUser::new);
-        return turUserMapper.toDto(user);
+        return ResponseEntity.ok(turUserMapper.toDto(user));
     }
 
     @PutMapping("/{username}")
-    public TurUserDto turUserUpdate(@PathVariable String username, @RequestBody TurUserDto turUserDto) {
+    public ResponseEntity<TurUserDto> turUserUpdate(@PathVariable String username, @RequestBody TurUserDto turUserDto) {
+        if (!isAdminOrSelf(username)) {
+            return ResponseEntity.status(403).build();
+        }
         TurUser turUser = turUserMapper.toEntity(turUserDto);
         TurUser user = Optional.ofNullable(turUserRepository.findByUsername(username)).map(userEdit -> {
             userEdit.setFirstName(turUser.getFirstName());
@@ -187,13 +220,17 @@ public class TurUserAPI {
             if (StringUtils.hasText(turUser.getPassword())) {
                 userEdit.setPassword(passwordEncoder.encode(turUser.getPassword()));
             }
-            userEdit.setTurGroups(turUser.getTurGroups());
+            // Only admins can change group assignments
+            if (isAdmin()) {
+                userEdit.setTurGroups(turUser.getTurGroups());
+            }
             turUserRepository.save(userEdit);
             return userEdit;
         }).orElseGet(TurUser::new);
-        return turUserMapper.toDto(user);
+        return ResponseEntity.ok(turUserMapper.toDto(user));
     }
 
+    @Secured("ROLE_ADMIN")
     @Transactional
     @DeleteMapping("/{username}")
     public boolean turUserDelete(@PathVariable String username) {
@@ -205,6 +242,7 @@ public class TurUserAPI {
         }
     }
 
+    @Secured("ROLE_ADMIN")
     @PostMapping
     public TurUserDto turUserAdd(@RequestBody TurUserDto turUserDto) {
         TurUser turUser = turUserMapper.toEntity(turUserDto);
@@ -215,6 +253,7 @@ public class TurUserAPI {
         return turUserMapper.toDto(turUser);
     }
 
+    @Secured("ROLE_ADMIN")
     @GetMapping("/model")
     public TurUserDto turUserStructure() {
         return new TurUserDto();
@@ -223,6 +262,9 @@ public class TurUserAPI {
     @PutMapping("/{username}/avatar-url")
     public ResponseEntity<Void> updateAvatarUrl(@PathVariable String username,
             @RequestBody(required = false) java.util.Map<String, String> body) {
+        if (!isAdminOrSelf(username)) {
+            return ResponseEntity.status(403).build();
+        }
         TurUser turUser = turUserRepository.findByUsername(username);
         if (turUser == null) {
             return ResponseEntity.notFound().build();

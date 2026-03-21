@@ -89,9 +89,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [hasEnabledLlm]
   )
 
+  const isAdmin = !!user?.admin
+
   const filteredManagement = React.useMemo(
-    () => minioEnabled ? management : management.filter((item) => item.title !== "Assets"),
-    [minioEnabled]
+    () => management.filter((item) => {
+      if (item.title === "Assets" && !minioEnabled) return false
+      if (item.title === "Administration" && !isAdmin) return false
+      return true
+    }),
+    [minioEnabled, isAdmin]
   )
 
   const navGroups = React.useMemo(
