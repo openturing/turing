@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -28,6 +29,7 @@ export function NavMain({
 }) {
   const location = useLocation();
   const pathname = location.pathname;
+  const { isMobile, setOpenMobile } = useSidebar();
   return (
     <>
       {groups.map((group) => (
@@ -38,7 +40,7 @@ export function NavMain({
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton tooltip={item.title} isActive={pathname.startsWith(item.url)} asChild>
-                    <NavLink to={item.url}>
+                    <NavLink to={item.url} onClick={() => isMobile && setOpenMobile(false)}>
                       {item.icon && <item.icon className="size-6!" />}
                       <span>{item.title}</span>
                     </NavLink>

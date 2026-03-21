@@ -46,7 +46,8 @@ const renderNavItems = (
   items: NavMainItem[],
   urlBase: string | undefined,
   pathname: string,
-  isCollapsed: boolean
+  isCollapsed: boolean,
+  onNavigate?: () => void
 ): ReactNode =>
   items.map((item) => (
     <SidebarMenuItem key={item.title}>
@@ -55,14 +56,14 @@ const renderNavItems = (
         isActive={pathname.startsWith((urlBase ?? "") + item.url)}
         asChild
       >
-        <NavLink to={(urlBase ?? "") + item.url}>
+        <NavLink to={(urlBase ?? "") + item.url} onClick={onNavigate}>
           {item.icon && <item.icon className="size-5!" />}
           <span>{item.title}</span>
         </NavLink>
       </SidebarMenuButton>
       {!isCollapsed && item.children && item.children.length > 0 && (
         <SidebarMenu className="ml-4">
-          {renderNavItems(item.children, urlBase, pathname, isCollapsed)}
+          {renderNavItems(item.children, urlBase, pathname, isCollapsed, onNavigate)}
         </SidebarMenu>
       )}
     </SidebarMenuItem>
@@ -82,8 +83,9 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
 }) => {
   const location = useLocation();
   const pathname = location.pathname;
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const onNavigate = isMobile ? () => setOpenMobile(false) : undefined;
 
   return (
     <Sidebar collapsible="icon" variant="inset" position="absolute">
@@ -161,7 +163,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
               {data?.navMain &&
                 renderNavItems(
                   isNew ? data.navMain.filter((item) => item.url === "/detail") : data.navMain,
-                  urlBase, pathname, isCollapsed
+                  urlBase, pathname, isCollapsed, onNavigate
                 )}
             </SidebarMenu>
           </SidebarGroupContent>

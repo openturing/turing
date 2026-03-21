@@ -35,6 +35,7 @@ import { useCurrentUser } from "@/contexts/user.context"
 import { TurFeaturesService } from "@/services/system/features.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
+import { ModeToggleSidebar } from "./mode-toggle"
 
 const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
 
@@ -81,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
   const [minioEnabled, setMinioEnabled] = React.useState(false);
-  const { toggleSidebar, state } = useSidebar();
+  const { toggleSidebar, state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   React.useEffect(() => {
@@ -132,7 +133,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     [filterItems, filteredManagement]
   )
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" side={isMobile ? "right" : "left"} {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -156,6 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain groups={navGroups} />
       </SidebarContent>
       <SidebarFooter>
+        <ModeToggleSidebar />
         <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>

@@ -35,8 +35,8 @@ interface Props {
 
 export const SubPage: React.FC<Props> = (props) => {
   return (
-    <div className="w-full px-6 lg:px-8 py-4 min-h-[calc(100svh-10.5rem)]">
-      <div className="flex min-h-full w-full rounded-xl border bg-sidebar shadow-sm">
+    <div className="w-full px-1 md:px-6 lg:px-8 py-1 md:py-4 min-h-[calc(100svh-10.5rem)]">
+      <div className="flex min-h-full w-full md:rounded-xl md:border md:bg-sidebar md:shadow-sm">
         <SidebarProvider
           defaultOpen={true}
           className="min-h-0!"
@@ -47,8 +47,8 @@ export const SubPage: React.FC<Props> = (props) => {
           } as React.CSSProperties}
         >
           <InternalSidebar {...props} />
-          <SidebarInset className="mr-1.5 my-1.5 rounded-xl border bg-background shadow-sm">
-            <main className="flex flex-1 flex-col pt-4">
+          <SidebarInset className="md:mr-1.5 md:my-1.5 md:rounded-xl md:border bg-background md:shadow-sm">
+            <main className="flex flex-1 flex-col pt-2 md:pt-4 max-md:[&_.px-6]:px-2">
               <Outlet />
             </main>
           </SidebarInset>

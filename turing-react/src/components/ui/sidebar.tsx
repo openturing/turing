@@ -2,7 +2,7 @@
 
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
+import { MenuIcon, PanelLeftIcon } from "lucide-react"
 import * as React from "react"
 
 import { Input } from "@/components/ui/input"
@@ -265,7 +265,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof GradientButton>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, isMobile } = useSidebar()
 
   return (
     <GradientButton
@@ -280,7 +280,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      {isMobile ? <MenuIcon /> : <PanelLeftIcon />}
       <span className="sr-only">Toggle Sidebar</span>
     </GradientButton>
   )

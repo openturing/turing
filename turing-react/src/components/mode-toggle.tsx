@@ -1,4 +1,4 @@
-import { Moon, Sun } from "lucide-react"
+import { Monitor, Moon, Sun } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
 import {
@@ -33,5 +33,36 @@ export function ModeToggle() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const
+
+export function ModeToggleSidebar() {
+  const { theme, setTheme } = useTheme()
+  const current = THEME_OPTIONS.find((t) => t.value === theme) ?? THEME_OPTIONS[2]
+
+  function cycleTheme() {
+    const idx = THEME_OPTIONS.findIndex((t) => t.value === theme)
+    const next = THEME_OPTIONS[(idx + 1) % THEME_OPTIONS.length]
+    setTheme(next.value)
+  }
+
+  const CurrentIcon = current.icon
+
+  return (
+    <button
+      type="button"
+      title="Toggle theme"
+      onClick={cycleTheme}
+      className="md:hidden flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+    >
+      <CurrentIcon className="size-4 shrink-0" />
+      <span>{current.label} mode</span>
+    </button>
   )
 }
