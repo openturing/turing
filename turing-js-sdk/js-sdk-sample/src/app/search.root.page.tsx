@@ -43,7 +43,7 @@ export default function SearchRootPage() {
         }
     };
     useEffect(() => {
-        fetchDocuments();
+        await fetchDocuments();
     }, [query]);
 
     return (
