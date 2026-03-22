@@ -90,7 +90,7 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
         </div>
       )}
 
-      <div className={`relative flex items-end rounded-xl border bg-muted/50 focus-within:ring-2 ${ringColor} transition-all`}>
+      <div className={`relative flex items-center rounded-xl border bg-muted/50 focus-within:ring-2 ${ringColor} transition-all`}>
         {attachments && (
           <>
             <input ref={fileInputRef} type="file" multiple className="hidden" title="Attach files" onChange={handleFileInputChange} />
@@ -106,7 +106,7 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled || loading}
-          className={`flex-1 resize-none border-0 bg-transparent ${attachments ? "px-2" : "px-4"} py-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-11! max-h-50`}
+          className={`flex-1 resize-none border-0 bg-transparent ${attachments ? "px-2" : "px-4"} py-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-11! max-h-50 field-sizing-fixed`}
           rows={1}
         />
         <div className="p-2">

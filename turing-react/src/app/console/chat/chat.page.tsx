@@ -470,7 +470,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] max-h-screen">
+    <div className="flex h-[calc(100dvh-2rem)]">
       <ChatSessionSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -511,7 +511,7 @@ export default function ChatPage() {
                   <ChatMessageList messages={chatMessages} loading={chatLoading} assistantName={assistantName} endRef={chatEndRef} />
                 </div>
                 <div className="shrink-0 border-t bg-background">
-                  <div className="max-w-3xl mx-auto px-2 py-2 md:px-4 md:py-4">
+                  <div className="max-w-3xl mx-auto px-2 py-1 md:px-4 md:py-3">
                     <ChatInput
                       value={chatInput}
                       onChange={setChatInput}
@@ -522,7 +522,7 @@ export default function ChatPage() {
                       accentColor="blue"
                       attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
                     />
-                    <div className="flex items-center justify-between mt-2 gap-4">
+                    <div className="flex items-center justify-between mt-1 gap-4">
                       <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
                       <ContextBar
                         tokens={chatContextUsage.tokens}

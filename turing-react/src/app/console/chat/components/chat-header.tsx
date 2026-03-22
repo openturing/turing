@@ -48,7 +48,7 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
       </div>
 
       {/* Row 2: Tabs */}
-      <div className="flex items-center justify-center md:justify-start px-3 pb-2 overflow-x-auto gap-1">
+      <div className="flex items-center justify-center px-3 pb-2 overflow-x-auto gap-1">
         <button
           type="button"
           onClick={() => onTabChange("chat")}
