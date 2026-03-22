@@ -4,7 +4,7 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
-import { IconCompass, IconHistory, IconMessageCircle, IconRobot } from "@tabler/icons-react"
+import { IconCompass, IconHistory, IconMessageCircle, IconPlus, IconRobot } from "@tabler/icons-react"
 
 interface ChatHeaderProps {
   activeTab: string
@@ -20,13 +20,14 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId, onModelChange, onToggleSidebar, hasMessages, onNewChat, agents }: ChatHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b px-4 py-3 shrink-0 gap-3">
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <button type="button" onClick={onToggleSidebar} title="Sessions" className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted">
+    <div className="border-b shrink-0">
+      {/* Row 1: Controls */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button type="button" onClick={onToggleSidebar} title="Sessions" className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted shrink-0">
           <IconHistory className="size-5" />
         </button>
         <Select value={selectedLlmId} onValueChange={onModelChange}>
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="flex-1 min-w-0">
             <SelectValue placeholder="Select a model..." />
           </SelectTrigger>
           <SelectContent>
@@ -35,13 +36,23 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
             ))}
           </SelectContent>
         </Select>
+        {hasMessages && (
+          <GradientButton variant="outline" size="sm" onClick={onNewChat} className="shrink-0">
+            <IconPlus className="size-4 md:mr-1" />
+            <span className="hidden md:inline">New Chat</span>
+          </GradientButton>
+        )}
+        <div className="hidden md:block shrink-0">
+          <ModeToggle />
+        </div>
       </div>
 
-      <div className="flex items-center rounded-full bg-muted p-1 gap-0.5 overflow-x-auto max-w-[60%]">
+      {/* Row 2: Tabs */}
+      <div className="flex items-center justify-center md:justify-start px-3 pb-2 overflow-x-auto gap-1">
         <button
           type="button"
           onClick={() => onTabChange("chat")}
-          className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all whitespace-nowrap ${activeTab === "chat" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === "chat" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
         >
           <IconMessageCircle className="size-4" />
           Chat
@@ -49,17 +60,17 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
         <button
           type="button"
           onClick={() => onTabChange("semantic")}
-          className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all whitespace-nowrap ${activeTab === "semantic" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === "semantic" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
         >
           <IconCompass className="size-4" />
-          Semantic Navigation
+          <span className="hidden sm:inline">Semantic</span> <span className="sm:hidden">SN</span>
         </button>
         {agents.map((agent) => (
           <button
             key={agent.id}
             type="button"
             onClick={() => onTabChange(`agent:${agent.id}`)}
-            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all whitespace-nowrap ${activeTab === `agent:${agent.id}` ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === `agent:${agent.id}` ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
           >
             {agent.icon ? (
               <Icon icon={agent.icon} className="size-4" />
@@ -69,15 +80,6 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
             {agent.title}
           </button>
         ))}
-      </div>
-
-      <div className="flex items-center gap-3 flex-1 min-w-0 justify-end">
-        {hasMessages && (
-          <GradientButton variant="outline" size="sm" onClick={onNewChat}>
-            New Chat
-          </GradientButton>
-        )}
-        <ModeToggle />
       </div>
     </div>
   )

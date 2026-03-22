@@ -106,7 +106,7 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled || loading}
-          className={`flex-1 resize-none border-0 bg-transparent ${attachments ? "px-2" : "px-4"} py-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[44px] max-h-[200px]`}
+          className={`flex-1 resize-none border-0 bg-transparent ${attachments ? "px-2" : "px-4"} py-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-11! max-h-50`}
           rows={1}
         />
         <div className="p-2">

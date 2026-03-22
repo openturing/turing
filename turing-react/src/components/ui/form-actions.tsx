@@ -1,4 +1,4 @@
-import { IconDeviceFloppy, IconLoader2, IconX } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconLoader2, IconTrash, IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { GradientButton } from "./gradient-button";
@@ -64,10 +64,35 @@ function Submit({ loading, disabled, children, className }: Readonly<SubmitProps
 }
 
 // ---------------------------------------------------------------------------
+// Delete (mobile only — shown alongside Cancel/Submit)
+// ---------------------------------------------------------------------------
+
+interface DeleteProps {
+  onClick: () => void;
+  children?: ReactNode;
+  className?: string;
+}
+
+function Delete({ onClick, children, className }: Readonly<DeleteProps>) {
+  return (
+    <GradientButton
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      className={cn("md:hidden text-destructive border-destructive/30 hover:bg-destructive/10 mr-auto", className)}
+    >
+      <IconTrash className="size-4" />
+      {children ?? "Delete"}
+    </GradientButton>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Composite export
 // ---------------------------------------------------------------------------
 
 FormActions.Cancel = Cancel;
 FormActions.Submit = Submit;
+FormActions.Delete = Delete;
 
 export { FormActions };

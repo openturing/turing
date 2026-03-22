@@ -120,9 +120,9 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
   }
 
   return (
-    <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader>
+    <div className="w-full px-0 md:px-4 py-4">
+      <Card className="mx-auto md:max-w-2xl border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
+        <CardHeader className="hidden md:grid">
           <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Embedding Model</CardTitle>
           <CardAction>
             {!isNew && <DialogDelete feature="embedding model" name={value.modelName} onDelete={onDelete} open={open} setOpen={setOpen} />}
@@ -133,7 +133,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-2 md:py-8">
               {/* General Information */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title="General Information" description="Name and description for this embedding model." />
@@ -428,6 +428,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
               </SectionCard>
 
               <FormActions>
+                {!isNew && <FormActions.Delete onClick={() => setOpen(true)} />}
                 <FormActions.Cancel onClick={() => navigate(urlBase)} />
                 <FormActions.Submit />
               </FormActions>

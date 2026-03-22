@@ -1,14 +1,20 @@
 import { AppFooter } from "@/components/app-footer";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ROUTES } from "@/app/routes.const";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { UserProvider } from "@/contexts/user.context";
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+
+const HIDE_FOOTER_ROUTES = [ROUTES.CHAT_ROOT];
 
 export default function ConsoleRootPage() {
+  const { pathname } = useLocation();
+  const showFooter = !HIDE_FOOTER_ROUTES.some((r) => pathname.startsWith(r));
+
   return (
     <UserProvider>
     <SidebarProvider defaultOpen={false}
@@ -23,7 +29,7 @@ export default function ConsoleRootPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <Outlet />
-        <AppFooter />
+        {showFooter && <AppFooter />}
       </SidebarInset>
     </SidebarProvider>
     </UserProvider>

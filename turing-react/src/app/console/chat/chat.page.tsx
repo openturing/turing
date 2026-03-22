@@ -470,7 +470,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] max-h-screen">
+    <div className="flex h-[calc(100vh-2rem)] max-h-screen">
       <ChatSessionSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -511,7 +511,7 @@ export default function ChatPage() {
                   <ChatMessageList messages={chatMessages} loading={chatLoading} assistantName={assistantName} endRef={chatEndRef} />
                 </div>
                 <div className="shrink-0 border-t bg-background">
-                  <div className="max-w-3xl mx-auto px-4 py-4">
+                  <div className="max-w-3xl mx-auto px-2 py-2 md:px-4 md:py-4">
                     <ChatInput
                       value={chatInput}
                       onChange={setChatInput}

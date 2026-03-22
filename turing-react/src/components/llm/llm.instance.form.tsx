@@ -368,9 +368,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     setOpen(false);
   }
   return (
-    <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto ">
-        <CardHeader>
+    <div className="w-full px-0 md:px-4 py-4">
+      <Card className="mx-auto border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
+        <CardHeader className="hidden md:grid">
           <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Language Model</CardTitle>
           <CardAction>
             {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
@@ -383,7 +383,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-4"
+              className="w-full max-w-2xl mx-auto py-2 md:py-8 flex flex-col gap-4"
               autoComplete="off"
             >
                 {/* General Section */}
@@ -850,6 +850,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Action Footer */}
               <FormActions>
+                {!isNew && <FormActions.Delete onClick={() => setOpen(true)} />}
                 <FormActions.Cancel onClick={() => navigate(urlBase)} />
                 <FormActions.Submit />
               </FormActions>
