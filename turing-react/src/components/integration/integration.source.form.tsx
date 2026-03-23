@@ -57,7 +57,7 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
       if (isNew) {
         const result = await turIntegrationAemSourceService.create(integrationAemSource);
         if (result) {
-          toast.success(t("forms.common.saved", { name: integrationAemSource.name, feature: "Integration Source" }));
+          toast.success(t("forms.common.saved", { name: integrationAemSource.name, feature: t("integration.sources.feature") }));
 
           navigate(sourceInstanceRoute);
         }
@@ -68,7 +68,7 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
       else {
         const result = await turIntegrationAemSourceService.update(integrationAemSource);
         if (result) {
-          toast.success(t("forms.common.updated", { name: integrationAemSource.name, feature: "Integration Source" }));
+          toast.success(t("forms.common.updated", { name: integrationAemSource.name, feature: t("integration.sources.feature") }));
         } else {
           toast.error(t("forms.common.formSubmitFailed"));
         }

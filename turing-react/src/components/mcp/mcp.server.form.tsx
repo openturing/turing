@@ -79,18 +79,18 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turMcpServerService.create(payload);
         if (result) {
-          toast.success(t("forms.common.saved", { name: payload.title, feature: "MCP Server" }));
+          toast.success(t("forms.common.saved", { name: payload.title, feature: t("mcp.title") }));
           navigate(urlBase);
         } else {
-          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "MCP Server" }));
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("mcp.title") }));
         }
       }
       else {
         const result = await turMcpServerService.update(payload);
         if (result) {
-          toast.success(t("forms.common.updated", { name: payload.title, feature: "MCP Server" }));
+          toast.success(t("forms.common.updated", { name: payload.title, feature: t("mcp.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "MCP Server" }));
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: t("mcp.title") }));
         }
       }
     } catch (error) {
@@ -102,15 +102,15 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
   async function onDelete() {
     try {
       if (await turMcpServerService.delete(value)) {
-        toast.success(t("forms.common.deleted", { name: value.title, feature: "MCP Server" }));
+        toast.success(t("forms.common.deleted", { name: value.title, feature: t("mcp.title") }));
         navigate(urlBase);
       }
       else {
-        toast.error(t("forms.common.notDeleted", { name: value.title, feature: "MCP Server" }));
+        toast.error(t("forms.common.notDeleted", { name: value.title, feature: t("mcp.title") }));
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(t("forms.common.notDeleted", { name: value.title, feature: "MCP Server" }));
+      toast.error(t("forms.common.notDeleted", { name: value.title, feature: t("mcp.title") }));
     }
     setOpen(false);
   }
@@ -119,7 +119,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="w-full px-0 md:px-4 py-4">
       <Card className="mx-auto md:max-w-2xl border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
         <CardHeader className="hidden md:grid">
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} MCP Server</CardTitle>
+          <CardTitle className="text-2xl">{isNew ? t("mcp.newMcpServer") : t("mcp.title")}</CardTitle>
           <CardAction>
             {!isNew && <DialogDelete feature="MCP server" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
@@ -170,7 +170,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                               placeholder={t("forms.mcp.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
-                              entityType="MCP Server"
+                              entityType={t("mcp.title")}
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

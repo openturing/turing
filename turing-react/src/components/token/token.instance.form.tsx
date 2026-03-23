@@ -47,18 +47,18 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turTokenInstanceService.create(tokenInstance);
         if (result) {
-          toast.success(t("forms.common.saved", { name: tokenInstance.title, feature: "API Token" }));
+          toast.success(t("forms.common.saved", { name: tokenInstance.title, feature: t("apiToken.title") }));
           navigate(ROUTES.ADMIN_TOKENS);
         } else {
-          toast.error(t("forms.common.notSaved", { name: tokenInstance.title, feature: "API Token" }));
+          toast.error(t("forms.common.notSaved", { name: tokenInstance.title, feature: t("apiToken.title") }));
         }
       }
       else {
         const result = await turTokenInstanceService.update(tokenInstance);
         if (result) {
-          toast.success(t("forms.common.updated", { name: tokenInstance.title, feature: "API Token" }));
+          toast.success(t("forms.common.updated", { name: tokenInstance.title, feature: t("apiToken.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: tokenInstance.title, feature: "API Token" }));
+          toast.error(t("forms.common.notUpdated", { name: tokenInstance.title, feature: t("apiToken.title") }));
         }
       }
     } catch (error) {

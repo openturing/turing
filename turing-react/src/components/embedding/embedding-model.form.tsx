@@ -87,17 +87,17 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turEmbeddingModelService.create(payload)
         if (result) {
-          toast.success(t("forms.common.saved", { name: payload.modelName, feature: "Embedding Model" }))
+          toast.success(t("forms.common.saved", { name: payload.modelName, feature: t("embeddingModel.title") }))
           navigate(urlBase)
         } else {
-          toast.error(t("forms.common.notSaved", { name: payload.modelName, feature: "Embedding Model" }))
+          toast.error(t("forms.common.notSaved", { name: payload.modelName, feature: t("embeddingModel.title") }))
         }
       } else {
         const result = await turEmbeddingModelService.update(payload)
         if (result) {
-          toast.success(t("forms.common.updated", { name: payload.modelName, feature: "Embedding Model" }))
+          toast.success(t("forms.common.updated", { name: payload.modelName, feature: t("embeddingModel.title") }))
         } else {
-          toast.error(t("forms.common.notUpdated", { name: payload.modelName, feature: "Embedding Model" }))
+          toast.error(t("forms.common.notUpdated", { name: payload.modelName, feature: t("embeddingModel.title") }))
         }
       }
     } catch (error) {
@@ -109,14 +109,14 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
   async function onDelete() {
     try {
       if (await turEmbeddingModelService.delete(value)) {
-        toast.success(t("forms.common.deleted", { name: value.modelName, feature: "Embedding Model" }))
+        toast.success(t("forms.common.deleted", { name: value.modelName, feature: t("embeddingModel.title") }))
         navigate(urlBase)
       } else {
-        toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: "Embedding Model" }))
+        toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: t("embeddingModel.title") }))
       }
     } catch (error) {
       console.error("Form submission error", error)
-      toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: "Embedding Model" }))
+      toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: t("embeddingModel.title") }))
     }
     setOpen(false)
   }
@@ -125,7 +125,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="w-full px-0 md:px-4 py-4">
       <Card className="mx-auto md:max-w-2xl border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
         <CardHeader className="hidden md:grid">
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Embedding Model</CardTitle>
+          <CardTitle className="text-2xl">{isNew ? t("embeddingModel.newInstance") : t("embeddingModel.title")}</CardTitle>
           <CardAction>
             {!isNew && <DialogDelete feature="embedding model" name={value.modelName} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
@@ -172,7 +172,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                               placeholder={t("forms.embedding.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("modelName")}
-                              entityType="Embedding Model"
+                              entityType={t("embeddingModel.title")}
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

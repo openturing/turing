@@ -288,18 +288,18 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turStoreInstanceService.create(payload);
         if (result) {
-          toast.success(t("forms.common.saved", { name: payload.title, feature: "Embedding Store" }));
+          toast.success(t("forms.common.saved", { name: payload.title, feature: t("store.title") }));
           navigate(urlBase);
         } else {
-          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "Embedding Store" }));
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("store.title") }));
         }
       }
       else {
         const result = await turStoreInstanceService.update(payload);
         if (result) {
-          toast.success(t("forms.common.updated", { name: payload.title, feature: "Embedding Store" }));
+          toast.success(t("forms.common.updated", { name: payload.title, feature: t("store.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "Embedding Store" }));
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: t("store.title") }));
         }
       }
     } catch (error) {
@@ -351,7 +351,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               placeholder={t("forms.store.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
-                              entityType="Embedding Store"
+                              entityType={t("store.title")}
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

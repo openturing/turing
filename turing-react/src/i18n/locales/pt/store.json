@@ -1,12 +1,12 @@
 {
   "store": {
-    "title": "Armazenamento de Embedding",
-    "newStore": "Novo Armazenamento de Embedding",
-    "blankTitle": "Você ainda não possui nenhuma instância de armazenamento de embedding.",
+    "title": "Banco Vetorial",
+    "newStore": "Novo Banco Vetorial",
+    "blankTitle": "Você ainda não possui nenhuma instância de banco vetorial.",
     "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
-    "newInstance": "Nova instância de armazenamento de embedding",
-    "deleted": "O Armazenamento de Embedding {{name}} foi excluído",
-    "notDeleted": "O Armazenamento de Embedding {{name}} não foi excluído",
+    "newInstance": "Nova instância de banco vetorial",
+    "deleted": "O Banco Vetorial {{name}} foi excluído",
+    "notDeleted": "O Banco Vetorial {{name}} não foi excluído",
     "nav": {
       "settings": "Configurações",
       "collections": "Coleções",
@@ -14,7 +14,7 @@
     },
     "detail": {
       "title": "Configurações",
-      "description": "Configure a conexão e opções do armazenamento de embedding."
+      "description": "Configure a conexão e opções do banco vetorial."
     },
     "collections": {
       "title": "Coleções",
@@ -40,14 +40,14 @@
       "deleteFailed": "Falha ao excluir coleção \"{{name}}\".",
       "created": "Coleção \"{{name}}\" criada.",
       "createFailed": "Falha ao criar coleção \"{{name}}\".",
-      "loadFailed": "Falha ao carregar coleções. Verifique a conexão do Armazenamento de Embedding."
+      "loadFailed": "Falha ao carregar coleções. Verifique a conexão do Banco Vetorial."
     },
     "systemInfo": {
       "title": "Informações do Sistema",
-      "description": "Versão e detalhes de conexão do armazenamento de embedding.",
-      "loadFailed": "Falha ao carregar informações do armazenamento de embedding.",
-      "details": "Detalhes do Armazenamento de Embedding",
-      "detailsDesc": "Versão e informações de conexão obtidas do armazenamento de embedding.",
+      "description": "Versão e detalhes de conexão do banco vetorial.",
+      "loadFailed": "Falha ao carregar informações do banco vetorial.",
+      "details": "Detalhes do Banco Vetorial",
+      "detailsDesc": "Versão e informações de conexão obtidas do banco vetorial.",
       "noInfo": "Nenhuma informação disponível.",
       "na": "N/D",
       "storeLabel": "Armazenamento",

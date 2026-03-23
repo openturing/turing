@@ -3,7 +3,8 @@ import { IntegrationIndexingManagerForm } from "@/components/integration/integra
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { Card } from "@/components/ui/card";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
 import { TurIntegrationAemSourceService } from "@/services/integration/integration-aem-source.service";
 import {
@@ -86,7 +87,8 @@ export default function IntegrationInstanceIndexAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const turIntegrationAemSourceService = useMemo(() => new TurIntegrationAemSourceService(id), [id]);
   const [sources, setSources] = useState<TurIntegrationAemSource[]>();
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  useSubPageBreadcrumb(breadcrumb);
   const navigate = useNavigate();
   const location = useLocation();
   const items = useMemo(() => buildItems(t), [t]);
@@ -125,19 +127,14 @@ export default function IntegrationInstanceIndexAdminPage() {
   };
 
   useEffect(() => {
-    let added = false;
     turIntegrationAemSourceService
       .query()
       .then((sources) => {
         setSources(sources);
-        pushItem({ label: t("integration.indexingManager.title") });
-        added = true;
+        setBreadcrumb([{ label: t("integration.indexingManager.title") }]);
       })
       .catch(() => setError("Failed to load integration details"));
-    return () => {
-      if (added) popItem();
-    };
-  }, [turIntegrationAemSourceService, pushItem, popItem]);
+  }, [turIntegrationAemSourceService]);
 
   const activeItem = items.find((i) => i.value === selectedTab) ?? items[0];
 

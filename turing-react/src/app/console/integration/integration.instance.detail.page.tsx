@@ -2,7 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import { IntegrationInstanceForm } from "@/components/integration/integration.instance.form";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model";
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import { IconSettings } from "@tabler/icons-react";
@@ -16,28 +16,20 @@ export default function IntegrationInstanceDetailPage() {
   const [integrationInstance, setIntegrationInstance] = useState<TurIntegrationInstance>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
   const { t } = useTranslation();
+  useSubPageBreadcrumb(t("integration.detail.title"));
 
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       turIntegrationInstanceService.query().then(() => {
         setIntegrationInstance({} as TurIntegrationInstance)
-        pushItem({ label: t("integration.detail.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/detail` });
-        added = true;
       }).catch(() => setError(t("common.connectionError", { resource: "Integration service" })));
     } else {
       turIntegrationInstanceService.get(id).then((integration) => {
         setIntegrationInstance(integration);
-        pushItem({ label: t("integration.detail.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/detail` });
-        added = true;
       }).catch(() => setError(t("common.connectionError", { resource: "Integration instance" })));
       setIsNew(false);
     }
-    return () => {
-      if (added) popItem();
-    };
   }, [id])
   return (
     <LoadProvider checkIsNotUndefined={integrationInstance} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/detail`}>

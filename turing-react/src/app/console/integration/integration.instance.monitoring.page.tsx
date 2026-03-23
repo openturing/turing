@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationMonitoringPage } from "@/models/integration/integration-monitoring-page.model";
 import type { TurIntegrationMonitoringRequest } from "@/models/integration/integration-monitoring-request.model";
 import { TurIntegrationMonitoringService } from "@/services/integration/integration-monitoring.service";
 import { IconFilter, IconFilterOff, IconGraph } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -71,18 +72,18 @@ export default function IntegrationInstanceMonitoringPage() {
     return id ? new TurIntegrationMonitoringService(id) : null;
   }, [id]);
 
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  useSubPageBreadcrumb(breadcrumb);
   const [refreshInterval, setRefreshInterval] = useState(5000);
-  const breadcrumbAdded = useRef(false);
 
   const handleTabChange = useCallback((newSource: string) => {
     setPage(0);
-    if (breadcrumbAdded.current) {
-      popItem();
-      pushItem({ label: newSource === DEFAULT_SOURCE ? t("integration.monitoring.all") : newSource });
-    }
+    setBreadcrumb([
+      { label: t("integration.monitoring.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring` },
+      { label: newSource === DEFAULT_SOURCE ? t("integration.monitoring.all") : newSource },
+    ]);
     navigate(`${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring/${newSource}`);
-  }, [navigate, id, popItem, pushItem]);
+  }, [navigate, id, t]);
 
   const buildRequest = useCallback((): TurIntegrationMonitoringRequest => {
     return {
@@ -128,10 +129,11 @@ export default function IntegrationInstanceMonitoringPage() {
 
         setMonitoringPage(data);
 
-        if (!isSilent && !breadcrumbAdded.current) {
-          pushItem({ label: t("integration.monitoring.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring` });
-          pushItem({ label: source === DEFAULT_SOURCE ? t("integration.monitoring.all") : source });
-          breadcrumbAdded.current = true;
+        if (!isSilent && !breadcrumb) {
+          setBreadcrumb([
+            { label: t("integration.monitoring.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring` },
+            { label: source === DEFAULT_SOURCE ? t("integration.monitoring.all") : source },
+          ]);
         }
       } catch (err) {
         if (!isSilent) setError("Failed to load monitoring data.");
@@ -152,16 +154,6 @@ export default function IntegrationInstanceMonitoringPage() {
       if (interval) clearInterval(interval);
     };
   }, [source, id, refreshInterval, buildRequest]);
-
-  useEffect(() => {
-    return () => {
-      if (breadcrumbAdded.current) {
-        popItem();
-        popItem();
-        breadcrumbAdded.current = false;
-      }
-    };
-  }, []);
 
   if (!id) {
     return <div>{t("integration.indexingStats.invalidId")}</div>;

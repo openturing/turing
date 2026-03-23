@@ -1,7 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { EmbeddingModelForm } from "@/components/embedding/embedding-model.form";
 import { LoadProvider } from "@/components/loading-provider";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts";
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service";
 import { useEffect, useState } from "react";
@@ -16,27 +17,23 @@ export default function EmbeddingModelPage() {
   const [model, setModel] = useState<TurEmbeddingModel>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[] | undefined>(
+    id === "new" ? [{ label: t("embeddingModel.newEmbeddingModel") }] : undefined
+  );
+  useSubPageBreadcrumb(breadcrumb);
 
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       turEmbeddingModelService.structure().then(() => {
-        pushItem({ label: t("embeddingModel.newEmbeddingModel") });
         setModel({} as TurEmbeddingModel);
-        added = true;
       }).catch(() => setError(t("common.connectionError", { resource: t("embeddingModel.title") })));
     } else {
       turEmbeddingModelService.get(id).then((result) => {
         setModel(result);
-        pushItem({ label: result.modelName, href: `${ROUTES.EMBEDDING_MODEL_INSTANCE}/${result.id}` });
-        added = true;
+        setBreadcrumb([{ label: result.modelName, href: `${ROUTES.EMBEDDING_MODEL_INSTANCE}/${result.id}` }]);
       }).catch(() => setError(t("common.connectionError", { resource: t("embeddingModel.title") })));
       setIsNew(false);
     }
-    return () => {
-      if (added) popItem();
-    };
   }, [id]);
 
   return (

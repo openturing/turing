@@ -1,6 +1,7 @@
 import { IconCompass, IconMessageCircle, IconRobot, IconTrash, IconX } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import type { ChatSession } from "@/services/chat/chat-session.service"
+import { useDateLocale } from "@/hooks/use-date-locale"
 import { formatRelativeTime } from "../chat.types"
 
 interface ChatSessionSidebarProps {
@@ -14,6 +15,7 @@ interface ChatSessionSidebarProps {
 
 export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, onRestore, onDelete }: ChatSessionSidebarProps) {
   const { t } = useTranslation()
+  const dateLocale = useDateLocale()
   return (
     <div className={`shrink-0 border-r bg-muted/30 flex flex-col transition-all duration-200 ${open ? "w-72" : "w-0"} overflow-hidden`}>
       <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -47,7 +49,7 @@ export function ChatSessionSidebar({ open, onClose, sessions, activeSessionId, o
                 <div className="flex-1 min-w-0">
                   <div className="truncate">{session.title}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {formatRelativeTime(session.updatedAt ?? session.createdAt)} &middot; {session.messages.length} {t("chat.msgs")}
+                    {formatRelativeTime(session.updatedAt ?? session.createdAt, dateLocale)} &middot; {session.messages.length} {t("chat.msgs")}
                   </div>
                   {session.llmTitle && (
                     <div className="text-xs text-muted-foreground/70 mt-0.5 truncate">

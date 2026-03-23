@@ -11,14 +11,15 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationIndexingStats } from "@/models/integration/integration-indexing-stats.model";
 import { TurIntegrationIndexingStatsService } from "@/services/integration/integration-indexing-stats.service";
 import { IconChartBar } from "@tabler/icons-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useDateLocale } from "@/hooks/use-date-locale";
 import { Clock, RefreshCcw, Zap } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
@@ -33,26 +34,16 @@ export default function IntegrationInstanceIndexingStatsPage() {
         return id ? new TurIntegrationIndexingStatsService(id) : null;
     }, [id]);
 
-    const { pushItem, popItem } = useBreadcrumb();
-    const breadcrumbAdded = useRef(false);
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    useSubPageBreadcrumb(breadcrumb);
 
     useEffect(() => {
         if (!statsService || !id) return;
 
         statsService.getAll().then((data) => {
             setStats(data);
-            if (!breadcrumbAdded.current) {
-                pushItem({ label: t("integration.indexingStats.title") });
-                breadcrumbAdded.current = true;
-            }
+            setBreadcrumb([{ label: t("integration.indexingStats.title") }]);
         }).catch(() => setError(t("integration.indexingStats.loadFailed")));
-
-        return () => {
-            if (breadcrumbAdded.current) {
-                popItem();
-                breadcrumbAdded.current = false;
-            }
-        };
     }, [id]);
 
     if (!id) {

@@ -332,18 +332,18 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turLLMInstanceService.create(payload);
         if (result) {
-          toast.success(t("forms.common.saved", { name: payload.title, feature: "Language Model" }));
+          toast.success(t("forms.common.saved", { name: payload.title, feature: t("llm.title") }));
           navigate(urlBase);
         } else {
-          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "Language Model" }));
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("llm.title") }));
         }
       }
       else {
         const result = await turLLMInstanceService.update(payload);
         if (result) {
-          toast.success(t("forms.common.updated", { name: payload.title, feature: "Language Model" }));
+          toast.success(t("forms.common.updated", { name: payload.title, feature: t("llm.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "Language Model" }));
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: t("llm.title") }));
         }
       }
     } catch (error) {
@@ -356,16 +356,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     console.log("delete");
     try {
       if (await turLLMInstanceService.delete(value)) {
-        toast.success(t("forms.common.deleted", { name: value.title, feature: "Language Model" }));
+        toast.success(t("forms.common.deleted", { name: value.title, feature: t("llm.title") }));
         navigate(urlBase);
       }
       else {
-        toast.error(t("forms.common.notDeleted", { name: value.title, feature: "Language Model" }));
+        toast.error(t("forms.common.notDeleted", { name: value.title, feature: t("llm.title") }));
       }
 
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(t("forms.common.notDeleted", { name: value.title, feature: "Language Model" }));
+      toast.error(t("forms.common.notDeleted", { name: value.title, feature: t("llm.title") }));
     }
     setOpen(false);
   }
@@ -373,7 +373,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="w-full px-0 md:px-4 py-4">
       <Card className="mx-auto border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
         <CardHeader className="hidden md:grid">
-          <CardTitle className="text-2xl">{isNew && (<span>New</span>)} Language Model</CardTitle>
+          <CardTitle className="text-2xl">{isNew ? t("llm.newLanguageModel") : t("llm.title")}</CardTitle>
           <CardAction>
             {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
@@ -467,7 +467,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                 rows={2}
                                 maxLength={500}
                                 title={form.watch("title")}
-                                entityType="Language Model"
+                                entityType={t("llm.title")}
                               >
                                 <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                 <SmartDescription.Description>

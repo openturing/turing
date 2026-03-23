@@ -1,7 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntent } from "@/models/intent/intent.model";
 import { TurIntentService } from "@/services/intent/intent.service";
 import { IconBulb, IconSettings } from "@tabler/icons-react";
@@ -19,7 +20,10 @@ export default function IntentPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[] | undefined>(
+    id === "new" ? [{ label: t("intent.newInstance") }] : undefined
+  );
+  useSubPageBreadcrumb(breadcrumb);
   const navigate = useNavigate();
   const urlBase = `${ROUTES.INTENT_INSTANCE}/${id}`;
 
@@ -30,23 +34,16 @@ export default function IntentPage() {
   }), [t]);
 
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       setIntent({ actions: [] } as unknown as TurIntent);
       setIsNew(true);
-      pushItem({ label: t("intent.newInstance") });
-      added = true;
     } else {
       turIntentService.get(id).then((i) => {
         setIntent(i);
-        pushItem({ label: i.title, href: `${ROUTES.INTENT_INSTANCE}/${i.id}` });
-        added = true;
+        setBreadcrumb([{ label: i.title, href: `${ROUTES.INTENT_INSTANCE}/${i.id}` }]);
       }).catch(() => setError(t("common.connectionError", { resource: t("intent.title").toLowerCase() })));
       setIsNew(false);
     }
-    return () => {
-      if (added) popItem();
-    };
   }, [id]);
 
   async function onDelete() {

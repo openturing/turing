@@ -56,12 +56,12 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     try {
       if (isNew) {
         turIntegrationInstanceService.create(integrationInstance);
-        toast.success(t("forms.common.saved", { name: integrationInstance.title, feature: "Integration Instance" }));
+        toast.success(t("forms.common.saved", { name: integrationInstance.title, feature: t("integration.title") }));
         navigate(ROUTES.INTEGRATION_INSTANCE);
       }
       else {
         turIntegrationInstanceService.update(integrationInstance);
-        toast.success(t("forms.common.updated", { name: integrationInstance.title, feature: "Integration Instance" }));
+        toast.success(t("forms.common.updated", { name: integrationInstance.title, feature: t("integration.title") }));
       }
     } catch (error) {
       console.error("Form submission error", error);
@@ -112,7 +112,7 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           placeholder={t("forms.integration.descPlaceholder")}
                           maxLength={500}
                           title={form.watch("title")}
-                          entityType="Integration"
+                          entityType={t("integration.title")}
                         >
                           <SmartDescription.Label>{t("forms.integration.descLabel")}</SmartDescription.Label>
                           <SmartDescription.Description>

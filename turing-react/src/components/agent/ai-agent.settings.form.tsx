@@ -58,17 +58,17 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turAIAgentService.create(payload);
         if (result) {
-          toast.success(t("forms.common.saved", { name: payload.title, feature: "AI Agent" }));
+          toast.success(t("forms.common.saved", { name: payload.title, feature: t("aiAgent.title") }));
           navigate(`${urlBase}/${result.id}/settings`);
         } else {
-          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "AI Agent" }));
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("aiAgent.title") }));
         }
       } else {
         const result = await turAIAgentService.update(payload);
         if (result) {
-          toast.success(t("forms.common.updated", { name: payload.title, feature: "AI Agent" }));
+          toast.success(t("forms.common.updated", { name: payload.title, feature: t("aiAgent.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "AI Agent" }));
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: t("aiAgent.title") }));
         }
       }
     } catch (error) {
@@ -117,7 +117,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         placeholder={t("forms.agentSettings.descPlaceholder")}
                         maxLength={500}
                         title={form.watch("title")}
-                        entityType="AI Agent"
+                        entityType={t("aiAgent.title")}
                       >
                         <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                         <SmartDescription.Description>

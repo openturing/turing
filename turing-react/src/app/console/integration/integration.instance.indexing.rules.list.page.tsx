@@ -3,7 +3,8 @@ import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurIntegrationIndexingRule } from "@/models/integration/integration-indexing-rule.model";
 import { TurIntegrationIndexingRuleService } from "@/services/integration/integration-indexing-rule.service";
@@ -17,18 +18,15 @@ export default function IntegrationInstanceIndexingRulesListPage() {
   const [integrationIndexingRules, setIntegrationIndexingRules] = useState<TurIntegrationIndexingRule[]>();
   const turIntegrationIndexingRuleService = new TurIntegrationIndexingRuleService(id || "");
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
   const { t } = useTranslation();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  useSubPageBreadcrumb(breadcrumb);
+
   useEffect(() => {
-    let added = false;
     turIntegrationIndexingRuleService.query().then((rules) => {
       setIntegrationIndexingRules(rules);
-      pushItem({ label: t("integration.indexingRules.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule` });
-      added = true;
+      setBreadcrumb([{ label: t("integration.indexingRules.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule` }]);
     }).catch(() => setError(t("common.connectionError", { resource: "Integration service" })));
-    return () => {
-      if (added) popItem();
-    };
   }, [id])
   const gridItemList = useGridAdapter(integrationIndexingRules, {
     name: "name",

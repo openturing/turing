@@ -101,17 +101,17 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turIntentService.create(payload)
         if (result) {
-          toast.success(t("forms.common.saved", { name: `"${payload.title}"`, feature: "intent" }))
+          toast.success(t("forms.common.saved", { name: `"${payload.title}"`, feature: t("intent.title") }))
           navigate(`${urlBase}/${result.id}/settings`)
         } else {
-          toast.error(t("forms.common.notSaved", { name: `"${payload.title}"`, feature: "intent" }))
+          toast.error(t("forms.common.notSaved", { name: `"${payload.title}"`, feature: t("intent.title") }))
         }
       } else {
         const result = await turIntentService.update(payload)
         if (result) {
-          toast.success(t("forms.common.updated", { name: `"${payload.title}"`, feature: "intent" }))
+          toast.success(t("forms.common.updated", { name: `"${payload.title}"`, feature: t("intent.title") }))
         } else {
-          toast.error(t("forms.common.notUpdated", { name: `"${payload.title}"`, feature: "intent" }))
+          toast.error(t("forms.common.notUpdated", { name: `"${payload.title}"`, feature: t("intent.title") }))
         }
       }
     } catch (error) {
@@ -168,7 +168,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         placeholder={t("forms.intentSettings.descPlaceholder")}
                         maxLength={500}
                         title={form.watch("title")}
-                        entityType="Intent"
+                        entityType={t("intent.title")}
                       >
                         <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                         <SmartDescription.Description>

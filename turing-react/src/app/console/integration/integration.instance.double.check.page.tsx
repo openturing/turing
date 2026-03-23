@@ -10,7 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationAemSource } from "@/models/integration/integration-aem-source.model";
 import type { TurIntegrationDoubleCheck } from "@/models/integration/integration-double-check.model";
 import type { TurIntegrationIndexing } from "@/models/integration/integration-indexing.model";
@@ -36,7 +37,8 @@ export default function IntegrationInstanceDoubleCheckPage() {
   const [loadingUnprocessed, setLoadingUnprocessed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  useSubPageBreadcrumb(breadcrumb);
 
   const aemSourceService = useMemo(() => {
     return id ? new TurIntegrationAemSourceService(id) : null;
@@ -48,7 +50,6 @@ export default function IntegrationInstanceDoubleCheckPage() {
 
   useEffect(() => {
     if (!aemSourceService || !id) return;
-    let added = false;
     aemSourceService
       .query()
       .then((data) => {
@@ -56,13 +57,9 @@ export default function IntegrationInstanceDoubleCheckPage() {
         if (data.length > 0) {
           setSelectedSource(data[0].name);
         }
-        pushItem({ label: t("integration.doubleCheck.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/double-check` });
-        added = true;
+        setBreadcrumb([{ label: t("integration.doubleCheck.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/double-check` }]);
       })
       .catch(() => setError(t("integration.doubleCheck.loadSourcesFailed")));
-    return () => {
-      if (added) popItem();
-    };
   }, [id]);
 
   useEffect(() => {

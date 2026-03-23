@@ -29,11 +29,11 @@
         "description": "Configure provedores de LLM como OpenAI, Ollama, Anthropic e Gemini para chat e geração."
       },
       "embeddingModel": {
-        "title": "Modelo de Embedding",
+        "title": "Modelo Vetorial",
         "description": "Configure modelos de embedding para busca por similaridade vetorial e pipelines RAG."
       },
       "embeddingStore": {
-        "title": "Armazenamento de Embedding",
+        "title": "Banco Vetorial",
         "description": "Gerencie armazenamentos vetoriais como Chroma, Milvus e PGVector para recuperação semântica."
       },
       "mcpServer": {

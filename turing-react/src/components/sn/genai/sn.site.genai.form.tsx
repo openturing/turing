@@ -250,11 +250,11 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         <FormItem>
                                             <FormLabel>{t("forms.snGenai.siteDescriptionPrompt")}</FormLabel>
                                             <FormDescription>
-                                                Write a detailed prompt describing what this site contains, its purpose, target audience, and any specific instructions for the AI. This prompt is used by the default LLM configured in Global Settings to generate reports, insights, and emails about this site.
+                                                {t("forms.snGenai.siteDescPromptDesc")}
                                             </FormDescription>
                                             <FormControl>
                                                 <Textarea
-                                                    placeholder="Example: This site indexes the internal knowledge base of our engineering team. It contains documentation about microservices architecture, deployment procedures, API specifications, and troubleshooting guides. The target audience is software engineers and DevOps team members..."
+                                                    placeholder={t("forms.snGenai.siteDescPromptPlaceholder")}
                                                     className="min-h-40"
                                                     disabled={isGenerating}
                                                     {...field}
@@ -455,22 +455,22 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                     <FormField
                                         control={form.control}
                                         name="systemPrompt"
-                                        rules={{ required: enabled && "System prompt is required." }}
+                                        rules={{ required: enabled && t("forms.snGenai.systemPromptRequired") }}
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>{t("forms.snGenai.promptTemplate")}</FormLabel>
                                                 <FormDescription>
-                                                    Define the prompt for the AI agent. Use <span className="font-mono font-bold text-amber-600">{"{{question}}"}</span> and <span className="font-mono font-bold text-amber-600">{"{{information}}"}</span> to insert user queries and retrieved content.
+                                                    {t("forms.snGenai.promptTemplateDesc")}
                                                 </FormDescription>
                                                 <FormControl>
                                                     <SystemPromptEditor
                                                         value={field.value ?? ""}
                                                         onChange={field.onChange}
                                                         fieldRef={field.ref}
-                                                        placeholder="Ex: Use {{information}} to answer {{question}}..."
+                                                        placeholder={t("forms.snGenai.promptTemplatePlaceholder")}
                                                         variables={PROMPT_VARIABLES}
                                                         requireVariables
-                                                        hint="For RAG to work, the prompt must contain {{question}} and {{information}}."
+                                                        hint={t("forms.snGenai.ragHint")}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />

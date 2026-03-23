@@ -1,20 +1,14 @@
 import { useTheme } from "@/components/theme-provider"
-import { useBreadcrumb } from "@/contexts/breadcrumb.context"
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 export default function GraphiQLPage() {
-    const { pushItem, popItem } = useBreadcrumb()
     const { theme } = useTheme()
     const iframeRef = useRef<HTMLIFrameElement>(null)
     const { t } = useTranslation()
 
-    useEffect(() => {
-        pushItem({ label: t("graphql.title") })
-        return () => {
-            popItem()
-        }
-    }, [])
+    useSubPageBreadcrumb(t("graphql.title"))
 
     useEffect(() => {
         if (!iframeRef.current || !iframeRef.current.contentWindow) return;

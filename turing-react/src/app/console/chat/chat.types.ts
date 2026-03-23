@@ -41,18 +41,11 @@ export function generateFallbackTitle(messages: ChatMessage[]): string {
   return `Chat ${new Date().toLocaleString()}`
 }
 
-export function formatRelativeTime(timestamp: number): string {
-  const now = Date.now()
-  const diff = now - timestamp
-  const seconds = Math.floor(diff / 1000)
-  if (seconds < 60) return "just now"
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} min ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(timestamp).toLocaleDateString()
+import type { Locale } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
+
+export function formatRelativeTime(timestamp: number, locale?: Locale): string {
+  return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale })
 }
 
 export function contextBarColor(percentage: number): string {

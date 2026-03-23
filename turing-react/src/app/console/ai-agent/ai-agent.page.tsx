@@ -1,7 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
-import { useBreadcrumb } from "@/contexts/breadcrumb.context";
+import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
 import { IconCpu2, IconRobot, IconServer2, IconSettings, IconTool } from "@tabler/icons-react";
@@ -19,7 +20,10 @@ export default function AIAgentPage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { pushItem, popItem } = useBreadcrumb();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[] | undefined>(
+    id === "new" ? [{ label: t("aiAgent.newInstance") }] : undefined
+  );
+  useSubPageBreadcrumb(breadcrumb);
   const navigate = useNavigate();
   const urlBase = `${ROUTES.AI_AGENT_INSTANCE}/${id}`;
 
@@ -42,23 +46,16 @@ export default function AIAgentPage() {
   }, [isNew, t]);
 
   useEffect(() => {
-    let added = false;
     if (id === "new") {
       setAgent({} as TurAIAgent);
       setIsNew(true);
-      pushItem({ label: t("aiAgent.newInstance") });
-      added = true;
     } else {
       turAIAgentService.get(id).then((a) => {
         setAgent(a);
-        pushItem({ label: a.title, href: `${ROUTES.AI_AGENT_INSTANCE}/${a.id}` });
-        added = true;
+        setBreadcrumb([{ label: a.title, href: `${ROUTES.AI_AGENT_INSTANCE}/${a.id}` }]);
       }).catch(() => setError(t("common.connectionError", { resource: t("aiAgent.title").toLowerCase() })));
       setIsNew(false);
     }
-    return () => {
-      if (added) popItem();
-    };
   }, [id]);
 
   async function onDelete() {

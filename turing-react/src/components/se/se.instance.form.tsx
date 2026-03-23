@@ -77,18 +77,18 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turSEInstanceService.create(seInstance);
         if (result) {
-          toast.success(t("forms.common.saved", { name: seInstance.title, feature: "Search Engine" }));
+          toast.success(t("forms.common.saved", { name: seInstance.title, feature: t("se.title") }));
           navigate(ROUTES.SE_INSTANCE);
         } else {
-          toast.error(t("forms.common.notSaved", { name: seInstance.title, feature: "Search Engine" }));
+          toast.error(t("forms.common.notSaved", { name: seInstance.title, feature: t("se.title") }));
         }
       }
       else {
         const result = await turSEInstanceService.update(seInstance);
         if (result) {
-          toast.success(t("forms.common.updated", { name: seInstance.title, feature: "Search Engine" }));
+          toast.success(t("forms.common.updated", { name: seInstance.title, feature: t("se.title") }));
         } else {
-          toast.error(t("forms.common.notUpdated", { name: seInstance.title, feature: "Search Engine" }));
+          toast.error(t("forms.common.notUpdated", { name: seInstance.title, feature: t("se.title") }));
         }
       }
     } catch (error) {
@@ -138,7 +138,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               placeholder={t("forms.se.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
-                              entityType="Search Engine"
+                              entityType={t("se.title")}
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

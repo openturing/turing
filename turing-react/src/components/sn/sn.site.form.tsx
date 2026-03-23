@@ -106,27 +106,27 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
                 {/* General Information Section */}
                 <SectionCard variant="blue">
-                  <SectionCard.Header icon={IconSettings} title="General Information" description="Basic site identity and description." />
+                  <SectionCard.Header icon={IconSettings} title={t("forms.snSiteForm.generalInfo")} description={t("forms.snSiteForm.generalInfoDesc")} />
                   <SectionCard.Content>
                     {/* Name Field */}
                     <FormField
                       control={form.control}
                       name="name"
                       rules={{
-                        required: "Site name is required.",
+                        required: t("forms.snSiteForm.nameRequired"),
                         pattern: {
                           value: /^[a-zA-Z0-9_-]+$/,
-                          message: "Only letters, numbers, underscores, and hyphens are allowed.",
+                          message: t("forms.snSiteForm.namePattern"),
                         },
                       }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>{t("forms.snSiteForm.nameLabel")}</FormLabel>
                           <FormDescription>
-                            Enter a unique identifier for this semantic navigation site. Use only letters, numbers, underscores, or hyphens. This name is used for API access and will appear in the site list.
+                            {t("forms.snSiteForm.nameDesc")}
                           </FormDescription>
                           <FormControl>
-                            <Input {...field} placeholder="Site Name" type="text" />
+                            <Input {...field} placeholder={t("forms.snSiteForm.namePlaceholder")} type="text" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -140,7 +140,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                       rules={{
                         maxLength: {
                           value: 500,
-                          message: "Description must be at most 500 characters.",
+                          message: t("forms.snSiteForm.descMaxLength"),
                         },
                       }}
                       render={({ field }) => (
@@ -149,14 +149,14 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                             <SmartDescription
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Describe this site"
+                              placeholder={t("forms.snSiteForm.descPlaceholder")}
                               maxLength={500}
                               title={form.watch("name")}
-                              entityType="Semantic Navigation Site"
+                              entityType={t("sn.title")}
                             >
-                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Label>{t("forms.snSiteForm.descLabel")}</SmartDescription.Label>
                               <SmartDescription.Description>
-                                Provide a concise summary describing the purpose or scope of this semantic navigation site.
+                                {t("forms.snSiteForm.descDesc")}
                               </SmartDescription.Description>
                             </SmartDescription>
                           </FormControl>
@@ -177,7 +177,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                               title={form.watch("name")}
                               description={form.watch("description")}
                             >
-                              <IconPicker.Label>Icon</IconPicker.Label>
+                              <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                             </IconPicker>
                           </FormControl>
                         </FormItem>
@@ -188,26 +188,26 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Search Engine Section */}
                 <SectionCard variant="emerald">
-                  <SectionCard.Header icon={IconSearch} title="Search Engine" description="Backend engine powering this site." />
+                  <SectionCard.Header icon={IconSearch} title={t("forms.snSiteForm.searchEngine")} description={t("forms.snSiteForm.searchEngineDesc")} />
                   <SectionCard.Content>
                     {/* Search Engine Instance (Select) */}
                     <FormField
                       control={form.control}
                       name="turSEInstance.id"
-                      rules={{ required: "Search engine instance is required." }}
+                      rules={{ required: t("forms.snSiteForm.seInstanceRequired") }}
                       render={({ field }) => (
                         <FormItemTwoColumns>
                           <FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Label>Search Engine Instance</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Label>{t("forms.snSiteForm.seInstanceLabel")}</FormItemTwoColumns.Label>
                             <FormItemTwoColumns.Description>
-                              Select the search engine instance powering this semantic navigation site. This determines which backend is used for indexing and searching content.
+                              {t("forms.snSiteForm.seInstanceDesc")}
                             </FormItemTwoColumns.Description>
                           </FormItemTwoColumns.Left>
                           <FormItemTwoColumns.Right>
                             <FormControl>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Choose..." />
+                                  <SelectValue placeholder={t("globalSettings.choose")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {seInstances.map((seInstance) => (
