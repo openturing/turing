@@ -2,8 +2,10 @@ import { LoginForm } from "@/components/login/login-form"
 import { TurLogo } from "@/components/logo/tur-logo"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Globe, Search, Sparkles } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 const LoginPage = () => {
+    const { t } = useTranslation()
     return (
         <div className="grid min-h-svh lg:grid-cols-2">
             {/* Left panel - Branding / Hero */}
@@ -22,7 +24,7 @@ const LoginPage = () => {
                     <div className="space-y-3">
                         <h1 className="text-4xl font-bold tracking-tight">Viglet Turing ES</h1>
                         <p className="text-lg text-white/80 max-w-md leading-relaxed">
-                            Enterprise Search Intelligence Platform powered by AI
+                            {t("login.heroTagline")}
                         </p>
                     </div>
 
@@ -30,15 +32,15 @@ const LoginPage = () => {
                     <div className="mt-6 grid gap-4 w-full max-w-sm">
                         <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
                             <Search className="h-5 w-5 shrink-0 text-blue-200" />
-                            <span className="text-sm text-white/90">Semantic Search & Navigation</span>
+                            <span className="text-sm text-white/90">{t("login.featureSearch")}</span>
                         </div>
                         <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
                             <Sparkles className="h-5 w-5 shrink-0 text-purple-200" />
-                            <span className="text-sm text-white/90">Generative AI with RAG</span>
+                            <span className="text-sm text-white/90">{t("login.featureAi")}</span>
                         </div>
                         <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
                             <Globe className="h-5 w-5 shrink-0 text-cyan-200" />
-                            <span className="text-sm text-white/90">Multi-source Knowledge Discovery</span>
+                            <span className="text-sm text-white/90">{t("login.featureKnowledge")}</span>
                         </div>
                     </div>
                 </div>

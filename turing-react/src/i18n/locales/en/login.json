@@ -10,6 +10,10 @@
     "signingIn": "Signing in...",
     "emptyFields": "Please enter both username and password",
     "invalidCredentials": "Invalid credentials. Please try again.",
-    "loginFailed": "Login failed"
+    "loginFailed": "Login failed",
+    "heroTagline": "Enterprise Search Intelligence Platform powered by AI",
+    "featureSearch": "Semantic Search & Navigation",
+    "featureAi": "Generative AI with RAG",
+    "featureKnowledge": "Multi-source Knowledge Discovery"
   }
 }

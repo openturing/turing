@@ -10,6 +10,10 @@
     "signingIn": "Entrando...",
     "emptyFields": "Por favor, preencha usuário e senha",
     "invalidCredentials": "Credenciais inválidas. Tente novamente.",
-    "loginFailed": "Falha no login"
+    "loginFailed": "Falha no login",
+    "heroTagline": "Plataforma de Inteligência em Busca Empresarial com IA",
+    "featureSearch": "Busca Semântica e Navegação",
+    "featureAi": "IA Generativa com RAG",
+    "featureKnowledge": "Descoberta de Conhecimento Multi-fonte"
   }
 }
