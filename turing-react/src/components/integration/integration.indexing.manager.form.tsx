@@ -269,7 +269,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
                   </FormDescription>
                   <div className="mt-2">
                     <FormControl>
-                      <DynamicIndexingRuleFields
+                      <DynamicIndexingRuleFields<IndexingManagerFormValues>
                         control={form.control}
                         register={form.register}
                         fieldName="values"

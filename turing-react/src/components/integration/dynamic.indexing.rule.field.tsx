@@ -1,26 +1,28 @@
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
+import { useFieldArray, type Control, type UseFormRegister, type FieldValues, type ArrayPath, type FieldArray, type Path } from 'react-hook-form';
 import { GradientButton } from '../ui/gradient-button';
 
-interface DynamicIndexingRuleFieldsProps {
-    control: Control<any>;
-    register: UseFormRegister<any>;
+
+interface DynamicIndexingRuleFieldsProps<TFieldValues extends FieldValues = FieldValues> {
+    control: Control<TFieldValues>;
+    register: UseFormRegister<TFieldValues>;
     fieldName: string;
 }
 
-export function DynamicIndexingRuleFields({
+
+export function DynamicIndexingRuleFields<TFieldValues extends FieldValues = FieldValues>({
     control,
     register,
     fieldName
-}: Readonly<DynamicIndexingRuleFieldsProps>) {
+}: Readonly<DynamicIndexingRuleFieldsProps<TFieldValues>>) {
     const { fields, append, remove } = useFieldArray({
         control,
-        name: fieldName,
+        name: fieldName as ArrayPath<TFieldValues>,
     });
 
     const handleAddField = () => {
-        append({ value: '' });
+        append({ value: '' } as FieldArray<TFieldValues, ArrayPath<TFieldValues>>);
     };
 
     return (
@@ -30,7 +32,7 @@ export function DynamicIndexingRuleFields({
                     <Input
                         className="grow"
                         placeholder="Value"
-                        {...register(`${fieldName}.${index}.value`)}
+                        {...register(`${fieldName}.${index}.value` as Path<TFieldValues>)}
                     />
                     <GradientButton
                         variant="ghost"

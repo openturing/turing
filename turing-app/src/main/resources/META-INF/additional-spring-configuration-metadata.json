@@ -104,6 +104,15 @@
       "name": "turing.ai.crypto.key",
       "type": "java.lang.String",
       "description": "A description for 'turing.ai.crypto.key'"
+    },
+    {
+      "name": "turing.keycloak-admin-id",
+      "type": "java.lang.String",
+      "description": "A description for 'turing.keycloak-admin-id'"
     }
   ]
+}   "type": "java.lang.String",
+"description": "A description for 'turing.permissions'"
+}
+]
 }

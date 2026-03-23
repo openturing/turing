@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties("turing")
 public class TurConfigProperties {
+	private boolean permissions = true;
 	private boolean multiTenant;
 	private boolean keycloak;
 	private String keycloakAdminId;

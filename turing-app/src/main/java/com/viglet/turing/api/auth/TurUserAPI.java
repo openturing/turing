@@ -47,6 +47,7 @@ import com.viglet.turing.persistence.mapper.auth.TurUserMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -78,21 +79,29 @@ public class TurUserAPI {
     private final TurRoleRepository turRoleRepository;
     private final TurConfigProperties turConfigProperties;
     private final TurUserMapper turUserMapper;
+    private final TurPrivilegeRepository turPrivilegeRepository;
 
     public TurUserAPI(PasswordEncoder passwordEncoder, TurUserRepository turUserRepository,
             TurGroupRepository turGroupRepository,
             TurRoleRepository turRoleRepository,
             TurConfigProperties turConfigProperties,
-            TurUserMapper turUserMapper) {
+            TurUserMapper turUserMapper,
+            TurPrivilegeRepository turPrivilegeRepository) {
         this.passwordEncoder = passwordEncoder;
         this.turUserRepository = turUserRepository;
         this.turGroupRepository = turGroupRepository;
         this.turRoleRepository = turRoleRepository;
         this.turConfigProperties = turConfigProperties;
         this.turUserMapper = turUserMapper;
+        this.turPrivilegeRepository = turPrivilegeRepository;
     }
 
     private List<String> resolvePrivileges(TurUser turUser) {
+        if (!turConfigProperties.isPermissions()) {
+            return turPrivilegeRepository.findAll().stream()
+                    .map(com.viglet.turing.persistence.model.auth.TurPrivilege::getName)
+                    .toList();
+        }
         var groups = turGroupRepository.findByTurUsersContaining(turUser);
         var privileges = new java.util.LinkedHashSet<String>();
         for (var group : groups) {
@@ -139,11 +148,11 @@ public class TurUserAPI {
     }
 
     private TurCurrentUser regularUser(String currentUserName) {
-        boolean isAdmin = false;
+        boolean isAdmin = !turConfigProperties.isPermissions();
         TurUser turUser = turUserRepository.findByUsername(currentUserName);
 
         turUser.setPassword(null);
-        if (turUser.getTurGroups() != null) {
+        if (!isAdmin && turUser.getTurGroups() != null) {
             for (TurGroup turGroup : turUser.getTurGroups()) {
                 if (turGroup.getName().equals(ADMINISTRATOR)) {
                     isAdmin = true;
@@ -188,13 +197,15 @@ public class TurUserAPI {
             turUserRepository.save(turUser);
         }
 
-        boolean isKeycloakAdmin = false;
-        var groups = turGroupRepository.findByTurUsersContaining(turUser);
-        if (groups != null) {
-            for (TurGroup turGroup : groups) {
-                if (ADMINISTRATOR.equals(turGroup.getName())) {
-                    isKeycloakAdmin = true;
-                    break;
+        boolean isKeycloakAdmin = !turConfigProperties.isPermissions();
+        if (!isKeycloakAdmin) {
+            var groups = turGroupRepository.findByTurUsersContaining(turUser);
+            if (groups != null) {
+                for (TurGroup turGroup : groups) {
+                    if (ADMINISTRATOR.equals(turGroup.getName())) {
+                        isKeycloakAdmin = true;
+                        break;
+                    }
                 }
             }
         }

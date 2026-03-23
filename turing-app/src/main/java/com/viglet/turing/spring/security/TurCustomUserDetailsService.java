@@ -35,22 +35,31 @@ import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
+import com.viglet.turing.properties.TurConfigProperties;
 
 @Service("customUserDetailsService")
 public class TurCustomUserDetailsService implements UserDetailsService {
 
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
     private final TurUserRepository turUserRepository;
     private final TurRoleRepository turRoleRepository;
     private final TurGroupRepository turGroupRepository;
+    private final TurPrivilegeRepository turPrivilegeRepository;
+    private final TurConfigProperties turConfigProperties;
 
     public TurCustomUserDetailsService(TurUserRepository turUserRepository,
             TurRoleRepository turRoleRepository,
-            TurGroupRepository turGroupRepository) {
+            TurGroupRepository turGroupRepository,
+            TurPrivilegeRepository turPrivilegeRepository,
+            TurConfigProperties turConfigProperties) {
         this.turUserRepository = turUserRepository;
         this.turRoleRepository = turRoleRepository;
         this.turGroupRepository = turGroupRepository;
+        this.turPrivilegeRepository = turPrivilegeRepository;
+        this.turConfigProperties = turConfigProperties;
     }
 
     @Override
@@ -59,20 +68,37 @@ public class TurCustomUserDetailsService implements UserDetailsService {
         if (null == turUser) {
             throw new UsernameNotFoundException("No user present with username: " + username);
         } else {
-            Set<TurGroup> turGroups = turGroupRepository.findByTurUsersContaining(turUser);
-            Set<TurRole> turRoles = new HashSet<>();
-            for (TurGroup turGroup : turGroups) {
-                turRoles.addAll(turRoleRepository.findByTurGroupsContaining(turGroup));
-            }
-
-            List<String> authorities = new ArrayList<>();
-            for (TurRole turRole : turRoles) {
-                authorities.add(turRole.getName());
-                for (var privilege : turRole.getTurPrivileges()) {
-                    authorities.add(privilege.getName());
-                }
+            List<String> authorities;
+            if (turConfigProperties.isPermissions()) {
+                authorities = resolveAuthorities(turUser);
+            } else {
+                authorities = allAuthorities();
             }
             return new TurCustomUserDetails(turUser, authorities);
         }
+    }
+
+    private List<String> resolveAuthorities(TurUser turUser) {
+        Set<TurGroup> turGroups = turGroupRepository.findByTurUsersContaining(turUser);
+        Set<TurRole> turRoles = new HashSet<>();
+        for (TurGroup turGroup : turGroups) {
+            turRoles.addAll(turRoleRepository.findByTurGroupsContaining(turGroup));
+        }
+        List<String> authorities = new ArrayList<>();
+        for (TurRole turRole : turRoles) {
+            authorities.add(turRole.getName());
+            for (var privilege : turRole.getTurPrivileges()) {
+                authorities.add(privilege.getName());
+            }
+        }
+        return authorities;
+    }
+
+    private List<String> allAuthorities() {
+        List<String> authorities = new ArrayList<>();
+        authorities.add(ROLE_ADMIN);
+        turPrivilegeRepository.findAll()
+                .forEach(p -> authorities.add(p.getName()));
+        return authorities;
     }
 }
