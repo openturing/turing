@@ -8,18 +8,20 @@ import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUsers } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turAdminUserService = new TurAdminUserService();
 
 export default function AdminUsersListPage() {
+    const { t } = useTranslation();
     const [users, setUsers] = useState<TurUser[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Users");
+    useSubPageBreadcrumb(t("admin.users.title"));
 
     useEffect(() => {
         turAdminUserService.query()
             .then(setUsers)
-            .catch(() => setError("Failed to load users."));
+            .catch(() => setError(t("admin.users.loadFailed")));
     }, []);
 
     const gridItemList = useGridAdapter(users, {
@@ -33,9 +35,9 @@ export default function AdminUsersListPage() {
         <LoadProvider checkIsNotUndefined={users} error={error} tryAgainUrl={ROUTES.ADMIN_USERS}>
             <SubPageHeader
                 icon={IconUsers}
-                feature="Users"
-                name="Users"
-                description="Manage user accounts and access."
+                feature={t("admin.users.title")}
+                name={t("admin.users.title")}
+                description={t("admin.users.description")}
             />
             {users && <GridList gridItemList={gridItemList}>
                 <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/users/new`} label="User" />

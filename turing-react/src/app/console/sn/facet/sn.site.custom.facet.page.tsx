@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconFilter } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,6 +22,7 @@ export default function SNSiteCustomFacetPage() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (customFacetId === "new") {
@@ -33,11 +35,11 @@ export default function SNSiteCustomFacetPage() {
         items: [],
         fieldExtId: "",
       } as TurSNSiteCustomFacet);
-      setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: "New" }]);
+      setBreadcrumb([{ label: t("sn.facets.title"), href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: t("common.new") }]);
     } else {
       turSNSiteCustomFacetService.get(id, customFacetId).then((facet) => {
         setCustomFacet(facet);
-        setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: facet.name || customFacetId }]);
+        setBreadcrumb([{ label: t("sn.facets.title"), href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: facet.name || customFacetId }]);
       }).catch(() => setError("Connection error or timeout while fetching custom facet details."));
       setIsNew(false);
     }
@@ -48,17 +50,17 @@ export default function SNSiteCustomFacetPage() {
   async function onDelete() {
     try {
       if (customFacet?.id && await turSNSiteCustomFacetService.delete(id, customFacet.id)) {
-        toast.success(`The ${customFacet.name} Custom Facet was deleted`);
+        toast.success(t("sn.facets.deleted", { name: customFacet.name }));
         navigate(`${ROUTES.SN_INSTANCE}/${id}/facet`);
       }
       else {
-        toast.error(`The ${customFacet?.name} Custom Facet was not deleted`);
+        toast.error(t("sn.facets.notDeleted", { name: customFacet?.name }));
       }
 
     } catch (error) {
-      console.error("Form deletion error", error);
+      console.error(t("sn.facets.deletionError"), error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error(`Failed to delete: ${errorMessage}`);
+      toast.error(t("sn.facets.failedDelete", { message: errorMessage }));
     }
     setOpen(false);
   }
@@ -68,7 +70,7 @@ export default function SNSiteCustomFacetPage() {
       {customFacet && (<> <SubPageHeader
         icon={IconFilter}
         name={customFacet.name}
-        feature="Custom Field"
+        feature={t("sn.facets.customField")}
         description={customFacet.defaultLabel ?? ""}
         onDelete={isNew ? undefined : onDelete}
         open={open}

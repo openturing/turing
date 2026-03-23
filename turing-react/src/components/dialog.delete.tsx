@@ -2,6 +2,7 @@ import { ROUTES } from "@/app/routes.const";
 import type { TurSECoreSiteUsage } from "@/models/se/se-core-site-usage.model";
 import { IconAlertTriangle, IconTrash } from "@tabler/icons-react";
 import React, { type Dispatch, type SetStateAction, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { BadgeColorful } from "./badge-colorful";
 import { getLocaleCountryCode } from "./badge-locale";
@@ -31,6 +32,7 @@ export const DialogDelete: React.FC<Props> = ({
 }) => {
   const isBlocked = blockedBy && blockedBy.length > 0;
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [confirmText, setConfirmText] = useState("");
 
   const canDelete = confirmText === name;
@@ -58,13 +60,13 @@ export const DialogDelete: React.FC<Props> = ({
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-amber-500/20 mb-2">
                 <IconAlertTriangle className="size-6 text-amber-500" />
               </div>
-              <DialogTitle className="text-center">Cannot delete {feature}</DialogTitle>
+              <DialogTitle className="text-center">{t("dialog.cannotDelete", { feature })}</DialogTitle>
               <DialogDescription className="text-center">
-                <span className="font-semibold text-foreground">{name}</span> is currently in use and cannot be removed.
+                {t("dialog.inUse", { name })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">The following Semantic Navigation sites depend on this {feature}:</p>
+              <p className="text-sm text-muted-foreground">{t("dialog.dependingSites", { feature })}</p>
               <div className="flex flex-wrap gap-2">
                 {blockedBy.map((usage) => {
                   const countryCode = getLocaleCountryCode(usage.language);
@@ -85,11 +87,11 @@ export const DialogDelete: React.FC<Props> = ({
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground">Remove this {feature} from those sites before deleting it.</p>
+              <p className="text-xs text-muted-foreground">{t("dialog.removeDependencies", { feature })}</p>
             </div>
             <DialogFooter>
               <GradientButton onClick={() => setOpen(false)} variant="outline" className="w-full">
-                Understood
+                {t("dialog.understood")}
               </GradientButton>
             </DialogFooter>
           </>
@@ -99,14 +101,14 @@ export const DialogDelete: React.FC<Props> = ({
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/20 mb-2">
                 <IconTrash className="size-6 text-red-500" />
               </div>
-              <DialogTitle className="text-center">{title ?? `Delete ${feature}`}</DialogTitle>
+              <DialogTitle className="text-center">{title ?? t("dialog.deleteFeature", { feature })}</DialogTitle>
               <DialogDescription className="text-center">
-                {description ?? <>This will permanently delete <span className="font-semibold text-foreground">{name}</span>. This action cannot be undone.</>}
+                {description ?? t("dialog.permanentDelete", { name })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">
-                Type <span className="font-mono font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded">{name}</span> to confirm
+                {t("dialog.typeToConfirm")} <span className="font-mono font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded">{name}</span> {t("dialog.toConfirm")}
               </label>
               <Input
                 value={confirmText}
@@ -124,14 +126,14 @@ export const DialogDelete: React.FC<Props> = ({
                 className="w-full"
               >
                 <IconTrash className="size-4" />
-                {confirmLabel ?? `Delete ${feature}`}
+                {confirmLabel ?? t("dialog.deleteFeature", { feature })}
               </GradientButton>
               <GradientButton
                 onClick={() => handleOpenChange(false)}
                 variant="ghost"
                 className="w-full"
               >
-                Cancel
+                {t("common.cancel")}
               </GradientButton>
             </DialogFooter>
           </>

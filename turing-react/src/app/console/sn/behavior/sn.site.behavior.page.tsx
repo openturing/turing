@@ -7,6 +7,7 @@ import { TurSNSiteService } from "@/services/sn/sn.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconScale } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteService = new TurSNSiteService();
@@ -16,7 +17,8 @@ export default function SNSiteBehaviorPage() {
   const [snSite, setSnSite] = useState<TurSNSite>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("Behavior");
+  const { t } = useTranslation();
+  useSubPageBreadcrumb(t("sn.behavior.title"));
 
   useEffect(() => {
     if (id !== "new") {
@@ -26,7 +28,7 @@ export default function SNSiteBehaviorPage() {
   }, [id]);
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/behavior`}>
-      <SubPageHeader icon={IconScale} name="Behavior" feature="Behavior" description="How the search will behave during the search." />
+      <SubPageHeader icon={IconScale} name={t("sn.behavior.title")} feature={t("sn.behavior.title")} description={t("sn.behavior.description")} />
       {snSite && <SNSiteBehaviorForm value={snSite} isNew={isNew} />}
     </LoadProvider>
   )

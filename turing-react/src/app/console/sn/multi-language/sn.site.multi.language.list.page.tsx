@@ -8,6 +8,7 @@ import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
 import { IconLanguage } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
@@ -15,7 +16,8 @@ export default function SNSiteMultiLanguageListPage() {
     const { id } = useParams() as { id: string };
     const [data, setData] = React.useState<TurSNSiteLocale[]>();
     const [error, setError] = React.useState<string | null>(null);
-    useSubPageBreadcrumb("Multi Languages");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("sn.multiLanguage.title"));
 
     React.useEffect(() => {
         turSNSiteLocaleService.query(id).then(setData).catch(() => setError("Connection error or timeout while fetching Multi Language data."));
@@ -23,18 +25,18 @@ export default function SNSiteMultiLanguageListPage() {
 
     return (
         <LoadProvider checkIsNotUndefined={data} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/locale`}>
-            <SubPageHeader icon={IconLanguage} name="Multi Language" feature="Multi Language"
-                description="Define Multi Languages.">
-                <SubPageHeader.Action label="New Language" href={`${ROUTES.SN_INSTANCE}/${id}/locale/new`} />
+            <SubPageHeader icon={IconLanguage} name={t("sn.multiLanguage.title")} feature={t("sn.multiLanguage.feature")}
+                description={t("sn.multiLanguage.description")}>
+                <SubPageHeader.Action label={t("sn.multiLanguage.newLanguage")} href={`${ROUTES.SN_INSTANCE}/${id}/locale/new`} />
             </SubPageHeader>
             {data && data.length > 0 ? (
                 <SNSiteMultiLanguageDataTable data={data} />
             ) : (
                 < BlankSlate
                     icon={IconLanguage}
-                    title="You don't seem to have any language."
-                    description="Create a new language to semantic navigation search works."
-                    buttonText="New language"
+                    title={t("sn.multiLanguage.blankTitle")}
+                    description={t("sn.multiLanguage.blankDescription")}
+                    buttonText={t("sn.multiLanguage.newLanguageBlank")}
                     urlNew={`${ROUTES.SN_INSTANCE}/${id}/locale/new`}
                 />
             )}

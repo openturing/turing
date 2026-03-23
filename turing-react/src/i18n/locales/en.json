@@ -1,0 +1,588 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "new": "New",
+    "loading": "Loading...",
+    "actions": "Actions",
+    "goBack": "Go back",
+    "tryAgain": "Try again",
+    "errorLoading": "Error while loading data",
+    "openNavigation": "Open navigation",
+    "connectionError": "Connection error or timeout while fetching {{resource}}."
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "modeLabel": "{{mode}} mode"
+  },
+  "login": {
+    "welcomeBack": "Welcome back",
+    "signInDescription": "Sign in to access your dashboard",
+    "username": "Username",
+    "enterUsername": "Enter your username",
+    "password": "Password",
+    "enterPassword": "Enter your password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "emptyFields": "Please enter both username and password",
+    "invalidCredentials": "Invalid credentials. Please try again.",
+    "loginFailed": "Login failed"
+  },
+  "dialog": {
+    "cannotDelete": "Cannot delete {{feature}}",
+    "inUse": "{{name}} is currently in use and cannot be removed.",
+    "dependingSites": "The following Semantic Navigation sites depend on this {{feature}}:",
+    "removeDependencies": "Remove this {{feature}} from those sites before deleting it.",
+    "understood": "Understood",
+    "deleteFeature": "Delete {{feature}}",
+    "permanentDelete": "This will permanently delete {{name}}. This action cannot be undone.",
+    "typeToConfirm": "Type",
+    "toConfirm": "to confirm"
+  },
+  "chat": {
+    "askMeAnything": "Ask me anything",
+    "noDefaultLlm": "No default LLM configured",
+    "howCanIHelp": "How can I help you today?",
+    "sessions": "Sessions",
+    "noSavedSessions": "No saved sessions",
+    "msgs": "msgs",
+    "deleteSession": "Delete session",
+    "selectModel": "Select a model...",
+    "newChat": "New Chat",
+    "chatTab": "Chat",
+    "semanticTab": "Semantic",
+    "semanticTabShort": "SN",
+    "dropFilesHere": "Drop files here",
+    "attachFiles": "Attach files",
+    "removeFile": "Remove {{name}}",
+    "copyToClipboard": "Copy to clipboard",
+    "you": "You",
+    "selectModelToStart": "Select a model to start...",
+    "selectModelToChat": "Select a language model to start chatting.",
+    "selectModelToExplore": "Select a language model to start exploring.",
+    "selectModelToStartAgent": "Select a language model to start.",
+    "askAboutContent": "Ask questions about your indexed content.",
+    "askAnythingAgent": "Ask anything this agent can help with.",
+    "askAboutSemantic": "Ask about your semantic navigation content...",
+    "askAgent": "Ask {{agent}}...",
+    "usingModel": "Using {{model}} ({{vendor}})",
+    "usingModelForSN": "Ask questions about your indexed content. Using {{model}}.",
+    "usingModelForAgent": "Using {{model}}. Ask anything this agent can help with.",
+    "noLlmAvailable": "No Language Model Available",
+    "noLlmDescription": "To use the chat, create and enable at least one LLM instance.",
+    "createLlmInstance": "Create LLM Instance",
+    "failedResponse": "Failed to get a response. Please check your LLM configuration.",
+    "failedAgentResponse": "Failed to get a response from {{agent}}.",
+    "contextCompacted": "Context compacted successfully.",
+    "failedCompact": "Failed to compact context.",
+    "contextCompactedLabel": "**[Context compacted]**"
+  },
+  "sidebar": {
+    "brandName": "Turing ES",
+    "brandTagline": "Enterprise Search",
+    "indexing": "Indexing",
+    "new": "New {{feature}}"
+  },
+  "nav": {
+    "account": "Account",
+    "logOut": "Log out"
+  },
+  "home": {
+    "title": "Home",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "welcome": "Welcome to Viglet Turing ES — your enterprise search intelligence platform.",
+    "docs": "Docs",
+    "open": "Open",
+    "sections": {
+      "generativeAi": {
+        "label": "Generative AI",
+        "description": "Build, configure and interact with large language models, embeddings, and intelligent agents."
+      },
+      "enterpriseSearch": {
+        "label": "Enterprise Search",
+        "description": "Index, search and navigate your enterprise content with powerful search engines and semantic understanding."
+      },
+      "management": {
+        "label": "Management",
+        "description": "System administration, asset management, and platform configuration."
+      }
+    },
+    "features": {
+      "languageModel": {
+        "title": "Language Model",
+        "description": "Configure LLM providers like OpenAI, Ollama, Anthropic, and Gemini for chat and generation."
+      },
+      "embeddingModel": {
+        "title": "Embedding Model",
+        "description": "Set up embedding models for vector similarity search and RAG pipelines."
+      },
+      "embeddingStore": {
+        "title": "Embedding Store",
+        "description": "Manage vector stores like Chroma, Milvus, and PGVector for semantic retrieval."
+      },
+      "mcpServer": {
+        "title": "MCP Server",
+        "description": "Connect to Model Context Protocol servers for external tool integration."
+      },
+      "aiAgent": {
+        "title": "AI Agent",
+        "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."
+      },
+      "intent": {
+        "title": "Intent",
+        "description": "Define prompt categories and actions shown as quick suggestions in the chat."
+      },
+      "tokenUsage": {
+        "title": "Token Usage",
+        "description": "Monitor token consumption across all LLM instances and models."
+      },
+      "chat": {
+        "title": "Chat",
+        "description": "Start conversations with your configured LLMs, agents, and semantic search."
+      },
+      "searchEngine": {
+        "title": "Search Engine",
+        "description": "Manage Solr, Elasticsearch, or Lucene instances that power your search."
+      },
+      "semanticNavigation": {
+        "title": "Semantic Navigation",
+        "description": "Create search sites with facets, highlighting, spell-check and AI insights."
+      },
+      "integration": {
+        "title": "Integration",
+        "description": "Connect to external CMS, databases, and file systems to index their content."
+      },
+      "graphqlExplorer": {
+        "title": "GraphQL Explorer",
+        "description": "Query your semantic navigation data using the interactive GraphQL playground."
+      },
+      "assets": {
+        "title": "Assets",
+        "description": "Browse and manage files stored in the MinIO object storage."
+      },
+      "import": {
+        "title": "Import",
+        "description": "Import configurations, sites, and data from exported packages."
+      },
+      "logging": {
+        "title": "Logging",
+        "description": "View indexing logs and monitor data pipeline activity."
+      },
+      "administration": {
+        "title": "Administration",
+        "description": "Manage users, groups, roles, API tokens, and system settings."
+      }
+    }
+  },
+  "sn": {
+    "title": "Semantic Navigation",
+    "newSite": "New Site",
+    "blankTitle": "You don't seem to have any semantic navigation instance.",
+    "blankDescription": "Create a new instance to search and navigate through your documents.",
+    "newInstance": "New semantic navigation instance",
+    "exportAll": "Export All",
+    "exporting": "Exporting...",
+    "exportSuccess": "All Semantic Navigation sites were exported.",
+    "exportFailed": "Failed to export Semantic Navigation sites.",
+    "siteSaved": "The {{name}} SN Site was saved",
+    "siteNotSaved": "The {{name}} SN Site was not saved",
+    "siteUpdated": "The {{name}} SN Site was updated",
+    "siteNotUpdated": "The {{name}} SN Site was not updated",
+    "formSubmitFailed": "Failed to submit the form. Please try again.",
+    "settings": {
+      "title": "Settings",
+      "description": "Configure the Semantic Navigation Site."
+    },
+    "behavior": {
+      "title": "Behavior",
+      "description": "How the search will behave during the search."
+    },
+    "fields": {
+      "title": "Fields",
+      "feature": "Field",
+      "description": "Custom Search Engine Fields.",
+      "newField": "New Field",
+      "deleted": "The field was deleted",
+      "notDeleted": "The field was not deleted"
+    },
+    "facets": {
+      "title": "Facets",
+      "feature": "Facet",
+      "description": "Edit and order the facets of the search.",
+      "newCustomFacet": "New Custom Facet",
+      "customField": "Custom Field",
+      "facetedField": "Faceted Field",
+      "deleted": "The {{name}} Custom Facet was deleted",
+      "notDeleted": "The {{name}} Custom Facet was not deleted",
+      "deletionError": "Form deletion error",
+      "failedDelete": "Failed to delete: {{message}}"
+    },
+    "genai": {
+      "title": "Generative AI",
+      "description": "Use Assistant in your search."
+    },
+    "insights": {
+      "title": "AI Insights",
+      "description": "AI-powered overview and suggestions for this Semantic Navigation site.",
+      "generating": "Generating AI summary...",
+      "failedGenerate": "Failed to generate summary.",
+      "failedConnect": "Failed to connect to the summary service. Please try again.",
+      "statistics": "Statistics",
+      "searchTerms": "search terms"
+    },
+    "multiLanguage": {
+      "title": "Multi Languages",
+      "feature": "Language",
+      "description": "Define Multi Languages.",
+      "newLanguage": "New Language",
+      "blankTitle": "You don't seem to have any language.",
+      "blankDescription": "Create a new language to semantic navigation search works.",
+      "newLanguageBlank": "New language",
+      "deleted": "The {{name}} Language was deleted",
+      "notDeleted": "The {{name}} Language was not deleted"
+    },
+    "resultRanking": {
+      "title": "Result Ranking",
+      "description": "Define content that will be featured in the term-based search.",
+      "newResultRanking": "New Result Ranking",
+      "blankTitle": "You don't seem to have any result ranking.",
+      "blankDescription": "Create a new result ranking to define relevance rules.",
+      "newResultRankingBlank": "New result ranking",
+      "deleted": "The {{name}} Result Ranking Instance was deleted",
+      "notDeleted": "The {{name}} Result Ranking Instance was not deleted"
+    },
+    "mergeProviders": {
+      "title": "Merge Providers",
+      "feature": "Merge Provider",
+      "description": "Unify different sources contents.",
+      "newMergeProvider": "New Merge Provider",
+      "blankTitle": "You don't seem to have any merge provider.",
+      "blankDescription": "Create a new merge provider and allow to merge documents from different providers during indexing.",
+      "newMergeProviderBlank": "New merge provider",
+      "deleted": "The merge provider was deleted",
+      "notDeleted": "The merge provider was not deleted"
+    },
+    "spotlight": {
+      "title": "Spotlight",
+      "description": "Define content that will be featured in the term-based search.",
+      "newSpotlight": "New Spotlight",
+      "blankTitle": "You don't seem to have any spotlight.",
+      "blankDescription": "Create a spotlight component that highlights content triggered by specific search terms.",
+      "newSpotlightBlank": "New spotlight",
+      "deleted": "The spotlight was deleted",
+      "notDeleted": "The spotlight was not deleted"
+    },
+    "topSearchTerms": {
+      "title": "Top Search Terms",
+      "description": "Top search terms report.",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "allTime": "All Time",
+      "noTerms": "No search terms yet.",
+      "noTermsDescription": "As soon as users search, the top terms will show up here.",
+      "rank": "Rank",
+      "term": "Term",
+      "avgResults": "Average of results",
+      "searchTotal": "Search total"
+    }
+  },
+  "llm": {
+    "title": "Language Model",
+    "blankTitle": "You don't seem to have any language model instance.",
+    "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
+    "newInstance": "New language model instance"
+  },
+  "se": {
+    "title": "Search Engine",
+    "newSearchEngine": "New Search Engine",
+    "blankTitle": "You don't seem to have any search engine instance.",
+    "blankDescription": "Create a new instance to use in semantic navigation and chatbot.",
+    "newInstance": "New search engine instance"
+  },
+  "store": {
+    "title": "Embedding Store",
+    "newStore": "New Embedding Store",
+    "blankTitle": "You don't seem to have any embedding store instance.",
+    "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
+    "newInstance": "New embedding store instance"
+  },
+  "integration": {
+    "title": "Integration",
+    "newIntegration": "New Integration",
+    "blankTitle": "You don't seem to have any integration instance.",
+    "blankDescription": "Create a new integration to index from many external data sources.",
+    "newInstance": "New integration"
+  },
+  "mcp": {
+    "title": "MCP Server",
+    "blankTitle": "You don't seem to have any MCP server.",
+    "blankDescription": "Create a new MCP server to integrate with external tools and services.",
+    "newInstance": "New MCP server"
+  },
+  "embeddingModel": {
+    "title": "Embedding Model",
+    "blankTitle": "You don't seem to have any embedding model.",
+    "blankDescription": "Create a new embedding model to use with semantic navigation and vector stores.",
+    "newInstance": "New Embedding Model"
+  },
+  "aiAgent": {
+    "title": "AI Agent",
+    "blankTitle": "You don't seem to have any AI agent.",
+    "blankDescription": "Create a new AI agent to orchestrate LLM instances and MCP servers.",
+    "newInstance": "New AI Agent"
+  },
+  "intent": {
+    "title": "Intent",
+    "blankTitle": "You don't have any intents yet.",
+    "blankDescription": "Create an intent to group suggested prompts for the chat.",
+    "newInstance": "New Intent"
+  },
+  "apiToken": {
+    "title": "API Token",
+    "description": "Manage API tokens for external access.",
+    "blankTitle": "You don't seem to have any API token.",
+    "blankDescription": "Create a new token to allow access to the API.",
+    "newInstance": "New API token"
+  },
+  "admin": {
+    "title": "Administration",
+    "console": "Administration Console",
+    "settings": "Settings",
+    "users": {
+      "title": "Users",
+      "description": "Manage user accounts and access.",
+      "newUser": "New User",
+      "createDescription": "Create a new user account.",
+      "editDescription": "Edit user account details.",
+      "deleted": "User \"{{name}}\" was deleted.",
+      "deleteFailed": "Failed to delete user \"{{name}}\".",
+      "loadFailed": "Failed to load users.",
+      "loadOneFailed": "Failed to load user."
+    },
+    "groups": {
+      "title": "Groups",
+      "description": "Organize users into groups with shared permissions.",
+      "newGroup": "New Group",
+      "createDescription": "Create a new user group.",
+      "editDescription": "Edit group details and members.",
+      "deleted": "Group \"{{name}}\" was deleted.",
+      "deleteFailed": "Failed to delete group \"{{name}}\".",
+      "loadFailed": "Failed to load groups.",
+      "loadOneFailed": "Failed to load group."
+    },
+    "roles": {
+      "title": "Roles",
+      "description": "Define roles and their associated permissions.",
+      "newRole": "New Role",
+      "createDescription": "Create a new access role.",
+      "editDescription": "Edit role details and permissions.",
+      "loadFailed": "Failed to load roles.",
+      "loadOneFailed": "Failed to load role."
+    },
+    "systemInfo": {
+      "title": "System Information"
+    }
+  },
+  "account": {
+    "title": "Account Settings",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "username": "Username",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "leaveBlank": "Leave blank to keep current",
+    "confirmPassword": "Confirm Password",
+    "repeatPassword": "Repeat new password",
+    "saveChanges": "Save Changes",
+    "loadFailed": "Failed to load user data.",
+    "unableToLoad": "Unable to load user data.",
+    "avatarUpdated": "Avatar updated.",
+    "avatarFailed": "Failed to save avatar.",
+    "avatarRemoved": "Avatar removed.",
+    "avatarRemoveFailed": "Failed to remove avatar.",
+    "passwordMismatch": "Passwords do not match.",
+    "updateSuccess": "Account updated successfully.",
+    "updateFailed": "Failed to update account."
+  },
+  "exchange": {
+    "dropFile": "Drop your file here",
+    "dragDrop": "Drag & drop your export file",
+    "browseFiles": "browse files",
+    "selectZip": "to select a ZIP archive",
+    "onlyZip": "Only .zip files exported from Turing are supported",
+    "importing": "Importing...",
+    "uploaded": "uploaded",
+    "importCompleted": "Import Completed",
+    "redirecting": "Redirecting to Semantic Navigation...",
+    "importFailed": "Import Failed",
+    "invalidFile": "Please select a valid ZIP file.",
+    "invalidType": "Invalid file type. Only ZIP files are accepted.",
+    "importSuccess": "Import completed successfully!",
+    "importError": "An error occurred during import.",
+    "importFailedMsg": "Import failed: {{message}}"
+  },
+  "graphql": {
+    "title": "GraphQL Explorer"
+  },
+  "logging": {
+    "turingServer": "Turing ES Server",
+    "turingServerDesc": "Logging server instance",
+    "indexing": "Indexing",
+    "indexingDesc": "Indexing service instance",
+    "aem": "AEM",
+    "aemDesc": "AEM service instance"
+  },
+  "tokenUsage": {
+    "noLlm": "No Language Model Available",
+    "noLlmDescription": "To view token usage, create and enable at least one LLM instance.",
+    "createLlm": "Create LLM Instance",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "loadingUsage": "Loading usage data...",
+    "loadFailed": "Failed to load usage data.",
+    "totalRequests": "Total Requests",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens",
+    "totalTokens": "Total Tokens",
+    "summaryByModel": "Summary by Model",
+    "summaryDescription": "Aggregated token usage per LLM instance for the selected month",
+    "noUsageData": "No usage data for this period.",
+    "instance": "Instance",
+    "vendor": "Vendor",
+    "model": "Model",
+    "requests": "Requests",
+    "input": "Input",
+    "output": "Output",
+    "total": "Total",
+    "dailyBreakdown": "Daily Breakdown",
+    "dailyDescription": "Day-by-day token consumption per model",
+    "date": "Date"
+  },
+  "systemInfo": {
+    "title": "System Information",
+    "description": "Runtime environment and system details.",
+    "overview": "Overview",
+    "systemVariables": "System Variables",
+    "application": "Application",
+    "applicationDesc": "Viglet Turing ES version and runtime.",
+    "version": "Version",
+    "javaVersion": "Java Version",
+    "javaVendor": "Java Vendor",
+    "os": "OS",
+    "database": "Database",
+    "databaseDesc": "Connected database information.",
+    "status": "Status",
+    "up": "UP",
+    "down": "DOWN",
+    "product": "Product",
+    "driver": "Driver",
+    "driverVersion": "Driver Version",
+    "url": "URL",
+    "physicalMemory": "Physical Memory (RAM)",
+    "physicalMemoryDesc": "Operating system physical memory and swap/pagefile.",
+    "ramUsage": "RAM Usage",
+    "used": "Used:",
+    "totalLabel": "Total:",
+    "totalRam": "Total RAM",
+    "freeRam": "Free RAM",
+    "usedRam": "Used RAM",
+    "swapUsage": "Swap / Pagefile Usage",
+    "totalSwap": "Total Swap",
+    "freeSwap": "Free Swap",
+    "jvmHeap": "Memory (JVM Heap)",
+    "jvmHeapDesc": "Java heap memory allocation and usage.",
+    "heapUsage": "Heap Usage",
+    "max": "Max:",
+    "totalAllocated": "Total Allocated",
+    "freeAllocated": "Free (Allocated)",
+    "usedMemory": "Used",
+    "maxHeap": "Max Heap",
+    "diskSpace": "Disk Space",
+    "diskSpaceDesc": "Storage on the application's working volume.",
+    "diskUsage": "Disk Usage",
+    "available": "Available",
+    "mongodb": "MongoDB",
+    "mongodbDesc": "MongoDB database used for logging.",
+    "endpoint": "Endpoint",
+    "minio": "MinIO",
+    "minioDesc": "Object storage for assets.",
+    "sysVarsDesc": "JVM system properties and environment values.",
+    "searchVariables": "Search variables...",
+    "property": "Property",
+    "value": "Value",
+    "noVariablesMatch": "No variables match your search.",
+    "propertiesShown": "{{count}} of {{total}} properties shown",
+    "loadFailed": "Failed to load system information."
+  },
+  "globalSettings": {
+    "title": "Global Settings",
+    "breadcrumb": "Settings",
+    "description": "Platform-wide configuration and preferences.",
+    "sectionTitle": "Global Settings",
+    "sectionDescription": "Platform-wide configuration and formatting preferences.",
+    "decimalSeparator": "Decimal Separator",
+    "decimalSeparatorDesc": "Defines how decimal values are typed in admin forms (including currency amount format).",
+    "choose": "Choose...",
+    "dot": "Dot (.)",
+    "comma": "Comma (,)",
+    "decimalPreview": "Decimal preview",
+    "currencyFormat": "Currency format",
+    "pythonPath": "Python Executable Path",
+    "pythonPathDesc": "Absolute path to the Python interpreter used by the code interpreter tool. Leave empty to auto-detect from known system locations.",
+    "llmSettings": "LLM Settings",
+    "llmSettingsDesc": "Language model instance and cache configuration for reports, insights, and emails.",
+    "defaultLlm": "Default LLM",
+    "defaultLlmDesc": "LLM instance used for AI suggestions across all screens (e.g., log analysis, monitoring summaries).",
+    "selectLlm": "Select an LLM instance...",
+    "none": "None",
+    "llmCache": "LLM Cache",
+    "llmCacheDesc": "Enable caching of LLM responses for reports, insights, and emails to reduce API calls and improve response time.",
+    "cacheDuration": "Cache Duration",
+    "cacheDurationDesc": "How long cached LLM responses remain valid before a new request is made.",
+    "regenerateCache": "Regenerate Cache",
+    "regenerateCacheDesc": "Force a new LLM call on the next request, ignoring any existing cache. The cache will be recreated with the fresh response.",
+    "ragSettings": "RAG Settings",
+    "ragSettingsDesc": "Retrieval-Augmented Generation for asset indexing and knowledge base.",
+    "enableRag": "Enable Global RAG",
+    "enableRagDesc": "Enables automatic embedding indexing of files stored in Assets (MinIO). Requires an Embedding Model and Store to be configured below.",
+    "embeddingModelRequired": "Embedding Model is required when RAG is enabled",
+    "defaultEmbeddingModel": "Default Embedding Model",
+    "defaultEmbeddingModelDesc": "Model used to generate vector embeddings for asset content.",
+    "selectEmbeddingModel": "Select an Embedding Model...",
+    "embeddingStoreRequired": "Embedding Store is required when RAG is enabled",
+    "defaultEmbeddingStore": "Default Embedding Store",
+    "defaultEmbeddingStoreDesc": "Vector database where asset embeddings are stored and queried.",
+    "selectEmbeddingStore": "Select an Embedding Store...",
+    "emailSettings": "Email Settings",
+    "emailSettingsDesc": "Configure email service for notifications and weekly reports.",
+    "emailProvider": "Email Provider",
+    "emailProviderDesc": "Service used to send transactional emails.",
+    "brevo": "Brevo",
+    "apiKey": "API Key",
+    "apiKeyDesc": "API key for the selected email provider.",
+    "senderEmail": "Sender Email",
+    "senderEmailDesc": "Email address used as the sender for outgoing emails.",
+    "senderName": "Sender Name",
+    "senderNameDesc": "Display name shown as the sender (e.g., \"Viglet Turing\").",
+    "recipientEmail": "Recipient Email",
+    "recipientEmailDesc": "Default recipient for automated reports (e.g., weekly search report).",
+    "testEmailHint": "Save settings before testing to use the latest configuration.",
+    "sendTestEmail": "Send Test Email",
+    "sending": "Sending...",
+    "saveSettings": "Save Settings",
+    "loadFailed": "Failed to load global settings. Using default values.",
+    "updateSuccess": "Global settings were updated.",
+    "updateFailed": "Failed to update global settings.",
+    "testEmailFailed": "Failed to send test email. Check your email settings."
+  }
+}

@@ -9,16 +9,18 @@ import { TurTokenInstanceService } from "@/services/token/token.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCode } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turTokenInstanceService = new TurTokenInstanceService();
 
 export default function TokenInstanceListPage() {
+  const { t } = useTranslation();
   const [tokenInstances, setTokenInstances] = useState<TurTokenInstance[]>();
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("API Token");
+  useSubPageBreadcrumb(t("apiToken.title"));
 
   useEffect(() => {
-    turTokenInstanceService.query().then(setTokenInstances).catch(() => setError("Connection error or timeout while fetching api tokens."));
+    turTokenInstanceService.query().then(setTokenInstances).catch(() => setError(t("common.connectionError", { resource: "api tokens" })));
   }, []);
   const gridItemList = useGridAdapter(tokenInstances, {
     name: "title",
@@ -29,20 +31,20 @@ export default function TokenInstanceListPage() {
     <LoadProvider checkIsNotUndefined={tokenInstances} error={error} tryAgainUrl={ROUTES.ADMIN_TOKENS}>
       <SubPageHeader
         icon={IconCode}
-        feature="API Token"
-        name="API Token"
-        description="Manage API tokens for external access."
+        feature={t("apiToken.title")}
+        name={t("apiToken.title")}
+        description={t("apiToken.description")}
       />
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.ADMIN_TOKENS}/new`} label="API Token" />
+          <GridList.NewButton to={`${ROUTES.ADMIN_TOKENS}/new`} label={t("apiToken.title")} />
         </GridList>
       ) : (
         <BlankSlate
           icon={IconCode}
-          title="You don’t seem to have any API token."
-          description="Create a new token to allow access to the API."
-          buttonText="New API token"
+          title={t("apiToken.blankTitle")}
+          description={t("apiToken.blankDescription")}
+          buttonText={t("apiToken.newInstance")}
           urlNew={`${ROUTES.ADMIN_TOKENS}/new`} />
       )}
     </LoadProvider>

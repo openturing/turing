@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconLoader2, IconRefresh, IconSparkles } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,7 +21,8 @@ interface SummaryResponse {
 
 export default function SNSiteSummaryPage() {
     const { id } = useParams() as { id: string };
-    useSubPageBreadcrumb("AI Insights");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("sn.insights.title"));
 
     const [content, setContent] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -40,15 +42,15 @@ export default function SNSiteSummaryPage() {
             if (response.data.success && response.data.content) {
                 setContent(response.data.content);
             } else {
-                setError(response.data.error ?? "Failed to generate summary.");
+                setError(response.data.error ?? t("sn.insights.failedGenerate"));
             }
             setCanRegenerate(response.data.canRegenerate ?? false);
         } catch {
-            setError("Failed to connect to the summary service. Please try again.");
+            setError(t("sn.insights.failedConnect"));
         } finally {
             setIsLoading(false);
         }
-    }, [id]);
+    }, [id, t]);
 
     useEffect(() => {
         fetchSummary();
@@ -58,9 +60,9 @@ export default function SNSiteSummaryPage() {
         <>
             <SubPageHeader
                 icon={IconSparkles}
-                name="AI Insights"
-                feature="AI Insights"
-                description="AI-powered overview and suggestions for this Semantic Navigation site."
+                name={t("sn.insights.title")}
+                feature={t("sn.insights.title")}
+                description={t("sn.insights.description")}
             />
             <div className="px-6 py-6 space-y-4">
                 {isLoading && (
@@ -68,7 +70,7 @@ export default function SNSiteSummaryPage() {
                         <CardContent className="p-6 space-y-4">
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <IconLoader2 className="size-4 animate-spin" />
-                                <span className="text-sm">Generating AI summary...</span>
+                                <span className="text-sm">{t("sn.insights.generating")}</span>
                             </div>
                             <Skeleton className="h-4 w-3/4" />
                             <Skeleton className="h-4 w-full" />

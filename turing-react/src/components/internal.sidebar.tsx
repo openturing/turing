@@ -1,5 +1,6 @@
 import { IconDownload } from "@tabler/icons-react";
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router-dom";
 import { DialogDelete } from "./dialog.delete";
 import { GradientButton } from "./ui/gradient-button";
@@ -81,6 +82,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
   open,
   setOpen,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const pathname = location.pathname;
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -99,7 +101,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
                 </div>
                 {!isCollapsed && (
                   <span className="text-sm font-semibold whitespace-nowrap truncate">
-                    {isNew ? `New ${feature}` : name}
+                    {isNew ? t("sidebar.new", { feature }) : name}
                   </span>
                 )}
               </NavLink>
@@ -133,7 +135,7 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
       <SidebarContent>
         {data?.counts && data.counts.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>Indexing</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("sidebar.indexing")}</SidebarGroupLabel>
             <SidebarGroupContent className="flex flex-col gap-2 pt-4">
               <SidebarMenu>
                 {data.counts.map((item: any) => (

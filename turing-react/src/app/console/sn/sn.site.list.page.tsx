@@ -8,17 +8,19 @@ import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
 import { IconDownload, IconSearch } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const turSNSiteService = new TurSNSiteService();
 
 export default function SNSiteListPage() {
+  const { t } = useTranslation();
   const [snInstances, setSnInstances] = useState<TurSNSite[]>();
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    turSNSiteService.query().then(setSnInstances).catch(() => setError("Connection error or timeout while fetching instances."));
+    turSNSiteService.query().then(setSnInstances).catch(() => setError(t("common.connectionError", { resource: "instances" })));
   }, []);
 
   const gridItemList = useGridAdapter(snInstances, {
@@ -41,10 +43,10 @@ export default function SNSiteListPage() {
         a.click();
         globalThis.URL.revokeObjectURL(url);
         a.remove();
-        toast.success("All Semantic Navigation sites were exported.");
+        toast.success(t("sn.exportSuccess"));
       }
     } catch {
-      toast.error("Failed to export Semantic Navigation sites.");
+      toast.error(t("sn.exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -54,20 +56,20 @@ export default function SNSiteListPage() {
     <LoadProvider checkIsNotUndefined={snInstances} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}`}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList ?? []}>
-          <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/new`} label="Semantic Navigation" />
+          <GridList.NewButton to={`${ROUTES.SN_INSTANCE}/new`} label={t("sn.title")} />
           <GridList.Action>
             <DropdownMenuItem onClick={handleExportAll} disabled={exporting}>
               <IconDownload className="size-4 mr-2" />
-              {exporting ? "Exporting..." : "Export All"}
+              {exporting ? t("sn.exporting") : t("sn.exportAll")}
             </DropdownMenuItem>
           </GridList.Action>
         </GridList>
       ) : (
         <BlankSlate
           icon={IconSearch}
-          title="You don't seem to have any semantic navigation instance."
-          description="Create a new instance to search and navigate through your documents."
-          buttonText="New semantic navigation instance"
+          title={t("sn.blankTitle")}
+          description={t("sn.blankDescription")}
+          buttonText={t("sn.newInstance")}
           urlNew={`${ROUTES.SN_INSTANCE}/new`} />
       )}
     </LoadProvider>

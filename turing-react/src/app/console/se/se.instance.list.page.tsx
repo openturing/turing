@@ -7,10 +7,12 @@ import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { IconZoomCode } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turSEInstanceService = new TurSEInstanceService();
 
 export default function SEInstanceListPage() {
+  const { t } = useTranslation();
   const [seInstances, setSeInstances] = useState<TurSEInstance[]>();
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ export default function SEInstanceListPage() {
     turSEInstanceService
       .query()
       .then(setSeInstances)
-      .catch(() => setError("Connection error or timeout while fetching instances."));
+      .catch(() => setError(t("common.connectionError", { resource: "instances" })));
   }, []);
 
   const gridItemList = useGridAdapter(seInstances, {
@@ -32,14 +34,14 @@ export default function SEInstanceListPage() {
     <LoadProvider checkIsNotUndefined={seInstances} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}`}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.SE_INSTANCE}/new`} label="Search Engine" />
+          <GridList.NewButton to={`${ROUTES.SE_INSTANCE}/new`} label={t("se.title")} />
         </GridList>
       ) : (
         <BlankSlate
           icon={IconZoomCode}
-          title="You don’t seem to have any search engine instance."
-          description="Create a new instance to use in semantic navigation and chatbot."
-          buttonText="New search engine instance"
+          title={t("se.blankTitle")}
+          description={t("se.blankDescription")}
+          buttonText={t("se.newInstance")}
           urlNew={`${ROUTES.SE_INSTANCE}/new`}
         />
       )}

@@ -9,6 +9,7 @@ import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitMerge } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteMergeService = new TurSNSiteMergeService();
@@ -17,7 +18,8 @@ export default function SNSiteMergeProvidersListPage() {
     const { id } = useParams() as { id: string };
     const [mergeProviderList, setMergeProviderList] = useState<TurSNSiteMerge[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Merge Providers");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("sn.mergeProviders.title"));
 
     useEffect(() => {
         turSNSiteMergeService.query(id).then(setMergeProviderList).catch(() => setError("Connection error or timeout while fetching merge providers."));
@@ -29,18 +31,18 @@ export default function SNSiteMergeProvidersListPage() {
     });
     return (
         <LoadProvider checkIsNotUndefined={mergeProviderList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/merge-providers`}>
-            <SubPageHeader icon={IconGitMerge} name="Merge Providers" feature="Merge Providers"
-                description="Unify different sources contents.">
-                <SubPageHeader.Action label="New Merge Provider" href={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} />
+            <SubPageHeader icon={IconGitMerge} name={t("sn.mergeProviders.title")} feature={t("sn.mergeProviders.feature")}
+                description={t("sn.mergeProviders.description")}>
+                <SubPageHeader.Action label={t("sn.mergeProviders.newMergeProvider")} href={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} />
             </SubPageHeader>
             {mergeProviderList && mergeProviderList.length > 0 ? (
                 <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconGitMerge}
-                    title="You don’t seem to have any merge provider."
-                    description="Create a new merge provider and allow to merge documents from different providers during indexing."
-                    buttonText="New merge provider"
+                    title={t("sn.mergeProviders.blankTitle")}
+                    description={t("sn.mergeProviders.blankDescription")}
+                    buttonText={t("sn.mergeProviders.newMergeProviderBlank")}
                     urlNew={`${ROUTES.SN_INSTANCE}/${id}/merge-providers/new`} />
 
             )}

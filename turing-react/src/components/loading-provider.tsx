@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconAlertTriangleFilled } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import { BlankSlate } from "./blank-slate";
 
 interface LoadProviderProps {
@@ -15,13 +16,15 @@ export const LoadProvider = ({
     tryAgainUrl,
     children
 }: LoadProviderProps) => {
+    const { t } = useTranslation();
+
     if (error) {
         return (
             <BlankSlate
                 icon={IconAlertTriangleFilled}
-                title="Error while loading data"
+                title={t("common.errorLoading")}
                 description={error}
-                buttonText="Try again"
+                buttonText={t("common.tryAgain")}
                 urlNew={tryAgainUrl}
             />
         );

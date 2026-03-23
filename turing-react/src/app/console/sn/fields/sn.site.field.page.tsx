@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconAlignBoxCenterStretch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,15 +22,16 @@ export default function SNSiteFieldPage() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (fieldId === "new") {
       turSNFieldService.query(id).then(() => setSnField({} as TurSNSiteField)).catch(() => setError("Connection error or timeout while fetching fields."));
-      setBreadcrumb([{ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: "New" }]);
+      setBreadcrumb([{ label: t("sn.fields.title"), href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: t("common.new") }]);
     } else {
       turSNFieldService.get(id, fieldId).then((field) => {
         setSnField(field);
-        setBreadcrumb([{ label: "Fields", href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: field.name || fieldId }]);
+        setBreadcrumb([{ label: t("sn.fields.title"), href: `${ROUTES.SN_INSTANCE}/${id}/field` }, { label: field.name || fieldId }]);
       }).catch(() => setError("Connection error or timeout while fetching field details."));
       setIsNew(false);
     }
@@ -40,14 +42,14 @@ export default function SNSiteFieldPage() {
     if (!snField) return;
     try {
       if (await turSNFieldService.delete(id, snField)) {
-        toast.success("The field was deleted");
+        toast.success(t("sn.fields.deleted"));
         navigate(`${ROUTES.SN_INSTANCE}/${id}/field`);
       } else {
-        toast.error("The field was not deleted");
+        toast.error(t("sn.fields.notDeleted"));
       }
     } catch (error) {
       console.error("Delete error", error);
-      toast.error("The field was not deleted");
+      toast.error(t("sn.fields.notDeleted"));
     }
     setOpen(false);
   }
@@ -57,7 +59,7 @@ export default function SNSiteFieldPage() {
       {snField && (<> <SubPageHeader
         icon={IconAlignBoxCenterStretch}
         name={snField.name}
-        feature="Field"
+        feature={t("sn.fields.feature")}
         description={snField.description}
         onDelete={isNew ? undefined : onDelete}
         open={open}

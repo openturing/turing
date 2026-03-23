@@ -8,11 +8,13 @@ import type { TurRole } from "@/models/auth/role";
 import { TurRoleService } from "@/services/auth/role.service";
 import { IconUserShield } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turRoleService = new TurRoleService();
 
 export default function AdminRolePage() {
+    const { t } = useTranslation();
     const { roleId } = useParams() as { roleId: string };
     const [role, setRole] = useState<TurRole>();
     const [isNew, setIsNew] = useState(true);
@@ -23,12 +25,12 @@ export default function AdminRolePage() {
         if (roleId === "new") {
             setRole({ id: "", name: "", description: "" } as TurRole);
             setIsNew(true);
-            setBreadcrumb([{ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("admin.roles.title"), href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: t("common.new") }]);
         } else {
             turRoleService.get(roleId).then((r) => {
                 setRole(r);
-                setBreadcrumb([{ label: "Roles", href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: r.name }]);
-            }).catch(() => setError("Failed to load role."));
+                setBreadcrumb([{ label: t("admin.roles.title"), href: `${ROUTES.ADMIN_ROOT}/roles` }, { label: r.name }]);
+            }).catch(() => setError(t("admin.roles.loadOneFailed")));
             setIsNew(false);
         }
     }, [roleId]);
@@ -39,9 +41,9 @@ export default function AdminRolePage() {
         <LoadProvider checkIsNotUndefined={role} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/roles/${roleId}`}>
             <SubPageHeader
                 icon={IconUserShield}
-                feature={isNew ? "New Role" : "Role"}
-                name={isNew ? "New Role" : (role?.name ?? "")}
-                description={isNew ? "Create a new access role." : "Edit role details and permissions."}
+                feature={isNew ? t("admin.roles.newRole") : "Role"}
+                name={isNew ? t("admin.roles.newRole") : (role?.name ?? "")}
+                description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
             />
             {role && <AdminRoleForm value={role} isNew={isNew} />}
         </LoadProvider>

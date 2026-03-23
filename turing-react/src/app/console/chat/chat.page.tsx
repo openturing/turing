@@ -11,6 +11,7 @@ import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
 import { IconMessageChatbot } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
 import { type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
 import { ChatHeader } from "./components/chat-header"
@@ -32,6 +33,7 @@ interface AgentTabState {
 }
 
 export default function ChatPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<string>("chat")
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -183,13 +185,13 @@ export default function ChatPage() {
       },
       (error) => {
         console.error(error)
-        toast.error("Failed to get a response. Please check your LLM configuration.")
+        toast.error(t("chat.failedResponse"))
         setChatMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
         setChatLoading(false)
       },
       filesToSend.length > 0 ? filesToSend : undefined,
     )
-  }, [attachedFiles, chatLoading, selectedLlmId, turChatService, saveAfterResponse])
+  }, [attachedFiles, chatLoading, selectedLlmId, turChatService, saveAfterResponse, t])
 
   // Auto-send initial prompt from sessionStorage (set by home page ChatStarter)
   useEffect(() => {
@@ -232,7 +234,7 @@ export default function ChatPage() {
       },
       (error) => {
         console.error(error)
-        toast.error("Failed to get a response. Please check your LLM configuration.")
+        toast.error(t("chat.failedResponse"))
         setChatMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
         setChatLoading(false)
       },
@@ -250,11 +252,11 @@ export default function ChatPage() {
       [{ role: "user", content: `Summarize the following conversation concisely, preserving key facts, decisions, and context needed to continue the conversation. Write the summary in the same language as the conversation.\n\n${text}` }],
       (token) => { summary += token },
       () => {
-        setChatMessages([{ id: generateId(), role: "assistant", content: `**[Context compacted]**\n\n${summary}` }])
+        setChatMessages([{ id: generateId(), role: "assistant", content: `${t("chat.contextCompactedLabel")}\n\n${summary}` }])
         setChatCompacting(false)
-        toast.success("Context compacted successfully.")
+        toast.success(t("chat.contextCompacted"))
       },
-      (error) => { console.error(error); toast.error("Failed to compact context."); setChatCompacting(false) },
+      (error) => { console.error(error); toast.error(t("chat.failedCompact")); setChatCompacting(false) },
     )
   }
 
@@ -284,7 +286,7 @@ export default function ChatPage() {
       },
       (error) => {
         console.error(error)
-        toast.error("Failed to get a response. Please check your LLM configuration.")
+        toast.error(t("chat.failedResponse"))
         setSemMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
         setSemLoading(false)
       },
@@ -301,11 +303,11 @@ export default function ChatPage() {
       [{ role: "user", content: `Summarize the following conversation concisely, preserving key facts, decisions, and context needed to continue the conversation. Write the summary in the same language as the conversation.\n\n${text}` }],
       (token) => { summary += token },
       () => {
-        setSemMessages([{ id: generateId(), role: "assistant", content: `**[Context compacted]**\n\n${summary}` }])
+        setSemMessages([{ id: generateId(), role: "assistant", content: `${t("chat.contextCompactedLabel")}\n\n${summary}` }])
         setSemCompacting(false)
-        toast.success("Context compacted successfully.")
+        toast.success(t("chat.contextCompacted"))
       },
-      (error) => { console.error(error); toast.error("Failed to compact context."); setSemCompacting(false) },
+      (error) => { console.error(error); toast.error(t("chat.failedCompact")); setSemCompacting(false) },
     )
   }
 
@@ -362,7 +364,7 @@ export default function ChatPage() {
       },
       (error) => {
         console.error(error)
-        toast.error(`Failed to get a response from ${agentTitle ?? "AI Agent"}.`)
+        toast.error(t("chat.failedAgentResponse", { agent: agentTitle ?? t("home.features.aiAgent.title") }))
         setAgentStates((prev) => {
           const s = prev[agentId]
           if (!s) return prev
@@ -396,12 +398,12 @@ export default function ChatPage() {
       (token) => { summary += token },
       () => {
         updateAgentState(agentId, {
-          messages: [{ id: generateId(), role: "assistant", content: `**[Context compacted]**\n\n${summary}` }],
+          messages: [{ id: generateId(), role: "assistant", content: `${t("chat.contextCompactedLabel")}\n\n${summary}` }],
           compacting: false,
         })
-        toast.success("Context compacted successfully.")
+        toast.success(t("chat.contextCompacted"))
       },
-      (error) => { console.error(error); toast.error("Failed to compact context."); updateAgentState(agentId, { compacting: false }) },
+      (error) => { console.error(error); toast.error(t("chat.failedCompact")); updateAgentState(agentId, { compacting: false }) },
     )
   }
 
@@ -457,12 +459,12 @@ export default function ChatPage() {
   if (loaded && llmInstances.length === 0) {
     return (
       <>
-        <PageHeader turIcon={IconMessageChatbot} title={"Chat"} />
+        <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
         <BlankSlate
           icon={IconMessageChatbot}
-          title="No Language Model Available"
-          description="To use the chat, create and enable at least one LLM instance."
-          buttonText="Create LLM Instance"
+          title={t("chat.noLlmAvailable")}
+          description={t("chat.noLlmDescription")}
+          buttonText={t("chat.createLlmInstance")}
           urlNew={ROUTES.LLM_INSTANCE + "/new"}
         />
       </>
@@ -500,7 +502,7 @@ export default function ChatPage() {
               <div className="flex-1 flex flex-col items-center justify-center px-4">
                 <ChatStarter
                   defaultLlmId={selectedLlmId}
-                  modelLabel={selectedInstance ? `Using ${selectedInstance.title} (${selectedInstance.turLLMVendor?.id ?? ""})` : "Select a language model to start chatting."}
+                  modelLabel={selectedInstance ? t("chat.usingModel", { model: selectedInstance.title, vendor: selectedInstance.turLLMVendor?.id ?? "" }) : t("chat.selectModelToChat")}
                   onSendInPlace={sendChatPrompt}
                   attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
                 />
@@ -518,7 +520,7 @@ export default function ChatPage() {
                       onSend={handleChatSend}
                       loading={chatLoading}
                       disabled={!selectedLlmId}
-                      placeholder={selectedLlmId ? "Send a message..." : "Select a model to start..."}
+                      placeholder={selectedLlmId ? t("chat.askMeAnything") : t("chat.selectModelToStart")}
                       accentColor="blue"
                       attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
                     />
@@ -557,7 +559,7 @@ export default function ChatPage() {
                   onSend={handleSemSend}
                   loading={semLoading}
                   disabled={!selectedLlmId}
-                  placeholder={selectedLlmId ? "Ask about your semantic navigation content..." : "Select a model to start..."}
+                  placeholder={selectedLlmId ? t("chat.askAboutSemantic") : t("chat.selectModelToStart")}
                   accentColor="emerald"
                 />
                 <div className="flex items-center justify-between mt-2 gap-4">
@@ -595,7 +597,7 @@ export default function ChatPage() {
                   onSend={handleAgentSend}
                   loading={currentAgentState.loading}
                   disabled={!selectedLlmId}
-                  placeholder={selectedLlmId ? `Ask ${activeAgent?.title ?? "the agent"}...` : "Select a model to start..."}
+                  placeholder={selectedLlmId ? t("chat.askAgent", { agent: activeAgent?.title ?? t("home.features.aiAgent.title") }) : t("chat.selectModelToStart")}
                   accentColor="violet"
                 />
                 <div className="flex items-center justify-between mt-2 gap-4">

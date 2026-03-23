@@ -29,14 +29,15 @@ import {
   IconZoomCode
 } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
 
 const turLLMInstanceService = new TurLLMInstanceService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
 
 interface FeatureCard {
-  title: string
-  description: string
+  titleKey: string
+  descriptionKey: string
   url: string
   icon: Icon
   privilege?: string
@@ -47,60 +48,61 @@ interface FeatureCard {
 }
 
 interface FeatureSection {
-  label: string
-  description: string
+  labelKey: string
+  descriptionKey: string
   gradient: string
   items: FeatureCard[]
 }
 
 const SECTIONS: FeatureSection[] = [
   {
-    label: "Generative AI",
-    description: "Build, configure and interact with large language models, embeddings, and intelligent agents.",
+    labelKey: "home.sections.generativeAi.label",
+    descriptionKey: "home.sections.generativeAi.description",
     gradient: "from-blue-600 to-indigo-600",
     items: [
-      { title: "Language Model", description: "Configure LLM providers like OpenAI, Ollama, Anthropic, and Gemini for chat and generation.", url: "/admin/llm/instance", icon: IconCpu2, privilege: "LLM_VIEW", docUrl: "https://docs.viglet.com/turing/llm-instances" },
-      { title: "Embedding Model", description: "Set up embedding models for vector similarity search and RAG pipelines.", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube, privilege: "EMBEDDING_VIEW", docUrl: "https://docs.viglet.com/turing/embedding-models" },
-      { title: "Embedding Store", description: "Manage vector stores like Chroma, Milvus, and PGVector for semantic retrieval.", url: "/admin/store/instance", icon: IconDatabase, privilege: "STORE_VIEW", docUrl: "https://docs.viglet.com/turing/embedding-stores" },
-      { title: "MCP Server", description: "Connect to Model Context Protocol servers for external tool integration.", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.com/turing/mcp-servers" },
-      { title: "AI Agent", description: "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks.", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.com/turing/ai-agents" },
-      { title: "Intent", description: "Define prompt categories and actions shown as quick suggestions in the chat.", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.com/turing/intent" },
-      { title: "Token Usage", description: "Monitor token consumption across all LLM instances and models.", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, docUrl: "https://docs.viglet.com/turing/token-usage" },
-      { title: "Chat", description: "Start conversations with your configured LLMs, agents, and semantic search.", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, docUrl: "https://docs.viglet.com/turing/chat#chat-direct-llm" },
+      { titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", url: "/admin/llm/instance", icon: IconCpu2, privilege: "LLM_VIEW", docUrl: "https://docs.viglet.com/turing/llm-instances" },
+      { titleKey: "home.features.embeddingModel.title", descriptionKey: "home.features.embeddingModel.description", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube, privilege: "EMBEDDING_VIEW", docUrl: "https://docs.viglet.com/turing/embedding-models" },
+      { titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", url: "/admin/store/instance", icon: IconDatabase, privilege: "STORE_VIEW", docUrl: "https://docs.viglet.com/turing/embedding-stores" },
+      { titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.com/turing/mcp-servers" },
+      { titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.com/turing/ai-agents" },
+      { titleKey: "home.features.intent.title", descriptionKey: "home.features.intent.description", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.com/turing/intent" },
+      { titleKey: "home.features.tokenUsage.title", descriptionKey: "home.features.tokenUsage.description", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, docUrl: "https://docs.viglet.com/turing/token-usage" },
+      { titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, docUrl: "https://docs.viglet.com/turing/chat" },
     ],
   },
   {
-    label: "Enterprise Search",
-    description: "Index, search and navigate your enterprise content with powerful search engines and semantic understanding.",
+    labelKey: "home.sections.enterpriseSearch.label",
+    descriptionKey: "home.sections.enterpriseSearch.description",
     gradient: "from-emerald-600 to-teal-600",
     items: [
-      { title: "Search Engine", description: "Manage Solr, Elasticsearch, or Lucene instances that power your search.", url: "/admin/se/instance", icon: IconZoomCode, privilege: "SE_VIEW", docUrl: "https://docs.viglet.com/turing/search-engine" },
-      { title: "Semantic Navigation", description: "Create search sites with facets, highlighting, spell-check and AI insights.", url: "/admin/sn/instance", icon: IconCompass, privilege: "SN_VIEW", docUrl: "https://docs.viglet.com/turing/semantic-navigation" },
-      { title: "Integration", description: "Connect to external CMS, databases, and file systems to index their content.", url: "/admin/integration/instance", icon: IconPlugConnectedX, docUrl: "https://docs.viglet.com/turing/integration" },
-      { title: "GraphQL Explorer", description: "Query your semantic navigation data using the interactive GraphQL playground.", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql, docUrl: "https://docs.viglet.com/turing/graphql" },
+      { titleKey: "home.features.searchEngine.title", descriptionKey: "home.features.searchEngine.description", url: "/admin/se/instance", icon: IconZoomCode, privilege: "SE_VIEW", docUrl: "https://docs.viglet.com/turing/search-engine" },
+      { titleKey: "home.features.semanticNavigation.title", descriptionKey: "home.features.semanticNavigation.description", url: "/admin/sn/instance", icon: IconCompass, privilege: "SN_VIEW", docUrl: "https://docs.viglet.com/turing/semantic-navigation" },
+      { titleKey: "home.features.integration.title", descriptionKey: "home.features.integration.description", url: "/admin/integration/instance", icon: IconPlugConnectedX, docUrl: "https://docs.viglet.com/turing/integration" },
+      { titleKey: "home.features.graphqlExplorer.title", descriptionKey: "home.features.graphqlExplorer.description", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql, docUrl: "https://docs.viglet.com/turing/graphql" },
     ],
   },
   {
-    label: "Management",
-    description: "System administration, asset management, and platform configuration.",
+    labelKey: "home.sections.management.label",
+    descriptionKey: "home.sections.management.description",
     gradient: "from-slate-600 to-slate-700",
     items: [
-      { title: "Assets", description: "Browse and manage files stored in the MinIO object storage.", url: ROUTES.ASSET_ROOT, icon: IconFolder, docUrl: "https://docs.viglet.com/turing/assets" },
-      { title: "Import", description: "Import configurations, sites, and data from exported packages.", url: "/admin/exchange/import", icon: IconFileImport, docUrl: "https://docs.viglet.com/turing/import-export" },
-      { title: "Logging", description: "View indexing logs and monitor data pipeline activity.", url: "/admin/logging/instance", icon: IconReceiptRupee, docUrl: "https://docs.viglet.com/turing/logging" },
-      { title: "Administration", description: "Manage users, groups, roles, API tokens, and system settings.", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog, docUrl: "https://docs.viglet.com/turing/administration-guide" },
+      { titleKey: "home.features.assets.title", descriptionKey: "home.features.assets.description", url: ROUTES.ASSET_ROOT, icon: IconFolder, docUrl: "https://docs.viglet.com/turing/assets" },
+      { titleKey: "home.features.import.title", descriptionKey: "home.features.import.description", url: "/admin/exchange/import", icon: IconFileImport, docUrl: "https://docs.viglet.com/turing/import-export" },
+      { titleKey: "home.features.logging.title", descriptionKey: "home.features.logging.description", url: "/admin/logging/instance", icon: IconReceiptRupee, docUrl: "https://docs.viglet.com/turing/logging" },
+      { titleKey: "home.features.administration.title", descriptionKey: "home.features.administration.description", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog, docUrl: "https://docs.viglet.com/turing/administration-guide" },
     ],
   },
 ]
 
-function getGreeting(): string {
+function getGreetingKey(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return "Good morning"
-  if (hour < 18) return "Good afternoon"
-  return "Good evening"
+  if (hour < 12) return "home.greeting.morning"
+  if (hour < 18) return "home.greeting.afternoon"
+  return "home.greeting.evening"
 }
 
 export default function HomePage() {
+  const { t } = useTranslation()
   const { user } = useCurrentUser()
   const isAdmin = !!user?.admin
   const userPrivileges = useMemo(() => new Set(user?.privileges ?? []), [user?.privileges])
@@ -141,7 +143,7 @@ export default function HomePage() {
 
   return (
     <>
-      <PageHeader turIcon={IconHome} title="Home" />
+      <PageHeader turIcon={IconHome} title={t("home.title")} />
       <div className="px-6 py-8 max-w-7xl mx-auto">
         {/* Hero */}
         <div className="mb-10">
@@ -149,10 +151,10 @@ export default function HomePage() {
             <TurLogo className="size-10" />
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
-                {getGreeting()}, {firstName}.
+                {t(getGreetingKey())}, {firstName}.
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
-                Welcome to Viglet Turing ES — your enterprise search intelligence platform.
+                {t("home.welcome")}
               </p>
             </div>
           </div>
@@ -171,24 +173,24 @@ export default function HomePage() {
         {/* Sections */}
         <div className="space-y-10">
           {visibleSections.map((section) => (
-            <section key={section.label}>
+            <section key={section.labelKey}>
               <div className="mb-4">
-                <h2 className="text-xl font-semibold">{section.label}</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">{section.description}</p>
+                <h2 className="text-xl font-semibold">{t(section.labelKey)}</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{t(section.descriptionKey)}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {section.items.map((item) => {
                   const ItemIcon = item.icon
                   return (
-                    <div key={item.title} className="relative flex flex-col h-full rounded-xl border bg-card p-5 transition-all duration-200">
+                    <div key={item.titleKey} className="relative flex flex-col h-full rounded-xl border bg-card p-5 transition-all duration-200">
                       <div className={`inline-flex rounded-lg bg-gradient-to-br ${section.gradient} p-2.5 mb-3 self-start`}>
                         <ItemIcon className="size-5 text-white" />
                       </div>
                       <h3 className="font-medium text-sm mb-1">
-                        {item.title}
+                        {t(item.titleKey)}
                       </h3>
                       <p className="text-xs text-muted-foreground leading-relaxed mb-4 flex-1">
-                        {item.description}
+                        {t(item.descriptionKey)}
                       </p>
                       <div className="flex items-center justify-between pt-2 border-t border-border/50">
                         {item.docUrl ? (
@@ -199,7 +201,7 @@ export default function HomePage() {
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           >
                             <IconBook className="size-3.5" />
-                            Docs
+                            {t("home.docs")}
                           </a>
                         ) : <span />}
                         {canAccess(item) ? (
@@ -207,7 +209,7 @@ export default function HomePage() {
                             to={item.url}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                           >
-                            Open
+                            {t("home.open")}
                             <IconExternalLink className="size-3.5" />
                           </NavLink>
                         ) : <span />}

@@ -4,6 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import { IconChevronLeft } from "@tabler/icons-react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ModeToggle } from "./mode-toggle";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "./ui/breadcrumb";
@@ -17,6 +18,7 @@ interface MyComponentProps {
 export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title, urlBase }) => {
   const { items } = useBreadcrumb();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const lastItem = items.length > 0 ? items[items.length - 1] : null;
   const parentItem = items.length > 1 ? items[items.length - 2] : null;
@@ -67,7 +69,7 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
           {parentItem?.href && (
             <button
               type="button"
-              title="Go back"
+              title={t("common.goBack")}
               onClick={() => navigate(parentItem.href!)}
               className="shrink-0 flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors"
             >

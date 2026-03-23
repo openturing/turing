@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconNumber123 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,15 +22,16 @@ export default function SNSiteResultRankingPage() {
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (resultRankingId === "new") {
             turSNRankingExpressionService.query(id).then(() => setResultRanking({} as TurSNRankingExpression)).catch(() => setError("Connection error or timeout while fetching result rankings."));
-            setBreadcrumb([{ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("sn.resultRanking.title"), href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: t("common.new") }]);
         } else {
             turSNRankingExpressionService.get(id, resultRankingId).then((ranking) => {
                 setResultRanking(ranking);
-                setBreadcrumb([{ label: "Result Ranking", href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: ranking.name || resultRankingId }]);
+                setBreadcrumb([{ label: t("sn.resultRanking.title"), href: `${ROUTES.SN_INSTANCE}/${id}/result-ranking` }, { label: ranking.name || resultRankingId }]);
             }).catch(() => setError("Connection error or timeout while fetching result ranking details."));
             setIsNew(false);
         }
@@ -40,15 +42,15 @@ export default function SNSiteResultRankingPage() {
         if (!resultRanking) return;
         try {
             if (await turSNRankingExpressionService.delete(id, resultRanking)) {
-                toast.success(`The ${resultRanking.name} Result Ranking Instance was deleted`);
+                toast.success(t("sn.resultRanking.deleted", { name: resultRanking.name }));
                 navigate(`${ROUTES.SN_INSTANCE}/${id}/result-ranking`);
             } else {
-                toast.error(`The ${resultRanking.name} Result Ranking Instance was not deleted`);
+                toast.error(t("sn.resultRanking.notDeleted", { name: resultRanking.name }));
             }
 
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error(`The ${resultRanking.name} Result Ranking Instance was not deleted`);
+            toast.error(t("sn.resultRanking.notDeleted", { name: resultRanking.name }));
         }
         setOpen(false);
     }
@@ -56,8 +58,8 @@ export default function SNSiteResultRankingPage() {
         <LoadProvider checkIsNotUndefined={resultRanking} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/result-ranking`}>
             {resultRanking && (
                 <>
-                    <SubPageHeader icon={IconNumber123} name={resultRanking.name} feature="Result Ranking"
-                        description="Define content that will be featured in the term-based search."
+                    <SubPageHeader icon={IconNumber123} name={resultRanking.name} feature={t("sn.resultRanking.title")}
+                        description={t("sn.resultRanking.description")}
                         onDelete={onDelete}
                         open={open}
                         setOpen={setOpen} />

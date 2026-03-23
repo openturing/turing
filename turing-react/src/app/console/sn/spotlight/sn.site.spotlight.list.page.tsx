@@ -9,6 +9,7 @@ import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.servi
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSpeakerphone } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -17,7 +18,8 @@ export default function SNSiteSpotlightListPage() {
     const { id } = useParams() as { id: string };
     const [spotlightList, setSpotlightList] = useState<TurSNSiteSpotlight[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Spotlight");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("sn.spotlight.title"));
 
     useEffect(() => {
         turSNSiteSpotlightService.query(id).then(setSpotlightList).catch(() => setError("Connection error or timeout while fetching spotlight."));
@@ -29,18 +31,18 @@ export default function SNSiteSpotlightListPage() {
     });
     return (
         <LoadProvider checkIsNotUndefined={spotlightList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/spotlight`}>
-            <SubPageHeader icon={IconSpeakerphone} name="Spotlight" feature="Spotlight"
-                description="Define content that will be featured in the term-based search.">
-                <SubPageHeader.Action label="New Spotlight" href={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} />
+            <SubPageHeader icon={IconSpeakerphone} name={t("sn.spotlight.title")} feature={t("sn.spotlight.title")}
+                description={t("sn.spotlight.description")}>
+                <SubPageHeader.Action label={t("sn.spotlight.newSpotlight")} href={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} />
             </SubPageHeader>
             {spotlightList && spotlightList.length > 0 ? (
                 <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconSpeakerphone}
-                    title="You don’t seem to have any spotlight."
-                    description="Create a spotlight component that highlights content triggered by specific search terms."
-                    buttonText="New spotlight"
+                    title={t("sn.spotlight.blankTitle")}
+                    description={t("sn.spotlight.blankDescription")}
+                    buttonText={t("sn.spotlight.newSpotlightBlank")}
                     urlNew={`${ROUTES.SN_INSTANCE}/${id}/spotlight/new`} />
             )}
         </LoadProvider>

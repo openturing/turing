@@ -39,6 +39,7 @@ import {
     IconLogout2,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const service = new TurLLMTokenUsageService();
 const llmService = new TurLLMInstanceService();
@@ -90,6 +91,7 @@ function SummaryCard({ title, value, icon: Icon, color, bgColor, ringColor }: Re
 }
 
 export default function TokenUsagePage() {
+    const { t } = useTranslation();
     const monthOptions = getMonthOptions();
     const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
     const [report, setReport] = useState<TurUsageReport | null>(null);
@@ -131,9 +133,9 @@ export default function TokenUsagePage() {
         return (
             <BlankSlate
                 icon={IconChartBar}
-                title="No Language Model Available"
-                description="To view token usage, create and enable at least one LLM instance."
-                buttonText="Create LLM Instance"
+                title={t("tokenUsage.noLlm")}
+                description={t("tokenUsage.noLlmDescription")}
+                buttonText={t("tokenUsage.createLlm")}
                 urlNew={ROUTES.LLM_INSTANCE + "/new"}
             />
         );
@@ -148,7 +150,7 @@ export default function TokenUsagePage() {
                     onClick={handlePrev}
                     disabled={currentIdx >= monthOptions.length - 1}
                     className="rounded-lg p-2 hover:bg-accent transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-                    title="Previous month"
+                    title={t("tokenUsage.previousMonth")}
                 >
                     <IconArrowLeft className="size-4" />
                 </button>
@@ -169,24 +171,24 @@ export default function TokenUsagePage() {
                     onClick={handleNext}
                     disabled={currentIdx <= 0}
                     className="rounded-lg p-2 hover:bg-accent transition-colors disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-                    title="Next month"
+                    title={t("tokenUsage.nextMonth")}
                 >
                     <IconArrowRight className="size-4" />
                 </button>
             </div>
 
             {loading ? (
-                <div className="text-muted-foreground py-16 text-center text-sm">Loading usage data...</div>
+                <div className="text-muted-foreground py-16 text-center text-sm">{t("tokenUsage.loadingUsage")}</div>
             ) : !report ? (
                 <div className="text-muted-foreground py-16 text-center text-sm">
-                    Failed to load usage data.
+                    {t("tokenUsage.loadFailed")}
                 </div>
             ) : (
                 <>
                     {/* Summary Cards */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <SummaryCard
-                            title="Total Requests"
+                            title={t("tokenUsage.totalRequests")}
                             value={report.totalRequests.toLocaleString()}
                             icon={IconFileText}
                             color="text-blue-600 dark:text-blue-400"
@@ -194,7 +196,7 @@ export default function TokenUsagePage() {
                             ringColor="ring-blue-500/10 dark:ring-blue-400/10"
                         />
                         <SummaryCard
-                            title="Input Tokens"
+                            title={t("tokenUsage.inputTokens")}
                             value={formatTokens(report.totalInputTokens)}
                             icon={IconLogin2}
                             color="text-emerald-600 dark:text-emerald-400"
@@ -202,7 +204,7 @@ export default function TokenUsagePage() {
                             ringColor="ring-emerald-500/10 dark:ring-emerald-400/10"
                         />
                         <SummaryCard
-                            title="Output Tokens"
+                            title={t("tokenUsage.outputTokens")}
                             value={formatTokens(report.totalOutputTokens)}
                             icon={IconLogout2}
                             color="text-amber-600 dark:text-amber-400"
@@ -210,7 +212,7 @@ export default function TokenUsagePage() {
                             ringColor="ring-amber-500/10 dark:ring-amber-400/10"
                         />
                         <SummaryCard
-                            title="Total Tokens"
+                            title={t("tokenUsage.totalTokens")}
                             value={formatTokens(report.totalTokens)}
                             icon={IconCoin}
                             color="text-violet-600 dark:text-violet-400"
@@ -222,27 +224,27 @@ export default function TokenUsagePage() {
                     {/* Monthly Summary by Model */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Summary by Model</CardTitle>
+                            <CardTitle>{t("tokenUsage.summaryByModel")}</CardTitle>
                             <CardDescription>
-                                Aggregated token usage per LLM instance for the selected month
+                                {t("tokenUsage.summaryDescription")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             {report.summary.length === 0 ? (
                                 <p className="text-muted-foreground py-4 text-center text-sm">
-                                    No usage data for this period.
+                                    {t("tokenUsage.noUsageData")}
                                 </p>
                             ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Instance</TableHead>
-                                            <TableHead>Vendor</TableHead>
-                                            <TableHead>Model</TableHead>
-                                            <TableHead className="text-right">Requests</TableHead>
-                                            <TableHead className="text-right">Input</TableHead>
-                                            <TableHead className="text-right">Output</TableHead>
-                                            <TableHead className="text-right">Total</TableHead>
+                                            <TableHead>{t("tokenUsage.instance")}</TableHead>
+                                            <TableHead>{t("tokenUsage.vendor")}</TableHead>
+                                            <TableHead>{t("tokenUsage.model")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.requests")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.input")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.output")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.total")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -278,27 +280,27 @@ export default function TokenUsagePage() {
                     {/* Daily Breakdown */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Daily Breakdown</CardTitle>
+                            <CardTitle>{t("tokenUsage.dailyBreakdown")}</CardTitle>
                             <CardDescription>
-                                Day-by-day token consumption per model
+                                {t("tokenUsage.dailyDescription")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             {report.daily.length === 0 ? (
                                 <p className="text-muted-foreground py-4 text-center text-sm">
-                                    No usage data for this period.
+                                    {t("tokenUsage.noUsageData")}
                                 </p>
                             ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Instance</TableHead>
-                                            <TableHead>Model</TableHead>
-                                            <TableHead className="text-right">Requests</TableHead>
-                                            <TableHead className="text-right">Input</TableHead>
-                                            <TableHead className="text-right">Output</TableHead>
-                                            <TableHead className="text-right">Total</TableHead>
+                                            <TableHead>{t("tokenUsage.date")}</TableHead>
+                                            <TableHead>{t("tokenUsage.instance")}</TableHead>
+                                            <TableHead>{t("tokenUsage.model")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.requests")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.input")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.output")}</TableHead>
+                                            <TableHead className="text-right">{t("tokenUsage.total")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

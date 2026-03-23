@@ -11,19 +11,22 @@ import { TurSNSiteMetricsService, type TurSNTopTermsPeriod } from "@/services/sn
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconArrowDown, IconArrowUp, IconChartBar, IconSearch } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
 const turSNSiteMetricsService = new TurSNSiteMetricsService();
 const rows = 50;
-const periodOptions: { value: TurSNTopTermsPeriod; label: string }[] = [
-  { value: "today", label: "Today" },
-  { value: "this-week", label: "This Week" },
-  { value: "this-month", label: "This Month" },
-  { value: "all-time", label: "All Time" },
-];
+const periodValues: TurSNTopTermsPeriod[] = ["today", "this-week", "this-month", "all-time"];
+
+const periodLabelKeys: Record<TurSNTopTermsPeriod, string> = {
+  "today": "sn.topSearchTerms.today",
+  "this-week": "sn.topSearchTerms.thisWeek",
+  "this-month": "sn.topSearchTerms.thisMonth",
+  "all-time": "sn.topSearchTerms.allTime",
+};
 
 function isValidPeriod(value: string | undefined): value is TurSNTopTermsPeriod {
-  return periodOptions.some((option) => option.value === value);
+  return periodValues.includes(value as TurSNTopTermsPeriod);
 }
 
 function getTermInitial(term: string): string {
@@ -44,7 +47,8 @@ function formatNumber(value: number | undefined): string {
 export default function SNSiteTopSearchTermsPage() {
   const { id, period: periodParam } = useParams() as { id: string; period?: string };
   const navigate = useNavigate();
-  useSubPageBreadcrumb("Top Search Terms");
+  const { t } = useTranslation();
+  useSubPageBreadcrumb(t("sn.topSearchTerms.title"));
 
   const [topTerms, setTopTerms] = useState<TurSNSiteMetricsTerm | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -124,8 +128,8 @@ export default function SNSiteTopSearchTermsPage() {
       return (
         <BlankSlate
           icon={IconChartBar}
-          title="No search terms yet."
-          description="As soon as users search, the top terms will show up here."
+          title={t("sn.topSearchTerms.noTerms")}
+          description={t("sn.topSearchTerms.noTermsDescription")}
           buttonText=""
         />
       );
@@ -138,10 +142,10 @@ export default function SNSiteTopSearchTermsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">Rank</TableHead>
-                  <TableHead>Term</TableHead>
-                  <TableHead className="text-center">Average of results</TableHead>
-                  <TableHead className="text-center">Search total</TableHead>
+                  <TableHead className="w-20">{t("sn.topSearchTerms.rank")}</TableHead>
+                  <TableHead>{t("sn.topSearchTerms.term")}</TableHead>
+                  <TableHead className="text-center">{t("sn.topSearchTerms.avgResults")}</TableHead>
+                  <TableHead className="text-center">{t("sn.topSearchTerms.searchTotal")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -174,13 +178,13 @@ export default function SNSiteTopSearchTermsPage() {
         </Card>
         <Card >
           <CardHeader>
-            <CardTitle>Statistics</CardTitle>
+            <CardTitle>{t("sn.insights.statistics")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground ">
             <div className="flex items-center gap-2 text-foreground">
               <IconSearch className="h-4 w-4 text-muted-foreground" />
               <span>
-                <strong>{formatNumber(topTerms?.totalTermsPeriod)}</strong> search terms
+                <strong>{formatNumber(topTerms?.totalTermsPeriod)}</strong> {t("sn.insights.searchTerms")}
               </span>
             </div>
             {variation !== 0 && (
@@ -209,9 +213,9 @@ export default function SNSiteTopSearchTermsPage() {
     <>
       <SubPageHeader
         icon={IconChartBar}
-        name="Top Search Terms"
-        feature="Top Search Terms"
-        description="Top search terms report."
+        name={t("sn.topSearchTerms.title")}
+        feature={t("sn.topSearchTerms.title")}
+        description={t("sn.topSearchTerms.description")}
       />
       <div className="px-6">
         <Tabs
@@ -222,9 +226,9 @@ export default function SNSiteTopSearchTermsPage() {
           className="mb-4"
         >
           <TabsList>
-            {periodOptions.map((option) => (
-              <TabsTrigger key={option.value} value={option.value}>
-                {option.label}
+            {periodValues.map((value) => (
+              <TabsTrigger key={value} value={value}>
+                {t(periodLabelKeys[value])}
               </TabsTrigger>
             ))}
           </TabsList>

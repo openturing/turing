@@ -17,7 +17,9 @@ import {
   IconShieldCog,
   IconZoomCode
 } from "@tabler/icons-react"
+import type { Icon } from "@tabler/icons-react"
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import { ROUTES } from "@/app/routes.const"
 import { NavMain } from "@/components/nav-main"
@@ -38,48 +40,56 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurLogo } from "./logo/tur-logo"
 import { ModeToggleSidebar } from "./mode-toggle"
 
-const LLM_ONLY_TITLES = new Set(["Chat", "Token Usage"])
-
-/** Maps sidebar item titles to the privilege required to view them. */
-const ITEM_PRIVILEGE: Record<string, string> = {
-  "Language Model": "LLM_VIEW",
-  "Embedding Model": "EMBEDDING_VIEW",
-  "Embedding Store": "STORE_VIEW",
-  "AI Agent": "AI_AGENT_VIEW",
-  "Intent": "INTENT_VIEW",
-  "Search Engine": "SE_VIEW",
-  "Semantic Navigation": "SN_VIEW",
+interface SidebarNavItem {
+  key: string
+  titleKey: string
+  url: string
+  icon: Icon
 }
 
-const generativeAiItems = [
-  { title: "Language Model", url: "/admin/llm/instance", icon: IconCpu2 },
-  { title: "Embedding Model", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
-  { title: "Embedding Store", url: "/admin/store/instance", icon: IconDatabase },
-  { title: "MCP Server", url: "/admin/mcp/instance", icon: IconServer2 },
-  { title: "AI Agent", url: "/admin/ai-agent/instance", icon: IconRobot },
-  { title: "Intent", url: ROUTES.INTENT_INSTANCE, icon: IconBulb },
-  { title: "Token Usage", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
-  { title: "Chat", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
+const LLM_ONLY_KEYS = new Set(["chat", "tokenUsage"])
+
+/** Maps sidebar item keys to the privilege required to view them. */
+const ITEM_PRIVILEGE: Record<string, string> = {
+  languageModel: "LLM_VIEW",
+  embeddingModel: "EMBEDDING_VIEW",
+  embeddingStore: "STORE_VIEW",
+  aiAgent: "AI_AGENT_VIEW",
+  intent: "INTENT_VIEW",
+  searchEngine: "SE_VIEW",
+  semanticNavigation: "SN_VIEW",
+}
+
+const generativeAiItems: SidebarNavItem[] = [
+  { key: "languageModel", titleKey: "home.features.languageModel.title", url: "/admin/llm/instance", icon: IconCpu2 },
+  { key: "embeddingModel", titleKey: "home.features.embeddingModel.title", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
+  { key: "embeddingStore", titleKey: "home.features.embeddingStore.title", url: "/admin/store/instance", icon: IconDatabase },
+  { key: "mcpServer", titleKey: "home.features.mcpServer.title", url: "/admin/mcp/instance", icon: IconServer2 },
+  { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
+  { key: "intent", titleKey: "home.features.intent.title", url: ROUTES.INTENT_INSTANCE, icon: IconBulb },
+  { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+  { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 
-const searchItems = [
-  { title: "Search Engine", url: "/admin/se/instance", icon: IconZoomCode },
-  { title: "Semantic Navigation", url: "/admin/sn/instance", icon: IconCompass },
-  { title: "Integration", url: "/admin/integration/instance", icon: IconPlugConnectedX },
-  { title: "GraphQL Explorer", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
+const searchItems: SidebarNavItem[] = [
+  { key: "searchEngine", titleKey: "home.features.searchEngine.title", url: "/admin/se/instance", icon: IconZoomCode },
+  { key: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", url: "/admin/sn/instance", icon: IconCompass },
+  { key: "integration", titleKey: "home.features.integration.title", url: "/admin/integration/instance", icon: IconPlugConnectedX },
+  { key: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
 ]
 
-const management = [
-  { title: "Assets", url: ROUTES.ASSET_ROOT, icon: IconFolder },
-  { title: "Import", url: "/admin/exchange/import", icon: IconFileImport },
-  { title: "Logging", url: "/admin/logging/instance", icon: IconReceiptRupee },
-  { title: "Administration", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
+const managementItems: SidebarNavItem[] = [
+  { key: "assets", titleKey: "home.features.assets.title", url: ROUTES.ASSET_ROOT, icon: IconFolder },
+  { key: "import", titleKey: "home.features.import.title", url: "/admin/exchange/import", icon: IconFileImport },
+  { key: "logging", titleKey: "home.features.logging.title", url: "/admin/logging/instance", icon: IconReceiptRupee },
+  { key: "administration", titleKey: "home.features.administration.title", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
 ]
 
 const turLLMInstanceService = new TurLLMInstanceService();
 const turFeaturesService = new TurFeaturesService();
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
   const [minioEnabled, setMinioEnabled] = React.useState(false);
@@ -99,40 +109,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const userPrivileges = React.useMemo(() => new Set(user?.privileges ?? []), [user?.privileges])
 
   const hasPrivilege = React.useCallback(
-    (title: string) => {
+    (key: string) => {
       if (isAdmin) return true
-      const required = ITEM_PRIVILEGE[title]
+      const required = ITEM_PRIVILEGE[key]
       return !required || userPrivileges.has(required)
     },
     [isAdmin, userPrivileges]
   )
 
   const filterItems = React.useCallback(
-    (items: typeof generativeAiItems) =>
+    (items: SidebarNavItem[]) =>
       items.filter((item) => {
-        if (LLM_ONLY_TITLES.has(item.title) && !hasEnabledLlm) return false
-        return hasPrivilege(item.title)
+        if (LLM_ONLY_KEYS.has(item.key) && !hasEnabledLlm) return false
+        return hasPrivilege(item.key)
       }),
     [hasEnabledLlm, hasPrivilege]
   )
 
   const filteredManagement = React.useMemo(
-    () => management.filter((item) => {
-      if (item.title === "Assets" && !minioEnabled) return false
-      if (item.title === "Administration" && !isAdmin) return false
+    () => managementItems.filter((item) => {
+      if (item.key === "assets" && !minioEnabled) return false
+      if (item.key === "administration" && !isAdmin) return false
       return true
     }),
     [minioEnabled, isAdmin]
   )
 
+  const toNavItems = React.useCallback(
+    (items: SidebarNavItem[]) => items.map(({ titleKey, url, icon }) => ({ title: t(titleKey), url, icon })),
+    [t]
+  )
+
   const navGroups = React.useMemo(
     () => [
-      { items: [{ title: "Home", url: ROUTES.HOME, icon: IconHome }] },
-      { label: "Generative AI", items: filterItems(generativeAiItems) },
-      { label: "Enterprise Search", items: filterItems(searchItems) },
-      { label: "Management", items: filteredManagement },
+      { items: [{ title: t("home.title"), url: ROUTES.HOME, icon: IconHome }] },
+      { label: t("home.sections.generativeAi.label"), items: toNavItems(filterItems(generativeAiItems)) },
+      { label: t("home.sections.enterpriseSearch.label"), items: toNavItems(filterItems(searchItems)) },
+      { label: t("home.sections.management.label"), items: toNavItems(filteredManagement) },
     ].filter((g) => g.items.length > 0),
-    [filterItems, filteredManagement]
+    [t, filterItems, filteredManagement, toNavItems]
   )
   return (
     <Sidebar collapsible="icon" side={isMobile ? "right" : "left"} {...props}>
@@ -147,8 +162,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
               {!isCollapsed && (
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="text-sm font-bold tracking-tight">Turing ES</span>
-                  <span className="text-[10px] text-muted-foreground">Enterprise Search</span>
+                  <span className="text-sm font-bold tracking-tight">{t("sidebar.brandName")}</span>
+                  <span className="text-[10px] text-muted-foreground">{t("sidebar.brandTagline")}</span>
                 </div>
               )}
             </SidebarMenuButton>

@@ -39,7 +39,9 @@ export default function SNSitePage() {
     const navigate = useNavigate()
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
     const [error, setError] = useState<string | null>(null);
-    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
+        id === "new" ? [{ label: "New Site" }] : [{ label: "…" }]
+    );
 
     const data = useMemo(() => {
         if (isNew) {
@@ -139,7 +141,6 @@ export default function SNSitePage() {
                 setSnSite({} as TurSNSite);
                 setSnStatus(null);
                 setIsNew(true);
-                setBreadcrumb([{ label: "New Site" }]);
             }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation sites."));
         } else {
             turSNSiteService.get(id).then((site) => {

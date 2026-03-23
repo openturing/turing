@@ -11,8 +11,10 @@ import {
     IconUserShield,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminSettingsPage() {
+    const { t } = useTranslation();
     const { user } = useCurrentUser();
     const isAdmin = !!user?.admin;
 
@@ -21,45 +23,45 @@ export default function AdminSettingsPage() {
     const data = useMemo(() => ({
         navMain: [
             {
-                title: "Settings",
+                title: t("admin.settings"),
                 url: "/settings",
                 icon: IconSettings,
             },
             ...(showAuthManagement ? [
                 {
-                    title: "Users",
+                    title: t("admin.users.title"),
                     url: "/users",
                     icon: IconUsers,
                 },
                 {
-                    title: "Groups",
+                    title: t("admin.groups.title"),
                     url: "/groups",
                     icon: IconUsersGroup,
                 },
                 {
-                    title: "Roles",
+                    title: t("admin.roles.title"),
                     url: "/roles",
                     icon: IconUserShield,
                 },
             ] : []),
             {
-                title: "API Token",
+                title: t("apiToken.title"),
                 url: "/tokens",
                 icon: IconCode,
             },
             {
-                title: "System Information",
+                title: t("admin.systemInfo.title"),
                 url: "/system-info",
                 icon: IconInfoCircle,
             },
         ],
-    }), [showAuthManagement]);
+    }), [showAuthManagement, t]);
 
     return (
         <SubPage
             icon={IconShieldCog}
-            feature="Administration"
-            name="Administration"
+            feature={t("admin.title")}
+            name={t("admin.title")}
             urlBase={ROUTES.ADMIN_ROOT}
             data={data}
         />

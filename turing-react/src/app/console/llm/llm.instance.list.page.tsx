@@ -7,14 +7,16 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { IconCpu2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turLLMInstanceService = new TurLLMInstanceService();
 
 export default function LLMInstanceListPage() {
+  const { t } = useTranslation();
   const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>();
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    turLLMInstanceService.query().then(setLlmInstances).catch(() => setError("Connection error or timeout while fetching instances."));
+    turLLMInstanceService.query().then(setLlmInstances).catch(() => setError(t("common.connectionError", { resource: "instances" })));
   }, []);
   const gridItemList = useGridAdapter(llmInstances, {
     name: "title",
@@ -26,14 +28,14 @@ export default function LLMInstanceListPage() {
     <LoadProvider checkIsNotUndefined={llmInstances} error={error} tryAgainUrl={`${ROUTES.LLM_INSTANCE}`}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.LLM_INSTANCE}/new`} label="Language Model" />
+          <GridList.NewButton to={`${ROUTES.LLM_INSTANCE}/new`} label={t("llm.title")} />
         </GridList>
       ) : (
         <BlankSlate
           icon={IconCpu2}
-          title="You don’t seem to have any language model instance."
-          description="Create a new instance and use it in semantic navigation and chatbot."
-          buttonText="New language model instance"
+          title={t("llm.blankTitle")}
+          description={t("llm.blankDescription")}
+          buttonText={t("llm.newInstance")}
           urlNew={`${ROUTES.LLM_INSTANCE}/new`} />
       )}
     </LoadProvider>

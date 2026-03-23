@@ -9,6 +9,7 @@ import {
     IconX,
 } from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ export default function ExchangeImportPage() {
     const [errorMessage, setErrorMessage] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const isValidFile = (f: File): boolean => {
         const validTypes = [
@@ -37,9 +39,9 @@ export default function ExchangeImportPage() {
     const handleFile = useCallback(
         async (selectedFile: File) => {
             if (!isValidFile(selectedFile)) {
-                setErrorMessage("Please select a valid ZIP file.");
+                setErrorMessage(t("exchange.invalidFile"));
                 setStatus("error");
-                toast.error("Invalid file type. Only ZIP files are accepted.");
+                toast.error(t("exchange.invalidType"));
                 return;
             }
 
@@ -52,7 +54,7 @@ export default function ExchangeImportPage() {
                 await importService.importFile(selectedFile, (p) => setProgress(p));
                 setStatus("success");
                 setProgress(100);
-                toast.success("Import completed successfully!");
+                toast.success(t("exchange.importSuccess"));
                 setTimeout(() => {
                     navigate(ROUTES.SN_INSTANCE);
                 }, 2000);
@@ -60,10 +62,10 @@ export default function ExchangeImportPage() {
                 const msg =
                     err?.response?.data?.message ||
                     err?.message ||
-                    "An error occurred during import.";
+                    t("exchange.importError");
                 setErrorMessage(msg);
                 setStatus("error");
-                toast.error(`Import failed: ${msg}`);
+                toast.error(t("exchange.importFailedMsg", { message: msg }));
             }
         },
         [navigate]
@@ -175,7 +177,7 @@ export default function ExchangeImportPage() {
                             onChange={handleFileChange}
                             className="hidden"
                             id="import-file-input"
-                            aria-label="Select ZIP file to import"
+                            aria-label={t("exchange.selectZip")}
                         />
 
                         {/* Icon */}
@@ -211,18 +213,18 @@ export default function ExchangeImportPage() {
                                 <>
                                     <p className="text-lg font-semibold">
                                         {isDragOver
-                                            ? "Drop your file here"
-                                            : "Drag & drop your export file"}
+                                            ? t("exchange.dropFile")
+                                            : t("exchange.dragDrop")}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                         or{" "}
                                         <span className="text-blue-500 font-medium underline underline-offset-4 decoration-blue-500/30 hover:decoration-blue-500">
-                                            browse files
+                                            {t("exchange.browseFiles")}
                                         </span>{" "}
-                                        to select a ZIP archive
+                                        {t("exchange.selectZip")}
                                     </p>
                                     <p className="text-xs text-muted-foreground/60 pt-1">
-                                        Only .zip files exported from Turing are supported
+                                        {t("exchange.onlyZip")}
                                     </p>
                                 </>
                             )}
@@ -230,10 +232,10 @@ export default function ExchangeImportPage() {
                             {status === "uploading" && (
                                 <>
                                     <p className="text-lg font-semibold text-blue-500">
-                                        Importing...
+                                        {t("exchange.importing")}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        {progress}% uploaded
+                                        {progress}% {t("exchange.uploaded")}
                                     </p>
                                 </>
                             )}
@@ -241,10 +243,10 @@ export default function ExchangeImportPage() {
                             {status === "success" && (
                                 <>
                                     <p className="text-lg font-semibold text-emerald-500">
-                                        Import Completed
+                                        {t("exchange.importCompleted")}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        Redirecting to Semantic Navigation...
+                                        {t("exchange.redirecting")}
                                     </p>
                                 </>
                             )}
@@ -252,7 +254,7 @@ export default function ExchangeImportPage() {
                             {status === "error" && (
                                 <>
                                     <p className="text-lg font-semibold text-red-500">
-                                        Import Failed
+                                        {t("exchange.importFailed")}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                         {errorMessage}

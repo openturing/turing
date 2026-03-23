@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconLanguage } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,15 +22,16 @@ export default function SNSiteMultiLanguagePage() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (localeId === "new") {
       turSNSiteLocaleService.query(id).then(() => setSnLocale({} as TurSNSiteLocale)).catch(() => setError("Connection error or timeout while fetching Multi Language data."));
-      setBreadcrumb([{ label: "Multi Languages", href: `${ROUTES.SN_INSTANCE}/${id}/locale` }, { label: "New" }]);
+      setBreadcrumb([{ label: t("sn.multiLanguage.title"), href: `${ROUTES.SN_INSTANCE}/${id}/locale` }, { label: t("common.new") }]);
     } else {
       turSNSiteLocaleService.get(id, localeId).then((locale) => {
         setSnLocale(locale);
-        setBreadcrumb([{ label: "Multi Languages", href: `${ROUTES.SN_INSTANCE}/${id}/locale` }, { label: locale.language || localeId }]);
+        setBreadcrumb([{ label: t("sn.multiLanguage.title"), href: `${ROUTES.SN_INSTANCE}/${id}/locale` }, { label: locale.language || localeId }]);
       }).catch(() => setError("Connection error or timeout while fetching locale details."));
       setIsNew(false);
     }
@@ -40,25 +42,25 @@ export default function SNSiteMultiLanguagePage() {
     if (!snLocale) return;
     try {
       if (await turSNSiteLocaleService.delete(snLocale)) {
-        toast.success(`The ${snLocale.language} Language was deleted`);
+        toast.success(t("sn.multiLanguage.deleted", { name: snLocale.language }));
         navigate(`${ROUTES.SN_INSTANCE}/${id}/locale`);
       } else {
-        toast.error(`The ${snLocale.language} Language was not deleted`);
+        toast.error(t("sn.multiLanguage.notDeleted", { name: snLocale.language }));
       }
 
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${snLocale.language} Language was not deleted`);
+      toast.error(t("sn.multiLanguage.notDeleted", { name: snLocale.language }));
     }
     setOpen(false);
   }
   return (
     <LoadProvider checkIsNotUndefined={snLocale} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/locale`}>
-      {isNew && <SubPageHeader icon={IconLanguage} name="Language" feature="Language" description="Define Multi Languages." />}
+      {isNew && <SubPageHeader icon={IconLanguage} name={t("sn.multiLanguage.feature")} feature={t("sn.multiLanguage.feature")} description={t("sn.multiLanguage.description")} />}
       {!isNew && snLocale && <SubPageHeader
         icon={IconLanguage}
         name={snLocale.language}
-        feature="Language"
+        feature={t("sn.multiLanguage.feature")}
         description={snLocale.core}
         onDelete={onDelete}
         open={open}

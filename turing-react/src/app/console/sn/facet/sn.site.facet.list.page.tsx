@@ -7,6 +7,7 @@ import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconFilter } from "@tabler/icons-react";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
@@ -14,7 +15,8 @@ export default function SNSiteFacetListPage() {
   const { id: siteId } = useParams() as { id: string };
   const [error, setError] = useState<string | null>(null);
   const [tableData, setTableData] = React.useState<TurSNSiteFacetOrdering[]>();
-  useSubPageBreadcrumb("Facets");
+  const { t } = useTranslation();
+  useSubPageBreadcrumb(t("sn.facets.title"));
 
   React.useEffect(() => {
     turSNFacetedFieldService.query(siteId).then(setTableData).catch(() => setError("Connection error or timeout while fetching faceted fields."));
@@ -23,10 +25,10 @@ export default function SNSiteFacetListPage() {
     <LoadProvider checkIsNotUndefined={tableData} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${siteId}/facet`}>
       <SubPageHeader
         icon={IconFilter}
-        name="Facet"
-        feature="Facet"
-        description="Edit and order the facets of the search.">
-        <SubPageHeader.Action label="New Custom Facet" href={`${ROUTES.SN_INSTANCE}/${siteId}/facet/custom/new`} />
+        name={t("sn.facets.feature")}
+        feature={t("sn.facets.feature")}
+        description={t("sn.facets.description")}>
+        <SubPageHeader.Action label={t("sn.facets.newCustomFacet")} href={`${ROUTES.SN_INSTANCE}/${siteId}/facet/custom/new`} />
       </SubPageHeader>
       {tableData && <SNSiteFacetDraggableList
         siteId={siteId}

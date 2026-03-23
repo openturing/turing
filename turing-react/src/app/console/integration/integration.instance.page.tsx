@@ -74,13 +74,14 @@ export default function IntegrationInstancePage() {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate()
     const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`
-    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
+        id === "new" ? [{ label: "New Integration" }] : [{ label: "…" }]
+    );
 
     useEffect(() => {
         if (id === "new") {
             turIntegrationInstanceService.query().then(() => {
                 setIntegration({} as TurIntegrationInstance);
-                setBreadcrumb([{ label: "New Integration" }]);
             }).catch(() => setError("Connection error or timeout while fetching Integration instances."));
             setIsNew(true);
         } else {

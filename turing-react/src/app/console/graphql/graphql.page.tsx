@@ -1,14 +1,16 @@
 import { useTheme } from "@/components/theme-provider"
 import { useBreadcrumb } from "@/contexts/breadcrumb.context"
 import { useEffect, useRef } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function GraphiQLPage() {
     const { pushItem, popItem } = useBreadcrumb()
     const { theme } = useTheme()
     const iframeRef = useRef<HTMLIFrameElement>(null)
+    const { t } = useTranslation()
 
     useEffect(() => {
-        pushItem({ label: "GraphQL Explorer" })
+        pushItem({ label: t("graphql.title") })
         return () => {
             popItem()
         }
@@ -37,7 +39,7 @@ export default function GraphiQLPage() {
                 ref={iframeRef}
                 src="/graphiql"
                 className="h-full w-full border-0 flex-1"
-                title="GraphiQL Explorer"
+                title={t("graphql.title")}
             />
         </div>
     )

@@ -18,7 +18,9 @@ export default function SEInstancePage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
+    id === "new" ? [{ label: "New Search Engine" }] : [{ label: "…" }]
+  );
   const navigate = useNavigate();
   const urlBase = `${ROUTES.SE_INSTANCE}/${id}`;
 
@@ -43,7 +45,6 @@ export default function SEInstancePage() {
     if (id === "new") {
       setSeInstance({} as TurSEInstance);
       setIsNew(true);
-      setBreadcrumb([{ label: "New Search Engine" }]);
     } else {
       turSEInstanceService.get(id).then((instance) => {
         setSeInstance(instance);

@@ -7,6 +7,7 @@ import { TurSNSiteService } from "@/services/sn/sn.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCpu2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteService = new TurSNSiteService();
@@ -15,7 +16,8 @@ export default function SNSiteGenAIPage() {
   const { id } = useParams() as { id: string };
   const [snSite, setSnSite] = useState<TurSNSite>();
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("Generative AI");
+  const { t } = useTranslation();
+  useSubPageBreadcrumb(t("sn.genai.title"));
 
   useEffect(() => {
     turSNSiteService.get(id).then(setSnSite).catch(() => setError("Connection error or timeout while fetching site data."));
@@ -25,9 +27,9 @@ export default function SNSiteGenAIPage() {
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/genai`}>
       <SubPageHeader
         icon={IconCpu2}
-        name="Generative AI"
-        feature="Generative AI"
-        description="Use Assistant in your search."
+        name={t("sn.genai.title")}
+        feature={t("sn.genai.title")}
+        description={t("sn.genai.description")}
       />
       {snSite && <SNSiteGenAiForm snSite={snSite} />}
     </LoadProvider>

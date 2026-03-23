@@ -34,6 +34,7 @@ import { DurationInput } from "@/components/ui/duration-input";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const turGlobalSettingsService = new TurGlobalSettingsService();
@@ -59,7 +60,8 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
 };
 
 export default function GlobalSettingsPage() {
-    useSubPageBreadcrumb("Settings");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("globalSettings.breadcrumb"));
 
     const [settings, setSettings] = useState<TurGlobalSettings>(DEFAULT_SETTINGS);
     const form = useForm<TurGlobalSettings>({
@@ -87,7 +89,7 @@ export default function GlobalSettingsPage() {
                 setSettings(loadedSettings);
             })
             .catch(() => {
-                toast.error("Failed to load global settings. Using default values.");
+                toast.error(t("globalSettings.loadFailed"));
             })
             .finally(() => setIsLoading(false));
     }, []);
@@ -97,10 +99,10 @@ export default function GlobalSettingsPage() {
             setIsSaving(true);
             const response = await turGlobalSettingsService.update(data);
             setSettings(response);
-            toast.success("Global settings were updated.");
+            toast.success(t("globalSettings.updateSuccess"));
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to update global settings.");
+            toast.error(t("globalSettings.updateFailed"));
         } finally {
             setIsSaving(false);
         }
@@ -116,7 +118,7 @@ export default function GlobalSettingsPage() {
                 toast.error(result.message);
             }
         } catch {
-            toast.error("Failed to send test email. Check your email settings.");
+            toast.error(t("globalSettings.testEmailFailed"));
         } finally {
             setIsSendingTest(false);
         }
@@ -134,14 +136,14 @@ export default function GlobalSettingsPage() {
         <>
             <SubPageHeader
                 icon={IconSettings}
-                feature="Settings"
-                name="Global Settings"
-                description="Platform-wide configuration and preferences."
+                feature={t("globalSettings.breadcrumb")}
+                name={t("globalSettings.title")}
+                description={t("globalSettings.description")}
             />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
                     <SectionCard variant="amber">
-                        <SectionCard.Header icon={IconSettings} title="Global Settings" description="Platform-wide configuration and formatting preferences." />
+                        <SectionCard.Header icon={IconSettings} title={t("globalSettings.sectionTitle")} description={t("globalSettings.sectionDescription")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -149,20 +151,20 @@ export default function GlobalSettingsPage() {
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>Decimal Separator</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.decimalSeparator")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                Defines how decimal values are typed in admin forms (including currency amount format).
+                                                {t("globalSettings.decimalSeparatorDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
                                             <FormControl>
                                                 <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                                                     <SelectTrigger className="w-full max-w-xs">
-                                                        <SelectValue placeholder="Choose..." />
+                                                        <SelectValue placeholder={t("globalSettings.choose")} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="DOT">Dot (.)</SelectItem>
-                                                        <SelectItem value="COMMA">Comma (,)</SelectItem>
+                                                        <SelectItem value="DOT">{t("globalSettings.dot")}</SelectItem>
+                                                        <SelectItem value="COMMA">{t("globalSettings.comma")}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>
@@ -172,11 +174,11 @@ export default function GlobalSettingsPage() {
                             />
                             <div className="flex gap-4">
                                 <div className="flex-1 rounded-lg bg-muted/40 px-4 py-3">
-                                    <span className="text-xs text-muted-foreground">Decimal preview</span>
+                                    <span className="text-xs text-muted-foreground">{t("globalSettings.decimalPreview")}</span>
                                     <p className="text-sm font-mono font-semibold mt-0.5">{decimalExample}</p>
                                 </div>
                                 <div className="flex-1 rounded-lg bg-muted/40 px-4 py-3">
-                                    <span className="text-xs text-muted-foreground">Currency format</span>
+                                    <span className="text-xs text-muted-foreground">{t("globalSettings.currencyFormat")}</span>
                                     <p className="text-sm font-mono font-semibold mt-0.5">{currencyExample}</p>
                                 </div>
                             </div>
@@ -185,10 +187,9 @@ export default function GlobalSettingsPage() {
                                 name="pythonExecutable"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Python Executable Path</FormLabel>
+                                        <FormLabel>{t("globalSettings.pythonPath")}</FormLabel>
                                         <FormDescription>
-                                            Absolute path to the Python interpreter used by the code interpreter tool.
-                                            Leave empty to auto-detect from known system locations.
+                                            {t("globalSettings.pythonPathDesc")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input
@@ -208,7 +209,7 @@ export default function GlobalSettingsPage() {
                     </SectionCard>
 
                     <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconBrain} title="LLM Settings" description="Language model instance and cache configuration for reports, insights, and emails." />
+                        <SectionCard.Header icon={IconBrain} title={t("globalSettings.llmSettings")} description={t("globalSettings.llmSettingsDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -216,10 +217,9 @@ export default function GlobalSettingsPage() {
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>Default LLM</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.defaultLlm")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                LLM instance used for AI suggestions across all screens
-                                                (e.g., log analysis, monitoring summaries).
+                                                {t("globalSettings.defaultLlmDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
@@ -230,10 +230,10 @@ export default function GlobalSettingsPage() {
                                                     disabled={isLoading}
                                                 >
                                                     <SelectTrigger className="w-full max-w-xs">
-                                                        <SelectValue placeholder="Select an LLM instance..." />
+                                                        <SelectValue placeholder={t("globalSettings.selectLlm")} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="none">None</SelectItem>
+                                                        <SelectItem value="none">{t("globalSettings.none")}</SelectItem>
                                                         {llmInstances.map((instance) => (
                                                             <SelectItem key={instance.id} value={instance.id}>
                                                                 {instance.title}
@@ -252,10 +252,9 @@ export default function GlobalSettingsPage() {
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>LLM Cache</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.llmCache")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                Enable caching of LLM responses for reports, insights, and emails
-                                                to reduce API calls and improve response time.
+                                                {t("globalSettings.llmCacheDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
@@ -277,9 +276,9 @@ export default function GlobalSettingsPage() {
                                         name="llmCacheTtlMs"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Cache Duration</FormLabel>
+                                                <FormLabel>{t("globalSettings.cacheDuration")}</FormLabel>
                                                 <FormDescription>
-                                                    How long cached LLM responses remain valid before a new request is made.
+                                                    {t("globalSettings.cacheDurationDesc")}
                                                 </FormDescription>
                                                 <FormControl>
                                                     <DurationInput
@@ -298,10 +297,9 @@ export default function GlobalSettingsPage() {
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Regenerate Cache</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("globalSettings.regenerateCache")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Force a new LLM call on the next request, ignoring any existing cache.
-                                                        The cache will be recreated with the fresh response.
+                                                        {t("globalSettings.regenerateCacheDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -322,7 +320,7 @@ export default function GlobalSettingsPage() {
                     </SectionCard>
 
                     <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconDatabase} title="RAG Settings" description="Retrieval-Augmented Generation for asset indexing and knowledge base." />
+                        <SectionCard.Header icon={IconDatabase} title={t("globalSettings.ragSettings")} description={t("globalSettings.ragSettingsDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -330,10 +328,9 @@ export default function GlobalSettingsPage() {
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>Enable Global RAG</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.enableRag")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                Enables automatic embedding indexing of files stored in Assets (MinIO).
-                                                Requires an Embedding Model and Store to be configured below.
+                                                {t("globalSettings.enableRagDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
@@ -353,13 +350,13 @@ export default function GlobalSettingsPage() {
                                     <FormField
                                         control={form.control}
                                         name="defaultEmbeddingModelId"
-                                        rules={{ required: ragEnabled ? "Embedding Model is required when RAG is enabled" : false }}
+                                        rules={{ required: ragEnabled ? t("globalSettings.embeddingModelRequired") : false }}
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Default Embedding Model</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("globalSettings.defaultEmbeddingModel")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Model used to generate vector embeddings for asset content.
+                                                        {t("globalSettings.defaultEmbeddingModelDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -370,10 +367,10 @@ export default function GlobalSettingsPage() {
                                                             disabled={isLoading}
                                                         >
                                                             <SelectTrigger className="w-full max-w-xs">
-                                                                <SelectValue placeholder="Select an Embedding Model..." />
+                                                                <SelectValue placeholder={t("globalSettings.selectEmbeddingModel")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="none">None</SelectItem>
+                                                                <SelectItem value="none">{t("globalSettings.none")}</SelectItem>
                                                                 {embeddingModels.map((model) => (
                                                                     <SelectItem key={model.id} value={model.id}>
                                                                         {model.modelName}
@@ -390,13 +387,13 @@ export default function GlobalSettingsPage() {
                                     <FormField
                                         control={form.control}
                                         name="defaultEmbeddingStoreId"
-                                        rules={{ required: ragEnabled ? "Embedding Store is required when RAG is enabled" : false }}
+                                        rules={{ required: ragEnabled ? t("globalSettings.embeddingStoreRequired") : false }}
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Default Embedding Store</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("globalSettings.defaultEmbeddingStore")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Vector database where asset embeddings are stored and queried.
+                                                        {t("globalSettings.defaultEmbeddingStoreDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -407,10 +404,10 @@ export default function GlobalSettingsPage() {
                                                             disabled={isLoading}
                                                         >
                                                             <SelectTrigger className="w-full max-w-xs">
-                                                                <SelectValue placeholder="Select an Embedding Store..." />
+                                                                <SelectValue placeholder={t("globalSettings.selectEmbeddingStore")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="none">None</SelectItem>
+                                                                <SelectItem value="none">{t("globalSettings.none")}</SelectItem>
                                                                 {storeInstances.map((store) => (
                                                                     <SelectItem key={store.id} value={store.id}>
                                                                         {store.title}
@@ -430,7 +427,7 @@ export default function GlobalSettingsPage() {
                     </SectionCard>
 
                     <SectionCard variant="amber">
-                        <SectionCard.Header icon={IconMail} title="Email Settings" description="Configure email service for notifications and weekly reports." />
+                        <SectionCard.Header icon={IconMail} title={t("globalSettings.emailSettings")} description={t("globalSettings.emailSettingsDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
@@ -438,19 +435,19 @@ export default function GlobalSettingsPage() {
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>Email Provider</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.emailProvider")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                Service used to send transactional emails.
+                                                {t("globalSettings.emailProviderDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
                                             <FormControl>
                                                 <Select onValueChange={field.onChange} value={field.value ?? "BREVO"} disabled={isLoading}>
                                                     <SelectTrigger className="w-full max-w-xs">
-                                                        <SelectValue placeholder="Choose..." />
+                                                        <SelectValue placeholder={t("globalSettings.choose")} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="BREVO">Brevo</SelectItem>
+                                                        <SelectItem value="BREVO">{t("globalSettings.brevo")}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>
@@ -463,9 +460,9 @@ export default function GlobalSettingsPage() {
                                 name="emailApiKey"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>API Key</FormLabel>
+                                        <FormLabel>{t("globalSettings.apiKey")}</FormLabel>
                                         <FormDescription>
-                                            API key for the selected email provider.
+                                            {t("globalSettings.apiKeyDesc")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input
@@ -486,9 +483,9 @@ export default function GlobalSettingsPage() {
                                 name="senderEmail"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sender Email</FormLabel>
+                                        <FormLabel>{t("globalSettings.senderEmail")}</FormLabel>
                                         <FormDescription>
-                                            Email address used as the sender for outgoing emails.
+                                            {t("globalSettings.senderEmailDesc")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input
@@ -509,9 +506,9 @@ export default function GlobalSettingsPage() {
                                 name="senderName"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sender Name</FormLabel>
+                                        <FormLabel>{t("globalSettings.senderName")}</FormLabel>
                                         <FormDescription>
-                                            Display name shown as the sender (e.g., "Viglet Turing").
+                                            {t("globalSettings.senderNameDesc")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input
@@ -531,9 +528,9 @@ export default function GlobalSettingsPage() {
                                 name="recipientEmail"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Recipient Email</FormLabel>
+                                        <FormLabel>{t("globalSettings.recipientEmail")}</FormLabel>
                                         <FormDescription>
-                                            Default recipient for automated reports (e.g., weekly search report).
+                                            {t("globalSettings.recipientEmailDesc")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input
@@ -561,10 +558,10 @@ export default function GlobalSettingsPage() {
                                     ) : (
                                         <IconMailForward className="size-4" />
                                     )}
-                                    {isSendingTest ? "Sending..." : "Send Test Email"}
+                                    {isSendingTest ? t("globalSettings.sending") : t("globalSettings.sendTestEmail")}
                                 </GradientButton>
                                 <span className="text-xs text-muted-foreground">
-                                    Save settings before testing to use the latest configuration.
+                                    {t("globalSettings.testEmailHint")}
                                 </span>
                             </div>
                         </SectionCard.Content>
@@ -572,7 +569,7 @@ export default function GlobalSettingsPage() {
 
                     <FormActions>
                         <FormActions.Submit loading={isSaving} disabled={isLoading}>
-                            Save Settings
+                            {t("globalSettings.saveSettings")}
                         </FormActions.Submit>
                     </FormActions>
                 </form>

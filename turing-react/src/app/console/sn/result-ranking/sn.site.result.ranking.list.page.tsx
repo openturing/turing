@@ -9,6 +9,7 @@ import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.rank
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconNumber123 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNRankingExpressionService = new TurSNRankingExpressionService();
@@ -17,7 +18,8 @@ export default function SNSiteResultRankingListPage() {
     const { id } = useParams() as { id: string };
     const [rankingList, setRankingList] = useState<TurSNRankingExpression[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Result Ranking");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("sn.resultRanking.title"));
 
     useEffect(() => {
         turSNRankingExpressionService.query(id).then(setRankingList).catch(() => setError("Connection error or timeout while fetching result ranking."));
@@ -30,19 +32,19 @@ export default function SNSiteResultRankingListPage() {
     return (
         <LoadProvider checkIsNotUndefined={rankingList} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/result-ranking`}>
             <SubPageHeader icon={IconNumber123}
-                name="Result Ranking"
-                feature="Result Ranking"
-                description="Define content that will be featured in the term-based search.">
-                <SubPageHeader.Action label="New Result Ranking" href={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} />
+                name={t("sn.resultRanking.title")}
+                feature={t("sn.resultRanking.title")}
+                description={t("sn.resultRanking.description")}>
+                <SubPageHeader.Action label={t("sn.resultRanking.newResultRanking")} href={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} />
             </SubPageHeader>
             {rankingList && rankingList.length > 0 ? (
                 <GridList gridItemList={gridItemList} />
             ) : (
                 <BlankSlate
                     icon={IconNumber123}
-                    title="You don’t seem to have any result ranking."
-                    description="Create a new result ranking to define relevance rules."
-                    buttonText="New result ranking"
+                    title={t("sn.resultRanking.blankTitle")}
+                    description={t("sn.resultRanking.blankDescription")}
+                    buttonText={t("sn.resultRanking.newResultRankingBlank")}
                     urlNew={`${ROUTES.SN_INSTANCE}/${id}/result-ranking/new`} />
 
             )}

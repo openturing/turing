@@ -8,12 +8,14 @@ import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const turAdminUserService = new TurAdminUserService();
 
 export default function AdminUserPage() {
+    const { t } = useTranslation();
     const { username } = useParams() as { username: string };
     const [user, setUser] = useState<TurUser>();
     const [isNew, setIsNew] = useState(true);
@@ -26,12 +28,12 @@ export default function AdminUserPage() {
         if (username === "new") {
             setUser({ username: "", firstName: "", lastName: "", email: "", admin: false } as TurUser);
             setIsNew(true);
-            setBreadcrumb([{ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("admin.users.title"), href: `${ROUTES.ADMIN_ROOT}/users` }, { label: t("common.new") }]);
         } else {
             turAdminUserService.get(username).then((u) => {
                 setUser(u);
-                setBreadcrumb([{ label: "Users", href: `${ROUTES.ADMIN_ROOT}/users` }, { label: u.username }]);
-            }).catch(() => setError("Failed to load user."));
+                setBreadcrumb([{ label: t("admin.users.title"), href: `${ROUTES.ADMIN_ROOT}/users` }, { label: u.username }]);
+            }).catch(() => setError(t("admin.users.loadOneFailed")));
             setIsNew(false);
         }
     }, [username]);
@@ -41,14 +43,14 @@ export default function AdminUserPage() {
     function onDelete() {
         turAdminUserService.delete(username).then((success) => {
             if (success) {
-                toast.success(`User "${username}" was deleted.`);
+                toast.success(t("admin.users.deleted", { name: username }));
                 navigate(ROUTES.ADMIN_USERS);
             } else {
-                toast.error(`Failed to delete user "${username}".`);
+                toast.error(t("admin.users.deleteFailed", { name: username }));
             }
         }).catch((error) => {
             console.error("Delete error", error);
-            toast.error(`Failed to delete user "${username}".`);
+            toast.error(t("admin.users.deleteFailed", { name: username }));
         }).finally(() => setOpen(false));
     }
 
@@ -57,8 +59,8 @@ export default function AdminUserPage() {
             <SubPageHeader
                 icon={IconUser}
                 feature="User"
-                name={isNew ? "New User" : (user?.username ?? "")}
-                description={isNew ? "Create a new user account." : "Edit user account details."}
+                name={isNew ? t("admin.users.newUser") : (user?.username ?? "")}
+                description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
                 {...(isNew ? {} : { onDelete, open, setOpen })}
             />
             {user && <AdminUserForm value={user} isNew={isNew} />}

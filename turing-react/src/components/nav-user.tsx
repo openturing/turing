@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar"
 import type { TurUser } from "@/models/auth/user"
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
 import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "./ui/gradient-avatar"
 
@@ -30,6 +31,7 @@ export function NavUser({
 }: Readonly<{
   user: TurUser
 }>) {
+  const { t } = useTranslation()
   const { isMobile } = useSidebar()
   const handleLogout = () => {
     globalThis.location.href = ROUTES.LOGOUT;
@@ -102,14 +104,14 @@ export function NavUser({
               <NavLink to={ROUTES.USER_ACCOUNT} className="w-full">
                 <DropdownMenuItem>
                   <IconUserCircle />
-                  Account
+                  {t("nav.account")}
                 </DropdownMenuItem>
               </NavLink>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <IconLogout />
-              <span>Log out</span>
+              <span>{t("nav.logOut")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

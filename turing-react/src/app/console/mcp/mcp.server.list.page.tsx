@@ -7,15 +7,17 @@ import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 import { IconServer2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turMcpServerService = new TurMcpServerService();
 
 export default function McpServerListPage() {
+  const { t } = useTranslation();
   const [mcpServers, setMcpServers] = useState<TurMcpServer[]>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    turMcpServerService.query().then(setMcpServers).catch(() => setError("Connection error or timeout while fetching MCP servers."));
+    turMcpServerService.query().then(setMcpServers).catch(() => setError(t("common.connectionError", { resource: "MCP servers" })));
   }, [])
   const gridItemList = useGridAdapter(mcpServers, {
     name: "title",
@@ -27,14 +29,14 @@ export default function McpServerListPage() {
     <LoadProvider checkIsNotUndefined={mcpServers} error={error} tryAgainUrl={`${ROUTES.MCP_INSTANCE}`}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.MCP_INSTANCE}/new`} label="MCP Server" />
+          <GridList.NewButton to={`${ROUTES.MCP_INSTANCE}/new`} label={t("mcp.title")} />
         </GridList>
       ) : (
         <BlankSlate
           icon={IconServer2}
-          title="You don't seem to have any MCP server."
-          description="Create a new MCP server to integrate with external tools and services."
-          buttonText="New MCP server"
+          title={t("mcp.blankTitle")}
+          description={t("mcp.blankDescription")}
+          buttonText={t("mcp.newInstance")}
           urlNew={`${ROUTES.MCP_INSTANCE}/new`} />
       )}
     </LoadProvider>

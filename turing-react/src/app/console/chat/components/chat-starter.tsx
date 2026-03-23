@@ -1,11 +1,12 @@
 "use client"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/app/routes.const"
 import { IconMessageChatbot } from "@tabler/icons-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
+import { LLM_STORAGE_KEY } from "../chat.types"
 import { ChatInput } from "./chat-input"
 import { ChatSuggestions } from "./chat-suggestions"
-import { LLM_STORAGE_KEY } from "../chat.types"
 
 interface ChatStarterProps {
   /** LLM instance ID to use. If provided, sets it as selected before navigating. */
@@ -35,6 +36,7 @@ interface ChatStarterProps {
  */
 export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSendInPlace, attachments }: ChatStarterProps) {
   const [input, setInput] = useState("")
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   function dispatchPrompt(prompt: string) {
@@ -62,7 +64,7 @@ export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSen
           <div className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 p-4 dark:from-blue-500 dark:to-indigo-500 mb-4">
             <IconMessageChatbot className="size-8 text-white" />
           </div>
-          <h2 className="text-2xl font-semibold mb-1">How can I help you today?</h2>
+          <h2 className="text-2xl font-semibold mb-1">{t("chat.howCanIHelp")}</h2>
         </>
       )}
       {modelLabel && (
@@ -75,7 +77,7 @@ export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSen
           onSend={handleSend}
           loading={false}
           disabled={!defaultLlmId}
-          placeholder={defaultLlmId ? "Send a message..." : "No default LLM configured"}
+          placeholder={defaultLlmId ? t("chat.askMeAnything") : t("chat.noDefaultLlm")}
           accentColor="blue"
           attachments={attachments}
         />

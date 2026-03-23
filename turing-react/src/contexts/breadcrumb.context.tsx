@@ -1,5 +1,5 @@
 
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, type Dispatch, type ReactNode, type SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 export type BreadcrumbItem = {
     label: string;
     href?: string;
@@ -7,7 +7,7 @@ export type BreadcrumbItem = {
 
 interface BreadcrumbContextType {
     items: BreadcrumbItem[];
-    setItems: (items: BreadcrumbItem[]) => void;
+    setItems: Dispatch<SetStateAction<BreadcrumbItem[]>>;
     pushItem: (item: BreadcrumbItem) => void;
     popItem: () => void;
     resetBreadcrumb: (initialItems?: BreadcrumbItem[]) => void;

@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSpeakerphone } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,15 +22,16 @@ export default function SNSiteSpotlightPage() {
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (spotlightId === "new") {
             turSNSiteSpotlightService.getStructure(id).then(setSpotlight).catch(() => setError("Connection error or timeout while fetching spotlight structure."));
-            setBreadcrumb([{ label: "Spotlight", href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("sn.spotlight.title"), href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` }, { label: t("common.new") }]);
         } else {
             turSNSiteSpotlightService.get(id, spotlightId).then((s) => {
                 setSpotlight(s);
-                setBreadcrumb([{ label: "Spotlight", href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` }, { label: s.name || spotlightId }]);
+                setBreadcrumb([{ label: t("sn.spotlight.title"), href: `${ROUTES.SN_INSTANCE}/${id}/spotlight` }, { label: s.name || spotlightId }]);
             }).catch(() => setError("Connection error or timeout while fetching spotlight details."));
             setIsNew(false);
         }
@@ -41,27 +43,27 @@ export default function SNSiteSpotlightPage() {
         if (!spotlight) return;
         try {
             if (await turSNSiteSpotlightService.delete(spotlight)) {
-                toast.success("The spotlight was deleted");
+                toast.success(t("sn.spotlight.deleted"));
                 navigate(`${ROUTES.SN_INSTANCE}/${id}/spotlight`);
             } else {
-                toast.error("The spotlight was not deleted");
+                toast.error(t("sn.spotlight.notDeleted"));
             }
         } catch (error) {
             console.error("Delete error", error);
-            toast.error("The spotlight was not deleted");
+            toast.error(t("sn.spotlight.notDeleted"));
         }
         setOpen(false);
     }
 
-    const name = spotlight?.name || "New Spotlight";
+    const name = spotlight?.name || t("sn.spotlight.newSpotlight");
 
     return (
         <LoadProvider checkIsNotUndefined={spotlight} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/spotlight`}>
             <SubPageHeader
                 icon={IconSpeakerphone}
                 name={name}
-                feature="Spotlight"
-                description="Define content that will be featured in the term-based search."
+                feature={t("sn.spotlight.title")}
+                description={t("sn.spotlight.description")}
                 onDelete={isNew ? undefined : onDelete}
                 open={open}
                 setOpen={setOpen}

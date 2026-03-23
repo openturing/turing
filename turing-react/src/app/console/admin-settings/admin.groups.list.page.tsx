@@ -8,18 +8,20 @@ import { TurGroupService } from "@/services/auth/group.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turGroupService = new TurGroupService();
 
 export default function AdminGroupsListPage() {
+    const { t } = useTranslation();
     const [groups, setGroups] = useState<TurGroup[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Groups");
+    useSubPageBreadcrumb(t("admin.groups.title"));
 
     useEffect(() => {
         turGroupService.query()
             .then(setGroups)
-            .catch(() => setError("Failed to load groups."));
+            .catch(() => setError(t("admin.groups.loadFailed")));
     }, []);
 
     const gridItemList = useGridAdapter(groups, {
@@ -32,9 +34,9 @@ export default function AdminGroupsListPage() {
         <LoadProvider checkIsNotUndefined={groups} error={error} tryAgainUrl={ROUTES.ADMIN_GROUPS}>
             <SubPageHeader
                 icon={IconUsersGroup}
-                feature="Groups"
-                name="Groups"
-                description="Organize users into groups with shared permissions."
+                feature={t("admin.groups.title")}
+                name={t("admin.groups.title")}
+                description={t("admin.groups.description")}
             />
             {groups && <GridList gridItemList={gridItemList}>
                 <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/groups/new`} label="Group" />

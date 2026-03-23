@@ -8,18 +8,20 @@ import { TurRoleService } from "@/services/auth/role.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUserShield } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turRoleService = new TurRoleService();
 
 export default function AdminRolesListPage() {
+    const { t } = useTranslation();
     const [roles, setRoles] = useState<TurRole[]>();
     const [error, setError] = useState<string | null>(null);
-    useSubPageBreadcrumb("Roles");
+    useSubPageBreadcrumb(t("admin.roles.title"));
 
     useEffect(() => {
         turRoleService.query()
             .then(setRoles)
-            .catch(() => setError("Failed to load roles."));
+            .catch(() => setError(t("admin.roles.loadFailed")));
     }, []);
 
     const gridItemList = useGridAdapter(roles, {
@@ -32,9 +34,9 @@ export default function AdminRolesListPage() {
         <LoadProvider checkIsNotUndefined={roles} error={error} tryAgainUrl={ROUTES.ADMIN_ROLES}>
             <SubPageHeader
                 icon={IconUserShield}
-                feature="Roles"
-                name="Roles"
-                description="Define roles and their associated permissions."
+                feature={t("admin.roles.title")}
+                name={t("admin.roles.title")}
+                description={t("admin.roles.description")}
             />
             {roles && <GridList gridItemList={gridItemList}>
                 <GridList.NewButton to={`${ROUTES.ADMIN_ROOT}/roles/new`} label="Role" />

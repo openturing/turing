@@ -18,7 +18,9 @@ export default function StoreInstancePage() {
   const [isNew, setIsNew] = useState(true)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>()
+  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
+    id === "new" ? [{ label: "New Embedding Store" }] : [{ label: "…" }]
+  )
   const navigate = useNavigate()
   const urlBase = `${ROUTES.STORE_INSTANCE}/${id}`
 
@@ -43,7 +45,6 @@ export default function StoreInstancePage() {
     if (id === "new") {
       setStoreInstance({} as TurStoreInstance)
       setIsNew(true)
-      setBreadcrumb([{ label: "New Embedding Store" }])
     } else {
       turStoreInstanceService.get(id).then((instance) => {
         setStoreInstance(instance)

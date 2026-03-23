@@ -19,6 +19,7 @@ import {
     IconVariable,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const turSystemInfoService = new TurSystemInfoService();
@@ -71,7 +72,8 @@ function StatusBadge({ status }: Readonly<{ status: string | null | undefined }>
 }
 
 export default function SystemInfoPage() {
-    useSubPageBreadcrumb("System Information");
+    const { t } = useTranslation();
+    useSubPageBreadcrumb(t("systemInfo.title"));
 
     const [info, setInfo] = useState<TurSystemInfo | null>(null);
     const [variables, setVariables] = useState<Record<string, string>>({});
@@ -88,7 +90,7 @@ export default function SystemInfoPage() {
                 setVariables(sysVars);
             })
             .catch(() => {
-                toast.error("Failed to load system information.");
+                toast.error(t("systemInfo.loadFailed"));
             })
             .finally(() => setIsLoading(false));
     }, []);
@@ -107,9 +109,9 @@ export default function SystemInfoPage() {
             <>
                 <SubPageHeader
                     icon={IconInfoCircle}
-                    feature="System Information"
-                    name="System Information"
-                    description="Runtime environment and system details."
+                    feature={t("systemInfo.title")}
+                    name={t("systemInfo.title")}
+                    description={t("systemInfo.description")}
                 />
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
@@ -145,11 +147,11 @@ export default function SystemInfoPage() {
                     <TabsList>
                         <TabsTrigger value="overview">
                             <IconServer className="size-4 mr-1" />
-                            Overview
+                            {t("systemInfo.overview")}
                         </TabsTrigger>
                         <TabsTrigger value="variables">
                             <IconVariable className="size-4 mr-1" />
-                            System Variables
+                            {t("systemInfo.systemVariables")}
                         </TabsTrigger>
                     </TabsList>
 
@@ -158,14 +160,14 @@ export default function SystemInfoPage() {
                         <SectionCard variant="blue">
                             <SectionCard.StaticHeader
                                 icon={IconDeviceDesktop}
-                                title="Application"
-                                description="Viglet Turing ES version and runtime."
+                                title={t("systemInfo.application")}
+                                description={t("systemInfo.applicationDesc")}
                             />
                             <SectionCard.Content>
-                                <InfoRow label="Version" value={info?.appVersion ?? "Unknown"} />
-                                <InfoRow label="Java Version" value={variables["java.version"] ?? "Unknown"} />
-                                <InfoRow label="Java Vendor" value={variables["java.vendor"] ?? "Unknown"} />
-                                <InfoRow label="OS" value={`${variables["os.name"] ?? ""} ${variables["os.version"] ?? ""} (${variables["os.arch"] ?? ""})`} />
+                                <InfoRow label={t("systemInfo.version")} value={info?.appVersion ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.javaVersion")} value={variables["java.version"] ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.javaVendor")} value={variables["java.vendor"] ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.os")} value={`${variables["os.name"] ?? ""} ${variables["os.version"] ?? ""} (${variables["os.arch"] ?? ""})`} />
                             </SectionCard.Content>
                         </SectionCard>
 
@@ -173,19 +175,19 @@ export default function SystemInfoPage() {
                         <SectionCard variant="violet">
                             <SectionCard.StaticHeader
                                 icon={IconDatabase}
-                                title="Database"
-                                description="Connected database information."
+                                title={t("systemInfo.database")}
+                                description={t("systemInfo.databaseDesc")}
                             />
                             <SectionCard.Content>
                                 <div className="flex items-center justify-between py-2 border-b">
-                                    <span className="text-sm text-muted-foreground">Status</span>
+                                    <span className="text-sm text-muted-foreground">{t("systemInfo.status")}</span>
                                     <StatusBadge status={info?.database.status} />
                                 </div>
-                                <InfoRow label="Product" value={info?.database.productName ?? "Unknown"} />
-                                <InfoRow label="Version" value={info?.database.productVersion ?? "Unknown"} />
-                                <InfoRow label="Driver" value={info?.database.driverName ?? "Unknown"} />
-                                <InfoRow label="Driver Version" value={info?.database.driverVersion ?? "Unknown"} />
-                                <InfoRow label="URL" value={info?.database.url ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.product")} value={info?.database.productName ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.version")} value={info?.database.productVersion ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.driver")} value={info?.database.driverName ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.driverVersion")} value={info?.database.driverVersion ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.url")} value={info?.database.url ?? "Unknown"} />
                             </SectionCard.Content>
                         </SectionCard>
 
@@ -194,39 +196,39 @@ export default function SystemInfoPage() {
                             <SectionCard variant="cyan">
                                 <SectionCard.StaticHeader
                                     icon={IconServer}
-                                    title="Physical Memory (RAM)"
-                                    description="Operating system physical memory and swap/pagefile."
+                                    title={t("systemInfo.physicalMemory")}
+                                    description={t("systemInfo.physicalMemoryDesc")}
                                 />
                                 <SectionCard.Content>
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">RAM Usage</span>
+                                            <span className="text-muted-foreground">{t("systemInfo.ramUsage")}</span>
                                             <span className="font-medium">{physicalPercent}%</span>
                                         </div>
                                         <ProgressBar value={physicalPercent} color="bg-cyan-500" />
                                         <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                            <span>Used: {formatBytes(physicalUsed)}</span>
-                                            <span>Total: {formatBytes(mem?.totalPhysicalMemory ?? 0)}</span>
+                                            <span>{t("systemInfo.used")} {formatBytes(physicalUsed)}</span>
+                                            <span>{t("systemInfo.totalLabel")} {formatBytes(mem?.totalPhysicalMemory ?? 0)}</span>
                                         </div>
                                     </div>
-                                    <InfoRow label="Total RAM" value={formatBytes(mem?.totalPhysicalMemory ?? 0)} />
-                                    <InfoRow label="Free RAM" value={formatBytes(mem?.freePhysicalMemory ?? 0)} />
-                                    <InfoRow label="Used RAM" value={formatBytes(physicalUsed)} />
+                                    <InfoRow label={t("systemInfo.totalRam")} value={formatBytes(mem?.totalPhysicalMemory ?? 0)} />
+                                    <InfoRow label={t("systemInfo.freeRam")} value={formatBytes(mem?.freePhysicalMemory ?? 0)} />
+                                    <InfoRow label={t("systemInfo.usedRam")} value={formatBytes(physicalUsed)} />
                                     {swapPercent >= 0 && (
                                         <>
                                             <div className="space-y-1 pt-4">
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">Swap / Pagefile Usage</span>
+                                                    <span className="text-muted-foreground">{t("systemInfo.swapUsage")}</span>
                                                     <span className="font-medium">{swapPercent}%</span>
                                                 </div>
                                                 <ProgressBar value={swapPercent} color="bg-amber-500" />
                                                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                                    <span>Used: {formatBytes((mem?.totalSwap ?? 0) - (mem?.freeSwap ?? 0))}</span>
-                                                    <span>Total: {formatBytes(mem?.totalSwap ?? 0)}</span>
+                                                    <span>{t("systemInfo.used")} {formatBytes((mem?.totalSwap ?? 0) - (mem?.freeSwap ?? 0))}</span>
+                                                    <span>{t("systemInfo.totalLabel")} {formatBytes(mem?.totalSwap ?? 0)}</span>
                                                 </div>
                                             </div>
-                                            <InfoRow label="Total Swap" value={formatBytes(mem?.totalSwap ?? 0)} />
-                                            <InfoRow label="Free Swap" value={formatBytes(mem?.freeSwap ?? 0)} />
+                                            <InfoRow label={t("systemInfo.totalSwap")} value={formatBytes(mem?.totalSwap ?? 0)} />
+                                            <InfoRow label={t("systemInfo.freeSwap")} value={formatBytes(mem?.freeSwap ?? 0)} />
                                         </>
                                     )}
                                 </SectionCard.Content>
@@ -237,25 +239,25 @@ export default function SystemInfoPage() {
                         <SectionCard variant="emerald">
                             <SectionCard.StaticHeader
                                 icon={IconCpu}
-                                title="Memory (JVM Heap)"
-                                description="Java heap memory allocation and usage."
+                                title={t("systemInfo.jvmHeap")}
+                                description={t("systemInfo.jvmHeapDesc")}
                             />
                             <SectionCard.Content>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Heap Usage</span>
+                                        <span className="text-muted-foreground">{t("systemInfo.heapUsage")}</span>
                                         <span className="font-medium">{memPercent}%</span>
                                     </div>
                                     <ProgressBar value={memPercent} color="bg-emerald-500" />
                                     <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                        <span>Used: {formatBytes(mem?.usedMemory ?? 0)}</span>
-                                        <span>Max: {formatBytes(mem?.maxMemory ?? 0)}</span>
+                                        <span>{t("systemInfo.used")} {formatBytes(mem?.usedMemory ?? 0)}</span>
+                                        <span>{t("systemInfo.max")} {formatBytes(mem?.maxMemory ?? 0)}</span>
                                     </div>
                                 </div>
-                                <InfoRow label="Total Allocated" value={formatBytes(mem?.totalMemory ?? 0)} />
-                                <InfoRow label="Free (Allocated)" value={formatBytes(mem?.freeMemory ?? 0)} />
-                                <InfoRow label="Used" value={formatBytes(mem?.usedMemory ?? 0)} />
-                                <InfoRow label="Max Heap" value={formatBytes(mem?.maxMemory ?? 0)} />
+                                <InfoRow label={t("systemInfo.totalAllocated")} value={formatBytes(mem?.totalMemory ?? 0)} />
+                                <InfoRow label={t("systemInfo.freeAllocated")} value={formatBytes(mem?.freeMemory ?? 0)} />
+                                <InfoRow label={t("systemInfo.usedMemory")} value={formatBytes(mem?.usedMemory ?? 0)} />
+                                <InfoRow label={t("systemInfo.maxHeap")} value={formatBytes(mem?.maxMemory ?? 0)} />
                             </SectionCard.Content>
                         </SectionCard>
 
@@ -263,24 +265,24 @@ export default function SystemInfoPage() {
                         <SectionCard variant="amber">
                             <SectionCard.StaticHeader
                                 icon={IconDisc}
-                                title="Disk Space"
-                                description="Storage on the application's working volume."
+                                title={t("systemInfo.diskSpace")}
+                                description={t("systemInfo.diskSpaceDesc")}
                             />
                             <SectionCard.Content>
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Disk Usage</span>
+                                        <span className="text-muted-foreground">{t("systemInfo.diskUsage")}</span>
                                         <span className="font-medium">{diskPercent}%</span>
                                     </div>
                                     <ProgressBar value={diskPercent} color="bg-amber-500" />
                                     <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                        <span>Used: {formatBytes(disk?.usedSpace ?? 0)}</span>
-                                        <span>Total: {formatBytes(disk?.totalSpace ?? 0)}</span>
+                                        <span>{t("systemInfo.used")} {formatBytes(disk?.usedSpace ?? 0)}</span>
+                                        <span>{t("systemInfo.totalLabel")} {formatBytes(disk?.totalSpace ?? 0)}</span>
                                     </div>
                                 </div>
-                                <InfoRow label="Total" value={formatBytes(disk?.totalSpace ?? 0)} />
-                                <InfoRow label="Available" value={formatBytes(disk?.usableSpace ?? 0)} />
-                                <InfoRow label="Used" value={formatBytes(disk?.usedSpace ?? 0)} />
+                                <InfoRow label={t("tokenUsage.total")} value={formatBytes(disk?.totalSpace ?? 0)} />
+                                <InfoRow label={t("systemInfo.available")} value={formatBytes(disk?.usableSpace ?? 0)} />
+                                <InfoRow label={t("systemInfo.usedMemory")} value={formatBytes(disk?.usedSpace ?? 0)} />
                             </SectionCard.Content>
                         </SectionCard>
 
@@ -289,16 +291,16 @@ export default function SystemInfoPage() {
                             <SectionCard variant="emerald">
                                 <SectionCard.StaticHeader
                                     icon={IconLeaf}
-                                    title="MongoDB"
-                                    description="MongoDB database used for logging."
+                                    title={t("systemInfo.mongodb")}
+                                    description={t("systemInfo.mongodbDesc")}
                                 />
                                 <SectionCard.Content>
                                     <div className="flex items-center justify-between py-2 border-b">
-                                        <span className="text-sm text-muted-foreground">Status</span>
+                                        <span className="text-sm text-muted-foreground">{t("systemInfo.status")}</span>
                                         <StatusBadge status={info.mongodb.status} />
                                     </div>
-                                    <InfoRow label="Version" value={info.mongodb.version ?? "Unknown"} />
-                                    <InfoRow label="Endpoint" value={info.mongodb.endpoint ?? "N/A"} />
+                                    <InfoRow label={t("systemInfo.version")} value={info.mongodb.version ?? "Unknown"} />
+                                    <InfoRow label={t("systemInfo.endpoint")} value={info.mongodb.endpoint ?? "N/A"} />
                                 </SectionCard.Content>
                             </SectionCard>
                         )}
@@ -308,16 +310,16 @@ export default function SystemInfoPage() {
                             <SectionCard variant="rose">
                                 <SectionCard.StaticHeader
                                     icon={IconBucket}
-                                    title="MinIO"
-                                    description="Object storage for assets."
+                                    title={t("systemInfo.minio")}
+                                    description={t("systemInfo.minioDesc")}
                                 />
                                 <SectionCard.Content>
                                     <div className="flex items-center justify-between py-2 border-b">
-                                        <span className="text-sm text-muted-foreground">Status</span>
+                                        <span className="text-sm text-muted-foreground">{t("systemInfo.status")}</span>
                                         <StatusBadge status={info.minio.status} />
                                     </div>
-                                    <InfoRow label="Version" value={info.minio.version ?? "Unknown"} />
-                                    <InfoRow label="Endpoint" value={info.minio.endpoint ?? "N/A"} />
+                                    <InfoRow label={t("systemInfo.version")} value={info.minio.version ?? "Unknown"} />
+                                    <InfoRow label={t("systemInfo.endpoint")} value={info.minio.endpoint ?? "N/A"} />
                                 </SectionCard.Content>
                             </SectionCard>
                         )}
@@ -327,15 +329,15 @@ export default function SystemInfoPage() {
                         <SectionCard variant="slate">
                             <SectionCard.StaticHeader
                                 icon={IconVariable}
-                                title="System Variables"
-                                description="JVM system properties and environment values."
+                                title={t("systemInfo.systemVariables")}
+                                description={t("systemInfo.sysVarsDesc")}
                             />
                             <SectionCard.Content>
                                 <div className="relative">
                                     <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                     <Input
                                         className="pl-9 max-w-sm"
-                                        placeholder="Search variables..."
+                                        placeholder={t("systemInfo.searchVariables")}
                                         value={varSearch}
                                         onChange={(e) => setVarSearch(e.target.value)}
                                     />
@@ -345,8 +347,8 @@ export default function SystemInfoPage() {
                                         <table className="w-full text-sm">
                                             <thead className="bg-muted/60 sticky top-0">
                                                 <tr>
-                                                    <th className="text-left px-4 py-2 font-medium text-muted-foreground w-1/3">Property</th>
-                                                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">Value</th>
+                                                    <th className="text-left px-4 py-2 font-medium text-muted-foreground w-1/3">{t("systemInfo.property")}</th>
+                                                    <th className="text-left px-4 py-2 font-medium text-muted-foreground">{t("systemInfo.value")}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -359,7 +361,7 @@ export default function SystemInfoPage() {
                                                 {filteredVariables.length === 0 && (
                                                     <tr>
                                                         <td colSpan={2} className="px-4 py-8 text-center text-muted-foreground">
-                                                            No variables match your search.
+                                                            {t("systemInfo.noVariablesMatch")}
                                                         </td>
                                                     </tr>
                                                 )}
@@ -368,7 +370,7 @@ export default function SystemInfoPage() {
                                     </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    {filteredVariables.length} of {Object.keys(variables).length} properties shown
+                                    {t("systemInfo.propertiesShown", { count: filteredVariables.length, total: Object.keys(variables).length })}
                                 </p>
                             </SectionCard.Content>
                         </SectionCard>

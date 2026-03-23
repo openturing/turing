@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import { IconCompass, IconCpu2, IconRobot } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
 
 interface ChatEmptyStateProps {
   variant: "chat" | "semantic" | "agent"
@@ -10,6 +11,8 @@ interface ChatEmptyStateProps {
 }
 
 export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentIcon }: ChatEmptyStateProps) {
+  const { t } = useTranslation()
+
   if (variant === "chat") {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
@@ -17,9 +20,9 @@ export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentIco
           <IconCpu2 className="size-8 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold mb-2">How can I help you today?</h2>
+          <h2 className="text-2xl font-semibold mb-2">{t("chat.howCanIHelp")}</h2>
           <p className="text-muted-foreground text-sm max-w-md">
-            {selectedInstance ? `Using ${selectedInstance.title} (${selectedInstance.turLLMVendor?.id ?? ""})` : "Select a language model to start chatting."}
+            {selectedInstance ? t("chat.usingModel", { model: selectedInstance.title, vendor: selectedInstance.turLLMVendor?.id ?? "" }) : t("chat.selectModelToChat")}
           </p>
         </div>
       </div>
@@ -33,11 +36,11 @@ export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentIco
           <IconCompass className="size-8 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-semibold mb-2">Semantic Navigation</h2>
+          <h2 className="text-2xl font-semibold mb-2">{t("home.features.semanticNavigation.title")}</h2>
           <p className="text-muted-foreground text-sm max-w-md">
             {selectedInstance
-              ? `Ask questions about your indexed content. Using ${selectedInstance.title}.`
-              : "Select a language model to start exploring."}
+              ? t("chat.usingModelForSN", { model: selectedInstance.title })
+              : t("chat.selectModelToExplore")}
           </p>
         </div>
       </div>
@@ -54,11 +57,11 @@ export function ChatEmptyState({ variant, selectedInstance, agentTitle, agentIco
         )}
       </div>
       <div>
-        <h2 className="text-2xl font-semibold mb-2">{agentTitle ?? "AI Agent"}</h2>
+        <h2 className="text-2xl font-semibold mb-2">{agentTitle ?? t("home.features.aiAgent.title")}</h2>
         <p className="text-muted-foreground text-sm max-w-md">
           {selectedInstance
-            ? `Using ${selectedInstance.title}. Ask anything this agent can help with.`
-            : "Select a language model to start."}
+            ? t("chat.usingModelForAgent", { model: selectedInstance.title })
+            : t("chat.selectModelToStartAgent")}
         </p>
       </div>
     </div>

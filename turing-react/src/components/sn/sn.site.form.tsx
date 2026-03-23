@@ -26,6 +26,7 @@ import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
@@ -42,6 +43,7 @@ interface Props {
   isNew: boolean;
 }
 export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
   const form = useForm<TurSNSite>({
@@ -63,24 +65,24 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
         const result = await turSNSiteService.create(snSite);
         setIsLoading(false)
         if (result) {
-          toast.success(`The ${snSite.name} SN Site was saved`);
+          toast.success(t("sn.siteSaved", { name: snSite.name }));
           navigate(urlBase);
         } else {
-          toast.error(`The ${snSite.name} SN Site was not saved`);
+          toast.error(t("sn.siteNotSaved", { name: snSite.name }));
         }
       }
       else {
         const result = await turSNSiteService.update(snSite);
         setIsLoading(false)
         if (result) {
-          toast.success(`The ${snSite.name} SN Site was updated`);
+          toast.success(t("sn.siteUpdated", { name: snSite.name }));
         } else {
-          toast.error(`The ${snSite.name} SN Site was not updated`);
+          toast.error(t("sn.siteNotUpdated", { name: snSite.name }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("sn.formSubmitFailed"));
       setIsLoading(false);
     }
   }

@@ -7,15 +7,17 @@ import type { TurIntent } from "@/models/intent/intent.model";
 import { TurIntentService } from "@/services/intent/intent.service";
 import { IconBulb } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const turIntentService = new TurIntentService();
 
 export default function IntentListPage() {
+  const { t } = useTranslation();
   const [intents, setIntents] = useState<TurIntent[]>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    turIntentService.query().then(setIntents).catch(() => setError("Connection error or timeout while fetching intents."));
+    turIntentService.query().then(setIntents).catch(() => setError(t("common.connectionError", { resource: "intents" })));
   }, [])
 
   const gridItemList = useGridAdapter(intents, {
@@ -29,14 +31,14 @@ export default function IntentListPage() {
     <LoadProvider checkIsNotUndefined={intents} error={error} tryAgainUrl={ROUTES.INTENT_INSTANCE}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.INTENT_INSTANCE}/new`} label="Intent" />
+          <GridList.NewButton to={`${ROUTES.INTENT_INSTANCE}/new`} label={t("intent.title")} />
         </GridList>
       ) : (
         <BlankSlate
           icon={IconBulb}
-          title="You don't have any intents yet."
-          description="Create an intent to group suggested prompts for the chat."
-          buttonText="New Intent"
+          title={t("intent.blankTitle")}
+          description={t("intent.blankDescription")}
+          buttonText={t("intent.newInstance")}
           urlNew={`${ROUTES.INTENT_INSTANCE}/new`} />
       )}
     </LoadProvider>

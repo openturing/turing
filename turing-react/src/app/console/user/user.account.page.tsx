@@ -1,6 +1,7 @@
 import { IconDeviceFloppy, IconLoader2, IconLock, IconUser } from "@tabler/icons-react"
 import { PageHeader } from "@/components/page-header"
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { AvatarField } from "@/components/avatar-field"
@@ -15,6 +16,7 @@ import { TurUserService } from "@/services/auth/user.service"
 const turUserService = new TurUserService()
 
 export default function UserAccountPage() {
+  const { t } = useTranslation()
   const { refreshUser } = useCurrentUser()
   const [user, setUser] = useState<TurUser | null>(null)
   const [firstName, setFirstName] = useState("")
@@ -35,7 +37,7 @@ export default function UserAccountPage() {
       setAvatarUrl(currentUser.avatarUrl ?? undefined)
       setLoading(false)
     }).catch(() => {
-      toast.error("Failed to load user data.")
+      toast.error(t("account.loadFailed"))
       setLoading(false)
     })
   }, [])
@@ -55,9 +57,9 @@ export default function UserAccountPage() {
       await turUserService.saveAvatarUrl(user.username, url)
       setAvatarUrl(url)
       refreshUser()
-      toast.success("Avatar updated.")
+      toast.success(t("account.avatarUpdated"))
     } catch {
-      toast.error("Failed to save avatar.")
+      toast.error(t("account.avatarFailed"))
     }
   }, [user])
 
@@ -67,16 +69,16 @@ export default function UserAccountPage() {
       await turUserService.saveAvatarUrl(user.username, null)
       setAvatarUrl(undefined)
       refreshUser()
-      toast.success("Avatar removed.")
+      toast.success(t("account.avatarRemoved"))
     } catch {
-      toast.error("Failed to remove avatar.")
+      toast.error(t("account.avatarRemoveFailed"))
     }
   }, [user])
 
   const handleSave = async () => {
     if (!user) return
     if (newPassword && newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.")
+      toast.error(t("account.passwordMismatch"))
       return
     }
     setSaving(true)
@@ -92,11 +94,11 @@ export default function UserAccountPage() {
       }
       await turUserService.update(user.username, payload)
       refreshUser()
-      toast.success("Account updated successfully.")
+      toast.success(t("account.updateSuccess"))
       setNewPassword("")
       setConfirmPassword("")
     } catch {
-      toast.error("Failed to update account.")
+      toast.error(t("account.updateFailed"))
     } finally {
       setSaving(false)
     }
@@ -113,14 +115,14 @@ export default function UserAccountPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        Unable to load user data.
+        {t("account.unableToLoad")}
       </div>
     )
   }
 
   return (
     <>
-    <PageHeader turIcon={IconUser} title="Account Settings" />
+    <PageHeader turIcon={IconUser} title={t("account.title")} />
     <div className="max-w-2xl mx-auto py-8 px-6">
 
       {/* Avatar + username */}
@@ -140,20 +142,20 @@ export default function UserAccountPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">{t("account.firstName")}</Label>
             <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">{t("account.lastName")}</Label>
             <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("account.email")}</Label>
           <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t("account.username")}</Label>
           <Input id="username" value={user.username} disabled className="bg-muted" />
         </div>
       </div>
@@ -163,23 +165,23 @@ export default function UserAccountPage() {
       {/* Change password */}
       <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
         <IconLock className="size-5" />
-        Change Password
+        {t("account.changePassword")}
       </h2>
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="newPassword">New Password</Label>
-          <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
+          <Label htmlFor="newPassword">{t("account.newPassword")}</Label>
+          <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("account.leaveBlank")} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat new password" />
+          <Label htmlFor="confirmPassword">{t("account.confirmPassword")}</Label>
+          <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t("account.repeatPassword")} />
         </div>
       </div>
 
       <div className="mt-8">
         <Button onClick={handleSave} disabled={saving}>
           {saving ? <IconLoader2 className="size-4 animate-spin mr-2" /> : <IconDeviceFloppy className="size-4 mr-2" />}
-          Save Changes
+          {t("account.saveChanges")}
         </Button>
       </div>
 

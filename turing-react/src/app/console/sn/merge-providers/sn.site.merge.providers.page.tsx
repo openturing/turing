@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitMerge } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,18 +22,19 @@ export default function SNSiteMergeProvidersPage() {
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (mergeProviderId === "new") {
             turSNSiteMergeService.getStructure(id).then(setMergeProvider).catch(() => setError("Connection error or timeout while fetching merge provider structure."));
-            setBreadcrumb([{ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("sn.mergeProviders.title"), href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label: t("common.new") }]);
         } else {
             turSNSiteMergeService.get(id, mergeProviderId).then((merge) => {
                 setMergeProvider(merge);
                 const label = merge.providerFrom && merge.providerTo
                     ? `${merge.providerFrom} → ${merge.providerTo}`
                     : mergeProviderId;
-                setBreadcrumb([{ label: "Merge Providers", href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label }]);
+                setBreadcrumb([{ label: t("sn.mergeProviders.title"), href: `${ROUTES.SN_INSTANCE}/${id}/merge-providers` }, { label }]);
             }).catch(() => setError("Connection error or timeout while fetching merge provider details."));
             setIsNew(false);
         }
@@ -44,29 +46,29 @@ export default function SNSiteMergeProvidersPage() {
         if (!mergeProvider) return;
         try {
             if (await turSNSiteMergeService.delete(mergeProvider)) {
-                toast.success(`The merge provider was deleted`);
+                toast.success(t("sn.mergeProviders.deleted"));
                 navigate(`${ROUTES.SN_INSTANCE}/${id}/merge-providers`);
             } else {
-                toast.error(`The merge provider was not deleted`);
+                toast.error(t("sn.mergeProviders.notDeleted"));
             }
         } catch (error) {
             console.error("Delete error", error);
-            toast.error(`The merge provider was not deleted`);
+            toast.error(t("sn.mergeProviders.notDeleted"));
         }
         setOpen(false);
     }
 
     const name = mergeProvider?.providerFrom && mergeProvider?.providerTo
         ? `${mergeProvider.providerFrom} → ${mergeProvider.providerTo}`
-        : "New Merge Provider";
+        : t("sn.mergeProviders.newMergeProvider");
 
     return (
         <LoadProvider checkIsNotUndefined={mergeProvider} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/merge-providers`}>
             <SubPageHeader
                 icon={IconGitMerge}
                 name={name}
-                feature="Merge Provider"
-                description="Unify different sources contents."
+                feature={t("sn.mergeProviders.feature")}
+                description={t("sn.mergeProviders.description")}
                 onDelete={isNew ? undefined : onDelete}
                 open={open}
                 setOpen={setOpen}

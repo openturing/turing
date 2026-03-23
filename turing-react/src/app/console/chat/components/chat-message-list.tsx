@@ -3,6 +3,7 @@ import { GradientAvatar, GradientAvatarFallback, GradientAvatarImage } from "@/c
 import { useCurrentUser } from "@/contexts/user.context"
 import { IconCheck, IconCopy, IconCpu2, IconFile, IconLoader2, IconUser } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
@@ -72,6 +73,7 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
 }
 
 export function ChatMessageList({ messages, loading, assistantName, assistantIcon, endRef }: Readonly<ChatMessageListProps>) {
+  const { t } = useTranslation()
   const { user } = useCurrentUser()
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -100,7 +102,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
-              <span>{message.role === "assistant" ? assistantName : "You"}</span>
+              <span>{message.role === "assistant" ? assistantName : t("chat.you")}</span>
               {message.role === "assistant" && loading && message === messages.at(-1) && (
                 <IconLoader2 className="size-3 animate-spin" />
               )}
@@ -121,7 +123,7 @@ export function ChatMessageList({ messages, loading, assistantName, assistantIco
                 <button
                   type="button"
                   onClick={() => handleCopy(message.id, message.content)}
-                  title="Copy to clipboard"
+                  title={t("chat.copyToClipboard")}
                   className={`not-prose absolute top-1 right-1 z-10 rounded-md p-1.5 hover:bg-muted/80 transition-all ${copiedId === message.id ? "opacity-100 text-emerald-500" : "opacity-0 group-hover/msg:opacity-100 text-muted-foreground/60 hover:text-foreground"}`}
                 >
                   {copiedId === message.id ? <IconCheck className="size-4" /> : <IconCopy className="size-4" />}

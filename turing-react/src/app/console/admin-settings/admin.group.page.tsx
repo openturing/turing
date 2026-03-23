@@ -8,12 +8,14 @@ import type { TurGroup } from "@/models/auth/group";
 import { TurGroupService } from "@/services/auth/group.service";
 import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const turGroupService = new TurGroupService();
 
 export default function AdminGroupPage() {
+    const { t } = useTranslation();
     const { groupId } = useParams() as { groupId: string };
     const [group, setGroup] = useState<TurGroup>();
     const [isNew, setIsNew] = useState(true);
@@ -26,12 +28,12 @@ export default function AdminGroupPage() {
         if (groupId === "new") {
             setGroup({ id: "", name: "", description: "" } as TurGroup);
             setIsNew(true);
-            setBreadcrumb([{ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: "New" }]);
+            setBreadcrumb([{ label: t("admin.groups.title"), href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: t("common.new") }]);
         } else {
             turGroupService.get(groupId).then((g) => {
                 setGroup(g);
-                setBreadcrumb([{ label: "Groups", href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: g.name }]);
-            }).catch(() => setError("Failed to load group."));
+                setBreadcrumb([{ label: t("admin.groups.title"), href: `${ROUTES.ADMIN_ROOT}/groups` }, { label: g.name }]);
+            }).catch(() => setError(t("admin.groups.loadOneFailed")));
             setIsNew(false);
         }
     }, [groupId]);
@@ -41,14 +43,14 @@ export default function AdminGroupPage() {
     function onDelete() {
         turGroupService.delete(group!.id).then((success) => {
             if (success) {
-                toast.success(`Group "${group!.name}" was deleted.`);
+                toast.success(t("admin.groups.deleted", { name: group!.name }));
                 navigate(ROUTES.ADMIN_GROUPS);
             } else {
-                toast.error(`Failed to delete group "${group!.name}".`);
+                toast.error(t("admin.groups.deleteFailed", { name: group!.name }));
             }
         }).catch((error) => {
             console.error("Delete error", error);
-            toast.error(`Failed to delete group "${group!.name}".`);
+            toast.error(t("admin.groups.deleteFailed", { name: group!.name }));
         }).finally(() => setOpen(false));
     }
 
@@ -57,8 +59,8 @@ export default function AdminGroupPage() {
             <SubPageHeader
                 icon={IconUsersGroup}
                 feature="Group"
-                name={isNew ? "New Group" : (group?.name ?? "")}
-                description={isNew ? "Create a new user group." : "Edit group details and members."}
+                name={isNew ? t("admin.groups.newGroup") : (group?.name ?? "")}
+                description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
                 {...(isNew ? {} : { onDelete, open, setOpen })}
             />
             {group && <AdminGroupForm value={group} isNew={isNew} />}

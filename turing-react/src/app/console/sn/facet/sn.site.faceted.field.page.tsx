@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconFilter } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNFieldService = new TurSNFieldService();
@@ -19,15 +20,16 @@ export default function SNSiteFacetedFieldPage() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (facetedFieldId === "new") {
       turSNFieldService.query(id).then(() => setSnField({} as TurSNSiteField)).catch(() => setError("Connection error or timeout while fetching faceted fields."));
-      setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: "New" }]);
+      setBreadcrumb([{ label: t("sn.facets.title"), href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: t("common.new") }]);
     } else {
       turSNFieldService.get(id, facetedFieldId).then((field) => {
         setSnField(field);
-        setBreadcrumb([{ label: "Facets", href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: field.name || facetedFieldId }]);
+        setBreadcrumb([{ label: t("sn.facets.title"), href: `${ROUTES.SN_INSTANCE}/${id}/facet` }, { label: field.name || facetedFieldId }]);
       }).catch(() => setError("Connection error or timeout while fetching faceted field details."));
       setIsNew(false);
     }
@@ -39,7 +41,7 @@ export default function SNSiteFacetedFieldPage() {
       {snField && (<> <SubPageHeader
         icon={IconFilter}
         name={snField.name}
-        feature="Faceted Field"
+        feature={t("sn.facets.facetedField")}
         description={snField.description}
         open={open}
         setOpen={setOpen} />

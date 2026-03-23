@@ -1,0 +1,588 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "new": "Novo",
+    "loading": "Carregando...",
+    "actions": "Ações",
+    "goBack": "Voltar",
+    "tryAgain": "Tentar novamente",
+    "errorLoading": "Erro ao carregar dados",
+    "openNavigation": "Abrir navegação",
+    "connectionError": "Erro de conexão ou tempo esgotado ao buscar {{resource}}."
+  },
+  "theme": {
+    "toggle": "Alternar tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "modeLabel": "Modo {{mode}}"
+  },
+  "login": {
+    "welcomeBack": "Bem-vindo de volta",
+    "signInDescription": "Faça login para acessar seu painel",
+    "username": "Usuário",
+    "enterUsername": "Digite seu usuário",
+    "password": "Senha",
+    "enterPassword": "Digite sua senha",
+    "signIn": "Entrar",
+    "signingIn": "Entrando...",
+    "emptyFields": "Por favor, preencha usuário e senha",
+    "invalidCredentials": "Credenciais inválidas. Tente novamente.",
+    "loginFailed": "Falha no login"
+  },
+  "dialog": {
+    "cannotDelete": "Não é possível excluir {{feature}}",
+    "inUse": "{{name}} está em uso e não pode ser removido.",
+    "dependingSites": "Os seguintes sites de Navegação Semântica dependem deste {{feature}}:",
+    "removeDependencies": "Remova este {{feature}} desses sites antes de excluí-lo.",
+    "understood": "Entendido",
+    "deleteFeature": "Excluir {{feature}}",
+    "permanentDelete": "Isso excluirá permanentemente {{name}}. Esta ação não pode ser desfeita.",
+    "typeToConfirm": "Digite",
+    "toConfirm": "para confirmar"
+  },
+  "chat": {
+    "askMeAnything": "Pergunte-me qualquer coisa",
+    "noDefaultLlm": "Nenhum LLM padrão configurado",
+    "howCanIHelp": "Como posso ajudá-lo hoje?",
+    "sessions": "Sessões",
+    "noSavedSessions": "Nenhuma sessão salva",
+    "msgs": "msgs",
+    "deleteSession": "Excluir sessão",
+    "selectModel": "Selecione um modelo...",
+    "newChat": "Novo Chat",
+    "chatTab": "Chat",
+    "semanticTab": "Semântico",
+    "semanticTabShort": "SN",
+    "dropFilesHere": "Solte os arquivos aqui",
+    "attachFiles": "Anexar arquivos",
+    "removeFile": "Remover {{name}}",
+    "copyToClipboard": "Copiar para a área de transferência",
+    "you": "Você",
+    "selectModelToStart": "Selecione um modelo para começar...",
+    "selectModelToChat": "Selecione um modelo de linguagem para começar a conversar.",
+    "selectModelToExplore": "Selecione um modelo de linguagem para começar a explorar.",
+    "selectModelToStartAgent": "Selecione um modelo de linguagem para começar.",
+    "askAboutContent": "Faça perguntas sobre seu conteúdo indexado.",
+    "askAnythingAgent": "Pergunte qualquer coisa que este agente possa ajudar.",
+    "askAboutSemantic": "Pergunte sobre seu conteúdo de navegação semântica...",
+    "askAgent": "Pergunte ao {{agent}}...",
+    "usingModel": "Usando {{model}} ({{vendor}})",
+    "usingModelForSN": "Faça perguntas sobre seu conteúdo indexado. Usando {{model}}.",
+    "usingModelForAgent": "Usando {{model}}. Pergunte qualquer coisa que este agente possa ajudar.",
+    "noLlmAvailable": "Nenhum Modelo de Linguagem Disponível",
+    "noLlmDescription": "Para usar o chat, crie e habilite pelo menos uma instância de LLM.",
+    "createLlmInstance": "Criar Instância de LLM",
+    "failedResponse": "Falha ao obter resposta. Verifique a configuração do seu LLM.",
+    "failedAgentResponse": "Falha ao obter resposta de {{agent}}.",
+    "contextCompacted": "Contexto compactado com sucesso.",
+    "failedCompact": "Falha ao compactar contexto.",
+    "contextCompactedLabel": "**[Contexto compactado]**"
+  },
+  "sidebar": {
+    "brandName": "Turing ES",
+    "brandTagline": "Busca Empresarial",
+    "indexing": "Indexação",
+    "new": "Novo(a) {{feature}}"
+  },
+  "nav": {
+    "account": "Conta",
+    "logOut": "Sair"
+  },
+  "home": {
+    "title": "Início",
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite"
+    },
+    "welcome": "Bem-vindo ao Viglet Turing ES — sua plataforma de inteligência em busca empresarial.",
+    "docs": "Docs",
+    "open": "Abrir",
+    "sections": {
+      "generativeAi": {
+        "label": "IA Generativa",
+        "description": "Construa, configure e interaja com modelos de linguagem, embeddings e agentes inteligentes."
+      },
+      "enterpriseSearch": {
+        "label": "Busca Empresarial",
+        "description": "Indexe, pesquise e navegue pelo conteúdo da sua empresa com mecanismos de busca e compreensão semântica."
+      },
+      "management": {
+        "label": "Gerenciamento",
+        "description": "Administração do sistema, gerenciamento de ativos e configuração da plataforma."
+      }
+    },
+    "features": {
+      "languageModel": {
+        "title": "Modelo de Linguagem",
+        "description": "Configure provedores de LLM como OpenAI, Ollama, Anthropic e Gemini para chat e geração."
+      },
+      "embeddingModel": {
+        "title": "Modelo de Embedding",
+        "description": "Configure modelos de embedding para busca por similaridade vetorial e pipelines RAG."
+      },
+      "embeddingStore": {
+        "title": "Armazenamento de Embedding",
+        "description": "Gerencie armazenamentos vetoriais como Chroma, Milvus e PGVector para recuperação semântica."
+      },
+      "mcpServer": {
+        "title": "Servidor MCP",
+        "description": "Conecte-se a servidores do Model Context Protocol para integração com ferramentas externas."
+      },
+      "aiAgent": {
+        "title": "Agente de IA",
+        "description": "Crie agentes de IA que orquestram LLMs, ferramentas e servidores MCP para tarefas complexas."
+      },
+      "intent": {
+        "title": "Intenção",
+        "description": "Defina categorias de prompts e ações exibidas como sugestões rápidas no chat."
+      },
+      "tokenUsage": {
+        "title": "Uso de Tokens",
+        "description": "Monitore o consumo de tokens em todas as instâncias e modelos de LLM."
+      },
+      "chat": {
+        "title": "Chat",
+        "description": "Inicie conversas com seus LLMs, agentes e busca semântica configurados."
+      },
+      "searchEngine": {
+        "title": "Mecanismo de Busca",
+        "description": "Gerencie instâncias Solr, Elasticsearch ou Lucene que alimentam sua busca."
+      },
+      "semanticNavigation": {
+        "title": "Navegação Semântica",
+        "description": "Crie sites de busca com facetas, destaque, correção ortográfica e insights de IA."
+      },
+      "integration": {
+        "title": "Integração",
+        "description": "Conecte-se a CMS, bancos de dados e sistemas de arquivos externos para indexar seu conteúdo."
+      },
+      "graphqlExplorer": {
+        "title": "Explorador GraphQL",
+        "description": "Consulte seus dados de navegação semântica usando o playground interativo GraphQL."
+      },
+      "assets": {
+        "title": "Ativos",
+        "description": "Navegue e gerencie arquivos armazenados no MinIO."
+      },
+      "import": {
+        "title": "Importar",
+        "description": "Importe configurações, sites e dados de pacotes exportados."
+      },
+      "logging": {
+        "title": "Logs",
+        "description": "Visualize logs de indexação e monitore a atividade do pipeline de dados."
+      },
+      "administration": {
+        "title": "Administração",
+        "description": "Gerencie usuários, grupos, papéis, tokens de API e configurações do sistema."
+      }
+    }
+  },
+  "sn": {
+    "title": "Navegação Semântica",
+    "newSite": "Novo Site",
+    "blankTitle": "Você ainda não possui nenhuma instância de navegação semântica.",
+    "blankDescription": "Crie uma nova instância para pesquisar e navegar pelos seus documentos.",
+    "newInstance": "Nova instância de navegação semântica",
+    "exportAll": "Exportar Tudo",
+    "exporting": "Exportando...",
+    "exportSuccess": "Todos os sites de Navegação Semântica foram exportados.",
+    "exportFailed": "Falha ao exportar sites de Navegação Semântica.",
+    "siteSaved": "O site SN {{name}} foi salvo",
+    "siteNotSaved": "O site SN {{name}} não foi salvo",
+    "siteUpdated": "O site SN {{name}} foi atualizado",
+    "siteNotUpdated": "O site SN {{name}} não foi atualizado",
+    "formSubmitFailed": "Falha ao enviar o formulário. Tente novamente.",
+    "settings": {
+      "title": "Configurações",
+      "description": "Configure o site de Navegação Semântica."
+    },
+    "behavior": {
+      "title": "Comportamento",
+      "description": "Como a busca se comportará durante a pesquisa."
+    },
+    "fields": {
+      "title": "Campos",
+      "feature": "Campo",
+      "description": "Campos personalizados do mecanismo de busca.",
+      "newField": "Novo Campo",
+      "deleted": "O campo foi excluído",
+      "notDeleted": "O campo não foi excluído"
+    },
+    "facets": {
+      "title": "Facetas",
+      "feature": "Faceta",
+      "description": "Edite e ordene as facetas da busca.",
+      "newCustomFacet": "Nova Faceta Personalizada",
+      "customField": "Campo Personalizado",
+      "facetedField": "Campo Facetado",
+      "deleted": "A Faceta Personalizada {{name}} foi excluída",
+      "notDeleted": "A Faceta Personalizada {{name}} não foi excluída",
+      "deletionError": "Erro ao excluir",
+      "failedDelete": "Falha ao excluir: {{message}}"
+    },
+    "genai": {
+      "title": "IA Generativa",
+      "description": "Use o Assistente na sua busca."
+    },
+    "insights": {
+      "title": "Insights de IA",
+      "description": "Visão geral e sugestões com IA para este site de Navegação Semântica.",
+      "generating": "Gerando resumo com IA...",
+      "failedGenerate": "Falha ao gerar resumo.",
+      "failedConnect": "Falha ao conectar ao serviço de resumo. Tente novamente.",
+      "statistics": "Estatísticas",
+      "searchTerms": "termos de busca"
+    },
+    "multiLanguage": {
+      "title": "Multi Idiomas",
+      "feature": "Idioma",
+      "description": "Defina Multi Idiomas.",
+      "newLanguage": "Novo Idioma",
+      "blankTitle": "Você ainda não possui nenhum idioma.",
+      "blankDescription": "Crie um novo idioma para que a busca de navegação semântica funcione.",
+      "newLanguageBlank": "Novo idioma",
+      "deleted": "O idioma {{name}} foi excluído",
+      "notDeleted": "O idioma {{name}} não foi excluído"
+    },
+    "resultRanking": {
+      "title": "Classificação de Resultados",
+      "description": "Defina conteúdo que será destacado na busca por termos.",
+      "newResultRanking": "Nova Classificação de Resultados",
+      "blankTitle": "Você ainda não possui nenhuma classificação de resultados.",
+      "blankDescription": "Crie uma nova classificação de resultados para definir regras de relevância.",
+      "newResultRankingBlank": "Nova classificação de resultados",
+      "deleted": "A instância de Classificação de Resultados {{name}} foi excluída",
+      "notDeleted": "A instância de Classificação de Resultados {{name}} não foi excluída"
+    },
+    "mergeProviders": {
+      "title": "Provedores de Mesclagem",
+      "feature": "Provedor de Mesclagem",
+      "description": "Unifique conteúdos de diferentes fontes.",
+      "newMergeProvider": "Novo Provedor de Mesclagem",
+      "blankTitle": "Você ainda não possui nenhum provedor de mesclagem.",
+      "blankDescription": "Crie um novo provedor de mesclagem para permitir a mesclagem de documentos de diferentes provedores durante a indexação.",
+      "newMergeProviderBlank": "Novo provedor de mesclagem",
+      "deleted": "O provedor de mesclagem foi excluído",
+      "notDeleted": "O provedor de mesclagem não foi excluído"
+    },
+    "spotlight": {
+      "title": "Destaque",
+      "description": "Defina conteúdo que será destacado na busca por termos.",
+      "newSpotlight": "Novo Destaque",
+      "blankTitle": "Você ainda não possui nenhum destaque.",
+      "blankDescription": "Crie um componente de destaque acionado por termos de busca específicos.",
+      "newSpotlightBlank": "Novo destaque",
+      "deleted": "O destaque foi excluído",
+      "notDeleted": "O destaque não foi excluído"
+    },
+    "topSearchTerms": {
+      "title": "Termos Mais Buscados",
+      "description": "Relatório dos termos mais buscados.",
+      "today": "Hoje",
+      "thisWeek": "Esta Semana",
+      "thisMonth": "Este Mês",
+      "allTime": "Todo o Período",
+      "noTerms": "Nenhum termo de busca ainda.",
+      "noTermsDescription": "Assim que os usuários pesquisarem, os principais termos aparecerão aqui.",
+      "rank": "Posição",
+      "term": "Termo",
+      "avgResults": "Média de resultados",
+      "searchTotal": "Total de buscas"
+    }
+  },
+  "llm": {
+    "title": "Modelo de Linguagem",
+    "blankTitle": "Você ainda não possui nenhuma instância de modelo de linguagem.",
+    "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de modelo de linguagem"
+  },
+  "se": {
+    "title": "Mecanismo de Busca",
+    "newSearchEngine": "Novo Mecanismo de Busca",
+    "blankTitle": "Você ainda não possui nenhuma instância de mecanismo de busca.",
+    "blankDescription": "Crie uma nova instância para usar em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de mecanismo de busca"
+  },
+  "store": {
+    "title": "Armazenamento de Embedding",
+    "newStore": "Novo Armazenamento de Embedding",
+    "blankTitle": "Você ainda não possui nenhuma instância de armazenamento de embedding.",
+    "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de armazenamento de embedding"
+  },
+  "integration": {
+    "title": "Integração",
+    "newIntegration": "Nova Integração",
+    "blankTitle": "Você ainda não possui nenhuma instância de integração.",
+    "blankDescription": "Crie uma nova integração para indexar de diversas fontes de dados externas.",
+    "newInstance": "Nova integração"
+  },
+  "mcp": {
+    "title": "Servidor MCP",
+    "blankTitle": "Você ainda não possui nenhum servidor MCP.",
+    "blankDescription": "Crie um novo servidor MCP para integrar com ferramentas e serviços externos.",
+    "newInstance": "Novo servidor MCP"
+  },
+  "embeddingModel": {
+    "title": "Modelo de Embedding",
+    "blankTitle": "Você ainda não possui nenhum modelo de embedding.",
+    "blankDescription": "Crie um novo modelo de embedding para usar com navegação semântica e armazenamentos vetoriais.",
+    "newInstance": "Novo Modelo de Embedding"
+  },
+  "aiAgent": {
+    "title": "Agente de IA",
+    "blankTitle": "Você ainda não possui nenhum agente de IA.",
+    "blankDescription": "Crie um novo agente de IA para orquestrar instâncias de LLM e servidores MCP.",
+    "newInstance": "Novo Agente de IA"
+  },
+  "intent": {
+    "title": "Intenção",
+    "blankTitle": "Você ainda não possui nenhuma intenção.",
+    "blankDescription": "Crie uma intenção para agrupar prompts sugeridos para o chat.",
+    "newInstance": "Nova Intenção"
+  },
+  "apiToken": {
+    "title": "Token de API",
+    "description": "Gerencie tokens de API para acesso externo.",
+    "blankTitle": "Você ainda não possui nenhum token de API.",
+    "blankDescription": "Crie um novo token para permitir acesso à API.",
+    "newInstance": "Novo token de API"
+  },
+  "admin": {
+    "title": "Administração",
+    "console": "Console de Administração",
+    "settings": "Configurações",
+    "users": {
+      "title": "Usuários",
+      "description": "Gerencie contas de usuário e acesso.",
+      "newUser": "Novo Usuário",
+      "createDescription": "Crie uma nova conta de usuário.",
+      "editDescription": "Edite os detalhes da conta do usuário.",
+      "deleted": "O usuário \"{{name}}\" foi excluído.",
+      "deleteFailed": "Falha ao excluir o usuário \"{{name}}\".",
+      "loadFailed": "Falha ao carregar usuários.",
+      "loadOneFailed": "Falha ao carregar usuário."
+    },
+    "groups": {
+      "title": "Grupos",
+      "description": "Organize usuários em grupos com permissões compartilhadas.",
+      "newGroup": "Novo Grupo",
+      "createDescription": "Crie um novo grupo de usuários.",
+      "editDescription": "Edite detalhes e membros do grupo.",
+      "deleted": "O grupo \"{{name}}\" foi excluído.",
+      "deleteFailed": "Falha ao excluir o grupo \"{{name}}\".",
+      "loadFailed": "Falha ao carregar grupos.",
+      "loadOneFailed": "Falha ao carregar grupo."
+    },
+    "roles": {
+      "title": "Papéis",
+      "description": "Defina papéis e suas permissões associadas.",
+      "newRole": "Novo Papel",
+      "createDescription": "Crie um novo papel de acesso.",
+      "editDescription": "Edite detalhes e permissões do papel.",
+      "loadFailed": "Falha ao carregar papéis.",
+      "loadOneFailed": "Falha ao carregar papel."
+    },
+    "systemInfo": {
+      "title": "Informações do Sistema"
+    }
+  },
+  "account": {
+    "title": "Configurações da Conta",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "email": "E-mail",
+    "username": "Usuário",
+    "changePassword": "Alterar Senha",
+    "newPassword": "Nova Senha",
+    "leaveBlank": "Deixe em branco para manter a atual",
+    "confirmPassword": "Confirmar Senha",
+    "repeatPassword": "Repita a nova senha",
+    "saveChanges": "Salvar Alterações",
+    "loadFailed": "Falha ao carregar dados do usuário.",
+    "unableToLoad": "Não foi possível carregar dados do usuário.",
+    "avatarUpdated": "Avatar atualizado.",
+    "avatarFailed": "Falha ao salvar avatar.",
+    "avatarRemoved": "Avatar removido.",
+    "avatarRemoveFailed": "Falha ao remover avatar.",
+    "passwordMismatch": "As senhas não coincidem.",
+    "updateSuccess": "Conta atualizada com sucesso.",
+    "updateFailed": "Falha ao atualizar conta."
+  },
+  "exchange": {
+    "dropFile": "Solte seu arquivo aqui",
+    "dragDrop": "Arraste e solte seu arquivo de exportação",
+    "browseFiles": "procurar arquivos",
+    "selectZip": "para selecionar um arquivo ZIP",
+    "onlyZip": "Apenas arquivos .zip exportados do Turing são suportados",
+    "importing": "Importando...",
+    "uploaded": "enviado",
+    "importCompleted": "Importação Concluída",
+    "redirecting": "Redirecionando para Navegação Semântica...",
+    "importFailed": "Falha na Importação",
+    "invalidFile": "Selecione um arquivo ZIP válido.",
+    "invalidType": "Tipo de arquivo inválido. Apenas arquivos ZIP são aceitos.",
+    "importSuccess": "Importação concluída com sucesso!",
+    "importError": "Ocorreu um erro durante a importação.",
+    "importFailedMsg": "Falha na importação: {{message}}"
+  },
+  "graphql": {
+    "title": "Explorador GraphQL"
+  },
+  "logging": {
+    "turingServer": "Servidor Turing ES",
+    "turingServerDesc": "Instância do servidor de logs",
+    "indexing": "Indexação",
+    "indexingDesc": "Instância do serviço de indexação",
+    "aem": "AEM",
+    "aemDesc": "Instância do serviço AEM"
+  },
+  "tokenUsage": {
+    "noLlm": "Nenhum Modelo de Linguagem Disponível",
+    "noLlmDescription": "Para ver o uso de tokens, crie e habilite pelo menos uma instância de LLM.",
+    "createLlm": "Criar Instância de LLM",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "loadingUsage": "Carregando dados de uso...",
+    "loadFailed": "Falha ao carregar dados de uso.",
+    "totalRequests": "Total de Requisições",
+    "inputTokens": "Tokens de Entrada",
+    "outputTokens": "Tokens de Saída",
+    "totalTokens": "Total de Tokens",
+    "summaryByModel": "Resumo por Modelo",
+    "summaryDescription": "Uso agregado de tokens por instância de LLM para o mês selecionado",
+    "noUsageData": "Sem dados de uso para este período.",
+    "instance": "Instância",
+    "vendor": "Fornecedor",
+    "model": "Modelo",
+    "requests": "Requisições",
+    "input": "Entrada",
+    "output": "Saída",
+    "total": "Total",
+    "dailyBreakdown": "Detalhamento Diário",
+    "dailyDescription": "Consumo diário de tokens por modelo",
+    "date": "Data"
+  },
+  "systemInfo": {
+    "title": "Informações do Sistema",
+    "description": "Ambiente de execução e detalhes do sistema.",
+    "overview": "Visão Geral",
+    "systemVariables": "Variáveis do Sistema",
+    "application": "Aplicação",
+    "applicationDesc": "Versão e ambiente de execução do Viglet Turing ES.",
+    "version": "Versão",
+    "javaVersion": "Versão do Java",
+    "javaVendor": "Fornecedor do Java",
+    "os": "SO",
+    "database": "Banco de Dados",
+    "databaseDesc": "Informações do banco de dados conectado.",
+    "status": "Status",
+    "up": "ATIVO",
+    "down": "INATIVO",
+    "product": "Produto",
+    "driver": "Driver",
+    "driverVersion": "Versão do Driver",
+    "url": "URL",
+    "physicalMemory": "Memória Física (RAM)",
+    "physicalMemoryDesc": "Memória física e swap/paginação do sistema operacional.",
+    "ramUsage": "Uso de RAM",
+    "used": "Usado:",
+    "totalLabel": "Total:",
+    "totalRam": "RAM Total",
+    "freeRam": "RAM Livre",
+    "usedRam": "RAM Usada",
+    "swapUsage": "Uso de Swap / Paginação",
+    "totalSwap": "Swap Total",
+    "freeSwap": "Swap Livre",
+    "jvmHeap": "Memória (JVM Heap)",
+    "jvmHeapDesc": "Alocação e uso de memória heap do Java.",
+    "heapUsage": "Uso do Heap",
+    "max": "Máx:",
+    "totalAllocated": "Total Alocado",
+    "freeAllocated": "Livre (Alocado)",
+    "usedMemory": "Usado",
+    "maxHeap": "Heap Máximo",
+    "diskSpace": "Espaço em Disco",
+    "diskSpaceDesc": "Armazenamento no volume de trabalho da aplicação.",
+    "diskUsage": "Uso do Disco",
+    "available": "Disponível",
+    "mongodb": "MongoDB",
+    "mongodbDesc": "Banco de dados MongoDB usado para logs.",
+    "endpoint": "Endpoint",
+    "minio": "MinIO",
+    "minioDesc": "Armazenamento de objetos para ativos.",
+    "sysVarsDesc": "Propriedades do sistema JVM e variáveis de ambiente.",
+    "searchVariables": "Pesquisar variáveis...",
+    "property": "Propriedade",
+    "value": "Valor",
+    "noVariablesMatch": "Nenhuma variável corresponde à sua busca.",
+    "propertiesShown": "{{count}} de {{total}} propriedades exibidas",
+    "loadFailed": "Falha ao carregar informações do sistema."
+  },
+  "globalSettings": {
+    "title": "Configurações Globais",
+    "breadcrumb": "Configurações",
+    "description": "Configurações e preferências da plataforma.",
+    "sectionTitle": "Configurações Globais",
+    "sectionDescription": "Configurações e preferências de formatação da plataforma.",
+    "decimalSeparator": "Separador Decimal",
+    "decimalSeparatorDesc": "Define como valores decimais são digitados nos formulários de administração (incluindo formato de moeda).",
+    "choose": "Escolha...",
+    "dot": "Ponto (.)",
+    "comma": "Vírgula (,)",
+    "decimalPreview": "Prévia decimal",
+    "currencyFormat": "Formato de moeda",
+    "pythonPath": "Caminho do Executável Python",
+    "pythonPathDesc": "Caminho absoluto para o interpretador Python usado pela ferramenta de interpretação de código. Deixe vazio para detectar automaticamente.",
+    "llmSettings": "Configurações de LLM",
+    "llmSettingsDesc": "Instância de modelo de linguagem e configuração de cache para relatórios, insights e e-mails.",
+    "defaultLlm": "LLM Padrão",
+    "defaultLlmDesc": "Instância de LLM usada para sugestões de IA em todas as telas (ex.: análise de logs, resumos de monitoramento).",
+    "selectLlm": "Selecione uma instância de LLM...",
+    "none": "Nenhum",
+    "llmCache": "Cache de LLM",
+    "llmCacheDesc": "Habilite o cache de respostas do LLM para relatórios, insights e e-mails para reduzir chamadas à API e melhorar o tempo de resposta.",
+    "cacheDuration": "Duração do Cache",
+    "cacheDurationDesc": "Quanto tempo as respostas do LLM em cache permanecem válidas antes de uma nova requisição ser feita.",
+    "regenerateCache": "Regenerar Cache",
+    "regenerateCacheDesc": "Forçar uma nova chamada ao LLM na próxima requisição, ignorando qualquer cache existente. O cache será recriado com a resposta atualizada.",
+    "ragSettings": "Configurações de RAG",
+    "ragSettingsDesc": "Geração Aumentada por Recuperação para indexação de ativos e base de conhecimento.",
+    "enableRag": "Habilitar RAG Global",
+    "enableRagDesc": "Habilita a indexação automática de embedding de arquivos armazenados em Ativos (MinIO). Requer um Modelo e Armazenamento de Embedding configurados abaixo.",
+    "embeddingModelRequired": "Modelo de Embedding é obrigatório quando RAG está habilitado",
+    "defaultEmbeddingModel": "Modelo de Embedding Padrão",
+    "defaultEmbeddingModelDesc": "Modelo usado para gerar embeddings vetoriais do conteúdo dos ativos.",
+    "selectEmbeddingModel": "Selecione um Modelo de Embedding...",
+    "embeddingStoreRequired": "Armazenamento de Embedding é obrigatório quando RAG está habilitado",
+    "defaultEmbeddingStore": "Armazenamento de Embedding Padrão",
+    "defaultEmbeddingStoreDesc": "Banco de dados vetorial onde os embeddings dos ativos são armazenados e consultados.",
+    "selectEmbeddingStore": "Selecione um Armazenamento de Embedding...",
+    "emailSettings": "Configurações de E-mail",
+    "emailSettingsDesc": "Configure o serviço de e-mail para notificações e relatórios semanais.",
+    "emailProvider": "Provedor de E-mail",
+    "emailProviderDesc": "Serviço usado para enviar e-mails transacionais.",
+    "brevo": "Brevo",
+    "apiKey": "Chave de API",
+    "apiKeyDesc": "Chave de API para o provedor de e-mail selecionado.",
+    "senderEmail": "E-mail do Remetente",
+    "senderEmailDesc": "Endereço de e-mail usado como remetente para e-mails enviados.",
+    "senderName": "Nome do Remetente",
+    "senderNameDesc": "Nome exibido como remetente (ex.: \"Viglet Turing\").",
+    "recipientEmail": "E-mail do Destinatário",
+    "recipientEmailDesc": "Destinatário padrão para relatórios automatizados (ex.: relatório semanal de busca).",
+    "testEmailHint": "Salve as configurações antes de testar para usar a configuração mais recente.",
+    "sendTestEmail": "Enviar E-mail de Teste",
+    "sending": "Enviando...",
+    "saveSettings": "Salvar Configurações",
+    "loadFailed": "Falha ao carregar configurações globais. Usando valores padrão.",
+    "updateSuccess": "Configurações globais foram atualizadas.",
+    "updateFailed": "Falha ao atualizar configurações globais.",
+    "testEmailFailed": "Falha ao enviar e-mail de teste. Verifique suas configurações de e-mail."
+  }
+}

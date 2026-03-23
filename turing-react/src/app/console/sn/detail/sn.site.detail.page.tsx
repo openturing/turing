@@ -7,6 +7,7 @@ import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import { TurSNSiteService } from "@/services/sn/sn.service";
 import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteService = new TurSNSiteService();
@@ -16,7 +17,8 @@ export default function SNSiteDetailPage() {
   const [snSite, setSnSite] = useState<TurSNSite>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("Settings");
+  const { t } = useTranslation();
+  useSubPageBreadcrumb(t("sn.settings.title"));
 
   useEffect(() => {
     if (id === "new") {
@@ -30,7 +32,7 @@ export default function SNSiteDetailPage() {
   }, [id]);
   return (
     <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/settings`}>
-      <SubPageHeader icon={IconSettings} name="Settings" feature="Settings" description="Configure the Semantic Navigation Site." />
+      <SubPageHeader icon={IconSettings} name={t("sn.settings.title")} feature={t("sn.settings.title")} description={t("sn.settings.description")} />
       {snSite && <SNSiteForm value={snSite} isNew={isNew} />}
     </LoadProvider>
   )

@@ -3,6 +3,7 @@ import { IconArrowUp, IconFile, IconLoader2, IconPaperclip, IconX } from "@table
 import { Textarea } from "@/components/ui/textarea"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { formatFileSize } from "../chat.types"
+import { useTranslation } from "react-i18next"
 
 interface ChatInputProps {
   value: string
@@ -20,6 +21,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ value, onChange, onSend, loading, disabled, placeholder, accentColor = "blue", attachments }: ChatInputProps) {
+  const { t } = useTranslation()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -70,7 +72,7 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-blue-500 rounded-lg">
           <div className="flex flex-col items-center gap-2 text-blue-500">
             <IconFile className="size-10" />
-            <span className="text-lg font-medium">Drop files here</span>
+            <span className="text-lg font-medium">{t("chat.dropFilesHere")}</span>
           </div>
         </div>
       )}
@@ -93,8 +95,8 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
       <div className={`relative flex items-center rounded-xl border bg-muted/50 focus-within:ring-2 ${ringColor} transition-all`}>
         {attachments && (
           <>
-            <input ref={fileInputRef} type="file" multiple className="hidden" title="Attach files" onChange={handleFileInputChange} />
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled || loading} className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:pointer-events-none" title="Attach files">
+            <input ref={fileInputRef} type="file" multiple className="hidden" title={t("chat.attachFiles")} onChange={handleFileInputChange} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled || loading} className="p-3 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:pointer-events-none" title={t("chat.attachFiles")}>
               <IconPaperclip className="size-5" />
             </button>
           </>
