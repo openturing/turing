@@ -65,8 +65,8 @@ const SECTIONS: FeatureSection[] = [
       { title: "MCP Server", description: "Connect to Model Context Protocol servers for external tool integration.", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.com/turing/mcp-servers" },
       { title: "AI Agent", description: "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks.", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.com/turing/ai-agents" },
       { title: "Intent", description: "Define prompt categories and actions shown as quick suggestions in the chat.", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.com/turing/intent" },
-      { title: "Token Usage", description: "Monitor token consumption across all LLM instances and models.", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, requiresLlm: true, docUrl: "https://docs.viglet.com/turing/token-usage" },
-      { title: "Chat", description: "Start conversations with your configured LLMs, agents, and semantic search.", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, requiresLlm: true, docUrl: "https://docs.viglet.com/turing/chat#chat-direct-llm" },
+      { title: "Token Usage", description: "Monitor token consumption across all LLM instances and models.", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, docUrl: "https://docs.viglet.com/turing/token-usage" },
+      { title: "Chat", description: "Start conversations with your configured LLMs, agents, and semantic search.", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, docUrl: "https://docs.viglet.com/turing/chat#chat-direct-llm" },
     ],
   },
   {
@@ -109,7 +109,7 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.all([
-      turLLMInstanceService.query(),
+      turLLMInstanceService.query().catch(() => []),
       turGlobalSettingsService.query().catch(() => null),
     ]).then(([instances, settings]) => {
       const enabled = instances.filter((i) => i.enabled === 1)

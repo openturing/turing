@@ -85,7 +85,8 @@ public class TurSecurityConfigProduction {
                         TurLogoutHandler turLogoutHandler,
                         TurConfigProperties turConfigProperties,
                         TurAuthenticationEntryPoint turAuthenticationEntryPoint,
-                        TurOAuth2UserService turOAuth2UserService) {
+                        TurOAuth2UserService turOAuth2UserService,
+                        TurOidcUserService turOidcUserService) {
 
                 http.headers(header -> header.frameOptions(
                                 frameOptions -> frameOptions.disable()
@@ -121,7 +122,9 @@ public class TurSecurityConfigProduction {
                                         "%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
                                         issuerUri, clientId, turingUrl);
                         http.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(
-                                        userInfo -> userInfo.userService(turOAuth2UserService)));
+                                        userInfo -> userInfo
+                                                .userService(turOAuth2UserService)
+                                                .oidcUserService(turOidcUserService)));
                         http.authorizeHttpRequests(authorizeRequests -> {
                                 authorizeRequests.requestMatchers(
                                                 mvc.matcher(ERROR_PATH),

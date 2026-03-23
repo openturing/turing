@@ -109,10 +109,11 @@
       "name": "turing.keycloak-admin-id",
       "type": "java.lang.String",
       "description": "A description for 'turing.keycloak-admin-id'"
+    },
+    {
+      "name": "turing.minio.bucket",
+      "type": "java.lang.String",
+      "description": "A description for 'turing.minio.bucket'"
     }
   ]
-}   "type": "java.lang.String",
-"description": "A description for 'turing.permissions'"
-}
-]
 }
