@@ -12,21 +12,21 @@ import type { TurSNSiteField } from '@/models/sn/sn-site-field.model';
 import { TurSNFieldService } from '@/services/sn/sn.field.service';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
+import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister, type FieldValues, type ArrayPath } from 'react-hook-form';
 
-interface DynamicResultRankingFieldsProps {
-    control: Control<any>;
-    register: UseFormRegister<any>;
+interface DynamicResultRankingFieldsProps<TFieldValues extends FieldValues = FieldValues> {
+    control: Control<TFieldValues>;
+    register: UseFormRegister<TFieldValues>;
     fieldName: keyof TurSNRankingExpression;
     snSiteId: string;
     errors?: FieldErrors;
 }
 const turSNFieldService = new TurSNFieldService();
 
-export function DynamicResultRankingFields({ control, register, fieldName, snSiteId, errors }: Readonly<DynamicResultRankingFieldsProps>) {
+export function DynamicResultRankingFields<TFieldValues extends FieldValues = FieldValues>({ control, register, fieldName, snSiteId, errors }: Readonly<DynamicResultRankingFieldsProps<TFieldValues>>) {
     const { fields, append, remove } = useFieldArray({
         control,
-        name: fieldName,
+        name: fieldName as ArrayPath<TFieldValues>,
         rules: {
             required: "At least one condition is required.",
             minLength: { value: 1, message: "At least one condition is required." },
@@ -38,7 +38,7 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
     }, [snSiteId]);
 
     const handleAddField = () => {
-        append({ attribute: '', condition: '', value: '' });
+        append({ attribute: '', condition: '', value: '' } as any);
     };
 
     return (
@@ -51,7 +51,7 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                             {/* Field select */}
                             <Controller
                                 control={control}
-                                name={`${fieldName}.${index}.attribute`}
+                                name={`${fieldName}.${index}.attribute` as any}
                                 rules={{ required: "Attribute is required." }}
                                 render={({ field: controllerField }) => (
                                     <div>
@@ -80,7 +80,7 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                             {/* Condition select */}
                             <Controller
                                 control={control}
-                                name={`${fieldName}.${index}.condition`}
+                                name={`${fieldName}.${index}.condition` as any}
                                 rules={{ required: "Condition is required." }}
                                 render={({ field: controllerField }) => (
                                     <div>
@@ -109,7 +109,7 @@ export function DynamicResultRankingFields({ control, register, fieldName, snSit
                                 <Input
                                     className={fieldErrors?.value ? "border-destructive" : ""}
                                     placeholder="Value"
-                                    {...register(`${fieldName}.${index}.value`, { required: "Value is required." })}
+                                    {...register(`${fieldName}.${index}.value` as any, { required: "Value is required." })}
                                 />
                                 {fieldErrors?.value && (
                                     <p className="text-xs text-destructive mt-1">{fieldErrors.value.message}</p>

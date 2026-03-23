@@ -4,30 +4,30 @@ import type { TurLocale } from '@/models/locale/locale.model';
 import { TurLocaleService } from '@/services/locale/locale.service';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Controller, useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
+import { Controller, useFieldArray, type Control, type UseFormRegister, type FieldValues, type ArrayPath } from 'react-hook-form';
 import { GradientButton } from '../ui/gradient-button';
 
-interface DynamicSourceLocalesProps {
-    control: Control<any>;
-    register: UseFormRegister<any>;
+interface DynamicSourceLocalesProps<TFieldValues extends FieldValues = FieldValues> {
+    control: Control<TFieldValues>;
+    register: UseFormRegister<TFieldValues>;
     fieldName: string;
 }
 const turLocaleService = new TurLocaleService();
-export function DynamicSourceLocales({
+export function DynamicSourceLocales<TFieldValues extends FieldValues = FieldValues>({
     control,
     register,
     fieldName
-}: Readonly<DynamicSourceLocalesProps>) {
+}: Readonly<DynamicSourceLocalesProps<TFieldValues>>) {
     const { fields, append, remove } = useFieldArray({
         control,
-        name: fieldName,
+        name: fieldName as ArrayPath<TFieldValues>,
     });
     const [locales, setLocales] = useState<TurLocale[]>([]);
     useEffect(() => {
         turLocaleService.query().then(setLocales)
     }, []);
     const handleAddField = () => {
-        append({ locale: '', path: '' });
+        append({ locale: '', path: '' } as any);
     };
 
     return (
@@ -36,7 +36,7 @@ export function DynamicSourceLocales({
                 <div key={field.id} className="flex items-center gap-2">
                     <Controller
                         control={control}
-                        name={`${fieldName}.${index}.locale`}
+                        name={`${fieldName}.${index}.locale` as any}
                         render={({ field: controllerField }) => (
                             <LanguageSelect
                                 value={controllerField.value}
@@ -50,7 +50,7 @@ export function DynamicSourceLocales({
                     <Input
                         className="grow"
                         placeholder="Path"
-                        {...register(`${fieldName}.${index}.path`)}
+                        {...register(`${fieldName}.${index}.path` as any)}
                     />
                     <GradientButton
                         variant="ghost"
