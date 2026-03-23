@@ -8,6 +8,7 @@ import {
   IconDatabase,
   IconFileImport,
   IconFolder,
+  IconHome,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
@@ -126,6 +127,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navGroups = React.useMemo(
     () => [
+      { items: [{ title: "Home", url: ROUTES.HOME, icon: IconHome }] },
       { label: "Generative AI", items: filterItems(generativeAiItems) },
       { label: "Enterprise Search", items: filterItems(searchItems) },
       { label: "Management", items: filteredManagement },

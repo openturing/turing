@@ -26,6 +26,9 @@ import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
 import com.viglet.turing.genai.tool.TurRagSearchToolService;
+import com.viglet.turing.genai.tool.TurIntegrationMonitoringToolService;
+import com.viglet.turing.genai.tool.TurLoggingToolService;
+import com.viglet.turing.genai.tool.TurSystemInfoToolService;
 import com.viglet.turing.genai.tool.TurToolDescriptionService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -61,6 +64,12 @@ class TurLLMChatAPITest {
     @Mock
     private TurToolDescriptionService toolDescriptionService;
     @Mock
+    private TurLoggingToolService loggingToolService;
+    @Mock
+    private TurIntegrationMonitoringToolService integrationMonitoringToolService;
+    @Mock
+    private TurSystemInfoToolService systemInfoToolService;
+    @Mock
     private TurGenAiLlmProvider provider;
 
     private TurLLMChatAPI api;
@@ -72,7 +81,9 @@ class TurLLMChatAPITest {
                 webCrawlerToolService, weatherToolService, financeToolService,
                 codeInterpreterToolService, imageSearchToolService,
                 dateTimeToolService, ragSearchToolService,
-                tokenUsageService, toolDescriptionService);
+                tokenUsageService, toolDescriptionService,
+                loggingToolService, integrationMonitoringToolService,
+                systemInfoToolService);
     }
 
     // --- Record Tests ---

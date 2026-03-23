@@ -50,6 +50,9 @@ import com.viglet.turing.genai.tool.TurWeatherToolService;
 import com.viglet.turing.genai.tool.TurRagSearchToolService;
 import com.viglet.turing.genai.tool.TurToolDescriptionCallback;
 import com.viglet.turing.genai.tool.TurToolDescriptionService;
+import com.viglet.turing.genai.tool.TurIntegrationMonitoringToolService;
+import com.viglet.turing.genai.tool.TurLoggingToolService;
+import com.viglet.turing.genai.tool.TurSystemInfoToolService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -82,15 +85,20 @@ public class TurLLMChatAPI {
     @org.springframework.beans.factory.annotation.Value("classpath:prompts/render.md")
     private org.springframework.core.io.Resource renderPromptResource;
 
+    @org.springframework.beans.factory.annotation.Value("classpath:prompts/ops.md")
+    private org.springframework.core.io.Resource opsPromptResource;
+
     private String basePrompt;
     private String toolsPrompt;
     private String renderPrompt;
+    private String opsPrompt;
 
     @PostConstruct
     void loadPrompts() throws IOException {
         basePrompt = basePromptResource.getContentAsString(StandardCharsets.UTF_8);
         toolsPrompt = toolsPromptResource.getContentAsString(StandardCharsets.UTF_8);
         renderPrompt = renderPromptResource.getContentAsString(StandardCharsets.UTF_8);
+        opsPrompt = opsPromptResource.getContentAsString(StandardCharsets.UTF_8);
     }
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
@@ -105,6 +113,9 @@ public class TurLLMChatAPI {
     private final TurRagSearchToolService ragSearchToolService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurToolDescriptionService toolDescriptionService;
+    private final TurLoggingToolService loggingToolService;
+    private final TurIntegrationMonitoringToolService integrationMonitoringToolService;
+    private final TurSystemInfoToolService systemInfoToolService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
@@ -117,7 +128,10 @@ public class TurLLMChatAPI {
             TurDateTimeToolService dateTimeToolService,
             TurRagSearchToolService ragSearchToolService,
             TurLLMTokenUsageService tokenUsageService,
-            TurToolDescriptionService toolDescriptionService) {
+            TurToolDescriptionService toolDescriptionService,
+            TurLoggingToolService loggingToolService,
+            TurIntegrationMonitoringToolService integrationMonitoringToolService,
+            TurSystemInfoToolService systemInfoToolService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -130,6 +144,9 @@ public class TurLLMChatAPI {
         this.ragSearchToolService = ragSearchToolService;
         this.tokenUsageService = tokenUsageService;
         this.toolDescriptionService = toolDescriptionService;
+        this.loggingToolService = loggingToolService;
+        this.integrationMonitoringToolService = integrationMonitoringToolService;
+        this.systemInfoToolService = systemInfoToolService;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -191,7 +208,7 @@ public class TurLLMChatAPI {
 
         List<Message> springMessages = new ArrayList<>();
         String systemPrompt = turLLMInstance.isToolsEnabled()
-                ? basePrompt + toolsPrompt + renderPrompt
+                ? basePrompt + toolsPrompt + opsPrompt + renderPrompt
                 : basePrompt + renderPrompt;
         springMessages.add(new SystemMessage(systemPrompt));
         springMessages.addAll(buildMessages(request.messages(), files));
@@ -200,7 +217,8 @@ public class TurLLMChatAPI {
             // Build base tool objects list, conditionally add RAG search
             java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
                     webCrawlerToolService, weatherToolService, financeToolService,
-                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService));
+                    codeInterpreterToolService, imageSearchToolService, dateTimeToolService,
+                    loggingToolService, integrationMonitoringToolService, systemInfoToolService));
             if (ragSearchToolService.isAvailable()) {
                 toolObjects.add(ragSearchToolService);
             }

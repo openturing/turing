@@ -39,7 +39,10 @@ public class TurNativeToolService {
             TurWeatherToolService weatherToolService,
             TurCodeInterpreterToolService codeInterpreterToolService,
             TurWebCrawlerToolService webCrawlerToolService,
-            TurImageSearchToolService imageSearchToolService) {
+            TurImageSearchToolService imageSearchToolService,
+            TurLoggingToolService loggingToolService,
+            TurIntegrationMonitoringToolService integrationMonitoringToolService,
+            TurSystemInfoToolService systemInfoToolService) {
 
         this.toolServiceInstances = List.of(
                 semanticNavToolService,
@@ -48,7 +51,10 @@ public class TurNativeToolService {
                 weatherToolService,
                 codeInterpreterToolService,
                 webCrawlerToolService,
-                imageSearchToolService);
+                imageSearchToolService,
+                loggingToolService,
+                integrationMonitoringToolService,
+                systemInfoToolService);
 
         this.toolGroups = discoverToolGroups();
         log.info("[NativeTool] Discovered {} tool groups with {} total tools",
