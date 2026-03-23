@@ -64,7 +64,7 @@ const SECTIONS: FeatureSection[] = [
       { title: "Embedding Store", description: "Manage vector stores like Chroma, Milvus, and PGVector for semantic retrieval.", url: "/admin/store/instance", icon: IconDatabase, privilege: "STORE_VIEW", docUrl: "https://docs.viglet.com/turing/embedding-stores" },
       { title: "MCP Server", description: "Connect to Model Context Protocol servers for external tool integration.", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.com/turing/mcp-servers" },
       { title: "AI Agent", description: "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks.", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.com/turing/ai-agents" },
-      { title: "Intent", description: "Define prompt categories and actions shown as quick suggestions in the chat.", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.com/turing/genai/intent" },
+      { title: "Intent", description: "Define prompt categories and actions shown as quick suggestions in the chat.", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.com/turing/intent" },
       { title: "Token Usage", description: "Monitor token consumption across all LLM instances and models.", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, requiresLlm: true, docUrl: "https://docs.viglet.com/turing/token-usage" },
       { title: "Chat", description: "Start conversations with your configured LLMs, agents, and semantic search.", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, requiresLlm: true, docUrl: "https://docs.viglet.com/turing/chat#chat-direct-llm" },
     ],
@@ -77,7 +77,7 @@ const SECTIONS: FeatureSection[] = [
       { title: "Search Engine", description: "Manage Solr, Elasticsearch, or Lucene instances that power your search.", url: "/admin/se/instance", icon: IconZoomCode, privilege: "SE_VIEW", docUrl: "https://docs.viglet.com/turing/search-engine" },
       { title: "Semantic Navigation", description: "Create search sites with facets, highlighting, spell-check and AI insights.", url: "/admin/sn/instance", icon: IconCompass, privilege: "SN_VIEW", docUrl: "https://docs.viglet.com/turing/semantic-navigation" },
       { title: "Integration", description: "Connect to external CMS, databases, and file systems to index their content.", url: "/admin/integration/instance", icon: IconPlugConnectedX, docUrl: "https://docs.viglet.com/turing/integration" },
-      { title: "GraphQL Explorer", description: "Query your semantic navigation data using the interactive GraphQL playground.", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql, docUrl: "https://docs.viglet.com/turing/rest-api#graphql-api" },
+      { title: "GraphQL Explorer", description: "Query your semantic navigation data using the interactive GraphQL playground.", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql, docUrl: "https://docs.viglet.com/turing/graphql" },
     ],
   },
   {
@@ -86,9 +86,9 @@ const SECTIONS: FeatureSection[] = [
     gradient: "from-slate-600 to-slate-700",
     items: [
       { title: "Assets", description: "Browse and manage files stored in the MinIO object storage.", url: ROUTES.ASSET_ROOT, icon: IconFolder, docUrl: "https://docs.viglet.com/turing/assets" },
-      { title: "Import", description: "Import configurations, sites, and data from exported packages.", url: "/admin/exchange/import", icon: IconFileImport, docUrl: "https://docs.viglet.com/turing/import" },
+      { title: "Import", description: "Import configurations, sites, and data from exported packages.", url: "/admin/exchange/import", icon: IconFileImport, docUrl: "https://docs.viglet.com/turing/import-export" },
       { title: "Logging", description: "View indexing logs and monitor data pipeline activity.", url: "/admin/logging/instance", icon: IconReceiptRupee, docUrl: "https://docs.viglet.com/turing/logging" },
-      { title: "Administration", description: "Manage users, groups, roles, API tokens, and system settings.", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog, docUrl: "https://docs.viglet.com/turing/administration" },
+      { title: "Administration", description: "Manage users, groups, roles, API tokens, and system settings.", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog, docUrl: "https://docs.viglet.com/turing/administration-guide" },
     ],
   },
 ]
@@ -128,12 +128,14 @@ export default function HomePage() {
       ...sec,
       items: sec.items.filter((item) => {
         if (item.requiresLlm && !hasEnabledLlm) return false
-        if (isAdmin) return true
-        return !item.privilege || userPrivileges.has(item.privilege)
+        return true
       }),
     })).filter((sec) => sec.items.length > 0),
-    [isAdmin, userPrivileges, hasEnabledLlm]
+    [hasEnabledLlm]
   )
+
+  const canAccess = (item: FeatureCard) =>
+    isAdmin || !item.privilege || userPrivileges.has(item.privilege)
 
   const firstName = user?.firstName || user?.username || "there"
 
@@ -200,13 +202,15 @@ export default function HomePage() {
                             Docs
                           </a>
                         ) : <span />}
-                        <NavLink
-                          to={item.url}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        >
-                          Open
-                          <IconExternalLink className="size-3.5" />
-                        </NavLink>
+                        {canAccess(item) ? (
+                          <NavLink
+                            to={item.url}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            Open
+                            <IconExternalLink className="size-3.5" />
+                          </NavLink>
+                        ) : <span />}
                       </div>
                     </div>
                   )
