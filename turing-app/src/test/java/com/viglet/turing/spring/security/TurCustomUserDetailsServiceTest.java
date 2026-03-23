@@ -18,8 +18,10 @@ import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurRole;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
+import com.viglet.turing.properties.TurConfigProperties;
 
 @ExtendWith(MockitoExtension.class)
 class TurCustomUserDetailsServiceTest {
@@ -30,11 +32,17 @@ class TurCustomUserDetailsServiceTest {
     private TurRoleRepository turRoleRepository;
     @Mock
     private TurGroupRepository turGroupRepository;
+    @Mock
+    private TurPrivilegeRepository turPrivilegeRepository;
+    @Mock
+    private TurConfigProperties turConfigProperties;
     @InjectMocks
     private TurCustomUserDetailsService service;
 
     @Test
     void loadUserByUsernameShouldReturnUserDetailsWithRoles() {
+        when(turConfigProperties.isPermissions()).thenReturn(true);
+
         TurUser user = TurUser.builder().username("admin").password("pass").build();
         when(turUserRepository.findByUsername("admin")).thenReturn(user);
 
@@ -63,6 +71,8 @@ class TurCustomUserDetailsServiceTest {
 
     @Test
     void loadUserByUsernameShouldReturnDetailsWithEmptyRolesIfNoGroups() {
+        when(turConfigProperties.isPermissions()).thenReturn(true);
+
         TurUser user = TurUser.builder().username("nogroups").password("pass").build();
         when(turUserRepository.findByUsername("nogroups")).thenReturn(user);
         when(turGroupRepository.findByTurUsersContaining(user)).thenReturn(Collections.emptySet());

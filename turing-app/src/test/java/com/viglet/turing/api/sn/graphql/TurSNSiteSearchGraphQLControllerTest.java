@@ -136,23 +136,29 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(expected);
 
-        TurSNSiteSearchBean result = controller.siteSearch("demo", null, null);
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest("POST", "/graphql");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(mockRequest));
+        try {
+            TurSNSiteSearchBean result = controller.siteSearch("demo", null, null);
 
-        assertSame(expected, result);
+            assertSame(expected, result);
 
-        ArgumentCaptor<TurSNSiteSearchContext> contextCaptor = ArgumentCaptor
-                .forClass(TurSNSiteSearchContext.class);
-        verify(searchProcess).search(contextCaptor.capture());
-        TurSNSiteSearchContext context = contextCaptor.getValue();
+            ArgumentCaptor<TurSNSiteSearchContext> contextCaptor = ArgumentCaptor
+                    .forClass(TurSNSiteSearchContext.class);
+            verify(searchProcess).search(contextCaptor.capture());
+            TurSNSiteSearchContext context = contextCaptor.getValue();
 
-        assertEquals("demo", context.getSiteName());
-        assertNull(context.getLocale());
-        assertEquals("*", context.getTurSEParameters().getQuery());
-        assertEquals(Integer.valueOf(1), context.getTurSEParameters().getCurrentPage());
-        assertEquals(Integer.valueOf(-1), context.getTurSEParameters().getRows());
-        assertEquals("relevance", context.getTurSEParameters().getSort());
-        assertTrue(context.getTurSNConfig().isHlEnabled());
-        assertTrue(context.getUri().toString().contains("/graphql"));
+            assertEquals("demo", context.getSiteName());
+            assertNull(context.getLocale());
+            assertEquals("*", context.getTurSEParameters().getQuery());
+            assertEquals(Integer.valueOf(1), context.getTurSEParameters().getCurrentPage());
+            assertEquals(Integer.valueOf(-1), context.getTurSEParameters().getRows());
+            assertEquals("relevance", context.getTurSEParameters().getSort());
+            assertTrue(context.getTurSNConfig().isHlEnabled());
+            assertTrue(context.getUri().toString().contains("/graphql"));
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
+        }
     }
 
     @Test

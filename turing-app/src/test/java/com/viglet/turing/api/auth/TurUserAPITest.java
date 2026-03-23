@@ -43,6 +43,7 @@ import com.viglet.turing.persistence.mapper.auth.TurUserMapper;
 import com.viglet.turing.persistence.model.auth.TurGroup;
 import com.viglet.turing.persistence.model.auth.TurUser;
 import com.viglet.turing.persistence.repository.auth.TurGroupRepository;
+import com.viglet.turing.persistence.repository.auth.TurPrivilegeRepository;
 import com.viglet.turing.persistence.repository.auth.TurRoleRepository;
 import com.viglet.turing.persistence.repository.auth.TurUserRepository;
 import com.viglet.turing.properties.TurConfigProperties;
@@ -66,6 +67,9 @@ class TurUserAPITest {
 
     @Mock
     private TurConfigProperties turConfigProperties;
+
+    @Mock
+    private TurPrivilegeRepository turPrivilegeRepository;
 
     @Spy
     private TurUserMapper turUserMapper = Mappers.getMapper(TurUserMapper.class);
@@ -170,11 +174,6 @@ class TurUserAPITest {
         TurUser kcUser = new TurUser();
         kcUser.setUsername("kcuser");
         when(turUserRepository.findByUsername("kcuser")).thenReturn(kcUser);
-
-        TurGroup adminGroup = new TurGroup();
-        adminGroup.setName("Administrator");
-        when(turGroupRepository.findByTurUsersContaining(kcUser))
-                .thenReturn(new HashSet<>(Collections.singletonList(adminGroup)));
 
         mockMvc.perform(get("/api/v2/user/current"))
                 .andExpect(status().isOk())
