@@ -26,4 +26,11 @@ export class TurIntegrationConnectorService {
     );
     return data;
   }
+
+  async auditSource(source: string): Promise<any> {
+    const { data } = await this.axiosInstance.get<any>(
+      `${this.connectorUrl}/audit/${source}`,
+    );
+    return data;
+  }
 }

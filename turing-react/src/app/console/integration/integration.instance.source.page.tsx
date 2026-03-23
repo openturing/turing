@@ -84,6 +84,20 @@ export default function IntegrationInstanceSourcePage() {
       toast.error(t("integration.sources.reindexingFailed", { name: integrationAemSource.name }));
     }
   }
+
+  async function onDryScan() {
+    try {
+      const result = await turIntegrationConnectorService.auditSource(integrationAemSource.name);
+      if (result) {
+        toast.success(t("integration.sources.dryScanStarted", { name: integrationAemSource.name }));
+      } else {
+        toast.error(t("integration.sources.dryScanFailed", { name: integrationAemSource.name }));
+      }
+    } catch (error) {
+      console.error("Dry scan error", error);
+      toast.error(t("integration.sources.dryScanFailed", { name: integrationAemSource.name }));
+    }
+  }
   return (
     <>
       <SubPageHeader icon={IconGitCommit} name={t("integration.sources.title")}
@@ -95,6 +109,14 @@ export default function IntegrationInstanceSourcePage() {
 
       <div className="flex justify-end pb-4 px-6">
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+          <GradientButton
+            type="button"
+            variant="outline"
+            onClick={onDryScan}
+            disabled={isActionDisabled}
+          >
+            {t("integration.sources.dryScan")}
+          </GradientButton>
           <GradientButton
             type="button"
             variant="outline"

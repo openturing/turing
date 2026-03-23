@@ -23,4 +23,11 @@ export class TurIntegrationIndexingStatsService {
         );
         return data;
     }
+
+    async getCountBySource(): Promise<Record<string, number>> {
+        const { data } = await this.axiosInstance.get<Record<string, number>>(
+            `${this.endpointPrefix}/stats/count`
+        );
+        return data;
+    }
 }

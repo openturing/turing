@@ -36,7 +36,10 @@
       "reindexingStarted": "Reindexing started for {{name}}",
       "reindexingFailed": "Failed to start reindexing for {{name}}",
       "reindexAll": "Reindex all",
-      "indexAll": "Index all"
+      "indexAll": "Index all",
+      "dryScan": "Dry Scan",
+      "dryScanStarted": "Dry scan started for {{name}}",
+      "dryScanFailed": "Failed to start dry scan for {{name}}"
     },
     "indexingRules": {
       "title": "Indexing Rules",
@@ -90,7 +93,15 @@
       "operation": "Operation",
       "documents": "Documents",
       "duration": "Duration",
-      "docsPerMin": "Docs/min"
+      "docsPerMin": "Docs/min",
+      "currentDocuments": "Current Documents",
+      "lastReindex": "Last Reindex",
+      "estimatedProgress": "estimated complete",
+      "documentsIndexed": "documents indexed",
+      "reindexSummary": "Reindex Summary",
+      "noReindexStats": "No REINDEX ALL operations recorded yet.",
+      "processedInLastReindex": "processed in last reindex",
+      "throughput": "Throughput"
     },
     "doubleCheck": {
       "title": "Double Check",
