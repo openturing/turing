@@ -28,6 +28,7 @@ import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurStoreVendorService } from "@/services/store/store-vendor.service"
 import { IconAdjustments, IconBuildingStore, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm
 } from "react-hook-form"
@@ -190,6 +191,7 @@ const buildStoreProviderOptionsFromDraft = (vendorId: string | undefined, draft:
 }
 
 export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurStoreInstance>({
     defaultValues: value
   });
@@ -254,7 +256,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       JSON.parse(normalized);
       return normalized;
     } catch {
-      toast.error("Provider Options must be valid JSON.");
+      toast.error(t("forms.common.invalidJson"));
       return null;
     }
   }
@@ -286,23 +288,23 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turStoreInstanceService.create(payload);
         if (result) {
-          toast.success(`The ${payload.title} Embedding Store was saved`);
+          toast.success(t("forms.common.saved", { name: payload.title, feature: "Embedding Store" }));
           navigate(urlBase);
         } else {
-          toast.error(`The ${payload.title} Embedding Store was not saved`);
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "Embedding Store" }));
         }
       }
       else {
         const result = await turStoreInstanceService.update(payload);
         if (result) {
-          toast.success(`The ${payload.title} Embedding Store was updated`);
+          toast.success(t("forms.common.updated", { name: payload.title, feature: "Embedding Store" }));
         } else {
-          toast.error(`The ${payload.title} Embedding Store was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "Embedding Store" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -311,23 +313,23 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
               {/* General Information Section */}
               <SectionCard variant="blue">
-                <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this store." />
+                <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.store.generalDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
                       control={form.control}
                       name="title"
-                      rules={{ required: "A title is required for this embedding store." }}
+                      rules={{ required: t("forms.store.titleRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Title</FormLabel>
+                          <FormLabel>{t("forms.common.title")}</FormLabel>
                           <FormDescription>
-                            Provide a unique, descriptive name for this embedding store instance.
+                            {t("forms.store.titleDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Enter store title"
+                              placeholder={t("forms.store.titlePlaceholder")}
                               type="text"
                             />
                           </FormControl>
@@ -346,14 +348,14 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             <SmartDescription
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Enter a brief description"
+                              placeholder={t("forms.store.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
                               entityType="Embedding Store"
                             >
-                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>
-                                Summarize the purpose or intended use of this embedding store.
+                                {t("forms.store.descriptionDesc")}
                               </SmartDescription.Description>
                             </SmartDescription>
                           </FormControl>
@@ -376,7 +378,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               title={form.watch("title")}
                               description={form.watch("description")}
                             >
-                              <IconPicker.Label>Icon</IconPicker.Label>
+                              <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                             </IconPicker>
                           </FormControl>
                         </FormItem>
@@ -388,20 +390,20 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Vendor Section - Strict Inline */}
               <SectionCard variant="cyan">
-                <SectionCard.Header icon={IconBuildingStore} title="Vendor" description="Backend technology for this store." />
+                <SectionCard.Header icon={IconBuildingStore} title={t("forms.store.vendorSection")} description={t("forms.store.vendorDesc")} />
                 <SectionCard.Content>
                   <div className="w-full flex flex-row justify-between items-center gap-4">
                     <div className="flex flex-col">
-                      <FormLabel>Vendor</FormLabel>
+                      <FormLabel>{t("forms.common.vendor")}</FormLabel>
                       <FormDescription>
-                        Choose the backend technology powering this embedding store.
+                        {t("forms.store.vendorSelectDesc")}
                       </FormDescription>
                     </div>
                     <div className="flex-1 max-w-xs">
                       <FormField
                         control={form.control}
                         name="turStoreVendor.id"
-                        rules={{ required: "Please select a vendor." }}
+                        rules={{ required: t("forms.store.vendorRequired") }}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <Select
@@ -413,7 +415,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             >
                               <FormControl>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select vendor..." />
+                                  <SelectValue placeholder={t("forms.common.selectVendor")} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -435,22 +437,22 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Endpoint Section */}
               <SectionCard variant="violet">
-                <SectionCard.Header icon={IconPlug} title="Endpoint" description="Connection URL, collection, and credentials." />
+                <SectionCard.Header icon={IconPlug} title={t("forms.common.endpoint")} description={t("forms.store.endpointDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
                       control={form.control}
                       name="url"
-                      rules={{ required: "Endpoint URL is required." }}
+                      rules={{ required: t("forms.store.endpointRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Endpoint</FormLabel>
+                          <FormLabel>{t("forms.common.endpoint")}</FormLabel>
                           <FormDescription>
-                            Enter the base URL where this embedding store is accessible. Example: http://localhost:8000
+                            {t("forms.store.endpointUrlDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
-                              placeholder="Enter endpoint URL"
+                              placeholder={t("forms.store.endpointPlaceholder")}
                               type="text"
                               {...field}
                             />
@@ -466,9 +468,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       name="collectionName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Collection Name</FormLabel>
+                          <FormLabel>{t("forms.store.collectionName")}</FormLabel>
                           <FormDescription>
-                            Optional collection/index name used by the vector store.
+                            {t("forms.store.collectionNameDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
@@ -489,13 +491,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       name="credential"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Credential</FormLabel>
+                          <FormLabel>{t("forms.store.credential")}</FormLabel>
                           <FormDescription>
-                            Optional token/credential. Leave blank to keep existing credential when editing.
+                            {t("forms.store.credentialDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
-                              placeholder="Enter credential"
+                              placeholder={t("forms.store.credentialPlaceholder")}
                               type="password"
                               autoComplete="new-password"
                               {...field}
@@ -512,12 +514,12 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Advanced Section */}
               <SectionCard variant="amber">
-                <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Provider-specific overrides and configuration." />
+                <SectionCard.Header icon={IconAdjustments} title={t("forms.common.advancedOptions")} description={t("forms.store.advancedDesc")} />
                 <SectionCard.Content>
                   <div className="w-full rounded-md border p-4 space-y-4">
-                    <div className="text-sm font-medium">Visual Provider Options</div>
+                    <div className="text-sm font-medium">{t("forms.store.visualOptions")}</div>
                     <div className="text-muted-foreground text-sm">
-                      Use these fields for common options. Any value in raw JSON below overrides visual values.
+                      {t("forms.store.visualOptionsDesc")}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input placeholder="Base URL" value={storeProviderOptionsDraft.baseUrl} onChange={(event) => setStoreDraftValue("baseUrl", event.target.value)} />
@@ -526,9 +528,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     </div>
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Initialize Schema</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.store.initializeSchema")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Enable automatic schema initialization for the vector store.
+                          {t("forms.store.initializeSchemaDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -576,9 +578,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       name="providerOptionsJson"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Provider Options (JSON)</FormLabel>
+                          <FormLabel>{t("forms.store.providerOptionsJson")}</FormLabel>
                           <FormDescription>
-                            Optional provider-specific overrides. Use valid JSON.
+                            {t("forms.store.providerOptionsJsonDesc")}
                           </FormDescription>
                           <FormControl>
                             <Textarea
@@ -599,7 +601,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Status Section - Strict Inline */}
               <SectionCard variant="slate">
-                <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this store." />
+                <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.store.statusDesc")} />
                 <SectionCard.Content>
                   <FormField
                     control={form.control}
@@ -607,9 +609,9 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     render={({ field }) => (
                       <FormItemTwoColumns>
                         <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                           <FormItemTwoColumns.Description>
-                            Toggle to activate or deactivate this embedding store instance.
+                            {t("forms.store.enabledDesc")}
                           </FormItemTwoColumns.Description>
                         </FormItemTwoColumns.Left>
                         <FormItemTwoColumns.Right>

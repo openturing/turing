@@ -16,6 +16,7 @@ import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { IconFileText, IconInfoCircle, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurAIAgent>({
     defaultValues: value
   });
@@ -56,22 +58,22 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turAIAgentService.create(payload);
         if (result) {
-          toast.success(`The ${payload.title} AI Agent was saved`);
+          toast.success(t("forms.common.saved", { name: payload.title, feature: "AI Agent" }));
           navigate(`${urlBase}/${result.id}/settings`);
         } else {
-          toast.error(`The ${payload.title} AI Agent was not saved`);
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "AI Agent" }));
         }
       } else {
         const result = await turAIAgentService.update(payload);
         if (result) {
-          toast.success(`The ${payload.title} AI Agent was updated`);
+          toast.success(t("forms.common.updated", { name: payload.title, feature: "AI Agent" }));
         } else {
-          toast.error(`The ${payload.title} AI Agent was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "AI Agent" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -80,23 +82,23 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
           <SectionCard variant="blue">
-            <SectionCard.Header icon={IconInfoCircle} title="General Information" description="Identity and purpose of this AI agent." />
+            <SectionCard.Header icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")} />
             <SectionCard.Content>
               <FormField
                 control={form.control}
                 name="title"
-                rules={{ required: "A title is required for this AI agent." }}
+                rules={{ required: t("forms.agentSettings.titleRequired", "A title is required for this AI agent.") }}
                 render={({ field }) => (
                   <FormItemTwoColumns>
                     <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Title</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Label>{t("forms.common.title")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
-                        A unique, descriptive name for this AI agent.
+                        {t("forms.agentSettings.titleDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Customer Support Agent" type="text" />
+                        <Input {...field} placeholder={t("forms.agentSettings.titlePlaceholder")} type="text" />
                       </FormControl>
                       <FormMessage />
                     </FormItemTwoColumns.Right>
@@ -112,14 +114,14 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <SmartDescription
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Describe what this agent does..."
+                        placeholder={t("forms.agentSettings.descPlaceholder")}
                         maxLength={500}
                         title={form.watch("title")}
                         entityType="AI Agent"
                       >
-                        <SmartDescription.Label>Description</SmartDescription.Label>
+                        <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                         <SmartDescription.Description>
-                          Summarize the purpose or intended use of this AI agent.
+                          {t("forms.agentSettings.descDesc")}
                         </SmartDescription.Description>
                       </SmartDescription>
                     </FormControl>
@@ -140,7 +142,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         title={form.watch("title")}
                         description={form.watch("description")}
                       >
-                        <IconPicker.Label>Icon</IconPicker.Label>
+                        <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                       </IconPicker>
                     </FormControl>
                   </FormItem>
@@ -150,24 +152,24 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           </SectionCard>
 
           <SectionCard variant="violet">
-            <SectionCard.Header icon={IconFileText} title="System Prompt" description="The instruction that shapes the AI agent's personality and behavior." />
+            <SectionCard.Header icon={IconFileText} title={t("forms.agentSettings.systemPrompt")} description={t("forms.agentSettings.systemPromptDesc")} />
             <SectionCard.Content>
               <FormField
                 control={form.control}
                 name="systemPrompt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Instruction</FormLabel>
+                    <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
                     <FormDescription>
-                      Define the role, constraints, and style of responses for this agent.
+                      {t("forms.agentSettings.instructionDesc")}
                     </FormDescription>
                     <FormControl>
                       <SystemPromptEditor
                         value={field.value ?? ""}
                         onChange={field.onChange}
                         fieldRef={field.ref}
-                        placeholder="You are a helpful assistant that..."
-                        hint="This prompt is sent as a system message to the language model before every conversation. It defines the agent's behavior and personality."
+                        placeholder={t("forms.agentSettings.instructionPlaceholder")}
+                        hint={t("forms.agentSettings.instructionHint")}
                       />
                     </FormControl>
                     <FormMessage />
@@ -178,7 +180,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           </SectionCard>
 
           <SectionCard variant="slate">
-            <SectionCard.Header icon={IconToggleLeft} title="Status" description="Control whether this AI agent is active." />
+            <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.agentSettings.statusDesc")} />
             <SectionCard.Content>
               <FormField
                 control={form.control}
@@ -186,9 +188,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                 render={({ field }) => (
                   <FormItemTwoColumns>
                     <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
-                        When disabled, the agent cannot be used in conversations.
+                        {t("forms.agentSettings.enabledDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

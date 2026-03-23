@@ -1,0 +1,8 @@
+{
+  "sidebar": {
+    "brandName": "Turing ES",
+    "brandTagline": "Enterprise Search",
+    "indexing": "Indexing",
+    "new": "New {{feature}}"
+  }
+}

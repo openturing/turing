@@ -1,0 +1,41 @@
+{
+  "admin": {
+    "title": "Administração",
+    "console": "Console de Administração",
+    "settings": "Configurações",
+    "users": {
+      "title": "Usuários",
+      "description": "Gerencie contas de usuário e acesso.",
+      "newUser": "Novo Usuário",
+      "createDescription": "Crie uma nova conta de usuário.",
+      "editDescription": "Edite os detalhes da conta do usuário.",
+      "deleted": "O usuário \"{{name}}\" foi excluído.",
+      "deleteFailed": "Falha ao excluir o usuário \"{{name}}\".",
+      "loadFailed": "Falha ao carregar usuários.",
+      "loadOneFailed": "Falha ao carregar usuário."
+    },
+    "groups": {
+      "title": "Grupos",
+      "description": "Organize usuários em grupos com permissões compartilhadas.",
+      "newGroup": "Novo Grupo",
+      "createDescription": "Crie um novo grupo de usuários.",
+      "editDescription": "Edite detalhes e membros do grupo.",
+      "deleted": "O grupo \"{{name}}\" foi excluído.",
+      "deleteFailed": "Falha ao excluir o grupo \"{{name}}\".",
+      "loadFailed": "Falha ao carregar grupos.",
+      "loadOneFailed": "Falha ao carregar grupo."
+    },
+    "roles": {
+      "title": "Papéis",
+      "description": "Defina papéis e suas permissões associadas.",
+      "newRole": "Novo Papel",
+      "createDescription": "Crie um novo papel de acesso.",
+      "editDescription": "Edite detalhes e permissões do papel.",
+      "loadFailed": "Falha ao carregar papéis.",
+      "loadOneFailed": "Falha ao carregar papel."
+    },
+    "systemInfo": {
+      "title": "Informações do Sistema"
+    }
+  }
+}

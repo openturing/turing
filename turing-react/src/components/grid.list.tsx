@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import type { TurGridItem } from "@/models/ui/grid-item";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { GradientButton } from "./ui/gradient-button";
 import { Input } from "./ui/input";
 import { IconChevronRight, IconDotsVertical, IconPlus, IconSearch } from "@tabler/icons-react";
@@ -88,6 +89,7 @@ const columns: ColumnDef<TurGridItem>[] = [
 ];
 
 const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     // Extract action definitions from marker children
@@ -147,14 +149,14 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                 <div className="relative flex-1 max-w-sm">
                     <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search..."
+                        placeholder={t("forms.common.search")}
                         value={globalFilter ?? ""}
                         onChange={(e) => setGlobalFilter(e.target.value)}
                         className="pl-9"
                     />
                 </div>
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {table.getFilteredRowModel().rows.length} item{table.getFilteredRowModel().rows.length !== 1 && "s"}
+                    {table.getFilteredRowModel().rows.length} {table.getFilteredRowModel().rows.length !== 1 ? t("forms.common.items") : t("forms.common.item")}
                 </span>
                 {actions.length > 0 && (
                     <div className="ml-auto">
@@ -162,7 +164,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                             <DropdownMenuTrigger asChild>
                                 <GradientButton variant="outline" size="sm" className="gap-1.5">
                                     <IconDotsVertical className="size-4" />
-                                    <span className="hidden sm:inline">Actions</span>
+                                    <span className="hidden sm:inline">{t("forms.common.actions")}</span>
                                 </GradientButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -201,7 +203,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                                 </p>
                                             ) : (
                                                 <p className="text-xs text-muted-foreground/50 mt-1 italic">
-                                                    No description
+                                                    {t("forms.common.noDescription")}
                                                 </p>
                                             )}
                                         </div>
@@ -216,7 +218,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                 <Card className="p-8">
                     <div className="text-center text-muted-foreground">
                         <IconSearch className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">No results found</p>
+                        <p className="text-sm">{t("forms.common.noResults")}</p>
                     </div>
                 </Card>
             )}
@@ -224,7 +226,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
             {table.getPageCount() > 1 && (
                 <div className="flex items-center justify-end space-x-2 mt-4">
                     <div className="flex items-center space-x-2">
-                        <p className="text-sm text-muted-foreground">Per page</p>
+                        <p className="text-sm text-muted-foreground">{t("forms.common.perPage")}</p>
                         <Select
                             value={`${table.getState().pagination.pageSize}`}
                             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -242,8 +244,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         </Select>
                     </div>
                     <div className="flex w-25 items-center justify-center text-sm font-medium">
-                        Page {table.getState().pagination.pageIndex + 1} of{" "}
-                        {table.getPageCount()}
+                        {t("forms.common.pageOf", { index: table.getState().pagination.pageIndex + 1, count: table.getPageCount() })}
                     </div>
                     <div className="flex items-center space-x-2">
                         <GradientButton

@@ -23,6 +23,7 @@ import {
 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurIntent>({
     defaultValues: value,
   })
@@ -99,22 +101,22 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turIntentService.create(payload)
         if (result) {
-          toast.success(`The "${payload.title}" intent was saved`)
+          toast.success(t("forms.common.saved", { name: `"${payload.title}"`, feature: "intent" }))
           navigate(`${urlBase}/${result.id}/settings`)
         } else {
-          toast.error(`The "${payload.title}" intent was not saved`)
+          toast.error(t("forms.common.notSaved", { name: `"${payload.title}"`, feature: "intent" }))
         }
       } else {
         const result = await turIntentService.update(payload)
         if (result) {
-          toast.success(`The "${payload.title}" intent was updated`)
+          toast.success(t("forms.common.updated", { name: `"${payload.title}"`, feature: "intent" }))
         } else {
-          toast.error(`The "${payload.title}" intent was not updated`)
+          toast.error(t("forms.common.notUpdated", { name: `"${payload.title}"`, feature: "intent" }))
         }
       }
     } catch (error) {
       console.error("Form submission error", error)
-      toast.error("Failed to submit the form. Please try again.")
+      toast.error(t("forms.common.formSubmitFailed"))
     }
   }
 
@@ -125,27 +127,27 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
-              title="General Information"
-              description="Name and description for this intent category."
+              title={t("forms.common.generalInfo")}
+              description={t("forms.intentSettings.generalDesc")}
             />
             <SectionCard.Content>
               <FormField
                 control={form.control}
                 name="title"
-                rules={{ required: "A title is required." }}
+                rules={{ required: t("forms.intentSettings.titleRequired") }}
                 render={({ field }) => (
                   <FormItemTwoColumns>
                     <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Title</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Label>{t("forms.common.title")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
-                        The category label shown in the chat suggestions.
+                        {t("forms.intentSettings.titleDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., Boost my work productivity"
+                          placeholder={t("forms.intentSettings.titlePlaceholder")}
                           type="text"
                         />
                       </FormControl>
@@ -163,14 +165,14 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <SmartDescription
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Describe the intent category..."
+                        placeholder={t("forms.intentSettings.descPlaceholder")}
                         maxLength={500}
                         title={form.watch("title")}
                         entityType="Intent"
                       >
-                        <SmartDescription.Label>Description</SmartDescription.Label>
+                        <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                         <SmartDescription.Description>
-                          A brief summary of what this category covers.
+                          {t("forms.intentSettings.descDesc")}
                         </SmartDescription.Description>
                       </SmartDescription>
                     </FormControl>
@@ -191,9 +193,9 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         title={form.watch("title")}
                         description={form.watch("description")}
                       >
-                        <IconPicker.Label>Icon</IconPicker.Label>
+                        <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                         <IconPicker.Description>
-                          An icon displayed next to the intent in the chat.
+                          {t("forms.intentSettings.iconDesc")}
                         </IconPicker.Description>
                       </IconPicker>
                     </FormControl>
@@ -206,8 +208,8 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           <SectionCard variant="violet">
             <SectionCard.Header
               icon={IconList}
-              title="Actions"
-              description="The prompt suggestions within this intent. Drag to reorder."
+              title={t("forms.intentSettings.actions")}
+              description={t("forms.intentSettings.actionsDesc")}
             />
             <SectionCard.Content>
               <div className="space-y-3">
@@ -231,13 +233,13 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormField
                         control={form.control}
                         name={`actions.${index}.label`}
-                        rules={{ required: "Label is required." }}
+                        rules={{ required: t("forms.intentSettings.labelRequired") }}
                         render={({ field: f }) => (
                           <FormItem>
                             <FormControl>
                               <Input
                                 {...f}
-                                placeholder="Action label (e.g., Create daily schedule)"
+                                placeholder={t("forms.intentSettings.actionLabel")}
                                 className="text-sm font-medium"
                               />
                             </FormControl>
@@ -248,13 +250,13 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormField
                         control={form.control}
                         name={`actions.${index}.prompt`}
-                        rules={{ required: "Prompt is required." }}
+                        rules={{ required: t("forms.intentSettings.promptRequired") }}
                         render={({ field: f }) => (
                           <FormItem>
                             <FormControl>
                               <Textarea
                                 {...f}
-                                placeholder="The prompt that will be sent to the chat..."
+                                placeholder={t("forms.intentSettings.actionPrompt")}
                                 className="resize-none text-sm min-h-15"
                               />
                             </FormControl>
@@ -267,7 +269,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       type="button"
                       onClick={() => remove(index)}
                       className="pt-2 text-muted-foreground hover:text-destructive transition-colors"
-                      title="Remove action"
+                      title={t("forms.intentSettings.removeAction")}
                     >
                       <IconTrash className="size-4" />
                     </button>
@@ -282,7 +284,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   onClick={addAction}
                 >
                   <IconPlus className="size-4 mr-1" />
-                  Add Action
+                  {t("forms.intentSettings.addAction")}
                 </GradientButton>
               </div>
             </SectionCard.Content>
@@ -291,8 +293,8 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           <SectionCard variant="slate">
             <SectionCard.Header
               icon={IconToggleLeft}
-              title="Status"
-              description="Control whether this intent is shown in the chat."
+              title={t("forms.common.status")}
+              description={t("forms.intentSettings.statusDesc")}
             />
             <SectionCard.Content>
               <FormField
@@ -301,9 +303,9 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                 render={({ field }) => (
                   <FormItemTwoColumns>
                     <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                       <FormItemTwoColumns.Description>
-                        When disabled, this intent will not appear in chat suggestions.
+                        {t("forms.intentSettings.enabledDesc")}
                       </FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>

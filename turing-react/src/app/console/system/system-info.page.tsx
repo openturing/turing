@@ -58,6 +58,7 @@ function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
 }
 
 function StatusBadge({ status }: Readonly<{ status: string | null | undefined }>) {
+    const { t } = useTranslation();
     const isUp = status === "UP";
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -66,7 +67,7 @@ function StatusBadge({ status }: Readonly<{ status: string | null | undefined }>
                 : "bg-red-500/10 text-red-600 dark:text-red-400"
         }`}>
             <span className={`size-1.5 rounded-full ${isUp ? "bg-emerald-500" : "bg-red-500"}`} />
-            {isUp ? "UP" : "DOWN"}
+            {isUp ? t("systemInfo.up") : t("systemInfo.down")}
         </span>
     );
 }

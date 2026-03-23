@@ -1,0 +1,15 @@
+{
+  "login": {
+    "welcomeBack": "Welcome back",
+    "signInDescription": "Sign in to access your dashboard",
+    "username": "Username",
+    "enterUsername": "Enter your username",
+    "password": "Password",
+    "enterPassword": "Enter your password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "emptyFields": "Please enter both username and password",
+    "invalidCredentials": "Invalid credentials. Please try again.",
+    "loginFailed": "Login failed"
+  }
+}

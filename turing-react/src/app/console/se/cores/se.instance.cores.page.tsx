@@ -21,6 +21,7 @@ import {
 } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
@@ -77,6 +78,7 @@ interface LocaleRowProps {
 }
 
 function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowProps>) {
+  const { t } = useTranslation();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const navigate = useNavigate();
@@ -108,7 +110,7 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
         </div>
       )}
       <span className="text-xs text-muted-foreground tabular-nums">
-        {formatNumDocs(coreInfo.numDocs)} docs
+        {formatNumDocs(coreInfo.numDocs)} {t("se.cores.docs")}
       </span>
       <div className="flex items-center gap-1">
         <DialogDelete
@@ -118,13 +120,13 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
           setOpen={setClearOpen}
           onDelete={() => { setClearOpen(false); onClear(coreInfo.name); }}
           trigger={
-            <Button variant="ghost" size="icon-sm" title="Remove all documents">
+            <Button variant="ghost" size="icon-sm" title={t("se.cores.removeAllDocs")}>
               <IconEraser className="size-4" />
             </Button>
           }
-          title="Remove all documents?"
-          description="This will delete all indexed documents from this core."
-          confirmLabel="Yes, remove all documents"
+          title={t("se.cores.removeAllDocs") + "?"}
+          description={t("se.cores.removeAllDocsDesc")}
+          confirmLabel={t("se.cores.confirmRemoveAll")}
         />
         <DialogDelete
           feature="core"
@@ -134,7 +136,7 @@ function LocaleRow({ locale, coreInfo, onDelete, onClear }: Readonly<LocaleRowPr
           onDelete={() => { setDeleteOpen(false); onDelete(coreInfo.name); }}
           blockedBy={coreInfo.usedBySites}
           trigger={
-            <Button variant="ghost" size="icon-sm" title="Delete core">
+            <Button variant="ghost" size="icon-sm" title={t("se.cores.deleteCore")}>
               <IconTrash className="size-4" />
             </Button>
           }
@@ -153,6 +155,7 @@ interface CoreGroupRowProps {
 }
 
 function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
@@ -173,11 +176,11 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
             <IconServer className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-semibold flex-1">{group.base}</span>
             <span className="text-xs text-muted-foreground">
-              {formatNumDocs(totalDocs)} docs
+              {formatNumDocs(totalDocs)} {t("se.cores.docs")}
             </span>
-            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground">&middot;</span>
             <span className="text-xs text-muted-foreground">
-              {localeCount} locale{localeCount === 1 ? "" : "s"}
+              {localeCount} {localeCount === 1 ? t("se.cores.locale") : t("se.cores.locales")}
             </span>
             <IconChevronDown
               className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
@@ -211,7 +214,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
             )}
             {group.coreInfo && (
               <span className="text-xs text-muted-foreground tabular-nums">
-                {formatNumDocs(group.coreInfo.numDocs)} docs
+                {formatNumDocs(group.coreInfo.numDocs)} {t("se.cores.docs")}
               </span>
             )}
             {group.coreInfo && (
@@ -223,13 +226,13 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
                   setOpen={setClearOpen}
                   onDelete={() => { setClearOpen(false); onClear(group.coreInfo!.name); }}
                   trigger={
-                    <Button variant="ghost" size="icon-sm" title="Remove all documents">
+                    <Button variant="ghost" size="icon-sm" title={t("se.cores.removeAllDocs")}>
                       <IconEraser className="size-4" />
                     </Button>
                   }
-                  title="Remove all documents?"
-                  description="This will delete all indexed documents from this core."
-                  confirmLabel="Yes, remove all documents"
+                  title={t("se.cores.removeAllDocs") + "?"}
+                  description={t("se.cores.removeAllDocsDesc")}
+                  confirmLabel={t("se.cores.confirmRemoveAll")}
                 />
                 <DialogDelete
                   feature="core"
@@ -239,7 +242,7 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
                   onDelete={() => { setDeleteOpen(false); onDelete(group.coreInfo!.name); }}
                   blockedBy={group.coreInfo.usedBySites}
                   trigger={
-                    <Button variant="ghost" size="icon-sm" title="Delete core">
+                    <Button variant="ghost" size="icon-sm" title={t("se.cores.deleteCore")}>
                       <IconTrash className="size-4" />
                     </Button>
                   }
@@ -268,17 +271,18 @@ function CoreGroupRow({ group, onDelete, onClear }: Readonly<CoreGroupRowProps>)
 }
 
 export default function SEInstanceCoresPage() {
+  const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cores, setCores] = useState<TurSECoreInfo[]>();
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("Cores");
+  useSubPageBreadcrumb(t("se.cores.title"));
 
   const loadCores = () => {
     turSEInstanceService.getCores(id)
       .then(setCores)
-      .catch(() => setError("Connection error or timeout while fetching Solr cores."));
+      .catch(() => setError(t("common.connectionError", { resource: "Solr cores" })));
   };
 
   useEffect(() => {
@@ -288,13 +292,13 @@ export default function SEInstanceCoresPage() {
   const handleDelete = (coreName: string) => {
     turSEInstanceService.deleteCore(id, coreName)
       .then(loadCores)
-      .catch(() => setError(`Failed to delete core: ${coreName}`));
+      .catch(() => setError(t("se.cores.deleteFailed", { name: coreName })));
   };
 
   const handleClear = (coreName: string) => {
     turSEInstanceService.clearCore(id, coreName)
       .then(loadCores)
-      .catch(() => setError(`Failed to remove documents from: ${coreName}`));
+      .catch(() => setError(t("se.cores.removeDocsFailed", { name: coreName })));
   };
 
   const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
@@ -322,16 +326,16 @@ export default function SEInstanceCoresPage() {
         <>
           <SubPageHeader
             icon={IconDatabase}
-            name="Cores"
-            feature="Cores"
-            description="Solr cores and collections available in this Search Engine."
+            name={t("se.cores.title")}
+            feature={t("se.cores.title")}
+            description={t("se.cores.description")}
           />
           <div className="px-6 pb-6 space-y-4">
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
                 <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search cores..."
+                  placeholder={t("se.cores.searchCores")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 pr-9"
@@ -341,7 +345,7 @@ export default function SEInstanceCoresPage() {
                     type="button"
                     onClick={() => setSearch("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Clear search"
+                    aria-label={t("se.cores.clearSearch")}
                   >
                     <IconX className="size-4" />
                   </button>
@@ -349,7 +353,7 @@ export default function SEInstanceCoresPage() {
               </div>
               <Button variant="outline" onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores/new`)}>
                 <IconPlus className="size-4 mr-2" />
-                New Core
+                {t("se.cores.newCore")}
               </Button>
             </div>
             {groups.length > 0 ? (
@@ -365,7 +369,7 @@ export default function SEInstanceCoresPage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
-                No cores match <span className="font-semibold">"{search}"</span>.
+                {t("se.cores.noMatch")} <span className="font-semibold">"{search}"</span>.
               </p>
             )}
           </div>
@@ -373,9 +377,9 @@ export default function SEInstanceCoresPage() {
       ) : (
         <BlankSlate
           icon={IconDatabase}
-          title="No cores or collections found."
-          description="Create a new core or make sure the Search Engine is running and accessible at the configured endpoint."
-          buttonText="New Core"
+          title={t("se.cores.blankTitle")}
+          description={t("se.cores.blankDescription")}
+          buttonText={t("se.cores.newCore")}
           urlNew={`${ROUTES.SE_INSTANCE}/${id}/cores/new`}
         />
       )}

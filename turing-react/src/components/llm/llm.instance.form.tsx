@@ -30,6 +30,7 @@ import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm
 } from "react-hook-form"
@@ -172,6 +173,7 @@ const buildLlmProviderOptionsFromDraft = (vendorId: string | undefined, draft: L
 }
 
 export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurLLMInstance>({
     defaultValues: value
   });
@@ -299,7 +301,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       JSON.parse(normalized);
       return normalized;
     } catch {
-      toast.error("Provider Options must be valid JSON.");
+      toast.error(t("forms.common.invalidJson"));
       return null;
     }
   }
@@ -330,23 +332,23 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turLLMInstanceService.create(payload);
         if (result) {
-          toast.success(`The ${payload.title} Language Model was saved`);
+          toast.success(t("forms.common.saved", { name: payload.title, feature: "Language Model" }));
           navigate(urlBase);
         } else {
-          toast.error(`The ${payload.title} Language Model was not saved`);
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "Language Model" }));
         }
       }
       else {
         const result = await turLLMInstanceService.update(payload);
         if (result) {
-          toast.success(`The ${payload.title} Language Model was updated`);
+          toast.success(t("forms.common.updated", { name: payload.title, feature: "Language Model" }));
         } else {
-          toast.error(`The ${payload.title} Language Model was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "Language Model" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -354,16 +356,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     console.log("delete");
     try {
       if (await turLLMInstanceService.delete(value)) {
-        toast.success(`The ${value.title} Language Model was deleted`);
+        toast.success(t("forms.common.deleted", { name: value.title, feature: "Language Model" }));
         navigate(urlBase);
       }
       else {
-        toast.error(`The ${value.title} Language Model was not deleted`);
+        toast.error(t("forms.common.notDeleted", { name: value.title, feature: "Language Model" }));
       }
 
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${value.title} Language Model was not deleted`);
+      toast.error(t("forms.common.notDeleted", { name: value.title, feature: "Language Model" }));
     }
     setOpen(false);
   }
@@ -376,7 +378,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
           <CardDescription>
-            Language model settings.
+            {t("forms.llm.settings")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -388,22 +390,22 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             >
                 {/* General Section */}
                 <SectionCard variant="blue">
-                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title, vendor, and description." />
+                  <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.llm.titleAndVendor")} />
                   <SectionCard.Content>
                     {/* Title */}
                     <div className="w-full">
                       <FormField
                         control={form.control}
                         name="title"
-                        rules={{ required: "A title is required for this language model instance." }}
+                        rules={{ required: t("forms.llm.titleRequired") }}
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Title</FormLabel>
+                            <FormLabel>{t("forms.common.title")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Enter a clear, descriptive name for this language model instance.
+                              {t("forms.llm.titleDesc")}
                             </div>
                             <FormControl>
-                              <Input {...field} placeholder="Enter a title" type="text" className="w-full" />
+                              <Input {...field} placeholder={t("forms.common.title")} type="text" className="w-full" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -413,16 +415,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     {/* Vendor (inline row) */}
                     <div className="w-full flex flex-row justify-between items-center">
                       <div className="flex flex-col">
-                        <FormLabel>Vendor</FormLabel>
+                        <FormLabel>{t("forms.common.vendor")}</FormLabel>
                         <div className="text-muted-foreground text-sm font-normal mt-1">
-                          Choose the provider for this model.
+                          {t("forms.llm.vendorDesc")}
                         </div>
                       </div>
                       <div className="flex-1 ml-8">
                         <FormField
                           control={form.control}
                           name="turLLMVendor.id"
-                          rules={{ required: "Vendor is required." }}
+                          rules={{ required: t("forms.llm.vendorRequired") }}
                           render={({ field }) => (
                             <FormItem className="w-full">
                               <FormControl>
@@ -460,16 +462,16 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               <SmartDescription
                                 value={field.value}
                                 onChange={field.onChange}
-                                placeholder="Add a description"
+                                placeholder={t("forms.common.description")}
                                 className="w-full"
                                 rows={2}
                                 maxLength={500}
                                 title={form.watch("title")}
                                 entityType="Language Model"
                               >
-                                <SmartDescription.Label>Description</SmartDescription.Label>
+                                <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                 <SmartDescription.Description>
-                                  Provide a concise summary for this instance.
+                                  {t("forms.llm.descriptionDesc")}
                                 </SmartDescription.Description>
                               </SmartDescription>
                             </FormControl>
@@ -492,7 +494,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                                 title={form.watch("title")}
                                 description={form.watch("description")}
                               >
-                                <IconPicker.Label>Icon</IconPicker.Label>
+                                <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                               </IconPicker>
                             </FormControl>
                           </FormItem>
@@ -504,22 +506,22 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Model Section */}
                 <SectionCard variant="violet">
-                  <SectionCard.Header icon={IconBrain} title="Model Settings" description="Endpoint, model name, and API key." />
+                  <SectionCard.Header icon={IconBrain} title={t("forms.llm.modelSettings")} description={t("forms.llm.modelSettingsDesc")} />
                   <SectionCard.Content>
                     {/* URL */}
                     <div className="w-full">
                       <FormField
                         control={form.control}
                         name="url"
-                        rules={{ required: "Endpoint URL is required." }}
+                        rules={{ required: t("forms.se.endpointRequired") }}
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Endpoint URL</FormLabel>
+                            <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Specify the model's endpoint, e.g., http://localhost:8000
+                              {t("forms.llm.endpointDesc")}
                             </div>
                             <FormControl>
-                              <Input placeholder="Enter the endpoint URL" type="text" className="w-full" {...field} />
+                              <Input placeholder={t("forms.llm.endpointPlaceholder")} type="text" className="w-full" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -531,15 +533,15 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormField
                         control={form.control}
                         name="modelName"
-                        rules={{ required: "Model Name is required." }}
+                        rules={{ required: t("forms.llm.modelName") }}
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Model Name</FormLabel>
+                            <FormLabel>{t("forms.llm.modelName")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Example: "MISTRAL", "gpt-3.5-turbo"
+                              {t("forms.llm.modelNameDesc")}
                             </div>
                             <FormControl>
-                              <Input placeholder="Specify the model name" type="text" autoComplete="one-time-code" className="w-full" {...field} />
+                              <Input placeholder={t("forms.llm.modelNamePlaceholder")} type="text" autoComplete="one-time-code" className="w-full" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -553,13 +555,13 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="apiKey"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>API Key</FormLabel>
+                            <FormLabel>{t("forms.common.apiKey")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Optional secret token. Leave blank to keep the existing key when editing.
+                              {t("forms.llm.apiKeyDesc")}
                             </div>
                             <FormControl>
                               <Input
-                                placeholder="Enter API key"
+                                placeholder={t("forms.llm.apiKeyPlaceholder")}
                                 type="text"
                                 className="w-full [-webkit-text-security:disc]"
                                 autoComplete="one-time-code"
@@ -577,7 +579,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Generation Section */}
                 <SectionCard variant="emerald">
-                  <SectionCard.Header icon={IconSparkles} title="Generation Parameters" description="Temperature, sampling, and seed settings." />
+                  <SectionCard.Header icon={IconSparkles} title={t("forms.llm.genParams")} description={t("forms.llm.genParamsDesc")} />
                   <SectionCard.Content>
                     {/* Temperature — all vendors */}
                     <div className="w-full">
@@ -586,9 +588,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="temperature"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Temperature</FormLabel>
+                            <FormLabel>{t("forms.llm.temperature")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Controls randomness. Range: 0.0 (deterministic) to 1.0 (creative).
+                              {t("forms.llm.temperatureDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., 0.8" type="number" step="0.01" className="w-full" {...field} />
@@ -605,9 +607,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="topP"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Top P</FormLabel>
+                            <FormLabel>{t("forms.llm.topP")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Nucleus sampling probability (e.g., 0.9).
+                              {t("forms.llm.topPDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., 0.9" type="number" step="0.01" className="w-full" {...field} />
@@ -625,9 +627,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           name="seed"
                           render={({ field }) => (
                             <FormItem className="w-full">
-                              <FormLabel>Seed</FormLabel>
+                              <FormLabel>{t("forms.llm.seed")}</FormLabel>
                               <div className="text-muted-foreground text-sm font-normal mt-1">
-                                Random seed for reproducibility.
+                                {t("forms.llm.seedDesc")}
                               </div>
                               <FormControl>
                                 <Input placeholder="e.g., 42" type="number" className="w-full" {...field} />
@@ -643,7 +645,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Advanced Section */}
                 <SectionCard variant="amber">
-                  <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Response format, capabilities, and provider overrides." />
+                  <SectionCard.Header icon={IconAdjustments} title={t("forms.common.advancedOptions")} description={t("forms.llm.advancedDesc")} />
                   <SectionCard.Content>
                     {/* Response Format */}
                     <div className="w-full">
@@ -652,9 +654,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="responseFormat"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Response Format</FormLabel>
+                            <FormLabel>{t("forms.llm.responseFormat")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Output format, such as "TEXT" or "JSON".
+                              {t("forms.llm.responseFormatDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., JSON" type="text" className="w-full" {...field} />
@@ -671,9 +673,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="supportedCapabilities"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Supported Capabilities</FormLabel>
+                            <FormLabel>{t("forms.llm.capabilities")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Comma-separated features (e.g., "RESPONSE_FORMAT_JSON_SCHEMA").
+                              {t("forms.llm.capabilitiesDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., RESPONSE_FORMAT_JSON_SCHEMA" type="text" className="w-full" {...field} />
@@ -690,9 +692,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="timeout"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Timeout</FormLabel>
+                            <FormLabel>{t("forms.llm.timeout")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Maximum wait time for a response (e.g., PT60S).
+                              {t("forms.llm.timeoutDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., PT60S" type="text" className="w-full" {...field} />
@@ -709,9 +711,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="maxRetries"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Max Retries</FormLabel>
+                            <FormLabel>{t("forms.llm.maxRetries")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Number of retry attempts if the request fails.
+                              {t("forms.llm.maxRetriesDesc")}
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., 3" type="number" className="w-full" {...field} />
@@ -723,9 +725,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     </div>
                     {/* Provider Options JSON */}
                     <div className="w-full rounded-md border p-4 space-y-4">
-                      <div className="text-sm font-medium">Visual Provider Options</div>
+                      <div className="text-sm font-medium">{t("forms.llm.visualOptions")}</div>
                       <div className="text-muted-foreground text-sm">
-                        Use these fields for common options. Any value in raw JSON below overrides visual values.
+                        {t("forms.llm.visualOptionsDesc")}
                       </div>
                       {selectedVendorId === "OLLAMA" && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -774,9 +776,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         name="providerOptionsJson"
                         render={({ field }) => (
                           <FormItem className="w-full">
-                            <FormLabel>Provider Options (JSON)</FormLabel>
+                            <FormLabel>{t("forms.llm.providerOptionsJson")}</FormLabel>
                             <div className="text-muted-foreground text-sm font-normal mt-1">
-                              Optional provider-specific overrides. Use valid JSON.
+                              {t("forms.llm.providerOptionsJsonDesc")}
                             </div>
                             <FormControl>
                               <Textarea
@@ -797,7 +799,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Status Section */}
                 <SectionCard variant="slate">
-                  <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this language model." />
+                  <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.llm.statusDesc")} />
                   <SectionCard.Content>
                     <FormField
                       control={form.control}
@@ -805,9 +807,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       render={({ field }) => (
                         <FormItemTwoColumns>
                           <FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                             <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
-                              Toggle to enable or disable this language model instance.
+                              {t("forms.llm.enabledDesc")}
                             </FormItemTwoColumns.Description>
                           </FormItemTwoColumns.Left>
                           <FormItemTwoColumns.Right>
@@ -828,9 +830,9 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                       render={({ field }) => (
                         <FormItemTwoColumns>
                           <FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Label>Tools Enabled</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Label>{t("forms.llm.toolsEnabled")}</FormItemTwoColumns.Label>
                             <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
-                              Enable tool calling (web search, weather, code execution). Disable for models that do not support function calling.
+                              {t("forms.llm.toolsEnabledDesc")}
                             </FormItemTwoColumns.Description>
                           </FormItemTwoColumns.Left>
                           <FormItemTwoColumns.Right>

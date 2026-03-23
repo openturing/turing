@@ -1,0 +1,9 @@
+{
+  "theme": {
+    "toggle": "Alternar tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "modeLabel": "Modo {{mode}}"
+  }
+}

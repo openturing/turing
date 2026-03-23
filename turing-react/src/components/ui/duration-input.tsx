@@ -7,20 +7,21 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type TimeUnit = "ms" | "s" | "min" | "h" | "d";
 
 interface UnitConfig {
-    label: string;
+    labelKey: string;
     factor: number;
 }
 
 const UNITS: Record<TimeUnit, UnitConfig> = {
-    ms: { label: "Milliseconds", factor: 1 },
-    s: { label: "Seconds", factor: 1_000 },
-    min: { label: "Minutes", factor: 60_000 },
-    h: { label: "Hours", factor: 3_600_000 },
-    d: { label: "Days", factor: 86_400_000 },
+    ms: { labelKey: "forms.duration.milliseconds", factor: 1 },
+    s: { labelKey: "forms.duration.seconds", factor: 1_000 },
+    min: { labelKey: "forms.duration.minutes", factor: 60_000 },
+    h: { labelKey: "forms.duration.hours", factor: 3_600_000 },
+    d: { labelKey: "forms.duration.days", factor: 86_400_000 },
 };
 
 function detectBestUnit(ms: number): TimeUnit {
@@ -39,6 +40,7 @@ interface DurationInputProps {
 }
 
 export function DurationInput({ value, onChange, disabled }: Readonly<DurationInputProps>) {
+    const { t } = useTranslation();
     const [unit, setUnit] = useState<TimeUnit>(() => detectBestUnit(value ?? 0));
     const [displayValue, setDisplayValue] = useState<string>(() => {
         const ms = value ?? 0;
@@ -94,7 +96,7 @@ export function DurationInput({ value, onChange, disabled }: Readonly<DurationIn
                 <SelectContent>
                     {(Object.entries(UNITS) as [TimeUnit, UnitConfig][]).map(([key, cfg]) => (
                         <SelectItem key={key} value={key}>
-                            {cfg.label}
+                            {t(cfg.labelKey)}
                         </SelectItem>
                     ))}
                 </SelectContent>

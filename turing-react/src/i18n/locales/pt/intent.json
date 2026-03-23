@@ -1,0 +1,17 @@
+{
+  "intent": {
+    "title": "Intenção",
+    "blankTitle": "Você ainda não possui nenhuma intenção.",
+    "blankDescription": "Crie uma intenção para agrupar prompts sugeridos para o chat.",
+    "newInstance": "Nova Intenção",
+    "deleted": "A intenção \"{{name}}\" foi excluída",
+    "notDeleted": "A intenção \"{{name}}\" não foi excluída",
+    "nav": {
+      "settings": "Configurações"
+    },
+    "settings": {
+      "title": "Configurações",
+      "description": "Informações gerais, ações (prompts) e status."
+    }
+  }
+}

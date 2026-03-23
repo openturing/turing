@@ -31,6 +31,7 @@ import { TurIntegrationIndexingRuleService } from "@/services/integration/integr
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { IconFileText, IconMap, IconGavel, IconList } from "@tabler/icons-react"
+import { useTranslation } from "react-i18next"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { SectionCard } from "../ui/section-card"
@@ -52,6 +53,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
   integrationId,
   isNew
 }) => {
+  const { t } = useTranslation();
   console.log("isNew", isNew);
   // Services - memoized to prevent recreation on each render
   const turSNSiteService = useMemo(() => new TurSNSiteService(), []);
@@ -94,7 +96,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
         setTurSNSites(sites);
       } catch (error) {
         console.error("Failed to load sites:", error);
-        toast.error("Failed to load Semantic Navigation sites.");
+        toast.error(t("forms.integrationRules.siteLoadFailed"));
       }
     };
 
@@ -122,7 +124,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
         setTurSNSiteFields(fields);
       } catch (error) {
         console.error("Failed to load fields:", error);
-        toast.error("Failed to load site fields.");
+        toast.error(t("forms.integrationRules.fieldLoadFailed"));
       } finally {
         setIsLoadingFields(false);
       }
@@ -151,23 +153,23 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
         const result = await turIntegrationIndexingRuleService.create(data);
         if (result) {
           form.reset(data); // Reset dirty state after successful save
-          toast.success(`The "${data.name}" Integration Indexing Rule was created successfully.`);
+          toast.success(t("forms.integrationRules.created", { name: data.name }));
           navigate(`${ROUTES.INTEGRATION_INSTANCE}/${integrationId}/indexing-rule`);
         } else {
-          toast.error("Failed to create the rule. Please try again.");
+          toast.error(t("forms.integrationRules.createFailed"));
         }
       } else {
         const result = await turIntegrationIndexingRuleService.update(data);
         if (result) {
           form.reset(data); // Reset dirty state after successful save
-          toast.success(`The "${data.name}" Integration Indexing Rule was updated successfully.`);
+          toast.success(t("forms.integrationRules.updated", { name: data.name }));
         } else {
-          toast.error("Failed to update the rule. Please try again.");
+          toast.error(t("forms.integrationRules.updateFailed"));
         }
       }
     } catch (error) {
       console.error("Form submission error:", error);
-      toast.error("Failed to save the rule. Please try again.");
+      toast.error(t("forms.integrationRules.saveFailed"));
     }
   }, [isNew, turIntegrationIndexingRuleService, navigate, form]);
 
@@ -181,23 +183,23 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
           <div className="space-y-4">
             {/* Section: Basic Info */}
             <SectionCard variant="blue">
-              <SectionCard.Header icon={IconFileText} title="Rule Details" description="Name and describe this indexing rule." />
+              <SectionCard.Header icon={IconFileText} title={t("forms.integrationRules.ruleDetails")} description={t("forms.integrationRules.ruleDetailsDesc")} />
               <SectionCard.Content>
                 {/* Rule Name */}
                 <FormField
                   control={control}
                   name="name"
-                  rules={{ required: "Please give your rule a name." }}
+                  rules={{ required: t("forms.integrationRules.ruleNameRequired") }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rule Name</FormLabel>
+                      <FormLabel>{t("forms.integrationRules.ruleName")}</FormLabel>
                       <FormDescription>
-                        Give your rule a short, memorable name so you and your team can easily recognize it later.
+                        {t("forms.integrationRules.ruleNameDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., Skip Draft Pages"
+                          placeholder={t("forms.integrationRules.ruleNamePlaceholder")}
                           type="text"
                         />
                       </FormControl>
@@ -212,14 +214,14 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>What does this rule do?</FormLabel>
+                      <FormLabel>{t("forms.integrationRules.ruleDescLabel")}</FormLabel>
                       <FormDescription>
-                        Briefly describe when or why this rule should be used. This helps everyone understand its purpose.
+                        {t("forms.integrationRules.ruleDescDesc")}
                       </FormDescription>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="e.g., Prevents draft pages from being indexed"
+                          placeholder={t("forms.integrationRules.ruleDescPlaceholder")}
                           className="resize-none"
                         />
                       </FormControl>
@@ -232,26 +234,26 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
 
             {/* Section: Site Settings */}
             <SectionCard variant="violet">
-              <SectionCard.Header icon={IconMap} title="Where does this rule apply?" description="Select the site and field for this rule." />
+              <SectionCard.Header icon={IconMap} title={t("forms.integrationRules.whereApply")} description={t("forms.integrationRules.whereApplyDesc")} />
               <SectionCard.Content>
                 {/* Semantic Navigation Site */}
                 <FormField
                   control={control}
                   name="source"
-                  rules={{ required: "Please select a site." }}
+                  rules={{ required: t("forms.integrationRules.siteRequired") }}
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Choose a Site</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.integrationRules.chooseSite")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Select the Semantic Navigation site where this rule should be active.
+                          {t("forms.integrationRules.chooseSiteDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
                         <FormControl>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a site..." />
+                              <SelectValue placeholder={t("forms.integrationRules.selectSite")} />
                             </SelectTrigger>
                             <SelectContent>
                               {turSNSites.map((site) => (
@@ -272,13 +274,13 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                 <FormField
                   control={control}
                   name="attribute"
-                  rules={{ required: "Please select a field." }}
+                  rules={{ required: t("forms.integrationRules.fieldRequired") }}
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Pick a Field</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.integrationRules.pickField")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Choose the content field this rule should check. Only items with matching values will be affected.
+                          {t("forms.integrationRules.pickFieldDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -290,7 +292,7 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue
-                                placeholder={isLoadingFields ? "Loading fields..." : "Select a field..."}
+                                placeholder={isLoadingFields ? t("forms.integrationRules.loadingFields") : t("forms.integrationRules.selectField")}
                               />
                             </SelectTrigger>
                             <SelectContent>
@@ -312,26 +314,26 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
 
             {/* Section: Rule Action */}
             <SectionCard variant="emerald">
-              <SectionCard.Header icon={IconGavel} title="What happens to matching content?" description="Define the action for matched items." />
+              <SectionCard.Header icon={IconGavel} title={t("forms.integrationRules.whatHappens")} description={t("forms.integrationRules.whatHappensDesc")} />
               <SectionCard.Content>
                 {/* Action Type */}
                 <FormField
                   control={control}
                   name="ruleType"
-                  rules={{ required: "Please choose an action." }}
+                  rules={{ required: t("forms.integrationRules.actionRequired") }}
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Action for Matching Items</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.integrationRules.actionLabel")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Decide what should happen when content matches this rule. For example, "Ignore" will skip these items during indexing.
+                          {t("forms.integrationRules.actionDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
                         <FormControl>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Choose an action..." />
+                              <SelectValue placeholder={t("forms.integrationRules.chooseAction")} />
                             </SelectTrigger>
                             <SelectContent>
                               {RULE_TYPES.map((ruleType: typeof RULE_TYPES[number]) => (
@@ -352,12 +354,12 @@ export const IntegrationIndexingRulesForm: React.FC<IntegrationIndexingRulesForm
 
             {/* Section: Matching Values */}
             <SectionCard variant="amber">
-              <SectionCard.Header icon={IconList} title="Which values trigger this rule?" description="Specify the values that activate this rule." />
+              <SectionCard.Header icon={IconList} title={t("forms.integrationRules.whichValues")} description={t("forms.integrationRules.whichValuesDesc")} />
               <SectionCard.Content>
                 <FormItem>
-                  <FormLabel>Values to Match</FormLabel>
+                  <FormLabel>{t("forms.integrationRules.valuesToMatch")}</FormLabel>
                   <FormDescription>
-                    Add one or more values. If the selected field matches any of these, the rule will apply.
+                    {t("forms.integrationRules.valuesToMatchDesc")}
                   </FormDescription>
                   <FormControl>
                     <DynamicIndexingRuleFields

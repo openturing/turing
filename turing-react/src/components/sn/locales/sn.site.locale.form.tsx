@@ -27,6 +27,7 @@ import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -39,6 +40,7 @@ interface Props {
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
 export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew }) => {
+  const { t } = useTranslation();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [useCustomCore, setUseCustomCore] = useState(isNew && !!snLocale.core);
   const form = useForm<TurSNSiteLocale>({
@@ -69,25 +71,25 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
       if (isNew) {
         const result = await turSNSiteLocaleService.create(snSiteId, payload);
         if (result) {
-          toast.success(`The ${snLocale.language} SN Locale was created`);
+          toast.success(t("forms.snLocale.created", { name: snLocale.language }));
           navigate(urlBase);
         }
         else {
-          toast.error("Failed to create the SN Locale. Please try again.");
+          toast.error(t("forms.snLocale.createFailed"));
         }
       }
       else {
         const result = await turSNSiteLocaleService.update(snSiteId, payload);
         if (result) {
-          toast.success(`The ${snLocale.language} SN Locale was updated`);
+          toast.success(t("forms.snLocale.updated", { name: snLocale.language }));
         }
         else {
-          toast.error("Failed to update the SN Locale. Please try again.");
+          toast.error(t("forms.snLocale.updateFailed"));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -96,19 +98,19 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
         {/* Language Section */}
         <SectionCard variant="blue">
-          <SectionCard.Header icon={IconLanguage} title="Language Settings" description="Configure the language for semantic search and content indexing." />
+          <SectionCard.Header icon={IconLanguage} title={t("forms.snLocale.languageSettings")} description={t("forms.snLocale.languageSettingsDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
               name="language"
-              rules={{ required: "Language is required." }}
+              rules={{ required: t("forms.snLocale.languageRequired") }}
               render={({ field }) => (
                 <FormItem>
                   <div className="flex flex-row justify-between items-center w-full">
                     <div className="flex flex-col">
-                      <FormLabel>Language</FormLabel>
+                      <FormLabel>{t("forms.snLocale.language")}</FormLabel>
                       <FormDescription>
-                        Select the language code for semantic search and content indexing.
+                        {t("forms.snLocale.languageDesc")}
                       </FormDescription>
                     </div>
                     <div className="flex-1 max-w-xs">
@@ -133,14 +135,14 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
 
         {/* Core Section */}
         <SectionCard variant="violet">
-          <SectionCard.Header icon={IconDatabase} title="Core Configuration" description="Manage the search engine core for this locale." />
+          <SectionCard.Header icon={IconDatabase} title={t("forms.snLocale.coreConfig")} description={t("forms.snLocale.coreConfigDesc")} />
           <SectionCard.Content>
             {isNew && (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Define Core Manually</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snLocale.defineManually")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Enable this option to manually specify the core. If disabled, the core will be created automatically.
+                    {t("forms.snLocale.defineManuallyDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -170,15 +172,15 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
                     : undefined;
                   return (
                     <FormItem>
-                      <FormLabel>Core</FormLabel>
+                      <FormLabel>{t("forms.snLocale.core")}</FormLabel>
                       <FormDescription>
-                        The core name will appear in the semantic navigation site locale list.
+                        {t("forms.snLocale.coreDesc")}
                       </FormDescription>
                       <FormControl>
                         <div className="flex gap-2">
                           <Input
                             {...field}
-                            placeholder="Enter core name"
+                            placeholder={t("forms.snLocale.corePlaceholder")}
                             type="text"
                           />
                           {coresUrl && (
@@ -186,7 +188,7 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
                               type="button"
                               variant="outline"
                               size="icon"
-                              title="View in Search Engine cores"
+                              title={t("forms.snLocale.viewInSE")}
                               onClick={() => navigate(coresUrl)}
                             >
                               <IconExternalLink className="size-4" />

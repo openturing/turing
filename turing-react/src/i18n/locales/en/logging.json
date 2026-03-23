@@ -1,0 +1,10 @@
+{
+  "logging": {
+    "turingServer": "Turing ES Server",
+    "turingServerDesc": "Logging server instance",
+    "indexing": "Indexing",
+    "indexingDesc": "Indexing service instance",
+    "aem": "AEM",
+    "aemDesc": "AEM service instance"
+  }
+}

@@ -36,6 +36,7 @@ import { useEffect, useMemo, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -49,6 +50,7 @@ interface Props {
 }
 
 export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
+  const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
     name: snField.name ?? "",
@@ -80,20 +82,20 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
   const navigate = useNavigate()
 
   const facetRanges = [
-    { value: "DISABLED", name: "Disabled" },
-    { value: "DAY", name: "Day" },
-    { value: "MONTH", name: "Month" },
-    { value: "YEAR", name: "Year" }
+    { value: "DISABLED", name: t("forms.snFacetedField.disabled") },
+    { value: "DAY", name: t("forms.snFacetedField.day") },
+    { value: "MONTH", name: t("forms.snFacetedField.month") },
+    { value: "YEAR", name: t("forms.snFacetedField.year") }
   ];
   const facetTypes = [
-    { value: "DEFAULT", name: "Default" },
-    { value: "AND", name: "And" },
-    { value: "OR", name: "Or" }
+    { value: "DEFAULT", name: t("forms.snFacetedField.default") },
+    { value: "AND", name: t("forms.snFacetedField.and") },
+    { value: "OR", name: t("forms.snFacetedField.or") }
   ];
   const facetSorts = [
-    { value: "DEFAULT", name: "Default" },
-    { value: "ALPHABETICAL", name: "Alphabetical" },
-    { value: "COUNT", name: "Count" }
+    { value: "DEFAULT", name: t("forms.snFacetedField.default") },
+    { value: "ALPHABETICAL", name: t("forms.snFacetedField.alphabetical") },
+    { value: "COUNT", name: t("forms.snFacetedField.count") }
   ];
   useEffect(() => {
     turSNFieldTypeService.query().then(() => {
@@ -159,28 +161,28 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
 
         const result = await turSNFieldService.create(snSiteId, normalizedData);
         if (result) {
-          toast.success(`The ${normalizedData.name} SN Field was saved`);
+          toast.success(t("forms.common.saved", { name: normalizedData.name, feature: "SN Field" }));
           navigate(urlBase);
         }
         else {
-          toast.error(`The ${normalizedData.name} SN Field was not saved`);
+          toast.error(t("forms.common.notSaved", { name: normalizedData.name, feature: "SN Field" }));
         }
       }
       else {
         const result = await turSNFieldService.update(snSiteId, normalizedData);
         if (result) {
-          toast.success(`The ${normalizedData.name} SN Field was updated`);
+          toast.success(t("forms.common.updated", { name: normalizedData.name, feature: "SN Field" }));
         } else {
-          toast.error(`The ${normalizedData.name} SN Field was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: normalizedData.name, feature: "SN Field" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
       if (axios.isAxiosError(error) && error.response?.status === 409) {
-        toast.error("A field with this name already exists.");
+        toast.error(t("forms.snField.fieldExists"));
         return;
       }
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -214,18 +216,18 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
             {/* Basic Information */}
             <SectionCard variant="blue">
-              <SectionCard.Header icon={IconId} title="Basic Information" description="Unique identifier and core field settings." />
+              <SectionCard.Header icon={IconId} title={t("forms.snFacetedField.basicInfo")} description={t("forms.snFacetedField.basicInfoDesc")} />
               <SectionCard.Content>
                 {/* Identifier */}
                 <FormField
                   control={form.control}
                   name="name"
-                  rules={{ required: "Identifier is required." }}
+                  rules={{ required: t("forms.snFacetedField.identifierRequired") }}
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel>Identifier</FormLabel>
+                      <FormLabel>{t("forms.snFacetedField.identifier")}</FormLabel>
                       <FormDescription>
-                        Unique identifier for this field. Used for search and indexing.
+                        {t("forms.snFacetedField.identifierDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
@@ -246,7 +248,7 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
 
             {/* Labels Section */}
             <SectionCard variant="violet">
-              <SectionCard.Header icon={IconLanguage} title="Display Labels" description="Names shown to users when browsing filters." />
+              <SectionCard.Header icon={IconLanguage} title={t("forms.snFacetedField.displayLabels")} description={t("forms.snFacetedField.displayLabelsDesc")} />
               <SectionCard.Content>
                 <div>
                   <FormField
@@ -255,9 +257,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                     rules={{ required: true }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Default</FormLabel>
+                        <FormLabel>{t("forms.snFacetedField.default")}</FormLabel>
                         <FormDescription>
-                          The name shown to users when browsing filters. Used when no language-specific label is available.
+                          {t("forms.snFacetedField.defaultDesc")}
                         </FormDescription>
                         <FormControl>
                           <Input
@@ -284,7 +286,7 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
 
             {/* Facet Configuration */}
             <SectionCard variant="emerald">
-              <SectionCard.Header icon={IconAdjustmentsHorizontal} title="Facet Configuration" description="Control how facet values are displayed and combined." />
+              <SectionCard.Header icon={IconAdjustmentsHorizontal} title={t("forms.snFacetedField.facetConfig")} description={t("forms.snFacetedField.facetConfigDesc")} />
               <SectionCard.Content>
                 {/* Secondary Facet Switch */}
                 <FormField
@@ -293,9 +295,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Secondary Facet</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.secondaryFacet")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Classifies this field as a secondary facet.
+                          {t("forms.snFacetedField.secondaryFacetDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -315,9 +317,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Show All Facet Items</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.showAllItems")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Displays all possible facet values, even those with zero results.
+                          {t("forms.snFacetedField.showAllItemsDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -337,9 +339,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Facet Sort</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.facetSort")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Determines how facet values are ordered in the filter box.
+                          {t("forms.snFacetedField.facetSortDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -369,9 +371,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Operator between Facets</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.operatorBetweenFacets")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Specifies how multiple facets are combined in search.
+                          {t("forms.snFacetedField.operatorBetweenFacetsDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -401,9 +403,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Operator between Facet Items</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.operatorBetweenItems")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Defines how multiple selected facet values are joined.
+                          {t("forms.snFacetedField.operatorBetweenItemsDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -433,9 +435,9 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Range</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.range")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Enables range-based facet filtering.
+                          {t("forms.snFacetedField.rangeDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>

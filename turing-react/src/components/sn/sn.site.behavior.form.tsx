@@ -34,6 +34,7 @@ import { useEffect } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurSNSite>({
     defaultValues: value
   });
@@ -61,16 +63,16 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
     try {
       if (isNew) {
         turSNSiteService.create(snSite);
-        toast.success(`The ${snSite.name} SN Site was saved`);
+        toast.success(t("sn.siteSaved", { name: snSite.name }));
         navigate(urlBase);
       }
       else {
         turSNSiteService.update(snSite);
-        toast.success(`The ${snSite.name} SN Site was updated`);
+        toast.success(t("sn.siteUpdated", { name: snSite.name }));
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("sn.formSubmitFailed"));
     }
   }
 
@@ -82,16 +84,16 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
       >
         {/* General */}
         <SectionCard variant="blue">
-          <SectionCard.Header icon={IconSettings} title="General" description="Core search behavior and pagination." />
+          <SectionCard.Header icon={IconSettings} title={t("forms.snBehavior.general")} description={t("forms.snBehavior.generalDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
             name="rowsPerPage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Results per Page</FormLabel>
+                <FormLabel>{t("forms.snBehavior.resultsPerPage")}</FormLabel>
                 <FormDescription>
-                  Set the number of search results displayed per page.
+                  {t("forms.snBehavior.resultsPerPageDesc")}
                 </FormDescription>
                 <FormControl>
                   <Input
@@ -111,9 +113,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Exact Match</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.exactMatch")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Enable precise search for quoted terms using the default field.
+                    {t("forms.snBehavior.exactMatchDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -134,7 +136,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Wildcard */}
         <SectionCard variant="violet">
-          <SectionCard.Header icon={IconCodeAsterisk} title="Wildcard" description="Automatic wildcard behavior for broader matching." />
+          <SectionCard.Header icon={IconCodeAsterisk} title={t("forms.snBehavior.wildcard")} description={t("forms.snBehavior.wildcardDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -142,9 +144,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Add Wildcard on No Results</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.addWildcardNoResults")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    If no results are found, automatically append a wildcard to the search term.
+                    {t("forms.snBehavior.addWildcardNoResultsDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -166,9 +168,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Always Add Wildcard</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.alwaysAddWildcard")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Always append a wildcard to each search term.
+                    {t("forms.snBehavior.alwaysAddWildcardDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -189,7 +191,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Facets */}
         <SectionCard variant="emerald">
-          <SectionCard.Header icon={IconLayoutListFilled} title="Facets" description="Filtering options and faceted navigation settings." />
+          <SectionCard.Header icon={IconLayoutListFilled} title={t("forms.snBehavior.facets")} description={t("forms.snBehavior.facetsDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -197,9 +199,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Enable Facets</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.enableFacets")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Allow filtering results by categories or attributes.
+                    {t("forms.snBehavior.enableFacetsDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -220,9 +222,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             name="itemsPerFacet"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Items per Facet</FormLabel>
+                <FormLabel>{t("forms.snBehavior.itemsPerFacet")}</FormLabel>
                 <FormDescription>
-                  Maximum number of items displayed per facet category.
+                  {t("forms.snBehavior.itemsPerFacetDesc")}
                 </FormDescription>
                 <FormControl>
                   <Input
@@ -242,15 +244,15 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="facetSort"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sorting</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.sorting")}</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("forms.snBehavior.select")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="COUNT">By Count</SelectItem>
-                        <SelectItem value="ALPHABETICAL">Alphabetical</SelectItem>
+                        <SelectItem value="COUNT">{t("forms.snBehavior.byCount")}</SelectItem>
+                        <SelectItem value="ALPHABETICAL">{t("forms.snBehavior.alphabetical")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -263,15 +265,15 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="facetType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Facet Operator</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.facetOperator")}</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("forms.snBehavior.select")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AND">AND</SelectItem>
-                        <SelectItem value="OR">OR</SelectItem>
+                        <SelectItem value="AND">{t("forms.snBehavior.and")}</SelectItem>
+                        <SelectItem value="OR">{t("forms.snBehavior.or")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -284,15 +286,15 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="facetItemType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Operator</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.itemOperator")}</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder={t("forms.snBehavior.select")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AND">AND</SelectItem>
-                        <SelectItem value="OR">OR</SelectItem>
+                        <SelectItem value="AND">{t("forms.snBehavior.and")}</SelectItem>
+                        <SelectItem value="OR">{t("forms.snBehavior.or")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -306,7 +308,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Highlighting */}
         <SectionCard variant="amber">
-          <SectionCard.Header icon={IconHighlight} title="Highlighting" description="How search terms are visually emphasized in results." />
+          <SectionCard.Header icon={IconHighlight} title={t("forms.snBehavior.highlighting")} description={t("forms.snBehavior.highlightingDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -314,9 +316,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Enable Highlighting</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.enableHighlighting")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Highlight search terms in the results.
+                    {t("forms.snBehavior.enableHighlightingDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -338,9 +340,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="hlPre"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Tag</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.startTag")}</FormLabel>
                   <FormDescription>
-                    Inserted before the highlighted term.
+                    {t("forms.snBehavior.startTagDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. <mark>" type="text" />
@@ -354,9 +356,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="hlPost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>End Tag</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.endTag")}</FormLabel>
                   <FormDescription>
-                    Inserted after the highlighted term.
+                    {t("forms.snBehavior.endTagDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. </mark>" type="text" />
@@ -371,7 +373,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Spelling Suggestions */}
         <SectionCard variant="rose">
-          <SectionCard.Header icon={IconProgressHelp} title="Spelling Suggestions" description="Did-you-mean and automatic correction behavior." />
+          <SectionCard.Header icon={IconProgressHelp} title={t("forms.snBehavior.spellingSuggestions")} description={t("forms.snBehavior.spellingSuggestionsDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -379,9 +381,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Enable Suggestions</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.enableSuggestions")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Suggest spelling corrections for user queries.
+                    {t("forms.snBehavior.enableSuggestionsDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -403,9 +405,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Always Show Corrected Term</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.alwaysShowCorrected")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Automatically display results for the corrected term if a typo is detected.
+                    {t("forms.snBehavior.alwaysShowCorrectedDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -426,7 +428,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* More Like This */}
         <SectionCard variant="cyan">
-          <SectionCard.Header icon={IconCopy} title="More Like This (MLT)" description="Recommend similar documents based on content." />
+          <SectionCard.Header icon={IconCopy} title={t("forms.snBehavior.mlt")} description={t("forms.snBehavior.mltDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -434,9 +436,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Enable Similar Recommendations</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.enableSimilar")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Recommend documents similar to the current result.
+                    {t("forms.snBehavior.enableSimilarDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -457,7 +459,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Spotlight */}
         <SectionCard variant="orange">
-          <SectionCard.Header icon={IconSpeakerphone} title="Spotlight" description="Featured content promotion in search results." />
+          <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snBehavior.spotlightSection")} description={t("forms.snBehavior.spotlightDesc")} />
           <SectionCard.Content>
           <FormField
             control={form.control}
@@ -465,9 +467,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
             render={({ field }) => (
               <FormItemTwoColumns>
                 <FormItemTwoColumns.Left>
-                  <FormItemTwoColumns.Label>Show Spotlight with Results</FormItemTwoColumns.Label>
+                  <FormItemTwoColumns.Label>{t("forms.snBehavior.showSpotlightWithResults")}</FormItemTwoColumns.Label>
                   <FormItemTwoColumns.Description>
-                    Display featured content alongside search results.
+                    {t("forms.snBehavior.showSpotlightWithResultsDesc")}
                   </FormItemTwoColumns.Description>
                 </FormItemTwoColumns.Left>
                 <FormItemTwoColumns.Right>
@@ -488,7 +490,7 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Default Fields */}
         <SectionCard variant="slate" defaultOpen={false}>
-          <SectionCard.Header icon={IconListDetails} title="Default Fields" description="Field mappings for search, display, and content extraction." />
+          <SectionCard.Header icon={IconListDetails} title={t("forms.snBehavior.defaultFields")} description={t("forms.snBehavior.defaultFieldsDesc")} />
           <SectionCard.Content>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
             <FormField
@@ -496,9 +498,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="exactMatchField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Exact Match Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.exactMatchField")}</FormLabel>
                   <FormDescription>
-                    Field used for quoted searches.
+                    {t("forms.snBehavior.exactMatchFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. title" type="text" />
@@ -512,9 +514,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Default Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.defaultField")}</FormLabel>
                   <FormDescription>
-                    Field used for general searches.
+                    {t("forms.snBehavior.defaultFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. content" type="text" />
@@ -528,9 +530,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultTitleField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.titleField")}</FormLabel>
                   <FormDescription>
-                    Field for document titles.
+                    {t("forms.snBehavior.titleFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. title" type="text" />
@@ -544,9 +546,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultTextField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Text Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.textField")}</FormLabel>
                   <FormDescription>
-                    Field for main content.
+                    {t("forms.snBehavior.textFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. body" type="text" />
@@ -560,9 +562,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultDescriptionField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.descriptionField")}</FormLabel>
                   <FormDescription>
-                    Field for document descriptions.
+                    {t("forms.snBehavior.descriptionFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. description" type="text" />
@@ -576,9 +578,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultDateField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.dateField")}</FormLabel>
                   <FormDescription>
-                    Field for document dates.
+                    {t("forms.snBehavior.dateFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. date" type="text" />
@@ -592,9 +594,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultImageField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.imageField")}</FormLabel>
                   <FormDescription>
-                    Field for document images.
+                    {t("forms.snBehavior.imageFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. image" type="text" />
@@ -608,9 +610,9 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
               name="defaultURLField"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL Field</FormLabel>
+                  <FormLabel>{t("forms.snBehavior.urlField")}</FormLabel>
                   <FormDescription>
-                    Field for document URLs.
+                    {t("forms.snBehavior.urlFieldDesc")}
                   </FormDescription>
                   <FormControl>
                     <Input className="font-mono text-sm" {...field} placeholder="e.g. url" type="text" />

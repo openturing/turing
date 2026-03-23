@@ -1,0 +1,61 @@
+{
+  "store": {
+    "title": "Armazenamento de Embedding",
+    "newStore": "Novo Armazenamento de Embedding",
+    "blankTitle": "Você ainda não possui nenhuma instância de armazenamento de embedding.",
+    "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de armazenamento de embedding",
+    "deleted": "O Armazenamento de Embedding {{name}} foi excluído",
+    "notDeleted": "O Armazenamento de Embedding {{name}} não foi excluído",
+    "nav": {
+      "settings": "Configurações",
+      "collections": "Coleções",
+      "systemInfo": "Informações do Sistema"
+    },
+    "detail": {
+      "title": "Configurações",
+      "description": "Configure a conexão e opções do armazenamento de embedding."
+    },
+    "collections": {
+      "title": "Coleções",
+      "description": "Coleções vetoriais armazenadas nesta instância.",
+      "totalDocs": "Total de Documentos",
+      "totalChunks": "Total de Chunks",
+      "newCollection": "Nova Coleção",
+      "createCollection": "Criar Coleção",
+      "createCollectionDesc": "Digite um nome para a nova coleção vetorial.",
+      "creating": "Criando...",
+      "blankTitle": "Nenhuma coleção encontrada neste armazenamento.",
+      "name": "Nome",
+      "id": "ID",
+      "documents": "Documentos",
+      "chunks": "Chunks",
+      "removeAllDocs": "Remover todos os documentos",
+      "removeAllDocsDesc": "Isso excluirá todos os embeddings da coleção \"{{name}}\". A coleção será recriada vazia.",
+      "confirmRemoveAll": "Sim, remover todos os documentos",
+      "deleteCollection": "Excluir coleção",
+      "cleared": "Coleção \"{{name}}\" limpa.",
+      "clearFailed": "Falha ao limpar coleção \"{{name}}\".",
+      "collectionDeleted": "Coleção \"{{name}}\" excluída.",
+      "deleteFailed": "Falha ao excluir coleção \"{{name}}\".",
+      "created": "Coleção \"{{name}}\" criada.",
+      "createFailed": "Falha ao criar coleção \"{{name}}\".",
+      "loadFailed": "Falha ao carregar coleções. Verifique a conexão do Armazenamento de Embedding."
+    },
+    "systemInfo": {
+      "title": "Informações do Sistema",
+      "description": "Versão e detalhes de conexão do armazenamento de embedding.",
+      "loadFailed": "Falha ao carregar informações do armazenamento de embedding.",
+      "details": "Detalhes do Armazenamento de Embedding",
+      "detailsDesc": "Versão e informações de conexão obtidas do armazenamento de embedding.",
+      "noInfo": "Nenhuma informação disponível.",
+      "na": "N/D",
+      "storeLabel": "Armazenamento",
+      "version": "Versão",
+      "error": "Erro",
+      "status": "Status",
+      "up": "ATIVO",
+      "down": "INATIVO"
+    }
+  }
+}

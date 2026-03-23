@@ -4,7 +4,7 @@ import {
     useReactTable,
     type ColumnDef,
 } from "@tanstack/react-table";
-import { useEffect, useState, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
 
 import { Card } from "@/components/ui/card";
 import {
@@ -24,8 +24,10 @@ import {
 } from "@/components/ui/table";
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurIntegrationIndexing } from "@/models/integration/integration-indexing.model";
-import { formatDistanceToNow } from 'date-fns';
+import { type Locale, formatDistanceToNow } from 'date-fns';
+import { useDateLocale } from "@/hooks/use-date-locale";
 import { ArrowRightCircle, ArrowUpDown, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { BadgeColorful } from "../badge-colorful";
 import { BadgeLocale } from "../badge-locale";
@@ -46,18 +48,21 @@ interface Props {
     onSortChange: (field: string, direction: "asc" | "desc") => void;
 }
 
-const SORTABLE_COLUMNS: Record<string, string> = {
-    modificationDate: "Date",
-    objectId: "Object ID",
-    status: "Status",
-    environment: "Environment",
-    locale: "Language",
-};
+function buildSortableColumns(t: (key: string) => string): Record<string, string> {
+    return {
+        modificationDate: t("forms.indexingLoggingGrid.date"),
+        objectId: t("integration.indexingManager.objectId"),
+        status: t("forms.indexingLoggingGrid.status"),
+        environment: t("forms.indexingLoggingGrid.environment"),
+        locale: t("forms.indexingLoggingGrid.locale"),
+    };
+}
 
-export const columns: ColumnDef<TurIntegrationIndexing>[] = [
+function buildColumns(t: (key: string) => string, dateLocale: Locale): ColumnDef<TurIntegrationIndexing>[] {
+  return [
     {
         accessorKey: "modificationDate",
-        header: "Date",
+        header: t("forms.indexingLoggingGrid.date"),
         cell: ({ row }) => {
             const dateValue = new Date(row.getValue("modificationDate"));
             const formattedDate = dateValue.toLocaleString(undefined, {
@@ -69,7 +74,8 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
                 second: '2-digit'
             });
             const timeAgo = formatDistanceToNow(dateValue, {
-                addSuffix: true
+                addSuffix: true,
+                locale: dateLocale,
             });
 
             return (
@@ -84,7 +90,7 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     },
     {
         accessorKey: "objectId",
-        header: "Object ID",
+        header: t("integration.indexingManager.objectId"),
         cell: ({ row }) => {
             const objectId: string = row.getValue("objectId");
             const locale: string = row.getValue("locale");
@@ -109,7 +115,7 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: t("forms.indexingLoggingGrid.status"),
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
 
@@ -198,7 +204,7 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     },
     {
         accessorKey: "environment",
-        header: "Environment",
+        header: t("forms.indexingLoggingGrid.environment"),
         cell: ({ row }) => {
             const env = String(row.getValue("environment")).toUpperCase();
 
@@ -232,14 +238,14 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
     },
     {
         accessorKey: "locale",
-        header: "Language",
+        header: t("forms.indexingLoggingGrid.locale"),
         cell: ({ row }) => {
             return (<BadgeLocale locale={row.getValue("locale")} />);
         },
     },
     {
         accessorKey: "sites",
-        header: "Sites",
+        header: t("forms.indexingLoggingGrid.sites"),
         cell: ({ row }) => {
             const sites = row.getValue("sites");
             const sitesArray = Array.isArray(sites) ? sites : [];
@@ -255,7 +261,8 @@ export const columns: ColumnDef<TurIntegrationIndexing>[] = [
             );
         },
     },
-];
+  ];
+}
 
 export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
     gridItemList,
@@ -270,6 +277,10 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
     onPageSizeChange,
     onSortChange,
 }) => {
+    const { t } = useTranslation();
+    const dateLocale = useDateLocale();
+    const columns = useMemo(() => buildColumns(t, dateLocale), [t, dateLocale]);
+    const SORTABLE_COLUMNS = useMemo(() => buildSortableColumns(t), [t]);
     const table = useReactTable({
         data: gridItemList,
         columns,
@@ -310,10 +321,10 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
     return (
         <div className="px-6">
             <div className="flex justify-between p-2 items-center text-xs text-muted-foreground">
-                <span>{totalElements.toLocaleString()} total records</span>
+                <span>{t("forms.common.totalRecords", { count: totalElements.toLocaleString() })}</span>
                 <div className="flex items-center gap-2">
                     <RefreshCcw className="h-3 w-3 animate-spin-slow" />
-                    Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+                    {t("forms.loggingGrid.lastSync", { time: new Date(lastUpdated).toLocaleTimeString() })}
                 </div>
             </div>
             <Card>
@@ -375,7 +386,7 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={columns.length}>
-                                        No results.
+                                        {t("forms.common.noResultsDot")}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -384,7 +395,7 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
                 </div>
                 <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
                     <div className="flex items-center space-x-2">
-                        <p>Rows per page</p>
+                        <p>{t("forms.common.rowsPerPage")}</p>
                         <Select
                             value={`${pageSize}`}
                             onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -402,8 +413,7 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
                         </Select>
                     </div>
                     <div className="flex w-25 items-center justify-center text-sm font-medium">
-                        Page {page + 1} of{" "}
-                        {totalPages || 1}
+                        {t("forms.common.pageOfPages", { page: page + 1, totalPages: totalPages || 1 })}
                     </div>
                     <div className="flex items-center space-x-2">
                         <GradientButton

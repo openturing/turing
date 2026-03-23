@@ -20,6 +20,7 @@ import React, { useEffect } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../../ui/form-actions"
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurSNRankingExpression>({
     defaultValues: value
   });
@@ -56,23 +58,23 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
       if (isNew) {
         const result = await turSNRankingExpressionService.create(snSiteId, snRankingExpression);
         if (result) {
-          toast.success(`The ${snRankingExpression.name} Ranking Expression was created`);
+          toast.success(t("forms.snResultRanking.created", { name: snRankingExpression.name }));
           navigate(urlBase);
         } else {
-          toast.error("Failed to create the Ranking Expression. Please try again.");
+          toast.error(t("forms.snResultRanking.createFailed"));
         }
       }
       else {
         const result = await turSNRankingExpressionService.update(snSiteId, snRankingExpression);
         if (result) {
-          toast.success(`The ${snRankingExpression.name} Ranking Expression was updated`);
+          toast.success(t("forms.snResultRanking.updated", { name: snRankingExpression.name }));
         } else {
-          toast.error("Failed to update the Ranking Expression. Please try again.");
+          toast.error(t("forms.snResultRanking.updateFailed"));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -84,24 +86,24 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             <SectionCard variant="blue">
               <SectionCard.Header
                 icon={IconInfoCircle}
-                title="General Information"
-                description="Basic details for this ranking expression."
+                title={t("forms.common.generalInfo")}
+                description={t("forms.snResultRanking.generalDesc")}
               />
               <SectionCard.Content>
                 <FormField
                   control={form.control}
                   name="name"
-                  rules={{ required: "Name is required." }}
+                  rules={{ required: t("forms.snResultRanking.nameRequired") }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t("forms.common.name")}</FormLabel>
                       <FormDescription>
-                        Enter a clear, descriptive name for this ranking expression.
+                        {t("forms.snResultRanking.nameDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="Ranking expression name"
+                          placeholder={t("forms.snResultRanking.namePlaceholder")}
                           type="text"
                         />
                       </FormControl>
@@ -118,14 +120,14 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                         <SmartDescription
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Purpose of this ranking expression"
+                          placeholder={t("forms.snResultRanking.descPlaceholder")}
                           maxLength={500}
                           title={form.watch("name")}
                           entityType="Ranking Expression"
                         >
-                          <SmartDescription.Label>Description</SmartDescription.Label>
+                          <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                           <SmartDescription.Description>
-                            Briefly summarize the purpose of this ranking expression.
+                            {t("forms.snResultRanking.descDesc")}
                           </SmartDescription.Description>
                         </SmartDescription>
                       </FormControl>
@@ -140,16 +142,16 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             <SectionCard variant="violet">
               <SectionCard.Header
                 icon={IconFilter}
-                title="Ranking Conditions"
-                description="Define filter expressions to target content for ranking."
+                title={t("forms.snResultRanking.conditions")}
+                description={t("forms.snResultRanking.conditionsDesc")}
               />
               <SectionCard.Content>
                 <FormItem>
                   <FormLabel>
-                    Content Filter <span className="text-destructive">*</span>
+                    {t("forms.snResultRanking.contentFilter")} <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormDescription>
-                    Specify filter expressions to target content for ranking.
+                    {t("forms.snResultRanking.contentFilterDesc")}
                   </FormDescription>
                   <FormControl>
                     <DynamicResultRankingFields
@@ -168,8 +170,8 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             <SectionCard variant="emerald">
               <SectionCard.Header
                 icon={IconScale}
-                title="Ranking Weight"
-                description="Adjust the influence of this expression on search results."
+                title={t("forms.snResultRanking.weight")}
+                description={t("forms.snResultRanking.weightDesc")}
               />
               <SectionCard.Content>
                 <FormField
@@ -179,9 +181,9 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                     <FormItem>
                       <div className="flex flex-row justify-between items-center w-full">
                         <div className="flex flex-col">
-                          <FormLabel>Weight Adjustment</FormLabel>
+                          <FormLabel>{t("forms.snResultRanking.weightAdjustment")}</FormLabel>
                           <FormDescription>
-                            Adjust the influence of this ranking expression on search results.
+                            {t("forms.snResultRanking.weightAdjustmentDesc")}
                           </FormDescription>
                         </div>
                         <div className="flex items-center gap-4 min-w-45">

@@ -1,0 +1,42 @@
+{
+  "account": {
+    "title": "Configurações da Conta",
+    "feature": "Conta",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "email": "E-mail",
+    "username": "Usuário",
+    "changePassword": "Alterar Senha",
+    "newPassword": "Nova Senha",
+    "leaveBlank": "Deixe em branco para manter a atual",
+    "confirmPassword": "Confirmar Senha",
+    "repeatPassword": "Repita a nova senha",
+    "saveChanges": "Salvar Alterações",
+    "loadFailed": "Falha ao carregar dados do usuário.",
+    "unableToLoad": "Não foi possível carregar dados do usuário.",
+    "avatarUpdated": "Avatar atualizado.",
+    "avatarFailed": "Falha ao salvar avatar.",
+    "avatarRemoved": "Avatar removido.",
+    "avatarRemoveFailed": "Falha ao remover avatar.",
+    "passwordMismatch": "As senhas não coincidem.",
+    "updateSuccess": "Conta atualizada com sucesso.",
+    "updateFailed": "Falha ao atualizar conta.",
+    "nav": {
+      "profile": "Perfil",
+      "preferences": "Preferências"
+    },
+    "preferences": {
+      "title": "Preferências",
+      "description": "Preferências de idioma e exibição.",
+      "language": "Idioma",
+      "languageDesc": "Escolha o idioma usado na interface.",
+      "languageSaved": "Preferência de idioma salva.",
+      "english": "Inglês",
+      "portuguese": "Português"
+    },
+    "profile": {
+      "title": "Perfil",
+      "description": "Suas informações pessoais e senha."
+    }
+  }
+}

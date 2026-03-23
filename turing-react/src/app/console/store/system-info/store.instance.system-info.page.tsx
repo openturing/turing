@@ -4,6 +4,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { TurStoreInstanceService } from "@/services/store/store.service";
 import { IconDatabase, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
 }
 
 function StatusBadge({ status }: Readonly<{ status: string }>) {
+    const { t } = useTranslation();
     const isUp = status === "UP";
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -27,14 +29,15 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
                 : "bg-red-500/10 text-red-600 dark:text-red-400"
         }`}>
             <span className={`size-1.5 rounded-full ${isUp ? "bg-emerald-500" : "bg-red-500"}`} />
-            {isUp ? "UP" : "DOWN"}
+            {isUp ? t("store.systemInfo.up") : t("store.systemInfo.down")}
         </span>
     );
 }
 
 export default function StoreInstanceSystemInfoPage() {
+    const { t } = useTranslation();
     const { id } = useParams() as { id: string };
-    useSubPageBreadcrumb("System Information");
+    useSubPageBreadcrumb(t("store.systemInfo.title"));
 
     const [info, setInfo] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +47,7 @@ export default function StoreInstanceSystemInfoPage() {
             turStoreInstanceService
                 .getSystemInfo(id)
                 .then(setInfo)
-                .catch(() => toast.error("Failed to load embedding store system information."))
+                .catch(() => toast.error(t("store.systemInfo.loadFailed")))
                 .finally(() => setIsLoading(false));
         } else {
             setIsLoading(false);
@@ -56,9 +59,9 @@ export default function StoreInstanceSystemInfoPage() {
             <>
                 <SubPageHeader
                     icon={IconInfoCircle}
-                    feature="System Information"
-                    name="System Information"
-                    description="Embedding store version and connection details."
+                    feature={t("store.systemInfo.title")}
+                    name={t("store.systemInfo.title")}
+                    description={t("store.systemInfo.description")}
                 />
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
@@ -68,9 +71,9 @@ export default function StoreInstanceSystemInfoPage() {
     }
 
     const displayLabels: Record<string, string> = {
-        store: "Store",
-        version: "Version",
-        error: "Error",
+        store: t("store.systemInfo.storeLabel"),
+        version: t("store.systemInfo.version"),
+        error: t("store.systemInfo.error"),
     };
 
     const entries = Object.entries(info).filter(([key]) => key !== "status");
@@ -79,32 +82,32 @@ export default function StoreInstanceSystemInfoPage() {
         <>
             <SubPageHeader
                 icon={IconInfoCircle}
-                feature="System Information"
-                name="System Information"
-                description="Embedding store version and connection details."
+                feature={t("store.systemInfo.title")}
+                name={t("store.systemInfo.title")}
+                description={t("store.systemInfo.description")}
             />
             <div className="py-6 px-6 space-y-4">
                 <SectionCard variant="violet">
                     <SectionCard.StaticHeader
                         icon={IconDatabase}
-                        title="Embedding Store Details"
-                        description="Version and connection information retrieved from the embedding store."
+                        title={t("store.systemInfo.details")}
+                        description={t("store.systemInfo.detailsDesc")}
                     />
                     <SectionCard.Content>
                         {info.status && (
                             <div className="flex items-center justify-between py-2 border-b">
-                                <span className="text-sm text-muted-foreground">Status</span>
+                                <span className="text-sm text-muted-foreground">{t("store.systemInfo.status")}</span>
                                 <StatusBadge status={info.status} />
                             </div>
                         )}
                         {entries.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No information available.</p>
+                            <p className="text-sm text-muted-foreground">{t("store.systemInfo.noInfo")}</p>
                         ) : (
                             entries.map(([key, value]) => (
                                 <InfoRow
                                     key={key}
                                     label={displayLabels[key] ?? key}
-                                    value={value || "N/A"}
+                                    value={value || t("store.systemInfo.na")}
                                 />
                             ))
                         )}

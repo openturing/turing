@@ -13,6 +13,7 @@ import { TurSNFieldService } from '@/services/sn/sn.field.service';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister, type FieldValues, type ArrayPath } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 interface DynamicResultRankingFieldsProps<TFieldValues extends FieldValues = FieldValues> {
     control: Control<TFieldValues>;
@@ -24,12 +25,13 @@ interface DynamicResultRankingFieldsProps<TFieldValues extends FieldValues = Fie
 const turSNFieldService = new TurSNFieldService();
 
 export function DynamicResultRankingFields<TFieldValues extends FieldValues = FieldValues>({ control, register, fieldName, snSiteId, errors }: Readonly<DynamicResultRankingFieldsProps<TFieldValues>>) {
+    const { t } = useTranslation();
     const { fields, append, remove } = useFieldArray({
         control,
         name: fieldName as ArrayPath<TFieldValues>,
         rules: {
-            required: "At least one condition is required.",
-            minLength: { value: 1, message: "At least one condition is required." },
+            required: t("forms.resultRankingField.conditionMinimum"),
+            minLength: { value: 1, message: t("forms.resultRankingField.conditionMinimum") },
         },
     });
     const [snFields, setSNFields] = useState<TurSNSiteField[]>([]);
@@ -52,16 +54,16 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                             <Controller
                                 control={control}
                                 name={`${fieldName}.${index}.attribute` as any}
-                                rules={{ required: "Attribute is required." }}
+                                rules={{ required: t("forms.resultRankingField.attributeRequired") }}
                                 render={({ field: controllerField }) => (
                                     <div>
-                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">Field</span>
+                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">{t("forms.common.field")}</span>
                                         <Select
                                             onValueChange={controllerField.onChange}
                                             value={controllerField.value === null ? '' : String(controllerField.value)}
                                         >
                                             <SelectTrigger className={fieldErrors?.attribute ? "border-destructive" : ""}>
-                                                <SelectValue placeholder="Choose the field" />
+                                                <SelectValue placeholder={t("forms.resultRankingField.chooseField")} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {snFields.map((option) => (
@@ -81,20 +83,20 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                             <Controller
                                 control={control}
                                 name={`${fieldName}.${index}.condition` as any}
-                                rules={{ required: "Condition is required." }}
+                                rules={{ required: t("forms.resultRankingField.conditionRequired") }}
                                 render={({ field: controllerField }) => (
                                     <div>
-                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">Condition</span>
+                                        <span className="text-xs text-muted-foreground mb-1 block md:hidden">{t("forms.common.condition")}</span>
                                         <Select
                                             onValueChange={(value) => controllerField.onChange(Number(value))}
                                             value={controllerField.value === null ? '' : String(controllerField.value)}
                                         >
                                             <SelectTrigger className={fieldErrors?.condition ? "border-destructive" : ""}>
-                                                <SelectValue placeholder="Condition" />
+                                                <SelectValue placeholder={t("forms.common.condition")} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="1">Is</SelectItem>
-                                                <SelectItem value="2">Is not</SelectItem>
+                                                <SelectItem value="1">{t("forms.resultRankingField.is")}</SelectItem>
+                                                <SelectItem value="2">{t("forms.resultRankingField.isNot")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {fieldErrors?.condition && (
@@ -105,11 +107,11 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                             />
                             {/* Value input */}
                             <div>
-                                <span className="text-xs text-muted-foreground mb-1 block md:hidden">Value</span>
+                                <span className="text-xs text-muted-foreground mb-1 block md:hidden">{t("forms.common.value")}</span>
                                 <Input
                                     className={fieldErrors?.value ? "border-destructive" : ""}
-                                    placeholder="Value"
-                                    {...register(`${fieldName}.${index}.value` as any, { required: "Value is required." })}
+                                    placeholder={t("forms.common.value")}
+                                    {...register(`${fieldName}.${index}.value` as any, { required: t("forms.resultRankingField.valueRequired") })}
                                 />
                                 {fieldErrors?.value && (
                                     <p className="text-xs text-destructive mt-1">{fieldErrors.value.message}</p>
@@ -121,8 +123,8 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => remove(index)}
-                                    aria-label="Remove condition"
-                                    title="Remove condition"
+                                    aria-label={t("forms.resultRankingField.removeCondition")}
+                                    title={t("forms.resultRankingField.removeCondition")}
                                     type="button"
                                     className="text-destructive hover:text-destructive"
                                 >
@@ -137,7 +139,7 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
             <div>
                 <GradientButton variant="outline" onClick={handleAddField} type="button" size="sm">
                     <PlusCircle className="h-4 w-4 mr-1.5" />
-                    Add Condition
+                    {t("forms.resultRankingField.addCondition")}
                 </GradientButton>
             </div>
             {errors?.[fieldName]?.root?.message && (

@@ -1,0 +1,9 @@
+{
+  "embeddingModel": {
+    "title": "Modelo de Embedding",
+    "blankTitle": "Você ainda não possui nenhum modelo de embedding.",
+    "blankDescription": "Crie um novo modelo de embedding para usar com navegação semântica e armazenamentos vetoriais.",
+    "newInstance": "Novo Modelo de Embedding",
+    "newEmbeddingModel": "Novo Modelo de Embedding"
+  }
+}

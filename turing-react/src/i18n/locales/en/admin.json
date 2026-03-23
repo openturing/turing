@@ -1,0 +1,41 @@
+{
+  "admin": {
+    "title": "Administration",
+    "console": "Administration Console",
+    "settings": "Settings",
+    "users": {
+      "title": "Users",
+      "description": "Manage user accounts and access.",
+      "newUser": "New User",
+      "createDescription": "Create a new user account.",
+      "editDescription": "Edit user account details.",
+      "deleted": "User \"{{name}}\" was deleted.",
+      "deleteFailed": "Failed to delete user \"{{name}}\".",
+      "loadFailed": "Failed to load users.",
+      "loadOneFailed": "Failed to load user."
+    },
+    "groups": {
+      "title": "Groups",
+      "description": "Organize users into groups with shared permissions.",
+      "newGroup": "New Group",
+      "createDescription": "Create a new user group.",
+      "editDescription": "Edit group details and members.",
+      "deleted": "Group \"{{name}}\" was deleted.",
+      "deleteFailed": "Failed to delete group \"{{name}}\".",
+      "loadFailed": "Failed to load groups.",
+      "loadOneFailed": "Failed to load group."
+    },
+    "roles": {
+      "title": "Roles",
+      "description": "Define roles and their associated permissions.",
+      "newRole": "New Role",
+      "createDescription": "Create a new access role.",
+      "editDescription": "Edit role details and permissions.",
+      "loadFailed": "Failed to load roles.",
+      "loadOneFailed": "Failed to load role."
+    },
+    "systemInfo": {
+      "title": "System Information"
+    }
+  }
+}

@@ -22,6 +22,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconInfoCircle } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -43,13 +44,14 @@ function buildCoreName(name: string, locale: string, appendLocale: boolean): str
 }
 
 export default function SEInstanceCoreNewPage() {
+  const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [appendLocale, setAppendLocale] = useState(true);
   useSubPageBreadcrumb([
-    { label: "Cores", href: `${ROUTES.SE_INSTANCE}/${id}/cores` },
-    { label: "New" },
+    { label: t("se.cores.title"), href: `${ROUTES.SE_INSTANCE}/${id}/cores` },
+    { label: t("se.newCore.title") },
   ]);
 
   const form = useForm<CreateCoreForm>({
@@ -67,17 +69,17 @@ export default function SEInstanceCoreNewPage() {
   async function onSubmit(data: CreateCoreForm) {
     const coreName = buildCoreName(data.name.trim(), data.locale, appendLocale);
     if (!CORE_NAME_PATTERN.test(coreName)) {
-      toast.error("Core name must contain only letters, numbers, underscores (_), or hyphens (-).");
+      toast.error(t("se.newCore.nameFormatError"));
       return;
     }
     try {
       await turSEInstanceService.createCore(id, coreName, data.locale);
-      toast.success(`Core "${coreName}" created successfully.`);
+      toast.success(t("se.newCore.createSuccess", { name: coreName }));
       navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`);
     } catch (error) {
       console.error("Failed to create core", error);
       const msg = error instanceof Error ? error.message : "Unknown error";
-      toast.error(`Failed to create core: ${msg}`);
+      toast.error(t("se.newCore.createFailed", { message: msg }));
     }
   }
 
@@ -85,36 +87,36 @@ export default function SEInstanceCoreNewPage() {
     <>
       <SubPageHeader
         icon={IconDatabase}
-        name="New Core"
-        feature="Cores"
-        description="Create a new core or collection in this Search Engine."
+        name={t("se.newCore.title")}
+        feature={t("se.cores.title")}
+        description={t("se.newCore.description")}
       />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
-              title="Core Details"
-              description="Name and locale for the new core."
+              title={t("se.newCore.coreDetails")}
+              description={t("se.newCore.coreDetailsDesc")}
             />
             <SectionCard.Content>
               <FormField
                 control={form.control}
                 name="name"
                 rules={{
-                  required: "Core name is required.",
+                  required: t("se.newCore.nameRequired"),
                   pattern: {
                     value: CORE_NAME_PATTERN,
-                    message: "Use only letters, numbers, underscores (_), or hyphens (-).",
+                    message: t("se.newCore.nameFormat"),
                   },
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{appendLocale ? "Name Prefix" : "Full Core Name"}</FormLabel>
+                    <FormLabel>{appendLocale ? t("se.newCore.namePrefix") : t("se.newCore.fullCoreName")}</FormLabel>
                     <FormDescription>
                       {appendLocale
-                        ? "Enter a prefix. The locale will be appended automatically (e.g., my-site + en_US = my-site_en_US)."
-                        : "Enter the full core name exactly as it should be created."}
+                        ? t("se.newCore.namePrefixDesc")
+                        : t("se.newCore.fullCoreNameDesc")}
                     </FormDescription>
                     <FormControl>
                       <Input
@@ -131,12 +133,12 @@ export default function SEInstanceCoreNewPage() {
               <FormField
                 control={form.control}
                 name="locale"
-                rules={{ required: "Please select a locale." }}
+                rules={{ required: t("se.newCore.localeRequired") }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Locale</FormLabel>
+                    <FormLabel>{t("se.newCore.locale")}</FormLabel>
                     <FormDescription>
-                      The language/locale determines the configSet used for text analysis (stemming, stopwords, etc.).
+                      {t("se.newCore.localeDesc")}
                     </FormDescription>
                     <FormControl>
                       <LanguageSelect
@@ -159,12 +161,12 @@ export default function SEInstanceCoreNewPage() {
                   onCheckedChange={setAppendLocale}
                 />
                 <Label htmlFor="append-locale" className="text-sm">
-                  Append locale to name
+                  {t("se.newCore.appendLocale")}
                 </Label>
               </div>
               {finalCoreName && (
                 <div className="rounded-md border bg-muted/50 px-4 py-3 mt-2">
-                  <p className="text-xs text-muted-foreground mb-1">Core name preview</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("se.newCore.coreNamePreview")}</p>
                   <p className="text-sm font-mono font-semibold">{finalCoreName}</p>
                 </div>
               )}
@@ -173,7 +175,7 @@ export default function SEInstanceCoreNewPage() {
 
           <FormActions>
             <FormActions.Cancel onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)} />
-            <FormActions.Submit>Create Core</FormActions.Submit>
+            <FormActions.Submit>{t("se.newCore.createCore")}</FormActions.Submit>
           </FormActions>
         </form>
       </Form>

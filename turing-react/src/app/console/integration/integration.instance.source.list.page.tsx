@@ -10,6 +10,7 @@ import type { TurIntegrationAemSource } from "@/models/integration/integration-a
 import { TurIntegrationAemSourceService } from "@/services/integration/integration-aem-source.service";
 import { IconGitCommit } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 export default function IntegrationInstanceSourceListPage() {
@@ -18,12 +19,13 @@ export default function IntegrationInstanceSourceListPage() {
   const turIntegrationAemSourceService = new TurIntegrationAemSourceService(id);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     turIntegrationAemSourceService.query().then((sources) => {
       setIntegrationAemSources(sources);
-      setBreadcrumb([{ label: "Sources" }]);
-    }).catch(() => setError("Connection error or timeout while fetching Integration service."));
+      setBreadcrumb([{ label: t("integration.sources.title") }]);
+    }).catch(() => setError(t("common.connectionError", { resource: "Integration service" })));
   }, [id]);
 
   useSubPageBreadcrumb(breadcrumb);
@@ -35,19 +37,19 @@ export default function IntegrationInstanceSourceListPage() {
   return (
     <LoadProvider checkIsNotUndefined={integrationAemSources} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/source`}>
       {gridItemList.length > 0 ? (<>
-        <SubPageHeader icon={IconGitCommit} name="Sources"
-          feature="Source"
-          description="Available AEM sources for indexing and configuration." />
+        <SubPageHeader icon={IconGitCommit} name={t("integration.sources.title")}
+          feature={t("integration.sources.feature")}
+          description={t("integration.sources.description")} />
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/${id}/source/new`} label="Source" />
+          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/${id}/source/new`} label={t("integration.sources.feature")} />
         </GridList>
 
       </>) : (
         <BlankSlate
           icon={IconGitCommit}
-          title="You don’t seem to have any AEM sources."
-          description="Create a new AEM source to index from many AEM external data sources."
-          buttonText="New AEM source"
+          title={t("integration.sources.blankTitle")}
+          description={t("integration.sources.blankDescription")}
+          buttonText={t("integration.sources.newSource")}
           urlNew={`${ROUTES.INTEGRATION_INSTANCE}/${id}/source/new`} />
       )}
     </LoadProvider>

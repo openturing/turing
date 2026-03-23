@@ -1,0 +1,93 @@
+{
+  "home": {
+    "title": "Início",
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite"
+    },
+    "welcome": "Bem-vindo ao Viglet Turing ES — sua plataforma de inteligência em busca empresarial.",
+    "docs": "Docs",
+    "open": "Abrir",
+    "sections": {
+      "generativeAi": {
+        "label": "IA Generativa",
+        "description": "Construa, configure e interaja com modelos de linguagem, embeddings e agentes inteligentes."
+      },
+      "enterpriseSearch": {
+        "label": "Busca Empresarial",
+        "description": "Indexe, pesquise e navegue pelo conteúdo da sua empresa com mecanismos de busca e compreensão semântica."
+      },
+      "management": {
+        "label": "Gerenciamento",
+        "description": "Administração do sistema, gerenciamento de ativos e configuração da plataforma."
+      }
+    },
+    "features": {
+      "languageModel": {
+        "title": "Modelo de Linguagem",
+        "description": "Configure provedores de LLM como OpenAI, Ollama, Anthropic e Gemini para chat e geração."
+      },
+      "embeddingModel": {
+        "title": "Modelo de Embedding",
+        "description": "Configure modelos de embedding para busca por similaridade vetorial e pipelines RAG."
+      },
+      "embeddingStore": {
+        "title": "Armazenamento de Embedding",
+        "description": "Gerencie armazenamentos vetoriais como Chroma, Milvus e PGVector para recuperação semântica."
+      },
+      "mcpServer": {
+        "title": "Servidor MCP",
+        "description": "Conecte-se a servidores do Model Context Protocol para integração com ferramentas externas."
+      },
+      "aiAgent": {
+        "title": "Agente de IA",
+        "description": "Crie agentes de IA que orquestram LLMs, ferramentas e servidores MCP para tarefas complexas."
+      },
+      "intent": {
+        "title": "Intenção",
+        "description": "Defina categorias de prompts e ações exibidas como sugestões rápidas no chat."
+      },
+      "tokenUsage": {
+        "title": "Uso de Tokens",
+        "description": "Monitore o consumo de tokens em todas as instâncias e modelos de LLM."
+      },
+      "chat": {
+        "title": "Chat",
+        "description": "Inicie conversas com seus LLMs, agentes e busca semântica configurados."
+      },
+      "searchEngine": {
+        "title": "Mecanismo de Busca",
+        "description": "Gerencie instâncias Solr, Elasticsearch ou Lucene que alimentam sua busca."
+      },
+      "semanticNavigation": {
+        "title": "Navegação Semântica",
+        "description": "Crie sites de busca com facetas, destaque, correção ortográfica e insights de IA."
+      },
+      "integration": {
+        "title": "Integração",
+        "description": "Conecte-se a CMS, bancos de dados e sistemas de arquivos externos para indexar seu conteúdo."
+      },
+      "graphqlExplorer": {
+        "title": "Explorador GraphQL",
+        "description": "Consulte seus dados de navegação semântica usando o playground interativo GraphQL."
+      },
+      "assets": {
+        "title": "Ativos",
+        "description": "Navegue e gerencie arquivos armazenados no MinIO."
+      },
+      "import": {
+        "title": "Importar",
+        "description": "Importe configurações, sites e dados de pacotes exportados."
+      },
+      "logging": {
+        "title": "Logs",
+        "description": "Visualize logs de indexação e monitore a atividade do pipeline de dados."
+      },
+      "administration": {
+        "title": "Administração",
+        "description": "Gerencie usuários, grupos, papéis, tokens de API e configurações do sistema."
+      }
+    }
+  }
+}

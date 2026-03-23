@@ -12,13 +12,12 @@ import {
 import {
   Input
 } from "@/components/ui/input"
-import {
-  Textarea
-} from "@/components/ui/textarea"
+import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
 import { TurTokenInstanceService } from "@/services/token/token.service"
 import { IconKey, IconNotes } from "@tabler/icons-react"
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm
 } from "react-hook-form"
@@ -34,6 +33,7 @@ interface Props {
 }
 
 export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurTokenInstance>({
     defaultValues: value
   });
@@ -47,32 +47,32 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turTokenInstanceService.create(tokenInstance);
         if (result) {
-          toast.success(`The ${tokenInstance.title} API Token was saved`);
+          toast.success(t("forms.common.saved", { name: tokenInstance.title, feature: "API Token" }));
           navigate(ROUTES.ADMIN_TOKENS);
         } else {
-          toast.error(`The ${tokenInstance.title} API Token was not saved`);
+          toast.error(t("forms.common.notSaved", { name: tokenInstance.title, feature: "API Token" }));
         }
       }
       else {
         const result = await turTokenInstanceService.update(tokenInstance);
         if (result) {
-          toast.success(`The ${tokenInstance.title} API Token was updated`);
+          toast.success(t("forms.common.updated", { name: tokenInstance.title, feature: "API Token" }));
         } else {
-          toast.error(`The ${tokenInstance.title} API Token was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: tokenInstance.title, feature: "API Token" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value.token);
-      toast.success("Token API copied!");
+      toast.success(t("forms.common.copied"));
     } catch (err) {
-      toast.error("Failed to copy token API");
+      toast.error(t("forms.common.copyFailed"));
       console.error("Failed to copy text: ", err);
     }
   };
@@ -85,20 +85,20 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       >
         {/* General */}
         <SectionCard variant="blue">
-          <SectionCard.Header icon={IconNotes} title="General" description="Basic information about the API token." />
+          <SectionCard.Header icon={IconNotes} title={t("forms.token.general")} description={t("forms.token.generalDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
               name="title"
-              rules={{ required: "Title is required." }}
+              rules={{ required: t("forms.token.titleRequired") }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormDescription>A short name to identify this token.</FormDescription>
+                  <FormLabel>{t("forms.common.title")}</FormLabel>
+                  <FormDescription>{t("forms.token.titleDesc")}</FormDescription>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="e.g. CI/CD Pipeline"
+                      placeholder={t("forms.token.titlePlaceholder")}
                       type="text"
                     />
                   </FormControl>
@@ -112,15 +112,16 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormDescription>Optional notes about how this token is used.</FormDescription>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g. Used by the deployment pipeline to index content."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
+                  <SmartDescription
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={t("forms.token.descriptionPlaceholder")}
+                    title={form.watch("title")}
+                    entityType={t("apiToken.title")}
+                  >
+                    <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
+                    <SmartDescription.Description>{t("forms.token.descriptionDesc")}</SmartDescription.Description>
+                  </SmartDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -130,24 +131,24 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
         {/* Token */}
         {!isNew && <SectionCard variant="violet">
-          <SectionCard.Header icon={IconKey} title="Token" description="The generated API token value." />
+          <SectionCard.Header icon={IconKey} title={t("forms.token.tokenLabel")} description={t("forms.token.tokenDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
               name="token"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>API Token</FormLabel>
-                  <FormDescription>Use this token in the Authorization header for API requests.</FormDescription>
+                  <FormLabel>{t("forms.common.apiKey")}</FormLabel>
+                  <FormDescription>{t("forms.token.tokenHint")}</FormDescription>
                   <FormControl>
                     <div className="flex items-center space-x-2">
                       <Input
-                        placeholder="API Token"
+                        placeholder={t("forms.common.apiKey")}
                         type="text"
                         readOnly
                         className="font-mono text-sm"
                         {...field} />
-                      <GradientButton type="button" onClick={handleCopy}>Copy</GradientButton>
+                      <GradientButton type="button" onClick={handleCopy}>{t("forms.common.copy")}</GradientButton>
                     </div>
                   </FormControl>
                   <FormMessage />

@@ -15,6 +15,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/app/routes.const';
 import {
@@ -37,6 +38,7 @@ interface SNSiteFacetDraggableListRowProps {
 }
 
 const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = ({ row, siteId }) => {
+    const { t } = useTranslation();
     const {
         attributes,
         listeners,
@@ -61,14 +63,14 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
                     {...attributes}
                     {...listeners}
                     className="p-2 cursor-grab active:cursor-grabbing hover:bg-accent rounded transition-colors"
-                    aria-label="Drag to reorder"
+                    aria-label={t("forms.facetDraggable.dragToReorder")}
                 >
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                 </button>
             </TableCell>
             <TableCell className="text-muted-foreground">
                 <div className="flex items-center gap-2">
-                    <span title={row.customFacet ? 'Custom Facet' : 'Faceted Field'}>
+                    <span title={row.customFacet ? t("forms.facetDraggable.customFacet") : t("forms.facetDraggable.facetedField")}>
                         <BadgeColorful text={row.customFacet ? 'CF' : 'FF'} className="w-7 text-[10px]" />
                     </span>
                     <span>{row.name}</span>
@@ -83,7 +85,7 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
                     to={`${ROUTES.SN_INSTANCE}/${siteId}/${row.customFacet ? 'facet/custom' : 'facet/field'
                         }/${row.customFacet ? row.id : row.fieldExtId}`}
                 >
-                    Edit
+                    {t("forms.common.edit")}
                 </GradientButton>
             </TableCell>
         </TableRow>
@@ -99,7 +101,7 @@ interface SNSiteFacetDraggableListProps {
 }
 const turSNFacetedFieldService = new TurSNFacetedFieldService();
 export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> = ({ siteId, tableData, setTableData, children }) => {
-
+    const { t } = useTranslation();
 
     const sensors = useSensors(useSensor(PointerSensor));
 
@@ -120,10 +122,10 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
 
             try {
                 await turSNFacetedFieldService.saveOrdering(siteId, reorderedItems);
-                toast.success('Facet ordering saved.');
+                toast.success(t("forms.facetDraggable.orderSaved"));
             } catch (error) {
                 console.error('Failed to save facet ordering', error);
-                toast.error('Failed to save facet ordering.');
+                toast.error(t("forms.facetDraggable.orderFailed"));
             }
         }
     };
@@ -143,9 +145,9 @@ export const SNSiteFacetDraggableList: React.FC<SNSiteFacetDraggableListProps> =
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12"></TableHead>
-                                <TableHead>Identifier</TableHead>
-                                <TableHead className="hidden md:table-cell">Facet Name</TableHead>
-                                <TableHead>Action</TableHead>
+                                <TableHead>{t("forms.integrationManager.identifier")}</TableHead>
+                                <TableHead className="hidden md:table-cell">{t("forms.facetDraggable.facetName")}</TableHead>
+                                <TableHead>{t("forms.localeTable.action")}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

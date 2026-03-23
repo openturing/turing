@@ -5,6 +5,7 @@ import { TurLocaleService } from '@/services/locale/locale.service';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useFieldArray, type Control, type UseFormRegister, type FieldValues, type ArrayPath } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { GradientButton } from '../ui/gradient-button';
 
 interface DynamicSourceLocalesProps<TFieldValues extends FieldValues = FieldValues> {
@@ -18,6 +19,7 @@ export function DynamicSourceLocales<TFieldValues extends FieldValues = FieldVal
     register,
     fieldName
 }: Readonly<DynamicSourceLocalesProps<TFieldValues>>) {
+    const { t } = useTranslation();
     const { fields, append, remove } = useFieldArray({
         control,
         name: fieldName as ArrayPath<TFieldValues>,
@@ -49,14 +51,14 @@ export function DynamicSourceLocales<TFieldValues extends FieldValues = FieldVal
                     />
                     <Input
                         className="grow"
-                        placeholder="Path"
+                        placeholder={t("forms.integrationSource.rootPath")}
                         {...register(`${fieldName}.${index}.path` as any)}
                     />
                     <GradientButton
                         variant="ghost"
                         size="icon"
                         onClick={() => remove(index)}
-                        aria-label="Remove the field"
+                        aria-label={t("forms.dynamicField.removeField")}
                         type="button"
                     >
                         <Trash2 className="h-4 w-4 text-red-500" />
@@ -67,7 +69,7 @@ export function DynamicSourceLocales<TFieldValues extends FieldValues = FieldVal
             <div className="mt-2">
                 <GradientButton variant="outline" onClick={handleAddField} type="button">
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Add
+                    {t("forms.common.add")}
                 </GradientButton>
             </div>
         </div>

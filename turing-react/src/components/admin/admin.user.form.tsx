@@ -19,6 +19,7 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
+    const { t } = useTranslation();
     const form = useForm<TurUser>({ defaultValues: value });
     const navigate = useNavigate();
     const [allGroups, setAllGroups] = useState<TurGroup[]>([]);
@@ -64,35 +66,35 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
         if (isNew) {
             setAvatarUrl(url);
             form.setValue("avatarUrl", url);
-            toast.success("Avatar selected.");
+            toast.success(t("forms.adminUser.avatarSelected"));
         } else {
             try {
                 await turUserService.saveAvatarUrl(value.username, url);
                 setAvatarUrl(url);
                 form.setValue("avatarUrl", url);
-                toast.success("Avatar updated.");
+                toast.success(t("forms.adminUser.avatarUpdated"));
             } catch {
-                toast.error("Failed to save avatar.");
+                toast.error(t("forms.adminUser.avatarFailed"));
             }
         }
-    }, [value, isNew]);
+    }, [value, isNew, t]);
 
     const handleAvatarRemove = useCallback(async () => {
         if (isNew) {
             setAvatarUrl(undefined);
             form.setValue("avatarUrl", undefined);
-            toast.success("Avatar removed.");
+            toast.success(t("forms.adminUser.avatarRemoved"));
         } else {
             try {
                 await turUserService.saveAvatarUrl(value.username, null);
                 setAvatarUrl(undefined);
                 form.setValue("avatarUrl", undefined);
-                toast.success("Avatar removed.");
+                toast.success(t("forms.adminUser.avatarRemoved"));
             } catch {
-                toast.error("Failed to remove avatar.");
+                toast.error(t("forms.adminUser.avatarRemoveFailed"));
             }
         }
-    }, [value, isNew]);
+    }, [value, isNew, t]);
 
     // Groups: search filters available (unassigned) groups
     const assignedGroupIds = useMemo(() => new Set(userGroups.map(g => g.id)), [userGroups]);
@@ -142,22 +144,22 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
             if (isNew) {
                 const result = await turAdminUserService.create(userPayload as TurUser);
                 if (result) {
-                    toast.success(`User ${data.username} was created.`);
+                    toast.success(t("forms.adminUser.created", { name: data.username }));
                     navigate(ROUTES.ADMIN_USERS);
                 } else {
-                    toast.error("Failed to create user.");
+                    toast.error(t("forms.adminUser.createFailed"));
                 }
             } else {
                 const result = await turAdminUserService.update(data.username, userPayload as TurUser);
                 if (result) {
-                    toast.success(`User ${data.username} was updated.`);
+                    toast.success(t("forms.adminUser.userUpdated", { name: data.username }));
                 } else {
-                    toast.error("Failed to update user.");
+                    toast.error(t("forms.adminUser.updateFailed"));
                 }
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to save user. Please try again.");
+            toast.error(t("forms.adminUser.saveFailed"));
         }
     }
 
@@ -167,7 +169,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                     {/* Avatar Section */}
                     <SectionCard variant="slate">
-                        <SectionCard.Header icon={IconUser} title="Avatar" description="Profile picture for this user." />
+                        <SectionCard.Header icon={IconUser} title={t("forms.adminUser.avatar")} description={t("forms.adminUser.avatarDesc")} />
                         <SectionCard.Content>
                             <AvatarField
                                 avatarUrl={avatarUrl}
@@ -184,18 +186,18 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Account Information */}
                     <SectionCard variant="blue">
-                        <SectionCard.Header icon={IconUser} title="Account Information" description="Username and personal details." />
+                        <SectionCard.Header icon={IconUser} title={t("forms.adminUser.accountInfo")} description={t("forms.adminUser.accountInfoDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="username"
-                                rules={{ required: "Username is required." }}
+                                rules={{ required: t("forms.adminUser.usernameRequired", "Username is required.") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <FormDescription>Unique identifier for this user account.</FormDescription>
+                                        <FormLabel>{t("forms.adminUser.username", "Username")}</FormLabel>
+                                        <FormDescription>{t("forms.adminUser.usernameDesc")}</FormDescription>
                                         <FormControl>
-                                            <Input {...field} placeholder="e.g. john.doe" readOnly={!isNew} />
+                                            <Input {...field} placeholder={t("forms.adminUser.usernamePlaceholder")} readOnly={!isNew} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -204,10 +206,10 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                             <FormField
                                 control={form.control}
                                 name="firstName"
-                                rules={{ required: "First name is required." }}
+                                rules={{ required: t("forms.adminUser.firstNameRequired", "First name is required.") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>First Name</FormLabel>
+                                        <FormLabel>{t("forms.adminUser.firstName", "First Name")}</FormLabel>
                                         <FormControl>
                                             <Input {...field} placeholder="John" />
                                         </FormControl>
@@ -218,10 +220,10 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                             <FormField
                                 control={form.control}
                                 name="lastName"
-                                rules={{ required: "Last name is required." }}
+                                rules={{ required: t("forms.adminUser.lastNameRequired", "Last name is required.") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Last Name</FormLabel>
+                                        <FormLabel>{t("forms.adminUser.lastName", "Last Name")}</FormLabel>
                                         <FormControl>
                                             <Input {...field} placeholder="Doe" />
                                         </FormControl>
@@ -234,20 +236,20 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Contact */}
                     <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconMail} title="Contact" description="Email address for notifications and recovery." />
+                        <SectionCard.Header icon={IconMail} title={t("forms.adminUser.contact")} description={t("forms.adminUser.contactDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="email"
                                 rules={{
-                                    required: "Email is required.",
-                                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email address." },
+                                    required: t("forms.adminUser.emailRequired", "Email is required."),
+                                    pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t("forms.adminUser.invalidEmail") },
                                 }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel>{t("forms.adminUser.email", "Email")}</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="email" placeholder="john.doe@example.com" />
+                                            <Input {...field} type="email" placeholder={t("forms.adminUser.emailPlaceholder")} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -258,17 +260,17 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Groups & Roles Tabs */}
                     <SectionCard variant="amber">
-                        <SectionCard.Header icon={IconUsersGroup} title="Groups & Roles" description="Manage group membership and role assignments." />
+                        <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminUser.groupsRoles")} description={t("forms.adminUser.groupsRolesDesc")} />
                         <SectionCard.Content>
                             <Tabs defaultValue="groups">
                                 <TabsList>
                                     <TabsTrigger value="groups">
                                         <IconUsersGroup className="size-4" />
-                                        Groups ({userGroups.length})
+                                        {t("forms.adminUser.groups", { count: userGroups.length })}
                                     </TabsTrigger>
                                     <TabsTrigger value="roles">
                                         <IconUserShield className="size-4" />
-                                        Roles ({inheritedRoles.length})
+                                        {t("forms.adminUser.roles", { count: inheritedRoles.length })}
                                     </TabsTrigger>
                                 </TabsList>
 
@@ -278,7 +280,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                                     <div className="relative">
                                         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search groups to add..."
+                                            placeholder={t("forms.adminUser.searchGroups")}
                                             value={groupSearch}
                                             onChange={(e) => setGroupSearch(e.target.value)}
                                             className="pl-9"
@@ -289,7 +291,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                                     {groupSearch && (
                                         <div className="rounded-lg border max-h-48 overflow-y-auto">
                                             {filteredAvailableGroups.length === 0 ? (
-                                                <p className="text-sm text-muted-foreground p-3">No groups found.</p>
+                                                <p className="text-sm text-muted-foreground p-3">{t("forms.adminUser.noGroupsFound")}</p>
                                             ) : (
                                                 filteredAvailableGroups.map((group) => (
                                                     <button
@@ -313,7 +315,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                                     {/* Assigned groups */}
                                     {userGroups.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No groups assigned yet.</p>
+                                        <p className="text-sm text-muted-foreground">{t("forms.adminUser.noGroupsAssigned")}</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {userGroups.map((group) => (
@@ -347,10 +349,10 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                                 {/* Roles Tab (read-only, inherited from groups) */}
                                 <TabsContent value="roles" className="space-y-3 mt-3">
                                     <p className="text-xs text-muted-foreground">
-                                        Roles are inherited from assigned groups. To change roles, edit the group's role assignments.
+                                        {t("forms.adminUser.rolesInherited")}
                                     </p>
                                     {inheritedRoles.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No roles inherited. Assign groups with roles to grant permissions.</p>
+                                        <p className="text-sm text-muted-foreground">{t("forms.adminUser.noRolesInherited")}</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {inheritedRoles.map((role) => (
@@ -376,17 +378,17 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Security */}
                     <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconLock} title="Security" description="Set or change the user password." />
+                        <SectionCard.Header icon={IconLock} title={t("forms.adminUser.security")} description={t("forms.adminUser.securityDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="password"
-                                rules={isNew ? { required: "Password is required for new users." } : {}}
+                                rules={isNew ? { required: t("forms.adminUser.passwordRequired", "Password is required for new users.") } : {}}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{isNew ? "Password" : "New Password"}</FormLabel>
+                                        <FormLabel>{isNew ? t("forms.adminUser.password", "Password") : t("forms.adminUser.newPassword")}</FormLabel>
                                         <FormDescription>
-                                            {isNew ? "Set the initial password." : "Leave blank to keep the current password."}
+                                            {isNew ? t("forms.adminUser.setInitialPassword") : t("forms.adminUser.leaveBlank")}
                                         </FormDescription>
                                         <FormControl>
                                             <Input {...field} type="password" placeholder="••••••••" value={field.value ?? ""} />
@@ -400,7 +402,7 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
 
                     <FormActions>
                         <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_USERS)} />
-                        <FormActions.Submit>{isNew ? "Create User" : "Save Changes"}</FormActions.Submit>
+                        <FormActions.Submit>{isNew ? t("forms.adminUser.createUser") : t("forms.common.saveChanges")}</FormActions.Submit>
                     </FormActions>
                 </form>
             </Form>

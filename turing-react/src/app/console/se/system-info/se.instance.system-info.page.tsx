@@ -4,6 +4,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { IconInfoCircle, IconLoader2, IconServer } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
 }
 
 function StatusBadge({ status }: Readonly<{ status: string }>) {
+    const { t } = useTranslation();
     const isUp = status === "UP";
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -27,14 +29,15 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
                 : "bg-red-500/10 text-red-600 dark:text-red-400"
         }`}>
             <span className={`size-1.5 rounded-full ${isUp ? "bg-emerald-500" : "bg-red-500"}`} />
-            {isUp ? "UP" : "DOWN"}
+            {isUp ? t("se.systemInfo.up") : t("se.systemInfo.down")}
         </span>
     );
 }
 
 export default function SEInstanceSystemInfoPage() {
+    const { t } = useTranslation();
     const { id } = useParams() as { id: string };
-    useSubPageBreadcrumb("System Information");
+    useSubPageBreadcrumb(t("se.systemInfo.title"));
 
     const [info, setInfo] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +47,7 @@ export default function SEInstanceSystemInfoPage() {
             turSEInstanceService
                 .getSystemInfo(id)
                 .then(setInfo)
-                .catch(() => toast.error("Failed to load search engine system information."))
+                .catch(() => toast.error(t("se.systemInfo.loadFailed")))
                 .finally(() => setIsLoading(false));
         } else {
             setIsLoading(false);
@@ -56,9 +59,9 @@ export default function SEInstanceSystemInfoPage() {
             <>
                 <SubPageHeader
                     icon={IconInfoCircle}
-                    feature="System Information"
-                    name="System Information"
-                    description="Search engine version and runtime details."
+                    feature={t("se.systemInfo.title")}
+                    name={t("se.systemInfo.title")}
+                    description={t("se.systemInfo.description")}
                 />
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
@@ -68,16 +71,16 @@ export default function SEInstanceSystemInfoPage() {
     }
 
     const displayLabels: Record<string, string> = {
-        engine: "Engine",
-        version: "Version",
-        luceneVersion: "Lucene Version",
-        os: "Operating System",
-        javaVersion: "Java Version",
-        jvmMemory: "JVM Memory Used",
-        clusterName: "Cluster Name",
-        buildType: "Build Type",
-        indexPath: "Index Path",
-        error: "Error",
+        engine: t("se.systemInfo.engine"),
+        version: t("se.systemInfo.version"),
+        luceneVersion: t("se.systemInfo.luceneVersion"),
+        os: t("se.systemInfo.os"),
+        javaVersion: t("se.systemInfo.javaVersion"),
+        jvmMemory: t("se.systemInfo.jvmMemory"),
+        clusterName: t("se.systemInfo.clusterName"),
+        buildType: t("se.systemInfo.buildType"),
+        indexPath: t("se.systemInfo.indexPath"),
+        error: t("se.systemInfo.error"),
     };
 
     const entries = Object.entries(info).filter(([key]) => key !== "status");
@@ -86,32 +89,32 @@ export default function SEInstanceSystemInfoPage() {
         <>
             <SubPageHeader
                 icon={IconInfoCircle}
-                feature="System Information"
-                name="System Information"
-                description="Search engine version and runtime details."
+                feature={t("se.systemInfo.title")}
+                name={t("se.systemInfo.title")}
+                description={t("se.systemInfo.description")}
             />
             <div className="py-6 px-6 space-y-4">
                 <SectionCard variant="blue">
                     <SectionCard.StaticHeader
                         icon={IconServer}
-                        title="Search Engine Details"
-                        description="Version and connection information retrieved from the search engine."
+                        title={t("se.systemInfo.details")}
+                        description={t("se.systemInfo.detailsDesc")}
                     />
                     <SectionCard.Content>
                         {info.status && (
                             <div className="flex items-center justify-between py-2 border-b">
-                                <span className="text-sm text-muted-foreground">Status</span>
+                                <span className="text-sm text-muted-foreground">{t("se.systemInfo.status")}</span>
                                 <StatusBadge status={info.status} />
                             </div>
                         )}
                         {entries.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No information available.</p>
+                            <p className="text-sm text-muted-foreground">{t("se.systemInfo.noInfo")}</p>
                         ) : (
                             entries.map(([key, value]) => (
                                 <InfoRow
                                     key={key}
                                     label={displayLabels[key] ?? key}
-                                    value={value || "N/A"}
+                                    value={value || t("se.systemInfo.na")}
                                 />
                             ))
                         )}

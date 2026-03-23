@@ -24,6 +24,7 @@ import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.s
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { IconAdjustments, IconCube, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -47,6 +48,7 @@ interface Props {
 }
 
 export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurEmbeddingModel>({ defaultValues: value })
   const [open, setOpen] = useState(false)
   const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([])
@@ -85,36 +87,36 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turEmbeddingModelService.create(payload)
         if (result) {
-          toast.success(`The ${payload.modelName} Embedding Model was saved`)
+          toast.success(t("forms.common.saved", { name: payload.modelName, feature: "Embedding Model" }))
           navigate(urlBase)
         } else {
-          toast.error(`The ${payload.modelName} Embedding Model was not saved`)
+          toast.error(t("forms.common.notSaved", { name: payload.modelName, feature: "Embedding Model" }))
         }
       } else {
         const result = await turEmbeddingModelService.update(payload)
         if (result) {
-          toast.success(`The ${payload.modelName} Embedding Model was updated`)
+          toast.success(t("forms.common.updated", { name: payload.modelName, feature: "Embedding Model" }))
         } else {
-          toast.error(`The ${payload.modelName} Embedding Model was not updated`)
+          toast.error(t("forms.common.notUpdated", { name: payload.modelName, feature: "Embedding Model" }))
         }
       }
     } catch (error) {
       console.error("Form submission error", error)
-      toast.error("Failed to submit the form. Please try again.")
+      toast.error(t("forms.common.formSubmitFailed"))
     }
   }
 
   async function onDelete() {
     try {
       if (await turEmbeddingModelService.delete(value)) {
-        toast.success(`The ${value.modelName} Embedding Model was deleted`)
+        toast.success(t("forms.common.deleted", { name: value.modelName, feature: "Embedding Model" }))
         navigate(urlBase)
       } else {
-        toast.error(`The ${value.modelName} Embedding Model was not deleted`)
+        toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: "Embedding Model" }))
       }
     } catch (error) {
       console.error("Form submission error", error)
-      toast.error(`The ${value.modelName} Embedding Model was not deleted`)
+      toast.error(t("forms.common.notDeleted", { name: value.modelName, feature: "Embedding Model" }))
     }
     setOpen(false)
   }
@@ -128,7 +130,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
             {!isNew && <DialogDelete feature="embedding model" name={value.modelName} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
           <CardDescription>
-            Configure an embedding model for vector generation.
+            {t("forms.embedding.settings")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,21 +138,21 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-2 md:py-8">
               {/* General Information */}
               <SectionCard variant="blue">
-                <SectionCard.Header icon={IconSettings} title="General Information" description="Name and description for this embedding model." />
+                <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.embedding.generalDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
                       control={form.control}
                       name="modelName"
-                      rules={{ required: "Model name is required." }}
+                      rules={{ required: t("forms.embedding.nameRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Model Name</FormLabel>
+                          <FormLabel>{t("forms.embedding.modelName")}</FormLabel>
                           <FormDescription>
-                            A friendly name for the model (e.g., "Stella V5 High Precision").
+                            {t("forms.embedding.modelNameDesc")}
                           </FormDescription>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Stella V5 High Precision" type="text" />
+                            <Input {...field} placeholder={t("forms.embedding.modelNamePlaceholder")} type="text" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -167,14 +169,14 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                             <SmartDescription
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Enter a brief description"
+                              placeholder={t("forms.embedding.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("modelName")}
                               entityType="Embedding Model"
                             >
-                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>
-                                Summarize the purpose or intended use of this embedding model.
+                                {t("forms.embedding.descriptionDesc")}
                               </SmartDescription.Description>
                             </SmartDescription>
                           </FormControl>
@@ -197,7 +199,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                               title={form.watch("modelName")}
                               description={form.watch("description")}
                             >
-                              <IconPicker.Label>Icon</IconPicker.Label>
+                              <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                             </IconPicker>
                           </FormControl>
                         </FormItem>
@@ -209,18 +211,18 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Provider */}
               <SectionCard variant="cyan">
-                <SectionCard.Header icon={IconPlug} title="Provider" description="Select the LLM instance or local transformer." />
+                <SectionCard.Header icon={IconPlug} title={t("forms.embedding.provider")} description={t("forms.embedding.providerDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
                       control={form.control}
                       name="providerType"
-                      rules={{ required: "Please select a provider." }}
+                      rules={{ required: t("forms.embedding.providerRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Provider Type</FormLabel>
+                          <FormLabel>{t("forms.embedding.providerType")}</FormLabel>
                           <FormDescription>
-                            Choose an LLM instance that supports embeddings, or select "Transformers (Local)" for ONNX models.
+                            {t("forms.embedding.providerTypeDesc")}
                           </FormDescription>
                           <Select
                             onValueChange={(val) => {
@@ -238,7 +240,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select provider..." />
+                                <SelectValue placeholder={t("forms.embedding.selectProvider")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -248,7 +250,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                                 </SelectItem>
                               ))}
                               <SelectItem value={TRANSFORMERS_LOCAL}>
-                                Transformers (Local)
+                                {t("forms.embedding.transformersLocal")}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -262,7 +264,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Model Configuration */}
               <SectionCard variant="violet">
-                <SectionCard.Header icon={IconCube} title="Model Configuration" description="Model identification and reference." />
+                <SectionCard.Header icon={IconCube} title={t("forms.embedding.modelConfig")} description={t("forms.embedding.modelConfigDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
@@ -270,12 +272,12 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                       name="modelReference"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Model ID / Reference</FormLabel>
+                          <FormLabel>{t("forms.embedding.modelId")}</FormLabel>
                           <FormDescription>
-                            The technical identifier of the model (e.g., "text-embedding-3-large" or "stella-v5").
+                            {t("forms.embedding.modelIdDesc")}
                           </FormDescription>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., text-embedding-3-large" type="text" />
+                            <Input {...field} placeholder={t("forms.embedding.modelIdPlaceholder")} type="text" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -291,20 +293,20 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                           control={form.control}
                           name="modelPath"
                           rules={{
-                            required: selectedProviderType === TRANSFORMERS_LOCAL ? "Model path is required for local transformers." : false,
+                            required: selectedProviderType === TRANSFORMERS_LOCAL ? t("forms.embedding.modelPathRequired") : false,
                             pattern: {
                               value: /\.onnx$/i,
-                              message: "Only .onnx files are supported."
+                              message: t("forms.embedding.onlyOnnx")
                             }
                           }}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Model Path</FormLabel>
+                              <FormLabel>{t("forms.embedding.modelPath")}</FormLabel>
                               <FormDescription>
-                                Path to the ONNX model file on the filesystem (e.g., /models/stella-v5/model.onnx).
+                                {t("forms.embedding.modelPathDesc")}
                               </FormDescription>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ""} placeholder="/path/to/model.onnx" type="text" />
+                                <Input {...field} value={field.value ?? ""} placeholder={t("forms.embedding.modelPathPlaceholder")} type="text" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -316,20 +318,20 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                           control={form.control}
                           name="tokenizerPath"
                           rules={{
-                            required: selectedProviderType === TRANSFORMERS_LOCAL ? "Tokenizer path is required for local transformers." : false,
+                            required: selectedProviderType === TRANSFORMERS_LOCAL ? t("forms.embedding.tokenizerRequired") : false,
                             pattern: {
                               value: /\.json$/i,
-                              message: "Only .json tokenizer files are supported."
+                              message: t("forms.embedding.onlyJsonTokenizer")
                             }
                           }}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Tokenizer Path</FormLabel>
+                              <FormLabel>{t("forms.embedding.tokenizerPath")}</FormLabel>
                               <FormDescription>
-                                Path to the tokenizer.json file on the filesystem.
+                                {t("forms.embedding.tokenizerPathDesc")}
                               </FormDescription>
                               <FormControl>
-                                <Input {...field} value={field.value ?? ""} placeholder="/path/to/tokenizer.json" type="text" />
+                                <Input {...field} value={field.value ?? ""} placeholder={t("forms.embedding.tokenizerPathPlaceholder")} type="text" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -343,7 +345,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Advanced Options */}
               <SectionCard variant="amber">
-                <SectionCard.Header icon={IconAdjustments} title="Advanced Options" description="Batch processing and hardware acceleration." />
+                <SectionCard.Header icon={IconAdjustments} title={t("forms.common.advancedOptions")} description={t("forms.embedding.advancedDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
@@ -351,9 +353,9 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                       name="batchSize"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Batch Size</FormLabel>
+                          <FormLabel>{t("forms.embedding.batchSize")}</FormLabel>
                           <FormDescription>
-                            Number of texts the model processes per batch. Useful for bulk imports.
+                            {t("forms.embedding.batchSizeDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
@@ -379,9 +381,9 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                     render={({ field }) => (
                       <FormItemTwoColumns>
                         <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Enable GPU</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Label>{t("forms.embedding.enableGpu")}</FormItemTwoColumns.Label>
                           <FormItemTwoColumns.Description>
-                            Enable hardware acceleration for local models that support GPU processing.
+                            {t("forms.embedding.enableGpuDesc")}
                           </FormItemTwoColumns.Description>
                         </FormItemTwoColumns.Left>
                         <FormItemTwoColumns.Right>
@@ -400,7 +402,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Status */}
               <SectionCard variant="slate">
-                <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this embedding model." />
+                <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.embedding.statusDesc")} />
                 <SectionCard.Content>
                   <FormField
                     control={form.control}
@@ -408,9 +410,9 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                     render={({ field }) => (
                       <FormItemTwoColumns>
                         <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                           <FormItemTwoColumns.Description>
-                            Toggle to activate or deactivate this embedding model.
+                            {t("forms.embedding.enabledDesc")}
                           </FormItemTwoColumns.Description>
                         </FormItemTwoColumns.Left>
                         <FormItemTwoColumns.Right>

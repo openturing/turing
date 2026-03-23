@@ -39,6 +39,7 @@ import { TurGlobalSettingsService } from "@/services/system/global-settings.serv
 import { IconBrain, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Button } from "../../ui/button"
 import { FormActions } from "../../ui/form-actions"
@@ -70,6 +71,7 @@ interface Props {
 }
 
 export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
+    const { t } = useTranslation();
     const form = useForm<TurSNSiteGenAi>({
         defaultValues: {
             ...snSite.turSNSiteGenAi
@@ -141,12 +143,12 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             },
             () => {
                 setIsGenerating(false);
-                toast.success("Site prompt generated successfully.");
+                toast.success(t("forms.snGenai.promptGenerated"));
             },
             (error) => {
                 setIsGenerating(false);
                 console.error("Failed to generate site prompt", error);
-                toast.error("Failed to generate site prompt. Check the default LLM configuration.");
+                toast.error(t("forms.snGenai.promptGenerateFailed"));
             },
         );
     }, [defaultLlmId, snSite.name, snSite.description, form]);
@@ -206,7 +208,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
     async function onSubmit(data: TurSNSiteGenAi) {
         if (data.enabled && !hasAllVariables) {
-            toast.error("The System Prompt must contain the tags {{question}} and {{information}}.");
+            toast.error(t("forms.snGenai.systemPromptValidation"));
             return;
         }
 
@@ -220,13 +222,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             };
             const result = await turSNSiteService.update(updatedSite);
             if (result) {
-                toast.success(`${snSite.name} semantic navigation site was updated.`);
+                toast.success(t("forms.snGenai.siteUpdated", { name: snSite.name }));
             } else {
-                toast.error("Failed to update site. Please try again.");
+                toast.error(t("forms.snGenai.updateFailed"));
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to update site. Please try again.");
+            toast.error(t("forms.snGenai.updateFailed"));
         }
     }
 
@@ -239,14 +241,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
                         <SectionCard variant="amber">
-                            <SectionCard.Header icon={IconFileDescription} title="Site Prompt" description="Describe what this site is about. Used by the default LLM (Global Settings) for reports, insights, and emails." />
+                            <SectionCard.Header icon={IconFileDescription} title={t("forms.snGenai.sitePrompt")} description={t("forms.snGenai.sitePromptDesc")} />
                             <SectionCard.Content>
                                 <FormField
                                     control={form.control}
                                     name="sitePrompt"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Site Description Prompt</FormLabel>
+                                            <FormLabel>{t("forms.snGenai.siteDescriptionPrompt")}</FormLabel>
                                             <FormDescription>
                                                 Write a detailed prompt describing what this site contains, its purpose, target audience, and any specific instructions for the AI. This prompt is used by the default LLM configured in Global Settings to generate reports, insights, and emails about this site.
                                             </FormDescription>
@@ -275,14 +277,14 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         ) : (
                                             <IconSparkles className="size-4" />
                                         )}
-                                        {isGenerating ? "Generating..." : "Generate with AI"}
+                                        {isGenerating ? t("forms.snGenai.generating") : t("forms.snGenai.generateWithAi")}
                                     </GradientButton>
                                     <span className="text-xs text-muted-foreground">
                                         {!defaultLlmId
-                                            ? "Configure a default LLM in Global Settings to enable."
+                                            ? t("forms.snGenai.configureLlm")
                                             : !snSite.description
-                                                ? "Add a site description in Settings to enable."
-                                                : "Generate a prompt based on the site description using the default LLM."}
+                                                ? t("forms.snGenai.addSiteDescription")
+                                                : t("forms.snGenai.generatePromptHint")}
                                     </span>
                                 </div>
                             </SectionCard.Content>
@@ -290,7 +292,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
                         {/* Section 2: RAG Activation */}
                         <SectionCard variant="blue">
-                            <SectionCard.Header icon={IconPower} title="RAG" description="Retrieval-Augmented Generation for this site." />
+                            <SectionCard.Header icon={IconPower} title={t("forms.snGenai.rag")} description={t("forms.snGenai.ragDesc")} />
                             <SectionCard.Content>
                                 <FormField
                                     control={form.control}
@@ -298,7 +300,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                     render={({ field }) => (
                                         <FormItemTwoColumns>
                                             <FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Label>Enable RAG</FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Label>{t("forms.snGenai.enableRag")}</FormItemTwoColumns.Label>
                                                 <FormItemTwoColumns.Description>
                                                     Enable Retrieval-Augmented Generation (RAG) to combine search results with a language model, providing AI-powered answers grounded in this site's indexed content.
                                                 </FormItemTwoColumns.Description>
@@ -320,7 +322,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         {/* Section 3: Models */}
                         {enabled && (
                             <SectionCard variant="violet">
-                                <SectionCard.Header icon={IconBrain} title="AI Model & Embedding Configuration" description="Language model, embedding model, and vector store configuration." />
+                                <SectionCard.Header icon={IconBrain} title={t("forms.snGenai.aiModelConfig")} description={t("forms.snGenai.aiModelConfigDesc")} />
                                 <SectionCard.Content>
                                     {/* Language Model */}
                                     <FormField
@@ -329,9 +331,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Language Model</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.languageModel")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Choose the AI language model for generating answers.
+                                                        {t("forms.snGenai.languageModelDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -341,13 +343,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                             value={getSelectValue(field.value)}
                                                         >
                                                             <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder="-- No Language Model --" />
+                                                                <SelectValue placeholder={t("forms.snGenai.noLanguageModel")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
                                                                 )}
-                                                                <SelectItem value={NONE_VALUE}>-- No Language Model --</SelectItem>
+                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noLanguageModel")}</SelectItem>
                                                                 {llmInstances.map((instance) => (
                                                                     <SelectItem key={instance.id} value={instance.id}>
                                                                         {instance.title}
@@ -369,9 +371,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Embedding Store</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.embeddingStore")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Select the vector store for semantic search and RAG.
+                                                        {t("forms.snGenai.embeddingStoreDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -381,13 +383,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                             value={getSelectValue(field.value)}
                                                         >
                                                             <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder="-- No Embedding Store --" />
+                                                                <SelectValue placeholder={t("forms.snGenai.noEmbeddingStore")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
                                                                 )}
-                                                                <SelectItem value={NONE_VALUE}>-- No Embedding Store --</SelectItem>
+                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noEmbeddingStore")}</SelectItem>
                                                                 {storeInstances.map((instance) => (
                                                                     <SelectItem key={instance.id} value={instance.id}>
                                                                         {instance.title}
@@ -409,9 +411,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         render={({ field }) => (
                                             <FormItemTwoColumns>
                                                 <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>Embedding Model</FormItemTwoColumns.Label>
+                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.embeddingModel")}</FormItemTwoColumns.Label>
                                                     <FormItemTwoColumns.Description>
-                                                        Select the LLM instance used for generating embeddings. This model converts text into vector representations for the embedding store.
+                                                        {t("forms.snGenai.embeddingModelDesc")}
                                                     </FormItemTwoColumns.Description>
                                                 </FormItemTwoColumns.Left>
                                                 <FormItemTwoColumns.Right>
@@ -421,13 +423,13 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                             value={getSelectValue(field.value)}
                                                         >
                                                             <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder="-- No Embedding Model --" />
+                                                                <SelectValue placeholder={t("forms.snGenai.noEmbeddingModel")} />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>-- Default (Global Settings) --</SelectItem>
+                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
                                                                 )}
-                                                                <SelectItem value={NONE_VALUE}>-- No Embedding Model --</SelectItem>
+                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noEmbeddingModel")}</SelectItem>
                                                                 {embeddingModels.map((model) => (
                                                                     <SelectItem key={model.id} value={model.id}>
                                                                         {model.modelName}
@@ -448,7 +450,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         {/* Section 4: System Prompt */}
                         {enabled && (
                             <SectionCard variant="emerald">
-                                <SectionCard.Header icon={IconMessageChatbot} title="System Prompt" description="Define the prompt template for the AI agent." />
+                                <SectionCard.Header icon={IconMessageChatbot} title={t("forms.snGenai.systemPrompt")} description={t("forms.snGenai.systemPromptDesc")} />
                                 <SectionCard.Content>
                                     <FormField
                                         control={form.control}
@@ -456,7 +458,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         rules={{ required: enabled && "System prompt is required." }}
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Prompt Template</FormLabel>
+                                                <FormLabel>{t("forms.snGenai.promptTemplate")}</FormLabel>
                                                 <FormDescription>
                                                     Define the prompt for the AI agent. Use <span className="font-mono font-bold text-amber-600">{"{{question}}"}</span> and <span className="font-mono font-bold text-amber-600">{"{{information}}"}</span> to insert user queries and retrieved content.
                                                 </FormDescription>
@@ -490,9 +492,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             <Dialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Overwrite Site Prompt?</DialogTitle>
+                        <DialogTitle>{t("forms.snGenai.overwriteTitle")}</DialogTitle>
                         <DialogDescription>
-                            The site description prompt already has content. Generating a new one will replace the existing text. This action cannot be undone.
+                            {t("forms.snGenai.overwriteDesc")}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="flex-col gap-2 sm:flex-row">
@@ -501,7 +503,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         </Button>
                         <GradientButton onClick={handleOverwriteConfirm}>
                             <IconSparkles className="size-4" />
-                            Overwrite and Generate
+                            {t("forms.snGenai.overwriteAndGenerate")}
                         </GradientButton>
                     </DialogFooter>
                 </DialogContent>

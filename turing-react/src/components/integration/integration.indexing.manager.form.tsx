@@ -26,6 +26,7 @@ import {
 } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { GradientSwitch } from "../ui/gradient-switch";
 import { Stepper } from "../ui/stepper";
@@ -52,6 +53,7 @@ const MODE_LABELS: Record<string, string> = {
 };
 
 function AdvancedSettings({ form }: Readonly<{ form: ReturnType<typeof useForm<IndexingManagerFormValues>> }>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -62,8 +64,8 @@ function AdvancedSettings({ form }: Readonly<{ form: ReturnType<typeof useForm<I
         className="flex w-full items-center gap-2 px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       >
         <IconSettings className="h-4 w-4" />
-        <span className="font-medium">Advanced Settings</span>
-        <span className="text-xs text-muted-foreground/60 ml-1">Optional</span>
+        <span className="font-medium">{t("forms.integrationManager.advancedSettings")}</span>
+        <span className="text-xs text-muted-foreground/60 ml-1">{t("forms.integrationManager.optional")}</span>
         <IconChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
@@ -75,9 +77,9 @@ function AdvancedSettings({ form }: Readonly<{ form: ReturnType<typeof useForm<I
               <FormItem>
                 <div className="flex items-center justify-between max-w-md rounded-lg border bg-muted/30 p-4">
                   <div>
-                    <FormLabel className="text-sm font-semibold">Recursive</FormLabel>
+                    <FormLabel className="text-sm font-semibold">{t("forms.integrationManager.recursive")}</FormLabel>
                     <FormDescription className="mt-0.5">
-                      Also apply to all child pages and assets.
+                      {t("forms.integrationManager.recursiveDesc")}
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -102,6 +104,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
   mode,
   sources,
 }) => {
+  const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const turIntegrationIndexingManagerService = useMemo(
     () => new TurIntegrationIndexingManagerService(integrationId),
@@ -130,7 +133,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
   async function onSubmit(data: IndexingManagerFormValues) {
     try {
       if (!data.attribute) {
-        toast.error("Please select a target attribute.");
+        toast.error(t("forms.integrationManager.selectAttribute"));
         return;
       }
 
@@ -146,7 +149,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
       };
 
       await turIntegrationIndexingManagerService.submit(data.source, payload);
-      toast.success(`${MODE_LABELS[mode]} requested successfully`);
+      toast.success(t("forms.integrationManager.requestSuccess", { action: MODE_LABELS[mode] }));
 
       form.reset({
         source: "",
@@ -155,7 +158,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
         recursive: false,
       });
     } catch {
-      toast.error("Request failed. Please try again.");
+      toast.error(t("forms.integrationManager.requestFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -179,14 +182,14 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
               rules={{ required: true }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Content Source</FormLabel>
+                  <FormLabel className="text-base font-semibold">{t("forms.integrationManager.contentSource")}</FormLabel>
                   <FormDescription>
-                    Choose where the content lives.
+                    {t("forms.integrationManager.contentSourceDesc")}
                   </FormDescription>
                   <FormControl>
                     <Select value={field.value || ""} onValueChange={field.onChange}>
                       <SelectTrigger className="w-full max-w-md mt-2">
-                        <SelectValue placeholder="Select a source..." />
+                        <SelectValue placeholder={t("forms.integrationManager.selectSource")} />
                       </SelectTrigger>
                       <SelectContent>
                         {sources?.map((s) => (
@@ -211,9 +214,9 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
               rules={{ required: true }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Match By</FormLabel>
+                  <FormLabel className="text-base font-semibold">{t("forms.integrationManager.matchBy")}</FormLabel>
                   <FormDescription>
-                    How should we identify the content?
+                    {t("forms.integrationManager.matchByDesc")}
                   </FormDescription>
                   <div className="grid grid-cols-2 gap-3 max-w-md mt-2">
                     <button
@@ -228,8 +231,8 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
                     >
                       <IconHash className={`h-5 w-5 ${field.value === "id" ? "text-primary" : "text-muted-foreground"}`} />
                       <div>
-                        <div className="text-sm font-medium">Identifier</div>
-                        <div className="text-xs text-muted-foreground">By unique ID</div>
+                        <div className="text-sm font-medium">{t("forms.integrationManager.identifier")}</div>
+                        <div className="text-xs text-muted-foreground">{t("forms.integrationManager.byId")}</div>
                       </div>
                     </button>
                     <button
@@ -245,7 +248,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
                       <IconLink className={`h-5 w-5 ${field.value === "url" ? "text-primary" : "text-muted-foreground"}`} />
                       <div>
                         <div className="text-sm font-medium">URL</div>
-                        <div className="text-xs text-muted-foreground">By content path</div>
+                        <div className="text-xs text-muted-foreground">{t("forms.integrationManager.byUrl")}</div>
                       </div>
                     </button>
                   </div>
@@ -263,7 +266,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
               rules={{ required: true }}
               render={() => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Values</FormLabel>
+                  <FormLabel className="text-base font-semibold">{t("forms.integrationManager.values")}</FormLabel>
                   <FormDescription>
                     Enter the {selectedAttribute === "url" ? "URLs" : "identifiers"} of the items to {actionLabel.toLowerCase()}.
                   </FormDescription>
@@ -292,7 +295,7 @@ export const IntegrationIndexingManagerForm: React.FC<IntegrationIndexingManager
 
         {/* Footer */}
         <FormActions>
-          <FormActions.Cancel onClick={() => form.reset()}>Reset</FormActions.Cancel>
+          <FormActions.Cancel onClick={() => form.reset()}>{t("forms.common.reset")}</FormActions.Cancel>
           <FormActions.Submit loading={submitting}>{actionLabel}</FormActions.Submit>
         </FormActions>
       </form>

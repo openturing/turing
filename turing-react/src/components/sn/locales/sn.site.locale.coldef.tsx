@@ -7,7 +7,7 @@ import { Checkbox } from "@radix-ui/react-checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
-export const columns: ColumnDef<TurSNSiteLocale>[] = [
+export const buildColumns = (t: (key: string) => string): ColumnDef<TurSNSiteLocale>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -38,7 +38,7 @@ export const columns: ColumnDef<TurSNSiteLocale>[] = [
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Language
+                    {t("forms.localeTable.language")}
                     <ArrowUpDown />
                 </GradientButton>
             )
@@ -49,7 +49,7 @@ export const columns: ColumnDef<TurSNSiteLocale>[] = [
     },
     {
         accessorKey: "core",
-        header: () => <div className="text-left">Core</div>,
+        header: () => <div className="text-left">{t("forms.localeTable.core")}</div>,
         cell: ({ row }) => {
             return <div className="text-left font-medium">
                 <BadgeColorful
@@ -61,17 +61,17 @@ export const columns: ColumnDef<TurSNSiteLocale>[] = [
     },
     {
         accessorKey: "action",
-        header: () => <div className="text-right">Action</div>,
+        header: () => <div className="text-right">{t("forms.localeTable.action")}</div>,
         cell: ({ row }) => {
             const locale = row.original;
             return (
                 <div className="flex justify-end gap-2">
                     <GradientButton asChild variant="outline" size={"sm"} to={`${ROUTES.SN_INSTANCE}/${locale.turSNSite.id}/locale/${locale.id}`}>
-                        Edit
+                        {t("forms.common.edit")}
                     </GradientButton>
                     <GradientButton asChild size={"sm"}>
                         <a href={`/sn/${locale.turSNSite.name}?_setlocale=${locale.language}`} target="_blank">
-                            Open Search
+                            {t("forms.localeTable.openSearch")}
                         </a>
                     </GradientButton>
                 </div>

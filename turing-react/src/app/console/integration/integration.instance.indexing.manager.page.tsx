@@ -14,6 +14,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 type IndexingTabMode = "INDEXING" | "DEINDEXING" | "PUBLISHING" | "UNPUBLISHING";
@@ -30,58 +31,57 @@ type IndexingTabItem = {
   hint: string;
 };
 
-const items: IndexingTabItem[] = [
-  {
-    value: "INDEXING",
-    title: "Indexing",
-    icon: IconPlus,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgLight: "bg-emerald-50 dark:bg-emerald-950/30",
-    bgActive: "bg-emerald-500",
-    borderActive: "ring-emerald-500/30",
-    description:
-      "Reindex selected content. Already published items will be automatically republished.",
-    hint: "Best for updating stale or inconsistent search results.",
-  },
-  {
-    value: "DEINDEXING",
-    title: "Deindexing",
-    icon: IconTrash,
-    color: "text-red-600 dark:text-red-400",
-    bgLight: "bg-red-50 dark:bg-red-950/30",
-    bgActive: "bg-red-500",
-    borderActive: "ring-red-500/30",
-    description:
-      "Remove content from the search index in all environments.",
-    hint: "Use for obsolete or sensitive content that shouldn't appear in search.",
-  },
-  {
-    value: "PUBLISHING",
-    title: "Publishing",
-    icon: IconCloudUpload,
-    color: "text-blue-600 dark:text-blue-400",
-    bgLight: "bg-blue-50 dark:bg-blue-950/30",
-    bgActive: "bg-blue-500",
-    borderActive: "ring-blue-500/30",
-    description:
-      "Force-publish content to the target environment regardless of current status.",
-    hint: "Useful to push urgent updates live without waiting for the standard flow.",
-  },
-  {
-    value: "UNPUBLISHING",
-    title: "Unpublishing",
-    icon: IconCloudDownload,
-    color: "text-amber-600 dark:text-amber-400",
-    bgLight: "bg-amber-50 dark:bg-amber-950/30",
-    bgActive: "bg-amber-500",
-    borderActive: "ring-amber-500/30",
-    description:
-      "Remove content from the Publish environment while keeping it in Author.",
-    hint: "Content stays editable but becomes invisible to the public.",
-  },
-];
+function buildItems(t: (key: string) => string): IndexingTabItem[] {
+  return [
+    {
+      value: "INDEXING",
+      title: t("integration.indexingManager.indexing"),
+      icon: IconPlus,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgLight: "bg-emerald-50 dark:bg-emerald-950/30",
+      bgActive: "bg-emerald-500",
+      borderActive: "ring-emerald-500/30",
+      description: t("integration.indexingManager.indexingDesc"),
+      hint: t("integration.indexingManager.indexingHint"),
+    },
+    {
+      value: "DEINDEXING",
+      title: t("integration.indexingManager.deindexing"),
+      icon: IconTrash,
+      color: "text-red-600 dark:text-red-400",
+      bgLight: "bg-red-50 dark:bg-red-950/30",
+      bgActive: "bg-red-500",
+      borderActive: "ring-red-500/30",
+      description: t("integration.indexingManager.deindexingDesc"),
+      hint: t("integration.indexingManager.deindexingHint"),
+    },
+    {
+      value: "PUBLISHING",
+      title: t("integration.indexingManager.publishing"),
+      icon: IconCloudUpload,
+      color: "text-blue-600 dark:text-blue-400",
+      bgLight: "bg-blue-50 dark:bg-blue-950/30",
+      bgActive: "bg-blue-500",
+      borderActive: "ring-blue-500/30",
+      description: t("integration.indexingManager.publishingDesc"),
+      hint: t("integration.indexingManager.publishingHint"),
+    },
+    {
+      value: "UNPUBLISHING",
+      title: t("integration.indexingManager.unpublishing"),
+      icon: IconCloudDownload,
+      color: "text-amber-600 dark:text-amber-400",
+      bgLight: "bg-amber-50 dark:bg-amber-950/30",
+      bgActive: "bg-amber-500",
+      borderActive: "ring-amber-500/30",
+      description: t("integration.indexingManager.unpublishingDesc"),
+      hint: t("integration.indexingManager.unpublishingHint"),
+    },
+  ];
+}
 
 export default function IntegrationInstanceIndexAdminPage() {
+  const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const [error, setError] = useState<string | null>(null);
   const turIntegrationAemSourceService = useMemo(() => new TurIntegrationAemSourceService(id), [id]);
@@ -89,6 +89,7 @@ export default function IntegrationInstanceIndexAdminPage() {
   const { pushItem, popItem } = useBreadcrumb();
   const navigate = useNavigate();
   const location = useLocation();
+  const items = useMemo(() => buildItems(t), [t]);
 
   const tabPathMap: Record<IndexingTabMode, string> = {
     INDEXING: "indexing",
@@ -129,7 +130,7 @@ export default function IntegrationInstanceIndexAdminPage() {
       .query()
       .then((sources) => {
         setSources(sources);
-        pushItem({ label: "Indexing Manager" });
+        pushItem({ label: t("integration.indexingManager.title") });
         added = true;
       })
       .catch(() => setError("Failed to load integration details"));
@@ -148,9 +149,9 @@ export default function IntegrationInstanceIndexAdminPage() {
     >
       <SubPageHeader
         icon={IconAdjustmentsSearch}
-        feature="Indexing Manager"
-        name="Indexing Manager"
-        description="Manage content indexing states to ensure search accuracy."
+        feature={t("integration.indexingManager.title")}
+        name={t("integration.indexingManager.title")}
+        description={t("integration.indexingManager.description")}
       />
       <div className="w-full mx-auto mt-4 px-6 pb-6 space-y-6">
         {/* Operation Selector Cards */}

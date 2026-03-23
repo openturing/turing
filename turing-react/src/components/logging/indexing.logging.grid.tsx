@@ -4,7 +4,8 @@ import {
     useReactTable,
     type ColumnDef,
 } from "@tanstack/react-table";
-import { useEffect, useState, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,8 @@ import {
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurLoggingIndexing } from "@/models/logging/logging-indexing.model";
 import { IconRefresh, IconSearch } from "@tabler/icons-react";
-import { formatDistanceToNow } from "date-fns";
+import { type Locale, formatDistanceToNow } from "date-fns";
+import { useDateLocale } from "@/hooks/use-date-locale";
 import { ArrowRightCircle, Ban, CheckCircle2, Clock, Database, FileSearch, Globe, PencilLine, RefreshCcw, Send, Zap } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { BadgeColorful } from "../badge-colorful";
@@ -56,10 +58,10 @@ interface Props {
     onUrlChange: (url: string) => void;
 }
 
-export const columns: ColumnDef<TurLoggingIndexing>[] = [
+export const buildIndexingColumns = (t: (key: string) => string, dateLocale: Locale): ColumnDef<TurLoggingIndexing>[] => [
     {
         accessorKey: "date",
-        header: "Date",
+        header: t("forms.indexingLoggingGrid.date"),
         cell: ({ row }) => {
             const dateValue = new Date(row.getValue("date"));
             const formattedDate = dateValue.toLocaleString(undefined, {
@@ -72,7 +74,8 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
             });
 
             const timeAgo = formatDistanceToNow(dateValue, {
-                addSuffix: true
+                addSuffix: true,
+                locale: dateLocale,
             });
 
             return (
@@ -87,12 +90,12 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     },
     {
         accessorKey: "source",
-        header: "Source",
+        header: t("forms.indexingLoggingGrid.source"),
         cell: ({ row }) => <div className="font-mono text-sm">{row.getValue("source")}</div>,
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: t("forms.indexingLoggingGrid.status"),
         cell: ({ row }) => {
             const status = String(row.getValue("status"));
 
@@ -181,7 +184,7 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     },
     {
         accessorKey: "resultStatus",
-        header: "Result Status",
+        header: t("forms.indexingLoggingGrid.resultStatus"),
         cell: ({ row }) => {
             const status = String(row.getValue("resultStatus")).toUpperCase();
             const statusConfig: Record<string, { label: string; className: string }> = {
@@ -203,7 +206,7 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     },
     {
         accessorKey: "url",
-        header: "URL",
+        header: t("forms.indexingLoggingGrid.url"),
         cell: ({ row }) => <div className="font-mono text-sm"><NavLink
             to={row.getValue("url")}
             target="_blank"
@@ -218,7 +221,7 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     },
     {
         accessorKey: "environment",
-        header: "Environment",
+        header: t("forms.indexingLoggingGrid.environment"),
         cell: ({ row }) => {
             const env = String(row.getValue("environment")).toUpperCase();
 
@@ -252,14 +255,14 @@ export const columns: ColumnDef<TurLoggingIndexing>[] = [
     },
     {
         accessorKey: "locale",
-        header: "Locale",
+        header: t("forms.indexingLoggingGrid.locale"),
         cell: ({ row }) => {
             return (<BadgeLocale locale={row.getValue("locale")} />);
         },
     },
     {
         accessorKey: "sites",
-        header: "Sites",
+        header: t("forms.indexingLoggingGrid.sites"),
         cell: ({ row }) => {
             const sites = row.getValue("sites");
             const sitesArray = Array.isArray(sites) ? sites : [];
@@ -291,6 +294,9 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
     onPageChange, onPageSizeChange, onDateFromChange, onDateToChange,
     onStatusChange, onContentIdChange, onResultStatusChange, onUrlChange
 }) => {
+    const { t } = useTranslation();
+    const dateLocale = useDateLocale();
+    const columns = useMemo(() => buildIndexingColumns(t, dateLocale), [t, dateLocale]);
     const [lastUpdated, setLastUpdated] = useState(Date.now());
 
     useEffect(() => {
@@ -313,7 +319,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
             <Card>
                 <div className="flex flex-wrap items-center gap-3 p-4 border-b">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.indexingLoggingGrid.statusFilter")}</span>
                         <Select value={status} onValueChange={onStatusChange}>
                             <SelectTrigger className="h-8 w-44 text-xs font-mono">
                                 <SelectValue placeholder="All" />
@@ -328,7 +334,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">Result:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.indexingLoggingGrid.resultFilter")}</span>
                         <Select value={resultStatus} onValueChange={onResultStatusChange}>
                             <SelectTrigger className="h-8 w-28 text-xs font-mono">
                                 <SelectValue placeholder="All" />
@@ -343,7 +349,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">From:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.indexingLoggingGrid.from")}</span>
                         <Input
                             type="date"
                             value={dateFrom}
@@ -352,7 +358,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">To:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.indexingLoggingGrid.to")}</span>
                         <Input
                             type="date"
                             value={dateTo}
@@ -366,7 +372,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         <IconSearch className="h-4 w-4 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder="Search content ID..."
+                            placeholder={t("forms.indexingLoggingGrid.searchContentId")}
                             value={contentId}
                             onChange={(e) => onContentIdChange(e.target.value)}
                             className="h-8 text-xs"
@@ -376,7 +382,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         <IconSearch className="h-4 w-4 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder="Search URL..."
+                            placeholder={t("forms.indexingLoggingGrid.searchUrl")}
                             value={url}
                             onChange={(e) => onUrlChange(e.target.value)}
                             className="h-8 text-xs"
@@ -420,7 +426,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={columns.length}>
-                                        No results.
+                                        {t("forms.common.noResultsDot")}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -429,15 +435,15 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                 </div>
                 <div className="flex items-center justify-between py-4 px-4 border-t">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{totalElements} total records</span>
+                        <span>{t("forms.common.totalRecords", { count: totalElements })}</span>
                         <span className="flex items-center gap-1 text-xs italic">
                             <IconRefresh className="h-3 w-3" />
-                            Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+                            {t("forms.loggingGrid.lastSync", { time: new Date(lastUpdated).toLocaleTimeString() })}
                         </span>
                     </div>
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
-                            <p className="text-sm">Rows per page</p>
+                            <p className="text-sm">{t("forms.common.rowsPerPage")}</p>
                             <Select
                                 value={`${pageSize}`}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -455,7 +461,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             </Select>
                         </div>
                         <div className="flex w-40 items-center justify-center text-sm font-medium">
-                            Page {page + 1} of{" "}{totalPages || 1}
+                            {t("forms.common.pageOfPages", { page: page + 1, totalPages: totalPages || 1 })}
                         </div>
                         <div className="flex items-center space-x-2">
                             <GradientButton

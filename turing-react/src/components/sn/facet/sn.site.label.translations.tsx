@@ -6,6 +6,7 @@ import { FormDescription, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import type { TurLocale } from "@/models/locale/locale.model"
 import { PlusCircle, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 export type SNSiteLabelTranslationEntry = {
     locale: string;
@@ -27,16 +28,17 @@ export const SNSiteLabelTranslations: React.FC<SNSiteLabelTranslationsProps> = (
     onUpdate,
     onRemove,
 }) => {
+    const { t } = useTranslation();
     return (
         <FormItem>
             <div className="flex items-center justify-between mt-6 mb-1">
                 <div className="grid gap-2">
-                    <FormLabel>Add Translations</FormLabel>
-                    <FormDescription>Help users in different regions by providing labels in their language.</FormDescription>
+                    <FormLabel>{t("forms.snLabelTranslations.addTranslations")}</FormLabel>
+                    <FormDescription>{t("forms.snLabelTranslations.addTranslationsDesc")}</FormDescription>
                 </div>
                 <Button type="button" variant="outline" onClick={onAdd}>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Label
+                    {t("forms.snLabelTranslations.addLabel")}
                 </Button>
             </div>
             <div className="space-y-3">
@@ -49,7 +51,7 @@ export const SNSiteLabelTranslations: React.FC<SNSiteLabelTranslationsProps> = (
                             extraLocaleValues={entries.map((item) => item.locale)}
                         />
                         <Input
-                            placeholder="Enter translated label"
+                            placeholder={t("forms.snLabelTranslations.enterLabel")}
                             value={entry.label}
                             onChange={(event) => onUpdate(index, "label", event.target.value)}
                             className="flex-1"

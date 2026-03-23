@@ -13,6 +13,7 @@ import type { TurIntegrationMonitoringRequest } from "@/models/integration/integ
 import { TurIntegrationMonitoringService } from "@/services/integration/integration-monitoring.service";
 import { IconFilter, IconFilterOff, IconGraph } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
 const DEFAULT_SOURCE = "all";
@@ -45,6 +46,7 @@ const REFRESH_OPTIONS = [
 const NONE_VALUE = "__none__";
 
 export default function IntegrationInstanceMonitoringPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id, source = DEFAULT_SOURCE } = useParams<{ id: string; source?: string }>();
 
@@ -77,7 +79,7 @@ export default function IntegrationInstanceMonitoringPage() {
     setPage(0);
     if (breadcrumbAdded.current) {
       popItem();
-      pushItem({ label: newSource === DEFAULT_SOURCE ? "All" : newSource });
+      pushItem({ label: newSource === DEFAULT_SOURCE ? t("integration.monitoring.all") : newSource });
     }
     navigate(`${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring/${newSource}`);
   }, [navigate, id, popItem, pushItem]);
@@ -127,8 +129,8 @@ export default function IntegrationInstanceMonitoringPage() {
         setMonitoringPage(data);
 
         if (!isSilent && !breadcrumbAdded.current) {
-          pushItem({ label: "Monitoring", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring` });
-          pushItem({ label: source === DEFAULT_SOURCE ? "All" : source });
+          pushItem({ label: t("integration.monitoring.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring` });
+          pushItem({ label: source === DEFAULT_SOURCE ? t("integration.monitoring.all") : source });
           breadcrumbAdded.current = true;
         }
       } catch (err) {
@@ -162,16 +164,16 @@ export default function IntegrationInstanceMonitoringPage() {
   }, []);
 
   if (!id) {
-    return <div>Invalid integration instance ID</div>;
+    return <div>{t("integration.indexingStats.invalidId")}</div>;
   }
 
   return (
     <LoadProvider checkIsNotUndefined={monitoringPage} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/monitoring`}>
       <SubPageHeader
         icon={IconGraph}
-        name="Monitoring"
-        feature="Monitoring"
-        description="Verify the current status of AEM content indexing."
+        name={t("integration.monitoring.title")}
+        feature={t("integration.monitoring.title")}
+        description={t("integration.monitoring.description")}
       />
       {monitoringPage && (
         <>
@@ -182,7 +184,7 @@ export default function IntegrationInstanceMonitoringPage() {
               className="w-auto"
             >
               <TabsList className="bg-transparent border-none">
-                <TabsTrigger value={DEFAULT_SOURCE}>All</TabsTrigger>
+                <TabsTrigger value={DEFAULT_SOURCE}>{t("integration.monitoring.all")}</TabsTrigger>
                 {monitoringPage.sources?.map((tab) => (
                   <TabsTrigger key={tab} value={tab}>
                     {tab}
@@ -198,12 +200,12 @@ export default function IntegrationInstanceMonitoringPage() {
                 onClick={() => setShowFilters(!showFilters)}
               >
                 {showFilters ? <IconFilterOff className="h-3.5 w-3.5" /> : <IconFilter className="h-3.5 w-3.5" />}
-                <span className="text-xs">Filters</span>
+                <span className="text-xs">{t("integration.indexingManager.filters")}</span>
                 {hasActiveFilters && (
                   <span className="ml-1 h-2 w-2 rounded-full bg-blue-500" />
                 )}
               </GradientButton>
-              <span className="text-xs text-muted-foreground italic">Auto-refreshing every:</span>
+              <span className="text-xs text-muted-foreground italic">{t("integration.indexingManager.autoRefreshing")}</span>
               <Select
                 value={String(refreshInterval)}
                 onValueChange={(v) => setRefreshInterval(Number(v))}
@@ -226,7 +228,7 @@ export default function IntegrationInstanceMonitoringPage() {
             <div className="px-6 py-4 border-b bg-muted/30">
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Date From</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.dateFrom")}</Label>
                   <Input
                     type="date"
                     value={dateFrom}
@@ -235,7 +237,7 @@ export default function IntegrationInstanceMonitoringPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Date To</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.dateTo")}</Label>
                   <Input
                     type="date"
                     value={dateTo}
@@ -244,26 +246,26 @@ export default function IntegrationInstanceMonitoringPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Object ID</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.objectId")}</Label>
                   <Input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t("forms.common.search")}
                     value={objectIdFilter}
                     onChange={(e) => { setObjectIdFilter(e.target.value); setPage(0); }}
                     className="h-8 text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Status</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.status")}</Label>
                   <Select
                     value={statusFilter || NONE_VALUE}
                     onValueChange={(v) => { setStatusFilter(v === NONE_VALUE ? "" : v); setPage(0); }}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder={t("forms.common.all")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE} className="text-xs">All</SelectItem>
+                      <SelectItem value={NONE_VALUE} className="text-xs">{t("forms.common.all")}</SelectItem>
                       {STATUS_OPTIONS.map((s) => (
                         <SelectItem key={s} value={s} className="text-xs">{s.replaceAll("_", " ")}</SelectItem>
                       ))}
@@ -271,16 +273,16 @@ export default function IntegrationInstanceMonitoringPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Environment</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.environment")}</Label>
                   <Select
                     value={environmentFilter || NONE_VALUE}
                     onValueChange={(v) => { setEnvironmentFilter(v === NONE_VALUE ? "" : v); setPage(0); }}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder={t("forms.common.all")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE} className="text-xs">All</SelectItem>
+                      <SelectItem value={NONE_VALUE} className="text-xs">{t("forms.common.all")}</SelectItem>
                       {monitoringPage.environments?.map((env) => (
                         <SelectItem key={env} value={env} className="text-xs">{env}</SelectItem>
                       ))}
@@ -288,16 +290,16 @@ export default function IntegrationInstanceMonitoringPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Language</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.language")}</Label>
                   <Select
                     value={localeFilter || NONE_VALUE}
                     onValueChange={(v) => { setLocaleFilter(v === NONE_VALUE ? "" : v); setPage(0); }}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder={t("forms.common.all")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE} className="text-xs">All</SelectItem>
+                      <SelectItem value={NONE_VALUE} className="text-xs">{t("forms.common.all")}</SelectItem>
                       {monitoringPage.locales?.map((loc) => (
                         <SelectItem key={loc} value={loc} className="text-xs">{loc}</SelectItem>
                       ))}
@@ -305,16 +307,16 @@ export default function IntegrationInstanceMonitoringPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Sites</Label>
+                  <Label className="text-xs font-medium">{t("integration.indexingManager.sites")}</Label>
                   <Select
                     value={siteFilter || NONE_VALUE}
                     onValueChange={(v) => { setSiteFilter(v === NONE_VALUE ? "" : v); setPage(0); }}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="All" />
+                      <SelectValue placeholder={t("forms.common.all")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE} className="text-xs">All</SelectItem>
+                      <SelectItem value={NONE_VALUE} className="text-xs">{t("forms.common.all")}</SelectItem>
                       {monitoringPage.sites?.map((site) => (
                         <SelectItem key={site} value={site} className="text-xs">{site}</SelectItem>
                       ))}
@@ -331,7 +333,7 @@ export default function IntegrationInstanceMonitoringPage() {
                     onClick={clearFilters}
                   >
                     <IconFilterOff className="h-3 w-3" />
-                    Clear Filters
+                    {t("integration.indexingManager.clearFilters")}
                   </GradientButton>
                 </div>
               )}

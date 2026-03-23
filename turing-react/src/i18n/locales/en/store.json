@@ -1,0 +1,61 @@
+{
+  "store": {
+    "title": "Embedding Store",
+    "newStore": "New Embedding Store",
+    "blankTitle": "You don't seem to have any embedding store instance.",
+    "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
+    "newInstance": "New embedding store instance",
+    "deleted": "The {{name}} Embedding Store was deleted",
+    "notDeleted": "The {{name}} Embedding Store was not deleted",
+    "nav": {
+      "settings": "Settings",
+      "collections": "Collections",
+      "systemInfo": "System Information"
+    },
+    "detail": {
+      "title": "Settings",
+      "description": "Configure the embedding store connection and options."
+    },
+    "collections": {
+      "title": "Collections",
+      "description": "Vector collections stored in this instance.",
+      "totalDocs": "Total Documents",
+      "totalChunks": "Total Chunks",
+      "newCollection": "New Collection",
+      "createCollection": "Create Collection",
+      "createCollectionDesc": "Enter a name for the new vector collection.",
+      "creating": "Creating...",
+      "blankTitle": "No collections found in this store.",
+      "name": "Name",
+      "id": "ID",
+      "documents": "Documents",
+      "chunks": "Chunks",
+      "removeAllDocs": "Remove all documents",
+      "removeAllDocsDesc": "This will delete all embeddings from the \"{{name}}\" collection. The collection itself will be recreated empty.",
+      "confirmRemoveAll": "Yes, remove all documents",
+      "deleteCollection": "Delete collection",
+      "cleared": "Collection \"{{name}}\" cleared.",
+      "clearFailed": "Failed to clear collection \"{{name}}\".",
+      "collectionDeleted": "Collection \"{{name}}\" deleted.",
+      "deleteFailed": "Failed to delete collection \"{{name}}\".",
+      "created": "Collection \"{{name}}\" created.",
+      "createFailed": "Failed to create collection \"{{name}}\".",
+      "loadFailed": "Failed to load collections. Check the Embedding Store connection."
+    },
+    "systemInfo": {
+      "title": "System Information",
+      "description": "Embedding store version and connection details.",
+      "loadFailed": "Failed to load embedding store system information.",
+      "details": "Embedding Store Details",
+      "detailsDesc": "Version and connection information retrieved from the embedding store.",
+      "noInfo": "No information available.",
+      "na": "N/A",
+      "storeLabel": "Store",
+      "version": "Version",
+      "error": "Error",
+      "status": "Status",
+      "up": "UP",
+      "down": "DOWN"
+    }
+  }
+}

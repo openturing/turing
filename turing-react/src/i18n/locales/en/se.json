@@ -1,0 +1,82 @@
+{
+  "se": {
+    "title": "Search Engine",
+    "newSearchEngine": "New Search Engine",
+    "blankTitle": "You don't seem to have any search engine instance.",
+    "blankDescription": "Create a new instance to use in semantic navigation and chatbot.",
+    "newInstance": "New search engine instance",
+    "deleted": "The {{name}} Search Engine was deleted",
+    "notDeleted": "The {{name}} Search Engine was not deleted",
+    "nav": {
+      "settings": "Settings",
+      "cores": "Cores",
+      "systemInfo": "System Information"
+    },
+    "detail": {
+      "title": "Settings",
+      "description": "Configure the Search Engine instance."
+    },
+    "cores": {
+      "title": "Cores",
+      "description": "Solr cores and collections available in this Search Engine.",
+      "searchCores": "Search cores...",
+      "clearSearch": "Clear search",
+      "newCore": "New Core",
+      "noMatch": "No cores match",
+      "blankTitle": "No cores or collections found.",
+      "blankDescription": "Create a new core or make sure the Search Engine is running and accessible at the configured endpoint.",
+      "deleteFailed": "Failed to delete core: {{name}}",
+      "removeDocsFailed": "Failed to remove documents from: {{name}}",
+      "removeAllDocs": "Remove all documents",
+      "removeAllDocsDesc": "This will delete all indexed documents from this core.",
+      "confirmRemoveAll": "Yes, remove all documents",
+      "deleteCore": "Delete core",
+      "locale": "locale",
+      "locales": "locales",
+      "docs": "docs"
+    },
+    "newCore": {
+      "title": "New Core",
+      "description": "Create a new core or collection in this Search Engine.",
+      "coreDetails": "Core Details",
+      "coreDetailsDesc": "Name and locale for the new core.",
+      "nameRequired": "Core name is required.",
+      "nameFormat": "Use only letters, numbers, underscores (_), or hyphens (-).",
+      "nameFormatError": "Core name must contain only letters, numbers, underscores (_), or hyphens (-).",
+      "namePrefix": "Name Prefix",
+      "fullCoreName": "Full Core Name",
+      "namePrefixDesc": "Enter a prefix. The locale will be appended automatically.",
+      "fullCoreNameDesc": "Enter the full core name exactly as it should be created.",
+      "locale": "Locale",
+      "localeDesc": "The language/locale determines the configSet used for text analysis (stemming, stopwords, etc.).",
+      "localeRequired": "Please select a locale.",
+      "appendLocale": "Append locale to name",
+      "coreNamePreview": "Core name preview",
+      "createSuccess": "Core \"{{name}}\" created successfully.",
+      "createFailed": "Failed to create core: {{message}}",
+      "createCore": "Create Core"
+    },
+    "systemInfo": {
+      "title": "System Information",
+      "description": "Search engine version and runtime details.",
+      "loadFailed": "Failed to load search engine system information.",
+      "details": "Search Engine Details",
+      "detailsDesc": "Version and connection information retrieved from the search engine.",
+      "noInfo": "No information available.",
+      "na": "N/A",
+      "engine": "Engine",
+      "version": "Version",
+      "luceneVersion": "Lucene Version",
+      "os": "Operating System",
+      "javaVersion": "Java Version",
+      "jvmMemory": "JVM Memory Used",
+      "clusterName": "Cluster Name",
+      "buildType": "Build Type",
+      "indexPath": "Index Path",
+      "error": "Error",
+      "status": "Status",
+      "up": "UP",
+      "down": "DOWN"
+    }
+  }
+}

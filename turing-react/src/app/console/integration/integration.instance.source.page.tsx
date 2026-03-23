@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitCommit } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -21,18 +22,19 @@ export default function IntegrationInstanceSourcePage() {
   const turIntegrationConnectorService = useConnectorService(id);
   const [open, setOpen] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (sourceId !== "new") {
       turIntegrationAemSourceService.get(sourceId).then((source) => {
         setIntegrationAemSource(source);
         if (source.name) {
-          setBreadcrumb([{ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: source.name }]);
+          setBreadcrumb([{ label: t("integration.sources.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: source.name }]);
         }
       });
       setIsNew(false);
     } else {
-      setBreadcrumb([{ label: "Sources", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: "New" }]);
+      setBreadcrumb([{ label: t("integration.sources.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/source` }, { label: t("common.new") }]);
     }
   }, [id, sourceId, turIntegrationAemSourceService]);
 
@@ -40,15 +42,15 @@ export default function IntegrationInstanceSourcePage() {
   async function onDelete() {
     try {
       if (await turIntegrationAemSourceService.delete(integrationAemSource)) {
-        toast.success(`The ${integrationAemSource.name} AEM Source Instance was deleted`);
+        toast.success(t("integration.sources.deleted", { name: integrationAemSource.name }));
         navigate(`${ROUTES.INTEGRATION_INSTANCE}/${id}/source`);
       } else {
-        toast.error(`The ${integrationAemSource.name} AEM Source Instance was not deleted`);
+        toast.error(t("integration.sources.notDeleted", { name: integrationAemSource.name }));
       }
 
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${integrationAemSource.name} AEM Source Instance was not deleted`);
+      toast.error(t("integration.sources.notDeleted", { name: integrationAemSource.name }));
     }
     setOpen(false);
   }
@@ -59,13 +61,13 @@ export default function IntegrationInstanceSourcePage() {
     try {
       const result = await turIntegrationConnectorService.indexAll(integrationAemSource.name);
       if (result) {
-        toast.success(`Indexing started for ${integrationAemSource.name}`);
+        toast.success(t("integration.sources.indexingStarted", { name: integrationAemSource.name }));
       } else {
-        toast.error(`Failed to start indexing for ${integrationAemSource.name}`);
+        toast.error(t("integration.sources.indexingFailed", { name: integrationAemSource.name }));
       }
     } catch (error) {
       console.error("Index all error", error);
-      toast.error(`Failed to start indexing for ${integrationAemSource.name}`);
+      toast.error(t("integration.sources.indexingFailed", { name: integrationAemSource.name }));
     }
   }
 
@@ -73,20 +75,20 @@ export default function IntegrationInstanceSourcePage() {
     try {
       const result = await turIntegrationConnectorService.reindexAll(integrationAemSource.name);
       if (result) {
-        toast.success(`Reindexing started for ${integrationAemSource.name}`);
+        toast.success(t("integration.sources.reindexingStarted", { name: integrationAemSource.name }));
       } else {
-        toast.error(`Failed to start reindexing for ${integrationAemSource.name}`);
+        toast.error(t("integration.sources.reindexingFailed", { name: integrationAemSource.name }));
       }
     } catch (error) {
       console.error("Reindex all error", error);
-      toast.error(`Failed to start reindexing for ${integrationAemSource.name}`);
+      toast.error(t("integration.sources.reindexingFailed", { name: integrationAemSource.name }));
     }
   }
   return (
     <>
-      <SubPageHeader icon={IconGitCommit} name="Sources"
-        feature="Sources"
-        description="Available AEM sources for indexing and configuration."
+      <SubPageHeader icon={IconGitCommit} name={t("integration.sources.title")}
+        feature={t("integration.sources.title")}
+        description={t("integration.sources.description")}
         onDelete={onDelete}
         open={open}
         setOpen={setOpen} />
@@ -99,7 +101,7 @@ export default function IntegrationInstanceSourcePage() {
             onClick={onReindexAll}
             disabled={isActionDisabled}
           >
-            Reindex all
+            {t("integration.sources.reindexAll")}
           </GradientButton>
           <GradientButton
             type="button"
@@ -107,7 +109,7 @@ export default function IntegrationInstanceSourcePage() {
             onClick={onIndexAll}
             disabled={isActionDisabled}
           >
-            Index all
+            {t("integration.sources.indexAll")}
           </GradientButton>
         </div>
       </div>

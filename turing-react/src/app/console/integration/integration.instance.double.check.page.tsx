@@ -19,11 +19,13 @@ import { TurIntegrationAemSourceService } from "@/services/integration/integrati
 import { TurIntegrationDoubleCheckService } from "@/services/integration/integration-double-check.service";
 import { IconListCheck } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const NO_SOURCE = "";
 
 export default function IntegrationInstanceDoubleCheckPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
 
   const [sources, setSources] = useState<TurIntegrationAemSource[]>([]);
@@ -54,10 +56,10 @@ export default function IntegrationInstanceDoubleCheckPage() {
         if (data.length > 0) {
           setSelectedSource(data[0].name);
         }
-        pushItem({ label: "Double Check", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/double-check` });
+        pushItem({ label: t("integration.doubleCheck.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/double-check` });
         added = true;
       })
-      .catch(() => setError("Failed to load sources."));
+      .catch(() => setError(t("integration.doubleCheck.loadSourcesFailed")));
     return () => {
       if (added) popItem();
     };
@@ -74,7 +76,7 @@ export default function IntegrationInstanceDoubleCheckPage() {
     doubleCheckService
       .get(selectedSource)
       .then((data) => setDoubleCheck(data))
-      .catch(() => setError("Failed to load validation data."))
+      .catch(() => setError(t("integration.doubleCheck.loadValidationFailed")))
       .finally(() => setLoading(false));
 
     doubleCheckService
@@ -85,7 +87,7 @@ export default function IntegrationInstanceDoubleCheckPage() {
   }, [selectedSource, id]);
 
   if (!id) {
-    return <div>Invalid integration instance ID</div>;
+    return <div>{t("integration.indexingStats.invalidId")}</div>;
   }
 
   const totalUnprocessed = unprocessed?.indexing?.length ?? 0;
@@ -102,17 +104,17 @@ export default function IntegrationInstanceDoubleCheckPage() {
     <LoadProvider checkIsNotUndefined={sources} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/double-check`}>
       <SubPageHeader
         icon={IconListCheck}
-        name="Double Check"
-        feature="Double Check"
-        description="Compare content between the connector and the search engine index."
+        name={t("integration.doubleCheck.title")}
+        feature={t("integration.doubleCheck.title")}
+        description={t("integration.doubleCheck.description")}
       />
       <div className="px-6 py-4 space-y-4">
         {sources.length > 0 && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Source:</span>
+            <span className="text-sm text-muted-foreground">{t("integration.doubleCheck.sourceLabel")}</span>
             <Select value={selectedSource} onValueChange={setSelectedSource}>
               <SelectTrigger className="w-64 h-8 text-sm">
-                <SelectValue placeholder="Select a source" />
+                <SelectValue placeholder={t("integration.doubleCheck.selectSource")} />
               </SelectTrigger>
               <SelectContent>
                 {sources.map((source) => (
@@ -126,45 +128,45 @@ export default function IntegrationInstanceDoubleCheckPage() {
         )}
 
         {loading && (
-          <div className="text-sm text-muted-foreground italic py-4">Loading validation data…</div>
+          <div className="text-sm text-muted-foreground italic py-4">{t("integration.doubleCheck.loading")}</div>
         )}
 
         {!loading && !loadingUnprocessed && (doubleCheck || unprocessed) && (
           <Tabs defaultValue="unprocessed">
             <TabsList className="bg-transparent border-none">
               <TabsTrigger value="unprocessed" className="gap-2">
-                Unprocessed
+                {t("integration.doubleCheck.unprocessed")}
                 <Badge variant="secondary">{totalUnprocessed}</Badge>
               </TabsTrigger>
               <TabsTrigger value="missing" className="gap-2">
-                Missing
+                {t("integration.doubleCheck.missing")}
                 <Badge variant="secondary">{totalMissing}</Badge>
               </TabsTrigger>
               <TabsTrigger value="extra" className="gap-2">
-                Extra
+                {t("integration.doubleCheck.extra")}
                 <Badge variant="secondary">{totalExtra}</Badge>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="unprocessed">
               <p className="text-xs text-muted-foreground mb-3">
-                Content accessible in the source (HTTP 200) but <strong>not yet processed</strong> by the connector.
+                {t("integration.doubleCheck.unprocessedDesc")}
               </p>
-              <UnprocessedList items={unprocessed?.indexing ?? []} />
+              <UnprocessedList items={unprocessed?.indexing ?? []} t={t} />
             </TabsContent>
 
             <TabsContent value="missing">
               <p className="text-xs text-muted-foreground mb-3">
-                Content present in the connector but <strong>not indexed</strong> in the search engine.
+                {t("integration.doubleCheck.missingDesc")}
               </p>
-              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.missing} emptyMessage="No missing content found." />}
+              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.missing} emptyMessage={t("integration.doubleCheck.noMissing")} />}
             </TabsContent>
 
             <TabsContent value="extra">
               <p className="text-xs text-muted-foreground mb-3">
-                Content present in the search engine index but <strong>not found</strong> in the connector.
+                {t("integration.doubleCheck.extraDesc")}
               </p>
-              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.extra} emptyMessage="No extra content found." />}
+              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.extra} emptyMessage={t("integration.doubleCheck.noExtra")} />}
             </TabsContent>
           </Tabs>
         )}
@@ -173,10 +175,10 @@ export default function IntegrationInstanceDoubleCheckPage() {
   );
 }
 
-function UnprocessedList({ items }: { items: TurIntegrationIndexing[] }) {
+function UnprocessedList({ items, t }: { items: TurIntegrationIndexing[]; t: (key: string) => string }) {
   if (items.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground italic py-4">No unprocessed content found.</div>
+      <div className="text-sm text-muted-foreground italic py-4">{t("integration.doubleCheck.noUnprocessed")}</div>
     );
   }
 
@@ -185,9 +187,9 @@ function UnprocessedList({ items }: { items: TurIntegrationIndexing[] }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="text-left px-3 py-2 font-medium">Object ID</th>
-            <th className="text-left px-3 py-2 font-medium">Status</th>
-            <th className="text-left px-3 py-2 font-medium">Created</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.objectIdCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.statusCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.createdCol")}</th>
           </tr>
         </thead>
         <tbody>

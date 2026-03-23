@@ -1,4 +1,4 @@
-import { columns } from "@/components/sn/locales/sn.site.locale.coldef.tsx";
+import { buildColumns } from "@/components/sn/locales/sn.site.locale.coldef.tsx";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -20,6 +20,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     data: TurSNSiteLocale[]
@@ -27,7 +28,8 @@ interface Props {
 }
 
 export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }) => {
-
+    const { t } = useTranslation();
+    const columns = React.useMemo(() => buildColumns(t), [t]);
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -59,7 +61,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
         <div className="px-6">
             <div className="flex items-center py-4">
                 <Input
-                    placeholder="Filter languages..."
+                    placeholder={t("forms.localeTable.filterLanguages")}
                     value={(table.getColumn("language")?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
                         table.getColumn("language")?.setFilterValue(event.target.value)
@@ -71,7 +73,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size={"sm"} className="hidden md:inline-flex">
-                                <IconColumns3Filled /> Columns <ChevronDown />
+                                <IconColumns3Filled /> {t("forms.common.columns")} <ChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -139,7 +141,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
                                     colSpan={columns.length}
                                     className="h-24 text-center"
                                 >
-                                    No results.
+                                    {t("forms.common.noResultsDot")}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -148,8 +150,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
+                    {t("forms.common.rowsSelected", { count: table.getFilteredSelectedRowModel().rows.length, total: table.getFilteredRowModel().rows.length })}
                 </div>
                 <div className="space-x-2">
                     <GradientButton
@@ -158,7 +159,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
-                        Previous
+                        {t("forms.common.previous")}
                     </GradientButton>
                     <GradientButton
                         variant="outline"
@@ -166,7 +167,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
-                        Next
+                        {t("forms.common.next")}
                     </GradientButton>
                 </div>
             </div>

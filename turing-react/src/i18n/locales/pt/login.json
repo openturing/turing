@@ -1,0 +1,15 @@
+{
+  "login": {
+    "welcomeBack": "Bem-vindo de volta",
+    "signInDescription": "Faça login para acessar seu painel",
+    "username": "Usuário",
+    "enterUsername": "Digite seu usuário",
+    "password": "Senha",
+    "enterPassword": "Digite sua senha",
+    "signIn": "Entrar",
+    "signingIn": "Entrando...",
+    "emptyFields": "Por favor, preencha usuário e senha",
+    "invalidCredentials": "Credenciais inválidas. Tente novamente.",
+    "loginFailed": "Falha no login"
+  }
+}

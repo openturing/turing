@@ -1,0 +1,19 @@
+{
+  "exchange": {
+    "dropFile": "Drop your file here",
+    "dragDrop": "Drag & drop your export file",
+    "browseFiles": "browse files",
+    "selectZip": "to select a ZIP archive",
+    "onlyZip": "Only .zip files exported from Turing are supported",
+    "importing": "Importing...",
+    "uploaded": "uploaded",
+    "importCompleted": "Import Completed",
+    "redirecting": "Redirecting to Semantic Navigation...",
+    "importFailed": "Import Failed",
+    "invalidFile": "Please select a valid ZIP file.",
+    "invalidType": "Invalid file type. Only ZIP files are accepted.",
+    "importSuccess": "Import completed successfully!",
+    "importError": "An error occurred during import.",
+    "importFailedMsg": "Import failed: {{message}}"
+  }
+}

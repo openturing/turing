@@ -1,191 +1,35 @@
-import { IconDeviceFloppy, IconLoader2, IconLock, IconUser } from "@tabler/icons-react"
-import { PageHeader } from "@/components/page-header"
-import { useCallback, useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
-
-import { AvatarField } from "@/components/avatar-field"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { useCurrentUser } from "@/contexts/user.context"
-import type { TurUser } from "@/models/auth/user"
-import { TurUserService } from "@/services/auth/user.service"
-
-const turUserService = new TurUserService()
+import { ROUTES } from "@/app/routes.const";
+import { LoadProvider } from "@/components/loading-provider";
+import { SubPage } from "@/components/sub.page";
+import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
+import { useCurrentUser } from "@/contexts/user.context";
+import { IconSettings, IconUser, IconWorld } from "@tabler/icons-react";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function UserAccountPage() {
-  const { t } = useTranslation()
-  const { refreshUser } = useCurrentUser()
-  const [user, setUser] = useState<TurUser | null>(null)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined)
+    const { t } = useTranslation();
+    const { user } = useCurrentUser();
+    const urlBase = ROUTES.USER_ACCOUNT;
 
-  useEffect(() => {
-    turUserService.get().then((currentUser) => {
-      setUser(currentUser)
-      setFirstName(currentUser.firstName ?? "")
-      setLastName(currentUser.lastName ?? "")
-      setEmail(currentUser.email ?? "")
-      setAvatarUrl(currentUser.avatarUrl ?? undefined)
-      setLoading(false)
-    }).catch(() => {
-      toast.error(t("account.loadFailed"))
-      setLoading(false)
-    })
-  }, [])
+    useSubPageBreadcrumb({ label: t("account.title") });
 
-  const initials = (() => {
-    const first = firstName || ""
-    const last = lastName || ""
-    if (!first && !last) return " "
-    const parts = `${first} ${last}`.trim().split(" ").filter(Boolean)
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-    return parts[0].charAt(0).toUpperCase() + (parts.at(-1)?.charAt(0).toUpperCase() ?? "")
-  })()
+    const data = useMemo(() => ({
+        navMain: [
+            { title: t("account.nav.profile"), url: "/profile", icon: IconUser },
+            { title: t("account.nav.preferences"), url: "/preferences", icon: IconWorld },
+        ],
+    }), [t]);
 
-  const handleAvatarSelect = useCallback(async (url: string) => {
-    if (!user) return
-    try {
-      await turUserService.saveAvatarUrl(user.username, url)
-      setAvatarUrl(url)
-      refreshUser()
-      toast.success(t("account.avatarUpdated"))
-    } catch {
-      toast.error(t("account.avatarFailed"))
-    }
-  }, [user])
-
-  const handleAvatarRemove = useCallback(async () => {
-    if (!user) return
-    try {
-      await turUserService.saveAvatarUrl(user.username, null)
-      setAvatarUrl(undefined)
-      refreshUser()
-      toast.success(t("account.avatarRemoved"))
-    } catch {
-      toast.error(t("account.avatarRemoveFailed"))
-    }
-  }, [user])
-
-  const handleSave = async () => {
-    if (!user) return
-    if (newPassword && newPassword !== confirmPassword) {
-      toast.error(t("account.passwordMismatch"))
-      return
-    }
-    setSaving(true)
-    try {
-      const payload: Partial<TurUser> = {
-        firstName,
-        lastName,
-        email,
-        avatarUrl: avatarUrl ?? undefined,
-      }
-      if (newPassword) {
-        payload.password = newPassword
-      }
-      await turUserService.update(user.username, payload)
-      refreshUser()
-      toast.success(t("account.updateSuccess"))
-      setNewPassword("")
-      setConfirmPassword("")
-    } catch {
-      toast.error(t("account.updateFailed"))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        {t("account.unableToLoad")}
-      </div>
-    )
-  }
-
-  return (
-    <>
-    <PageHeader turIcon={IconUser} title={t("account.title")} />
-    <div className="max-w-2xl mx-auto py-8 px-6">
-
-      {/* Avatar + username */}
-      <AvatarField
-        avatarUrl={avatarUrl}
-        initials={initials}
-        seed={user.username}
-        onSelect={handleAvatarSelect}
-        onRemove={handleAvatarRemove}
-        className="mb-8"
-      >
-        <div className="text-lg font-medium">{firstName} {lastName}</div>
-        <div className="text-sm text-muted-foreground">@{user.username}</div>
-      </AvatarField>
-
-      {/* Profile fields */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">{t("account.firstName")}</Label>
-            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lastName">{t("account.lastName")}</Label>
-            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">{t("account.email")}</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="username">{t("account.username")}</Label>
-          <Input id="username" value={user.username} disabled className="bg-muted" />
-        </div>
-      </div>
-
-      <Separator className="my-8" />
-
-      {/* Change password */}
-      <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-        <IconLock className="size-5" />
-        {t("account.changePassword")}
-      </h2>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="newPassword">{t("account.newPassword")}</Label>
-          <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("account.leaveBlank")} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">{t("account.confirmPassword")}</Label>
-          <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t("account.repeatPassword")} />
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <IconLoader2 className="size-4 animate-spin mr-2" /> : <IconDeviceFloppy className="size-4 mr-2" />}
-          {t("account.saveChanges")}
-        </Button>
-      </div>
-
-    </div>
-    </>
-  )
+        <LoadProvider checkIsNotUndefined={user} tryAgainUrl={ROUTES.USER_ACCOUNT}>
+            <SubPage
+                icon={IconSettings}
+                feature={t("account.feature")}
+                name={t("account.title")}
+                data={data}
+                urlBase={urlBase}
+            />
+        </LoadProvider>
+    );
 }

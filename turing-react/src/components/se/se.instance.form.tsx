@@ -23,6 +23,7 @@ import type { TurSEInstance } from "@/models/se/se-instance.model.ts"
 import type { TurSEVendor } from "@/models/se/se-vendor.model.ts"
 import { TurSEInstanceService, TurSEVendorService } from "@/services/se/se.service"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm, useWatch
 } from "react-hook-form"
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurSEInstance>({
     defaultValues: value
   });
@@ -75,23 +77,23 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turSEInstanceService.create(seInstance);
         if (result) {
-          toast.success(`The ${seInstance.title} Search Engine was saved`);
+          toast.success(t("forms.common.saved", { name: seInstance.title, feature: "Search Engine" }));
           navigate(ROUTES.SE_INSTANCE);
         } else {
-          toast.error(`The ${seInstance.title} Search Engine was not saved`);
+          toast.error(t("forms.common.notSaved", { name: seInstance.title, feature: "Search Engine" }));
         }
       }
       else {
         const result = await turSEInstanceService.update(seInstance);
         if (result) {
-          toast.success(`The ${seInstance.title} Search Engine was updated`);
+          toast.success(t("forms.common.updated", { name: seInstance.title, feature: "Search Engine" }));
         } else {
-          toast.error(`The ${seInstance.title} Search Engine was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: seInstance.title, feature: "Search Engine" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -101,22 +103,22 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                 {/* General Section */}
                 <SectionCard variant="blue">
-                  <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this engine." />
+                  <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.se.generalDesc")} />
                   <SectionCard.Content>
                     <FormField
                       control={control}
                       name="title"
-                      rules={{ required: "Title is required." }}
+                      rules={{ required: t("forms.se.titleRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Title</FormLabel>
+                          <FormLabel>{t("forms.common.title")}</FormLabel>
                           <FormDescription>
-                            Enter a unique, descriptive name for this search engine instance.
+                            {t("forms.se.titleDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="e.g. Enterprise Search"
+                              placeholder={t("forms.se.titlePlaceholder")}
                               type="text"
                             />
                           </FormControl>
@@ -133,14 +135,14 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             <SmartDescription
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Add a description"
+                              placeholder={t("forms.se.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
                               entityType="Search Engine"
                             >
-                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>
-                                Briefly describe the purpose or scope of this search engine.
+                                {t("forms.se.descriptionDesc")}
                               </SmartDescription.Description>
                             </SmartDescription>
                           </FormControl>
@@ -161,7 +163,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               title={form.watch("title")}
                               description={form.watch("description")}
                             >
-                              <IconPicker.Label>Icon</IconPicker.Label>
+                              <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                             </IconPicker>
                           </FormControl>
                         </FormItem>
@@ -172,25 +174,25 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
                 {/* Connection Section */}
                 <SectionCard variant="violet">
-                  <SectionCard.Header icon={IconPlug} title="Connection Settings" description="Vendor and endpoint configuration." />
+                  <SectionCard.Header icon={IconPlug} title={t("forms.se.connectionSettings")} description={t("forms.se.connectionSettingsDesc")} />
                   <SectionCard.Content>
                     <FormField
                       control={control}
                       name="turSEVendor.id"
-                      rules={{ required: "Vendor is required." }}
+                      rules={{ required: t("forms.se.vendorRequired") }}
                       render={({ field }) => (
                         <FormItemTwoColumns>
                           <FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Label>Vendor</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Label>{t("forms.common.vendor")}</FormItemTwoColumns.Label>
                             <FormItemTwoColumns.Description>
-                              Choose the backend technology powering this search engine.
+                              {t("forms.se.vendorDesc")}
                             </FormItemTwoColumns.Description>
                           </FormItemTwoColumns.Left>
                           <FormItemTwoColumns.Right>
                             <FormControl>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select vendor..." />
+                                  <SelectValue placeholder={t("forms.common.selectVendor")} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {vendors.map((vendor) => (
@@ -207,16 +209,16 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                     <FormField
                       control={control}
                       name="endpointUrl"
-                      rules={{ required: "Endpoint URL is required." }}
+                      rules={{ required: t("forms.se.endpointRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Endpoint URL</FormLabel>
+                          <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
                           <FormDescription>
-                            Enter the full URL of the search engine (e.g., <code>http://localhost:8983/solr</code>).
+                            {t("forms.se.endpointDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
-                              placeholder="e.g. http://localhost:8983/solr"
+                              placeholder={t("forms.se.endpointPlaceholder")}
                               type="url"
                               {...field}
                             />

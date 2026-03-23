@@ -9,6 +9,7 @@ import type { TurIntegrationIndexingRule } from "@/models/integration/integratio
 import { TurIntegrationIndexingRuleService } from "@/services/integration/integration-indexing-rule.service";
 import { IconGitCommit } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 export default function IntegrationInstanceIndexingRulesListPage() {
@@ -17,13 +18,14 @@ export default function IntegrationInstanceIndexingRulesListPage() {
   const turIntegrationIndexingRuleService = new TurIntegrationIndexingRuleService(id || "");
   const [error, setError] = useState<string | null>(null);
   const { pushItem, popItem } = useBreadcrumb();
+  const { t } = useTranslation();
   useEffect(() => {
     let added = false;
     turIntegrationIndexingRuleService.query().then((rules) => {
       setIntegrationIndexingRules(rules);
-      pushItem({ label: "Indexing Rules", href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule` });
+      pushItem({ label: t("integration.indexingRules.title"), href: `${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule` });
       added = true;
-    }).catch(() => setError("Connection error or timeout while fetching Integration service."));
+    }).catch(() => setError(t("common.connectionError", { resource: "Integration service" })));
     return () => {
       if (added) popItem();
     };
@@ -36,17 +38,17 @@ export default function IntegrationInstanceIndexingRulesListPage() {
   return (
     <LoadProvider checkIsNotUndefined={integrationIndexingRules} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule`}>
       {gridItemList.length > 0 ? (<>
-        <SubPageHeader icon={IconGitCommit} name="Indexing Rules" feature="Indexing Rules"
-          description="Establish guidelines for how the indexing process will operate." />
+        <SubPageHeader icon={IconGitCommit} name={t("integration.indexingRules.title")} feature={t("integration.indexingRules.feature")}
+          description={t("integration.indexingRules.description")} />
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule/new`} label="Indexing Rule" />
+          <GridList.NewButton to={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule/new`} label={t("integration.indexingRules.feature")} />
         </GridList>
       </>) : (
         <BlankSlate
           icon={IconGitCommit}
-          title="You don’t seem to have any Indexing Rules."
-          description="Create a new indexing rule to define how AEM sources are indexed."
-          buttonText="New Indexing Rule"
+          title={t("integration.indexingRules.blankTitle")}
+          description={t("integration.indexingRules.blankDescription")}
+          buttonText={t("integration.indexingRules.newRule")}
           urlNew={`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule/new`} />
       )}
     </LoadProvider>

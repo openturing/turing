@@ -6,6 +6,7 @@ import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconCheck, IconServer2 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
+  const { t } = useTranslation();
   const [mcpServers, setMcpServers] = useState<TurMcpServer[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -55,14 +57,14 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
     try {
       const result = await turAIAgentService.update(payload);
       if (result) {
-        toast.success("MCP servers updated");
+        toast.success(t("forms.agentMcp.updated"));
         setSavedIds(new Set(selectedIds));
       } else {
-        toast.error("Failed to update MCP servers");
+        toast.error(t("forms.agentMcp.updateFailed"));
       }
     } catch (error) {
       console.error("Save error", error);
-      toast.error("Failed to update MCP servers");
+      toast.error(t("forms.agentMcp.updateFailed"));
     }
   }
 
@@ -82,8 +84,8 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
         <SectionCard variant="cyan">
           <SectionCard.Header
             icon={IconServer2}
-            title="Available MCP Servers"
-            description="Select which MCP servers provide tools to this agent."
+            title={t("forms.agentMcp.available")}
+            description={t("forms.agentMcp.availableDesc")}
           />
           <SectionCard.Content>
             {mcpServers.length > 0 ? (
@@ -140,8 +142,8 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
             ) : (
               <div className="text-center py-8">
                 <IconServer2 className="mx-auto size-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">No MCP servers available.</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Create an MCP Server first to provide tools to this agent.</p>
+                <p className="text-sm text-muted-foreground">{t("forms.agentMcp.noServers")}</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">{t("forms.agentMcp.createFirst")}</p>
               </div>
             )}
 
@@ -155,7 +157,7 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
                     ? "bg-cyan-500 animate-pulse"
                     : "bg-slate-300 dark:bg-slate-600"
                     }`} />
-                  {selectedIds.size} SELECTED
+                  {selectedIds.size} {t("forms.common.selected")}
                 </div>
               </div>
             )}
@@ -164,10 +166,10 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>
-            Reset
+            {t("forms.common.reset")}
           </GradientButton>
           <GradientButton type="button" onClick={onSave} disabled={!isDirty}>
-            Save Changes
+            {t("forms.common.saveChanges")}
           </GradientButton>
         </div>
       </div>

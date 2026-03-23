@@ -24,27 +24,29 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { type TurStoreCollectionInfo, TurStoreInstanceService } from "@/services/store/store.service"
 import { IconDatabase, IconEraser, IconLayersSubtract, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 
 function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreCollectionInfo; storeId: string; onRefresh: () => void }>) {
+  const { t } = useTranslation()
   const [clearOpen, setClearOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const handleClear = () => {
     setClearOpen(false)
     turStoreInstanceService.clearCollection(storeId, col.name)
-      .then(() => { toast.success(`Collection "${col.name}" cleared.`); onRefresh() })
-      .catch(() => toast.error(`Failed to clear collection "${col.name}".`))
+      .then(() => { toast.success(t("store.collections.cleared", { name: col.name })); onRefresh() })
+      .catch(() => toast.error(t("store.collections.clearFailed", { name: col.name })))
   }
 
   const handleDelete = () => {
     setDeleteOpen(false)
     turStoreInstanceService.deleteCollection(storeId, col.name)
-      .then(() => { toast.success(`Collection "${col.name}" deleted.`); onRefresh() })
-      .catch(() => toast.error(`Failed to delete collection "${col.name}".`))
+      .then(() => { toast.success(t("store.collections.collectionDeleted", { name: col.name })); onRefresh() })
+      .catch(() => toast.error(t("store.collections.deleteFailed", { name: col.name })))
   }
 
   return (
@@ -67,13 +69,13 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
             setOpen={setClearOpen}
             onDelete={handleClear}
             trigger={
-              <Button variant="ghost" size="icon-sm" title="Remove all documents">
+              <Button variant="ghost" size="icon-sm" title={t("store.collections.removeAllDocs")}>
                 <IconEraser className="size-4" />
               </Button>
             }
-            title="Remove all documents?"
-            description={`This will delete all embeddings from the "${col.name}" collection. The collection itself will be recreated empty.`}
-            confirmLabel="Yes, remove all documents"
+            title={t("store.collections.removeAllDocs") + "?"}
+            description={t("store.collections.removeAllDocsDesc", { name: col.name })}
+            confirmLabel={t("store.collections.confirmRemoveAll")}
           />
           <DialogDelete
             feature="collection"
@@ -82,7 +84,7 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
             setOpen={setDeleteOpen}
             onDelete={handleDelete}
             trigger={
-              <Button variant="ghost" size="icon-sm" title="Delete collection">
+              <Button variant="ghost" size="icon-sm" title={t("store.collections.deleteCollection")}>
                 <IconTrash className="size-4" />
               </Button>
             }
@@ -94,6 +96,7 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
 }
 
 function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: string; onCreated: () => void }>) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [creating, setCreating] = useState(false)
@@ -104,12 +107,12 @@ function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: stri
     setCreating(true)
     turStoreInstanceService.createCollection(storeId, trimmed)
       .then(() => {
-        toast.success(`Collection "${trimmed}" created.`)
+        toast.success(t("store.collections.created", { name: trimmed }))
         setName("")
         setOpen(false)
         onCreated()
       })
-      .catch(() => toast.error(`Failed to create collection "${trimmed}".`))
+      .catch(() => toast.error(t("store.collections.createFailed", { name: trimmed })))
       .finally(() => setCreating(false))
   }
 
@@ -117,14 +120,14 @@ function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: stri
     <>
       <GradientButton variant="outline" onClick={() => setOpen(true)}>
         <IconPlus className="size-4" />
-        New Collection
+        {t("store.collections.newCollection")}
       </GradientButton>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Collection</DialogTitle>
+            <DialogTitle>{t("store.collections.createCollection")}</DialogTitle>
             <DialogDescription>
-              Enter a name for the new vector collection.
+              {t("store.collections.createCollectionDesc")}
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -137,7 +140,7 @@ function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: stri
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <GradientButton onClick={handleCreate} disabled={!name.trim() || creating}>
-              {creating ? "Creating..." : "Create"}
+              {creating ? t("store.collections.creating") : t("store.collections.createCollection")}
             </GradientButton>
           </DialogFooter>
         </DialogContent>
@@ -147,15 +150,16 @@ function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: stri
 }
 
 export default function StoreInstanceCollectionsPage() {
+  const { t } = useTranslation()
   const { id } = useParams() as { id: string }
   const [collections, setCollections] = useState<TurStoreCollectionInfo[]>()
   const [error, setError] = useState<string | null>(null)
-  useSubPageBreadcrumb("Collections")
+  useSubPageBreadcrumb(t("store.collections.title"))
 
   const loadCollections = useCallback(() => {
     turStoreInstanceService.collections(id)
       .then(setCollections)
-      .catch(() => setError("Failed to load collections. Check the Embedding Store connection."))
+      .catch(() => setError(t("store.collections.loadFailed")))
   }, [id])
 
   useEffect(() => { loadCollections() }, [loadCollections])
@@ -165,8 +169,8 @@ export default function StoreInstanceCollectionsPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={collections} error={error}>
-      <SubPageHeader icon={IconLayersSubtract} feature="Embedding Store" name="Collections"
-        description="Vector collections stored in this instance." />
+      <SubPageHeader icon={IconLayersSubtract} feature={t("store.title")} name={t("store.collections.title")}
+        description={t("store.collections.description")} />
 
       <div className="px-4 lg:px-6 space-y-4">
         <div className="flex items-center justify-between gap-4">
@@ -174,15 +178,15 @@ export default function StoreInstanceCollectionsPage() {
             {collections && collections.length > 0 && (
               <>
                 <div className="rounded-lg bg-muted/40 px-4 py-3">
-                  <span className="text-xs text-muted-foreground">Collections</span>
+                  <span className="text-xs text-muted-foreground">{t("store.collections.title")}</span>
                   <p className="text-lg font-semibold">{collections.length}</p>
                 </div>
                 <div className="rounded-lg bg-muted/40 px-4 py-3">
-                  <span className="text-xs text-muted-foreground">Total Documents</span>
+                  <span className="text-xs text-muted-foreground">{t("store.collections.totalDocs")}</span>
                   <p className="text-lg font-semibold">{totalDocuments.toLocaleString()}</p>
                 </div>
                 <div className="rounded-lg bg-muted/40 px-4 py-3">
-                  <span className="text-xs text-muted-foreground">Total Chunks</span>
+                  <span className="text-xs text-muted-foreground">{t("store.collections.totalChunks")}</span>
                   <p className="text-lg font-semibold">{totalChunks.toLocaleString()}</p>
                 </div>
               </>
@@ -194,17 +198,17 @@ export default function StoreInstanceCollectionsPage() {
         {collections && collections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <IconDatabase className="size-12 mb-3 opacity-40" />
-            <p className="text-sm">No collections found in this store.</p>
+            <p className="text-sm">{t("store.collections.blankTitle")}</p>
           </div>
         ) : (
           <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="w-[200px]">ID</TableHead>
-                  <TableHead className="w-[120px] text-right">Documents</TableHead>
-                  <TableHead className="w-[120px] text-right">Chunks</TableHead>
+                  <TableHead>{t("store.collections.name")}</TableHead>
+                  <TableHead className="w-[200px]">{t("store.collections.id")}</TableHead>
+                  <TableHead className="w-[120px] text-right">{t("store.collections.documents")}</TableHead>
+                  <TableHead className="w-[120px] text-right">{t("store.collections.chunks")}</TableHead>
                   <TableHead className="w-[100px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>

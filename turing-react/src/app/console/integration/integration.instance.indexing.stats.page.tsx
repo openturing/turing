@@ -15,12 +15,16 @@ import { useBreadcrumb } from "@/contexts/breadcrumb.context";
 import type { TurIntegrationIndexingStats } from "@/models/integration/integration-indexing-stats.model";
 import { TurIntegrationIndexingStatsService } from "@/services/integration/integration-indexing-stats.service";
 import { IconChartBar } from "@tabler/icons-react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import { useDateLocale } from "@/hooks/use-date-locale";
 import { Clock, RefreshCcw, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 export default function IntegrationInstanceIndexingStatsPage() {
+    const { t } = useTranslation();
+    const dateLocale = useDateLocale();
     const { id } = useParams<{ id: string }>();
     const [stats, setStats] = useState<TurIntegrationIndexingStats[]>();
     const [error, setError] = useState<string | null>(null);
@@ -38,10 +42,10 @@ export default function IntegrationInstanceIndexingStatsPage() {
         statsService.getAll().then((data) => {
             setStats(data);
             if (!breadcrumbAdded.current) {
-                pushItem({ label: "Indexing Stats" });
+                pushItem({ label: t("integration.indexingStats.title") });
                 breadcrumbAdded.current = true;
             }
-        }).catch(() => setError("Failed to load indexing stats."));
+        }).catch(() => setError(t("integration.indexingStats.loadFailed")));
 
         return () => {
             if (breadcrumbAdded.current) {
@@ -52,7 +56,7 @@ export default function IntegrationInstanceIndexingStatsPage() {
     }, [id]);
 
     if (!id) {
-        return <div>Invalid integration instance ID</div>;
+        return <div>{t("integration.indexingStats.invalidId")}</div>;
     }
 
     function formatDuration(start: string, end: string): string {
@@ -66,15 +70,8 @@ export default function IntegrationInstanceIndexingStatsPage() {
 
     function formatDateTime(dateStr: string): { formatted: string; timeAgo: string } {
         const date = new Date(dateStr);
-        const formatted = date.toLocaleString(undefined, {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
-        const timeAgo = formatDistanceToNow(date, { addSuffix: true });
+        const formatted = format(date, "dd/MM/yy HH:mm:ss", { locale: dateLocale });
+        const timeAgo = formatDistanceToNow(date, { addSuffix: true, locale: dateLocale });
         return { formatted, timeAgo };
     }
 
@@ -86,9 +83,9 @@ export default function IntegrationInstanceIndexingStatsPage() {
         >
             <SubPageHeader
                 icon={IconChartBar}
-                name="Indexing Stats"
-                feature="Indexing Stats"
-                description="View performance statistics for indexing and reindexing operations."
+                name={t("integration.indexingStats.title")}
+                feature={t("integration.indexingStats.title")}
+                description={t("integration.indexingStats.description")}
             />
             {stats && (
                 <div className="px-6">
@@ -97,7 +94,7 @@ export default function IntegrationInstanceIndexingStatsPage() {
                     </div>
                     {stats.length === 0 ? (
                         <Card className="p-8 text-center text-muted-foreground">
-                            No indexing stats available yet. Run an indexAll or reindexAll operation to generate stats.
+                            {t("integration.indexingStats.noStats")}
                         </Card>
                     ) : (
                         <Card>
@@ -105,12 +102,12 @@ export default function IntegrationInstanceIndexingStatsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="px-5">Start Time</TableHead>
-                                            <TableHead className="px-5">Source</TableHead>
-                                            <TableHead className="px-5">Operation</TableHead>
-                                            <TableHead className="px-5">Documents</TableHead>
-                                            <TableHead className="px-5">Duration</TableHead>
-                                            <TableHead className="px-5">Docs/min</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.startTime")}</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.source")}</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.operation")}</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.documents")}</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.duration")}</TableHead>
+                                            <TableHead className="px-5">{t("integration.indexingStats.docsPerMin")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

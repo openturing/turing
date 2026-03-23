@@ -1,5 +1,6 @@
 import { IconCheck, IconDice5, IconSearch, IconPalette } from "@tabler/icons-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -78,6 +79,7 @@ export function DiceBearAvatarPicker({
   defaultSeed = "",
   currentAvatarUrl,
 }: DiceBearAvatarPickerProps) {
+  const { t } = useTranslation()
   const [selectedStyle, setSelectedStyle] = useState<DiceBearStyle>("adventurer")
   const [seed, setSeed] = useState(defaultSeed || generateRandomSeed())
   const [previewSeeds, setPreviewSeeds] = useState<string[]>([])
@@ -134,10 +136,10 @@ export function DiceBearAvatarPicker({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <IconPalette className="size-5" />
-            Choose Your Avatar
+            {t("forms.avatarPicker.chooseAvatar")}
           </DialogTitle>
           <DialogDescription>
-            Search by keyword, pick a style and customize your unique avatar.
+            {t("forms.avatarPicker.chooseAvatarDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -162,7 +164,7 @@ export function DiceBearAvatarPicker({
 
           {/* Search input + randomize */}
           <div className="space-y-2">
-            <Label htmlFor="avatar-search">Search by keyword</Label>
+            <Label htmlFor="avatar-search">{t("forms.avatarPicker.searchKeyword")}</Label>
             <div className="flex items-end gap-2">
               <div className="relative flex-1">
                 <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -170,11 +172,11 @@ export function DiceBearAvatarPicker({
                   id="avatar-search"
                   value={seed}
                   onChange={(e) => setSeed(e.target.value)}
-                  placeholder="Type a keyword... e.g. cat, robot, space"
+                  placeholder={t("forms.avatarPicker.searchPlaceholder")}
                   className="pl-9"
                 />
               </div>
-              <Button variant="outline" size="icon" onClick={handleRandomize} title="Randomize">
+              <Button variant="outline" size="icon" onClick={handleRandomize} title={t("forms.avatarPicker.randomize")}>
                 <IconDice5 className="size-4" />
               </Button>
             </div>
@@ -201,7 +203,7 @@ export function DiceBearAvatarPicker({
 
           {/* Style selector */}
           <div className="space-y-2">
-            <Label>Style</Label>
+            <Label>{t("forms.avatarPicker.style")}</Label>
             <div className="grid grid-cols-7 gap-2 max-h-48 overflow-y-auto pr-1">
               {DICEBEAR_STYLES.map((style) => {
                 const url = buildDiceBearUrl(style.id, debouncedSeed)
@@ -243,7 +245,7 @@ export function DiceBearAvatarPicker({
           {/* Seed variations grid */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Variations</Label>
+              <Label>{t("forms.avatarPicker.variations")}</Label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -251,7 +253,7 @@ export function DiceBearAvatarPicker({
                 onClick={generatePreviewSeeds}
               >
                 <IconDice5 className="size-3 mr-1" />
-                Shuffle
+                {t("forms.avatarPicker.shuffle")}
               </Button>
             </div>
             <div className="grid grid-cols-6 gap-2">
@@ -287,10 +289,10 @@ export function DiceBearAvatarPicker({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("forms.formActions.cancel")}
           </Button>
           <Button onClick={handleConfirm}>
-            Use This Avatar
+            {t("forms.avatarPicker.useThisAvatar")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -5,6 +5,7 @@ import type { TurIntegrationIndexingRule } from "@/models/integration/integratio
 import { TurIntegrationIndexingRuleService } from "@/services/integration/integration-indexing-rule.service";
 import { IconTools } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ export default function IntegrationInstanceIndexingRulePage() {
   const turIntegrationIndexingRuleService = new TurIntegrationIndexingRuleService(id || "");
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   useEffect(() => {
     if (ruleId !== "new") {
       turIntegrationIndexingRuleService.get(ruleId).then(setIntegrationIndexingRules);
@@ -24,22 +26,22 @@ export default function IntegrationInstanceIndexingRulePage() {
   async function onDelete() {
     try {
       if (await turIntegrationIndexingRuleService.delete(integrationIndexingRules)) {
-        toast.success(`The ${integrationIndexingRules.name} Indexing Rule Instance was deleted`);
+        toast.success(t("integration.indexingRules.deleted", { name: integrationIndexingRules.name }));
         navigate(`${ROUTES.INTEGRATION_INSTANCE}/${id}/indexing-rule`);
       } else {
-        toast.error(`The ${integrationIndexingRules.name} Indexing Rule Instance was not deleted`);
+        toast.error(t("integration.indexingRules.notDeleted", { name: integrationIndexingRules.name }));
       }
 
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${integrationIndexingRules.name} Indexing Rule Instance was not deleted`);
+      toast.error(t("integration.indexingRules.notDeleted", { name: integrationIndexingRules.name }));
     }
     setOpen(false);
   }
   return (
     <>
-      <SubPageHeader icon={IconTools} feature="Indexing Rules" name={integrationIndexingRules.name}
-        description="Establish guidelines for how the indexing process will operate."
+      <SubPageHeader icon={IconTools} feature={t("integration.indexingRules.title")} name={integrationIndexingRules.name}
+        description={t("integration.indexingRules.description")}
         onDelete={onDelete}
         open={open}
         setOpen={setOpen}

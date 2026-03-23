@@ -6,6 +6,7 @@ import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurNativeToolService } from "@/services/genai/native-tool.service"
 import { IconCheck, IconTool } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
@@ -29,6 +30,7 @@ function serializeNativeTools(tools: Set<string>): string {
 }
 
 export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
+  const { t } = useTranslation();
   const [toolGroups, setToolGroups] = useState<NativeToolGroup[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [savedTools, setSavedTools] = useState<Set<string>>(new Set());
@@ -88,14 +90,14 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
     try {
       const result = await turAIAgentService.update(payload);
       if (result) {
-        toast.success("Native tools updated");
+        toast.success(t("forms.agentTools.updated"));
         setSavedTools(new Set(selectedTools));
       } else {
-        toast.error("Failed to update native tools");
+        toast.error(t("forms.agentTools.updateFailed"));
       }
     } catch (error) {
       console.error("Save error", error);
-      toast.error("Failed to update native tools");
+      toast.error(t("forms.agentTools.updateFailed"));
     }
   }
 
@@ -111,8 +113,8 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
         <SectionCard variant="blue">
           <SectionCard.Header
             icon={IconTool}
-            title="Available Native Tools"
-            description="Select which built-in tool callings are available to this agent."
+            title={t("forms.agentTools.available")}
+            description={t("forms.agentTools.availableDesc")}
           />
           <SectionCard.Content>
             {toolGroups.length > 0 ? (
@@ -175,7 +177,7 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
             ) : (
               <div className="text-center py-8">
                 <IconTool className="mx-auto size-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">No native tools available.</p>
+                <p className="text-sm text-muted-foreground">{t("forms.agentTools.noTools")}</p>
               </div>
             )}
 
@@ -189,7 +191,7 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
                     ? "bg-blue-500 animate-pulse"
                     : "bg-slate-300 dark:bg-slate-600"
                     }`} />
-                  {selectedTools.size} / {totalTools} SELECTED
+                  {selectedTools.size} / {totalTools} {t("forms.common.selected")}
                 </div>
               </div>
             )}
@@ -198,10 +200,10 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t">
           <GradientButton type="button" variant="outline" onClick={onReset} disabled={!isDirty}>
-            Reset
+            {t("forms.common.reset")}
           </GradientButton>
           <GradientButton type="button" onClick={onSave} disabled={!isDirty}>
-            Save Changes
+            {t("forms.common.saveChanges")}
           </GradientButton>
         </div>
       </div>

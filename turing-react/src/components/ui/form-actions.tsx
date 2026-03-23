@@ -1,5 +1,6 @@
 import { IconDeviceFloppy, IconLoader2, IconTrash, IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { GradientButton } from "./gradient-button";
 
@@ -31,10 +32,11 @@ interface CancelProps {
 }
 
 function Cancel({ onClick, children, className }: Readonly<CancelProps>) {
+  const { t } = useTranslation();
   return (
     <GradientButton type="button" variant="outline" onClick={onClick} className={className}>
       <IconX className="size-4" />
-      {children ?? "Cancel"}
+      {children ?? t("forms.formActions.cancel")}
     </GradientButton>
   );
 }
@@ -51,6 +53,7 @@ interface SubmitProps {
 }
 
 function Submit({ loading, disabled, children, className }: Readonly<SubmitProps>) {
+  const { t } = useTranslation();
   return (
     <GradientButton type="submit" disabled={disabled || loading} className={className}>
       {loading ? (
@@ -58,7 +61,7 @@ function Submit({ loading, disabled, children, className }: Readonly<SubmitProps
       ) : (
         <IconDeviceFloppy className="size-4" />
       )}
-      {children ?? "Save Changes"}
+      {children ?? t("forms.formActions.saveChanges")}
     </GradientButton>
   );
 }
@@ -74,6 +77,7 @@ interface DeleteProps {
 }
 
 function Delete({ onClick, children, className }: Readonly<DeleteProps>) {
+  const { t } = useTranslation();
   return (
     <GradientButton
       type="button"
@@ -82,7 +86,7 @@ function Delete({ onClick, children, className }: Readonly<DeleteProps>) {
       className={cn("md:hidden text-destructive border-destructive/30 hover:bg-destructive/10 mr-auto", className)}
     >
       <IconTrash className="size-4" />
-      {children ?? "Delete"}
+      {children ?? t("forms.formActions.delete")}
     </GradientButton>
   );
 }

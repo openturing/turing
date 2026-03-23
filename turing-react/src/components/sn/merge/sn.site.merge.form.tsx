@@ -39,6 +39,7 @@ import { IconFileText, IconGitMerge, IconLink, IconReplace } from "@tabler/icons
 import { PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -51,6 +52,7 @@ interface Props {
 }
 
 export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+    const { t } = useTranslation();
     const form = useForm<TurSNSiteMerge>({
         defaultValues: value,
     });
@@ -68,22 +70,22 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
             if (isNew) {
                 const result = await turSNSiteMergeService.create(data);
                 if (result) {
-                    toast.success(`The merge provider was created`);
+                    toast.success(t("forms.snMerge.created"));
                     navigate(urlBase);
                 } else {
-                    toast.error("Failed to create the merge provider. Please try again.");
+                    toast.error(t("forms.snMerge.createFailed"));
                 }
             } else {
                 const result = await turSNSiteMergeService.update(data);
                 if (result) {
-                    toast.success(`The merge provider was updated`);
+                    toast.success(t("forms.snMerge.mergeUpdated"));
                 } else {
-                    toast.error("Failed to update the merge provider. Please try again.");
+                    toast.error(t("forms.snMerge.mergeFailed"));
                 }
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to submit the form. Please try again.");
+            toast.error(t("forms.common.formSubmitFailed"));
         }
     }
 
@@ -111,20 +113,20 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
                 {/* Providers Section */}
                 <SectionCard variant="blue">
-                    <SectionCard.Header icon={IconGitMerge} title="Provider Details" description="Configure source and destination providers for this merge." />
+                    <SectionCard.Header icon={IconGitMerge} title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")} />
                     <SectionCard.Content>
                         <FormField
                             control={form.control}
                             name="providerFrom"
-                            rules={{ required: "Please enter the source provider." }}
+                            rules={{ required: t("forms.snMerge.sourceProviderRequired") }}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Source Provider</FormLabel>
+                                    <FormLabel>{t("forms.snMerge.sourceProvider")}</FormLabel>
                                     <FormDescription>
-                                        Choose the provider you want to merge data from. This is where your information starts.
+                                        {t("forms.snMerge.sourceProviderDesc")}
                                     </FormDescription>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. Main Database" type="text" />
+                                        <Input {...field} placeholder={t("forms.snMerge.sourceProviderPlaceholder")} type="text" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -133,15 +135,15 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                         <FormField
                             control={form.control}
                             name="providerTo"
-                            rules={{ required: "Please enter the destination provider." }}
+                            rules={{ required: t("forms.snMerge.destProviderRequired") }}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Destination Provider</FormLabel>
+                                    <FormLabel>{t("forms.snMerge.destProvider")}</FormLabel>
                                     <FormDescription>
-                                        Select where the merged data will go. This is your target location.
+                                        {t("forms.snMerge.destProviderDesc")}
                                     </FormDescription>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. Analytics Store" type="text" />
+                                        <Input {...field} placeholder={t("forms.snMerge.destProviderPlaceholder")} type="text" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -152,20 +154,20 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
 
                 {/* Relations Section */}
                 <SectionCard variant="violet">
-                    <SectionCard.Header icon={IconLink} title="Relation Mapping" description="Define how source and destination data are linked." />
+                    <SectionCard.Header icon={IconLink} title={t("forms.snMerge.relationMapping")} description={t("forms.snMerge.relationMappingDesc")} />
                     <SectionCard.Content>
                         <FormField
                             control={form.control}
                             name="relationFrom"
-                            rules={{ required: "Please enter the source relation." }}
+                            rules={{ required: t("forms.snMerge.sourceRelationRequired") }}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Source Relation</FormLabel>
+                                    <FormLabel>{t("forms.snMerge.sourceRelation")}</FormLabel>
                                     <FormDescription>
-                                        Specify the relation from your source provider. This helps match the right data.
+                                        {t("forms.snMerge.sourceRelationDesc")}
                                     </FormDescription>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. user_id" type="text" />
+                                        <Input {...field} placeholder={t("forms.snMerge.sourceRelationPlaceholder")} type="text" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -174,15 +176,15 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                         <FormField
                             control={form.control}
                             name="relationTo"
-                            rules={{ required: "Please enter the destination relation." }}
+                            rules={{ required: t("forms.snMerge.destRelationRequired") }}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Destination Relation</FormLabel>
+                                    <FormLabel>{t("forms.snMerge.destRelation")}</FormLabel>
                                     <FormDescription>
-                                        Enter the relation in your destination provider. This is where the data will be linked.
+                                        {t("forms.snMerge.destRelationDesc")}
                                     </FormDescription>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. account_id" type="text" />
+                                        <Input {...field} placeholder={t("forms.snMerge.destRelationPlaceholder")} type="text" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -193,7 +195,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
 
                 {/* Description Section */}
                 <SectionCard variant="emerald">
-                    <SectionCard.Header icon={IconFileText} title="About This Merge" description="Add context to help your team understand this merge." />
+                    <SectionCard.Header icon={IconFileText} title={t("forms.snMerge.aboutMerge")} description={t("forms.snMerge.aboutMergeDesc")} />
                     <SectionCard.Content>
                         <FormField
                             control={form.control}
@@ -204,13 +206,13 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                                         <SmartDescription
                                             value={field.value}
                                             onChange={field.onChange}
-                                            placeholder="e.g. Sync user profiles for analytics"
+                                            placeholder={t("forms.snMerge.mergeDescPlaceholder")}
                                             maxLength={500}
                                             entityType="Merge Provider"
                                         >
-                                            <SmartDescription.Label>Merge Description</SmartDescription.Label>
+                                            <SmartDescription.Label>{t("forms.snMerge.mergeDescription")}</SmartDescription.Label>
                                             <SmartDescription.Description>
-                                                Add a short note to help you and your team understand the purpose of this merge.
+                                                {t("forms.snMerge.mergeDescriptionDesc")}
                                             </SmartDescription.Description>
                                         </SmartDescription>
                                     </FormControl>
@@ -223,26 +225,26 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
 
                 {/* Overwritten Fields Section */}
                 <SectionCard variant="amber">
-                    <SectionCard.Header icon={IconReplace} title="Fields to Overwrite" description="Manage which fields are replaced during the merge." />
+                    <SectionCard.Header icon={IconReplace} title={t("forms.snMerge.fieldsToOverwrite")} description={t("forms.snMerge.fieldsToOverwriteDesc")} />
                     <SectionCard.Content>
                         <div className="flex items-center justify-between mb-4">
                             <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
                                 <DialogTrigger asChild>
                                     <GradientButton variant="outline" type="button">
                                         <PlusCircle className="h-4 w-4 mr-2" />
-                                        Add Field
+                                        {t("forms.snMerge.addField")}
                                     </GradientButton>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
-                                        <DialogTitle>Add a Field to Overwrite</DialogTitle>
+                                        <DialogTitle>{t("forms.snMerge.addFieldTitle")}</DialogTitle>
                                         <DialogDescription>
-                                            Pick a field from your source that should replace the value in your destination. This is useful for keeping important data up to date.
+                                            {t("forms.snMerge.addFieldDesc")}
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4 py-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="field-name">Field Name</Label>
+                                            <Label htmlFor="field-name">{t("forms.snMerge.fieldName")}</Label>
                                             <Input
                                                 id="field-name"
                                                 value={newFieldName}
@@ -259,7 +261,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                                     </div>
                                     <DialogFooter>
                                         <GradientButton type="button" onClick={addOverwrittenField}>
-                                            Add Field
+                                            {t("forms.snMerge.addField")}
                                         </GradientButton>
                                     </DialogFooter>
                                 </DialogContent>
@@ -269,8 +271,8 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Field Name</TableHead>
-                                        <TableHead className="w-24 text-right">Actions</TableHead>
+                                        <TableHead>{t("forms.snMerge.fieldName")}</TableHead>
+                                        <TableHead className="w-24 text-right">{t("forms.common.edit")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -285,7 +287,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                                                     onClick={() => removeOverwrittenField(index)}
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-1" />
-                                                    Delete
+                                                    {t("forms.formActions.delete")}
                                                 </GradientButton>
                                             </TableCell>
                                         </TableRow>

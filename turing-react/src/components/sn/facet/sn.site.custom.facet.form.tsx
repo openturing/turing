@@ -70,6 +70,7 @@ import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../../ui/form-actions"
@@ -231,6 +232,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onEdit, onR
 };
 
 export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurSNSiteCustomFacet>({
     defaultValues: {
       ...value,
@@ -383,7 +385,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
 
   async function onSubmit(customFacet: TurSNSiteCustomFacet) {
     if (!FACET_NAME_PATTERN.test(customFacet.name ?? "")) {
-      toast.error("Facet Name must contain only letters, numbers, underscore (_) or hyphen (-).");
+      toast.error(t("forms.snCustomFacet.facetNameInvalid"));
       return;
     }
 
@@ -401,7 +403,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
     });
 
     if (invalidRange) {
-      toast.error(`Invalid range on item "${invalidRange.label || "(without label)"}": Range End must be greater than or equal to Range Start.`);
+      toast.error(t("forms.snCustomFacet.invalidRange", { label: invalidRange.label || "(without label)" }));
       return;
     }
 
@@ -422,18 +424,18 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
       if (isNew) {
         const result = await turSNSiteCustomFacetService.create(snSiteId, payload);
         if (result) {
-          toast.success(`The ${payload.name} Custom Facet was saved`);
+          toast.success(t("forms.common.saved", { name: payload.name, feature: "Custom Facet" }));
           navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`);
         } else {
-          toast.error(`The ${payload.name} Custom Facet was not saved`);
+          toast.error(t("forms.common.notSaved", { name: payload.name, feature: "Custom Facet" }));
         }
       }
       else {
         const result = await turSNSiteCustomFacetService.update(snSiteId, payload);
         if (result) {
-          toast.success(`The ${payload.name} Custom Facet was updated`);
+          toast.success(t("forms.common.updated", { name: payload.name, feature: "Custom Facet" }));
         } else {
-          toast.error(`The ${payload.name} Custom Facet was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: payload.name, feature: "Custom Facet" }));
         }
       }
     } catch (error) {
@@ -447,9 +449,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
       <Dialog open={openFieldChangeDialog} onOpenChange={setOpenFieldChangeDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change field?</DialogTitle>
+            <DialogTitle>{t("forms.snCustomFacet.changeField")}</DialogTitle>
             <DialogDescription>
-              There are range values already filled in this custom facet. If you continue, current range values will be lost.
+              {t("forms.snCustomFacet.changeFieldDesc")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -457,7 +459,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
               Cancel
             </Button>
             <Button type="button" onClick={onConfirmFieldChange}>
-              Continue
+              {t("forms.snCustomFacet.continue")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -465,14 +467,14 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
       <Dialog open={itemModalOpen} onOpenChange={setItemModalOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingItemIndex !== null ? "Edit Facet Item" : "Add Facet Item"}</DialogTitle>
+            <DialogTitle>{editingItemIndex !== null ? t("forms.snCustomFacet.editItem") : t("forms.snCustomFacet.addItemTitle")}</DialogTitle>
             <DialogDescription>
-              Define how this item filters search results.
+              {t("forms.snCustomFacet.itemDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Label</label>
+              <label className="text-sm font-medium">{t("forms.snCustomFacet.label")}</label>
               <Input
                 value={editingItem.label ?? ""}
                 onChange={(e) => onUpdateEditingItem("label", e.target.value)}
@@ -480,7 +482,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Operator</label>
+              <label className="text-sm font-medium">{t("forms.snCustomFacet.operator")}</label>
               <Select
                 value={editingItem.operator ?? "BETWEEN"}
                 onValueChange={(v) => onUpdateEditingItem("operator", v)}
@@ -503,7 +505,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
             {(editingItem.operator ?? "BETWEEN") === "BETWEEN" && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Start</label>
+                  <label className="text-sm font-medium">{t("forms.snCustomFacet.start")}</label>
                   <Input
                     type={dateField ? "datetime-local" : "number"}
                     step={dateField ? undefined : "any"}
@@ -513,7 +515,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">End</label>
+                  <label className="text-sm font-medium">{t("forms.snCustomFacet.end")}</label>
                   <Input
                     type={dateField ? "datetime-local" : "number"}
                     step={dateField ? undefined : "any"}
@@ -526,7 +528,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
             )}
             {(editingItem.operator === "EQUAL" || editingItem.operator === "GREATER_THAN") && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Value</label>
+                <label className="text-sm font-medium">{t("forms.common.value")}</label>
                 <Input
                   type={dateField ? "datetime-local" : "number"}
                   step={dateField ? undefined : "any"}
@@ -538,7 +540,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
             )}
             {editingItem.operator === "LESS_THAN" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Value</label>
+                <label className="text-sm font-medium">{t("forms.common.value")}</label>
                 <Input
                   type={dateField ? "datetime-local" : "number"}
                   step={dateField ? undefined : "any"}
@@ -554,7 +556,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
               Cancel
             </Button>
             <Button type="button" onClick={onSaveItem}>
-              {editingItemIndex !== null ? "Save" : "Add"}
+              {editingItemIndex !== null ? t("forms.snCustomFacet.save") : t("forms.common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -563,28 +565,28 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
           {/* Basic Information Section */}
           <SectionCard variant="blue">
-            <SectionCard.Header icon={IconInfoCircle} title="Basic Information" description="Unique identifier for this custom facet." />
+            <SectionCard.Header icon={IconInfoCircle} title={t("forms.snCustomFacet.basicInfo")} description={t("forms.snCustomFacet.basicInfoDesc")} />
             <SectionCard.Content>
               <FormField
                 control={control}
                 name="name"
                 rules={{
-                  required: "Please enter an identifier.",
+                  required: t("forms.snCustomFacet.identifierRequired"),
                   pattern: {
                     value: FACET_NAME_PATTERN,
-                    message: "Use only letters, numbers, underscores (_), or hyphens (-).",
+                    message: t("forms.snCustomFacet.identifierFormat"),
                   },
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Identifier</FormLabel>
+                    <FormLabel>{t("forms.snCustomFacet.basicInfo")}</FormLabel>
                     <FormDescription>
-                      Give your facet a unique identifier using lowercase letters, numbers, underscores, or hyphens. This helps organize your search filters.
+                      {t("forms.snCustomFacet.identifierDesc")}
                     </FormDescription>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="e.g., price_range"
+                        placeholder={t("forms.snCustomFacet.identifierPlaceholder")}
                         type="text"
                       />
                     </FormControl>
@@ -599,7 +601,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
 
           {/* Labels Section */}
           <SectionCard variant="violet">
-            <SectionCard.Header icon={IconLanguage} title="Display Labels" description="Names shown to users when browsing filters." />
+            <SectionCard.Header icon={IconLanguage} title={t("forms.snCustomFacet.displayLabels")} description={t("forms.snCustomFacet.displayLabelsDesc")} />
             <SectionCard.Content>
               <div>
                 <FormField
@@ -608,15 +610,15 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                   rules={{ required: true }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Default</FormLabel>
+                      <FormLabel>{t("forms.snCustomFacet.default")}</FormLabel>
                       <FormDescription>
-                        The name shown to users when browsing filters. Used when no language-specific label is available.
+                        {t("forms.snCustomFacet.defaultDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
                           {...field}
                           value={field.value ?? ""}
-                          placeholder="e.g., Price Range"
+                          placeholder={t("forms.snCustomFacet.defaultPlaceholder")}
                           type="text"
                         />
                       </FormControl>
@@ -637,7 +639,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
 
           {/* Facet Configuration Section */}
           <SectionCard variant="emerald">
-            <SectionCard.Header icon={IconFilter} title="Facet Configuration" description="Field selection and operator settings." />
+            <SectionCard.Header icon={IconFilter} title={t("forms.snCustomFacet.facetConfig")} description={t("forms.snCustomFacet.facetConfigDesc")} />
             <SectionCard.Content>
               <FormField
                 control={control}
@@ -646,14 +648,14 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                 render={({ field }) => (
                   <FormItemTwoColumns>
                     <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>Select a Field</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description >Choose the field that will serve as the foundation for this custom facet.</FormItemTwoColumns.Description>
+                      <FormItemTwoColumns.Label>{t("forms.snCustomFacet.selectField")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>{t("forms.snCustomFacet.selectFieldDesc")}</FormItemTwoColumns.Description>
                     </FormItemTwoColumns.Left>
                     <FormItemTwoColumns.Right>
                       <FormControl>
                         <Select onValueChange={onFieldChange} value={field.value || ""}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a field" />
+                            <SelectValue placeholder={t("forms.snCustomFacet.selectFieldPlaceholder")} />
                           </SelectTrigger>
                           <SelectContent>
                             {fieldOptions.map((fieldOption) => (
@@ -680,9 +682,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Operator between Facets</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description >
-                          Specifies how multiple facets are combined in search.
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.operatorBetweenFacets")}</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          {t("forms.snFacetedField.operatorBetweenFacetsDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -713,9 +715,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Operator between Facet Items</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description >
-                          Defines how multiple selected facet values are joined.
+                        <FormItemTwoColumns.Label>{t("forms.snFacetedField.operatorBetweenItems")}</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Description>
+                          {t("forms.snFacetedField.operatorBetweenItemsDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -744,17 +746,17 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
 
           {/* Facet Items Section */}
           <SectionCard variant="amber">
-            <SectionCard.Header icon={IconListDetails} title="Facet Items" description="Custom filter conditions for this facet." />
+            <SectionCard.Header icon={IconListDetails} title={t("forms.snCustomFacet.facetItems")} description={t("forms.snCustomFacet.facetItemsDesc")} />
             <SectionCard.Content>
               <FormItem>
                 <div className="flex items-center justify-between mb-4">
                   <div className="grid gap-2">
-                    <FormLabel>Define Your Items</FormLabel>
-                    <FormDescription>Create custom filter conditions (between, equal, greater than, less than). Drag items to reorder.</FormDescription>
+                    <FormLabel>{t("forms.snCustomFacet.defineItems")}</FormLabel>
+                    <FormDescription>{t("forms.snCustomFacet.defineItemsDesc")}</FormDescription>
                   </div>
                   <Button type="button" variant="outline" onClick={onOpenAddItem}>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Item
+                    {t("forms.snCustomFacet.addItem")}
                   </Button>
                 </div>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -764,9 +766,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
                         <TableRow className="bg-muted/50">
                           <TableHead className="w-10" />
                           <TableHead className="w-16">#</TableHead>
-                          <TableHead>Label</TableHead>
-                          <TableHead>Operator</TableHead>
-                          <TableHead>Condition</TableHead>
+                          <TableHead>{t("forms.snCustomFacet.label")}</TableHead>
+                          <TableHead>{t("forms.snCustomFacet.operator")}</TableHead>
+                          <TableHead>{t("forms.common.condition")}</TableHead>
                           <TableHead className="w-24 text-right" />
                         </TableRow>
                       </TableHeader>
@@ -796,7 +798,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
 
           <FormActions>
             <FormActions.Cancel onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)} />
-            <FormActions.Submit>{isNew ? "Create Facet" : "Save Changes"}</FormActions.Submit>
+            <FormActions.Submit>{isNew ? t("forms.snCustomFacet.createFacet") : t("forms.formActions.saveChanges")}</FormActions.Submit>
           </FormActions>
         </form>
       </Form>

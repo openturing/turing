@@ -1,0 +1,121 @@
+{
+  "sn": {
+    "title": "Navegação Semântica",
+    "newSite": "Novo Site",
+    "blankTitle": "Você ainda não possui nenhuma instância de navegação semântica.",
+    "blankDescription": "Crie uma nova instância para pesquisar e navegar pelos seus documentos.",
+    "newInstance": "Nova instância de navegação semântica",
+    "exportAll": "Exportar Tudo",
+    "exporting": "Exportando...",
+    "exportSuccess": "Todos os sites de Navegação Semântica foram exportados.",
+    "exportFailed": "Falha ao exportar sites de Navegação Semântica.",
+    "siteSaved": "O site SN {{name}} foi salvo",
+    "siteNotSaved": "O site SN {{name}} não foi salvo",
+    "siteUpdated": "O site SN {{name}} foi atualizado",
+    "siteNotUpdated": "O site SN {{name}} não foi atualizado",
+    "formSubmitFailed": "Falha ao enviar o formulário. Tente novamente.",
+    "siteDeleted": "A Navegação Semântica {{name}} foi excluída",
+    "siteNotDeleted": "A Navegação Semântica {{name}} não foi excluída",
+    "siteExported": "A Navegação Semântica {{name}} foi exportada",
+    "siteNotExported": "A Navegação Semântica {{name}} não foi exportada",
+    "queue": "Fila",
+    "indexed": "Indexados",
+    "settings": {
+      "title": "Configurações",
+      "description": "Configure o site de Navegação Semântica."
+    },
+    "behavior": {
+      "title": "Comportamento",
+      "description": "Como a busca se comportará durante a pesquisa."
+    },
+    "fields": {
+      "title": "Campos",
+      "feature": "Campo",
+      "description": "Campos personalizados do mecanismo de busca.",
+      "newField": "Novo Campo",
+      "deleted": "O campo foi excluído",
+      "notDeleted": "O campo não foi excluído"
+    },
+    "facets": {
+      "title": "Facetas",
+      "feature": "Faceta",
+      "description": "Edite e ordene as facetas da busca.",
+      "newCustomFacet": "Nova Faceta Personalizada",
+      "customField": "Campo Personalizado",
+      "facetedField": "Campo Facetado",
+      "deleted": "A Faceta Personalizada {{name}} foi excluída",
+      "notDeleted": "A Faceta Personalizada {{name}} não foi excluída",
+      "deletionError": "Erro ao excluir",
+      "failedDelete": "Falha ao excluir: {{message}}"
+    },
+    "genai": {
+      "title": "IA Generativa",
+      "description": "Use o Assistente na sua busca."
+    },
+    "insights": {
+      "title": "Insights de IA",
+      "description": "Visão geral e sugestões com IA para este site de Navegação Semântica.",
+      "generating": "Gerando resumo com IA...",
+      "failedGenerate": "Falha ao gerar resumo.",
+      "failedConnect": "Falha ao conectar ao serviço de resumo. Tente novamente.",
+      "statistics": "Estatísticas",
+      "searchTerms": "termos de busca"
+    },
+    "multiLanguage": {
+      "title": "Multi Idiomas",
+      "feature": "Idioma",
+      "description": "Defina Multi Idiomas.",
+      "newLanguage": "Novo Idioma",
+      "blankTitle": "Você ainda não possui nenhum idioma.",
+      "blankDescription": "Crie um novo idioma para que a busca de navegação semântica funcione.",
+      "newLanguageBlank": "Novo idioma",
+      "deleted": "O idioma {{name}} foi excluído",
+      "notDeleted": "O idioma {{name}} não foi excluído"
+    },
+    "resultRanking": {
+      "title": "Classificação de Resultados",
+      "description": "Defina conteúdo que será destacado na busca por termos.",
+      "newResultRanking": "Nova Classificação de Resultados",
+      "blankTitle": "Você ainda não possui nenhuma classificação de resultados.",
+      "blankDescription": "Crie uma nova classificação de resultados para definir regras de relevância.",
+      "newResultRankingBlank": "Nova classificação de resultados",
+      "deleted": "A instância de Classificação de Resultados {{name}} foi excluída",
+      "notDeleted": "A instância de Classificação de Resultados {{name}} não foi excluída"
+    },
+    "mergeProviders": {
+      "title": "Provedores de Mesclagem",
+      "feature": "Provedor de Mesclagem",
+      "description": "Unifique conteúdos de diferentes fontes.",
+      "newMergeProvider": "Novo Provedor de Mesclagem",
+      "blankTitle": "Você ainda não possui nenhum provedor de mesclagem.",
+      "blankDescription": "Crie um novo provedor de mesclagem para permitir a mesclagem de documentos de diferentes provedores durante a indexação.",
+      "newMergeProviderBlank": "Novo provedor de mesclagem",
+      "deleted": "O provedor de mesclagem foi excluído",
+      "notDeleted": "O provedor de mesclagem não foi excluído"
+    },
+    "spotlight": {
+      "title": "Destaque",
+      "description": "Defina conteúdo que será destacado na busca por termos.",
+      "newSpotlight": "Novo Destaque",
+      "blankTitle": "Você ainda não possui nenhum destaque.",
+      "blankDescription": "Crie um componente de destaque acionado por termos de busca específicos.",
+      "newSpotlightBlank": "Novo destaque",
+      "deleted": "O destaque foi excluído",
+      "notDeleted": "O destaque não foi excluído"
+    },
+    "topSearchTerms": {
+      "title": "Termos Mais Buscados",
+      "description": "Relatório dos termos mais buscados.",
+      "today": "Hoje",
+      "thisWeek": "Esta Semana",
+      "thisMonth": "Este Mês",
+      "allTime": "Todo o Período",
+      "noTerms": "Nenhum termo de busca ainda.",
+      "noTermsDescription": "Assim que os usuários pesquisarem, os principais termos aparecerão aqui.",
+      "rank": "Posição",
+      "term": "Termo",
+      "avgResults": "Média de resultados",
+      "searchTotal": "Total de buscas"
+    }
+  }
+}

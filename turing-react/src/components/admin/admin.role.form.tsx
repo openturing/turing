@@ -3,7 +3,7 @@ import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { SmartDescription } from "@/components/ui/smart-description";
 import { FormActions } from "@/components/ui/form-actions";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
@@ -13,6 +13,7 @@ import { TurPrivilegeService } from "@/services/auth/privilege.service";
 import { IconLock, IconNotes, IconUserShield } from "@tabler/icons-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -28,13 +29,13 @@ interface PrivilegeGroup {
 }
 
 const PRIVILEGE_LAYOUT: PrivilegeGroup[] = [
-    { section: "Generative AI", category: "LLM", label: "Language Model" },
-    { section: "Generative AI", category: "EMBEDDING", label: "Embedding Model" },
-    { section: "Generative AI", category: "STORE", label: "Embedding Store" },
-    { section: "Generative AI", category: "AI_AGENT", label: "AI Agent" },
-    { section: "Generative AI", category: "INTENT", label: "Intent" },
-    { section: "Enterprise Search", category: "SE", label: "Search Engine" },
-    { section: "Enterprise Search", category: "SN", label: "Semantic Navigation" },
+    { section: "home.sections.generativeAi.label", category: "LLM", label: "home.features.languageModel.title" },
+    { section: "home.sections.generativeAi.label", category: "EMBEDDING", label: "home.features.embeddingModel.title" },
+    { section: "home.sections.generativeAi.label", category: "STORE", label: "home.features.embeddingStore.title" },
+    { section: "home.sections.generativeAi.label", category: "AI_AGENT", label: "home.features.aiAgent.title" },
+    { section: "home.sections.generativeAi.label", category: "INTENT", label: "home.features.intent.title" },
+    { section: "home.sections.enterpriseSearch.label", category: "SE", label: "home.features.searchEngine.title" },
+    { section: "home.sections.enterpriseSearch.label", category: "SN", label: "home.features.semanticNavigation.title" },
 ];
 
 interface Props {
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
+    const { t } = useTranslation();
     const form = useForm<TurRole>({ defaultValues: value });
     const navigate = useNavigate();
     const [allPrivileges, setAllPrivileges] = useState<TurPrivilege[]>([]);
@@ -115,22 +117,22 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
             if (isNew) {
                 const result = await turRoleService.create(data);
                 if (result) {
-                    toast.success(`Role "${data.name}" was created.`);
+                    toast.success(t("forms.adminRole.created", { name: data.name }));
                     navigate(ROUTES.ADMIN_ROLES);
                 } else {
-                    toast.error("Failed to create role.");
+                    toast.error(t("forms.adminRole.createFailed"));
                 }
             } else {
                 const result = await turRoleService.update(data.id, data);
                 if (result) {
-                    toast.success(`Role "${data.name}" was updated.`);
+                    toast.success(t("forms.adminRole.roleUpdated", { name: data.name }));
                 } else {
-                    toast.error("Failed to update role.");
+                    toast.error(t("forms.adminRole.updateFailed"));
                 }
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to save role. Please try again.");
+            toast.error(t("forms.adminRole.saveFailed"));
         }
     }
 
@@ -139,20 +141,20 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                     <SectionCard variant="blue">
-                        <SectionCard.Header icon={IconUserShield} title="Role Details" description="Name and identification for this role." />
+                        <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="name"
-                                rules={{ required: "Role name is required." }}
+                                rules={{ required: t("forms.adminRole.roleNameRequired", "Role name is required.") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Role Name</FormLabel>
+                                        <FormLabel>{t("forms.adminRole.roleName")}</FormLabel>
                                         <FormDescription>
-                                            A unique name for this role (e.g. "Admin", "Editor", "Viewer").
+                                            {t("forms.adminRole.roleNameDesc")}
                                         </FormDescription>
                                         <FormControl>
-                                            <Input {...field} placeholder="e.g. Admin" />
+                                            <Input {...field} placeholder={t("forms.adminRole.roleNamePlaceholder")} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -162,24 +164,23 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                     </SectionCard>
 
                     <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconNotes} title="Description" description="Optional details about this role's scope." />
+                        <SectionCard.Header icon={IconNotes} title={t("forms.common.description")} description={t("forms.adminRole.descriptionDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
-                                        <FormDescription>
-                                            Describe what permissions or access level this role grants.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Textarea
-                                                {...field}
-                                                placeholder="e.g. Full read/write access to all resources"
-                                                className="resize-none"
-                                            />
-                                        </FormControl>
+                                        <SmartDescription
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder={t("forms.adminRole.descPlaceholder")}
+                                            title={form.watch("name")}
+                                            entityType={t("admin.roles.title")}
+                                        >
+                                            <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
+                                            <SmartDescription.Description>{t("forms.adminRole.descPlaceholder")}</SmartDescription.Description>
+                                        </SmartDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -189,17 +190,17 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {sections.length > 0 && (
                         <SectionCard variant="emerald">
-                            <SectionCard.Header icon={IconLock} title="Privileges" description="Select which actions this role can perform on each resource." />
+                            <SectionCard.Header icon={IconLock} title={t("forms.adminRole.privileges")} description={t("forms.adminRole.privilegesDesc")} />
                             <SectionCard.Content>
                                 <div className="overflow-x-auto rounded-lg border">
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b bg-muted/50">
-                                                <th className="text-left font-medium px-4 py-3">Resource</th>
+                                                <th className="text-left font-medium px-4 py-3">{t("forms.adminRole.resource")}</th>
                                                 {ACTIONS.map((a) => (
-                                                    <th key={a} className="text-center font-medium px-3 py-3 w-24">{a}</th>
+                                                    <th key={a} className="text-center font-medium px-3 py-3 w-24">{t(`forms.adminRole.${a === "VIEW" ? "view" : a === "CREATE" ? "create" : a === "EDIT" ? "editPriv" : "deletePriv"}`)}</th>
                                                 ))}
-                                                <th className="text-center font-medium px-3 py-3 w-24">ALL</th>
+                                                <th className="text-center font-medium px-3 py-3 w-24">{t("forms.adminRole.allPriv")}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -207,14 +208,14 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                                                 <Fragment key={sec.section}>
                                                     <tr className="bg-muted/30">
                                                         <td colSpan={ACTIONS.length + 2} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                                            {sec.section}
+                                                            {t(sec.section)}
                                                         </td>
                                                     </tr>
                                                     {sec.rows.map(({ label, privileges }) => {
                                                         const allChecked = privileges.every((p) => selectedIds.has(p.id));
                                                         return (
                                                             <tr key={label} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
-                                                                <td className="px-4 py-3 pl-6 font-medium">{label}</td>
+                                                                <td className="px-4 py-3 pl-6 font-medium">{t(label)}</td>
                                                                 {ACTIONS.map((action) => {
                                                                     const priv = privileges.find((p) => p.name.endsWith("_" + action));
                                                                     if (!priv) return <td key={action} className="text-center px-3 py-3" />;
@@ -247,7 +248,7 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
 
                     <FormActions>
                         <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_ROLES)} />
-                        <FormActions.Submit>{isNew ? "Create Role" : "Save Changes"}</FormActions.Submit>
+                        <FormActions.Submit>{isNew ? t("forms.adminRole.createRole") : t("forms.common.saveChanges")}</FormActions.Submit>
                     </FormActions>
                 </form>
             </Form>

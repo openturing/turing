@@ -1,0 +1,28 @@
+{
+  "tokenUsage": {
+    "noLlm": "No Language Model Available",
+    "noLlmDescription": "To view token usage, create and enable at least one LLM instance.",
+    "createLlm": "Create LLM Instance",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "loadingUsage": "Loading usage data...",
+    "loadFailed": "Failed to load usage data.",
+    "totalRequests": "Total Requests",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens",
+    "totalTokens": "Total Tokens",
+    "summaryByModel": "Summary by Model",
+    "summaryDescription": "Aggregated token usage per LLM instance for the selected month",
+    "noUsageData": "No usage data for this period.",
+    "instance": "Instance",
+    "vendor": "Vendor",
+    "model": "Model",
+    "requests": "Requests",
+    "input": "Input",
+    "output": "Output",
+    "total": "Total",
+    "dailyBreakdown": "Daily Breakdown",
+    "dailyDescription": "Day-by-day token consumption per model",
+    "date": "Date"
+  }
+}

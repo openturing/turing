@@ -6,12 +6,14 @@ import type { TurIntent } from "@/models/intent/intent.model";
 import { TurIntentService } from "@/services/intent/intent.service";
 import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turIntentService = new TurIntentService();
 
 export default function IntentSettingsPage() {
   const { id } = useParams() as { id: string };
+  const { t } = useTranslation();
   const [intent, setIntent] = useState<TurIntent>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,15 +24,15 @@ export default function IntentSettingsPage() {
     } else {
       turIntentService.get(id)
         .then(setIntent)
-        .catch(() => setError("Connection error or timeout while fetching intent."));
+        .catch(() => setError(t("common.connectionError", { resource: t("intent.title").toLowerCase() })));
       setIsNew(false);
     }
   }, [id]);
 
   return (
     <LoadProvider checkIsNotUndefined={intent} error={error} tryAgainUrl={`${ROUTES.INTENT_INSTANCE}/${id}/settings`}>
-      <SubPageHeader icon={IconSettings} name="Settings" feature="Settings"
-        description="General information, actions (prompts), and status." />
+      <SubPageHeader icon={IconSettings} name={t("intent.settings.title")} feature={t("intent.settings.title")}
+        description={t("intent.settings.description")} />
       {intent && <IntentSettingsForm value={intent} isNew={isNew} />}
     </LoadProvider>
   );

@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { IconLoader2, IconPencil, IconArrowsMaximize, IconCut, IconAbc, IconSparkles } from "@tabler/icons-react"
 import { Textarea } from "@/components/ui/textarea"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
@@ -13,8 +14,8 @@ type AiAction = "refine" | "expand" | "summarize" | "fix" | "generate"
 
 interface ActionDef {
   key: AiAction
-  label: string
-  tooltip: string
+  labelKey: string
+  tooltipKey: string
   icon: typeof IconPencil
   needsText: boolean
   prompt: (ctx: string, maxLen?: number) => string
@@ -29,8 +30,8 @@ function charLimitHint(maxLen?: number): string {
 const AI_ACTIONS: ActionDef[] = [
   {
     key: "generate",
-    label: "Generate",
-    tooltip: "Create a new description from scratch using the title as context",
+    labelKey: "forms.smartDescription.generate",
+    tooltipKey: "forms.smartDescription.generateTooltip",
     icon: IconSparkles,
     needsText: false,
     prompt: (ctx, maxLen) =>
@@ -38,8 +39,8 @@ const AI_ACTIONS: ActionDef[] = [
   },
   {
     key: "refine",
-    label: "Refine",
-    tooltip: "Improve grammar and style without changing the length",
+    labelKey: "forms.smartDescription.refine",
+    tooltipKey: "forms.smartDescription.refineTooltip",
     icon: IconPencil,
     needsText: true,
     prompt: (_ctx, maxLen) =>
@@ -47,8 +48,8 @@ const AI_ACTIONS: ActionDef[] = [
   },
   {
     key: "expand",
-    label: "Expand",
-    tooltip: "Make the text more detailed and informative",
+    labelKey: "forms.smartDescription.expand",
+    tooltipKey: "forms.smartDescription.expandTooltip",
     icon: IconArrowsMaximize,
     needsText: true,
     prompt: (_ctx, maxLen) =>
@@ -56,8 +57,8 @@ const AI_ACTIONS: ActionDef[] = [
   },
   {
     key: "summarize",
-    label: "Summarize",
-    tooltip: "Shorten the text while keeping the key meaning",
+    labelKey: "forms.smartDescription.summarize",
+    tooltipKey: "forms.smartDescription.summarizeTooltip",
     icon: IconCut,
     needsText: true,
     prompt: (_ctx, maxLen) =>
@@ -65,8 +66,8 @@ const AI_ACTIONS: ActionDef[] = [
   },
   {
     key: "fix",
-    label: "Fix",
-    tooltip: "Fix only spelling and grammar errors",
+    labelKey: "forms.smartDescription.fix",
+    tooltipKey: "forms.smartDescription.fixTooltip",
     icon: IconAbc,
     needsText: true,
     prompt: (_ctx, maxLen) =>
@@ -99,6 +100,7 @@ function SmartDescriptionComponent({
   entityType,
   children,
 }: SmartDescriptionProps) {
+  const { t } = useTranslation()
   const text = value ?? ""
   const [defaultLlmId, setDefaultLlmId] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<AiAction | null>(null)
@@ -171,7 +173,7 @@ function SmartDescriptionComponent({
                 <button
                   key={action.key}
                   type="button"
-                  title={action.tooltip}
+                  title={t(action.tooltipKey)}
                   onClick={() => handleAction(action)}
                   disabled={isActionDisabled(action)}
                   className={cn(
@@ -186,7 +188,7 @@ function SmartDescriptionComponent({
                   ) : (
                     <ActionIcon className="size-3.5" />
                   )}
-                  {action.label}
+                  {t(action.labelKey)}
                 </button>
               )
             })}

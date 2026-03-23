@@ -24,6 +24,7 @@ import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm
 } from "react-hook-form"
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurMcpServer>({
     defaultValues: value
   });
@@ -77,38 +79,38 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
       if (isNew) {
         const result = await turMcpServerService.create(payload);
         if (result) {
-          toast.success(`The ${payload.title} MCP Server was saved`);
+          toast.success(t("forms.common.saved", { name: payload.title, feature: "MCP Server" }));
           navigate(urlBase);
         } else {
-          toast.error(`The ${payload.title} MCP Server was not saved`);
+          toast.error(t("forms.common.notSaved", { name: payload.title, feature: "MCP Server" }));
         }
       }
       else {
         const result = await turMcpServerService.update(payload);
         if (result) {
-          toast.success(`The ${payload.title} MCP Server was updated`);
+          toast.success(t("forms.common.updated", { name: payload.title, feature: "MCP Server" }));
         } else {
-          toast.error(`The ${payload.title} MCP Server was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: payload.title, feature: "MCP Server" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
   async function onDelete() {
     try {
       if (await turMcpServerService.delete(value)) {
-        toast.success(`The ${value.title} MCP Server was deleted`);
+        toast.success(t("forms.common.deleted", { name: value.title, feature: "MCP Server" }));
         navigate(urlBase);
       }
       else {
-        toast.error(`The ${value.title} MCP Server was not deleted`);
+        toast.error(t("forms.common.notDeleted", { name: value.title, feature: "MCP Server" }));
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${value.title} MCP Server was not deleted`);
+      toast.error(t("forms.common.notDeleted", { name: value.title, feature: "MCP Server" }));
     }
     setOpen(false);
   }
@@ -122,7 +124,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
             {!isNew && <DialogDelete feature="MCP server" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
           </CardAction>
           <CardDescription>
-            MCP server settings.
+            {t("forms.mcp.settings")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,23 +132,23 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-2 md:py-8">
               {/* General Information Section */}
               <SectionCard variant="blue">
-                <SectionCard.Header icon={IconSettings} title="General Information" description="Title and description for this MCP server." />
+                <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.mcp.generalDesc")} />
                 <SectionCard.Content>
                   <div className="w-full">
                     <FormField
                       control={form.control}
                       name="title"
-                      rules={{ required: "A title is required for this MCP server." }}
+                      rules={{ required: t("forms.mcp.titleRequired") }}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Title</FormLabel>
+                          <FormLabel>{t("forms.common.title")}</FormLabel>
                           <FormDescription>
-                            Provide a unique, descriptive name for this MCP server.
+                            {t("forms.mcp.titleDesc")}
                           </FormDescription>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Enter server title"
+                              placeholder={t("forms.mcp.titlePlaceholder")}
                               type="text"
                             />
                           </FormControl>
@@ -165,14 +167,14 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                             <SmartDescription
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Enter a brief description"
+                              placeholder={t("forms.mcp.descriptionPlaceholder")}
                               maxLength={500}
                               title={form.watch("title")}
                               entityType="MCP Server"
                             >
-                              <SmartDescription.Label>Description</SmartDescription.Label>
+                              <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>
-                                Summarize the purpose or intended use of this MCP server.
+                                {t("forms.mcp.descriptionDesc")}
                               </SmartDescription.Description>
                             </SmartDescription>
                           </FormControl>
@@ -195,7 +197,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                               title={form.watch("title")}
                               description={form.watch("description")}
                             >
-                              <IconPicker.Label>Icon</IconPicker.Label>
+                              <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                             </IconPicker>
                           </FormControl>
                         </FormItem>
@@ -207,20 +209,20 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Connection Section */}
               <SectionCard variant="cyan">
-                <SectionCard.Header icon={IconPlug} title="Connection" description="How to connect to this MCP server." />
+                <SectionCard.Header icon={IconPlug} title={t("forms.mcp.connection")} description={t("forms.mcp.connectionDesc")} />
                 <SectionCard.Content>
                   <div className="w-full flex flex-row justify-between items-center gap-4">
                     <div className="flex flex-col">
-                      <FormLabel>Connection Type</FormLabel>
+                      <FormLabel>{t("forms.mcp.connectionType")}</FormLabel>
                       <FormDescription>
-                        Choose how this MCP server is accessed.
+                        {t("forms.mcp.connectionTypeDesc")}
                       </FormDescription>
                     </div>
                     <div className="flex-1 max-w-xs">
                       <FormField
                         control={form.control}
                         name="connectionType"
-                        rules={{ required: "Please select a connection type." }}
+                        rules={{ required: t("forms.mcp.connectionTypeRequired") }}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <Select
@@ -229,15 +231,15 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                             >
                               <FormControl>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select connection type..." />
+                                  <SelectValue placeholder={t("forms.mcp.selectConnectionType")} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 <SelectItem key="HTTP" value="HTTP">
-                                  HTTP
+                                  {t("forms.mcp.http")}
                                 </SelectItem>
                                 <SelectItem key="COMMAND" value="COMMAND">
-                                  Command
+                                  {t("forms.mcp.command")}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -249,16 +251,16 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                   </div>
                   <div className="w-full flex flex-row justify-between items-center gap-4">
                     <div className="flex flex-col">
-                      <FormLabel>Type</FormLabel>
+                      <FormLabel>{t("forms.mcp.type")}</FormLabel>
                       <FormDescription>
-                        Define if this server runs synchronously or asynchronously.
+                        {t("forms.mcp.typeDesc")}
                       </FormDescription>
                     </div>
                     <div className="flex-1 max-w-xs">
                       <FormField
                         control={form.control}
                         name="type"
-                        rules={{ required: "Please select a type." }}
+                        rules={{ required: t("forms.mcp.typeRequired") }}
                         render={({ field }) => (
                           <FormItem className="mb-0">
                             <Select
@@ -267,15 +269,15 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                             >
                               <FormControl>
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select type..." />
+                                  <SelectValue placeholder={t("forms.mcp.selectType")} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 <SelectItem key="SYNC" value="SYNC">
-                                  Sync
+                                  {t("forms.mcp.sync")}
                                 </SelectItem>
                                 <SelectItem key="ASYNC" value="ASYNC">
-                                  Async
+                                  {t("forms.mcp.async")}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -290,7 +292,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Endpoint Section */}
               <SectionCard variant="violet">
-                <SectionCard.Header icon={selectedConnectionType === "COMMAND" ? IconTerminal2 : IconServer2} title="Endpoint" description={selectedConnectionType === "COMMAND" ? "Command and arguments to start the server." : "URL to reach the MCP server."} />
+                <SectionCard.Header icon={selectedConnectionType === "COMMAND" ? IconTerminal2 : IconServer2} title={t("forms.mcp.endpointSection")} description={selectedConnectionType === "COMMAND" ? t("forms.mcp.endpointDescCommand") : t("forms.mcp.endpointDescHttp")} />
                 <SectionCard.Content>
                   {selectedConnectionType === "HTTP" && (
                     <div className="w-full">
@@ -299,13 +301,13 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                         name="url"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>URL</FormLabel>
+                            <FormLabel>{t("forms.mcp.url")}</FormLabel>
                             <FormDescription>
-                              Enter the base URL where this MCP server is accessible. Example: http://localhost:3000/mcp
+                              {t("forms.mcp.urlDesc")}
                             </FormDescription>
                             <FormControl>
                               <Input
-                                placeholder="Enter endpoint URL"
+                                placeholder={t("forms.mcp.urlPlaceholder")}
                                 type="text"
                                 {...field}
                                 value={field.value ?? ""}
@@ -325,13 +327,13 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                           name="command"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Command</FormLabel>
+                              <FormLabel>{t("forms.mcp.commandLabel")}</FormLabel>
                               <FormDescription>
-                                The command to execute the MCP server. Example: npx, python, node
+                                {t("forms.mcp.commandDesc")}
                               </FormDescription>
                               <FormControl>
                                 <Input
-                                  placeholder="e.g., npx"
+                                  placeholder={t("forms.mcp.commandPlaceholder")}
                                   type="text"
                                   {...field}
                                   value={field.value ?? ""}
@@ -348,13 +350,13 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                           name="args"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Arguments</FormLabel>
+                              <FormLabel>{t("forms.mcp.arguments")}</FormLabel>
                               <FormDescription>
-                                Arguments to pass to the command. Example: -y @modelcontextprotocol/server-filesystem /path/to/dir
+                                {t("forms.mcp.argumentsDesc")}
                               </FormDescription>
                               <FormControl>
                                 <Input
-                                  placeholder="e.g., -y @modelcontextprotocol/server-filesystem /tmp"
+                                  placeholder={t("forms.mcp.argumentsPlaceholder")}
                                   type="text"
                                   {...field}
                                   value={field.value ?? ""}
@@ -372,7 +374,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
 
               {/* Status Section */}
               <SectionCard variant="slate">
-                <SectionCard.Header icon={IconToggleLeft} title="Status" description="Enable or disable this MCP server." />
+                <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.mcp.statusDesc")} />
                 <SectionCard.Content>
                   <FormField
                     control={form.control}
@@ -380,9 +382,9 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                     render={({ field }) => (
                       <FormItemTwoColumns>
                         <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                           <FormItemTwoColumns.Description>
-                            Toggle to activate or deactivate this MCP server instance.
+                            {t("forms.mcp.enabledDesc")}
                           </FormItemTwoColumns.Description>
                         </FormItemTwoColumns.Left>
                         <FormItemTwoColumns.Right>

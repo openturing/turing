@@ -5,6 +5,7 @@ import {
     type ColumnDef,
 } from "@tanstack/react-table";
 import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,9 @@ import {
 } from "@/components/ui/table";
 import type { TurLoggingGeneral } from "@/models/logging/logging-general.model";
 import { IconFileAlert, IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
+import type { Locale } from "date-fns";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
+import { useDateLocale } from "@/hooks/use-date-locale";
 import { Badge } from "../ui/badge";
 import { GradientButton } from "../ui/gradient-button";
 import { LogHighlighter } from "./logging.hl";
@@ -58,10 +61,10 @@ type StackTraceContextType = {
 };
 const StackTraceContext = createContext<StackTraceContextType>({ openStackTrace: () => { } });
 
-export const columns: ColumnDef<TurLoggingGeneral>[] = [
+export const buildLoggingColumns = (t: (key: string, opts?: Record<string, unknown>) => string, dateLocale: Locale): ColumnDef<TurLoggingGeneral>[] => [
     {
         accessorKey: "date",
-        header: "Date",
+        header: t("forms.loggingGrid.date"),
         cell: ({ row }) => {
             const dateValue = new Date(row.getValue("date"));
             const formattedDate = dateValue.toLocaleString(undefined, {
@@ -74,7 +77,8 @@ export const columns: ColumnDef<TurLoggingGeneral>[] = [
             });
 
             const timeAgo = formatDistanceToNow(dateValue, {
-                addSuffix: true
+                addSuffix: true,
+                locale: dateLocale,
             });
 
             return (
@@ -89,12 +93,12 @@ export const columns: ColumnDef<TurLoggingGeneral>[] = [
     },
     {
         accessorKey: "clusterNode",
-        header: "Node",
+        header: t("forms.loggingGrid.node"),
         cell: ({ row }) => <div className="font-mono text-sm">{row.getValue("clusterNode")}</div>,
     },
     {
         accessorKey: "level",
-        header: "Level",
+        header: t("forms.loggingGrid.level"),
         cell: ({ row }) => {
             const level = String(row.getValue("level")).toUpperCase();
             const levelConfig: Record<string, { label: string; className: string }> = {
@@ -119,18 +123,19 @@ export const columns: ColumnDef<TurLoggingGeneral>[] = [
     },
     {
         accessorKey: "logger",
-        header: "Logger",
+        header: t("forms.loggingGrid.logger"),
         cell: ({ row }) => <div className="font-mono text-sm">{truncateLogger(row.getValue("logger"), 40)}</div>,
     },
     {
         accessorKey: "message",
-        header: "Message",
+        header: t("forms.loggingGrid.message"),
         size: 500,
         cell: ({ row }) => <MessageCell message={row.getValue("message")} stackTrace={row.original.stackTrace} />,
     }
 ];
 
 function MessageCell({ message, stackTrace }: { message: string; stackTrace: string }) {
+    const { t } = useTranslation();
     const { openStackTrace } = useContext(StackTraceContext);
     const hasStackTrace = stackTrace && stackTrace.trim().length > 0;
 
@@ -141,7 +146,7 @@ function MessageCell({ message, stackTrace }: { message: string; stackTrace: str
                     <button
                         type="button"
                         onClick={() => openStackTrace(message, stackTrace)}
-                        title="View Stack Trace"
+                        title={t("forms.loggingGrid.viewStackTrace")}
                         className="mt-0.5 shrink-0 text-red-500 hover:text-red-700 cursor-pointer"
                     >
                         <IconFileAlert className="h-4 w-4" />
@@ -168,6 +173,9 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
     level, dateFrom, dateTo, search,
     onPageChange, onPageSizeChange, onLevelChange, onDateFromChange, onDateToChange, onSearchChange
 }) => {
+    const { t } = useTranslation();
+    const dateLocale = useDateLocale();
+    const columns = buildLoggingColumns(t, dateLocale);
     const [selectedTrace, setSelectedTrace] = useState<{ message: string; stackTrace: string } | null>(null);
     const [lastUpdated, setLastUpdated] = useState(Date.now());
 
@@ -191,7 +199,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
             <Card>
                 <div className="flex flex-wrap items-center gap-3 p-4 border-b">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">Level:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.loggingGrid.level")}:</span>
                         <Select value={level} onValueChange={onLevelChange}>
                             <SelectTrigger className="h-8 w-28 text-xs font-mono">
                                 <SelectValue placeholder="All" />
@@ -206,7 +214,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         </Select>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">From:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.loggingGrid.from")}</span>
                         <Input
                             type="date"
                             value={dateFrom}
@@ -215,7 +223,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">To:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">{t("forms.loggingGrid.to")}</span>
                         <Input
                             type="date"
                             value={dateTo}
@@ -227,7 +235,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                         <IconSearch className="h-4 w-4 text-muted-foreground" />
                         <Input
                             type="text"
-                            placeholder="Search message / stacktrace..."
+                            placeholder={t("forms.loggingGrid.searchMessage")}
                             value={search}
                             onChange={(e) => onSearchChange(e.target.value)}
                             className="h-8 text-xs"
@@ -271,7 +279,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={columns.length}>
-                                        No results.
+                                        {t("forms.common.noResultsDot")}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -280,15 +288,15 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                 </div>
                 <div className="flex items-center justify-between py-4 px-4 border-t">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{totalElements} total records</span>
+                        <span>{t("forms.common.totalRecords", { count: totalElements })}</span>
                         <span className="flex items-center gap-1 text-xs italic">
                             <IconRefresh className="h-3 w-3" />
-                            Last sync: {new Date(lastUpdated).toLocaleTimeString()}
+                            {t("forms.loggingGrid.lastSync", { time: new Date(lastUpdated).toLocaleTimeString() })}
                         </span>
                     </div>
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
-                            <p className="text-sm">Rows per page</p>
+                            <p className="text-sm">{t("forms.common.rowsPerPage")}</p>
                             <Select
                                 value={`${pageSize}`}
                                 onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -306,7 +314,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             </Select>
                         </div>
                         <div className="flex w-40 items-center justify-center text-sm font-medium">
-                            Page {page + 1} of{" "}{totalPages || 1}
+                            {t("forms.common.pageOfPages", { page: page + 1, totalPages: totalPages || 1 })}
                         </div>
                         <div className="flex items-center space-x-2">
                             <GradientButton
@@ -365,7 +373,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             <Card className="h-full flex flex-col ml-2 overflow-hidden">
                                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                                     <div className="flex flex-col gap-1 min-w-0">
-                                        <h3 className="text-sm font-semibold">Stack Trace</h3>
+                                        <h3 className="text-sm font-semibold">{t("forms.loggingGrid.stackTrace")}</h3>
                                         <p className="text-xs text-muted-foreground font-mono truncate">
                                             {selectedTrace.message.length > 100
                                                 ? selectedTrace.message.slice(0, 100) + "..."
@@ -376,7 +384,7 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                         type="button"
                                         onClick={() => setSelectedTrace(null)}
                                         className="shrink-0 ml-2 p-1 rounded hover:bg-muted cursor-pointer"
-                                        title="Close"
+                                        title={t("forms.loggingGrid.close")}
                                     >
                                         <IconX className="h-4 w-4" />
                                     </button>

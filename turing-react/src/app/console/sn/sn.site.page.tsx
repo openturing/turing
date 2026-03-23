@@ -24,6 +24,7 @@ import {
     IconSpeakerphone
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 const turSNSiteService = new TurSNSiteService();
@@ -37,10 +38,11 @@ export default function SNSitePage() {
     const [hasDefaultLlm, setHasDefaultLlm] = useState(false);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate()
+    const { t } = useTranslation();
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
     const [error, setError] = useState<string | null>(null);
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
-        id === "new" ? [{ label: "New Site" }] : [{ label: "…" }]
+        id === "new" ? [{ label: t("sn.newSite") }] : [{ label: "…" }]
     );
 
     const data = useMemo(() => {
@@ -48,7 +50,7 @@ export default function SNSitePage() {
             return {
                 navMain: [
                     {
-                        title: "Settings",
+                        title: t("sn.settings.title"),
                         url: "/detail",
                         icon: IconSettings,
                     },
@@ -60,7 +62,7 @@ export default function SNSitePage() {
 
         if (hasDefaultLlm) {
             navItems.push({
-                title: "AI Insights",
+                title: t("sn.insights.title"),
                 url: "/insights",
                 icon: IconSparkles,
             });
@@ -68,52 +70,52 @@ export default function SNSitePage() {
 
         navItems.push(
             {
-                title: "Settings",
+                title: t("sn.settings.title"),
                 url: "/detail",
                 icon: IconSettings,
             },
             {
-                title: "Multi Languages",
+                title: t("sn.multiLanguage.title"),
                 url: "/locale",
                 icon: IconLanguage,
             },
             {
-                title: "Behavior",
+                title: t("sn.behavior.title"),
                 url: "/behavior",
                 icon: IconScale,
             },
             {
-                title: "Fields",
+                title: t("sn.fields.title"),
                 url: "/field",
                 icon: IconAlignBoxCenterStretch,
             },
             {
-                title: "Facets",
+                title: t("sn.facets.title"),
                 url: "/facet",
                 icon: IconFilter,
             },
             {
-                title: "Generative AI",
+                title: t("sn.genai.title"),
                 url: "/ai",
                 icon: IconCpu2,
             },
             {
-                title: "Result Ranking",
+                title: t("sn.resultRanking.title"),
                 url: "/result-ranking",
                 icon: IconNumber123,
             },
             {
-                title: "Merge Providers",
+                title: t("sn.mergeProviders.title"),
                 url: "/merge-providers",
                 icon: IconGitMerge,
             },
             {
-                title: "Spotlight",
+                title: t("sn.spotlight.title"),
                 url: "/spotlight",
                 icon: IconSpeakerphone,
             },
             {
-                title: "Top Search Terms",
+                title: t("sn.topSearchTerms.title"),
                 url: "/top-terms",
                 icon: IconDashboard,
             },
@@ -123,34 +125,34 @@ export default function SNSitePage() {
             navMain: navItems,
             counts: [
                 {
-                    title: "Queue",
+                    title: t("sn.queue"),
                     icon: IconInbox,
                     count: snStatus?.queue ?? 0,
                 },
                 {
-                    title: "Indexed",
+                    title: t("sn.indexed"),
                     icon: IconDatabase,
                     count: snStatus?.documents ?? 0,
                 },
             ],
         };
-    }, [isNew, hasDefaultLlm, snStatus]);
+    }, [isNew, hasDefaultLlm, snStatus, t]);
     useEffect(() => {
         if (id === "new") {
             turSNSiteService.query().then(() => {
                 setSnSite({} as TurSNSite);
                 setSnStatus(null);
                 setIsNew(true);
-            }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation sites."));
+            }).catch(() => setError(t("common.connectionError", { resource: "Semantic Navigation sites" })));
         } else {
             turSNSiteService.get(id).then((site) => {
                 setSnSite(site);
                 setBreadcrumb([{ label: site.name, href: `${ROUTES.SN_INSTANCE}/${site.id}` }]);
-            }).catch(() => setError("Connection error or timeout while fetching Semantic Navigation site details."));
+            }).catch(() => setError(t("common.connectionError", { resource: "Semantic Navigation site details" })));
 
             turSNSiteService.getStatus(id)
                 .then(setSnStatus)
-                .catch(() => setError("Connection error or timeout while fetching Semantic Navigation site status."));
+                .catch(() => setError(t("common.connectionError", { resource: "Semantic Navigation site status" })));
             turGlobalSettingsService.query()
                 .then((settings) => setHasDefaultLlm(!!settings.defaultLlmId))
                 .catch(() => setHasDefaultLlm(false));
@@ -163,15 +165,15 @@ export default function SNSitePage() {
     async function onDelete() {
         try {
             if (await turSNSiteService.delete(snSite)) {
-                toast.success(`The ${snSite.name} Semantic Navigation was deleted`);
+                toast.success(t("sn.siteDeleted", { name: snSite.name }));
                 navigate(`${ROUTES.SN_INSTANCE}`);
             } else {
-                toast.error(`The ${snSite.name} Semantic Navigation was not deleted`);
+                toast.error(t("sn.siteNotDeleted", { name: snSite.name }));
             }
 
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error(`The ${snSite.name} Semantic Navigation was not deleted`);
+            toast.error(t("sn.siteNotDeleted", { name: snSite.name }));
         }
         setOpen(false);
     }
@@ -189,20 +191,20 @@ export default function SNSitePage() {
                 a.click();
                 globalThis.URL.revokeObjectURL(url);
                 a.remove();
-                toast.success(`The ${snSite.name} Semantic Navigation was exported`);
+                toast.success(t("sn.siteExported", { name: snSite.name }));
             } else {
-                toast.error(`The ${snSite.name} Semantic Navigation was not exported`);
+                toast.error(t("sn.siteNotExported", { name: snSite.name }));
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error(`The ${snSite.name} Semantic Navigation was not exported`);
+            toast.error(t("sn.siteNotExported", { name: snSite.name }));
         }
         setOpen(false);
     }
 
     return (
         <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}`}>
-            <SubPage icon={IconSearch} feature={"Semantic Navigation"} name={snSite.name}
+            <SubPage icon={IconSearch} feature={t("sn.title")} name={snSite.name}
                 onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} onExport={onExport} />
         </LoadProvider>
     )

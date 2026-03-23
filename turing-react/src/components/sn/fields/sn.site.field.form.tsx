@@ -37,6 +37,7 @@ import { useEffect, useMemo, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 const turSNFieldService = new TurSNFieldService();
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
+  const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
     name: snField.name ?? "",
@@ -126,28 +128,28 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
 
         const result = await turSNFieldService.create(snSiteId, normalizedData);
         if (result) {
-          toast.success(`The ${normalizedData.name} SN Field was saved`);
+          toast.success(t("forms.common.saved", { name: normalizedData.name, feature: "SN Field" }));
           navigate(urlBase);
         }
         else {
-          toast.error(`The ${normalizedData.name} SN Field was not saved`);
+          toast.error(t("forms.common.notSaved", { name: normalizedData.name, feature: "SN Field" }));
         }
       }
       else {
         const result = await turSNFieldService.update(snSiteId, normalizedData);
         if (result) {
-          toast.success(`The ${normalizedData.name} SN Field was updated`);
+          toast.success(t("forms.common.updated", { name: normalizedData.name, feature: "SN Field" }));
         } else {
-          toast.error(`The ${normalizedData.name} SN Field was not updated`);
+          toast.error(t("forms.common.notUpdated", { name: normalizedData.name, feature: "SN Field" }));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
       if (axios.isAxiosError(error) && error.response?.status === 409) {
-        toast.error("A field with this name already exists.");
+        toast.error(t("forms.snField.fieldExists"));
         return;
       }
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -181,18 +183,18 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
             {/* General Configuration */}
             <SectionCard variant="blue">
-              <SectionCard.Header icon={IconSettings} title="General Configuration" description="Core field settings including name, type, and behavior." />
+              <SectionCard.Header icon={IconSettings} title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")} />
               <SectionCard.Content>
                 {/* Name */}
                 <FormField
                   control={form.control}
                   name="name"
-                  rules={{ required: "Name is required." }}
+                  rules={{ required: t("forms.snField.nameRequired") }}
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t("forms.common.name")}</FormLabel>
                       <FormDescription>
-                        Unique identifier for this field. Used for search and indexing.
+                        {t("forms.snField.nameDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input {...field} placeholder="Name" type="text" className="w-full" />
@@ -205,13 +207,13 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                 <FormField
                   control={form.control}
                   name="type"
-                  rules={{ required: "Type is required." }}
+                  rules={{ required: t("forms.snField.typeRequired") }}
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Type</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.type")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Data type for this field (e.g., text, number, date).
+                          {t("forms.snField.typeDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -269,9 +271,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   name="defaultValue"
                   render={({ field }) => (
                     <FormItem className="w-full">
-                      <FormLabel>Default Value</FormLabel>
+                      <FormLabel>{t("forms.snField.defaultValue")}</FormLabel>
                       <FormDescription>
-                        Value automatically assigned if no value is provided during indexing.
+                        {t("forms.snField.defaultValueDesc")}
                         {isDecimalType
                           ? ` Use ${decimalSymbol} as decimal separator (example: 150${decimalSymbol}75).`
                           : null}
@@ -310,9 +312,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Multi Value</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.multiValue")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Allows this field to store multiple values (e.g., tags).
+                          {t("forms.snField.multiValueDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -332,9 +334,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Highlighting</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.highlightingLabel")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Enables highlighting of matching search terms in results.
+                          {t("forms.snField.highlightingDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -354,9 +356,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>MLT</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.mlt")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Activates "More Like This" functionality.
+                          {t("forms.snField.mltDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -376,9 +378,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Enabled</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          If enabled, this field will be included in search queries and indexing.
+                          {t("forms.snField.enabledDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -398,9 +400,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Required</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.required")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Marks this field as mandatory during indexing.
+                          {t("forms.snField.requiredDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
@@ -420,9 +422,9 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
                   render={({ field }) => (
                     <FormItemTwoColumns className="w-full">
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Facet</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.snField.facet")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Enables this field as a filter in the search page.
+                          {t("forms.snField.facetDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>

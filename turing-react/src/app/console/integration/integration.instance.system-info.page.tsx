@@ -11,6 +11,7 @@ import {
 } from "@tabler/icons-react";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -76,7 +77,7 @@ function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
     );
 }
 
-function StatusBadge({ status }: Readonly<{ status: string }>) {
+function StatusBadge({ status, t }: Readonly<{ status: string; t: (key: string) => string }>) {
     const isUp = status === "UP";
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -85,14 +86,15 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
                 : "bg-red-500/10 text-red-600 dark:text-red-400"
         }`}>
             <span className={`size-1.5 rounded-full ${isUp ? "bg-emerald-500" : "bg-red-500"}`} />
-            {isUp ? "UP" : "DOWN"}
+            {isUp ? t("integration.connectorSystemInfo.up") : t("integration.connectorSystemInfo.down")}
         </span>
     );
 }
 
 export default function IntegrationInstanceSystemInfoPage() {
+    const { t } = useTranslation();
     const { id } = useParams() as { id: string };
-    useSubPageBreadcrumb("System Information");
+    useSubPageBreadcrumb(t("integration.connectorSystemInfo.title"));
 
     const [info, setInfo] = useState<ConnectorSystemInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -121,9 +123,9 @@ export default function IntegrationInstanceSystemInfoPage() {
             <>
                 <SubPageHeader
                     icon={IconInfoCircle}
-                    feature="System Information"
-                    name="System Information"
-                    description="Connector version and runtime details."
+                    feature={t("integration.connectorSystemInfo.title")}
+                    name={t("integration.connectorSystemInfo.title")}
+                    description={t("integration.connectorSystemInfo.description")}
                 />
                 <div className="flex items-center justify-center py-20">
                     <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
@@ -156,20 +158,20 @@ export default function IntegrationInstanceSystemInfoPage() {
                 <SectionCard variant="blue">
                     <SectionCard.StaticHeader
                         icon={IconDeviceDesktop}
-                        title="Application"
-                        description="Connector version and runtime environment."
+                        title={t("integration.connectorSystemInfo.application")}
+                        description={t("integration.connectorSystemInfo.applicationDesc")}
                     />
                     <SectionCard.Content>
                         <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-sm text-muted-foreground">Status</span>
-                            <StatusBadge status={status} />
+                            <span className="text-sm text-muted-foreground">{t("integration.connectorSystemInfo.status")}</span>
+                            <StatusBadge status={status} t={t} />
                         </div>
-                        <InfoRow label="Name" value={info?.appName ?? "Unknown"} />
-                        <InfoRow label="Version" value={info?.appVersion ?? "Unknown"} />
-                        <InfoRow label="Java Version" value={info?.javaVersion ?? "Unknown"} />
-                        <InfoRow label="Java Vendor" value={info?.javaVendor ?? "Unknown"} />
-                        <InfoRow label="JVM" value={info?.javaVmName ?? "Unknown"} />
-                        <InfoRow label="OS" value={`${info?.osName ?? ""} ${info?.osVersion ?? ""} (${info?.osArch ?? ""})`} />
+                        <InfoRow label={t("integration.connectorSystemInfo.name")} value={info?.appName ?? "Unknown"} />
+                        <InfoRow label={t("integration.connectorSystemInfo.version")} value={info?.appVersion ?? "Unknown"} />
+                        <InfoRow label={t("integration.connectorSystemInfo.javaVersion")} value={info?.javaVersion ?? "Unknown"} />
+                        <InfoRow label={t("integration.connectorSystemInfo.javaVendor")} value={info?.javaVendor ?? "Unknown"} />
+                        <InfoRow label={t("integration.connectorSystemInfo.jvm")} value={info?.javaVmName ?? "Unknown"} />
+                        <InfoRow label={t("integration.connectorSystemInfo.os")} value={`${info?.osName ?? ""} ${info?.osVersion ?? ""} (${info?.osArch ?? ""})`} />
                     </SectionCard.Content>
                 </SectionCard>
 
@@ -178,23 +180,23 @@ export default function IntegrationInstanceSystemInfoPage() {
                     <SectionCard variant="cyan">
                         <SectionCard.StaticHeader
                             icon={IconServer}
-                            title="Physical Memory (RAM)"
-                            description="Operating system physical memory."
+                            title={t("systemInfo.physicalMemory")}
+                            description={t("systemInfo.physicalMemoryDesc")}
                         />
                         <SectionCard.Content>
                             <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">RAM Usage</span>
+                                    <span className="text-muted-foreground">{t("systemInfo.ramUsage")}</span>
                                     <span className="font-medium">{physicalPercent}%</span>
                                 </div>
                                 <ProgressBar value={physicalPercent} color="bg-cyan-500" />
                                 <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                    <span>Used: {formatBytes(physicalUsed)}</span>
-                                    <span>Total: {formatBytes(mem?.totalPhysicalMemory ?? 0)}</span>
+                                    <span>{t("systemInfo.used")} {formatBytes(physicalUsed)}</span>
+                                    <span>{t("systemInfo.totalLabel")} {formatBytes(mem?.totalPhysicalMemory ?? 0)}</span>
                                 </div>
                             </div>
-                            <InfoRow label="Total RAM" value={formatBytes(mem?.totalPhysicalMemory ?? 0)} />
-                            <InfoRow label="Free RAM" value={formatBytes(mem?.freePhysicalMemory ?? 0)} />
+                            <InfoRow label={t("systemInfo.totalRam")} value={formatBytes(mem?.totalPhysicalMemory ?? 0)} />
+                            <InfoRow label={t("systemInfo.freeRam")} value={formatBytes(mem?.freePhysicalMemory ?? 0)} />
                         </SectionCard.Content>
                     </SectionCard>
                 )}
@@ -203,24 +205,24 @@ export default function IntegrationInstanceSystemInfoPage() {
                 <SectionCard variant="emerald">
                     <SectionCard.StaticHeader
                         icon={IconCpu}
-                        title="Memory (JVM Heap)"
-                        description="Java heap memory allocation and usage."
+                        title={t("systemInfo.jvmHeap")}
+                        description={t("systemInfo.jvmHeapDesc")}
                     />
                     <SectionCard.Content>
                         <div className="space-y-1">
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Heap Usage</span>
+                                <span className="text-muted-foreground">{t("systemInfo.heapUsage")}</span>
                                 <span className="font-medium">{heapPercent}%</span>
                             </div>
                             <ProgressBar value={heapPercent} color="bg-emerald-500" />
                             <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                <span>Used: {formatBytes(mem?.usedMemory ?? 0)}</span>
-                                <span>Max: {formatBytes(mem?.maxMemory ?? 0)}</span>
+                                <span>{t("systemInfo.used")} {formatBytes(mem?.usedMemory ?? 0)}</span>
+                                <span>{t("systemInfo.max")} {formatBytes(mem?.maxMemory ?? 0)}</span>
                             </div>
                         </div>
-                        <InfoRow label="Total Allocated" value={formatBytes(mem?.totalMemory ?? 0)} />
-                        <InfoRow label="Free (Allocated)" value={formatBytes(mem?.freeMemory ?? 0)} />
-                        <InfoRow label="Max Heap" value={formatBytes(mem?.maxMemory ?? 0)} />
+                        <InfoRow label={t("systemInfo.totalAllocated")} value={formatBytes(mem?.totalMemory ?? 0)} />
+                        <InfoRow label={t("systemInfo.freeAllocated")} value={formatBytes(mem?.freeMemory ?? 0)} />
+                        <InfoRow label={t("systemInfo.maxHeap")} value={formatBytes(mem?.maxMemory ?? 0)} />
                     </SectionCard.Content>
                 </SectionCard>
 
@@ -228,24 +230,24 @@ export default function IntegrationInstanceSystemInfoPage() {
                 <SectionCard variant="amber">
                     <SectionCard.StaticHeader
                         icon={IconDisc}
-                        title="Disk Space"
-                        description="Storage on the connector's working volume."
+                        title={t("systemInfo.diskSpace")}
+                        description={t("systemInfo.diskSpaceDesc")}
                     />
                     <SectionCard.Content>
                         <div className="space-y-1">
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Disk Usage</span>
+                                <span className="text-muted-foreground">{t("systemInfo.diskUsage")}</span>
                                 <span className="font-medium">{diskPercent}%</span>
                             </div>
                             <ProgressBar value={diskPercent} color="bg-amber-500" />
                             <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                                <span>Used: {formatBytes(disk?.usedSpace ?? 0)}</span>
-                                <span>Total: {formatBytes(disk?.totalSpace ?? 0)}</span>
+                                <span>{t("systemInfo.used")} {formatBytes(disk?.usedSpace ?? 0)}</span>
+                                <span>{t("systemInfo.totalLabel")} {formatBytes(disk?.totalSpace ?? 0)}</span>
                             </div>
                         </div>
-                        <InfoRow label="Total" value={formatBytes(disk?.totalSpace ?? 0)} />
-                        <InfoRow label="Available" value={formatBytes(disk?.usableSpace ?? 0)} />
-                        <InfoRow label="Used" value={formatBytes(disk?.usedSpace ?? 0)} />
+                        <InfoRow label={t("systemInfo.totalLabel")} value={formatBytes(disk?.totalSpace ?? 0)} />
+                        <InfoRow label={t("systemInfo.available")} value={formatBytes(disk?.usableSpace ?? 0)} />
+                        <InfoRow label={t("systemInfo.usedMemory")} value={formatBytes(disk?.usedSpace ?? 0)} />
                     </SectionCard.Content>
                 </SectionCard>
             </div>

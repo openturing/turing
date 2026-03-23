@@ -6,6 +6,7 @@ import {
     SelectTrigger,
 } from "@/components/ui/select";
 import type { TurLocale } from "@/models/locale/locale.model";
+import { useTranslation } from "react-i18next";
 
 interface LanguageSelectProps {
     value?: string;
@@ -21,9 +22,11 @@ export function LanguageSelect({
     onValueChange,
     locales,
     extraLocaleValues = [],
-    placeholder = "Choose the language",
+    placeholder,
     className,
 }: Readonly<LanguageSelectProps>) {
+    const { t } = useTranslation();
+    const resolvedPlaceholder = placeholder ?? t("forms.common.chooseLanguage");
     const localeMap = new Map<string, { name: string; label: string }>();
 
     locales.forEach((locale) => {
@@ -58,7 +61,7 @@ export function LanguageSelect({
                         <span className="truncate">{selectedOption.label}</span>
                     </div>
                 ) : (
-                    <span className="text-muted-foreground">{placeholder}</span>
+                    <span className="text-muted-foreground">{resolvedPlaceholder}</span>
                 )}
             </SelectTrigger>
             <SelectContent>

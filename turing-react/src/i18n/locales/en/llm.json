@@ -1,0 +1,9 @@
+{
+  "llm": {
+    "title": "Language Model",
+    "blankTitle": "You don't seem to have any language model instance.",
+    "blankDescription": "Create a new instance and use it in semantic navigation and chatbot.",
+    "newInstance": "New language model instance",
+    "newLanguageModel": "New Language Model"
+  }
+}

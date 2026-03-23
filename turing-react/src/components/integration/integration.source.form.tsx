@@ -22,6 +22,7 @@ import { useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { FormActions } from "../ui/form-actions"
@@ -37,6 +38,7 @@ interface Props {
 }
 const turLocaleService = new TurLocaleService();
 export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrationId }) => {
+  const { t } = useTranslation();
   const turIntegrationAemSourceService = useAemSourceService(integrationId);
   const form = useForm<TurIntegrationAemSource>({
     defaultValues: value
@@ -55,25 +57,25 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
       if (isNew) {
         const result = await turIntegrationAemSourceService.create(integrationAemSource);
         if (result) {
-          toast.success(`The ${integrationAemSource.name} Integration Source was saved`);
+          toast.success(t("forms.common.saved", { name: integrationAemSource.name, feature: "Integration Source" }));
 
           navigate(sourceInstanceRoute);
         }
         else {
-          toast.error("Failed to create the integration source. Please try again.");
+          toast.error(t("forms.common.formSubmitFailed"));
         }
       }
       else {
         const result = await turIntegrationAemSourceService.update(integrationAemSource);
         if (result) {
-          toast.success(`The ${integrationAemSource.name} Integration Source was updated`);
+          toast.success(t("forms.common.updated", { name: integrationAemSource.name, feature: "Integration Source" }));
         } else {
-          toast.error("Failed to update the integration source. Please try again.");
+          toast.error(t("forms.common.formSubmitFailed"));
         }
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -83,19 +85,19 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
 
         {/* General Configuration */}
         <SectionCard variant="blue">
-          <SectionCard.Header icon={IconSettings} title="General Configuration" description="Basic information and connection settings for the AEM integration source." />
+          <SectionCard.Header icon={IconSettings} title={t("forms.integrationSource.general")} description={t("forms.integrationSource.generalDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
               name="name"
-              rules={{ required: "Name is required." }}
+              rules={{ required: t("forms.integration.nameRequired") }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t("forms.common.name")}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="My AEM Source" type="text" />
+                    <Input {...field} placeholder={t("forms.integration.namePlaceholder")} type="text" />
                   </FormControl>
-                  <FormDescription>Unique identifier for this integration source</FormDescription>
+                  <FormDescription>{t("forms.integration.nameDesc")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -104,14 +106,14 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
             <FormField
               control={form.control}
               name="endpoint"
-              rules={{ required: "Endpoint is required." }}
+              rules={{ required: t("forms.integration.endpointRequired") }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endpoint</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.endpoint")}</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://aem.example.com" type="url" />
+                    <Input {...field} placeholder={t("forms.integration.endpointPlaceholder")} type="url" />
                   </FormControl>
-                  <FormDescription>AEM instance URL to connect</FormDescription>
+                  <FormDescription>{t("forms.integration.endpointDesc")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -121,14 +123,14 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               <FormField
                 control={form.control}
                 name="username"
-                rules={{ required: "Username is required." }}
+                rules={{ required: t("forms.integrationSource.username") + " is required." }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("forms.integrationSource.username")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="admin" type="text" />
                     </FormControl>
-                    <FormDescription>AEM authentication username</FormDescription>
+                    <FormDescription>{t("forms.integrationSource.username")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -137,14 +139,14 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               <FormField
                 control={form.control}
                 name="password"
-                rules={{ required: "Password is required." }}
+                rules={{ required: t("forms.integrationSource.password") + " is required." }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("forms.integrationSource.password")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="••••••••" type="password" />
                     </FormControl>
-                    <FormDescription>AEM authentication password</FormDescription>
+                    <FormDescription>{t("forms.integrationSource.password")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -154,14 +156,14 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
             <FormField
               control={form.control}
               name="rootPath"
-              rules={{ required: "Root Path is required." }}
+              rules={{ required: t("forms.integrationSource.rootPath") + " is required." }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Root Path</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.rootPath")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="/content/mysite" type="text" />
                   </FormControl>
-                  <FormDescription>Root JCR path to start content extraction</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.rootPath")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -173,11 +175,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
                 name="contentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Content Type</FormLabel>
+                    <FormLabel>{t("forms.integrationSource.contentType")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="cq:Page" type="text" />
                     </FormControl>
-                    <FormDescription>JCR content type to index</FormDescription>
+                    <FormDescription>{t("forms.integrationSource.contentType")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -188,11 +190,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
                 name="subType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sub Type</FormLabel>
+                    <FormLabel>{t("forms.integrationSource.subType")}</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="cq:PageContent" type="text" />
                     </FormControl>
-                    <FormDescription>JCR sub-type for content nodes</FormDescription>
+                    <FormDescription>{t("forms.integrationSource.subType")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -204,11 +206,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="oncePattern"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Once Pattern</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.oncePattern")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder=".*" type="text" />
                   </FormControl>
-                  <FormDescription>Regex pattern for one-time indexing filter</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.oncePattern")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -218,7 +220,7 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
 
         {/* Author Configuration */}
         <SectionCard variant="violet">
-          <SectionCard.Header icon={IconUser} title="Author Configuration" description="Settings for indexing content from AEM Author instance." />
+          <SectionCard.Header icon={IconUser} title={t("forms.integrationSource.authorConfig")} description={t("forms.integrationSource.authorConfigDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
@@ -226,9 +228,9 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               render={({ field }) => (
                 <FormItemTwoColumns className="rounded-lg border p-4">
                   <FormItemTwoColumns.Left className="space-y-0.5">
-                    <FormItemTwoColumns.Label className="text-base">Enable Author</FormItemTwoColumns.Label>
+                    <FormItemTwoColumns.Label className="text-base">{t("forms.integrationSource.enableAuthor")}</FormItemTwoColumns.Label>
                     <FormItemTwoColumns.Description>
-                      Index content from AEM Author instance
+                      {t("forms.integrationSource.authorConfigDesc")}
                     </FormItemTwoColumns.Description>
                   </FormItemTwoColumns.Left>
                   <FormItemTwoColumns.Right>
@@ -248,11 +250,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="authorSNSite"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Author SN Site</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.authorSnSite")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="author-site" type="text" />
                   </FormControl>
-                  <FormDescription>Semantic Navigation site ID for author content</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.authorSnSite")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -263,11 +265,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="authorURLPrefix"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Author URL Prefix</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.authorUrlPrefix")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="https://author.example.com" type="url" />
                   </FormControl>
-                  <FormDescription>URL prefix for author content links</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.authorUrlPrefix")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -277,7 +279,7 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
 
         {/* Publish Configuration */}
         <SectionCard variant="emerald">
-          <SectionCard.Header icon={IconSend} title="Publish Configuration" description="Settings for indexing content from AEM Publish instance." />
+          <SectionCard.Header icon={IconSend} title={t("forms.integrationSource.publishConfig")} description={t("forms.integrationSource.publishConfigDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
@@ -285,9 +287,9 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               render={({ field }) => (
                 <FormItemTwoColumns className="rounded-lg border p-4">
                   <FormItemTwoColumns.Left className="space-y-0.5">
-                    <FormItemTwoColumns.Label className="text-base">Enable Publish</FormItemTwoColumns.Label>
+                    <FormItemTwoColumns.Label className="text-base">{t("forms.integrationSource.enablePublish")}</FormItemTwoColumns.Label>
                     <FormItemTwoColumns.Description>
-                      Index content from AEM Publish instance
+                      {t("forms.integrationSource.publishConfigDesc")}
                     </FormItemTwoColumns.Description>
                   </FormItemTwoColumns.Left>
                   <FormItemTwoColumns.Right>
@@ -307,11 +309,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="publishSNSite"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Publish SN Site</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.publishSnSite")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="publish-site" type="text" />
                   </FormControl>
-                  <FormDescription>Semantic Navigation site ID for published content</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.publishSnSite")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -322,11 +324,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="publishURLPrefix"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Publish URL Prefix</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.publishUrlPrefix")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="https://www.example.com" type="url" />
                   </FormControl>
-                  <FormDescription>URL prefix for published content links</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.publishUrlPrefix")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -336,14 +338,14 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
 
         {/* Locales Configuration */}
         <SectionCard variant="amber">
-          <SectionCard.Header icon={IconLanguage} title="Locales Configuration" description="Locale detection and path mapping settings." />
+          <SectionCard.Header icon={IconLanguage} title={t("forms.integrationSource.localesConfig")} description={t("forms.integrationSource.localesConfigDesc")} />
           <SectionCard.Content>
             <FormField
               control={form.control}
               name="defaultLocale"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Default Locale</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.defaultLocale")}</FormLabel>
                   <FormControl>
                     <LanguageSelect
                       value={field.value}
@@ -353,7 +355,7 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
                       className="w-full"
                     />
                   </FormControl>
-                  <FormDescription>Default locale for content without explicit locale</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.defaultLocale")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -364,11 +366,11 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="localeClass"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Locale Class</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.localeClass")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="com.example.LocaleProvider" type="text" />
                   </FormControl>
-                  <FormDescription>Java class for custom locale detection logic</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.localeClass")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -379,20 +381,20 @@ export const IntegrationSourceForm: React.FC<Props> = ({ value, isNew, integrati
               name="deltaClass"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Delta Class</FormLabel>
+                  <FormLabel>{t("forms.integrationSource.deltaClass")}</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="com.example.DeltaProvider" type="text" />
                   </FormControl>
-                  <FormDescription>Java class for incremental indexing logic</FormDescription>
+                  <FormDescription>{t("forms.integrationSource.deltaClass")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             <div className="rounded-lg border p-4 bg-muted/50">
-              <h4 className="font-medium mb-2">Locale Paths</h4>
+              <h4 className="font-medium mb-2">{t("forms.integrationSource.localePaths")}</h4>
               <p className="text-sm text-muted-foreground mb-4">
-                Define specific paths for different locales.
+                {t("forms.integrationSource.localePathsDesc")}
               </p>
               <DynamicSourceLocales
                 fieldName="localePaths"

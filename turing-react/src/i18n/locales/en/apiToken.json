@@ -1,0 +1,9 @@
+{
+  "apiToken": {
+    "title": "API Token",
+    "description": "Manage API tokens for external access.",
+    "blankTitle": "You don't seem to have any API token.",
+    "blankDescription": "Create a new token to allow access to the API.",
+    "newInstance": "New API token"
+  }
+}

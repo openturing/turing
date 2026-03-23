@@ -7,19 +7,21 @@ import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { IconDatabase, IconInfoCircle, IconLayersSubtract, IconSettings } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 
 export default function StoreInstancePage() {
+  const { t } = useTranslation()
   const { id } = useParams() as { id: string }
   const [storeInstance, setStoreInstance] = useState<TurStoreInstance>({} as TurStoreInstance)
   const [isNew, setIsNew] = useState(true)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
-    id === "new" ? [{ label: "New Embedding Store" }] : [{ label: "…" }]
+    id === "new" ? [{ label: t("store.newStore") }] : [{ label: "…" }]
   )
   const navigate = useNavigate()
   const urlBase = `${ROUTES.STORE_INSTANCE}/${id}`
@@ -28,18 +30,18 @@ export default function StoreInstancePage() {
     if (isNew) {
       return {
         navMain: [
-          { title: "Settings", url: "/detail", icon: IconSettings },
+          { title: t("store.nav.settings"), url: "/detail", icon: IconSettings },
         ],
       }
     }
     return {
       navMain: [
-        { title: "Settings", url: "/detail", icon: IconSettings },
-        { title: "Collections", url: "/collections", icon: IconLayersSubtract },
-        { title: "System Information", url: "/system-info", icon: IconInfoCircle },
+        { title: t("store.nav.settings"), url: "/detail", icon: IconSettings },
+        { title: t("store.nav.collections"), url: "/collections", icon: IconLayersSubtract },
+        { title: t("store.nav.systemInfo"), url: "/system-info", icon: IconInfoCircle },
       ],
     }
-  }, [isNew])
+  }, [isNew, t])
 
   useEffect(() => {
     if (id === "new") {
@@ -49,7 +51,7 @@ export default function StoreInstancePage() {
       turStoreInstanceService.get(id).then((instance) => {
         setStoreInstance(instance)
         setBreadcrumb([{ label: instance.title, href: `${ROUTES.STORE_INSTANCE}/${instance.id}` }])
-      }).catch(() => setError("Connection error or timeout while fetching Embedding Store instance."))
+      }).catch(() => setError(t("common.connectionError", { resource: "Embedding Store instance" })))
       setIsNew(false)
     }
   }, [id])
@@ -59,21 +61,21 @@ export default function StoreInstancePage() {
   async function onDelete() {
     try {
       if (await turStoreInstanceService.delete(storeInstance)) {
-        toast.success(`The ${storeInstance.title} Embedding Store was deleted`)
+        toast.success(t("store.deleted", { name: storeInstance.title }))
         navigate(ROUTES.STORE_INSTANCE)
       } else {
-        toast.error(`The ${storeInstance.title} Embedding Store was not deleted`)
+        toast.error(t("store.notDeleted", { name: storeInstance.title }))
       }
     } catch (error) {
       console.error("Delete error", error)
-      toast.error(`The ${storeInstance.title} Embedding Store was not deleted`)
+      toast.error(t("store.notDeleted", { name: storeInstance.title }))
     }
     setOpen(false)
   }
 
   return (
     <LoadProvider checkIsNotUndefined={storeInstance} error={error} tryAgainUrl={`${ROUTES.STORE_INSTANCE}/${id}`}>
-      <SubPage icon={IconDatabase} feature="Embedding Store" name={storeInstance.title}
+      <SubPage icon={IconDatabase} feature={t("store.title")} name={storeInstance.title}
         onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
     </LoadProvider>
   )

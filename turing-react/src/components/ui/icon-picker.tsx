@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service"
+import { useTranslation } from "react-i18next"
 
 interface IconPickerProps {
   value?: string | null
@@ -67,6 +68,7 @@ async function resolveAiKeywords(llmResponse: string): Promise<AiKeywordGroup[]>
 }
 
 function IconPickerComponent({ value, onChange, onRemove, title, description, children }: IconPickerProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<string[]>([])
@@ -168,7 +170,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
         </div>
         <button
           type="button"
-          title="Choose icon"
+          title={t("forms.iconPicker.chooseIcon")}
           onClick={() => setOpen(true)}
           className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
         >
@@ -182,7 +184,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
         {value ? (
           <span className="text-xs text-muted-foreground font-mono">{value}</span>
         ) : (
-          <span className="text-sm text-muted-foreground">No icon selected</span>
+          <span className="text-sm text-muted-foreground">{t("forms.iconPicker.noIconSelected")}</span>
         )}
         <div className="flex items-center gap-2 mt-1">
           <button
@@ -190,7 +192,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
             onClick={() => setOpen(true)}
             className="text-xs text-primary hover:underline cursor-pointer"
           >
-            Choose icon
+            {t("forms.iconPicker.chooseIcon")}
           </button>
           {value && onRemove && (
             <button
@@ -199,7 +201,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
               className="text-xs text-destructive hover:underline cursor-pointer flex items-center gap-0.5"
             >
               <IconTrash className="size-3" />
-              Remove
+              {t("forms.common.remove")}
             </button>
           )}
         </div>
@@ -208,7 +210,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Choose an Icon</DialogTitle>
+            <DialogTitle>{t("forms.iconPicker.chooseAnIcon")}</DialogTitle>
           </DialogHeader>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -216,7 +218,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search icons (e.g., briefcase, heart, mail...)"
+                placeholder={t("forms.iconPicker.searchIcons")}
                 className="pl-9"
                 autoFocus
               />
@@ -236,7 +238,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
                 ) : (
                   <IconSparkles className="size-4" />
                 )}
-                AI Suggest
+                {t("forms.iconPicker.aiSuggest")}
               </GradientButton>
             )}
           </div>
@@ -245,7 +247,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
               <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1.5">
                 <IconSparkles className="size-3.5" />
-                AI Suggestions
+                {t("forms.iconPicker.aiSuggestions")}
               </div>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {aiGroups.map((g) => (
@@ -290,20 +292,20 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
           <div className="flex-1 overflow-y-auto min-h-[200px] max-h-[400px]">
             {loading && (
               <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                Searching...
+                {t("forms.iconPicker.searching")}
               </div>
             )}
             {!loading && query && results.length === 0 && (
               <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                No icons found for "{query}"
+                {t("forms.iconPicker.noIconsFound", { query })}
               </div>
             )}
             {!loading && !query && results.length === 0 && aiGroups.length === 0 && (
               <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm gap-2 text-center px-4">
-                <span>Type to search across {COLLECTIONS.length} icon collections</span>
+                <span>{t("forms.iconPicker.typeToSearch", { count: COLLECTIONS.length })}</span>
                 {showAiButton && (
                   <span className="text-xs leading-relaxed">
-                    or click <strong>AI Suggest</strong> to get recommendations based on the <strong>title</strong> and <strong>description</strong> you filled in
+                    {t("forms.iconPicker.orClickAi")}
                   </span>
                 )}
               </div>
@@ -338,7 +340,7 @@ Return ONLY a JSON array of strings, nothing else. Example: ["briefcase","calend
                 <span className="text-xs font-mono text-muted-foreground">{value}</span>
               </div>
               <GradientButton size="sm" type="button" onClick={() => setOpen(false)}>
-                Done
+                {t("forms.iconPicker.done")}
               </GradientButton>
             </div>
           )}

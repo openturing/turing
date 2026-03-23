@@ -1,0 +1,9 @@
+{
+  "embeddingModel": {
+    "title": "Embedding Model",
+    "blankTitle": "You don't seem to have any embedding model.",
+    "blankDescription": "Create a new embedding model to use with semantic navigation and vector stores.",
+    "newInstance": "New Embedding Model",
+    "newEmbeddingModel": "New Embedding Model"
+  }
+}

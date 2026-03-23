@@ -1,0 +1,13 @@
+{
+  "dialog": {
+    "cannotDelete": "Cannot delete {{feature}}",
+    "inUse": "{{name}} is currently in use and cannot be removed.",
+    "dependingSites": "The following Semantic Navigation sites depend on this {{feature}}:",
+    "removeDependencies": "Remove this {{feature}} from those sites before deleting it.",
+    "understood": "Understood",
+    "deleteFeature": "Delete {{feature}}",
+    "permanentDelete": "This will permanently delete {{name}}. This action cannot be undone.",
+    "typeToConfirm": "Type",
+    "toConfirm": "to confirm"
+  }
+}

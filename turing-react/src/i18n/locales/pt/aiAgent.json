@@ -1,0 +1,32 @@
+{
+  "aiAgent": {
+    "title": "Agente de IA",
+    "blankTitle": "Você ainda não possui nenhum agente de IA.",
+    "blankDescription": "Crie um novo agente de IA para orquestrar instâncias de LLM e servidores MCP.",
+    "newInstance": "Novo Agente de IA",
+    "deleted": "O Agente de IA {{name}} foi excluído",
+    "notDeleted": "O Agente de IA {{name}} não foi excluído",
+    "nav": {
+      "settings": "Configurações",
+      "languageModels": "Modelos de Linguagem",
+      "nativeTools": "Ferramentas Nativas",
+      "mcpServers": "Servidores MCP"
+    },
+    "settings": {
+      "title": "Configurações",
+      "description": "Informações gerais, prompt do sistema e status."
+    },
+    "llm": {
+      "title": "Modelos de Linguagem",
+      "description": "Selecione uma ou mais instâncias de LLM para este agente."
+    },
+    "tools": {
+      "title": "Ferramentas Nativas",
+      "description": "Selecione quais chamadas de ferramentas nativas estão disponíveis para este agente."
+    },
+    "mcp": {
+      "title": "Servidores MCP",
+      "description": "Selecione um ou mais servidores MCP para acesso a ferramentas."
+    }
+  }
+}

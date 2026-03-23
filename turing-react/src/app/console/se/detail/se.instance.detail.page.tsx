@@ -7,16 +7,18 @@ import { TurSEInstanceService } from "@/services/se/se.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSEInstanceService = new TurSEInstanceService();
 
 export default function SEInstanceDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams() as { id: string };
   const [seInstance, setSeInstance] = useState<TurSEInstance>();
   const [isNew, setIsNew] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  useSubPageBreadcrumb("Settings");
+  useSubPageBreadcrumb(t("se.detail.title"));
 
   useEffect(() => {
     if (id === "new") {
@@ -24,15 +26,15 @@ export default function SEInstanceDetailPage() {
     } else {
       turSEInstanceService.get(id)
         .then(setSeInstance)
-        .catch(() => setError("Connection error or timeout while fetching SE instance."));
+        .catch(() => setError(t("common.connectionError", { resource: "SE instance" })));
       setIsNew(false);
     }
   }, [id]);
 
   return (
     <LoadProvider checkIsNotUndefined={seInstance} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}/detail`}>
-      <SubPageHeader icon={IconSettings} name="Settings" feature="Settings"
-        description="Configure the Search Engine instance." />
+      <SubPageHeader icon={IconSettings} name={t("se.detail.title")} feature={t("se.detail.title")}
+        description={t("se.detail.description")} />
       {seInstance && <SEInstanceForm value={seInstance} isNew={isNew} />}
     </LoadProvider>
   );

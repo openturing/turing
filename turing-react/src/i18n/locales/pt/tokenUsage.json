@@ -1,0 +1,28 @@
+{
+  "tokenUsage": {
+    "noLlm": "Nenhum Modelo de Linguagem Disponível",
+    "noLlmDescription": "Para ver o uso de tokens, crie e habilite pelo menos uma instância de LLM.",
+    "createLlm": "Criar Instância de LLM",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "loadingUsage": "Carregando dados de uso...",
+    "loadFailed": "Falha ao carregar dados de uso.",
+    "totalRequests": "Total de Requisições",
+    "inputTokens": "Tokens de Entrada",
+    "outputTokens": "Tokens de Saída",
+    "totalTokens": "Total de Tokens",
+    "summaryByModel": "Resumo por Modelo",
+    "summaryDescription": "Uso agregado de tokens por instância de LLM para o mês selecionado",
+    "noUsageData": "Sem dados de uso para este período.",
+    "instance": "Instância",
+    "vendor": "Fornecedor",
+    "model": "Modelo",
+    "requests": "Requisições",
+    "input": "Entrada",
+    "output": "Saída",
+    "total": "Total",
+    "dailyBreakdown": "Detalhamento Diário",
+    "dailyDescription": "Consumo diário de tokens por modelo",
+    "date": "Data"
+  }
+}

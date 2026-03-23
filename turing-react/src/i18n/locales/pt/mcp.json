@@ -1,0 +1,9 @@
+{
+  "mcp": {
+    "title": "Servidor MCP",
+    "blankTitle": "Você ainda não possui nenhum servidor MCP.",
+    "blankDescription": "Crie um novo servidor MCP para integrar com ferramentas e serviços externos.",
+    "newInstance": "Novo servidor MCP",
+    "newMcpServer": "Novo Servidor MCP"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "home": {
+    "title": "Home",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "welcome": "Welcome to Viglet Turing ES — your enterprise search intelligence platform.",
+    "docs": "Docs",
+    "open": "Open",
+    "sections": {
+      "generativeAi": {
+        "label": "Generative AI",
+        "description": "Build, configure and interact with large language models, embeddings, and intelligent agents."
+      },
+      "enterpriseSearch": {
+        "label": "Enterprise Search",
+        "description": "Index, search and navigate your enterprise content with powerful search engines and semantic understanding."
+      },
+      "management": {
+        "label": "Management",
+        "description": "System administration, asset management, and platform configuration."
+      }
+    },
+    "features": {
+      "languageModel": {
+        "title": "Language Model",
+        "description": "Configure LLM providers like OpenAI, Ollama, Anthropic, and Gemini for chat and generation."
+      },
+      "embeddingModel": {
+        "title": "Embedding Model",
+        "description": "Set up embedding models for vector similarity search and RAG pipelines."
+      },
+      "embeddingStore": {
+        "title": "Embedding Store",
+        "description": "Manage vector stores like Chroma, Milvus, and PGVector for semantic retrieval."
+      },
+      "mcpServer": {
+        "title": "MCP Server",
+        "description": "Connect to Model Context Protocol servers for external tool integration."
+      },
+      "aiAgent": {
+        "title": "AI Agent",
+        "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."
+      },
+      "intent": {
+        "title": "Intent",
+        "description": "Define prompt categories and actions shown as quick suggestions in the chat."
+      },
+      "tokenUsage": {
+        "title": "Token Usage",
+        "description": "Monitor token consumption across all LLM instances and models."
+      },
+      "chat": {
+        "title": "Chat",
+        "description": "Start conversations with your configured LLMs, agents, and semantic search."
+      },
+      "searchEngine": {
+        "title": "Search Engine",
+        "description": "Manage Solr, Elasticsearch, or Lucene instances that power your search."
+      },
+      "semanticNavigation": {
+        "title": "Semantic Navigation",
+        "description": "Create search sites with facets, highlighting, spell-check and AI insights."
+      },
+      "integration": {
+        "title": "Integration",
+        "description": "Connect to external CMS, databases, and file systems to index their content."
+      },
+      "graphqlExplorer": {
+        "title": "GraphQL Explorer",
+        "description": "Query your semantic navigation data using the interactive GraphQL playground."
+      },
+      "assets": {
+        "title": "Assets",
+        "description": "Browse and manage files stored in the MinIO object storage."
+      },
+      "import": {
+        "title": "Import",
+        "description": "Import configurations, sites, and data from exported packages."
+      },
+      "logging": {
+        "title": "Logging",
+        "description": "View indexing logs and monitor data pipeline activity."
+      },
+      "administration": {
+        "title": "Administration",
+        "description": "Manage users, groups, roles, API tokens, and system settings."
+      }
+    }
+  }
+}

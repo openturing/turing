@@ -22,6 +22,7 @@ import {
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts"
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service"
 import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import {
   useForm
 } from "react-hook-form"
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+  const { t } = useTranslation();
   const form = useForm<TurIntegrationInstance>({
     defaultValues: value
   });
@@ -54,16 +56,16 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     try {
       if (isNew) {
         turIntegrationInstanceService.create(integrationInstance);
-        toast.success(`The ${integrationInstance.title} Integration Instance was saved`);
+        toast.success(t("forms.common.saved", { name: integrationInstance.title, feature: "Integration Instance" }));
         navigate(ROUTES.INTEGRATION_INSTANCE);
       }
       else {
         turIntegrationInstanceService.update(integrationInstance);
-        toast.success(`The ${integrationInstance.title} Integration Instance was updated`);
+        toast.success(t("forms.common.updated", { name: integrationInstance.title, feature: "Integration Instance" }));
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error("Failed to submit the form. Please try again.");
+      toast.error(t("forms.common.formSubmitFailed"));
     }
   }
 
@@ -73,23 +75,23 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* General Information Section */}
             <SectionCard variant="blue">
-              <SectionCard.Header icon={IconSettings} title="General Information" description="Name and description for this integration." />
+              <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.integration.generalDesc")} />
               <SectionCard.Content>
                 {/* Title */}
                 <FormField
                   control={form.control}
                   name="title"
-                  rules={{ required: "Please give your integration a name." }}
+                  rules={{ required: t("forms.integration.nameRequired") }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Integration Name</FormLabel>
+                      <FormLabel>{t("forms.integration.nameLabel")}</FormLabel>
                       <FormDescription>
-                        Choose a name that helps you and your team quickly recognize this integration.
+                        {t("forms.integration.nameDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g. Marketing AEM Connector"
+                          placeholder={t("forms.integration.namePlaceholder")}
                           type="text"
                         />
                       </FormControl>
@@ -107,14 +109,14 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         <SmartDescription
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Describe the integration’s purpose or what it connects."
+                          placeholder={t("forms.integration.descPlaceholder")}
                           maxLength={500}
                           title={form.watch("title")}
                           entityType="Integration"
                         >
-                          <SmartDescription.Label>Short Description</SmartDescription.Label>
+                          <SmartDescription.Label>{t("forms.integration.descLabel")}</SmartDescription.Label>
                           <SmartDescription.Description>
-                            Briefly explain what this integration does or why you’re setting it up.
+                            {t("forms.integration.descDesc")}
                           </SmartDescription.Description>
                         </SmartDescription>
                       </FormControl>
@@ -135,7 +137,7 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           title={form.watch("title")}
                           description={form.watch("description")}
                         >
-                          <IconPicker.Label>Icon</IconPicker.Label>
+                          <IconPicker.Label>{t("forms.common.icon")}</IconPicker.Label>
                         </IconPicker>
                       </FormControl>
                     </FormItem>
@@ -146,30 +148,30 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
             {/* Connection Details Section */}
             <SectionCard variant="violet">
-              <SectionCard.Header icon={IconPlug} title="Connection Details" description="Vendor type and endpoint configuration." />
+              <SectionCard.Header icon={IconPlug} title={t("forms.integration.connectionDetails")} description={t("forms.integration.connectionDetailsDesc")} />
               <SectionCard.Content>
                 {/* Vendor (50/50 row) */}
                 <FormField
                   control={form.control}
                   name="vendor"
-                  rules={{ required: "Please select a vendor." }}
+                  rules={{ required: t("forms.integration.vendorRequired") }}
                   render={({ field }) => (
                     <FormItemTwoColumns>
                       <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>Integration Type</FormItemTwoColumns.Label>
+                        <FormItemTwoColumns.Label>{t("forms.integration.typeLabel")}</FormItemTwoColumns.Label>
                         <FormItemTwoColumns.Description>
-                          Pick the platform or technology you want to connect with. This helps us tailor the setup for you.
+                          {t("forms.integration.typeDesc")}
                         </FormItemTwoColumns.Description>
                       </FormItemTwoColumns.Left>
                       <FormItemTwoColumns.Right>
                         <FormControl>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a type..." />
+                              <SelectValue placeholder={t("forms.integration.selectType")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem key="AEM" value="AEM">Adobe AEM</SelectItem>
-                              <SelectItem key="WEB_CRAWLER" value="WEB_CRAWLER">Web Crawler</SelectItem>
+                              <SelectItem key="AEM" value="AEM">{t("forms.integration.adobeAem")}</SelectItem>
+                              <SelectItem key="WEB_CRAWLER" value="WEB_CRAWLER">{t("forms.integration.webCrawler")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -182,16 +184,16 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                 <FormField
                   control={form.control}
                   name="endpoint"
-                  rules={{ required: "Please enter the endpoint URL." }}
+                  rules={{ required: t("forms.integration.endpointRequired") }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Endpoint URL</FormLabel>
+                      <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
                       <FormDescription>
-                        Enter the web address where Turing should connect to your system. Make sure it’s accessible from this environment.
+                        {t("forms.integration.endpointDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
-                          placeholder="https://your-system.example.com/api"
+                          placeholder={t("forms.integration.endpointPlaceholder")}
                           type="url"
                           {...field}
                         />

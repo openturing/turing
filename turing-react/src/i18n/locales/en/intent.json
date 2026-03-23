@@ -1,0 +1,17 @@
+{
+  "intent": {
+    "title": "Intent",
+    "blankTitle": "You don't have any intents yet.",
+    "blankDescription": "Create an intent to group suggested prompts for the chat.",
+    "newInstance": "New Intent",
+    "deleted": "The \"{{name}}\" intent was deleted",
+    "notDeleted": "The \"{{name}}\" intent was not deleted",
+    "nav": {
+      "settings": "Settings"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "General information, actions (prompts), and status."
+    }
+  }
+}

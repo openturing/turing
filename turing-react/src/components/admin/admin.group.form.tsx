@@ -3,7 +3,7 @@ import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { SmartDescription } from "@/components/ui/smart-description";
 import { FormActions } from "@/components/ui/form-actions";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +18,7 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
+    const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();
     const [allRoles, setAllRoles] = useState<TurRole[]>([]);
@@ -106,22 +108,22 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
             if (isNew) {
                 const result = await turGroupService.create(groupPayload);
                 if (result) {
-                    toast.success(`Group "${data.name}" was created.`);
+                    toast.success(t("forms.adminGroup.created", { name: data.name }));
                     navigate(ROUTES.ADMIN_GROUPS);
                 } else {
-                    toast.error("Failed to create group.");
+                    toast.error(t("forms.adminGroup.createFailed"));
                 }
             } else {
                 const result = await turGroupService.update(data.id, groupPayload);
                 if (result) {
-                    toast.success(`Group "${data.name}" was updated.`);
+                    toast.success(t("forms.adminGroup.groupUpdated", { name: data.name }));
                 } else {
-                    toast.error("Failed to update group.");
+                    toast.error(t("forms.adminGroup.updateFailed"));
                 }
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to save group. Please try again.");
+            toast.error(t("forms.adminGroup.saveFailed"));
         }
     }
 
@@ -131,20 +133,20 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
                     {/* Group Details */}
                     <SectionCard variant="blue">
-                        <SectionCard.Header icon={IconUsersGroup} title="Group Details" description="Name and identification for this group." />
+                        <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="name"
-                                rules={{ required: "Group name is required." }}
+                                rules={{ required: t("forms.adminGroup.groupNameRequired", "Group name is required.") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Group Name</FormLabel>
+                                        <FormLabel>{t("forms.adminGroup.groupName")}</FormLabel>
                                         <FormDescription>
-                                            A unique name to identify this group (e.g. "Administrators", "Editors").
+                                            {t("forms.adminGroup.groupNameDesc")}
                                         </FormDescription>
                                         <FormControl>
-                                            <Input {...field} placeholder="e.g. Administrators" />
+                                            <Input {...field} placeholder={t("forms.adminGroup.groupNamePlaceholder")} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -155,24 +157,23 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Description */}
                     <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconNotes} title="Description" description="Optional details about this group's purpose." />
+                        <SectionCard.Header icon={IconNotes} title={t("forms.common.description")} description={t("forms.adminGroup.descriptionDesc")} />
                         <SectionCard.Content>
                             <FormField
                                 control={form.control}
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
-                                        <FormDescription>
-                                            Describe the purpose or scope of permissions for this group.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <Textarea
-                                                {...field}
-                                                placeholder="e.g. Full administrative access to all features"
-                                                className="resize-none"
-                                            />
-                                        </FormControl>
+                                        <SmartDescription
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder={t("forms.adminGroup.descPlaceholder")}
+                                            title={form.watch("name")}
+                                            entityType={t("admin.groups.title")}
+                                        >
+                                            <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
+                                            <SmartDescription.Description>{t("forms.adminGroup.descPlaceholder")}</SmartDescription.Description>
+                                        </SmartDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -182,17 +183,17 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
 
                     {/* Users & Roles Tabs */}
                     <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconUsers} title="Members & Roles" description="Manage users and role assignments for this group." />
+                        <SectionCard.Header icon={IconUsers} title={t("forms.adminGroup.membersRoles")} description={t("forms.adminGroup.membersRolesDesc")} />
                         <SectionCard.Content>
                             <Tabs defaultValue="users">
                                 <TabsList>
                                     <TabsTrigger value="users">
                                         <IconUsers className="size-4" />
-                                        Users ({groupUsers.length})
+                                        {t("forms.adminGroup.users", { count: groupUsers.length })}
                                     </TabsTrigger>
                                     <TabsTrigger value="roles">
                                         <IconUserShield className="size-4" />
-                                        Roles ({groupRoles.length})
+                                        {t("forms.adminGroup.roles", { count: groupRoles.length })}
                                     </TabsTrigger>
                                 </TabsList>
 
@@ -202,7 +203,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                                     <div className="relative">
                                         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search users to add..."
+                                            placeholder={t("forms.adminGroup.searchUsers")}
                                             value={userSearch}
                                             onChange={(e) => setUserSearch(e.target.value)}
                                             className="pl-9"
@@ -213,7 +214,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                                     {userSearch && (
                                         <div className="rounded-lg border max-h-48 overflow-y-auto">
                                             {filteredAvailableUsers.length === 0 ? (
-                                                <p className="text-sm text-muted-foreground p-3">No users found.</p>
+                                                <p className="text-sm text-muted-foreground p-3">{t("forms.adminGroup.noUsersFound")}</p>
                                             ) : (
                                                 filteredAvailableUsers.map((user) => (
                                                     <button
@@ -239,7 +240,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
 
                                     {/* Assigned users */}
                                     {groupUsers.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No members in this group yet.</p>
+                                        <p className="text-sm text-muted-foreground">{t("forms.adminGroup.noMembers")}</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {groupUsers.map((user) => (
@@ -278,7 +279,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                                     <div className="relative">
                                         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search roles to add..."
+                                            placeholder={t("forms.adminGroup.searchRoles")}
                                             value={roleSearch}
                                             onChange={(e) => setRoleSearch(e.target.value)}
                                             className="pl-9"
@@ -289,7 +290,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                                     {roleSearch && (
                                         <div className="rounded-lg border max-h-48 overflow-y-auto">
                                             {filteredAvailableRoles.length === 0 ? (
-                                                <p className="text-sm text-muted-foreground p-3">No roles found.</p>
+                                                <p className="text-sm text-muted-foreground p-3">{t("forms.adminGroup.noRolesFound")}</p>
                                             ) : (
                                                 filteredAvailableRoles.map((role) => (
                                                     <button
@@ -313,7 +314,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
 
                                     {/* Assigned roles */}
                                     {groupRoles.length === 0 ? (
-                                        <p className="text-sm text-muted-foreground">No roles assigned yet.</p>
+                                        <p className="text-sm text-muted-foreground">{t("forms.adminGroup.noRolesAssigned")}</p>
                                     ) : (
                                         <div className="space-y-2">
                                             {groupRoles.map((role) => (
@@ -349,7 +350,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
 
                     <FormActions>
                         <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_GROUPS)} />
-                        <FormActions.Submit>{isNew ? "Create Group" : "Save Changes"}</FormActions.Submit>
+                        <FormActions.Submit>{isNew ? t("forms.adminGroup.createGroup") : t("forms.common.saveChanges")}</FormActions.Submit>
                     </FormActions>
                 </form>
             </Form>

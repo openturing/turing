@@ -1,0 +1,32 @@
+{
+  "aiAgent": {
+    "title": "AI Agent",
+    "blankTitle": "You don't seem to have any AI agent.",
+    "blankDescription": "Create a new AI agent to orchestrate LLM instances and MCP servers.",
+    "newInstance": "New AI Agent",
+    "deleted": "The {{name}} AI Agent was deleted",
+    "notDeleted": "The {{name}} AI Agent was not deleted",
+    "nav": {
+      "settings": "Settings",
+      "languageModels": "Language Models",
+      "nativeTools": "Native Tools",
+      "mcpServers": "MCP Servers"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "General information, system prompt and status."
+    },
+    "llm": {
+      "title": "Language Models",
+      "description": "Select one or more LLM instances for this agent."
+    },
+    "tools": {
+      "title": "Native Tools",
+      "description": "Select which native tool callings are available to this agent."
+    },
+    "mcp": {
+      "title": "MCP Servers",
+      "description": "Select one or more MCP servers for tool access."
+    }
+  }
+}

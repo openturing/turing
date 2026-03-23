@@ -1,0 +1,9 @@
+{
+  "apiToken": {
+    "title": "Token de API",
+    "description": "Gerencie tokens de API para acesso externo.",
+    "blankTitle": "Você ainda não possui nenhum token de API.",
+    "blankDescription": "Crie um novo token para permitir acesso à API.",
+    "newInstance": "Novo token de API"
+  }
+}

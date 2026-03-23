@@ -1,0 +1,19 @@
+{
+  "exchange": {
+    "dropFile": "Solte seu arquivo aqui",
+    "dragDrop": "Arraste e solte seu arquivo de exportação",
+    "browseFiles": "procurar arquivos",
+    "selectZip": "para selecionar um arquivo ZIP",
+    "onlyZip": "Apenas arquivos .zip exportados do Turing são suportados",
+    "importing": "Importando...",
+    "uploaded": "enviado",
+    "importCompleted": "Importação Concluída",
+    "redirecting": "Redirecionando para Navegação Semântica...",
+    "importFailed": "Falha na Importação",
+    "invalidFile": "Selecione um arquivo ZIP válido.",
+    "invalidType": "Tipo de arquivo inválido. Apenas arquivos ZIP são aceitos.",
+    "importSuccess": "Importação concluída com sucesso!",
+    "importError": "Ocorreu um erro durante a importação.",
+    "importFailedMsg": "Falha na importação: {{message}}"
+  }
+}

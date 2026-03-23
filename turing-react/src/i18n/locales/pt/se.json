@@ -1,0 +1,82 @@
+{
+  "se": {
+    "title": "Mecanismo de Busca",
+    "newSearchEngine": "Novo Mecanismo de Busca",
+    "blankTitle": "Você ainda não possui nenhuma instância de mecanismo de busca.",
+    "blankDescription": "Crie uma nova instância para usar em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de mecanismo de busca",
+    "deleted": "O Mecanismo de Busca {{name}} foi excluído",
+    "notDeleted": "O Mecanismo de Busca {{name}} não foi excluído",
+    "nav": {
+      "settings": "Configurações",
+      "cores": "Cores",
+      "systemInfo": "Informações do Sistema"
+    },
+    "detail": {
+      "title": "Configurações",
+      "description": "Configure a instância do Mecanismo de Busca."
+    },
+    "cores": {
+      "title": "Cores",
+      "description": "Cores e coleções Solr disponíveis neste Mecanismo de Busca.",
+      "searchCores": "Pesquisar cores...",
+      "clearSearch": "Limpar busca",
+      "newCore": "Novo Core",
+      "noMatch": "Nenhum core corresponde",
+      "blankTitle": "Nenhum core ou coleção encontrado.",
+      "blankDescription": "Crie um novo core ou verifique se o Mecanismo de Busca está em execução e acessível no endpoint configurado.",
+      "deleteFailed": "Falha ao excluir core: {{name}}",
+      "removeDocsFailed": "Falha ao remover documentos de: {{name}}",
+      "removeAllDocs": "Remover todos os documentos",
+      "removeAllDocsDesc": "Isso excluirá todos os documentos indexados deste core.",
+      "confirmRemoveAll": "Sim, remover todos os documentos",
+      "deleteCore": "Excluir core",
+      "locale": "idioma",
+      "locales": "idiomas",
+      "docs": "docs"
+    },
+    "newCore": {
+      "title": "Novo Core",
+      "description": "Crie um novo core ou coleção neste Mecanismo de Busca.",
+      "coreDetails": "Detalhes do Core",
+      "coreDetailsDesc": "Nome e idioma para o novo core.",
+      "nameRequired": "Nome do core é obrigatório.",
+      "nameFormat": "Use apenas letras, números, sublinhados (_) ou hifens (-).",
+      "nameFormatError": "O nome do core deve conter apenas letras, números, sublinhados (_) ou hifens (-).",
+      "namePrefix": "Prefixo do Nome",
+      "fullCoreName": "Nome Completo do Core",
+      "namePrefixDesc": "Digite um prefixo. O idioma será adicionado automaticamente.",
+      "fullCoreNameDesc": "Digite o nome completo do core exatamente como deve ser criado.",
+      "locale": "Idioma",
+      "localeDesc": "O idioma/locale determina o configSet usado para análise de texto.",
+      "localeRequired": "Selecione um idioma.",
+      "appendLocale": "Adicionar idioma ao nome",
+      "coreNamePreview": "Prévia do nome do core",
+      "createSuccess": "Core \"{{name}}\" criado com sucesso.",
+      "createFailed": "Falha ao criar core: {{message}}",
+      "createCore": "Criar Core"
+    },
+    "systemInfo": {
+      "title": "Informações do Sistema",
+      "description": "Versão e detalhes de execução do mecanismo de busca.",
+      "loadFailed": "Falha ao carregar informações do mecanismo de busca.",
+      "details": "Detalhes do Mecanismo de Busca",
+      "detailsDesc": "Versão e informações de conexão obtidas do mecanismo de busca.",
+      "noInfo": "Nenhuma informação disponível.",
+      "na": "N/D",
+      "engine": "Engine",
+      "version": "Versão",
+      "luceneVersion": "Versão do Lucene",
+      "os": "Sistema Operacional",
+      "javaVersion": "Versão do Java",
+      "jvmMemory": "Memória JVM Usada",
+      "clusterName": "Nome do Cluster",
+      "buildType": "Tipo de Build",
+      "indexPath": "Caminho do Índice",
+      "error": "Erro",
+      "status": "Status",
+      "up": "ATIVO",
+      "down": "INATIVO"
+    }
+  }
+}

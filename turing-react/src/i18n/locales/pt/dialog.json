@@ -1,0 +1,13 @@
+{
+  "dialog": {
+    "cannotDelete": "Não é possível excluir {{feature}}",
+    "inUse": "{{name}} está em uso e não pode ser removido.",
+    "dependingSites": "Os seguintes sites de Navegação Semântica dependem deste {{feature}}:",
+    "removeDependencies": "Remova este {{feature}} desses sites antes de excluí-lo.",
+    "understood": "Entendido",
+    "deleteFeature": "Excluir {{feature}}",
+    "permanentDelete": "Isso excluirá permanentemente {{name}}. Esta ação não pode ser desfeita.",
+    "typeToConfirm": "Digite",
+    "toConfirm": "para confirmar"
+  }
+}

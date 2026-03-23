@@ -1,0 +1,9 @@
+{
+  "llm": {
+    "title": "Modelo de Linguagem",
+    "blankTitle": "Você ainda não possui nenhuma instância de modelo de linguagem.",
+    "blankDescription": "Crie uma nova instância e use em navegação semântica e chatbot.",
+    "newInstance": "Nova instância de modelo de linguagem",
+    "newLanguageModel": "Novo Modelo de Linguagem"
+  }
+}

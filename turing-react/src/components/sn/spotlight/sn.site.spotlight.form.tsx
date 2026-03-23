@@ -45,6 +45,7 @@ import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
 import { PlusCircle, Search, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -58,6 +59,7 @@ interface Props {
 }
 
 export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+    const { t } = useTranslation();
     const form = useForm<TurSNSiteSpotlight>({
         defaultValues: value,
     });
@@ -81,13 +83,13 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
     async function onSubmit(data: TurSNSiteSpotlight) {
         let hasError = false;
         if (!data.turSNSiteSpotlightTerms || data.turSNSiteSpotlightTerms.length === 0) {
-            setTermsError("At least one term is required.");
+            setTermsError(t("forms.snSpotlight.termRequired"));
             hasError = true;
         } else {
             setTermsError(null);
         }
         if (!data.turSNSiteSpotlightDocuments || data.turSNSiteSpotlightDocuments.length === 0) {
-            setDocumentsError("At least one document is required.");
+            setDocumentsError(t("forms.snSpotlight.documentRequired"));
             hasError = true;
         } else {
             setDocumentsError(null);
@@ -97,22 +99,22 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
             if (isNew) {
                 const result = await turSNSiteSpotlightService.create(data);
                 if (result) {
-                    toast.success(`The ${data.name} spotlight was created`);
+                    toast.success(t("forms.snSpotlight.created", { name: data.name }));
                     navigate(urlBase);
                 } else {
-                    toast.error("Failed to create the spotlight. Please try again.");
+                    toast.error(t("forms.snSpotlight.createFailed"));
                 }
             } else {
                 const result = await turSNSiteSpotlightService.update(data);
                 if (result) {
-                    toast.success(`The ${data.name} spotlight was updated`);
+                    toast.success(t("forms.snSpotlight.spotlightUpdated", { name: data.name }));
                 } else {
-                    toast.error("Failed to update the spotlight. Please try again.");
+                    toast.error(t("forms.snSpotlight.updateFailed"));
                 }
             }
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Failed to submit the form. Please try again.");
+            toast.error(t("forms.common.formSubmitFailed"));
         }
     }
 
@@ -173,7 +175,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
             setSearchResult(result);
         } catch (error) {
             console.error("Search error", error);
-            toast.error("Failed to search documents.");
+            toast.error(t("forms.snSpotlight.searchFailed"));
         }
     }
 
@@ -200,14 +202,14 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
     function handleFormSubmit(e: React.BaseSyntheticEvent) {
         const currentTerms = form.getValues("turSNSiteSpotlightTerms") || [];
         if (currentTerms.length === 0) {
-            setTermsError("At least one term is required.");
+            setTermsError(t("forms.snSpotlight.termRequired"));
         } else {
             setTermsError(null);
         }
         if (selectedLanguage) {
             const currentDocs = form.getValues("turSNSiteSpotlightDocuments") || [];
             if (currentDocs.length === 0) {
-                setDocumentsError("At least one document is required.");
+                setDocumentsError(t("forms.snSpotlight.documentRequired"));
             } else {
                 setDocumentsError(null);
             }
@@ -221,21 +223,21 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
             <form onSubmit={handleFormSubmit} className="space-y-4 py-8 px-6">
                     {/* General Section */}
                     <SectionCard variant="blue">
-                        <SectionCard.Header icon={IconSpeakerphone} title="Spotlight Details" description="Name, description, and language for this spotlight." />
+                        <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")} />
                         <SectionCard.Content>
                             {/* Name */}
                             <FormField
                                 control={form.control}
                                 name="name"
-                                rules={{ required: "Please give your spotlight a name." }}
+                                rules={{ required: t("forms.snSpotlight.nameRequired") }}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>{t("forms.common.name")}</FormLabel>
                                         <FormDescription>
-                                            Choose a name to help you recognize this spotlight later.
+                                            {t("forms.snSpotlight.nameDesc")}
                                         </FormDescription>
                                         <FormControl>
-                                            <Input {...field} placeholder="e.g. AI Best Practices" type="text" />
+                                            <Input {...field} placeholder={t("forms.snSpotlight.namePlaceholder")} type="text" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -251,14 +253,14 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                             <SmartDescription
                                                 value={field.value}
                                                 onChange={field.onChange}
-                                                placeholder="e.g. Curated resources for AI adoption"
+                                                placeholder={t("forms.snSpotlight.descPlaceholder")}
                                                 maxLength={500}
                                                 title={form.watch("name")}
                                                 entityType="Spotlight"
                                             >
-                                                <SmartDescription.Label>Description</SmartDescription.Label>
+                                                <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                                 <SmartDescription.Description>
-                                                    Add a short description so others know what this spotlight is about.
+                                                    {t("forms.snSpotlight.descDesc")}
                                                 </SmartDescription.Description>
                                             </SmartDescription>
                                         </FormControl>
@@ -270,20 +272,20 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                             <FormField
                                 control={form.control}
                                 name="language"
-                                rules={{ required: "Please select a language." }}
+                                rules={{ required: t("forms.snSpotlight.langRequired") }}
                                 render={({ field }) => (
                                     <FormItemTwoColumns>
                                         <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>Language</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Label>{t("forms.snSpotlight.language")}</FormItemTwoColumns.Label>
                                             <FormItemTwoColumns.Description>
-                                                Pick the language for this spotlight. This helps show the right content to your users.
+                                                {t("forms.snSpotlight.languageDesc")}
                                             </FormItemTwoColumns.Description>
                                         </FormItemTwoColumns.Left>
                                         <FormItemTwoColumns.Right>
                                             <FormControl>
                                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                                     <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Choose language" />
+                                                        <SelectValue placeholder={t("forms.snSpotlight.chooseLang")} />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {locales.map((locale) => (
@@ -304,12 +306,12 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
 
                     {/* Terms Section */}
                     <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconTags} title="Trigger Terms" description="Keywords that activate this spotlight." />
+                        <SectionCard.Header icon={IconTags} title={t("forms.snSpotlight.triggerTerms")} description={t("forms.snSpotlight.triggerTermsDesc")} />
                         <SectionCard.Content>
                             <div>
-                                <div className="mb-2 font-medium">When someone searches for these terms...</div>
+                                <div className="mb-2 font-medium">{t("forms.snSpotlight.whenSearched")}</div>
                                 <div className="text-sm text-muted-foreground mb-4">
-                                    Add keywords or phrases. If a user searches for any of these, this spotlight will appear.
+                                    {t("forms.snSpotlight.addKeywords")}
                                 </div>
                                 <div className="space-y-2">
                                     {terms.map((term, index) => (
@@ -317,7 +319,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                             <Input
                                                 value={term.name}
                                                 onChange={(e) => updateTermName(index, e.target.value)}
-                                                placeholder="Type a search term"
+                                                placeholder={t("forms.snSpotlight.typeSearchTerm")}
                                                 className="grow"
                                             />
                                             <GradientButton
@@ -335,7 +337,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                 <div className="mt-4">
                                     <GradientButton variant="outline" type="button" onClick={addTerm}>
                                         <PlusCircle className="h-4 w-4 mr-2" />
-                                        Add Term
+                                        {t("forms.snSpotlight.addTerm")}
                                     </GradientButton>
                                 </div>
                                 {termsError && (
@@ -347,12 +349,12 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
 
                     {/* Documents Section */}
                     <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconFileText} title="Spotlight Documents" description="Documents highlighted when terms are searched." />
+                        <SectionCard.Header icon={IconFileText} title={t("forms.snSpotlight.documents")} description={t("forms.snSpotlight.documentsDesc")} />
                         <SectionCard.Content>
                             <div>
-                                <div className="mb-2 font-medium">...show these documents as spotlights</div>
+                                <div className="mb-2 font-medium">{t("forms.snSpotlight.showDocuments")}</div>
                                 <div className="text-sm text-muted-foreground mb-4">
-                                    Choose which documents will be highlighted when the above terms are searched.
+                                    {t("forms.snSpotlight.chooseDocuments")}
                                 </div>
                                 <div className="mb-4">
                                     <Dialog open={searchDialogOpen} onOpenChange={(open) => {
@@ -365,19 +367,19 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                         <DialogTrigger asChild>
                                             <GradientButton variant="outline" type="button">
                                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                                Add Document
+                                                {t("forms.snSpotlight.addDocument")}
                                             </GradientButton>
                                         </DialogTrigger>
                                         <DialogContent className="sm:max-w-2xl">
                                             <DialogHeader>
-                                                <DialogTitle>Find a Document</DialogTitle>
+                                                <DialogTitle>{t("forms.snSpotlight.findDocument")}</DialogTitle>
                                                 <DialogDescription>
-                                                    Search and select a document to feature in this spotlight.
+                                                    {t("forms.snSpotlight.findDocumentDesc")}
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <div className="flex items-center gap-2">
                                                 <Input
-                                                    placeholder="Type to search..."
+                                                    placeholder={t("forms.snSpotlight.typeToSearch")}
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
                                                     onKeyDown={(e) => {
@@ -402,8 +404,8 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead>Title</TableHead>
-                                                                <TableHead>Type</TableHead>
+                                                                <TableHead>{t("forms.common.title")}</TableHead>
+                                                                <TableHead>{t("forms.common.field")}</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
@@ -443,10 +445,10 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-24">Order</TableHead>
-                                                <TableHead>Title</TableHead>
-                                                <TableHead>Type</TableHead>
-                                                <TableHead className="w-24 text-right">Actions</TableHead>
+                                                <TableHead className="w-24">{t("forms.snSpotlight.order")}</TableHead>
+                                                <TableHead>{t("forms.common.title")}</TableHead>
+                                                <TableHead>{t("forms.common.field")}</TableHead>
+                                                <TableHead className="w-24 text-right">{t("forms.common.edit")}</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -470,7 +472,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                                                             onClick={() => removeDocument(index)}
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-1" />
-                                                            Remove
+                                                            {t("forms.common.remove")}
                                                         </GradientButton>
                                                     </TableCell>
                                                 </TableRow>
@@ -486,7 +488,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                     </SectionCard>
                 <FormActions>
                     <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                    <FormActions.Submit>{isNew ? "Create Spotlight" : "Save Changes"}</FormActions.Submit>
+                    <FormActions.Submit>{isNew ? t("forms.common.createButton", { feature: t("forms.snSpotlight.details") }) : t("forms.formActions.saveChanges")}</FormActions.Submit>
                 </FormActions>
             </form>
         </Form>

@@ -17,6 +17,7 @@ import {
     ChevronDown,
 } from "lucide-react"
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import {
     DropdownMenu,
@@ -49,6 +50,7 @@ type StatusFieldDropdownProps = {
 };
 
 function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>) {
+    const { t } = useTranslation();
     if (!statusField) {
         return null;
     }
@@ -57,7 +59,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <GradientButton variant="ghost" size="icon" className="h-6 w-6 p-0">
-                    <span className="sr-only">Open field status</span>
+                    <span className="sr-only">{t("forms.fieldGrid.openStatus")}</span>
                     {statusField.correct ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     ) : (
@@ -91,20 +93,20 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                             type="button"
                                             className="text-xs text-primary hover:underline"
                                         >
-                                            Repair All
+                                            {t("forms.fieldGrid.repairAll")}
                                         </button>
                                     </div>
                                     {!core.exists && (
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
                                                 <AlertTriangle className="h-4 w-4" />
-                                                <span>Missing field</span>
+                                                <span>{t("forms.fieldGrid.missingField")}</span>
                                             </div>
                                             <button
                                                 type="button"
                                                 className="text-xs text-primary hover:underline"
                                             >
-                                                Repair
+                                                {t("forms.fieldGrid.repair")}
                                             </button>
                                         </div>
                                     )}
@@ -112,13 +114,13 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
                                                 <AlertTriangle className="h-4 w-4" />
-                                                <span>Facet Type is incorrect</span>
+                                                <span>{t("forms.fieldGrid.facetTypeIncorrect")}</span>
                                             </div>
                                             <button
                                                 type="button"
                                                 className="text-xs text-primary hover:underline"
                                             >
-                                                Repair
+                                                {t("forms.fieldGrid.repair")}
                                             </button>
                                         </div>
                                     )}
@@ -126,13 +128,13 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
                                                 <AlertTriangle className="h-4 w-4" />
-                                                <span>SE MultiValued isn't configured</span>
+                                                <span>{t("forms.fieldGrid.multiValuedNotConfigured")}</span>
                                             </div>
                                             <button
                                                 type="button"
                                                 className="text-xs text-primary hover:underline"
                                             >
-                                                Repair
+                                                {t("forms.fieldGrid.repair")}
                                             </button>
                                         </div>
                                     )}
@@ -142,13 +144,13 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                             <div className="flex items-center justify-between px-2 py-1 text-sm">
                                                 <div className="flex items-center gap-2 text-rose-600">
                                                     <AlertTriangle className="h-4 w-4" />
-                                                    <span>Using {core.type}</span>
+                                                    <span>{t("forms.fieldGrid.usingType", { type: core.type })}</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     className="text-xs text-primary hover:underline"
                                                 >
-                                                    Repair
+                                                    {t("forms.fieldGrid.repair")}
                                                 </button>
                                             </div>
                                         )}
@@ -166,7 +168,8 @@ type FieldToggleKey = "multiValued" | "mlt" | "facet" | "secondaryFacet" | "hl" 
 const buildColumns = (
     statusFieldMap: Map<string, TurSNFieldCheck>,
     onToggle: (fieldId: string, key: FieldToggleKey, checked: boolean) => void,
-    isSavingField: (fieldId: string) => boolean
+    isSavingField: (fieldId: string) => boolean,
+    t: (key: string, opts?: Record<string, unknown>) => string
 ): ColumnDef<TurSNSiteField>[] => [
         {
             accessorKey: "name",
@@ -177,7 +180,7 @@ const buildColumns = (
                             variant="ghost"
                             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                         >
-                            Field
+                            {t("forms.common.field")}
                             <ArrowUpDown />
                         </GradientButton>
                     </div>
@@ -194,7 +197,7 @@ const buildColumns = (
             },
         }, {
             accessorKey: "type",
-            header: () => <div className="text-center">Type</div>,
+            header: () => <div className="text-center">{t("forms.fieldGrid.type")}</div>,
             cell: ({ row }) => {
                 const typeValue = row.getValue("type");
                 const displayType = typeof typeValue === "string" ? typeValue : String(typeValue ?? "");
@@ -208,7 +211,7 @@ const buildColumns = (
         },
         {
             accessorKey: "multiValued",
-            header: () => <div className="text-right">Multi Valued</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.multiValued")}</div>,
             cell: ({ row }) => {
                 const multiValued = row.original.multiValued;
                 const fieldId = row.original.id;
@@ -227,7 +230,7 @@ const buildColumns = (
         },
         {
             accessorKey: "mlt",
-            header: () => <div className="text-right">MLT</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.mlt")}</div>,
             cell: ({ row }) => {
                 const mlt = row.original.mlt;
                 const fieldId = row.original.id;
@@ -246,7 +249,7 @@ const buildColumns = (
         },
         {
             accessorKey: "facet",
-            header: () => <div className="text-right">Facet</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.facet")}</div>,
             cell: ({ row }) => {
                 const facet = row.original.facet;
                 const fieldId = row.original.id;
@@ -265,7 +268,7 @@ const buildColumns = (
         },
         {
             accessorKey: "secondaryFacet",
-            header: () => <div className="text-right">Secondary Facet</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.secondaryFacet")}</div>,
             cell: ({ row }) => {
                 const secondaryFacet = row.original.secondaryFacet;
                 const fieldId = row.original.id;
@@ -284,7 +287,7 @@ const buildColumns = (
         },
         {
             accessorKey: "hl",
-            header: () => <div className="text-right">Highlighting</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.highlighting")}</div>,
             cell: ({ row }) => {
                 const hl = row.original.hl;
                 const fieldId = row.original.id;
@@ -303,7 +306,7 @@ const buildColumns = (
         },
         {
             accessorKey: "enabled",
-            header: () => <div className="text-right">Enabled</div>,
+            header: () => <div className="text-right">{t("forms.fieldGrid.enabled")}</div>,
             cell: ({ row }) => {
                 const enabled = row.original.enabled;
                 const fieldId = row.original.id;
@@ -322,13 +325,13 @@ const buildColumns = (
         },
         {
             id: "actions",
-            header: () => <div className="text-center">Actions</div>,
+            header: () => <div className="text-center">{t("forms.common.actions")}</div>,
             enableHiding: false,
             cell: ({ row }) => {
                 return (
                     <div className="text-center">
                         <GradientButton asChild variant="outline" size={"sm"} to={row.original.id}>
-                            Edit
+                            {t("forms.common.edit")}
                         </GradientButton>
                     </div>
                 )
@@ -344,6 +347,7 @@ interface Props {
     setSnField: React.Dispatch<React.SetStateAction<TurSNSiteField[]>>;
 }
 export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, children }) => {
+    const { t } = useTranslation();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -424,8 +428,8 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     );
 
     const columns = React.useMemo(
-        () => buildColumns(statusFieldMap, handleToggle, isSavingField),
-        [statusFieldMap, handleToggle, isSavingField]
+        () => buildColumns(statusFieldMap, handleToggle, isSavingField, t),
+        [statusFieldMap, handleToggle, isSavingField, t]
     );
 
     const table = useReactTable({
@@ -454,7 +458,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
         <div className="px-6">
             <div className="flex items-center py-4">
                 <Input
-                    placeholder="Filter fields..."
+                    placeholder={t("forms.common.filterFields")}
                     value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
                         table.getColumn("name")?.setFilterValue(event.target.value)
@@ -466,7 +470,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size="sm" className="hidden md:inline-flex">
-                                <IconColumns3Filled /> Columns <ChevronDown />
+                                <IconColumns3Filled /> {t("forms.common.columns")} <ChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -534,7 +538,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                                     colSpan={columns.length}
                                     className="h-24 text-center"
                                 >
-                                    No results.
+                                    {t("forms.common.noResultsDot")}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -543,7 +547,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredRowModel().rows.length} row(s).
+                    {table.getFilteredRowModel().rows.length} {t("forms.common.rows")}.
                 </div>
                 <div className="space-x-2">
                     <GradientButton
@@ -552,7 +556,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
-                        Previous
+                        {t("forms.common.previous")}
                     </GradientButton>
                     <GradientButton
                         variant="outline"
@@ -560,7 +564,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
-                        Next
+                        {t("forms.common.next")}
                     </GradientButton>
                 </div>
             </div>

@@ -6,6 +6,7 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
 import { IconCpu2, IconRobot, IconServer2, IconSettings, IconTool } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -13,6 +14,7 @@ const turAIAgentService = new TurAIAgentService();
 
 export default function AIAgentPage() {
   const { id } = useParams() as { id: string };
+  const { t } = useTranslation();
   const [agent, setAgent] = useState<TurAIAgent>({} as TurAIAgent);
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
@@ -25,33 +27,33 @@ export default function AIAgentPage() {
     if (isNew) {
       return {
         navMain: [
-          { title: "Settings", url: "/settings", icon: IconSettings },
+          { title: t("aiAgent.nav.settings"), url: "/settings", icon: IconSettings },
         ],
       };
     }
     return {
       navMain: [
-        { title: "Settings", url: "/settings", icon: IconSettings },
-        { title: "Language Models", url: "/llm", icon: IconCpu2 },
-        { title: "Native Tools", url: "/tools", icon: IconTool },
-        { title: "MCP Servers", url: "/mcp", icon: IconServer2 },
+        { title: t("aiAgent.nav.settings"), url: "/settings", icon: IconSettings },
+        { title: t("aiAgent.nav.languageModels"), url: "/llm", icon: IconCpu2 },
+        { title: t("aiAgent.nav.nativeTools"), url: "/tools", icon: IconTool },
+        { title: t("aiAgent.nav.mcpServers"), url: "/mcp", icon: IconServer2 },
       ],
     };
-  }, [isNew]);
+  }, [isNew, t]);
 
   useEffect(() => {
     let added = false;
     if (id === "new") {
       setAgent({} as TurAIAgent);
       setIsNew(true);
-      pushItem({ label: "New AI Agent" });
+      pushItem({ label: t("aiAgent.newInstance") });
       added = true;
     } else {
       turAIAgentService.get(id).then((a) => {
         setAgent(a);
         pushItem({ label: a.title, href: `${ROUTES.AI_AGENT_INSTANCE}/${a.id}` });
         added = true;
-      }).catch(() => setError("Connection error or timeout while fetching AI agent."));
+      }).catch(() => setError(t("common.connectionError", { resource: t("aiAgent.title").toLowerCase() })));
       setIsNew(false);
     }
     return () => {
@@ -62,21 +64,21 @@ export default function AIAgentPage() {
   async function onDelete() {
     try {
       if (await turAIAgentService.delete(agent)) {
-        toast.success(`The ${agent.title} AI Agent was deleted`);
+        toast.success(t("aiAgent.deleted", { name: agent.title }));
         navigate(ROUTES.AI_AGENT_INSTANCE);
       } else {
-        toast.error(`The ${agent.title} AI Agent was not deleted`);
+        toast.error(t("aiAgent.notDeleted", { name: agent.title }));
       }
     } catch (error) {
       console.error("Form submission error", error);
-      toast.error(`The ${agent.title} AI Agent was not deleted`);
+      toast.error(t("aiAgent.notDeleted", { name: agent.title }));
     }
     setOpen(false);
   }
 
   return (
     <LoadProvider checkIsNotUndefined={agent} error={error} tryAgainUrl={`${ROUTES.AI_AGENT_INSTANCE}/${id}`}>
-      <SubPage icon={IconRobot} feature="AI Agent" name={agent.title}
+      <SubPage icon={IconRobot} feature={t("aiAgent.title")} name={agent.title}
         onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
     </LoadProvider>
   );

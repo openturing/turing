@@ -1,0 +1,42 @@
+{
+  "account": {
+    "title": "Account Settings",
+    "feature": "Account",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "username": "Username",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "leaveBlank": "Leave blank to keep current",
+    "confirmPassword": "Confirm Password",
+    "repeatPassword": "Repeat new password",
+    "saveChanges": "Save Changes",
+    "loadFailed": "Failed to load user data.",
+    "unableToLoad": "Unable to load user data.",
+    "avatarUpdated": "Avatar updated.",
+    "avatarFailed": "Failed to save avatar.",
+    "avatarRemoved": "Avatar removed.",
+    "avatarRemoveFailed": "Failed to remove avatar.",
+    "passwordMismatch": "Passwords do not match.",
+    "updateSuccess": "Account updated successfully.",
+    "updateFailed": "Failed to update account.",
+    "nav": {
+      "profile": "Profile",
+      "preferences": "Preferences"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "description": "Language and display preferences.",
+      "language": "Language",
+      "languageDesc": "Choose the language used for the interface.",
+      "languageSaved": "Language preference saved.",
+      "english": "English",
+      "portuguese": "Portuguese"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your personal information and password."
+    }
+  }
+}

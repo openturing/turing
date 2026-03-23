@@ -1,0 +1,121 @@
+{
+  "sn": {
+    "title": "Semantic Navigation",
+    "newSite": "New Site",
+    "blankTitle": "You don't seem to have any semantic navigation instance.",
+    "blankDescription": "Create a new instance to search and navigate through your documents.",
+    "newInstance": "New semantic navigation instance",
+    "exportAll": "Export All",
+    "exporting": "Exporting...",
+    "exportSuccess": "All Semantic Navigation sites were exported.",
+    "exportFailed": "Failed to export Semantic Navigation sites.",
+    "siteSaved": "The {{name}} SN Site was saved",
+    "siteNotSaved": "The {{name}} SN Site was not saved",
+    "siteUpdated": "The {{name}} SN Site was updated",
+    "siteNotUpdated": "The {{name}} SN Site was not updated",
+    "formSubmitFailed": "Failed to submit the form. Please try again.",
+    "siteDeleted": "The {{name}} Semantic Navigation was deleted",
+    "siteNotDeleted": "The {{name}} Semantic Navigation was not deleted",
+    "siteExported": "The {{name}} Semantic Navigation was exported",
+    "siteNotExported": "The {{name}} Semantic Navigation was not exported",
+    "queue": "Queue",
+    "indexed": "Indexed",
+    "settings": {
+      "title": "Settings",
+      "description": "Configure the Semantic Navigation Site."
+    },
+    "behavior": {
+      "title": "Behavior",
+      "description": "How the search will behave during the search."
+    },
+    "fields": {
+      "title": "Fields",
+      "feature": "Field",
+      "description": "Custom Search Engine Fields.",
+      "newField": "New Field",
+      "deleted": "The field was deleted",
+      "notDeleted": "The field was not deleted"
+    },
+    "facets": {
+      "title": "Facets",
+      "feature": "Facet",
+      "description": "Edit and order the facets of the search.",
+      "newCustomFacet": "New Custom Facet",
+      "customField": "Custom Field",
+      "facetedField": "Faceted Field",
+      "deleted": "The {{name}} Custom Facet was deleted",
+      "notDeleted": "The {{name}} Custom Facet was not deleted",
+      "deletionError": "Form deletion error",
+      "failedDelete": "Failed to delete: {{message}}"
+    },
+    "genai": {
+      "title": "Generative AI",
+      "description": "Use Assistant in your search."
+    },
+    "insights": {
+      "title": "AI Insights",
+      "description": "AI-powered overview and suggestions for this Semantic Navigation site.",
+      "generating": "Generating AI summary...",
+      "failedGenerate": "Failed to generate summary.",
+      "failedConnect": "Failed to connect to the summary service. Please try again.",
+      "statistics": "Statistics",
+      "searchTerms": "search terms"
+    },
+    "multiLanguage": {
+      "title": "Multi Languages",
+      "feature": "Language",
+      "description": "Define Multi Languages.",
+      "newLanguage": "New Language",
+      "blankTitle": "You don't seem to have any language.",
+      "blankDescription": "Create a new language to semantic navigation search works.",
+      "newLanguageBlank": "New language",
+      "deleted": "The {{name}} Language was deleted",
+      "notDeleted": "The {{name}} Language was not deleted"
+    },
+    "resultRanking": {
+      "title": "Result Ranking",
+      "description": "Define content that will be featured in the term-based search.",
+      "newResultRanking": "New Result Ranking",
+      "blankTitle": "You don't seem to have any result ranking.",
+      "blankDescription": "Create a new result ranking to define relevance rules.",
+      "newResultRankingBlank": "New result ranking",
+      "deleted": "The {{name}} Result Ranking Instance was deleted",
+      "notDeleted": "The {{name}} Result Ranking Instance was not deleted"
+    },
+    "mergeProviders": {
+      "title": "Merge Providers",
+      "feature": "Merge Provider",
+      "description": "Unify different sources contents.",
+      "newMergeProvider": "New Merge Provider",
+      "blankTitle": "You don't seem to have any merge provider.",
+      "blankDescription": "Create a new merge provider and allow to merge documents from different providers during indexing.",
+      "newMergeProviderBlank": "New merge provider",
+      "deleted": "The merge provider was deleted",
+      "notDeleted": "The merge provider was not deleted"
+    },
+    "spotlight": {
+      "title": "Spotlight",
+      "description": "Define content that will be featured in the term-based search.",
+      "newSpotlight": "New Spotlight",
+      "blankTitle": "You don't seem to have any spotlight.",
+      "blankDescription": "Create a spotlight component that highlights content triggered by specific search terms.",
+      "newSpotlightBlank": "New spotlight",
+      "deleted": "The spotlight was deleted",
+      "notDeleted": "The spotlight was not deleted"
+    },
+    "topSearchTerms": {
+      "title": "Top Search Terms",
+      "description": "Top search terms report.",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "allTime": "All Time",
+      "noTerms": "No search terms yet.",
+      "noTermsDescription": "As soon as users search, the top terms will show up here.",
+      "rank": "Rank",
+      "term": "Term",
+      "avgResults": "Average of results",
+      "searchTotal": "Search total"
+    }
+  }
+}

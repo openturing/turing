@@ -1,0 +1,15 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "new": "Novo",
+    "loading": "Carregando...",
+    "actions": "Ações",
+    "goBack": "Voltar",
+    "tryAgain": "Tentar novamente",
+    "errorLoading": "Erro ao carregar dados",
+    "openNavigation": "Abrir navegação",
+    "connectionError": "Erro de conexão ou tempo esgotado ao buscar {{resource}}."
+  }
+}
