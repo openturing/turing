@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
@@ -19,9 +20,11 @@ import type { TurIntegrationMonitoring } from "@/models/integration/integration-
 import { TurIntegrationAemSourceService } from "@/services/integration/integration-aem-source.service";
 import { TurIntegrationDoubleCheckService } from "@/services/integration/integration-double-check.service";
 import { IconListCheck } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import { Play } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const NO_SOURCE = "";
 
@@ -82,6 +85,16 @@ export default function IntegrationInstanceDoubleCheckPage() {
       .catch(() => {})
       .finally(() => setLoadingUnprocessed(false));
   }, [selectedSource, id]);
+
+  const handleIndex = useCallback(async (contentId: string) => {
+    if (!doubleCheckService || !selectedSource) return;
+    try {
+      await doubleCheckService.indexById(selectedSource, contentId);
+      toast.success(t("integration.doubleCheck.indexSent"));
+    } catch {
+      toast.error(t("integration.doubleCheck.indexFailed"));
+    }
+  }, [doubleCheckService, selectedSource, t]);
 
   if (!id) {
     return <div>{t("integration.indexingStats.invalidId")}</div>;
@@ -149,21 +162,21 @@ export default function IntegrationInstanceDoubleCheckPage() {
               <p className="text-xs text-muted-foreground mb-3">
                 {t("integration.doubleCheck.unprocessedDesc")}
               </p>
-              <UnprocessedList items={unprocessed?.indexing ?? []} t={t} />
+              <UnprocessedList items={unprocessed?.indexing ?? []} t={t} onIndex={handleIndex} />
             </TabsContent>
 
             <TabsContent value="missing">
               <p className="text-xs text-muted-foreground mb-3">
                 {t("integration.doubleCheck.missingDesc")}
               </p>
-              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.missing} emptyMessage={t("integration.doubleCheck.noMissing")} />}
+              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.missing} emptyMessage={t("integration.doubleCheck.noMissing")} t={t} onIndex={handleIndex} />}
             </TabsContent>
 
             <TabsContent value="extra">
               <p className="text-xs text-muted-foreground mb-3">
                 {t("integration.doubleCheck.extraDesc")}
               </p>
-              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.extra} emptyMessage={t("integration.doubleCheck.noExtra")} />}
+              {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.extra} emptyMessage={t("integration.doubleCheck.noExtra")} t={t} onIndex={handleIndex} />}
             </TabsContent>
           </Tabs>
         )}
@@ -172,7 +185,7 @@ export default function IntegrationInstanceDoubleCheckPage() {
   );
 }
 
-function UnprocessedList({ items, t }: { items: TurIntegrationIndexing[]; t: (key: string) => string }) {
+function UnprocessedList({ items, t, onIndex }: { items: TurIntegrationIndexing[]; t: (key: string) => string; onIndex: (contentId: string) => void }) {
   if (items.length === 0) {
     return (
       <div className="text-sm text-muted-foreground italic py-4">{t("integration.doubleCheck.noUnprocessed")}</div>
@@ -187,6 +200,7 @@ function UnprocessedList({ items, t }: { items: TurIntegrationIndexing[]; t: (ke
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.objectIdCol")}</th>
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.statusCol")}</th>
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.createdCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.actionsCol")}</th>
           </tr>
         </thead>
         <tbody>
@@ -201,6 +215,17 @@ function UnprocessedList({ items, t }: { items: TurIntegrationIndexing[]; t: (ke
               <td className="px-3 py-2 text-xs text-muted-foreground">
                 {item.created ? new Date(item.created).toLocaleString() : "—"}
               </td>
+              <td className="px-3 py-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => onIndex(item.objectId)}
+                >
+                  <Play className="h-3 w-3" />
+                  {t("integration.doubleCheck.index")}
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -212,9 +237,13 @@ function UnprocessedList({ items, t }: { items: TurIntegrationIndexing[]; t: (ke
 function DoubleCheckCoreList({
   coreMap,
   emptyMessage,
+  t,
+  onIndex,
 }: {
   coreMap: Record<string, string[]>;
   emptyMessage: string;
+  t: (key: string) => string;
+  onIndex: (contentId: string) => void;
 }) {
   const entries = Object.entries(coreMap).filter(([, paths]) => paths.length > 0);
 
@@ -239,10 +268,18 @@ function DoubleCheckCoreList({
               {paths.map((path) => (
                 <li
                   key={path}
-                  className="text-xs font-mono text-muted-foreground px-2 py-1 rounded hover:bg-muted truncate"
-                  title={path}
+                  className="flex items-center justify-between text-xs font-mono text-muted-foreground px-2 py-1 rounded hover:bg-muted"
                 >
-                  {path}
+                  <span className="truncate" title={path}>{path}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs gap-1 ml-2 shrink-0"
+                    onClick={() => onIndex(path)}
+                  >
+                    <Play className="h-3 w-3" />
+                    {t("integration.doubleCheck.index")}
+                  </Button>
                 </li>
               ))}
             </ul>

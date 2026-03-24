@@ -101,7 +101,10 @@
       "reindexSummary": "Resumo do Reindex",
       "noReindexStats": "Nenhuma operação REINDEX ALL registrada ainda.",
       "processedInLastReindex": "processados no último reindex",
-      "throughput": "Throughput"
+      "throughput": "Throughput",
+      "environment": "Ambiente",
+      "locale": "Locale",
+      "site": "Site"
     },
     "doubleCheck": {
       "title": "Verificação Dupla",
@@ -122,7 +125,11 @@
       "noExtra": "Nenhum conteúdo extra encontrado.",
       "objectIdCol": "ID do Objeto",
       "statusCol": "Status",
-      "createdCol": "Criado"
+      "createdCol": "Criado",
+      "actionsCol": "Ações",
+      "index": "Indexar",
+      "indexSent": "Solicitação de indexação enviada",
+      "indexFailed": "Falha ao enviar solicitação de indexação"
     },
     "connectorSystemInfo": {
       "title": "Informações do Sistema",

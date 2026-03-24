@@ -3,7 +3,7 @@ import type { TurIntegrationMonitoring } from "@/models/integration/integration-
 import axios, { type AxiosInstance } from "axios";
 
 export class TurIntegrationDoubleCheckService {
-  private integrationId: string;
+  private readonly integrationId: string;
   private readonly axiosInstance: AxiosInstance;
 
   constructor(integrationId: string, axiosInstance: AxiosInstance = axios) {
@@ -25,6 +25,13 @@ export class TurIntegrationDoubleCheckService {
   async getUnprocessed(source: string): Promise<TurIntegrationMonitoring> {
     const { data } = await this.axiosInstance.get<TurIntegrationMonitoring>(
       `${this.connectorUrl}/monitoring/indexing/unprocessed/${source}`
+    );
+    return data;
+  }
+
+  async indexById(source: string, contentId: string): Promise<Record<string, string>> {
+    const { data } = await this.axiosInstance.get<Record<string, string>>(
+      `${this.connectorUrl}/index/${source}/id/${contentId}`
     );
     return data;
   }

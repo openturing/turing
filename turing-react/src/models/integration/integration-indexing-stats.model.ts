@@ -7,4 +7,7 @@ export interface TurIntegrationIndexingStats {
     endTime: string;
     documentCount: number;
     documentsPerMinute: number;
+    environment: string | null;
+    locale: string | null;
+    sites: string[];
 }
