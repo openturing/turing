@@ -20,7 +20,7 @@ import { TurIntegrationIndexingStatsService } from "@/services/integration/integ
 import { IconChartBar } from "@tabler/icons-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useDateLocale } from "@/hooks/use-date-locale";
-import { Clock, Database, Globe, MapPin, RefreshCcw, Search, TrendingUp, Zap } from "lucide-react";
+import { Clock, Database, RefreshCcw, Search, TrendingUp, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -272,9 +272,6 @@ export default function IntegrationInstanceIndexingStatsPage() {
                                                 <TableHead className="px-5">{t("integration.indexingStats.startTime")}</TableHead>
                                                 <TableHead className="px-5">{t("integration.indexingStats.source")}</TableHead>
                                                 <TableHead className="px-5">{t("integration.indexingStats.operation")}</TableHead>
-                                                <TableHead className="px-5">{t("integration.indexingStats.environment")}</TableHead>
-                                                <TableHead className="px-5">{t("integration.indexingStats.locale")}</TableHead>
-                                                <TableHead className="px-5">{t("integration.indexingStats.site")}</TableHead>
                                                 <TableHead className="px-5">{t("integration.indexingStats.documents")}</TableHead>
                                                 <TableHead className="px-5">{t("integration.indexingStats.duration")}</TableHead>
                                                 <TableHead className="px-5">{t("integration.indexingStats.docsPerMin")}</TableHead>
@@ -321,39 +318,6 @@ export default function IntegrationInstanceIndexingStatsPage() {
                                                                     <><RefreshCcw className="h-3 w-3" /> REINDEX ALL</>
                                                                 )}
                                                             </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="px-5 py-3">
-                                                            {stat.environment ? (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                    <span className="text-sm">{stat.environment}</span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-xs text-muted-foreground">—</span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="px-5 py-3">
-                                                            {stat.locale ? (
-                                                                <Badge variant="outline" className="font-mono text-xs px-2 py-0.5">
-                                                                    {stat.locale}
-                                                                </Badge>
-                                                            ) : (
-                                                                <span className="text-xs text-muted-foreground">—</span>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="px-5 py-3">
-                                                            {stat.sites?.length > 0 ? (
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {stat.sites.map((site) => (
-                                                                        <Badge key={site} variant="outline" className="flex items-center gap-1 font-mono text-xs px-2 py-0.5">
-                                                                            <MapPin className="h-3 w-3" />
-                                                                            {site}
-                                                                        </Badge>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-xs text-muted-foreground">—</span>
-                                                            )}
                                                         </TableCell>
                                                         <TableCell className="px-5 py-3">
                                                             <span className="font-mono text-sm font-semibold">

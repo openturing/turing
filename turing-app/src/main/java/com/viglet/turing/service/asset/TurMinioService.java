@@ -145,7 +145,7 @@ public class TurMinioService {
 					PutObjectArgs.builder()
 							.bucket(getBucket())
 							.object(objectName)
-							.stream(is, file.getSize(), -1)
+							.stream(is, file.getSize(), -1L)
 							.contentType(contentType)
 							.build());
 		} catch (Exception e) {
@@ -161,7 +161,7 @@ public class TurMinioService {
 					PutObjectArgs.builder()
 							.bucket(getBucket())
 							.object(path)
-							.stream(InputStream.nullInputStream(), 0, -1)
+							.stream(InputStream.nullInputStream(), 0L, -1L)
 							.contentType("application/x-directory")
 							.build());
 		} catch (Exception e) {

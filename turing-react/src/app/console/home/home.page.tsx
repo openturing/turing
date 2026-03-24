@@ -31,6 +31,8 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
+import { useWeather } from "./use-weather"
+import { WeatherCard } from "./weather-card"
 
 const turLLMInstanceService = new TurLLMInstanceService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
@@ -108,6 +110,7 @@ export default function HomePage() {
   const userPrivileges = useMemo(() => new Set(user?.privileges ?? []), [user?.privileges])
   const [hasEnabledLlm, setHasEnabledLlm] = useState(false)
   const [chatLlmId, setChatLlmId] = useState<string | null>(null)
+  const { weather } = useWeather()
 
   useEffect(() => {
     Promise.all([
@@ -158,6 +161,11 @@ export default function HomePage() {
               </p>
             </div>
           </div>
+          {weather && (
+            <div className="mt-4">
+              <WeatherCard weather={weather} />
+            </div>
+          )}
         </div>
 
         {/* Quick Chat */}

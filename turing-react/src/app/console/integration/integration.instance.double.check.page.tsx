@@ -198,6 +198,9 @@ function UnprocessedList({ items, t, onIndex }: { items: TurIntegrationIndexing[
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.objectIdCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.localeCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.sitesCol")}</th>
+            <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.environmentCol")}</th>
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.statusCol")}</th>
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.createdCol")}</th>
             <th className="text-left px-3 py-2 font-medium">{t("integration.doubleCheck.actionsCol")}</th>
@@ -208,6 +211,15 @@ function UnprocessedList({ items, t, onIndex }: { items: TurIntegrationIndexing[
             <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/30">
               <td className="px-3 py-2 font-mono text-xs truncate max-w-md" title={item.objectId}>
                 {item.objectId}
+              </td>
+              <td className="px-3 py-2 text-xs">
+                {item.locale || "—"}
+              </td>
+              <td className="px-3 py-2 text-xs">
+                {item.sites?.length > 0 ? item.sites.join(", ") : "—"}
+              </td>
+              <td className="px-3 py-2 text-xs">
+                {item.environment || "—"}
               </td>
               <td className="px-3 py-2">
                 <Badge variant="outline" className="text-xs">{item.status}</Badge>

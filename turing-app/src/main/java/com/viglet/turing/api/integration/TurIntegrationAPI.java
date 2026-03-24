@@ -68,7 +68,9 @@ public class TurIntegrationAPI {
         URI baseUri = URI.create(turIntegrationInstance.getEndpoint());
         String relativePath = request.getRequestURI()
                 .replace("/api/v2/integration/" + turIntegrationInstance.getId(), "/api/v2");
-        URI fullUri = baseUri.resolve(relativePath);
+        String queryString = request.getQueryString();
+        String fullPath = queryString != null ? relativePath + "?" + queryString : relativePath;
+        URI fullUri = baseUri.resolve(fullPath);
         log.debug("Executing: {}", fullUri);
 
         try {

@@ -31,7 +31,7 @@ export class TurIntegrationDoubleCheckService {
 
   async indexById(source: string, contentId: string): Promise<Record<string, string>> {
     const { data } = await this.axiosInstance.get<Record<string, string>>(
-      `${this.connectorUrl}/index/${source}/id/${contentId}`
+      `${this.connectorUrl}/index/${source}`, { params: { id: contentId } }
     );
     return data;
   }
