@@ -1,22 +1,18 @@
 /*
  * Copyright (C) 2016-2022 the original author or authors.
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.viglet.turing.api.sn.console;
@@ -25,7 +21,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -57,7 +51,6 @@ import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -81,12 +74,9 @@ public class TurSNSiteAPI {
 
     public TurSNSiteAPI(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNSiteGenAiRepository turSNSiteGenAiRepository,
-            TurSNSiteExport turSNSiteExport,
-            TurSNTemplate turSNTemplate,
-            TurSNQueue turSNQueue,
-            TurSolrInstanceProcess turSolrInstanceProcess,
-            TurSolr turSolr,
+            TurSNSiteGenAiRepository turSNSiteGenAiRepository, TurSNSiteExport turSNSiteExport,
+            TurSNTemplate turSNTemplate, TurSNQueue turSNQueue,
+            TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
             TurConfigProperties turConfigProperties) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -103,8 +93,8 @@ public class TurSNSiteAPI {
     @GetMapping
     public List<TurSNSite> turSNSiteList(Principal principal) {
         if (turConfigProperties.isMultiTenant()) {
-            return this.turSNSiteRepository.findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),
-                    principal.getName().toLowerCase());
+            return this.turSNSiteRepository.findByCreatedBy(
+                    TurPersistenceUtils.orderByNameIgnoreCase(), principal.getName().toLowerCase());
         } else {
             return this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase());
         }
@@ -164,7 +154,8 @@ public class TurSNSiteAPI {
             Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi()).ifPresent(turSNSiteGenAi -> {
                 turSNSiteGenAi.setEnabled(turSNSite.getTurSNSiteGenAi().isEnabled());
                 turSNSiteGenAi.setTurLLMInstance(turSNSite.getTurSNSiteGenAi().getTurLLMInstance());
-                turSNSiteGenAi.setTurStoreInstance(turSNSite.getTurSNSiteGenAi().getTurStoreInstance());
+                turSNSiteGenAi
+                        .setTurStoreInstance(turSNSite.getTurSNSiteGenAi().getTurStoreInstance());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
             });
             return turSNSiteEdit;
@@ -176,9 +167,10 @@ public class TurSNSiteAPI {
 
     public boolean turSNSiteDelete(@PathVariable String id) {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
-        turSNSite.ifPresent(
-                site -> turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
-                        .forEach(locale -> TurSolrUtils.deleteCore(site.getTurSEInstance(), locale.getCore())));
+        turSNSite.ifPresent(site -> turSNSiteLocaleRepository
+                .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
+                .forEach(locale -> TurSolrUtils.deleteCore(site.getTurSEInstance(),
+                        locale.getCore())));
         turSNSiteRepository.delete(id);
 
         return true;
@@ -198,7 +190,7 @@ public class TurSNSiteAPI {
     public StreamingResponseBody turSNSiteExport(HttpServletResponse response) {
 
         try {
-            return turSNSiteExport.exportObject(response);
+            return turSNSiteExport.exportAll(response);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -209,12 +201,14 @@ public class TurSNSiteAPI {
     @GetMapping("/{id}/monitoring")
     public TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatus(@PathVariable String id) {
         return this.turSNSiteRepository.findById(id).map(turSNSite -> {
-            TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
+            TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean =
+                    new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
             for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
                     .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
-                Optional<TurSolrInstance> turSolrInstance = turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
+                Optional<TurSolrInstance> turSolrInstance =
+                        turSolrInstanceProcess.initSolrInstance(turSNSiteLocale);
                 if (turSolrInstance.isPresent()) {
                     documentTotal += turSolr.getDocumentTotal(turSolrInstance.get());
                 }
