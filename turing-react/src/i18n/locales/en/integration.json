@@ -131,8 +131,11 @@
       "createdCol": "Created",
       "actionsCol": "Actions",
       "index": "Index",
+      "indexAll": "Index All",
       "indexSent": "Index request sent",
-      "indexFailed": "Failed to send index request"
+      "indexFailed": "Failed to send index request",
+      "indexAllSent": "Index All request sent",
+      "indexAllFailed": "Failed to send Index All request"
     },
     "connectorSystemInfo": {
       "title": "System Information",

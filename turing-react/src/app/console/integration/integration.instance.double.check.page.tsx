@@ -1,4 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
+import { BadgeAemEnv } from "@/components/badge-aem-env";
+import { BadgeIndexingStatus } from "@/components/badge-indexing-status";
+import { BadgeLocale } from "@/components/badge-locale";
+import { BadgeSites } from "@/components/badge-sites";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import {
@@ -9,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
@@ -82,7 +87,7 @@ export default function IntegrationInstanceDoubleCheckPage() {
     doubleCheckService
       .getUnprocessed(selectedSource)
       .then((data) => setUnprocessed(data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingUnprocessed(false));
   }, [selectedSource, id]);
 
@@ -93,6 +98,16 @@ export default function IntegrationInstanceDoubleCheckPage() {
       toast.success(t("integration.doubleCheck.indexSent"));
     } catch {
       toast.error(t("integration.doubleCheck.indexFailed"));
+    }
+  }, [doubleCheckService, selectedSource, t]);
+
+  const handleIndexAll = useCallback(async (tab: string) => {
+    if (!doubleCheckService || !selectedSource) return;
+    try {
+      await doubleCheckService.indexAllByTab(selectedSource, tab);
+      toast.success(t("integration.doubleCheck.indexAllSent"));
+    } catch {
+      toast.error(t("integration.doubleCheck.indexAllFailed"));
     }
   }, [doubleCheckService, selectedSource, t]);
 
@@ -159,23 +174,62 @@ export default function IntegrationInstanceDoubleCheckPage() {
             </TabsList>
 
             <TabsContent value="unprocessed">
-              <p className="text-xs text-muted-foreground mb-3">
-                {t("integration.doubleCheck.unprocessedDesc")}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">
+                  {t("integration.doubleCheck.unprocessedDesc")}
+                </p>
+                {totalUnprocessed > 0 && (
+                  <GradientButton
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => handleIndexAll("unprocessed")}
+                  >
+                    <Play className="h-3 w-3" />
+                    {t("integration.doubleCheck.indexAll")}
+                  </GradientButton>
+                )}
+              </div>
               <UnprocessedList items={unprocessed?.indexing ?? []} t={t} onIndex={handleIndex} />
             </TabsContent>
 
             <TabsContent value="missing">
-              <p className="text-xs text-muted-foreground mb-3">
-                {t("integration.doubleCheck.missingDesc")}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">
+                  {t("integration.doubleCheck.missingDesc")}
+                </p>
+                {totalMissing > 0 && (
+                  <GradientButton
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => handleIndexAll("missing")}
+                  >
+                    <Play className="h-3 w-3" />
+                    {t("integration.doubleCheck.indexAll")}
+                  </GradientButton>
+                )}
+              </div>
               {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.missing} emptyMessage={t("integration.doubleCheck.noMissing")} t={t} onIndex={handleIndex} />}
             </TabsContent>
 
             <TabsContent value="extra">
-              <p className="text-xs text-muted-foreground mb-3">
-                {t("integration.doubleCheck.extraDesc")}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">
+                  {t("integration.doubleCheck.extraDesc")}
+                </p>
+                {totalExtra > 0 && (
+                  <GradientButton
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => handleIndexAll("extra")}
+                  >
+                    <Play className="h-3 w-3" />
+                    {t("integration.doubleCheck.indexAll")}
+                  </GradientButton>
+                )}
+              </div>
               {doubleCheck && <DoubleCheckCoreList coreMap={doubleCheck.extra} emptyMessage={t("integration.doubleCheck.noExtra")} t={t} onIndex={handleIndex} />}
             </TabsContent>
           </Tabs>
@@ -213,16 +267,16 @@ function UnprocessedList({ items, t, onIndex }: { items: TurIntegrationIndexing[
                 {item.objectId}
               </td>
               <td className="px-3 py-2 text-xs">
-                {item.locale || "—"}
+                <BadgeLocale locale={item.locale} />
               </td>
               <td className="px-3 py-2 text-xs">
-                {item.sites?.length > 0 ? item.sites.join(", ") : "—"}
+                <BadgeSites sites={item.sites} />
               </td>
               <td className="px-3 py-2 text-xs">
-                {item.environment || "—"}
+                <BadgeAemEnv environment={item.environment} />
               </td>
               <td className="px-3 py-2">
-                <Badge variant="outline" className="text-xs">{item.status}</Badge>
+                <BadgeIndexingStatus status={item.status} />
               </td>
               <td className="px-3 py-2 text-xs text-muted-foreground">
                 {item.created ? new Date(item.created).toLocaleString() : "—"}

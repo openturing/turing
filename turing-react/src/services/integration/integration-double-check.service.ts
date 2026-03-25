@@ -35,4 +35,11 @@ export class TurIntegrationDoubleCheckService {
     );
     return data;
   }
+
+  async indexAllByTab(source: string, tab: string): Promise<Record<string, string>> {
+    const { data } = await this.axiosInstance.post<Record<string, string>>(
+      `${this.connectorUrl}/index-all-by-tab/${source}`, { tab }
+    );
+    return data;
+  }
 }

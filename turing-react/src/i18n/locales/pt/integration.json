@@ -131,8 +131,11 @@
       "createdCol": "Criado",
       "actionsCol": "Ações",
       "index": "Indexar",
+      "indexAll": "Indexar Todos",
       "indexSent": "Solicitação de indexação enviada",
-      "indexFailed": "Falha ao enviar solicitação de indexação"
+      "indexFailed": "Falha ao enviar solicitação de indexação",
+      "indexAllSent": "Solicitação de indexação em lote enviada",
+      "indexAllFailed": "Falha ao enviar solicitação de indexação em lote"
     },
     "connectorSystemInfo": {
       "title": "Informações do Sistema",
