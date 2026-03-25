@@ -39,7 +39,8 @@
       "indexAll": "Indexar tudo",
       "dryScan": "Dry Scan",
       "dryScanStarted": "Dry scan iniciado para {{name}}",
-      "dryScanFailed": "Falha ao iniciar dry scan para {{name}}"
+      "dryScanFailed": "Falha ao iniciar dry scan para {{name}}",
+      "alreadyRunning": "Um processo já está em execução para {{name}}. Aguarde a conclusão."
     },
     "indexingRules": {
       "title": "Regras de Indexação",

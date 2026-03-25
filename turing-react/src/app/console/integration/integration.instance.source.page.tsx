@@ -7,6 +7,7 @@ import type { TurIntegrationAemSource } from "@/models/integration/integration-a
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconGitCommit } from "@tabler/icons-react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -67,6 +68,10 @@ export default function IntegrationInstanceSourcePage() {
       }
     } catch (error) {
       console.error("Index all error", error);
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast.warning(t("integration.sources.alreadyRunning", { name: integrationAemSource.name }));
+        return;
+      }
       toast.error(t("integration.sources.indexingFailed", { name: integrationAemSource.name }));
     }
   }
@@ -81,6 +86,10 @@ export default function IntegrationInstanceSourcePage() {
       }
     } catch (error) {
       console.error("Reindex all error", error);
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast.warning(t("integration.sources.alreadyRunning", { name: integrationAemSource.name }));
+        return;
+      }
       toast.error(t("integration.sources.reindexingFailed", { name: integrationAemSource.name }));
     }
   }
