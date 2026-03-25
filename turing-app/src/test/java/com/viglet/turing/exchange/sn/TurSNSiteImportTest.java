@@ -1,6 +1,7 @@
 package com.viglet.turing.exchange.sn;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -102,6 +103,7 @@ class TurSNSiteImportTest {
         @BeforeEach
         void setUp() {
                 when(cacheManager.getCacheNames()).thenReturn(Collections.emptySet());
+                lenient().when(turSNSiteRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
         }
 
         @Test
@@ -417,5 +419,74 @@ class TurSNSiteImportTest {
                 verify(turSNRankingExpressionRepository).save(any(TurSNRankingExpression.class));
                 verify(turSNRankingConditionRepository).save(any(TurSNRankingCondition.class));
                 verify(turSNSiteMergeProvidersRepository).save(any(TurSNSiteMergeProviders.class));
+        }
+
+        @Test
+        void shouldRenameSiteWhenNameAlreadyExistsWithDifferentId() {
+                TurSEInstance seInstance = new TurSEInstance();
+                seInstance.setId("se-1");
+
+                TurSNSite existingSite = new TurSNSite();
+                existingSite.setId("other-id");
+                existingSite.setName("MySite");
+
+                TurSNSiteExchange siteExchange = new TurSNSiteExchange();
+                siteExchange.setId("site-new");
+                siteExchange.setName("MySite");
+                siteExchange.setTurSEInstance("se-1");
+
+                TurExchange exchange = new TurExchange();
+                exchange.setSnSites(List.of(siteExchange));
+
+                when(turSNSiteRepository.findById("site-new")).thenReturn(Optional.empty());
+                when(turSEInstanceRepository.findById("se-1")).thenReturn(Optional.of(seInstance));
+                when(turSNSiteRepository.findByNameIgnoreCase("MySite")).thenReturn(Optional.of(existingSite));
+                when(turSNSiteRepository.findByNameIgnoreCase("MySite (1)")).thenReturn(Optional.empty());
+                when(turSNSiteRepository.saveAndFlush(any(TurSNSite.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+
+                turSNSiteImport.importSNSite(exchange);
+
+                ArgumentCaptor<TurSNSite> siteCaptor = ArgumentCaptor.forClass(TurSNSite.class);
+                verify(turSNSiteRepository).saveAndFlush(siteCaptor.capture());
+                org.assertj.core.api.Assertions.assertThat(siteCaptor.getValue().getName())
+                                .isEqualTo("MySite (1)");
+        }
+
+        @Test
+        void shouldIncrementSuffixWhenMultipleDuplicatesExist() {
+                TurSEInstance seInstance = new TurSEInstance();
+                seInstance.setId("se-1");
+
+                TurSNSite existingSite1 = new TurSNSite();
+                existingSite1.setId("other-id-1");
+                existingSite1.setName("MySite");
+
+                TurSNSite existingSite2 = new TurSNSite();
+                existingSite2.setId("other-id-2");
+                existingSite2.setName("MySite (1)");
+
+                TurSNSiteExchange siteExchange = new TurSNSiteExchange();
+                siteExchange.setId("site-new");
+                siteExchange.setName("MySite");
+                siteExchange.setTurSEInstance("se-1");
+
+                TurExchange exchange = new TurExchange();
+                exchange.setSnSites(List.of(siteExchange));
+
+                when(turSNSiteRepository.findById("site-new")).thenReturn(Optional.empty());
+                when(turSEInstanceRepository.findById("se-1")).thenReturn(Optional.of(seInstance));
+                when(turSNSiteRepository.findByNameIgnoreCase("MySite")).thenReturn(Optional.of(existingSite1));
+                when(turSNSiteRepository.findByNameIgnoreCase("MySite (1)")).thenReturn(Optional.of(existingSite2));
+                when(turSNSiteRepository.findByNameIgnoreCase("MySite (2)")).thenReturn(Optional.empty());
+                when(turSNSiteRepository.saveAndFlush(any(TurSNSite.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+
+                turSNSiteImport.importSNSite(exchange);
+
+                ArgumentCaptor<TurSNSite> siteCaptor = ArgumentCaptor.forClass(TurSNSite.class);
+                verify(turSNSiteRepository).saveAndFlush(siteCaptor.capture());
+                org.assertj.core.api.Assertions.assertThat(siteCaptor.getValue().getName())
+                                .isEqualTo("MySite (2)");
         }
 }

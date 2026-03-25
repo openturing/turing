@@ -338,6 +338,7 @@
       "generalInfoDesc": "Basic site identity and description.",
       "nameRequired": "Site name is required.",
       "namePattern": "Only letters, numbers, underscores, and hyphens are allowed.",
+      "nameDuplicate": "A site with this name already exists (case-insensitive).",
       "nameLabel": "Name",
       "nameDesc": "Enter a unique identifier for this semantic navigation site. Use only letters, numbers, underscores, or hyphens. This name is used for API access and will appear in the site list.",
       "namePlaceholder": "Site Name",

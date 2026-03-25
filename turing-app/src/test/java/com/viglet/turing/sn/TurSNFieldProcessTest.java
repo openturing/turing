@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +41,6 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
-
 @ExtendWith(MockitoExtension.class)
 class TurSNFieldProcessTest {
 
@@ -53,6 +50,9 @@ class TurSNFieldProcessTest {
     @Mock
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
+    @Mock
+    private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+
     private TurSNFieldProcess turSNFieldProcess;
 
     @BeforeEach
@@ -60,7 +60,7 @@ class TurSNFieldProcessTest {
         turSNFieldProcess = new TurSNFieldProcess(
                 turSNSiteRepository,
                 turSNSiteFieldExtRepository,
-                new TurSNFacetDefinitionFactory());
+                new com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory(turSNSiteCustomFacetRepository));
     }
 
     @Test
@@ -91,11 +91,13 @@ class TurSNFieldProcessTest {
         fieldWithCustomFacet.setFacet(0);
         fieldWithCustomFacet.setEnabled(1);
         fieldWithCustomFacet.setTurSNSite(site);
-        fieldWithCustomFacet.setCustomFacets(Set.of(customFacet));
+        customFacet.setTurSNSiteFieldExt(fieldWithCustomFacet);
 
         when(turSNSiteRepository.findById(snSiteId)).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(List.of(fieldWithCustomFacet, fieldFacet));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of(customFacet));
 
         Optional<List<TurSNSiteFieldExt>> result = turSNFieldProcess.getTurSNSiteFieldOrdering(snSiteId);
 
@@ -131,11 +133,13 @@ class TurSNFieldProcessTest {
         fieldWithCustomFacet.setFacet(0);
         fieldWithCustomFacet.setEnabled(1);
         fieldWithCustomFacet.setTurSNSite(site);
-        fieldWithCustomFacet.setCustomFacets(Set.of(customFacet));
+        customFacet.setTurSNSiteFieldExt(fieldWithCustomFacet);
 
         when(turSNSiteRepository.findById(snSiteId)).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                 .thenReturn(List.of(fieldWithCustomFacet));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of(customFacet));
 
         Optional<List<TurSNSiteFieldExt>> result = turSNFieldProcess.getTurSNSiteFieldOrdering(snSiteId);
 

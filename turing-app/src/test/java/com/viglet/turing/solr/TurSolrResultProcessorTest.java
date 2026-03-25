@@ -78,11 +78,14 @@ class TurSolrResultProcessorTest {
         @Mock
         private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
+        @Mock
+        private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+
         @Test
         @SuppressWarnings("unchecked")
         void testSetFacetQueriesOrdersCustomFacetItemsByPosition() throws Exception {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
                 TurSNSite site = new TurSNSite();
 
                 TurSNSiteCustomFacetItem itemPosition3 = TurSNSiteCustomFacetItem.builder()
@@ -139,7 +142,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultAppliesHighlightAndRequiredFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
                 TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
                                 .name("title")
                                 .type(TurSEFieldType.TEXT)
@@ -164,7 +167,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersFromResults() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(10);
@@ -196,7 +199,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersFromGroupResponse() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(5);
@@ -227,7 +230,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetFieldExtMapAndRequiredFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
                 TurSNSite site = new TurSNSite();
 
                 TurSNSiteFieldExt f1 = TurSNSiteFieldExt.builder().name("title").required(0).build();
@@ -253,7 +256,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetHLAndIsHLBranches() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
 
                 TurSNSite site = new TurSNSite();
                 site.setHl(1);
@@ -280,7 +283,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetResultsProcessesMltAndGroups() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
                 TurSNSite site = new TurSNSite();
                 site.setMlt(1);
                 site.setFacet(0);
@@ -347,7 +350,7 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetResultsEnrichesGroupsWithWildcardResponse() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
                 TurSNSite site = new TurSNSite();
                 site.setMlt(0);
                 site.setFacet(0);

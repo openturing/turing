@@ -24,10 +24,13 @@ package com.viglet.turing.api.sn.console;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,6 +40,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -119,9 +123,15 @@ public class TurSNSiteAPI {
     @Operation(summary = "Update a Semantic Navigation Site")
     @PutMapping("/{id}")
     @Secured({"ROLE_ADMIN", "SN_EDIT"})
-    public TurSNSiteDto turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
+    public ResponseEntity<?> turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
+        Optional<TurSNSite> duplicate = turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName())
+                .filter(site -> !site.getId().equals(id));
+        if (duplicate.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "A site with this name already exists."));
+        }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
-        return this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
+        return ResponseEntity.ok(this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
             turSNSiteEdit.setIcon(turSNSite.getIcon());
@@ -164,8 +174,7 @@ public class TurSNSiteAPI {
             });
             turSNSiteRepository.save(turSNSiteEdit);
             return turSNSiteMapper.toDto(turSNSiteEdit);
-        }).orElse(new TurSNSiteDto());
-
+        }).orElse(new TurSNSiteDto()));
     }
 
     @Transactional
@@ -176,9 +185,6 @@ public class TurSNSiteAPI {
         Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
         turSNSite.ifPresent(site -> {
             TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
-            turSNSiteLocaleRepository.findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), site)
-                    .forEach(locale -> pluginFactory.getPluginForSite(site)
-                            .deleteIndex(site.getTurSEInstance(), locale.getCore()));
             site.getTurSNSiteFields().clear();
             site.getTurSNSiteFieldExts().clear();
             site.getTurSNSiteSpotlights().clear();
@@ -193,18 +199,33 @@ public class TurSNSiteAPI {
         return true;
     }
 
+    @Operation(summary = "Check if a Semantic Navigation Site name already exists")
+    @GetMapping("/name-exists")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public ResponseEntity<Map<String, Boolean>> turSNSiteNameExists(
+            @RequestParam String name,
+            @RequestParam(required = false) String excludeId) {
+        boolean exists = turSNSiteRepository.findByNameIgnoreCase(name)
+                .filter(site -> excludeId == null || !site.getId().equals(excludeId))
+                .isPresent();
+        return ResponseEntity.ok(Map.of("exists", exists));
+    }
+
     @Operation(summary = "Create a Semantic Navigation Site")
     @PostMapping
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public TurSNSiteDto turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
+    public ResponseEntity<?> turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
+        if (turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "A site with this name already exists."));
+        }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
         if (turSNSite.getTurSNSiteGenAi() != null) {
             turSNSiteGenAiRepository.save(turSNSite.getTurSNSiteGenAi());
         }
         turSNSiteRepository.save(turSNSite);
         turSNTemplate.createSNSite(turSNSite, principal.getName(), Locale.US);
-        return turSNSiteMapper.toDto(turSNSite);
-
+        return ResponseEntity.ok(turSNSiteMapper.toDto(turSNSite));
     }
 
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)

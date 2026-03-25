@@ -22,7 +22,7 @@ import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
   useForm
 } from "react-hook-form"
@@ -52,6 +52,16 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
   const urlBase = "/admin/sn/instance";
   const navigate = useNavigate()
 
+  const validateNameUnique = useCallback(async (name: string) => {
+    if (!name) return true;
+    try {
+      const exists = await turSNSiteService.nameExists(name, isNew ? undefined : value.id);
+      return exists ? t("forms.snSiteForm.nameDuplicate") : true;
+    } catch {
+      return true;
+    }
+  }, [isNew, value.id, t]);
+
   useEffect(() => {
     turSEInstanceService.query().then(setSeInstances);
     form.reset(value);
@@ -80,8 +90,17 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
           toast.error(t("sn.siteNotUpdated", { name: snSite.name }));
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Form submission error", error);
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 409) {
+          toast.error(t("forms.snSiteForm.nameDuplicate"));
+          form.setError("name", { type: "manual", message: t("forms.snSiteForm.nameDuplicate") });
+          setIsLoading(false);
+          return;
+        }
+      }
       toast.error(t("sn.formSubmitFailed"));
       setIsLoading(false);
     }
@@ -117,6 +136,9 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                         pattern: {
                           value: /^[a-zA-Z0-9_-]+$/,
                           message: t("forms.snSiteForm.namePattern"),
+                        },
+                        validate: {
+                          unique: validateNameUnique
                         },
                       }}
                       render={({ field }) => (

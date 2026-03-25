@@ -37,7 +37,9 @@ import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
@@ -54,11 +56,14 @@ public class TurSolrResultProcessor {
 
         private final TurSNFieldProcess turSNFieldProcess;
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+        private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
         public TurSolrResultProcessor(TurSNFieldProcess turSNFieldProcess,
-                        TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+                        TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                        TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository) {
                 this.turSNFieldProcess = turSNFieldProcess;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+                this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
         }
 
         public TurSEResults getResults(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
@@ -334,12 +339,15 @@ public class TurSolrResultProcessor {
 
                 List<TurSEFacetResult> facetResults = new ArrayList<>();
                 Set<String> processedFacetNames = new HashSet<>();
-                List<TurSNFacetDefinition> customFacetDefinitions = turSNSiteFieldExtRepository
-                                .findByTurSNSiteAndEnabled(turSNSite, 1).stream()
-                                .flatMap(field -> Optional.ofNullable(field.getCustomFacets())
-                                                .orElse(Collections.emptySet()).stream()
-                                                .map(customFacet -> (TurSNFacetDefinition) new TurSNCustomFacetDefinition(
-                                                                field, customFacet, null)))
+                List<TurSNSiteFieldExt> enabledFields = turSNSiteFieldExtRepository
+                                .findByTurSNSiteAndEnabled(turSNSite, 1);
+                Map<String, TurSNSiteFieldExt> fieldById = enabledFields.stream()
+                                .collect(Collectors.toMap(TurSNSiteFieldExt::getId, f -> f));
+                List<TurSNFacetDefinition> customFacetDefinitions = turSNSiteCustomFacetRepository
+                                .findByFieldExtsWithDetails(enabledFields).stream()
+                                .map(customFacet -> (TurSNFacetDefinition) new TurSNCustomFacetDefinition(
+                                                fieldById.get(customFacet.getTurSNSiteFieldExt().getId()),
+                                                customFacet, null))
                                 .sorted(Comparator.comparing(TurSNFacetDefinition::getPosition)
                                                 .thenComparing(TurSNFacetDefinition::getName,
                                                                 Comparator.nullsLast(String::compareToIgnoreCase)))

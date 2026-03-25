@@ -112,16 +112,22 @@ class TurSNSearchProcessTest {
         @Mock
         private TurSolrQueryBuilder turSolrQueryBuilder;
 
-        private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory = new TurSNFacetDefinitionFactory();
+        @Mock
+        private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+
+        private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory() {
+                return new TurSNFacetDefinitionFactory(turSNSiteCustomFacetRepository);
+        }
 
         private TurSNSearchProcess process(boolean metricsEnabled) {
                 return new TurSNSearchProcess(turSNSiteFieldExtRepository,
+                                turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository,
                                 turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory);
+                                turSNFacetDefinitionFactory());
         }
 
         private TurSNSiteSearchContext context(String query) {
@@ -283,10 +289,11 @@ class TurSNSearchProcessTest {
         @Test
         void testPopulateMetricsSkipsWhenDisabledOrWildcard() {
                 TurSNSearchProcess processDisabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
+                                turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 false, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory);
+                                turSNFacetDefinitionFactory());
 
                 TurSNSearchParams searchParamsWildcard = new TurSNSearchParams();
                 searchParamsWildcard.setQ("*");
@@ -301,10 +308,11 @@ class TurSNSearchProcessTest {
                 verify(turSNSiteMetricAccessRepository, never()).save(any());
 
                 TurSNSearchProcess processEnabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
+                                turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 true, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory);
+                                turSNFacetDefinitionFactory());
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setQ("java");

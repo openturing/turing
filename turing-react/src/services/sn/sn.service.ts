@@ -17,6 +17,12 @@ export class TurSNSiteService {
     return response.data;
   }
 
+  async nameExists(name: string, excludeId?: string): Promise<boolean> {
+    const params: Record<string, string> = { name };
+    if (excludeId) params.excludeId = excludeId;
+    const response = await axios.get<{ exists: boolean }>("/sn/name-exists", { params });
+    return response.data.exists;
+  }
   async create(turSNSite: TurSNSite): Promise<TurSNSite> {
     const response = await axios.post<TurSNSite>("/sn", turSNSite);
     return response.data;

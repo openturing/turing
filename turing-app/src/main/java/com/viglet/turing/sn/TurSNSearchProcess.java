@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -70,6 +72,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -105,6 +108,7 @@ public class TurSNSearchProcess {
         public static final String AND_OR = "AND-OR";
         public static final String FACET_ITEM_AND = "-AND";
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+        private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
         private final TurSNSiteRepository turSNSiteRepository;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
@@ -117,6 +121,7 @@ public class TurSNSearchProcess {
         private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory;
 
         public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+                        TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                         TurSNSiteRepository turSNSiteRepository,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
@@ -128,6 +133,7 @@ public class TurSNSearchProcess {
                         TurSolrQueryBuilder turSolrQueryBuilder,
                         TurSNFacetDefinitionFactory turSNFacetDefinitionFactory) {
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+                this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteRepository = turSNSiteRepository;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
@@ -301,12 +307,17 @@ public class TurSNSearchProcess {
                         TurSolrInstance turSolrInstance, TurSEResults turSEResults) {
                 return turSNSiteRepository.findByNameIgnoreCase(context.getSiteName()).map(turSNSite -> {
                         populateMetrics(turSNSite, context, turSEResults.getNumFound());
-                        List<TurSNFacetDefinition> facetDefinitions = turSNSiteFieldExtRepository
-                                        .findByTurSNSiteAndEnabled(turSNSite, 1)
+                        List<TurSNSiteFieldExt> enabledFields = turSNSiteFieldExtRepository
+                                        .findByTurSNSiteAndEnabled(turSNSite, 1);
+                        Set<String> fieldIdsWithCustomFacets = turSNSiteCustomFacetRepository
+                                        .findByFieldExtsWithDetails(enabledFields).stream()
+                                        .map(cf -> cf.getTurSNSiteFieldExt().getId())
+                                        .collect(Collectors.toSet());
+                        List<TurSNFacetDefinition> facetDefinitions = enabledFields
                                         .stream()
                                         .filter(turSNSiteFieldExt -> turSNSiteFieldExt.getFacet() == 1
-                                                        || !CollectionUtils.isEmpty(turSNSiteFieldExt
-                                                                        .getCustomFacets()))
+                                                        || fieldIdsWithCustomFacets.contains(
+                                                                        turSNSiteFieldExt.getId()))
                                         .flatMap(turSNSiteFieldExt -> getFacetDefinitions(
                                                         context, turSNSiteFieldExt)
                                                         .stream())

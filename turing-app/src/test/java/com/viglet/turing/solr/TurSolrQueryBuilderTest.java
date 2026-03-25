@@ -89,8 +89,12 @@ class TurSolrQueryBuilderTest {
         @Mock
         private TurSNTargetingRules turSNTargetingRules;
 
+        @Mock
+        private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+
         private TurSolrQueryBuilder builder() {
                 return new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                                turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository,
                                 turSNTargetingRules);
         }
@@ -105,7 +109,7 @@ class TurSolrQueryBuilderTest {
 
         @Test
         void testHasGroupWhenGroupIsPresent() {
-                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setGroup("group");
@@ -117,7 +121,7 @@ class TurSolrQueryBuilderTest {
 
         @Test
         void testHasGroupWhenGroupIsMissing() {
-                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 TurSEParameters parameters = new TurSEParameters(
@@ -128,7 +132,7 @@ class TurSolrQueryBuilderTest {
 
         @Test
         void testGetFqFieldsExtractsKeys() {
-                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
                 TurSNFilterParams params = TurSNFilterParams.builder()
                                 .defaultValues(List.of("category:books", "type:article"))
@@ -170,7 +174,7 @@ class TurSolrQueryBuilderTest {
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(categoryFacet, typeFacet));
 
-                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
                 TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
 
@@ -186,14 +190,17 @@ class TurSolrQueryBuilderTest {
                                 .defaultValues(List.of("price_range:101 - 500", "other:1"))
                                 .build();
 
-                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder().name("price_range").build();
                 TurSNSiteFieldExt idFacet = TurSNSiteFieldExt.builder()
+                                .id("field-1")
                                 .name("id")
-                                .customFacets(new java.util.HashSet<>(List.of(customFacet)))
                                 .build();
+                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
+                                .name("price_range").turSNSiteFieldExt(idFacet).build();
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(idFacet));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(List.of(customFacet));
 
                 List<String> fields = builder().getFacetFieldsInFilterQuery(new TurSNFacetTypeContext(site, params));
 
@@ -207,16 +214,19 @@ class TurSolrQueryBuilderTest {
                                 .defaultValues(List.of("price_range:101 - 500"))
                                 .build();
 
-                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder().name("price_range").build();
                 TurSNSiteFieldExt nonFacetField = TurSNSiteFieldExt.builder()
+                                .id("field-1")
                                 .name("id")
                                 .facet(0)
                                 .enabled(1)
-                                .customFacets(new java.util.HashSet<>(List.of(customFacet)))
                                 .build();
+                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
+                                .name("price_range").turSNSiteFieldExt(nonFacetField).build();
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(nonFacetField));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(List.of(customFacet));
 
                 List<String> fields = builder().getFacetFieldsInFilterQuery(new TurSNFacetTypeContext(site, params));
 
@@ -231,7 +241,7 @@ class TurSolrQueryBuilderTest {
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndMltAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(mltField));
 
-                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
                 SolrQuery query = new SolrQuery();
 
@@ -334,14 +344,17 @@ class TurSolrQueryBuilderTest {
                                 .build();
 
                 TurSNSiteFieldExt nonFacetField = TurSNSiteFieldExt.builder()
+                                .id("field-1")
                                 .name("id")
                                 .facet(0)
                                 .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .customFacets(new java.util.HashSet<>(List.of(customFacet)))
                                 .build();
+                customFacet.setTurSNSiteFieldExt(nonFacetField);
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(nonFacetField));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(List.of(customFacet));
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
@@ -365,20 +378,23 @@ class TurSolrQueryBuilderTest {
                                 .rangeStart(new BigDecimal("101"))
                                 .rangeEnd(new BigDecimal("500"))
                                 .build();
-                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
-                                .name("price_range")
-                                .items(new java.util.HashSet<>(List.of(item)))
-                                .build();
 
                 TurSNSiteFieldExt nonFacetField = TurSNSiteFieldExt.builder()
+                                .id("field-1")
                                 .name("id")
                                 .facet(0)
                                 .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .customFacets(new java.util.HashSet<>(List.of(customFacet)))
+                                .build();
+                TurSNSiteCustomFacet customFacet = TurSNSiteCustomFacet.builder()
+                                .name("price_range")
+                                .items(new java.util.HashSet<>(List.of(item)))
+                                .turSNSiteFieldExt(nonFacetField)
                                 .build();
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(nonFacetField));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(List.of(customFacet));
 
                 SolrQuery query = new SolrQuery();
                 TurSNFilterParams params = TurSNFilterParams.builder()
@@ -422,15 +438,18 @@ class TurSolrQueryBuilderTest {
                                 .build();
 
                 TurSNSiteFieldExt field = TurSNSiteFieldExt.builder()
+                                .id("field-1")
                                 .name("id")
                                 .facetType(TurSNSiteFacetFieldEnum.AND)
                                 .facetItemType(TurSNSiteFacetFieldEnum.AND)
                                 .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .customFacets(new java.util.HashSet<>(List.of(customFacet)))
                                 .build();
+                customFacet.setTurSNSiteFieldExt(field);
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of(field));
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(List.of(customFacet));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabledAndType(site, 1, 1,
                                 com.viglet.turing.commons.se.field.TurSEFieldType.DATE))
                                 .thenReturn(Collections.emptyList());

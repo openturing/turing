@@ -56,6 +56,7 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
@@ -75,6 +76,9 @@ class TurSolrTest {
 
     @Mock
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+
+    @Mock
+    private TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
     @Mock
     private TurSNTargetingRules turSNTargetingRules;
@@ -342,6 +346,7 @@ class TurSolrTest {
     private TurSolr buildTurSolr(boolean commitEnabled) {
         return new TurSolr(commitEnabled, 500,
                 turSNSiteFieldExtRepository,
+                turSNSiteCustomFacetRepository,
                 turSNTargetingRules,
                 turSNSiteFieldService,
                 turSNRankingExpressionRepository,

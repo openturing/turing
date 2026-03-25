@@ -38,6 +38,7 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
@@ -64,6 +65,7 @@ public class TurSolr {
     public TurSolr(@Value("${turing.solr.commit.enabled:false}") boolean isCommitEnabled,
             @Value("${turing.solr.commit.within:10000}") int commitWithin,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
             TurSNTargetingRules turSNTargetingRules, TurSNSiteFieldService turSNSiteFieldUtils,
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
@@ -74,8 +76,10 @@ public class TurSolr {
         this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
                 turDecimalFieldNormalizer);
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
+                turSNSiteCustomFacetRepository,
                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
-        this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess, turSNSiteFieldExtRepository);
+        this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess,
+                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
     }
 
     public String dslQuery(TurSolrInstance turSolrInstance, String jsonQuery) {

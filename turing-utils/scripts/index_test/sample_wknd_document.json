@@ -1,8 +1,42 @@
-{
-    "id": "wknd-example-001",
-    "title": "WKND Example Article 1",
-    "modification_date": "2026-03-09T10:30:00Z",
-    "abstract": "Sample content for Turing indexing test.",
-    "price": "10000",
-    "url": "https://www.example.com/wknd/example-article-1"
-}
+[
+    {
+        "id": "wknd-example-001",
+        "title": "WKND Example Article 1",
+        "modification_date": "2026-03-09T10:30:00Z",
+        "abstract": "Sample content for Turing indexing test.",
+        "price": 1000.01,
+        "url": "https://www.example.com/wknd/example-article-1"
+    },
+    {
+        "id": "wknd-example-002",
+        "title": "WKND Adventure Guide: Mountain Trails",
+        "modification_date": "2026-03-15T14:45:00Z",
+        "abstract": "Explore the best mountain trails for beginners and advanced hikers.",
+        "price": 249.99,
+        "url": "https://www.example.com/wknd/adventure-guide-mountain-trails"
+    },
+    {
+        "id": "wknd-example-003",
+        "title": "WKND Culinary Experience: Italian Cuisine",
+        "modification_date": "2026-03-20T08:00:00Z",
+        "abstract": "A deep dive into traditional Italian recipes and cooking techniques.",
+        "price": 75.50,
+        "url": "https://www.example.com/wknd/culinary-experience-italian-cuisine"
+    },
+    {
+        "id": "wknd-example-004",
+        "title": "WKND Travel Tips: Budget Backpacking in Southeast Asia",
+        "modification_date": "2026-03-22T16:20:00Z",
+        "abstract": "Everything you need to know about affordable travel across Southeast Asia.",
+        "price": 499.00,
+        "url": "https://www.example.com/wknd/travel-tips-budget-backpacking-southeast-asia"
+    },
+    {
+        "id": "wknd-example-005",
+        "title": "WKND Fitness Challenge: 30-Day Workout Plan",
+        "modification_date": "2026-03-25T12:00:00Z",
+        "abstract": "A structured 30-day fitness plan designed for all levels.",
+        "price": 29.90,
+        "url": "https://www.example.com/wknd/fitness-challenge-30-day-workout-plan"
+    }
+]

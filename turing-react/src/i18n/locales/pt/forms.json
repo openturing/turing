@@ -339,6 +339,7 @@
       "generalInfoDesc": "Identidade e descrição básica do site.",
       "nameRequired": "Nome do site é obrigatório.",
       "namePattern": "Apenas letras, números, sublinhados e hifens são permitidos.",
+      "nameDuplicate": "Já existe um site com este nome (sem distinção de maiúsculas/minúsculas).",
       "nameLabel": "Nome",
       "nameDesc": "Digite um identificador único para este site de navegação semântica. Use apenas letras, números, sublinhados ou hifens. Este nome é usado para acesso à API e aparecerá na lista de sites.",
       "namePlaceholder": "Nome do Site",

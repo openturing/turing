@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -160,9 +161,11 @@ class TurSNSiteAPITest {
                 payload.setTurSNSiteGenAi(new TurSNSiteGenAi());
 
                 when(siteRepository.findById("site")).thenReturn(Optional.of(existing));
+                when(siteRepository.findByNameIgnoreCase("New")).thenReturn(Optional.empty());
 
-                TurSNSiteDto result = api.turSNSiteUpdate("site", payload);
+                TurSNSiteDto result = (TurSNSiteDto) api.turSNSiteUpdate("site", payload).getBody();
 
+                assertThat(result).isNotNull();
                 assertThat(result.getName()).isEqualTo("New");
                 assertThat(result.getDescription()).isEqualTo("Desc");
                 verify(siteRepository).save(existing);
@@ -170,13 +173,11 @@ class TurSNSiteAPITest {
         }
 
         @Test
-        void testSiteDeleteDeletesCores() {
+        void testSiteDeleteDoesNotDeleteCores() {
                 TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-                TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-                TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
-                TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
                 TurSNSiteMapper siteMapper = Mappers.getMapper(TurSNSiteMapper.class);
-                TurSNSiteAPI api = newApi(siteRepository, localeRepository,
+                TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
+                TurSNSiteAPI api = newApi(siteRepository, mock(TurSNSiteLocaleRepository.class),
                                 mock(TurSNSiteGenAiRepository.class), mock(TurSNSiteExport.class),
                                 mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 pluginFactory, mock(TurConfigProperties.class), siteMapper);
@@ -184,31 +185,23 @@ class TurSNSiteAPITest {
                 TurSEInstance instance = new TurSEInstance();
                 instance.setEndpointUrl("http://localhost:8983/solr");
                 site.setTurSEInstance(instance);
-                TurSNSiteLocale locale = new TurSNSiteLocale();
-                locale.setCore("core1");
 
                 when(siteRepository.findById("site")).thenReturn(Optional.of(site));
-                when(localeRepository.findByTurSNSite(org.mockito.ArgumentMatchers.any(),
-                                org.mockito.ArgumentMatchers.eq(site)))
-                                .thenReturn(List.of(locale));
-                when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
 
                 boolean result = api.turSNSiteDelete("site");
 
                 assertThat(result).isTrue();
-                verify(plugin).deleteIndex(instance, "core1");
+                verify(pluginFactory, never()).getPluginForSite(any());
                 verify(siteRepository).delete(site);
         }
 
         @Test
         void testSiteDeleteComplexRemovesReferencedObjectsBeforeDelete() {
                 TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-                TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
                 TurSNSiteGenAiRepository genAiRepository = mock(TurSNSiteGenAiRepository.class);
                 TurSearchEnginePluginFactory pluginFactory = mock(TurSearchEnginePluginFactory.class);
-                TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
                 TurSNSiteMapper siteMapper = Mappers.getMapper(TurSNSiteMapper.class);
-                TurSNSiteAPI api = newApi(siteRepository, localeRepository,
+                TurSNSiteAPI api = newApi(siteRepository, mock(TurSNSiteLocaleRepository.class),
                                 genAiRepository, mock(TurSNSiteExport.class),
                                 mock(TurSNTemplate.class), mock(TurSNQueue.class),
                                 pluginFactory, mock(TurConfigProperties.class), siteMapper);
@@ -230,16 +223,7 @@ class TurSNSiteAPITest {
                 site.getTurSNSiteMergeProviders().add(mergeProvider1);
                 site.getTurSNSiteMergeProviders().add(mergeProvider2);
 
-                TurSNSiteLocale locale1 = new TurSNSiteLocale();
-                locale1.setCore("core1");
-                TurSNSiteLocale locale2 = new TurSNSiteLocale();
-                locale2.setCore("core2");
-
                 when(siteRepository.findById("site")).thenReturn(Optional.of(site));
-                when(localeRepository.findByTurSNSite(org.mockito.ArgumentMatchers.any(),
-                                org.mockito.ArgumentMatchers.eq(site)))
-                                .thenReturn(List.of(locale1, locale2));
-                when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
 
                 boolean result = api.turSNSiteDelete("site");
 
@@ -250,8 +234,7 @@ class TurSNSiteAPITest {
                 assertThat(site.getTurSNRankingExpressions()).isEmpty();
                 assertThat(site.getTurSNSiteMergeProviders()).isEmpty();
                 assertThat(site.getTurSNSiteGenAi()).isNull();
-                verify(plugin).deleteIndex(instance, "core1");
-                verify(plugin).deleteIndex(instance, "core2");
+                verify(pluginFactory, never()).getPluginForSite(any());
 
                 InOrder inOrder = inOrder(siteRepository);
                 inOrder.verify(siteRepository).flush();
@@ -272,9 +255,11 @@ class TurSNSiteAPITest {
                 TurSNSiteDto site = new TurSNSiteDto();
                 site.setTurSNSiteGenAi(new TurSNSiteGenAi());
                 Principal principal = () -> "admin";
+                when(siteRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
 
-                TurSNSiteDto result = api.turSNSiteAdd(site, principal);
+                TurSNSiteDto result = (TurSNSiteDto) api.turSNSiteAdd(site, principal).getBody();
 
+                assertThat(result).isNotNull();
                 assertThat(result.getTurSNSiteGenAi()).isNotNull();
                 verify(genAiRepository).save(any(TurSNSiteGenAi.class));
                 verify(siteRepository, times(1)).save(any(TurSNSite.class));

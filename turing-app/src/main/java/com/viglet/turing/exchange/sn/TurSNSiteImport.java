@@ -218,10 +218,28 @@ public class TurSNSiteImport {
 		log.info("Semantic Navigation caches were cleared after import.");
 	}
 
+	private String resolveUniqueName(String originalName, String siteId) {
+		String candidateName = originalName;
+		int counter = 1;
+		while (true) {
+			var existing = turSNSiteRepository.findByNameIgnoreCase(candidateName);
+			if (existing.isEmpty() || existing.get().getId().equals(siteId)) {
+				break;
+			}
+			candidateName = originalName + " (" + counter + ")";
+			counter++;
+		}
+		if (!candidateName.equals(originalName)) {
+			log.info("SN Site name '{}' already exists with a different ID. Renamed to '{}'.",
+					originalName, candidateName);
+		}
+		return candidateName;
+	}
+
 	private TurSNSite createSNSiteFromExchange(TurSNSiteExchange turSNSiteExchange) {
 		TurSNSite turSNSite = new TurSNSite();
 		turSNSite.setId(turSNSiteExchange.getId());
-		turSNSite.setName(turSNSiteExchange.getName());
+		turSNSite.setName(resolveUniqueName(turSNSiteExchange.getName(), turSNSiteExchange.getId()));
 		turSNSite.setDescription(turSNSiteExchange.getDescription());
 		turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
 		turSNSite.setWildcardNoResults(turSNSiteExchange.getWildcardNoResults());

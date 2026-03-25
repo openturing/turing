@@ -32,11 +32,11 @@
     "facet": false
   },
   {
-    "name": "price12",
-    "type": "CURRENCY",
+    "name": "price",
+    "type": "FLOAT",
     "mandatory": false,
     "multiValued": false,
-    "description": "Article price in the default currency",
+    "description": "Article price in the default floating-point format",
     "facet": true,
     "facetName": {
       "default": "Price",
