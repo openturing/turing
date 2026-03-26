@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.InitializingBean;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -107,6 +108,20 @@ class TurRagContextBuilderTest {
     @Test
     void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenNoReference() {
         embModel.setModelReference(null);
+
+        TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
+        EmbeddingModel springEmb = mock(EmbeddingModel.class);
+        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(provider);
+        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
+        when(provider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+
+        EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
+        assertThat(result).isSameAs(springEmb);
+    }
+
+    @Test
+    void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenReferenceIsEmpty() {
+        embModel.setModelReference("");
 
         TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
@@ -251,6 +266,54 @@ class TurRagContextBuilderTest {
     }
 
     @Test
+    void buildFromGlobalSettingsShouldWorkWithValidIds() {
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+        when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
+        when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
+
+        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
+        EmbeddingModel springEmb = mock(EmbeddingModel.class);
+        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
+        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
+        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(storeProviderFactory.getProvider(storeInstance)).thenReturn(storeProvider);
+        when(secretCryptoService.decrypt("store-enc")).thenReturn("store-plain");
+        when(storeProvider.createVectorStore(storeInstance, springEmb, "store-plain")).thenReturn(vectorStore);
+
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.buildFromGlobalSettings();
+        assertThat(result).isPresent();
+    }
+
+    @Test
+    void buildFromGlobalSettingsWithOverrideShouldWorkWithValidIds() {
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+        when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
+        when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
+
+        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
+        EmbeddingModel springEmb = mock(EmbeddingModel.class);
+        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
+        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
+        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+        when(storeProviderFactory.getProvider(storeInstance)).thenReturn(storeProvider);
+        when(secretCryptoService.decrypt("store-enc")).thenReturn("store-plain");
+        when(storeProvider.createVectorStore(storeInstance, springEmb, "store-plain", "override"))
+                .thenReturn(vectorStore);
+
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.buildFromGlobalSettings("override");
+        assertThat(result).isPresent();
+        assertThat(result.get().collectionName()).isEqualTo("override");
+    }
+
+    @Test
     void ragInfrastructureRecordShouldHoldAllValues() {
         VectorStore vs = mock(VectorStore.class);
         EmbeddingModel em = mock(EmbeddingModel.class);
@@ -263,5 +326,52 @@ class TurRagContextBuilderTest {
         assertThat(infra.storeInstance()).isSameAs(si);
         assertThat(infra.storeCredential()).isEqualTo("cred");
         assertThat(infra.collectionName()).isEqualTo("coll");
+    }
+
+    @Test
+    void buildWithEntitiesShouldCallAfterPropertiesSetOnInitializingBeanVectorStore() throws Exception {
+        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
+        EmbeddingModel springEmb = mock(EmbeddingModel.class);
+        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
+        when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
+        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+
+        TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
+        when(storeProviderFactory.getProvider(storeInstance)).thenReturn(storeProvider);
+        when(secretCryptoService.decrypt("store-enc")).thenReturn("store-plain");
+
+        // Create a VectorStore that also implements InitializingBean
+        InitializingVectorStore initVectorStore = mock(InitializingVectorStore.class);
+        when(storeProvider.createVectorStore(storeInstance, springEmb, "store-plain")).thenReturn(initVectorStore);
+
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build(embModel, storeInstance, null);
+        assertThat(result).isPresent();
+        verify(initVectorStore).afterPropertiesSet();
+    }
+
+    @Test
+    void buildWithEntitiesShouldReturnEmptyOnException() {
+        when(llmProviderFactory.getProvider(any(TurLLMInstance.class)))
+                .thenThrow(new RuntimeException("build error"));
+
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build(embModel, storeInstance, null);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void buildTwoArgShouldDelegateToThreeArg() {
+        when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.empty());
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build("emb-1", "store-1");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void buildShouldReturnEmptyWhenBothIdsAreBlank() {
+        Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build("", "");
+        assertThat(result).isEmpty();
+    }
+
+    // Helper interface for testing VectorStore that also implements InitializingBean
+    interface InitializingVectorStore extends VectorStore, InitializingBean {
     }
 }

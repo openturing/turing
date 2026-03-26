@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.solr.client.solrj.request.SolrQuery;
+import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.GroupCommand;
 import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -518,6 +519,482 @@ class TurSolrResultProcessorTest {
 
                 Map<String, List<String>> hl = processor.getHL(site, List.of(hlField), response, document);
                 assertThat(hl).isNull();
+        }
+
+        @Test
+        void testCreateTurSEResultHighlightsStringField() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt nameField = TurSNSiteFieldExt.builder()
+                                .name("name")
+                                .type(TurSEFieldType.STRING)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("name", nameField);
+                SolrDocument document = new SolrDocument();
+                document.addField("name", "plain name");
+
+                Map<String, List<String>> hl = Map.of("name", List.of("<b>highlighted</b>"));
+
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
+                assertThat(result.getFields()).containsEntry("name", "<b>highlighted</b>");
+        }
+
+        @Test
+        void testCreateTurSEResultDoesNotHighlightBoolField() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt boolField = TurSNSiteFieldExt.builder()
+                                .name("active")
+                                .type(TurSEFieldType.BOOL)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("active", boolField);
+                SolrDocument document = new SolrDocument();
+                document.addField("active", true);
+
+                Map<String, List<String>> hl = Map.of("active", List.of("<em>true</em>"));
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
+                assertThat(result.getFields().get("active")).isEqualTo(true);
+        }
+
+        @Test
+        void testCreateTurSEResultDoesNotHighlightDateField() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt dateField = TurSNSiteFieldExt.builder()
+                                .name("published")
+                                .type(TurSEFieldType.DATE)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("published", dateField);
+                SolrDocument document = new SolrDocument();
+                document.addField("published", "2026-01-01");
+
+                Map<String, List<String>> hl = Map.of("published", List.of("<em>2026-01-01</em>"));
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
+                assertThat(result.getFields().get("published")).isEqualTo("2026-01-01");
+        }
+
+        @Test
+        void testCreateTurSEResultAddsMultipleRequiredFields() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Collections.emptyMap();
+                Map<String, Object> requiredFields = new HashMap<>();
+                requiredFields.put("type", "article");
+                requiredFields.put("source", "web");
+
+                SolrDocument document = new SolrDocument();
+                document.addField("id", "1");
+
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, requiredFields, document, null);
+                assertThat(result.getFields()).containsEntry("type", "article");
+                assertThat(result.getFields()).containsEntry("source", "web");
+                assertThat(result.getFields()).containsEntry("id", "1");
+        }
+
+        @Test
+        void testCreateTurSEResultDoesNotOverrideExistingWithRequired() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                Map<String, Object> requiredFields = Map.of("type", "default-type");
+                SolrDocument document = new SolrDocument();
+                document.addField("type", "actual-type");
+
+                TurSEResult result = processor.createTurSEResult(Collections.emptyMap(), requiredFields, document, null);
+                assertThat(result.getFields()).containsEntry("type", "actual-type");
+        }
+
+        @Test
+        void testTurSEResultsParametersWithNullResultsAndNullGroups() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setRows(10);
+                searchParams.setP(1);
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+
+                SolrQuery query = new SolrQuery().setQuery("test");
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                when(queryResponse.getResults()).thenReturn(null);
+                when(queryResponse.getGroupResponse()).thenReturn(null);
+                when(queryResponse.getElapsedTime()).thenReturn(5L);
+                when(queryResponse.getQTime()).thenReturn(2);
+
+                TurSEResults seResults = TurSEResults.builder().build();
+                processor.turSEResultsParameters(parameters, query, seResults, queryResponse);
+
+                // numFound should remain default (0) since both results and group are null
+                assertThat(seResults.getElapsedTime()).isEqualTo(5);
+                assertThat(seResults.getQTime()).isEqualTo(2);
+                assertThat(seResults.getQueryString()).isEqualTo("test");
+        }
+
+        @Test
+        void testGetResultsWithNoMltAndNoFacet() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+                site.setMlt(0);
+                site.setFacet(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(Collections.emptyList());
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndRequiredAndEnabled(site, 1, 1))
+                                .thenReturn(Collections.emptyList());
+
+                SolrDocumentList docs = new SolrDocumentList();
+                SolrDocument doc = new SolrDocument();
+                doc.addField("id", "1");
+                docs.add(doc);
+                docs.setNumFound(1);
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                when(queryResponse.getResults()).thenReturn(docs);
+                when(queryResponse.getElapsedTime()).thenReturn(10L);
+                when(queryResponse.getQTime()).thenReturn(3);
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("test");
+                searchParams.setRows(10);
+                searchParams.setP(1);
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+                SolrQuery query = new SolrQuery().setQuery("test");
+
+                TurSolrQueryContext queryContext = TurSolrQueryContext.builder()
+                                .query(query)
+                                .turSEParameters(parameters)
+                                .mltFieldExtList(Collections.emptyList())
+                                .facetFieldExtList(Collections.emptyList())
+                                .hlFieldExtList(Collections.emptyList())
+                                .spellCheckResult(null)
+                                .queryToRenderFacet(false)
+                                .build();
+
+                TurSolrQueryBuilder queryBuilder = mock(TurSolrQueryBuilder.class);
+                when(queryBuilder.hasGroup(parameters)).thenReturn(false);
+
+                TurSEResults seResults = processor.getResults(mock(TurSolrInstance.class), site,
+                                query, queryContext, queryResponse, queryBuilder);
+
+                assertThat(seResults.getResults()).hasSize(1);
+                assertThat(seResults.getSimilarResults()).isNull();
+                assertThat(seResults.getGroups()).isNull();
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testSetFacetFieldsExcludesRangeOverlaps() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "setFacetFields", QueryResponse.class, List.class);
+                method.setAccessible(true);
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                FacetField categoryFacet = new FacetField("category");
+                categoryFacet.add("books", 10);
+                categoryFacet.add("movies", 5);
+                FacetField dateFacet = new FacetField("publishDate");
+                dateFacet.add("2024-01-01", 3);
+                when(queryResponse.getFacetFields()).thenReturn(List.of(categoryFacet, dateFacet));
+
+                TurSEFacetResult rangeResult = new TurSEFacetResult();
+                rangeResult.setFacet("publishDate");
+                List<TurSEFacetResult> rangeList = List.of(rangeResult);
+
+                List<TurSEFacetResult> facetResults = (List<TurSEFacetResult>) method.invoke(null,
+                                queryResponse, rangeList);
+
+                assertThat(facetResults).hasSize(1);
+                assertThat(facetResults.getFirst().getFacet()).isEqualTo("category");
+                assertThat(facetResults.getFirst().getTurSEFacetResultAttr()).containsKey("books");
+                assertThat(facetResults.getFirst().getTurSEFacetResultAttr()).containsKey("movies");
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testSetFacetFieldsIncludesAllWhenNoRangeOverlap() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "setFacetFields", QueryResponse.class, List.class);
+                method.setAccessible(true);
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                FacetField field1 = new FacetField("type");
+                field1.add("article", 7);
+                FacetField field2 = new FacetField("author");
+                field2.add("john", 3);
+                when(queryResponse.getFacetFields()).thenReturn(List.of(field1, field2));
+
+                List<TurSEFacetResult> facetResults = (List<TurSEFacetResult>) method.invoke(null,
+                                queryResponse, Collections.emptyList());
+
+                assertThat(facetResults).hasSize(2);
+        }
+
+        @Test
+        void testWasFacetConfiguredReturnsFalseWhenFacetDisabled() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "wasFacetConfigured", TurSNSite.class, List.class);
+                method.setAccessible(true);
+
+                TurSNSite site = new TurSNSite();
+                site.setFacet(0);
+                site.setItemsPerFacet(10);
+                TurSNSiteFieldExt field = TurSNSiteFieldExt.builder().name("category").build();
+
+                boolean result = (boolean) method.invoke(
+                                new TurSolrResultProcessor(turSNFieldProcess,
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                site, List.of(field));
+
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testWasFacetConfiguredReturnsFalseWhenItemsPerFacetNull() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "wasFacetConfigured", TurSNSite.class, List.class);
+                method.setAccessible(true);
+
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(null);
+                TurSNSiteFieldExt field = TurSNSiteFieldExt.builder().name("category").build();
+
+                boolean result = (boolean) method.invoke(
+                                new TurSolrResultProcessor(turSNFieldProcess,
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                site, List.of(field));
+
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testWasFacetConfiguredReturnsFalseWhenFieldListEmpty() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "wasFacetConfigured", TurSNSite.class, List.class);
+                method.setAccessible(true);
+
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(10);
+
+                boolean result = (boolean) method.invoke(
+                                new TurSolrResultProcessor(turSNFieldProcess,
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                site, Collections.emptyList());
+
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testWasFacetConfiguredReturnsTrueWhenAllConditionsMet() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "wasFacetConfigured", TurSNSite.class, List.class);
+                method.setAccessible(true);
+
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(10);
+                TurSNSiteFieldExt field = TurSNSiteFieldExt.builder().name("category").build();
+
+                boolean result = (boolean) method.invoke(
+                                new TurSolrResultProcessor(turSNFieldProcess,
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                site, List.of(field));
+
+                assertThat(result).isTrue();
+        }
+
+        @Test
+        void testGetNumberOfPagesCalculation() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "getNumberOfPages", long.class, int.class);
+                method.setAccessible(true);
+
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                assertThat((int) method.invoke(processor, 0L, 10)).isZero();
+                assertThat((int) method.invoke(processor, 1L, 10)).isEqualTo(1);
+                assertThat((int) method.invoke(processor, 10L, 10)).isEqualTo(1);
+                assertThat((int) method.invoke(processor, 11L, 10)).isEqualTo(2);
+                assertThat((int) method.invoke(processor, 100L, 10)).isEqualTo(10);
+                assertThat((int) method.invoke(processor, 99L, 10)).isEqualTo(10);
+                assertThat((int) method.invoke(processor, 101L, 10)).isEqualTo(11);
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testSetFacetQueriesReturnsEmptyWhenFacetQueryIsNull() throws Exception {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                when(queryResponse.getFacetQuery()).thenReturn(null);
+
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                method.setAccessible(true);
+                List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
+                                site, queryResponse);
+
+                assertThat(results).isEmpty();
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testSetFacetQueriesReturnsEmptyWhenFacetQueryMapIsEmpty() throws Exception {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                when(queryResponse.getFacetQuery()).thenReturn(Collections.emptyMap());
+
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                method.setAccessible(true);
+                List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
+                                site, queryResponse);
+
+                assertThat(results).isEmpty();
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void testSetFacetQueriesHandlesUnmatchedCustomFacetsAsFallback() throws Exception {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(Collections.emptyList());
+                when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                                .thenReturn(Collections.emptyList());
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                Map<String, Integer> facetQuery = new HashMap<>();
+                facetQuery.put("unknown_facet::itemA", 5);
+                facetQuery.put("unknown_facet::itemB", 3);
+                when(queryResponse.getFacetQuery()).thenReturn(facetQuery);
+
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                method.setAccessible(true);
+                List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
+                                site, queryResponse);
+
+                assertThat(results).hasSize(1);
+                assertThat(results.getFirst().getFacet()).isEqualTo("unknown_facet");
+                assertThat(results.getFirst().getTurSEFacetResultAttr()).containsKey("itemA");
+                assertThat(results.getFirst().getTurSEFacetResultAttr()).containsKey("itemB");
+        }
+
+        @Test
+        void testIsHLAttributeReturnsTrueForTextWithHL() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt textField = TurSNSiteFieldExt.builder()
+                                .name("title").type(TurSEFieldType.TEXT).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("title", textField);
+                Map<String, List<String>> hl = Map.of("title", List.of("<em>value</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "title");
+                assertThat(result).isTrue();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsFalseForIntField() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt intField = TurSNSiteFieldExt.builder()
+                                .name("count").type(TurSEFieldType.INT).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("count", intField);
+                Map<String, List<String>> hl = Map.of("count", List.of("<em>42</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "count");
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsFalseWhenHLIsNull() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt textField = TurSNSiteFieldExt.builder()
+                                .name("title").type(TurSEFieldType.TEXT).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("title", textField);
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, null, "title");
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsFalseWhenFieldNotInMap() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Collections.emptyMap();
+                Map<String, List<String>> hl = Map.of("title", List.of("<em>value</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "title");
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsTrueForStringField() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt stringField = TurSNSiteFieldExt.builder()
+                                .name("name").type(TurSEFieldType.STRING).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("name", stringField);
+                Map<String, List<String>> hl = Map.of("name", List.of("<em>val</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "name");
+                assertThat(result).isTrue();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsFalseForDoubleField() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt doubleField = TurSNSiteFieldExt.builder()
+                                .name("price").type(TurSEFieldType.DOUBLE).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("price", doubleField);
+                Map<String, List<String>> hl = Map.of("price", List.of("<em>9.99</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "price");
+                assertThat(result).isFalse();
+        }
+
+        @Test
+        void testIsHLAttributeReturnsFalseForLongField() throws Exception {
+                Method method = TurSolrResultProcessor.class.getDeclaredMethod(
+                                "isHLAttribute", Map.class, Map.class, String.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt longField = TurSNSiteFieldExt.builder()
+                                .name("timestamp").type(TurSEFieldType.LONG).build();
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("timestamp", longField);
+                Map<String, List<String>> hl = Map.of("timestamp", List.of("<em>123456</em>"));
+
+                boolean result = (boolean) method.invoke(null, fieldExtMap, hl, "timestamp");
+                assertThat(result).isFalse();
         }
 
         @Test

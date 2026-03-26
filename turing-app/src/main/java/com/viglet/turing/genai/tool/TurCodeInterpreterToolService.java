@@ -37,16 +37,19 @@ public class TurCodeInterpreterToolService {
                 : String.join(File.pathSeparator, "/usr/bin", "/usr/local/bin", "/bin");
     }
 
-    /** Absolute Python candidates searched in order when no explicit path is configured. */
+    /**
+     * Absolute Python candidates searched in order when no explicit path is
+     * configured.
+     */
     private static final List<String> PYTHON_CANDIDATES;
     static {
         boolean isWindows = System.getProperty("os.name", "")
                 .toLowerCase(Locale.ROOT).startsWith("windows");
         PYTHON_CANDIDATES = isWindows
                 ? List.of("C:\\Python312\\python.exe", "C:\\Python311\\python.exe",
-                          "C:\\Python310\\python.exe")
+                        "C:\\Python310\\python.exe")
                 : List.of("/usr/bin/python3", "/usr/local/bin/python3",
-                          "/usr/bin/python", "/usr/local/bin/python");
+                        "/usr/bin/python", "/usr/local/bin/python");
     }
 
     private final TurGlobalSettingsService turGlobalSettingsService;
@@ -139,11 +142,11 @@ public class TurCodeInterpreterToolService {
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
-        Thread outThread = Thread.ofVirtual().start(() ->
-                readStream(new java.io.InputStreamReader(process.getInputStream(),
+        Thread outThread = Thread.ofVirtual()
+                .start(() -> readStream(new java.io.InputStreamReader(process.getInputStream(),
                         java.nio.charset.StandardCharsets.UTF_8), stdout));
-        Thread errThread = Thread.ofVirtual().start(() ->
-                readStream(new java.io.InputStreamReader(process.getErrorStream(),
+        Thread errThread = Thread.ofVirtual()
+                .start(() -> readStream(new java.io.InputStreamReader(process.getErrorStream(),
                         java.nio.charset.StandardCharsets.UTF_8), stderr));
 
         boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -162,8 +165,8 @@ public class TurCodeInterpreterToolService {
         errThread.join(5000);
 
         int exitCode = process.exitValue();
-        File[] generatedFiles = sessionDir.listFiles((dir, name) ->
-                !name.equals("script.py") && !name.equals("_runner.py"));
+        File[] generatedFiles = sessionDir
+                .listFiles((dir, name) -> !name.equals("script.py") && !name.equals("_runner.py"));
 
         String result = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles);
         logResult(sessionId, scriptPath, exitCode, stdout, stderr, generatedFiles);
@@ -203,7 +206,8 @@ public class TurCodeInterpreterToolService {
 
         if (generatedFiles != null && generatedFiles.length > 0) {
             result.append("\n--- Generated Files ---\n");
-            result.append("IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
+            result.append(
+                    "IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
             for (File f : generatedFiles) {
                 String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName();
                 boolean isImage = isImageFile(f.getName());
@@ -275,13 +279,5 @@ public class TurCodeInterpreterToolService {
 
     private static String repr(String s) {
         return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'";
-    }
-
-    private String formatFileSize(long bytes) {
-        if (bytes >= 1_048_576)
-            return String.format("%.1f MB", bytes / 1_048_576.0);
-        if (bytes >= 1024)
-            return String.format("%.1f KB", bytes / 1024.0);
-        return bytes + " bytes";
     }
 }

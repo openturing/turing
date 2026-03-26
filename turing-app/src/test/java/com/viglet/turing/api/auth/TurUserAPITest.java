@@ -274,4 +274,172 @@ class TurUserAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").doesNotExist());
     }
+
+    @Test
+    void testTurUserEdit_Forbidden() throws Exception {
+        setAuthenticatedUser("otheruser");
+
+        mockMvc.perform(get("/api/v2/user/testuser"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testTurUserEdit_SelfAccess() throws Exception {
+        setAuthenticatedUser("testuser");
+
+        TurUser user = new TurUser();
+        user.setUsername("testuser");
+
+        when(turUserRepository.findByUsername("testuser")).thenReturn(user);
+        when(turGroupRepository.findByTurUsersContaining(user)).thenReturn(new HashSet<>());
+
+        mockMvc.perform(get("/api/v2/user/testuser"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("testuser"));
+    }
+
+    @Test
+    void testTurUserUpdate_Forbidden() throws Exception {
+        setAuthenticatedUser("otheruser");
+
+        TurUser updatedInfo = new TurUser();
+        updatedInfo.setFirstName("New");
+
+        mockMvc.perform(put("/api/v2/user/testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedInfo)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testTurUserUpdate_NotFound() throws Exception {
+        setAuthenticatedUser("testuser");
+
+        TurUser updatedInfo = new TurUser();
+        updatedInfo.setFirstName("New");
+
+        when(turUserRepository.findByUsername("testuser")).thenReturn(null);
+
+        mockMvc.perform(put("/api/v2/user/testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedInfo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").doesNotExist());
+    }
+
+    @Test
+    void testTurUserUpdate_AdminCanChangeGroups() throws Exception {
+        setAuthenticatedUser("admin", "ROLE_ADMIN");
+
+        TurUser userEdit = new TurUser();
+        userEdit.setUsername("testuser");
+
+        TurUser updatedInfo = new TurUser();
+        updatedInfo.setFirstName("Updated");
+        updatedInfo.setLastName("User");
+
+        when(turUserRepository.findByUsername("testuser")).thenReturn(userEdit);
+
+        mockMvc.perform(put("/api/v2/user/testuser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedInfo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Updated"));
+
+        verify(turUserRepository, times(1)).save(userEdit);
+    }
+
+    @Test
+    void testUpdateAvatarUrl_Success() throws Exception {
+        setAuthenticatedUser("testuser");
+
+        TurUser user = new TurUser();
+        user.setUsername("testuser");
+        when(turUserRepository.findByUsername("testuser")).thenReturn(user);
+
+        mockMvc.perform(put("/api/v2/user/testuser/avatar-url")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"avatarUrl\":\"https://example.com/avatar.png\"}"))
+                .andExpect(status().isOk());
+
+        verify(turUserRepository, times(1)).save(user);
+    }
+
+    @Test
+    void testUpdateAvatarUrl_NotFound() throws Exception {
+        setAuthenticatedUser("testuser");
+
+        when(turUserRepository.findByUsername("testuser")).thenReturn(null);
+
+        mockMvc.perform(put("/api/v2/user/testuser/avatar-url")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"avatarUrl\":\"https://example.com/avatar.png\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testUpdateAvatarUrl_Forbidden() throws Exception {
+        setAuthenticatedUser("otheruser");
+
+        mockMvc.perform(put("/api/v2/user/testuser/avatar-url")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"avatarUrl\":\"https://example.com/avatar.png\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testUpdateAvatarUrl_NullBody() throws Exception {
+        setAuthenticatedUser("testuser");
+
+        TurUser user = new TurUser();
+        user.setUsername("testuser");
+        when(turUserRepository.findByUsername("testuser")).thenReturn(user);
+
+        mockMvc.perform(put("/api/v2/user/testuser/avatar-url")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testTurUserAdd_WithoutPassword() throws Exception {
+        TurUser newUser = new TurUser();
+        newUser.setUsername("newuser");
+
+        mockMvc.perform(post("/api/v2/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(newUser)))
+                .andExpect(status().isOk());
+
+        verify(turUserRepository, never()).save(any(TurUser.class));
+    }
+
+    @Test
+    void testTurUserCurrentWithRegularUserNoAdmin() throws Exception {
+        org.springframework.security.core.Authentication auth =
+                new UsernamePasswordAuthenticationToken("testuser", "password");
+        SecurityContext context = mock(SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(context);
+
+        when(turConfigProperties.isKeycloak()).thenReturn(false);
+        when(turConfigProperties.isPermissions()).thenReturn(true);
+
+        TurUser turUser = new TurUser();
+        turUser.setUsername("testuser");
+        turUser.setFirstName("Test");
+        turUser.setLastName("User");
+
+        TurGroup regularGroup = new TurGroup();
+        regularGroup.setName("Users");
+        turUser.setTurGroups(new HashSet<>(Collections.singletonList(regularGroup)));
+
+        when(turUserRepository.findByUsername("testuser")).thenReturn(turUser);
+        when(turGroupRepository.findByTurUsersContaining(turUser)).thenReturn(new HashSet<>());
+
+        mockMvc.perform(get("/api/v2/user/current"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.admin").value(false));
+    }
 }

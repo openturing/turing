@@ -581,4 +581,249 @@ class TurFileUtilsTest {
         assertThat(result.get()).contains("Line one");
         assertThat(result.get()).contains("Line three");
     }
+
+    // --- documentToText with title metadata ---
+
+    @Test
+    void testDocumentToTextWithPdfTitle() {
+        // Create content that Tika can parse and extract metadata from
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file",
+                "report.txt",
+                "text/plain",
+                "Report content body".getBytes());
+
+        TurFileAttributes result = TurFileUtils.documentToText(multipartFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("Report content body");
+        // Without pdf:docinfo:title metadata, title falls back to filename
+        assertThat(result.getTitle()).isEqualTo("report.txt");
+        assertThat(result.getMetadata()).isNotNull();
+    }
+
+    @Test
+    void testDocumentToTextLastModifiedIsNotNull() {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file",
+                "dated.txt",
+                "text/plain",
+                "content".getBytes());
+
+        TurFileAttributes result = TurFileUtils.documentToText(multipartFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getLastModified()).isNotNull();
+    }
+
+    // --- readFile with various content types ---
+
+    @Test
+    void testReadFileWithXmlContent(@TempDir Path tempDir) throws IOException {
+        File xmlFile = tempDir.resolve("test.xml").toFile();
+        Files.writeString(xmlFile.toPath(), "<?xml version=\"1.0\"?><root><item>XML data</item></root>");
+
+        TurTikaFileAttributes result = TurFileUtils.readFile(xmlFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("XML data");
+    }
+
+    @Test
+    void testReadFileWithCsvContent(@TempDir Path tempDir) throws IOException {
+        File csvFile = tempDir.resolve("data.csv").toFile();
+        Files.writeString(csvFile.toPath(), "name,age\nAlice,30\nBob,25");
+
+        TurTikaFileAttributes result = TurFileUtils.readFile(csvFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("Alice");
+    }
+
+    @Test
+    void testReadFileMetadataIsPopulated(@TempDir Path tempDir) throws IOException {
+        File htmlFile = tempDir.resolve("meta.html").toFile();
+        Files.writeString(htmlFile.toPath(),
+                "<html><head><title>Page Title</title></head><body>Body text</body></html>");
+
+        TurTikaFileAttributes result = TurFileUtils.readFile(htmlFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getMetadata()).isNotNull();
+        assertThat(result.getMetadata().names()).isNotEmpty();
+    }
+
+    // --- parseFile(MultipartFile) with various types ---
+
+    @Test
+    void testParseMultipartFileWithHtmlContent() {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file",
+                "page.html",
+                "text/html",
+                "<html><body><h1>Title</h1><p>Paragraph</p></body></html>".getBytes());
+
+        TurTikaFileAttributes result = TurFileUtils.parseFile(multipartFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("Title");
+        assertThat(result.getContent()).contains("Paragraph");
+    }
+
+    @Test
+    void testParseMultipartFileWithXmlContent() {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file",
+                "data.xml",
+                "application/xml",
+                "<root><element>Value</element></root>".getBytes());
+
+        TurTikaFileAttributes result = TurFileUtils.parseFile(multipartFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("Value");
+    }
+
+    // --- isSafe edge cases ---
+
+    @Test
+    void testIsSafe172EdgeCases() throws Exception {
+        // 172.15.255.255 is just below the private range (16-31) -> safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("172.15.255.255"))).isTrue();
+        // 172.16.0.0 is the start of private range -> not safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("172.16.0.0"))).isFalse();
+        // 172.31.255.255 is the end of private range -> not safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("172.31.255.255"))).isFalse();
+        // 172.32.0.0 is just above the private range -> safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("172.32.0.0"))).isTrue();
+    }
+
+    @Test
+    void testIsSafe100CGNATEdgeCases() throws Exception {
+        // 100.63.255.255 is just below CGNAT range -> safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("100.63.255.255"))).isTrue();
+        // 100.64.0.0 is the start of CGNAT -> not safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("100.64.0.0"))).isFalse();
+        // 100.127.255.255 is the end of CGNAT -> not safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("100.127.255.255"))).isFalse();
+        // 100.128.0.0 is just above CGNAT -> safe
+        assertThat(TurFileUtils.isSafe(InetAddress.getByName("100.128.0.0"))).isTrue();
+    }
+
+    // --- isAllowedRemoteUrlString with edge cases ---
+
+    @Test
+    void testIsAllowedRemoteUrlStringWithPrivate10Network() {
+        assertThat(TurFileUtils.isAllowedRemoteUrlString("http://10.0.0.1/test")).isFalse();
+    }
+
+    @Test
+    void testIsAllowedRemoteUrlStringWith172PrivateNetwork() {
+        assertThat(TurFileUtils.isAllowedRemoteUrlString("http://172.16.0.1/test")).isFalse();
+    }
+
+    @Test
+    void testIsAllowedRemoteUrlStringWithCGNATNetwork() {
+        assertThat(TurFileUtils.isAllowedRemoteUrlString("http://100.64.0.1/test")).isFalse();
+    }
+
+    // --- isHostInAllowedDomains (via reflection) ---
+
+    @Test
+    void testIsHostInAllowedDomainsReturnsCorrectly() throws Exception {
+        // Since ALLOWED_DOMAINS is empty, this always returns false
+        Method method = TurFileUtils.class.getDeclaredMethod("isHostInAllowedDomains", String.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(null, "example.com");
+        // With empty ALLOWED_DOMAINS, anyMatch returns false
+        assertThat(result).isFalse();
+    }
+
+    // --- parseDocument with various content types ---
+
+    @Test
+    void testParseDocumentWithXmlInputStream() throws IOException {
+        String xml = "<?xml version=\"1.0\"?><root><data>XML document content</data></root>";
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes());
+
+        Optional<String> result = TurFileUtils.parseDocument(inputStream);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).contains("XML document content");
+    }
+
+    @Test
+    void testParseDocumentWithCsvInputStream() throws IOException {
+        String csv = "col1,col2\nval1,val2\nval3,val4";
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(csv.getBytes());
+
+        Optional<String> result = TurFileUtils.parseDocument(inputStream);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).contains("val1");
+    }
+
+    @Test
+    void testParseDocumentWithLargeContent() throws IOException {
+        String content = "A".repeat(10000);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes());
+
+        Optional<String> result = TurFileUtils.parseDocument(inputStream);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).contains("A".repeat(100));
+    }
+
+    // --- urlContentToText with various blocked URLs ---
+
+    @Test
+    void testUrlContentToTextWith172PrivateUrl() throws Exception {
+        java.net.URL url = URI.create("http://172.16.0.1/test.txt").toURL();
+
+        TurFileAttributes result = TurFileUtils.urlContentToText(url);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).isNullOrEmpty();
+    }
+
+    @Test
+    void testUrlContentToTextWithCGNATUrl() throws Exception {
+        java.net.URL url = URI.create("http://100.64.0.1/test.txt").toURL();
+
+        TurFileAttributes result = TurFileUtils.urlContentToText(url);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).isNullOrEmpty();
+    }
+
+    // --- Multiple readFile scenarios for metadata coverage ---
+
+    @Test
+    void testReadFileWithStringPathForExistingFile(@TempDir Path tempDir) throws IOException {
+        File testFile = tempDir.resolve("metadata_test.html").toFile();
+        Files.writeString(testFile.toPath(),
+                "<html><head><title>Test Doc</title></head><body>Content here</body></html>");
+
+        TurTikaFileAttributes result = TurFileUtils.readFile(testFile.getAbsolutePath());
+
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).contains("Content here");
+        assertThat(result.getFile()).isEqualTo(testFile);
+    }
+
+    @Test
+    void testDocumentToTextMetadataMapPopulated() {
+        MockMultipartFile multipartFile = new MockMultipartFile(
+                "file",
+                "test.html",
+                "text/html",
+                "<html><head><title>HTML Title</title></head><body>Body</body></html>".getBytes());
+
+        TurFileAttributes result = TurFileUtils.documentToText(multipartFile);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getMetadata()).isNotNull();
+        assertThat(result.getMetadata()).isNotEmpty();
+    }
 }

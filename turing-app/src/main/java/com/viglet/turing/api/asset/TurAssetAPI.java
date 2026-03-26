@@ -1,24 +1,30 @@
 package com.viglet.turing.api.asset;
 
-import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.viglet.turing.service.asset.TurAssetEvent;
 import com.viglet.turing.service.asset.TurAssetTrainingService;
 import com.viglet.turing.service.asset.TurAssetTrainingState;
 import com.viglet.turing.service.asset.TurAssetTrainingStatus;
 import com.viglet.turing.service.asset.TurMinioService;
+
 import io.minio.StatObjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 
 /**
  * REST API for managing assets stored in MinIO.
@@ -35,7 +41,7 @@ public class TurAssetAPI {
 	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
 	public TurAssetAPI(TurMinioService turMinioService, TurAssetTrainingService turAssetTrainingService,
-					   org.springframework.context.ApplicationEventPublisher eventPublisher) {
+			org.springframework.context.ApplicationEventPublisher eventPublisher) {
 		this.turMinioService = turMinioService;
 		this.turAssetTrainingService = turAssetTrainingService;
 		this.eventPublisher = eventPublisher;
@@ -88,7 +94,7 @@ public class TurAssetAPI {
 	@Operation(summary = "Upload assets")
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> upload(@RequestParam("files") List<MultipartFile> files,
-									   @RequestParam(defaultValue = "") String prefix) {
+			@RequestParam(defaultValue = "") String prefix) {
 		for (MultipartFile file : files) {
 			turMinioService.uploadObject(file, prefix);
 			String objectName = (prefix != null && !prefix.isBlank() ? prefix : "") + file.getOriginalFilename();

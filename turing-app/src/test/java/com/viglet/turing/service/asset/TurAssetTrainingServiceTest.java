@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,233 +37,341 @@ import com.viglet.turing.system.TurGlobalSettingsService;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class TurAssetTrainingServiceTest {
 
-    @Mock
-    private TurMinioService minioService;
+        @Mock
+        private TurMinioService minioService;
 
-    @Mock
-    private TurGlobalSettingsService globalSettingsService;
+        @Mock
+        private TurGlobalSettingsService globalSettingsService;
 
-    @Mock
-    private TurRagContextBuilder ragContextBuilder;
+        @Mock
+        private TurRagContextBuilder ragContextBuilder;
 
-    @Mock
-    private TurAssetTrainingRecordRepository trainingRecordRepository;
+        @Mock
+        private TurAssetTrainingRecordRepository trainingRecordRepository;
 
-    @Mock
-    private RagInfrastructure ragInfrastructure;
+        @Mock
+        private RagInfrastructure ragInfrastructure;
 
-    private TurAssetTrainingService service;
+        private TurAssetTrainingService service;
 
-    @BeforeEach
-    void setUp() {
-        service = new TurAssetTrainingService(
-                minioService,
-                globalSettingsService,
-                ragContextBuilder,
-                trainingRecordRepository);
-    }
+        @BeforeEach
+        void setUp() {
+                service = new TurAssetTrainingService(
+                                minioService,
+                                globalSettingsService,
+                                ragContextBuilder,
+                                trainingRecordRepository);
+        }
 
-    @Test
-    void getStatusReturnsIdleByDefault() {
-        TurAssetTrainingStatus status = service.getStatus();
+        @Test
+        void getStatusReturnsIdleByDefault() {
+                TurAssetTrainingStatus status = service.getStatus();
 
-        assertThat(status).isNotNull();
-        assertThat(status.state()).isEqualTo(TurAssetTrainingState.IDLE);
-        assertThat(status.totalCount()).isZero();
-        assertThat(status.processedCount()).isZero();
-        assertThat(status.errorCount()).isZero();
-        assertThat(status.startedAt()).isEmpty();
-        assertThat(status.completedAt()).isEmpty();
-        assertThat(status.errorMessage()).isEmpty();
-    }
+                assertThat(status).isNotNull();
+                assertThat(status.state()).isEqualTo(TurAssetTrainingState.IDLE);
+                assertThat(status.totalCount()).isZero();
+                assertThat(status.processedCount()).isZero();
+                assertThat(status.errorCount()).isZero();
+                assertThat(status.startedAt()).isEmpty();
+                assertThat(status.completedAt()).isEmpty();
+                assertThat(status.errorMessage()).isEmpty();
+        }
 
-    @Test
-    void getTrainedAtMapReturnsEmptyMapWhenNoRecords() {
-        when(trainingRecordRepository.findByObjectNameIn(any()))
-                .thenReturn(Collections.emptyList());
+        @Test
+        void getTrainedAtMapReturnsEmptyMapWhenNoRecords() {
+                when(trainingRecordRepository.findByObjectNameIn(any()))
+                                .thenReturn(Collections.emptyList());
 
-        var result = service.getTrainedAtMap(List.of("file1.pdf", "file2.txt"));
+                var result = service.getTrainedAtMap(List.of("file1.pdf", "file2.txt"));
 
-        assertThat(result).isEmpty();
-    }
+                assertThat(result).isEmpty();
+        }
 
-    @Test
-    void getTrainedAtMapReturnsCorrectMapping() {
-        TurAssetTrainingRecord record1 = new TurAssetTrainingRecord();
-        record1.setObjectName("file1.pdf");
-        record1.setTrainedAt(Instant.parse("2026-03-01T10:00:00Z"));
+        @Test
+        void getTrainedAtMapReturnsCorrectMapping() {
+                TurAssetTrainingRecord record1 = new TurAssetTrainingRecord();
+                record1.setObjectName("file1.pdf");
+                record1.setTrainedAt(Instant.parse("2026-03-01T10:00:00Z"));
 
-        TurAssetTrainingRecord record2 = new TurAssetTrainingRecord();
-        record2.setObjectName("file2.txt");
-        record2.setTrainedAt(Instant.parse("2026-03-02T15:30:00Z"));
+                TurAssetTrainingRecord record2 = new TurAssetTrainingRecord();
+                record2.setObjectName("file2.txt");
+                record2.setTrainedAt(Instant.parse("2026-03-02T15:30:00Z"));
 
-        when(trainingRecordRepository.findByObjectNameIn(List.of("file1.pdf", "file2.txt")))
-                .thenReturn(List.of(record1, record2));
+                when(trainingRecordRepository.findByObjectNameIn(List.of("file1.pdf", "file2.txt")))
+                                .thenReturn(List.of(record1, record2));
 
-        var result = service.getTrainedAtMap(List.of("file1.pdf", "file2.txt"));
+                var result = service.getTrainedAtMap(List.of("file1.pdf", "file2.txt"));
 
-        assertThat(result).hasSize(2);
-        assertThat(result).containsKey("file1.pdf");
-        assertThat(result).containsKey("file2.txt");
-        assertThat(result.get("file1.pdf")).isEqualTo("2026-03-01T10:00:00Z");
-    }
+                assertThat(result).hasSize(2);
+                assertThat(result).containsKey("file1.pdf");
+                assertThat(result).containsKey("file2.txt");
+                assertThat(result.get("file1.pdf")).isEqualTo("2026-03-01T10:00:00Z");
+        }
 
-    @Test
-    void getTrainedAtMapWithEmptyInputList() {
-        when(trainingRecordRepository.findByObjectNameIn(Collections.emptyList()))
-                .thenReturn(Collections.emptyList());
+        @Test
+        void getTrainedAtMapWithEmptyInputList() {
+                when(trainingRecordRepository.findByObjectNameIn(Collections.emptyList()))
+                                .thenReturn(Collections.emptyList());
 
-        var result = service.getTrainedAtMap(Collections.emptyList());
+                var result = service.getTrainedAtMap(Collections.emptyList());
 
-        assertThat(result).isEmpty();
-    }
+                assertThat(result).isEmpty();
+        }
 
-    @Test
-    void getTrainedAtMapPartialMatch() {
-        TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-        record.setObjectName("trained.pdf");
-        record.setTrainedAt(Instant.parse("2026-01-15T08:00:00Z"));
+        @Test
+        void getTrainedAtMapPartialMatch() {
+                TurAssetTrainingRecord record = new TurAssetTrainingRecord();
+                record.setObjectName("trained.pdf");
+                record.setTrainedAt(Instant.parse("2026-01-15T08:00:00Z"));
 
-        when(trainingRecordRepository.findByObjectNameIn(List.of("trained.pdf", "untrained.pdf")))
-                .thenReturn(List.of(record));
+                when(trainingRecordRepository.findByObjectNameIn(List.of("trained.pdf", "untrained.pdf")))
+                                .thenReturn(List.of(record));
 
-        var result = service.getTrainedAtMap(List.of("trained.pdf", "untrained.pdf"));
+                var result = service.getTrainedAtMap(List.of("trained.pdf", "untrained.pdf"));
 
-        assertThat(result).hasSize(1);
-        assertThat(result).containsKey("trained.pdf");
-        assertThat(result).doesNotContainKey("untrained.pdf");
-    }
+                assertThat(result).hasSize(1);
+                assertThat(result).containsKey("trained.pdf");
+                assertThat(result).doesNotContainKey("untrained.pdf");
+        }
 
-    @Test
-    void indexSingleFileSkipsWhenRagNotConfigured() {
-        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.empty());
+        @Test
+        void indexSingleFileSkipsWhenRagNotConfigured() {
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.empty());
 
-        service.indexSingleFile("test.pdf", "application/pdf", 1024);
+                service.indexSingleFile("test.pdf", "application/pdf", 1024);
 
-        verify(trainingRecordRepository, never()).save(any());
-    }
+                verify(trainingRecordRepository, never()).save(any());
+        }
 
-    @Test
-    void deindexSingleFileSkipsWhenRagNotConfigured() {
-        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.empty());
+        @Test
+        void deindexSingleFileSkipsWhenRagNotConfigured() {
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.empty());
 
-        service.deindexSingleFile("test.pdf");
+                service.deindexSingleFile("test.pdf");
 
-        verify(trainingRecordRepository, never()).deleteById(anyString());
-    }
+                verify(trainingRecordRepository, never()).deleteById(anyString());
+        }
 
-    @Test
-    void startTrainingReturnsFailedWhenRagNotEnabled() {
-        when(globalSettingsService.isRagEnabled()).thenReturn(false);
+        @Test
+        void startTrainingReturnsFailedWhenRagNotEnabled() {
+                when(globalSettingsService.isRagEnabled()).thenReturn(false);
 
-        TurAssetTrainingStatus status = service.startTraining();
+                TurAssetTrainingStatus status = service.startTraining();
 
-        assertThat(status.state()).isEqualTo(TurAssetTrainingState.FAILED);
-        assertThat(status.errorMessage()).contains("RAG is not enabled");
-    }
+                assertThat(status.state()).isEqualTo(TurAssetTrainingState.FAILED);
+                assertThat(status.errorMessage()).contains("RAG is not enabled");
+        }
 
-    @Test
-    void startTrainingReturnsRunningWhenAlreadyRunning() {
-        when(globalSettingsService.isRagEnabled()).thenReturn(true);
-        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
-        when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+        @Test
+        void startTrainingReturnsRunningWhenAlreadyRunning() {
+                when(globalSettingsService.isRagEnabled()).thenReturn(true);
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
+                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
 
-        TurAssetTrainingStatus firstCall = service.startTraining();
-        assertThat(firstCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+                TurAssetTrainingStatus firstCall = service.startTraining();
+                assertThat(firstCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
 
-        TurAssetTrainingStatus secondCall = service.startTraining();
-        assertThat(secondCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
-    }
+                TurAssetTrainingStatus secondCall = service.startTraining();
+                assertThat(secondCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+        }
 
-    @Test
-    void startTrainingReturnsRunningStatus() {
-        when(globalSettingsService.isRagEnabled()).thenReturn(true);
-        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
-        when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+        @Test
+        void startTrainingReturnsRunningStatus() {
+                when(globalSettingsService.isRagEnabled()).thenReturn(true);
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
+                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
 
-        TurAssetTrainingStatus status = service.startTraining();
+                TurAssetTrainingStatus status = service.startTraining();
 
-        assertThat(status.state()).isEqualTo(TurAssetTrainingState.RUNNING);
-        assertThat(status.startedAt()).isNotEmpty();
-    }
+                assertThat(status.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+                assertThat(status.startedAt()).isNotEmpty();
+        }
 
-    @Test
-    void turAssetTrainingStatusIdleFactory() {
-        TurAssetTrainingStatus idle = TurAssetTrainingStatus.idle();
+        @Test
+        void turAssetTrainingStatusIdleFactory() {
+                TurAssetTrainingStatus idle = TurAssetTrainingStatus.idle();
 
-        assertThat(idle.state()).isEqualTo(TurAssetTrainingState.IDLE);
-        assertThat(idle.totalCount()).isZero();
-        assertThat(idle.processedCount()).isZero();
-        assertThat(idle.errorCount()).isZero();
-        assertThat(idle.startedAt()).isEmpty();
-        assertThat(idle.completedAt()).isEmpty();
-        assertThat(idle.errorMessage()).isEmpty();
-    }
+                assertThat(idle.state()).isEqualTo(TurAssetTrainingState.IDLE);
+                assertThat(idle.totalCount()).isZero();
+                assertThat(idle.processedCount()).isZero();
+                assertThat(idle.errorCount()).isZero();
+                assertThat(idle.startedAt()).isEmpty();
+                assertThat(idle.completedAt()).isEmpty();
+                assertThat(idle.errorMessage()).isEmpty();
+        }
 
-    @Test
-    void turAssetTrainingStateEnumValues() {
-        TurAssetTrainingState[] values = TurAssetTrainingState.values();
+        @Test
+        void turAssetTrainingStateEnumValues() {
+                TurAssetTrainingState[] values = TurAssetTrainingState.values();
 
-        assertThat(values).hasSize(4);
-        assertThat(values).containsExactly(
-                TurAssetTrainingState.IDLE,
-                TurAssetTrainingState.RUNNING,
-                TurAssetTrainingState.COMPLETED,
-                TurAssetTrainingState.FAILED);
-    }
+                assertThat(values).hasSize(4);
+                assertThat(values).containsExactly(
+                                TurAssetTrainingState.IDLE,
+                                TurAssetTrainingState.RUNNING,
+                                TurAssetTrainingState.COMPLETED,
+                                TurAssetTrainingState.FAILED);
+        }
 
-    @Test
-    void turAssetTrainingStatusRecordEquality() {
-        TurAssetTrainingStatus s1 = new TurAssetTrainingStatus(
-                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
-        TurAssetTrainingStatus s2 = new TurAssetTrainingStatus(
-                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
+        @Test
+        void turAssetTrainingStatusRecordEquality() {
+                TurAssetTrainingStatus s1 = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
+                TurAssetTrainingStatus s2 = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
 
-        assertThat(s1).isEqualTo(s2);
-        assertThat(s1.hashCode()).isEqualTo(s2.hashCode());
-    }
+                assertThat(s1).isEqualTo(s2);
+                assertThat(s1.hashCode()).isEqualTo(s2.hashCode());
+        }
 
-    @Test
-    void turAssetTrainingStatusRecordInequality() {
-        TurAssetTrainingStatus s1 = new TurAssetTrainingStatus(
-                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
-        TurAssetTrainingStatus s2 = new TurAssetTrainingStatus(
-                TurAssetTrainingState.FAILED, 10, 10, 0, "t1", "t2", "error");
+        @Test
+        void turAssetTrainingStatusRecordInequality() {
+                TurAssetTrainingStatus s1 = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
+                TurAssetTrainingStatus s2 = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.FAILED, 10, 10, 0, "t1", "t2", "error");
 
-        assertThat(s1).isNotEqualTo(s2);
-    }
+                assertThat(s1).isNotEqualTo(s2);
+        }
 
-    @Test
-    void turAssetTrainingStatusAccessors() {
-        TurAssetTrainingStatus status = new TurAssetTrainingStatus(
-                TurAssetTrainingState.RUNNING, 50, 25, 3, "2026-01-01", "2026-01-02", "some error");
+        @Test
+        void turAssetTrainingStatusAccessors() {
+                TurAssetTrainingStatus status = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.RUNNING, 50, 25, 3, "2026-01-01", "2026-01-02", "some error");
 
-        assertThat(status.state()).isEqualTo(TurAssetTrainingState.RUNNING);
-        assertThat(status.totalCount()).isEqualTo(50);
-        assertThat(status.processedCount()).isEqualTo(25);
-        assertThat(status.errorCount()).isEqualTo(3);
-        assertThat(status.startedAt()).isEqualTo("2026-01-01");
-        assertThat(status.completedAt()).isEqualTo("2026-01-02");
-        assertThat(status.errorMessage()).isEqualTo("some error");
-    }
+                assertThat(status.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+                assertThat(status.totalCount()).isEqualTo(50);
+                assertThat(status.processedCount()).isEqualTo(25);
+                assertThat(status.errorCount()).isEqualTo(3);
+                assertThat(status.startedAt()).isEqualTo("2026-01-01");
+                assertThat(status.completedAt()).isEqualTo("2026-01-02");
+                assertThat(status.errorMessage()).isEqualTo("some error");
+        }
 
-    @Test
-    void deindexSingleFileDoesNotThrowOnException() {
-        when(ragContextBuilder.buildFromGlobalSettings())
-                .thenThrow(new RuntimeException("Unexpected error"));
+        @Test
+        void deindexSingleFileDoesNotThrowOnException() {
+                when(ragContextBuilder.buildFromGlobalSettings())
+                                .thenThrow(new RuntimeException("Unexpected error"));
 
-        service.deindexSingleFile("bad-file.pdf");
+                service.deindexSingleFile("bad-file.pdf");
 
-        // Should not propagate the exception
-    }
+                // Should not propagate the exception
+        }
 
-    @Test
-    void indexSingleFileDoesNotThrowOnException() {
-        when(ragContextBuilder.buildFromGlobalSettings())
-                .thenThrow(new RuntimeException("Unexpected error"));
+        @Test
+        void indexSingleFileDoesNotThrowOnException() {
+                when(ragContextBuilder.buildFromGlobalSettings())
+                                .thenThrow(new RuntimeException("Unexpected error"));
 
-        service.indexSingleFile("bad-file.pdf", "application/pdf", 1024);
+                service.indexSingleFile("bad-file.pdf", "application/pdf", 1024);
 
-        // Should not propagate the exception
-    }
+                // Should not propagate the exception
+        }
+
+        // --- Additional coverage: deindexSingleFile success path ---
+
+        @Test
+        void deindexSingleFileCallsDeleteWhenRagConfigured() throws Exception {
+                com.viglet.turing.genai.provider.store.TurGenAiStoreProvider mockStoreProvider = org.mockito.Mockito
+                                .mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class);
+                com.viglet.turing.persistence.model.store.TurStoreInstance mockStoreInstance = org.mockito.Mockito
+                                .mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+                org.springframework.ai.vectorstore.VectorStore mockVectorStore = org.mockito.Mockito
+                                .mock(org.springframework.ai.vectorstore.VectorStore.class);
+                org.springframework.ai.embedding.EmbeddingModel mockEmbeddingModel = org.mockito.Mockito
+                                .mock(org.springframework.ai.embedding.EmbeddingModel.class);
+
+                TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                                mockVectorStore, mockEmbeddingModel, mockStoreProvider, mockStoreInstance, "cred",
+                                "collection");
+
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(infra));
+
+                service.deindexSingleFile("docs/report.pdf");
+
+                verify(mockStoreProvider).deleteByMetadata(eq(mockStoreInstance), eq("cred"),
+                                eq("collection"), eq("objectName"), eq("docs/report.pdf"));
+                verify(trainingRecordRepository).deleteById("docs/report.pdf");
+        }
+
+        // --- startTraining edge cases ---
+
+        @Test
+        void startTrainingReturnsFailedStatusWithMessage() {
+                when(globalSettingsService.isRagEnabled()).thenReturn(false);
+
+                TurAssetTrainingStatus status = service.startTraining();
+
+                assertThat(status.state()).isEqualTo(TurAssetTrainingState.FAILED);
+                assertThat(status.errorMessage()).isEqualTo("RAG is not enabled in Global Settings.");
+                assertThat(status.totalCount()).isZero();
+                assertThat(status.processedCount()).isZero();
+                assertThat(status.errorCount()).isZero();
+        }
+
+        // --- getTrainedAtMap with single record ---
+
+        @Test
+        void getTrainedAtMapWithSingleRecord() {
+                TurAssetTrainingRecord record = new TurAssetTrainingRecord();
+                record.setObjectName("single.pdf");
+                record.setTrainedAt(java.time.Instant.parse("2026-03-15T12:00:00Z"));
+
+                when(trainingRecordRepository.findByObjectNameIn(List.of("single.pdf")))
+                                .thenReturn(List.of(record));
+
+                var result = service.getTrainedAtMap(List.of("single.pdf"));
+
+                assertThat(result).hasSize(1);
+                assertThat(result.get("single.pdf")).isEqualTo("2026-03-15T12:00:00Z");
+        }
+
+        // --- TurAssetTrainingStatus toString ---
+
+        @Test
+        void turAssetTrainingStatusToString() {
+                TurAssetTrainingStatus status = new TurAssetTrainingStatus(
+                                TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
+
+                String str = status.toString();
+                assertThat(str).contains("COMPLETED");
+        }
+
+        // --- deindexSingleFile when storeProvider throws ---
+
+        @Test
+        void deindexSingleFileHandlesStoreProviderException() throws Exception {
+                com.viglet.turing.genai.provider.store.TurGenAiStoreProvider mockStoreProvider = org.mockito.Mockito
+                                .mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class);
+                com.viglet.turing.persistence.model.store.TurStoreInstance mockStoreInstance = org.mockito.Mockito
+                                .mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+                org.springframework.ai.vectorstore.VectorStore mockVectorStore = org.mockito.Mockito
+                                .mock(org.springframework.ai.vectorstore.VectorStore.class);
+                org.springframework.ai.embedding.EmbeddingModel mockEmbeddingModel = org.mockito.Mockito
+                                .mock(org.springframework.ai.embedding.EmbeddingModel.class);
+
+                TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                                mockVectorStore, mockEmbeddingModel, mockStoreProvider, mockStoreInstance, "cred",
+                                "collection");
+
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(infra));
+                org.mockito.Mockito.doThrow(new RuntimeException("Store error")).when(mockStoreProvider)
+                                .deleteByMetadata(any(), anyString(), anyString(), anyString(), anyString());
+
+                // Should not throw
+                service.deindexSingleFile("problem-file.pdf");
+        }
+
+        // --- getStatus after startTraining ---
+
+        @Test
+        void getStatusReflectsRunningAfterStartTraining() {
+                when(globalSettingsService.isRagEnabled()).thenReturn(true);
+                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
+                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+
+                service.startTraining();
+                TurAssetTrainingStatus status = service.getStatus();
+
+                assertThat(status.state()).isIn(TurAssetTrainingState.RUNNING, TurAssetTrainingState.COMPLETED);
+        }
 }

@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.Collections;
@@ -946,5 +947,662 @@ class TurSolrQueryBuilderTest {
                 assertThat(result).containsExactly(mltField);
                 // But the query is NOT configured with MLT params when mlt is disabled
                 assertThat(query.get(MoreLikeThisParams.MLT)).isNull();
+        }
+
+        @Test
+        void testPrepareSolrQueryWithoutExactMatchDoesNotModifyQuery() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setExactMatch(0);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("\"quoted query\"");
+                searchParams.setRows(10);
+                TurSEParameters parameters = new TurSEParameters(searchParams, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(parameters, new TurSNSitePostParamsBean()), site,
+                                parameters, new TurSESpellCheckResult(false, ""));
+
+                // Without exact match, the query should not be prefixed
+                assertThat(query.getQuery()).isEqualTo("\"quoted query\"");
+        }
+
+        @Test
+        void testPrepareSolrQueryExactMatchWithBlankFieldDoesNotModify() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setExactMatch(1);
+                site.setExactMatchField("");
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("\"test\"");
+                searchParams.setRows(10);
+                TurSEParameters parameters = new TurSEParameters(searchParams, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(parameters, new TurSNSitePostParamsBean()), site,
+                                parameters, new TurSESpellCheckResult(false, ""));
+
+                // ExactMatchField is blank so exact match should NOT apply
+                assertThat(query.getQuery()).isEqualTo("\"test\"");
+        }
+
+        @Test
+        void testPrepareSolrQueryWithFacetSortCount() {
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(10);
+                site.setFacetSort(com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum.COUNT);
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+
+                TurSNSiteFieldExt facet = TurSNSiteFieldExt.builder()
+                                .name("category")
+                                .facet(1)
+                                .enabled(1)
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .facetSort(TurSNSiteFacetFieldSortEnum.DEFAULT)
+                                .build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(facet));
+
+                SolrQuery query = new SolrQuery();
+                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build());
+
+                assertThat(query.get("facet.sort")).isEqualTo("count");
+        }
+
+        @Test
+        void testPrepareSolrQueryWithFacetSortAlphabetical() {
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(10);
+                site.setFacetSort(com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum.ALPHABETICAL);
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+
+                TurSNSiteFieldExt facet = TurSNSiteFieldExt.builder()
+                                .name("category")
+                                .facet(1)
+                                .enabled(1)
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .facetSort(TurSNSiteFacetFieldSortEnum.DEFAULT)
+                                .build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(facet));
+
+                SolrQuery query = new SolrQuery();
+                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build());
+
+                assertThat(query.get("facet.sort")).isEqualTo("index");
+        }
+
+        @Test
+        void testPrepareQueryHLWithMultipleFields() {
+                TurSNSite site = new TurSNSite();
+                site.setHlPre("<b>");
+                site.setHlPost("</b>");
+
+                TurSNSiteFieldExt hlField1 = TurSNSiteFieldExt.builder().name("title").build();
+                TurSNSiteFieldExt hlField2 = TurSNSiteFieldExt.builder().name("body").build();
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1))
+                                .thenReturn(List.of(hlField1, hlField2));
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+                TurSNConfig config = new TurSNConfig();
+                config.setHlEnabled(true);
+                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", config,
+                                parameters, Locale.US, URI.create("http://localhost/search"));
+
+                SolrQuery query = new SolrQuery();
+                List<TurSNSiteFieldExt> result = builder().prepareQueryHL(site, query, context);
+
+                assertThat(result).hasSize(2);
+                assertThat(query.get(HighlightParams.FIELDS)).isEqualTo("title,body");
+                assertThat(query.get(HighlightParams.SIMPLE_PRE)).isEqualTo("<b>");
+                assertThat(query.get(HighlightParams.SIMPLE_POST)).isEqualTo("</b>");
+        }
+
+        @Test
+        void testPrepareQueryFacetWithNullItemsPerFacetDoesNotSetFacet() {
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(null);
+
+                TurSNSiteFieldExt facet = TurSNSiteFieldExt.builder()
+                                .name("category")
+                                .facet(1)
+                                .enabled(1)
+                                .build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(facet));
+
+                SolrQuery query = new SolrQuery();
+                List<TurSNSiteFieldExt> result = builder().prepareQueryFacet(site, query,
+                                TurSNFilterParams.builder().build());
+
+                // itemsPerFacet is null so wasFacetConfigured returns false
+                assertThat(query.get("facet")).isNull();
+        }
+
+        @Test
+        void testPrepareSolrQueryWithNonExactMatchQuotedQuery() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setExactMatch(1);
+                site.setExactMatchField("title_exact");
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                // Non-quoted query should NOT trigger exact match
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("hello world");
+                searchParams.setRows(10);
+                TurSEParameters parameters = new TurSEParameters(searchParams, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(parameters, new TurSNSitePostParamsBean()), site,
+                                parameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getQuery()).isEqualTo("hello world");
+        }
+
+        @Test
+        void testGetFqFieldsHandlesValuesWithoutColons() {
+                TurSNFilterParams params = TurSNFilterParams.builder()
+                                .defaultValues(List.of("nocolon"))
+                                .build();
+
+                List<String> keys = builder().getFqFields(params);
+                // No colon means getKeyValueFromColon returns empty Optional -> null key
+                assertThat(keys).hasSize(1);
+        }
+
+        @Test
+        void testPrepareSolrQueryWithPositiveRowsPerPageSetsRows() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(25);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("test");
+                searchParams.setRows(-1);
+                TurSEParameters parameters = new TurSEParameters(searchParams, new TurSNSitePostParamsBean());
+
+                builder().prepareSolrQuery(
+                                contextFrom(parameters, new TurSNSitePostParamsBean()), site,
+                                parameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(parameters.getRows()).isEqualTo(25);
+        }
+
+        @Test
+        void testPrepareSolrQueryWithAndFilterQueries() {
+                TurSNSite site = new TurSNSite();
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                TurSNSiteFieldExt categoryField = TurSNSiteFieldExt.builder()
+                                .name("category")
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .build();
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(categoryField));
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabledAndType(site, 1, 1,
+                                com.viglet.turing.commons.se.field.TurSEFieldType.DATE))
+                                .thenReturn(Collections.emptyList());
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("query");
+                params.setRows(10);
+                params.setFq(List.of("category:books"));
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getFilterQueries()).isNotEmpty();
+                assertThat(query.getFilterQueries()[0]).contains("category:\"books\"");
+        }
+
+        // --- buildFilterQueryByOperator (via reflection) ---
+
+        @Test
+        void testBuildFilterQueryByOperatorBetween() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
+                                "10", "100");
+                assertThat(result).isEqualTo("price:[10 TO 100]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorBetweenWithNullStart() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
+                                null, "100");
+                assertThat(result).isEqualTo("price:[* TO 100]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorBetweenWithNullEnd() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
+                                "10", null);
+                assertThat(result).isEqualTo("price:[10 TO *]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorEqual() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "status",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
+                                "active", null);
+                assertThat(result).isEqualTo("status:active");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorEqualUsesEndWhenStartNull() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "status",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
+                                null, "inactive");
+                assertThat(result).isEqualTo("status:inactive");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorEqualBothNullUsesWildcard() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "status",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
+                                null, null);
+                assertThat(result).isEqualTo("status:*");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorGreaterThan() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN,
+                                "50", null);
+                assertThat(result).isEqualTo("price:[50 TO *]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorGreaterThanWithNullStart() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN,
+                                null, null);
+                assertThat(result).isEqualTo("price:[* TO *]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorLessThan() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.LESS_THAN,
+                                null, "100");
+                assertThat(result).isEqualTo("price:[* TO 100]");
+        }
+
+        @Test
+        void testBuildFilterQueryByOperatorLessThanWithNullEnd() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "buildFilterQueryByOperator", String.class,
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
+                                String.class, String.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price",
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.LESS_THAN,
+                                null, null);
+                assertThat(result).isEqualTo("price:[* TO *]");
+        }
+
+        // --- escapeLocalParamValue (via reflection) ---
+
+        @Test
+        void testEscapeLocalParamValueEscapesBackslashAndQuote() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "escapeLocalParamValue", String.class);
+                method.setAccessible(true);
+
+                assertThat((String) method.invoke(null, "normal")).isEqualTo("normal");
+                assertThat((String) method.invoke(null, "it's")).isEqualTo("it\\'s");
+                assertThat((String) method.invoke(null, "back\\slash")).isEqualTo("back\\\\slash");
+                assertThat((String) method.invoke(null, "both\\and'quote")).isEqualTo("both\\\\and\\'quote");
+        }
+
+        // --- addDoubleQuotesToValue (via reflection) ---
+
+        @Test
+        void testAddDoubleQuotesToValueWithKeyValue() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "addDoubleQuotesToValue", String.class);
+                method.setAccessible(true);
+
+                assertThat((String) method.invoke(null, "category:books")).isEqualTo("category:\"books\"");
+        }
+
+        @Test
+        void testAddDoubleQuotesToValueWithoutColon() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "addDoubleQuotesToValue", String.class);
+                method.setAccessible(true);
+
+                assertThat((String) method.invoke(null, "plainvalue")).isEqualTo("\"plainvalue\"");
+        }
+
+        // --- queryWithoutExpression / withoutExpression (via reflection) ---
+
+        @Test
+        void testWithoutExpression() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "withoutExpression", String.class);
+                method.setAccessible(true);
+
+                assertThat((boolean) method.invoke(null, "simple")).isTrue();
+                assertThat((boolean) method.invoke(null, "[1 TO 10]")).isFalse();
+                assertThat((boolean) method.invoke(null, "(nested)")).isFalse();
+                assertThat((boolean) method.invoke(null, "wild*")).isFalse();
+                assertThat((boolean) method.invoke(null, "normal text")).isTrue();
+        }
+
+        @Test
+        void testQueryWithoutExpression() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "queryWithoutExpression", String.class);
+                method.setAccessible(true);
+
+                assertThat((boolean) method.invoke(null, "field:value")).isTrue();
+                assertThat((boolean) method.invoke(null, "(field:value)")).isFalse();
+                assertThat((boolean) method.invoke(null, "field:[1 TO 10]")).isFalse();
+                assertThat((boolean) method.invoke(null, "field:wild*")).isFalse();
+        }
+
+        // --- betweenSpaces (via reflection) ---
+
+        @Test
+        void testBetweenSpaces() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "betweenSpaces", String.class);
+                method.setAccessible(true);
+
+                assertThat((String) method.invoke(null, "AND")).isEqualTo(" AND ");
+                assertThat((String) method.invoke(null, "OR")).isEqualTo(" OR ");
+        }
+
+        // --- getCustomFacetLocalParams (via reflection) ---
+
+        @Test
+        void testGetCustomFacetLocalParamsWithExclude() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "getCustomFacetLocalParams", String.class, String.class, boolean.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price_range", "0-100", true);
+                assertThat(result).contains("key='price_range::0-100'");
+                assertThat(result).contains("ex=_all_");
+        }
+
+        @Test
+        void testGetCustomFacetLocalParamsWithoutExclude() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "getCustomFacetLocalParams", String.class, String.class, boolean.class);
+                method.setAccessible(true);
+
+                String result = (String) method.invoke(null, "price_range", "0-100", false);
+                assertThat(result).contains("key='price_range::0-100'");
+                assertThat(result).doesNotContain("ex=_all_");
+        }
+
+        // --- isFacetTypeDefault (via reflection) ---
+
+        @Test
+        void testIsFacetTypeDefault() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "isFacetTypeDefault", TurSNSiteFacetFieldEnum.class);
+                method.setAccessible(true);
+
+                assertThat((boolean) method.invoke(null, TurSNSiteFacetFieldEnum.DEFAULT)).isTrue();
+                assertThat((boolean) method.invoke(null, (Object) null)).isTrue();
+                assertThat((boolean) method.invoke(null, TurSNSiteFacetFieldEnum.AND)).isFalse();
+                assertThat((boolean) method.invoke(null, TurSNSiteFacetFieldEnum.OR)).isFalse();
+        }
+
+        // --- operatorIsNotEmpty (via reflection) ---
+
+        @Test
+        void testOperatorIsNotEmpty() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "operatorIsNotEmpty", TurSNFilterQueryOperator.class);
+                method.setAccessible(true);
+
+                assertThat((boolean) method.invoke(null, TurSNFilterQueryOperator.AND)).isTrue();
+                assertThat((boolean) method.invoke(null, TurSNFilterQueryOperator.OR)).isTrue();
+                assertThat((boolean) method.invoke(null, TurSNFilterQueryOperator.NONE)).isFalse();
+                assertThat((boolean) method.invoke(null, (Object) null)).isFalse();
+        }
+
+        // --- getFacetTypeFromSite / getFacetItemTypeFromSite (via reflection) ---
+
+        @Test
+        void testGetFacetTypeFromSite() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "getFacetTypeFromSite", TurSNSite.class);
+                method.setAccessible(true);
+
+                TurSNSite orSite = new TurSNSite();
+                orSite.setFacetType(TurSNSiteFacetFieldEnum.OR);
+                assertThat(method.invoke(null, orSite)).isEqualTo(TurSNSiteFacetFieldEnum.OR);
+
+                TurSNSite andSite = new TurSNSite();
+                andSite.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                assertThat(method.invoke(null, andSite)).isEqualTo(TurSNSiteFacetFieldEnum.AND);
+
+                TurSNSite defaultSite = new TurSNSite();
+                defaultSite.setFacetType(TurSNSiteFacetFieldEnum.DEFAULT);
+                assertThat(method.invoke(null, defaultSite)).isEqualTo(TurSNSiteFacetFieldEnum.AND);
+        }
+
+        @Test
+        void testGetFacetItemTypeFromSite() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "getFacetItemTypeFromSite", TurSNSite.class);
+                method.setAccessible(true);
+
+                TurSNSite orSite = new TurSNSite();
+                orSite.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
+                assertThat(method.invoke(null, orSite)).isEqualTo(TurSNSiteFacetFieldEnum.OR);
+
+                TurSNSite andSite = new TurSNSite();
+                andSite.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+                assertThat(method.invoke(null, andSite)).isEqualTo(TurSNSiteFacetFieldEnum.AND);
+
+                TurSNSite defaultSite = new TurSNSite();
+                defaultSite.setFacetItemType(TurSNSiteFacetFieldEnum.DEFAULT);
+                assertThat(method.invoke(null, defaultSite)).isEqualTo(TurSNSiteFacetFieldEnum.AND);
+        }
+
+        // --- facetSortIsEmptyOrCount (via reflection) ---
+
+        @Test
+        void testFacetSortIsEmptyOrCount() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "facetSortIsEmptyOrCount", TurSNSite.class);
+                method.setAccessible(true);
+
+                TurSNSite nullSort = new TurSNSite();
+                nullSort.setFacetSort(null);
+                assertThat((boolean) method.invoke(null, nullSort)).isTrue();
+
+                TurSNSite countSort = new TurSNSite();
+                countSort.setFacetSort(com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum.COUNT);
+                assertThat((boolean) method.invoke(null, countSort)).isTrue();
+
+                TurSNSite alphaSort = new TurSNSite();
+                alphaSort.setFacetSort(com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum.ALPHABETICAL);
+                assertThat((boolean) method.invoke(null, alphaSort)).isFalse();
+        }
+
+        // --- isNerOrThesaurus (via reflection) ---
+
+        @Test
+        void testIsNerOrThesaurus() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "isNerOrThesaurus", TurSNFieldType.class);
+                method.setAccessible(true);
+
+                assertThat((boolean) method.invoke(null, TurSNFieldType.NER)).isTrue();
+                assertThat((boolean) method.invoke(null, TurSNFieldType.THESAURUS)).isTrue();
+                assertThat((boolean) method.invoke(null, TurSNFieldType.SE)).isFalse();
+        }
+
+        // --- isDateRangeFacet (via reflection) ---
+
+        @Test
+        void testIsDateRangeFacet() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "isDateRangeFacet", TurSNSiteFieldExt.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt dateRangeField = TurSNSiteFieldExt.builder()
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.DATE)
+                                .facetRange(TurSNSiteFacetRangeEnum.MONTH)
+                                .build();
+                assertThat((boolean) method.invoke(null, dateRangeField)).isTrue();
+
+                TurSNSiteFieldExt dateDisabledField = TurSNSiteFieldExt.builder()
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.DATE)
+                                .facetRange(TurSNSiteFacetRangeEnum.DISABLED)
+                                .build();
+                assertThat((boolean) method.invoke(null, dateDisabledField)).isFalse();
+
+                TurSNSiteFieldExt dateNullRange = TurSNSiteFieldExt.builder()
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.DATE)
+                                .facetRange(null)
+                                .build();
+                assertThat((boolean) method.invoke(null, dateNullRange)).isFalse();
+
+                TurSNSiteFieldExt stringField = TurSNSiteFieldExt.builder()
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .facetRange(TurSNSiteFacetRangeEnum.MONTH)
+                                .build();
+                assertThat((boolean) method.invoke(null, stringField)).isFalse();
+        }
+
+        // --- isFacetEnabled (via reflection) ---
+
+        @Test
+        void testIsFacetEnabled() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "isFacetEnabled", TurSNSiteFieldExt.class);
+                method.setAccessible(true);
+
+                TurSNSiteFieldExt enabled = TurSNSiteFieldExt.builder().facet(1).build();
+                assertThat((boolean) method.invoke(null, enabled)).isTrue();
+
+                TurSNSiteFieldExt disabled = TurSNSiteFieldExt.builder().facet(0).build();
+                assertThat((boolean) method.invoke(null, disabled)).isFalse();
+        }
+
+        // --- getFaceTypeFromOperator (via reflection) ---
+
+        @Test
+        void testGetFaceTypeFromOperator() throws Exception {
+                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
+                                "getFaceTypeFromOperator", TurSNFilterQueryOperator.class);
+                method.setAccessible(true);
+
+                assertThat(method.invoke(null, TurSNFilterQueryOperator.OR))
+                                .isEqualTo(TurSNSiteFacetFieldEnum.OR);
+                assertThat(method.invoke(null, TurSNFilterQueryOperator.AND))
+                                .isEqualTo(TurSNSiteFacetFieldEnum.AND);
         }
 }

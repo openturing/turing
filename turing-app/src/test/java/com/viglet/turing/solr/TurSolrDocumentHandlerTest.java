@@ -390,6 +390,271 @@ class TurSolrDocumentHandlerTest {
         }
 
         @Test
+        void testDeIndexingCallsDeleteById() {
+                turSolrDocumentHandler.deIndexing(turSolrInstance, "doc-123");
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                assertThat(updateRequest).isNotNull();
+                assertThat(updateRequest.getDeleteById()).contains("doc-123");
+        }
+
+        @Test
+        void testDeIndexingByTypeCallsDeleteByQuery() {
+                turSolrDocumentHandler.deIndexingByType(turSolrInstance, "article");
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                assertThat(updateRequest).isNotNull();
+                // The deleteByQuery sets query "type:article"
+                assertThat(updateRequest.getDeleteQuery()).contains("type:article");
+        }
+
+        @Test
+        void testCurrencyNullValueIsSkipped() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", null);
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
+        }
+
+        @Test
+        void testCurrencyMultiValuedJsonArray() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("prices")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(1)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("prices", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("prices", new org.json.JSONArray(List.of("100.00,USD", "200.00,EUR")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValues("prices")).containsExactly("100.00,USD", "200.00,EUR");
+        }
+
+        @Test
+        void testCurrencySingleValuedJsonArrayUsesFirst() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", new org.json.JSONArray(List.of("50.00,GBP", "75.00,EUR")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isEqualTo("50.00,GBP");
+        }
+
+        @Test
+        void testCurrencyEmptyJsonArrayIsSkipped() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", new org.json.JSONArray());
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
+        }
+
+        @Test
+        void testCurrencyMultiValuedArrayList() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("prices")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(1)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("prices", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("prices", new ArrayList<>(List.of("100.00,USD", "200.00,EUR")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValues("prices")).containsExactly("100.00,USD", "200.00,EUR");
+        }
+
+        @Test
+        void testCurrencySingleValuedArrayListUsesFirst() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", new ArrayList<>(List.of("50.00,GBP", "75.00,EUR")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isEqualTo("50.00,GBP");
+        }
+
+        @Test
+        void testCurrencyEmptyArrayListIsSkipped() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", new ArrayList<>());
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
+        }
+
+        @Test
+        void testDecimalFieldNonCurrencyUsesNormalizer() {
+                TurSNSiteField floatField = TurSNSiteField.builder()
+                                .name("weight")
+                                .type(TurSEFieldType.FLOAT)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("weight", floatField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.FLOAT)).thenReturn(true);
+                when(turDecimalFieldNormalizer.normalizeNumericValue(
+                                org.mockito.ArgumentMatchers.eq(TurSEFieldType.FLOAT), org.mockito.ArgumentMatchers.any()))
+                                .thenReturn(java.util.Optional.of(3.14));
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("weight", "3,14");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("weight")).isEqualTo(3.14);
+        }
+
+        @Test
+        void testDecimalFieldInvalidValueIsSkipped() {
+                TurSNSiteField doubleField = TurSNSiteField.builder()
+                                .name("weight")
+                                .type(TurSEFieldType.DOUBLE)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("weight", doubleField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.DOUBLE)).thenReturn(true);
+                when(turDecimalFieldNormalizer.normalizeNumericValue(
+                                org.mockito.ArgumentMatchers.eq(TurSEFieldType.DOUBLE), org.mockito.ArgumentMatchers.any()))
+                                .thenReturn(java.util.Optional.empty());
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("weight", "not-a-number");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("weight")).isNull();
+        }
+
+        @Test
+        void testCurrencyWithCommaDecimalIsNormalized() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                // "19,92,BRL" - comma decimal in amount part should be normalized to dot
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", "19,92,BRL");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isEqualTo("19.92,BRL");
+        }
+
+        @Test
         void testCurrencyInvalidCodeLengthIsInvalid() {
                 TurSNSiteField currencyField = TurSNSiteField.builder()
                                 .name("price")

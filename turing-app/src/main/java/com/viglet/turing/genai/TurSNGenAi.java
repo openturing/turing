@@ -170,7 +170,9 @@ public class TurSNGenAi {
     private Map<String, Object> setMetadata(TurSNJobItem jobItem) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put(SOURCE_ID, jobItem.getId());
-        metadata.put(LOCALE, jobItem.getLocale().toString());
+        if (jobItem.getLocale() != null) {
+            metadata.put(LOCALE, jobItem.getLocale().toString());
+        }
         metadata.put(SOURCE_APPS, jobItem.getProviderName());
         metadata.put(SITES, jobItem.getSiteNames().getFirst());
         if (jobItem.getAttributes().containsKey(MODIFICATION_DATE)) {

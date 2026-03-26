@@ -283,4 +283,99 @@ class TurLuceneResultProcessorTest {
 
         assertEquals("", result.getFields().get("empty"));
     }
+
+    // ---- populateResultsParameters tests ----
+
+    @Test
+    void populateResultsParametersShouldSetAllFields() throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "populateResultsParameters",
+                com.viglet.turing.commons.se.TurSEParameters.class,
+                com.viglet.turing.se.result.TurSEResults.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(20);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(3);
+        org.mockito.Mockito.when(params.getSort()).thenReturn("relevance");
+        org.mockito.Mockito.when(params.getQuery()).thenReturn("test query");
+
+        com.viglet.turing.se.result.TurSEResults results =
+                com.viglet.turing.se.result.TurSEResults.builder().build();
+
+        method.invoke(processor, params, results);
+
+        assertEquals(20, results.getLimit());
+        assertEquals(3, results.getCurrentPage());
+        assertEquals("relevance", results.getSort());
+        assertEquals("test query", results.getQueryString());
+    }
+
+    // ---- firstRow tests ----
+
+    @Test
+    void firstRowShouldReturnZeroForPageOne() throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(1);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
+
+        int result = (int) method.invoke(processor, params);
+
+        assertEquals(0, result);
+    }
+
+    @Test
+    void firstRowShouldCalculateOffsetCorrectly() throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(3);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
+
+        int result = (int) method.invoke(processor, params);
+
+        assertEquals(20, result);
+    }
+
+    @Test
+    void firstRowShouldReturnZeroForPageZero() throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(0);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
+
+        int result = (int) method.invoke(processor, params);
+
+        // (0-1)*10 = -10 -> Math.max(0, -10) = 0
+        assertEquals(0, result);
+    }
+
+    @Test
+    void firstRowShouldReturnZeroForNegativePage() throws Exception {
+        java.lang.reflect.Method method = TurLuceneResultProcessor.class.getDeclaredMethod(
+                "firstRow", com.viglet.turing.commons.se.TurSEParameters.class);
+        method.setAccessible(true);
+
+        com.viglet.turing.commons.se.TurSEParameters params =
+                org.mockito.Mockito.mock(com.viglet.turing.commons.se.TurSEParameters.class);
+        org.mockito.Mockito.when(params.getCurrentPage()).thenReturn(-1);
+        org.mockito.Mockito.when(params.getRows()).thenReturn(10);
+
+        int result = (int) method.invoke(processor, params);
+
+        assertEquals(0, result);
+    }
 }

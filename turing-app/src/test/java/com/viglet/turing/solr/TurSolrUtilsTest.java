@@ -213,6 +213,96 @@ class TurSolrUtilsTest {
         assertTrue(TurSolrUtils.SCHEMA_API_URL.contains("%s"));
     }
 
+    // ---- isCreateCopyFieldByCore with non-TEXT types ----
+
+    @ParameterizedTest
+    @EnumSource(value = TurSEFieldType.class, names = {"INT", "BOOL", "DATE", "LONG", "FLOAT", "DOUBLE", "CURRENCY", "ARRAY"})
+    void isDeleteCopyFieldByCoreShouldReturnFalseForNonTextTypes(TurSEFieldType type) {
+        assertFalse(TurSolrUtils.isDeleteCopyFieldByCore(null, null, "field", type));
+    }
+
+    // ---- firstRowPositionFromCurrentPage edge cases ----
+
+    @Test
+    void firstRowPositionPage0Rows10ShouldBeNegative() {
+        TurSEParameters params = createParams(0, 10);
+        assertEquals(-10, TurSolrUtils.firstRowPositionFromCurrentPage(params));
+    }
+
+    @Test
+    void firstRowPositionLargePageShouldCalculate() {
+        TurSEParameters params = createParams(100, 25);
+        assertEquals(2475, TurSolrUtils.firstRowPositionFromCurrentPage(params));
+    }
+
+    // ---- lastRowPositionFromCurrentPage edge cases ----
+
+    @Test
+    void lastRowPositionPage0Rows10ShouldBeZero() {
+        TurSEParameters params = createParams(0, 10);
+        assertEquals(0, TurSolrUtils.lastRowPositionFromCurrentPage(params));
+    }
+
+    // ---- createTurSEResultFromDocument edge cases ----
+
+    @Test
+    void createTurSEResultFromDocumentWithNullFieldValue() {
+        SolrDocument doc = new SolrDocument();
+        doc.addField("id", "1");
+        doc.addField("nullField", null);
+        TurSEResult result = TurSolrUtils.createTurSEResultFromDocument(doc);
+        assertNotNull(result);
+        assertTrue(result.getFields().containsKey("nullField"));
+    }
+
+    @Test
+    void createTurSEResultFromDocumentWithNumericFields() {
+        SolrDocument doc = new SolrDocument();
+        doc.addField("intVal", 42);
+        doc.addField("floatVal", 3.14f);
+        doc.addField("longVal", 999999L);
+        TurSEResult result = TurSolrUtils.createTurSEResultFromDocument(doc);
+        assertEquals(42, result.getFields().get("intVal"));
+        assertEquals(3.14f, result.getFields().get("floatVal"));
+        assertEquals(999999L, result.getFields().get("longVal"));
+    }
+
+    // ---- getValueFromQuery edge cases ----
+
+    @Test
+    void getValueFromQueryWithWhitespace() {
+        assertEquals("  spaces  ", TurSolrUtils.getValueFromQuery("field:  spaces  "));
+    }
+
+    @Test
+    void getValueFromQueryWithSpecialCharacters() {
+        assertEquals("[1 TO 100]", TurSolrUtils.getValueFromQuery("price:[1 TO 100]"));
+    }
+
+    // ---- getSolrFieldType individual edge cases ----
+
+    @Test
+    void getSolrFieldTypeForCurrencyShouldReturnCurrency() {
+        assertEquals("currency", TurSolrUtils.getSolrFieldType(TurSEFieldType.CURRENCY));
+    }
+
+    @Test
+    void getSolrFieldTypeForDoubleShouldReturnPdouble() {
+        assertEquals("pdouble", TurSolrUtils.getSolrFieldType(TurSEFieldType.DOUBLE));
+    }
+
+    // ---- isCreateCopyFieldByCore / isDeleteCopyFieldByCore for TEXT with _str suffix ----
+
+    @Test
+    void isCreateCopyFieldByCoreShouldReturnFalseForFieldEndingWithStr() {
+        assertFalse(TurSolrUtils.isCreateCopyFieldByCore(null, null, "myField_str", TurSEFieldType.TEXT));
+    }
+
+    @Test
+    void isDeleteCopyFieldByCoreShouldReturnFalseForFieldEndingWithStr() {
+        assertFalse(TurSolrUtils.isDeleteCopyFieldByCore(null, null, "myField_str", TurSEFieldType.TEXT));
+    }
+
     // ---- Helper ----
 
     private TurSEParameters createParams(int page, int rows) {

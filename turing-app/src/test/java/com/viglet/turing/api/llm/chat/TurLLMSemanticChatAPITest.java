@@ -154,4 +154,62 @@ class TurLLMSemanticChatAPITest {
 
         assertThat(username).isEqualTo("anonymous");
     }
+
+    @Test
+    void shouldReturnUsernameWhenAuthenticated() throws Exception {
+        var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "testuser", "password");
+        var context = org.mockito.Mockito.mock(org.springframework.security.core.context.SecurityContext.class);
+        org.mockito.Mockito.when(context.getAuthentication()).thenReturn(auth);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+
+        Method method = TurLLMSemanticChatAPI.class.getDeclaredMethod("resolveUsername");
+        method.setAccessible(true);
+
+        String username = (String) method.invoke(api);
+        assertThat(username).isEqualTo("testuser");
+
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    // --- chat() validation tests ---
+
+    @Test
+    void chatShouldThrowWhenInstanceNotFound() {
+        when(turLLMInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+
+        var request = new TurLLMSemanticChatAPI.ChatRequest(
+                List.of(new TurLLMSemanticChatAPI.ChatMessageItem("user", "Hello")));
+
+        assertThatThrownBy(() -> api.chat("missing", request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("LLM instance not found");
+    }
+
+    // --- Record equality ---
+
+    @Test
+    void chatRequestShouldSupportEquality() {
+        var items = List.of(new TurLLMSemanticChatAPI.ChatMessageItem("user", "test"));
+        var r1 = new TurLLMSemanticChatAPI.ChatRequest(items);
+        var r2 = new TurLLMSemanticChatAPI.ChatRequest(items);
+
+        assertThat(r1).isEqualTo(r2);
+    }
+
+    @Test
+    void chatResponseShouldSupportEquality() {
+        var r1 = new TurLLMSemanticChatAPI.ChatResponse("assistant", "reply");
+        var r2 = new TurLLMSemanticChatAPI.ChatResponse("assistant", "reply");
+
+        assertThat(r1).isEqualTo(r2);
+    }
+
+    @Test
+    void chatMessageItemShouldSupportToString() {
+        var item = new TurLLMSemanticChatAPI.ChatMessageItem("user", "hello");
+
+        assertThat(item.toString()).contains("user");
+        assertThat(item.toString()).contains("hello");
+    }
 }

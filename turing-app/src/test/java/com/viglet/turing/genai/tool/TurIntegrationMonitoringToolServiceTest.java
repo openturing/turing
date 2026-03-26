@@ -321,4 +321,394 @@ class TurIntegrationMonitoringToolServiceTest {
 
         assertThat(method.invoke(service, map)).isEqualTo(3);
     }
+
+    @Test
+    void countMapEntriesShouldReturnZeroForEmptyObject() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("countMapEntries", JSONObject.class);
+        method.setAccessible(true);
+
+        assertThat(method.invoke(service, new JSONObject())).isEqualTo(0);
+    }
+
+    @Test
+    void getIndexingBySourceShouldReturnNotFoundForMissingIntegration() {
+        when(integrationRepository.findById("missing")).thenReturn(Optional.empty());
+        String result = service.getIndexingBySource("missing", "aem");
+        assertThat(result).contains("Integration not found");
+    }
+
+    @Test
+    void getIndexingBySourceShouldReturnDisabledMessage() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(0);
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.getIndexingBySource("int-1", "aem");
+        assertThat(result).contains("disabled");
+    }
+
+    @Test
+    void searchIndexingContentShouldReturnNotFoundForMissingIntegration() {
+        when(integrationRepository.findById("missing")).thenReturn(Optional.empty());
+        String result = service.searchIndexingContent("missing", null, null, null, null, null, null, null, null, 10, "desc");
+        assertThat(result).contains("Integration not found");
+    }
+
+    @Test
+    void searchIndexingContentShouldReturnDisabledMessage() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(0);
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.searchIndexingContent("int-1", null, null, null, null, null, null, null, null, 10, "desc");
+        assertThat(result).contains("disabled");
+    }
+
+    @Test
+    void getIndexingStatsShouldReturnNotFoundForMissingIntegration() {
+        when(integrationRepository.findById("missing")).thenReturn(Optional.empty());
+        String result = service.getIndexingStats("missing", null);
+        assertThat(result).contains("Integration not found");
+    }
+
+    @Test
+    void getIndexingStatsShouldReturnDisabledMessage() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(0);
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.getIndexingStats("int-1", "aem");
+        assertThat(result).contains("disabled");
+    }
+
+    @Test
+    void validateIndexingConsistencyShouldReturnNotFoundForMissingIntegration() {
+        when(integrationRepository.findById("missing")).thenReturn(Optional.empty());
+        String result = service.validateIndexingConsistency("missing", "connector");
+        assertThat(result).contains("Integration not found");
+    }
+
+    @Test
+    void validateIndexingConsistencyShouldReturnDisabledMessage() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(0);
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.validateIndexingConsistency("int-1", "connector");
+        assertThat(result).contains("disabled");
+    }
+
+    @Test
+    void getUnprocessedContentShouldReturnNotFoundForMissingIntegration() {
+        when(integrationRepository.findById("missing")).thenReturn(Optional.empty());
+        String result = service.getUnprocessedContent("missing", "aem");
+        assertThat(result).contains("Integration not found");
+    }
+
+    @Test
+    void getUnprocessedContentShouldReturnDisabledMessage() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(0);
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.getUnprocessedContent("int-1", "aem");
+        assertThat(result).contains("disabled");
+    }
+
+    @Test
+    void getIndexingOverviewShouldReturnConnectionErrorForBadEndpoint() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Bad Connector");
+        instance.setEnabled(1);
+        instance.setEndpoint("http://invalid-host-99999:9999");
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.getIndexingOverview("int-1");
+        assertThat(result).contains("Error connecting to integration");
+    }
+
+    @Test
+    void searchIndexingContentShouldReturnConnectionErrorForBadEndpoint() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Bad Connector");
+        instance.setEnabled(1);
+        instance.setEndpoint("http://invalid-host-99999:9999");
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        String result = service.searchIndexingContent("int-1", "obj-1", "aem",
+                "INDEXED", "prod", "en", "site1", "2026-01-01", "2026-12-31", 0, null);
+        assertThat(result).contains("Error connecting to integration");
+    }
+
+    @Test
+    void searchIndexingContentShouldApplyDefaultRowsAndSort() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Bad Connector");
+        instance.setEnabled(1);
+        instance.setEndpoint("http://invalid-host-99999:9999");
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        // rows <= 0 should default to 20, sort blank defaults to "desc"
+        String result = service.searchIndexingContent("int-1", null, null,
+                null, null, null, null, null, null, -1, "");
+        assertThat(result).contains("Error connecting to integration");
+    }
+
+    @Test
+    void formatSearchResponseShouldFormatWithContent() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatSearchResponse", String.class);
+        method.setAccessible(true);
+
+        JSONObject record = new JSONObject();
+        record.put("objectId", "obj-1");
+        record.put("name", "doc-1");
+        record.put("status", "INDEXED");
+
+        JSONObject json = new JSONObject();
+        json.put("totalElements", 1);
+        json.put("totalPages", 1);
+        json.put("page", 0);
+        json.put("sources", new JSONArray().put("aem"));
+        json.put("environments", new JSONArray().put("prod"));
+        json.put("locales", new JSONArray().put("en_US"));
+        json.put("sites", new JSONArray().put("site1"));
+        json.put("content", new JSONArray().put(record));
+
+        String result = (String) method.invoke(service, json.toString());
+        assertThat(result)
+                .contains("1 total entries")
+                .contains("Sources: aem")
+                .contains("Environments: prod")
+                .contains("Locales: en_US")
+                .contains("Sites: site1")
+                .contains("obj-1")
+                .contains("INDEXED");
+    }
+
+    @Test
+    void formatSearchResponseShouldFallbackOnBadJson() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatSearchResponse", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(service, "not json");
+        assertThat(result).contains("Raw response");
+    }
+
+    @Test
+    void formatStatsResponseShouldFallbackOnBadJson() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatStatsResponse", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(service, "not an array");
+        assertThat(result).contains("Raw response");
+    }
+
+    @Test
+    void formatValidationResponseShouldFallbackOnBadJson() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatValidationResponse", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(service, "not json");
+        assertThat(result).contains("Raw response");
+    }
+
+    @Test
+    void formatValidationResponseShouldHandleNullMissingAndExtra() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatValidationResponse", String.class);
+        method.setAccessible(true);
+
+        JSONObject json = new JSONObject();
+        // no "missing" or "extra" keys at all
+        String result = (String) method.invoke(service, json.toString());
+        assertThat(result)
+                .contains("Missing (in DB but not indexed): 0")
+                .contains("Extra (indexed but not in DB): 0")
+                .contains("consistent");
+    }
+
+    @Test
+    void formatValidationResponseShouldTruncateLongLists() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatValidationResponse", String.class);
+        method.setAccessible(true);
+
+        JSONArray ids = new JSONArray();
+        for (int i = 0; i < 25; i++) {
+            ids.put("id-" + i);
+        }
+        JSONObject missing = new JSONObject();
+        missing.put("source1", ids);
+
+        JSONObject json = new JSONObject();
+        json.put("missing", missing);
+        json.put("extra", new JSONObject());
+
+        String result = (String) method.invoke(service, json.toString());
+        assertThat(result).contains("... and 5 more");
+    }
+
+    @Test
+    void formatMonitoringResponseShouldLimitRecordsTo50() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatMonitoringResponse", String.class);
+        method.setAccessible(true);
+
+        JSONArray indexing = new JSONArray();
+        for (int i = 0; i < 55; i++) {
+            JSONObject record = new JSONObject();
+            record.put("objectId", "obj-" + i);
+            indexing.put(record);
+        }
+        JSONObject json = new JSONObject();
+        json.put("indexing", indexing);
+
+        String result = (String) method.invoke(service, json.toString());
+        assertThat(result)
+                .contains("Indexing records: 55")
+                .contains("... and 5 more records");
+    }
+
+    @Test
+    void formatIndexingRecordShouldIncludeSites() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatIndexingRecord", StringBuilder.class, JSONObject.class);
+        method.setAccessible(true);
+
+        JSONObject item = new JSONObject();
+        item.put("objectId", "obj-1");
+        item.put("name", "test");
+        item.put("status", "INDEXED");
+        item.put("source", "aem");
+        item.put("environment", "prod");
+        item.put("locale", "en_US");
+        item.put("transactionId", "tx-1");
+        item.put("checksum", "abc123");
+        item.put("created", "2026-01-01");
+        item.put("modificationDate", "2026-03-01");
+        item.put("sites", new JSONArray().put("site1").put("site2"));
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb, item);
+
+        String result = sb.toString();
+        assertThat(result)
+                .contains("ObjectId: obj-1")
+                .contains("Name: test")
+                .contains("Status: INDEXED")
+                .contains("Source: aem")
+                .contains("Environment: prod")
+                .contains("Locale: en_US")
+                .contains("TransactionId: tx-1")
+                .contains("Checksum: abc123")
+                .contains("Created: 2026-01-01")
+                .contains("Modified: 2026-03-01")
+                .contains("Sites: site1, site2");
+    }
+
+    @Test
+    void appendJsonFieldShouldSkipMissingKeys() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("appendJsonField", StringBuilder.class, String.class,
+                        JSONObject.class, String.class);
+        method.setAccessible(true);
+
+        JSONObject json = new JSONObject();
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb, "Label", json, "missing_key");
+        assertThat(sb).isEmpty();
+    }
+
+    @Test
+    void appendJsonFieldShouldSkipNullValues() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("appendJsonField", StringBuilder.class, String.class,
+                        JSONObject.class, String.class);
+        method.setAccessible(true);
+
+        JSONObject json = new JSONObject();
+        json.put("key", JSONObject.NULL);
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb, "Label", json, "key");
+        assertThat(sb).isEmpty();
+    }
+
+    @Test
+    void appendJsonFieldShouldAppendPresentValue() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("appendJsonField", StringBuilder.class, String.class,
+                        JSONObject.class, String.class);
+        method.setAccessible(true);
+
+        JSONObject json = new JSONObject();
+        json.put("key", "value");
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb, "Label", json, "key");
+        assertThat(sb.toString()).isEqualTo("Label: value\n");
+    }
+
+    @Test
+    void formatStatsResponseShouldFormatMultipleOperations() throws Exception {
+        Method method = TurIntegrationMonitoringToolService.class
+                .getDeclaredMethod("formatStatsResponse", String.class);
+        method.setAccessible(true);
+
+        JSONObject stat1 = new JSONObject();
+        stat1.put("provider", "aem");
+        stat1.put("source", "content");
+        stat1.put("operationType", "FULL_INDEX");
+        stat1.put("startTime", "2026-01-01T00:00:00");
+        stat1.put("endTime", "2026-01-01T01:00:00");
+        stat1.put("documentCount", 1500);
+        stat1.put("documentsPerMinute", 25);
+
+        JSONObject stat2 = new JSONObject();
+        stat2.put("provider", "wp");
+        stat2.put("source", "pages");
+        stat2.put("operationType", "INCREMENTAL");
+
+        JSONArray stats = new JSONArray().put(stat1).put(stat2);
+
+        String result = (String) method.invoke(service, stats.toString());
+        assertThat(result)
+                .contains("2 operation(s)")
+                .contains("Operation 1")
+                .contains("Operation 2")
+                .contains("Provider: aem")
+                .contains("Provider: wp")
+                .contains("Start: 2026-01-01T00:00:00")
+                .contains("End: 2026-01-01T01:00:00")
+                .contains("Docs/min: 25");
+    }
+
+    @Test
+    void getIndexingStatsShouldAppendSourceToPath() {
+        TurIntegrationInstance instance = new TurIntegrationInstance();
+        instance.setTitle("Test");
+        instance.setEnabled(1);
+        instance.setEndpoint("http://invalid-host-99999:9999");
+        when(integrationRepository.findById("int-1")).thenReturn(Optional.of(instance));
+
+        // With source
+        String result = service.getIndexingStats("int-1", "aem-source");
+        assertThat(result).contains("Error connecting to integration");
+
+        // Without source (null)
+        String result2 = service.getIndexingStats("int-1", null);
+        assertThat(result2).contains("Error connecting to integration");
+
+        // Without source (blank)
+        String result3 = service.getIndexingStats("int-1", "");
+        assertThat(result3).contains("Error connecting to integration");
+    }
 }

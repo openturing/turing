@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.properties.TurMinioProperty;
 import com.viglet.turing.service.asset.TurMinioService;
 
 /**
@@ -187,5 +188,255 @@ class TurSystemInfoToolServiceTest {
                 .contains("MinIO")
                 .contains("JVM")
                 .contains("Java:");
+    }
+
+    @Test
+    void getSystemStatusShouldHandleDatabaseDown() throws Exception {
+        when(dataSource.getConnection()).thenThrow(new RuntimeException("Connection refused"));
+        when(turMinioService.isEnabled()).thenReturn(false);
+
+        String result = service.getSystemStatus();
+        assertThat(result)
+                .contains("Viglet Turing ES")
+                .contains("DOWN");
+    }
+
+    @Test
+    void getDatabaseStatusShouldShowReadOnly() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metadata);
+        when(metadata.getDatabaseProductName()).thenReturn("PostgreSQL");
+        when(metadata.getDatabaseProductVersion()).thenReturn("16.0");
+        when(metadata.getDriverName()).thenReturn("PostgreSQL JDBC Driver");
+        when(metadata.getDriverVersion()).thenReturn("42.7.0");
+        when(metadata.getURL()).thenReturn("jdbc:postgresql://localhost/turing");
+        when(metadata.getUserName()).thenReturn("turing");
+        when(metadata.getMaxConnections()).thenReturn(100);
+        when(connection.isReadOnly()).thenReturn(true);
+        when(connection.getAutoCommit()).thenReturn(false);
+
+        String result = service.getDatabaseStatus();
+        assertThat(result)
+                .contains("Status: UP")
+                .contains("PostgreSQL")
+                .contains("Read-only: yes")
+                .contains("Auto-commit: no")
+                .contains("Max Connections: 100");
+    }
+
+    @Test
+    void getMemoryDetailsShouldContainPhysicalMemory() {
+        String result = service.getMemoryDetails();
+        // On Windows/Linux with com.sun.management.OperatingSystemMXBean available
+        // the output should contain physical memory info
+        assertThat(result)
+                .contains("Memory Details")
+                .contains("JVM Heap")
+                .contains("Max Heap:");
+    }
+
+    @Test
+    void getExternalServicesStatusShouldShowMongoEnabled() {
+        TurSystemInfoToolService enabledMongoService = new TurSystemInfoToolService(
+                dataSource, turMinioService, turConfigProperties,
+                true, "mongodb://invalid-host-99999:99999");
+        when(turMinioService.isEnabled()).thenReturn(false);
+
+        String result = enabledMongoService.getExternalServicesStatus();
+        assertThat(result)
+                .contains("MongoDB")
+                .contains("DOWN");
+    }
+
+    @Test
+    void getExternalServicesStatusShouldShowMinioEnabled() {
+        TurMinioProperty minioProps = mock(TurMinioProperty.class);
+        when(minioProps.getEndpoint()).thenReturn("http://invalid-host-99999:9000");
+        when(turMinioService.isEnabled()).thenReturn(true);
+        when(turConfigProperties.getMinio()).thenReturn(minioProps);
+
+        String result = service.getExternalServicesStatus();
+        assertThat(result)
+                .contains("MinIO")
+                .contains("DOWN");
+    }
+
+    @Test
+    void getExternalServicesStatusShouldHandleNullMinioProps() {
+        when(turMinioService.isEnabled()).thenReturn(true);
+        when(turConfigProperties.getMinio()).thenReturn(null);
+
+        // This will try to build a URL with "" + "/minio/health/cluster" which should error
+        String result = service.getExternalServicesStatus();
+        assertThat(result)
+                .contains("MinIO")
+                .contains("DOWN");
+    }
+
+    @Test
+    void appendAppVersionShouldShowDevWhenNoVersion() throws Exception {
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendAppVersion", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        // In test context, getImplementationVersion() returns null
+        assertThat(sb.toString()).contains("App Version: dev");
+    }
+
+    @Test
+    void appendDiskStatusShouldContainDiskInfo() throws Exception {
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendDiskStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("Disk")
+                .contains("Used:")
+                .contains("Free:");
+    }
+
+    @Test
+    void appendJvmInfoShouldContainJavaDetails() throws Exception {
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendJvmInfo", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("JVM")
+                .contains("Java:")
+                .contains("VM:")
+                .contains("OS:")
+                .contains("Processors:");
+    }
+
+    @Test
+    void appendMemoryStatusShouldContainHeapInfo() throws Exception {
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendMemoryStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("JVM Memory")
+                .contains("Heap:");
+    }
+
+    @Test
+    void appendMongoDbStatusShouldShowDisabled() throws Exception {
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendMongoDbStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("MongoDB")
+                .contains("DISABLED");
+    }
+
+    @Test
+    void appendMongoDbStatusShouldShowDownWhenEnabled() throws Exception {
+        TurSystemInfoToolService enabledMongoService = new TurSystemInfoToolService(
+                dataSource, turMinioService, turConfigProperties,
+                true, "mongodb://invalid-host-99999:99999");
+
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendMongoDbStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(enabledMongoService, sb);
+
+        assertThat(sb.toString())
+                .contains("MongoDB")
+                .contains("DOWN");
+    }
+
+    @Test
+    void appendMinioStatusShouldShowDisabled() throws Exception {
+        when(turMinioService.isEnabled()).thenReturn(false);
+
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendMinioStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("MinIO")
+                .contains("DISABLED");
+    }
+
+    @Test
+    void appendMinioStatusShouldShowDownWhenEnabledButUnreachable() throws Exception {
+        TurMinioProperty minioProps = mock(TurMinioProperty.class);
+        when(minioProps.getEndpoint()).thenReturn("http://invalid-host-99999:9000");
+        when(turMinioService.isEnabled()).thenReturn(true);
+        when(turConfigProperties.getMinio()).thenReturn(minioProps);
+
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendMinioStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("MinIO")
+                .contains("DOWN");
+    }
+
+    @Test
+    void appendDatabaseStatusShouldShowUpWhenConnected() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metadata);
+        when(metadata.getDatabaseProductName()).thenReturn("H2");
+        when(metadata.getDatabaseProductVersion()).thenReturn("2.2");
+
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendDatabaseStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("Database")
+                .contains("UP")
+                .contains("H2 2.2");
+    }
+
+    @Test
+    void appendDatabaseStatusShouldShowDownOnError() throws Exception {
+        when(dataSource.getConnection()).thenThrow(new RuntimeException("Connection failed"));
+
+        java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
+                "appendDatabaseStatus", StringBuilder.class);
+        method.setAccessible(true);
+
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb);
+
+        assertThat(sb.toString())
+                .contains("Database")
+                .contains("DOWN")
+                .contains("Connection failed");
     }
 }
