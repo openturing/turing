@@ -6,6 +6,11 @@
       "description": "Enable or disable AI features including generative AI and semantic search capabilities."
     },
     {
+      "name": "turing.ai.crypto.key",
+      "type": "java.lang.String",
+      "description": "AES/GCM encryption key used to encrypt and decrypt AI provider secrets (API keys, credentials). Must be set in production; falls back to a development key if empty."
+    },
+    {
       "name": "turing.allowedOrigins",
       "type": "java.lang.String",
       "description": "Comma-separated list of allowed CORS origins for cross-origin requests."
@@ -16,14 +21,54 @@
       "description": "Connection timeout in milliseconds for Elasticsearch operations."
     },
     {
+      "name": "turing.jms.concurrency",
+      "type": "java.lang.String",
+      "description": "JMS listener concurrency range for the indexing queue in 'min-max' format (e.g., '1-1'). Controls how many concurrent consumers process document indexing jobs."
+    },
+    {
       "name": "turing.keycloak",
       "type": "java.lang.Boolean",
       "description": "Enable or disable Keycloak integration for authentication and authorization."
     },
     {
+      "name": "turing.keycloak-admin-id",
+      "type": "java.lang.String",
+      "description": "Keycloak user ID that is automatically granted the Administrator group on every application startup."
+    },
+    {
+      "name": "turing.minio.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable MinIO object storage integration for asset management. When disabled, asset operations are not available."
+    },
+    {
+      "name": "turing.minio.endpoint",
+      "type": "java.lang.String",
+      "description": "MinIO server endpoint URL (e.g., http://localhost:9000)."
+    },
+    {
+      "name": "turing.minio.access-key",
+      "type": "java.lang.String",
+      "description": "Access key (username) for authenticating with the MinIO server."
+    },
+    {
+      "name": "turing.minio.secret-key",
+      "type": "java.lang.String",
+      "description": "Secret key (password) for authenticating with the MinIO server."
+    },
+    {
+      "name": "turing.minio.bucket",
+      "type": "java.lang.String",
+      "description": "Name of the MinIO bucket used to store application assets (e.g., 'turing-assets')."
+    },
+    {
       "name": "turing.mongodb.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable MongoDB integration for data persistence."
+      "description": "Enable or disable MongoDB integration for logging and data persistence."
+    },
+    {
+      "name": "turing.mongodb.uri",
+      "type": "java.lang.String",
+      "description": "MongoDB connection URI string (e.g., mongodb://localhost:27017)."
     },
     {
       "name": "turing.mongodb.logging.database",
@@ -31,9 +76,24 @@
       "description": "MongoDB database name used for storing application logs."
     },
     {
-      "name": "turing.mongodb.uri",
+      "name": "turing.mongodb.logging.collection.server",
       "type": "java.lang.String",
-      "description": "MongoDB connection URI string (e.g., mongodb://localhost:27017)."
+      "description": "MongoDB collection name for storing general server application logs including errors and stack traces."
+    },
+    {
+      "name": "turing.mongodb.logging.collection.aem",
+      "type": "java.lang.String",
+      "description": "MongoDB collection name for storing Adobe Experience Manager (AEM) connector integration logs."
+    },
+    {
+      "name": "turing.mongodb.logging.collection.indexing",
+      "type": "java.lang.String",
+      "description": "MongoDB collection name for storing search indexing operation logs including document status and results."
+    },
+    {
+      "name": "turing.mongodb.logging.purge.days",
+      "type": "java.lang.Integer",
+      "description": "Number of days to retain MongoDB logs before automatic purging. A scheduled daily task deletes logs older than this threshold."
     },
     {
       "name": "turing.multi-tenant",
@@ -49,6 +109,11 @@
       "name": "turing.openai.key",
       "type": "java.lang.String",
       "description": "OpenAI API key for accessing generative AI and LLM services."
+    },
+    {
+      "name": "turing.permissions",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable the fine-grained permissions system. When disabled, all authenticated users receive full admin privileges."
     },
     {
       "name": "turing.search.cache.enabled",
@@ -76,6 +141,11 @@
       "description": "Enable SolrCloud mode for distributed search across multiple nodes."
     },
     {
+      "name": "turing.solr.commit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable explicit Solr commits after indexing operations. When disabled, relies on Solr auto-commit settings."
+    },
+    {
       "name": "turing.solr.commit.within",
       "type": "java.lang.Integer",
       "description": "Maximum time in milliseconds before a soft commit is triggered in Solr."
@@ -89,31 +159,6 @@
       "name": "turing.url",
       "type": "java.lang.String",
       "description": "Base URL of the Turing application (e.g., http://localhost:2700)."
-    },
-    {
-      "name": "turing.solr.commit.enabled",
-      "type": "java.lang.String",
-      "description": "A description for 'turing.solr.commit.enabled'"
-    },
-    {
-      "name": "turing.jms.concurrency",
-      "type": "java.lang.String",
-      "description": "A description for 'turing.jms.concurrency'"
-    },
-    {
-      "name": "turing.ai.crypto.key",
-      "type": "java.lang.String",
-      "description": "A description for 'turing.ai.crypto.key'"
-    },
-    {
-      "name": "turing.keycloak-admin-id",
-      "type": "java.lang.String",
-      "description": "A description for 'turing.keycloak-admin-id'"
-    },
-    {
-      "name": "turing.minio.bucket",
-      "type": "java.lang.String",
-      "description": "A description for 'turing.minio.bucket'"
     }
   ]
 }
