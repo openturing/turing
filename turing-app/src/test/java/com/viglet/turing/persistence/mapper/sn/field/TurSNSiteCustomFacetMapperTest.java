@@ -31,7 +31,7 @@ class TurSNSiteCustomFacetMapperTest {
     }
 
     private TurSNSiteCustomFacet buildEntity() {
-        TurSNSiteCustomFacet entity = TurSNSiteCustomFacet.builder()
+        return TurSNSiteCustomFacet.builder()
                 .id("cf-1")
                 .name("Category")
                 .defaultLabel("Categories")
@@ -40,7 +40,6 @@ class TurSNSiteCustomFacetMapperTest {
                 .facetItemType(TurSNSiteFacetFieldEnum.DEFAULT)
                 .label(Map.of("en", "Categories", "pt", "Categorias"))
                 .build();
-        return entity;
     }
 
     private TurSNSiteCustomFacetDto buildDto() {

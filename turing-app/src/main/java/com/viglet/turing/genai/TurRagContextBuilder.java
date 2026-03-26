@@ -150,10 +150,11 @@ public class TurRagContextBuilder {
             TurGenAiStoreProvider storeProvider = storeProviderFactory.getProvider(storeInstance);
             String storeCredential = secretCryptoService.decrypt(storeInstance.getCredentialEncrypted());
 
+            String defaultCollection = storeInstance.getCollectionName() != null
+                    ? storeInstance.getCollectionName() : "turing";
             String collectionName = StringUtils.hasText(collectionNameOverride)
                     ? collectionNameOverride
-                    : (storeInstance.getCollectionName() != null
-                            ? storeInstance.getCollectionName() : "turing");
+                    : defaultCollection;
 
             VectorStore vectorStore;
             if (StringUtils.hasText(collectionNameOverride)) {

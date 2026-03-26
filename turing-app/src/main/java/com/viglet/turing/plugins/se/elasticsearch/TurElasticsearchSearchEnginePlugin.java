@@ -219,6 +219,11 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
             }
             info.put("clusterName", root.path("cluster_name").asText(""));
             info.put("status", "UP");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Failed to retrieve Elasticsearch system info: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve Elasticsearch system info: {}", e.getMessage());
             info.put("status", "DOWN");

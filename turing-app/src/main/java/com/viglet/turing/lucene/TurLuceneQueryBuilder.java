@@ -29,7 +29,7 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.stereotype.Component;
@@ -132,7 +132,7 @@ public class TurLuceneQueryBuilder {
 
     private Query buildMainQuery(String queryStr, TurSNSite turSNSite) {
         if (!StringUtils.hasText(queryStr) || queryStr.equals("*") || queryStr.equals("*:*")) {
-            return new MatchAllDocsQuery();
+            return new FieldExistsQuery(TurLuceneConstants.ID);
         }
 
         String[] textFields = resolveTextFields(turSNSite);

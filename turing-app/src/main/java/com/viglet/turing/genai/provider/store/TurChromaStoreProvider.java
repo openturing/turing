@@ -23,6 +23,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
     private static final String DEFAULT_COLLECTION = "turing";
     private static final String DEFAULT_TENANT = "default_tenant";
     private static final String DEFAULT_DATABASE = "default_database";
+    private static final String TENANT_NAME_OPTION = "tenantName";
+    private static final String DATABASE_NAME_OPTION = "databaseName";
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -47,8 +49,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 optionsParser.stringValue(options, "collectionName"),
                 turStoreInstance.getCollectionName(),
                 DEFAULT_COLLECTION);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
         boolean initializeSchema = Boolean.TRUE
                 .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
 
@@ -75,8 +77,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                         optionsParser.stringValue(options, "collectionName"),
                         turStoreInstance.getCollectionName(),
                         DEFAULT_COLLECTION);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
         boolean initializeSchema = Boolean.TRUE
                 .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
 
@@ -104,8 +106,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
         try {
             ensureTenantAndDatabase(chromaApi, tenantName, databaseName);
             chromaApi.createCollection(tenantName, databaseName,
@@ -137,8 +139,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String decryptedCredential) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
 
         try {
             List<ChromaApi.Collection> collections = chromaApi.listCollections(tenantName, databaseName);
@@ -167,8 +169,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
         try {
             // Delete and recreate the collection to clear all embeddings
             chromaApi.deleteCollection(tenantName, databaseName, collectionName);
@@ -187,8 +189,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String collectionName) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
         try {
             chromaApi.deleteCollection(tenantName, databaseName, collectionName);
             log.info("[Chroma] Deleted collection: {}", collectionName);
@@ -206,8 +208,8 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             String metadataValue) {
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
         ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, "tenantName"), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, "databaseName"), DEFAULT_DATABASE);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
 
         try {
             // Get the collection to find its ID
@@ -276,6 +278,11 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 info.put("version", body);
             }
             info.put("status", "UP");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while retrieving ChromaDB version: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve ChromaDB version: {}", e.getMessage());
             info.put("status", "DOWN");

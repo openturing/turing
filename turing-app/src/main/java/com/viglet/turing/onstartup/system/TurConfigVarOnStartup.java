@@ -48,6 +48,7 @@ public class TurConfigVarOnStartup {
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
 	public static final String EMAIL_PROVIDER_DEFAULT_VALUE = "BREVO";
+	private static final String FALSE_VALUE = "false";
 
 	private final TurConfigVarRepository turConfigVarRepository;
 
@@ -65,10 +66,10 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(SENDER_EMAIL, GLOBAL_PATH, "");
 		ensureConfigVar(SENDER_NAME, GLOBAL_PATH, "");
 		ensureConfigVar(RECIPIENT_EMAIL, GLOBAL_PATH, "");
-		ensureConfigVar(LLM_CACHE_ENABLED, GLOBAL_PATH, "false");
+		ensureConfigVar(LLM_CACHE_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(LLM_CACHE_TTL_MS, GLOBAL_PATH, "3600000");
-		ensureConfigVar(LLM_CACHE_REGENERATE, GLOBAL_PATH, "false");
-		ensureConfigVar(RAG_ENABLED, GLOBAL_PATH, "false");
+		ensureConfigVar(LLM_CACHE_REGENERATE, GLOBAL_PATH, FALSE_VALUE);
+		ensureConfigVar(RAG_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(DEFAULT_EMBEDDING_MODEL_ID, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_EMBEDDING_STORE_ID, GLOBAL_PATH, "");
 	}

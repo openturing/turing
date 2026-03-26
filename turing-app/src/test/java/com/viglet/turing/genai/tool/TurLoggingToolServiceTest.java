@@ -14,7 +14,6 @@ import org.bson.conversions.Bson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -580,7 +579,7 @@ class TurLoggingToolServiceTest {
 
         StringBuilder sb = new StringBuilder();
         method.invoke(service, sb, "Label", "value");
-        assertThat(sb.toString()).isEqualTo("Label: value\n");
+        assertThat(sb).hasToString("Label: value\n");
     }
 
     @Test

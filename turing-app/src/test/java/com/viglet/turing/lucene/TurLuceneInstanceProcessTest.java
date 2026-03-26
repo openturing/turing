@@ -1,13 +1,11 @@
 package com.viglet.turing.lucene;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -78,7 +76,7 @@ class TurLuceneInstanceProcessTest {
 
         assertThat(first).isPresent();
         assertThat(second).isPresent();
-        assertThat(first.get()).isSameAs(second.get());
+        assertThat(first).containsSame(second.get());
     }
 
     @Test
@@ -178,7 +176,7 @@ class TurLuceneInstanceProcessTest {
     @Test
     void evictShouldDoNothingForNonExistentCache() {
         // Should not throw
-        process.evict(tempDir.toString(), "non-existent-core");
+        assertDoesNotThrow(() -> process.evict(tempDir.toString(), "non-existent-core"));
     }
 
     // --- resetInstance Tests ---
@@ -202,7 +200,7 @@ class TurLuceneInstanceProcessTest {
         Path nonExistent = tempDir.resolve("does-not-exist");
 
         // Should not throw
-        process.resetInstance(nonExistent);
+        assertDoesNotThrow(() -> process.resetInstance(nonExistent));
     }
 
     // --- shutdown Tests ---
@@ -216,12 +214,12 @@ class TurLuceneInstanceProcessTest {
         process.initLuceneInstance(seInstance, "shutdown-core2");
 
         // Should not throw
-        process.shutdown();
+        assertDoesNotThrow(() -> process.shutdown());
     }
 
     @Test
     void shutdownShouldBeIdempotent() {
         process.shutdown();
-        process.shutdown(); // Should not throw
+        assertDoesNotThrow(() -> process.shutdown()); // Should not throw
     }
 }

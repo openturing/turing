@@ -842,7 +842,8 @@ public class TurSolrQueryBuilder {
             TurSNSiteCustomFacetOperatorEnum operator, String startValue, String endValue) {
         return switch (operator) {
             case EQUAL -> {
-                String value = startValue != null ? startValue : (endValue != null ? endValue : "*");
+                String fallback = endValue != null ? endValue : "*";
+                String value = startValue != null ? startValue : fallback;
                 yield String.format("%s:%s", fieldName, value);
             }
             case GREATER_THAN -> {

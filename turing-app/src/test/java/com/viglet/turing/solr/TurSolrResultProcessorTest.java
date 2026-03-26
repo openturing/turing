@@ -408,7 +408,7 @@ class TurSolrResultProcessorTest {
                 TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
 
                 // INT field should not be highlighted
-                assertThat(result.getFields().get("count")).isEqualTo(42);
+                assertThat(result.getFields()).containsEntry("count", 42);
         }
 
         @Test
@@ -555,7 +555,7 @@ class TurSolrResultProcessorTest {
 
                 Map<String, List<String>> hl = Map.of("active", List.of("<em>true</em>"));
                 TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
-                assertThat(result.getFields().get("active")).isEqualTo(true);
+                assertThat(result.getFields()).containsEntry("active", true);
         }
 
         @Test
@@ -573,7 +573,7 @@ class TurSolrResultProcessorTest {
 
                 Map<String, List<String>> hl = Map.of("published", List.of("<em>2026-01-01</em>"));
                 TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
-                assertThat(result.getFields().get("published")).isEqualTo("2026-01-01");
+                assertThat(result.getFields()).containsEntry("published", "2026-01-01");
         }
 
         @Test

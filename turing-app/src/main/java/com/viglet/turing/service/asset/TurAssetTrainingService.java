@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TurAssetTrainingService {
 
     private static final Logger log = LoggerFactory.getLogger(TurAssetTrainingService.class);
+    private static final String OBJECT_NAME_FIELD = "objectName";
 
     private final TurMinioService minioService;
     private final TurGlobalSettingsService globalSettingsService;
@@ -98,7 +99,7 @@ public class TurAssetTrainingService {
             if (infra == null) return;
 
             infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
-                    infra.collectionName(), "objectName", objectName);
+                    infra.collectionName(), OBJECT_NAME_FIELD, objectName);
             trainingRecordRepository.deleteById(objectName);
             log.info("[AssetEvent] Successfully deindexed: {}", objectName);
         } catch (Exception e) {
@@ -169,7 +170,7 @@ public class TurAssetTrainingService {
 
         // Delete old embeddings for this file before re-indexing
         infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
-                infra.collectionName(), "objectName", objectName);
+                infra.collectionName(), OBJECT_NAME_FIELD, objectName);
 
         try (InputStream is = minioService.downloadObject(objectName)) {
             String text = TurFileUtils.parseDocument(is).orElse("");
@@ -184,7 +185,7 @@ public class TurAssetTrainingService {
 
             Map<String, Object> metadata = Map.of(
                     "source", "minio-asset",
-                    "objectName", objectName,
+                    OBJECT_NAME_FIELD, objectName,
                     "objectPath", path,
                     "fileName", fileName,
                     "contentType", file.contentType(),

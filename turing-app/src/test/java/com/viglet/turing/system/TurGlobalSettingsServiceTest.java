@@ -41,37 +41,37 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getDecimalSeparatorShouldReturnCommaWhenConfigured() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("COMMA");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("COMMA");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurGlobalDecimalSeparator.COMMA, service.getDecimalSeparator());
     }
 
     @Test
     void getDecimalSeparatorShouldReturnDotForInvalidValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("INVALID");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("INVALID");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurGlobalDecimalSeparator.DOT, service.getDecimalSeparator());
     }
 
     @Test
     void getDecimalSeparatorShouldHandleLowercaseValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("comma");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("comma");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurGlobalDecimalSeparator.COMMA, service.getDecimalSeparator());
     }
 
     @Test
     void getDecimalSeparatorShouldTrimWhitespace() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("  DOT  ");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("  DOT  ");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DECIMAL_SEPARATOR))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurGlobalDecimalSeparator.DOT, service.getDecimalSeparator());
     }
 
@@ -116,10 +116,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getPythonExecutableShouldReturnConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("/usr/bin/python3");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("/usr/bin/python3");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_EXECUTABLE))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals("/usr/bin/python3", service.getPythonExecutable());
     }
 
@@ -158,10 +158,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getDefaultLlmIdShouldReturnConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("llm-instance-1");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("llm-instance-1");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals("llm-instance-1", service.getDefaultLlmId());
     }
 
@@ -196,19 +196,19 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getEmailProviderShouldReturnBrevoForInvalidValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("INVALID_PROVIDER");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("INVALID_PROVIDER");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurEmailProviderType.BREVO, service.getEmailProvider());
     }
 
     @Test
     void getEmailProviderShouldBeCaseInsensitive() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("brevo");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("brevo");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_PROVIDER))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(TurEmailProviderType.BREVO, service.getEmailProvider());
     }
 
@@ -235,10 +235,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getEmailApiKeyShouldReturnConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("secret-key-123");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("secret-key-123");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.EMAIL_API_KEY))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals("secret-key-123", service.getEmailApiKey());
     }
 
@@ -280,10 +280,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getSenderNameShouldReturnConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("Viglet Turing");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("Viglet Turing");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.SENDER_NAME))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals("Viglet Turing", service.getSenderName());
     }
 
@@ -345,19 +345,19 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void isLlmCacheEnabledShouldReturnTrueWhenConfigured() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("true");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("true");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertTrue(service.isLlmCacheEnabled());
     }
 
     @Test
     void isLlmCacheEnabledShouldReturnFalseForNonBooleanString() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("yes");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("yes");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_ENABLED))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertFalse(service.isLlmCacheEnabled());
     }
 
@@ -396,28 +396,28 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getLlmCacheTtlMsShouldParseConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("5000");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("5000");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(5000L, service.getLlmCacheTtlMs());
     }
 
     @Test
     void getLlmCacheTtlMsShouldReturnDefaultForInvalidValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("notanumber");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("notanumber");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(3_600_000L, service.getLlmCacheTtlMs());
     }
 
     @Test
     void getLlmCacheTtlMsShouldHandleWhitespace() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("  7200000  ");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("  7200000  ");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_TTL_MS))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals(7_200_000L, service.getLlmCacheTtlMs());
     }
 
@@ -462,10 +462,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void isLlmCacheRegenerateShouldReturnTrueWhenConfigured() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("true");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("true");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.LLM_CACHE_REGENERATE))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertTrue(service.isLlmCacheRegenerate());
     }
 
@@ -491,10 +491,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void isRagEnabledShouldReturnTrueWhenConfigured() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("true");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("true");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.RAG_ENABLED))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertTrue(service.isRagEnabled());
     }
 
@@ -521,10 +521,10 @@ class TurGlobalSettingsServiceTest {
 
     @Test
     void getDefaultEmbeddingModelIdShouldReturnConfiguredValue() {
-        TurConfigVar var = new TurConfigVar();
-        var.setValue("embed-model-1");
+        TurConfigVar configVar = new TurConfigVar();
+        configVar.setValue("embed-model-1");
         when(turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_EMBEDDING_MODEL_ID))
-                .thenReturn(Optional.of(var));
+                .thenReturn(Optional.of(configVar));
         assertEquals("embed-model-1", service.getDefaultEmbeddingModelId());
     }
 

@@ -34,6 +34,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -61,6 +63,7 @@ import java.util.Map;
  * @author Alexandre Oliveira
  * @since 2026.1.10
  */
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 class TurElasticsearchTest {
 
@@ -205,7 +208,7 @@ class TurElasticsearchTest {
         TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
                 URI.create("http://localhost:9200").toURL(), "index");
 
-        assertThat(service.getDocumentTotal(instance)).isEqualTo(0L);
+        assertThat(service.getDocumentTotal(instance)).isZero();
     }
 
     @Test
@@ -268,7 +271,6 @@ class TurElasticsearchTest {
         org.mockito.Mockito.verify(elasticsearchClient).deleteByQuery(any(DeleteByQueryRequest.class));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testIndexingSuccessWithValidId() throws Exception {
         TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
@@ -287,7 +289,6 @@ class TurElasticsearchTest {
         org.mockito.Mockito.verify(elasticsearchClient).index(any(IndexRequest.class));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void testIndexingHandlesElasticsearchException() throws Exception {
         TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
@@ -322,7 +323,7 @@ class TurElasticsearchTest {
         TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
                 URI.create("http://localhost:9200").toURL(), "index");
 
-        assertThat(service.getDocumentTotal(instance)).isEqualTo(0L);
+        assertThat(service.getDocumentTotal(instance)).isZero();
     }
 
     @Test
@@ -339,7 +340,7 @@ class TurElasticsearchTest {
         TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
                 URI.create("http://localhost:9200").toURL(), "index");
 
-        assertThat(service.getDocumentTotal(instance)).isEqualTo(0L);
+        assertThat(service.getDocumentTotal(instance)).isZero();
     }
 
     @Test
@@ -469,8 +470,9 @@ class TurElasticsearchTest {
         assertThat(result).isEmpty();
     }
 
-    @Test
-    void testRetrieveElasticsearchFromSNWithSortParameter() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"test, 'date desc'", "test, 'date asc'", "test, relevance", "test, ''"})
+    void testRetrieveElasticsearchFromSNWithSortVariations(String query, String sort) throws Exception {
         TurSNSite site = new TurSNSite();
         site.setName("site");
         when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
@@ -479,60 +481,16 @@ class TurElasticsearchTest {
 
         TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
         TurSNSearchParams searchParams = new TurSNSearchParams();
-        searchParams.setQ("test");
-        searchParams.setSort("date desc");
+        searchParams.setQ(query);
+        if (sort != null && !sort.isEmpty()) {
+            searchParams.setSort(sort);
+        }
         TurSEParameters params = new TurSEParameters(searchParams);
         TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
                 params, Locale.US, URI.create("http://example.com"));
         TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
                 URI.create("http://localhost:9200").toURL(), "index");
 
-        // exercises addOptionalSorting + addSorting with "desc" order
-        Optional<?> result = service.retrieveElasticsearchFromSN(instance, context);
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void testRetrieveElasticsearchFromSNWithSortAscParameter() throws Exception {
-        TurSNSite site = new TurSNSite();
-        site.setName("site");
-        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-        when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
-                .thenThrow(new IOException("connection refused"));
-
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
-        TurSNSearchParams searchParams = new TurSNSearchParams();
-        searchParams.setQ("test");
-        searchParams.setSort("date asc");
-        TurSEParameters params = new TurSEParameters(searchParams);
-        TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                params, Locale.US, URI.create("http://example.com"));
-        TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
-                URI.create("http://localhost:9200").toURL(), "index");
-
-        Optional<?> result = service.retrieveElasticsearchFromSN(instance, context);
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void testRetrieveElasticsearchFromSNWithRelevanceSortSkipsSorting() throws Exception {
-        TurSNSite site = new TurSNSite();
-        site.setName("site");
-        when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-        when(elasticsearchClient.search(any(SearchRequest.class), any(java.lang.reflect.Type.class)))
-                .thenThrow(new IOException("connection refused"));
-
-        TurElasticsearch service = new TurElasticsearch(turSNSiteRepository, turSNSiteFieldExtRepository);
-        TurSNSearchParams searchParams = new TurSNSearchParams();
-        searchParams.setQ("test");
-        searchParams.setSort("relevance");
-        TurSEParameters params = new TurSEParameters(searchParams);
-        TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                params, Locale.US, URI.create("http://example.com"));
-        TurElasticsearchInstance instance = new TurElasticsearchInstance(elasticsearchClient,
-                URI.create("http://localhost:9200").toURL(), "index");
-
-        // "relevance" sort should be skipped in addOptionalSorting
         Optional<?> result = service.retrieveElasticsearchFromSN(instance, context);
         assertThat(result).isEmpty();
     }

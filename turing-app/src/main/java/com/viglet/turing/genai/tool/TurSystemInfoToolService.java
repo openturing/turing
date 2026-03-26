@@ -27,6 +27,12 @@ import java.sql.DatabaseMetaData;
 @Service
 public class TurSystemInfoToolService {
 
+    private static final String USED_PREFIX = "Used: ";
+    private static final String FREE_PREFIX = "Free: ";
+    private static final String STATUS_UP = "Status: UP\n";
+    private static final String STATUS_DOWN = "Status: DOWN\n";
+    private static final String ERROR_PREFIX = "Error: ";
+
     private final DataSource dataSource;
     private final TurMinioService turMinioService;
     private final TurConfigProperties turConfigProperties;
@@ -76,8 +82,8 @@ public class TurSystemInfoToolService {
         sb.append("--- JVM Heap ---\n");
         sb.append("Max Heap: ").append(formatBytes(maxMemory)).append("\n");
         sb.append("Allocated: ").append(formatBytes(totalMemory)).append("\n");
-        sb.append("Used: ").append(formatBytes(usedMemory)).append("\n");
-        sb.append("Free: ").append(formatBytes(freeMemory)).append("\n");
+        sb.append(USED_PREFIX).append(formatBytes(usedMemory)).append("\n");
+        sb.append(FREE_PREFIX).append(formatBytes(freeMemory)).append("\n");
         sb.append("Usage: ").append(percent(usedMemory, maxMemory)).append("%\n");
 
         try {
@@ -89,8 +95,8 @@ public class TurSystemInfoToolService {
 
                 sb.append("\n--- Physical Memory ---\n");
                 sb.append("Total: ").append(formatBytes(totalPhysical)).append("\n");
-                sb.append("Used: ").append(formatBytes(usedPhysical)).append("\n");
-                sb.append("Free: ").append(formatBytes(freePhysical)).append("\n");
+                sb.append(USED_PREFIX).append(formatBytes(usedPhysical)).append("\n");
+                sb.append(FREE_PREFIX).append(formatBytes(freePhysical)).append("\n");
                 sb.append("Usage: ").append(percent(usedPhysical, totalPhysical)).append("%\n");
 
                 long reportedSwap = osMx.getTotalSwapSpaceSize();
@@ -103,8 +109,8 @@ public class TurSystemInfoToolService {
 
                 sb.append("\n--- Swap ---\n");
                 sb.append("Total: ").append(formatBytes(totalSwap)).append("\n");
-                sb.append("Used: ").append(formatBytes(usedSwap)).append("\n");
-                sb.append("Free: ").append(formatBytes(freeSwap)).append("\n");
+                sb.append(USED_PREFIX).append(formatBytes(usedSwap)).append("\n");
+                sb.append(FREE_PREFIX).append(formatBytes(freeSwap)).append("\n");
 
                 sb.append("\n--- CPU ---\n");
                 sb.append("Available Processors: ").append(osMx.getAvailableProcessors()).append("\n");
@@ -131,7 +137,7 @@ public class TurSystemInfoToolService {
         sb.append("=== Database Status ===\n\n");
         try (Connection conn = dataSource.getConnection()) {
             DatabaseMetaData meta = conn.getMetaData();
-            sb.append("Status: UP\n");
+            sb.append(STATUS_UP);
             sb.append("Product: ").append(meta.getDatabaseProductName()).append("\n");
             sb.append("Version: ").append(meta.getDatabaseProductVersion()).append("\n");
             sb.append("Driver: ").append(meta.getDriverName()).append(" ").append(meta.getDriverVersion()).append("\n");
@@ -141,8 +147,8 @@ public class TurSystemInfoToolService {
             sb.append("Read-only: ").append(conn.isReadOnly() ? "yes" : "no").append("\n");
             sb.append("Auto-commit: ").append(conn.getAutoCommit() ? "yes" : "no").append("\n");
         } catch (Exception e) {
-            sb.append("Status: DOWN\n");
-            sb.append("Error: ").append(e.getMessage()).append("\n");
+            sb.append(STATUS_DOWN);
+            sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
         }
         return sb.toString();
     }
@@ -160,13 +166,13 @@ public class TurSystemInfoToolService {
             try (var mongoClient = com.mongodb.client.MongoClients.create(mongoUri)) {
                 org.bson.Document buildInfo = mongoClient.getDatabase("admin")
                         .runCommand(new org.bson.Document("buildInfo", 1));
-                sb.append("Status: UP\n");
+                sb.append(STATUS_UP);
                 sb.append("Version: ").append(buildInfo.getString("version")).append("\n");
                 sb.append("URI: ").append(mongoUri).append("\n");
             } catch (Exception e) {
-                sb.append("Status: DOWN\n");
+                sb.append(STATUS_DOWN);
                 sb.append("URI: ").append(mongoUri).append("\n");
-                sb.append("Error: ").append(e.getMessage()).append("\n");
+                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
             }
         }
 
@@ -187,10 +193,15 @@ public class TurSystemInfoToolService {
                 sb.append("Endpoint: ").append(endpoint).append("\n");
                 response.headers().firstValue("Server").ifPresent(
                         server -> sb.append("Server: ").append(server).append("\n"));
-            } catch (Exception e) {
-                sb.append("Status: DOWN\n");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                sb.append(STATUS_DOWN);
                 sb.append("Endpoint: ").append(endpoint).append("\n");
-                sb.append("Error: ").append(e.getMessage()).append("\n");
+                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
+            } catch (Exception e) {
+                sb.append(STATUS_DOWN);
+                sb.append("Endpoint: ").append(endpoint).append("\n");
+                sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
             }
         }
 
@@ -206,7 +217,7 @@ public class TurSystemInfoToolService {
         sb.append("--- Database ---\n");
         try (Connection conn = dataSource.getConnection()) {
             DatabaseMetaData meta = conn.getMetaData();
-            sb.append("Status: UP\n");
+            sb.append(STATUS_UP);
             sb.append("Product: ").append(meta.getDatabaseProductName())
                     .append(" ").append(meta.getDatabaseProductVersion()).append("\n");
         } catch (Exception e) {
@@ -230,9 +241,9 @@ public class TurSystemInfoToolService {
         long usable = root.getUsableSpace();
         long used = total - usable;
         sb.append("--- Disk ---\n");
-        sb.append("Used: ").append(formatBytes(used)).append(" / ").append(formatBytes(total));
+        sb.append(USED_PREFIX).append(formatBytes(used)).append(" / ").append(formatBytes(total));
         sb.append(" (").append(percent(used, total)).append("% used)\n");
-        sb.append("Free: ").append(formatBytes(usable)).append("\n\n");
+        sb.append(FREE_PREFIX).append(formatBytes(usable)).append("\n\n");
     }
 
     private void appendMongoDbStatus(StringBuilder sb) {
@@ -258,13 +269,16 @@ public class TurSystemInfoToolService {
         }
         var minio = turConfigProperties.getMinio();
         String endpoint = minio != null ? minio.getEndpoint() : "";
-        try {
+        try (var client = java.net.http.HttpClient.newHttpClient()) {
             var request = java.net.http.HttpRequest.newBuilder()
                     .uri(java.net.URI.create(endpoint + "/minio/health/cluster"))
                     .GET().build();
-            var response = java.net.http.HttpClient.newHttpClient()
+            var response = client
                     .send(request, java.net.http.HttpResponse.BodyHandlers.discarding());
             sb.append("Status: ").append(response.statusCode() < 500 ? "UP" : "DOWN").append("\n\n");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            sb.append("Status: DOWN\n\n");
         } catch (Exception e) {
             sb.append("Status: DOWN\n\n");
         }

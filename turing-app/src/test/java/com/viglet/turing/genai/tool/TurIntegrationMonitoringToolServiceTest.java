@@ -13,9 +13,6 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -167,14 +164,14 @@ class TurIntegrationMonitoringToolServiceTest {
                 .getDeclaredMethod("formatMonitoringResponse", String.class);
         method.setAccessible(true);
 
-        JSONObject record = new JSONObject();
-        record.put("objectId", "obj-1");
-        record.put("name", "test-doc");
-        record.put("status", "INDEXED");
+        JSONObject entry = new JSONObject();
+        entry.put("objectId", "obj-1");
+        entry.put("name", "test-doc");
+        entry.put("status", "INDEXED");
 
         JSONObject json = new JSONObject();
         json.put("sources", new JSONArray().put("aem-source"));
-        json.put("indexing", new JSONArray().put(record));
+        json.put("indexing", new JSONArray().put(entry));
 
         String result = (String) method.invoke(service, json.toString());
         assertThat(result)
@@ -466,10 +463,10 @@ class TurIntegrationMonitoringToolServiceTest {
                 .getDeclaredMethod("formatSearchResponse", String.class);
         method.setAccessible(true);
 
-        JSONObject record = new JSONObject();
-        record.put("objectId", "obj-1");
-        record.put("name", "doc-1");
-        record.put("status", "INDEXED");
+        JSONObject entry = new JSONObject();
+        entry.put("objectId", "obj-1");
+        entry.put("name", "doc-1");
+        entry.put("status", "INDEXED");
 
         JSONObject json = new JSONObject();
         json.put("totalElements", 1);
@@ -479,7 +476,7 @@ class TurIntegrationMonitoringToolServiceTest {
         json.put("environments", new JSONArray().put("prod"));
         json.put("locales", new JSONArray().put("en_US"));
         json.put("sites", new JSONArray().put("site1"));
-        json.put("content", new JSONArray().put(record));
+        json.put("content", new JSONArray().put(entry));
 
         String result = (String) method.invoke(service, json.toString());
         assertThat(result)
@@ -566,9 +563,9 @@ class TurIntegrationMonitoringToolServiceTest {
 
         JSONArray indexing = new JSONArray();
         for (int i = 0; i < 55; i++) {
-            JSONObject record = new JSONObject();
-            record.put("objectId", "obj-" + i);
-            indexing.put(record);
+            JSONObject entry = new JSONObject();
+            entry.put("objectId", "obj-" + i);
+            indexing.put(entry);
         }
         JSONObject json = new JSONObject();
         json.put("indexing", indexing);
@@ -654,7 +651,7 @@ class TurIntegrationMonitoringToolServiceTest {
         json.put("key", "value");
         StringBuilder sb = new StringBuilder();
         method.invoke(service, sb, "Label", json, "key");
-        assertThat(sb.toString()).isEqualTo("Label: value\n");
+        assertThat(sb).hasToString("Label: value\n");
     }
 
     @Test

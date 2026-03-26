@@ -13,6 +13,7 @@ import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.ollama.api.OllamaEmbeddingOptions;
 import org.springframework.http.MediaType;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -221,6 +222,7 @@ public class TurOllamaLlmProvider implements TurGenAiLlmProvider {
                 .toList();
     }
 
+    @Nullable
     @SafeVarargs
     private <T> T firstNonNull(T... values) {
         for (T value : values) {

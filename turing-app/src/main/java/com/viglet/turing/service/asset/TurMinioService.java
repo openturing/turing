@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service for interacting with MinIO object storage.
@@ -25,6 +26,26 @@ import java.util.List;
 @Service
 public class TurMinioService {
 	private static final Logger log = LoggerFactory.getLogger(TurMinioService.class);
+	private static final String PATH_DELIMITER = "/";
+	private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+	private static final Map<String, String> EXTENSION_TO_CONTENT_TYPE = Map.ofEntries(
+			Map.entry(".pdf", "application/pdf"),
+			Map.entry(".png", "image/png"),
+			Map.entry(".jpg", "image/jpeg"),
+			Map.entry(".jpeg", "image/jpeg"),
+			Map.entry(".gif", "image/gif"),
+			Map.entry(".svg", "image/svg+xml"),
+			Map.entry(".txt", "text/plain"),
+			Map.entry(".csv", "text/csv"),
+			Map.entry(".json", "application/json"),
+			Map.entry(".xml", "application/xml"),
+			Map.entry(".zip", "application/zip"),
+			Map.entry(".doc", "application/msword"),
+			Map.entry(".docx", "application/msword"),
+			Map.entry(".xls", "application/vnd.ms-excel"),
+			Map.entry(".xlsx", "application/vnd.ms-excel")
+	);
+	private static final String MINIO_NOT_CONFIGURED = "MinIO is not configured.";
 	private final TurConfigProperties configProperties;
 	private MinioClient minioClient;
 
@@ -111,7 +132,7 @@ public class TurMinioService {
 	}
 
 	public InputStream downloadObject(String objectName) {
-		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
+		requireEnabled();
 		try {
 			return minioClient.getObject(
 					GetObjectArgs.builder()
@@ -119,12 +140,12 @@ public class TurMinioService {
 							.object(objectName)
 							.build());
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to download object: " + objectName, e);
+			throw new IllegalStateException("Failed to download object: " + objectName, e);
 		}
 	}
 
 	public StatObjectResponse statObject(String objectName) {
-		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
+		requireEnabled();
 		try {
 			return minioClient.statObject(
 					StatObjectArgs.builder()
@@ -132,15 +153,15 @@ public class TurMinioService {
 							.object(objectName)
 							.build());
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to stat object: " + objectName, e);
+			throw new IllegalStateException("Failed to stat object: " + objectName, e);
 		}
 	}
 
 	public void uploadObject(MultipartFile file, String prefix) {
-		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
+		requireEnabled();
 		String objectName = (prefix != null && !prefix.isBlank() ? prefix : "") + file.getOriginalFilename();
 		try (InputStream is = file.getInputStream()) {
-			String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+			String contentType = file.getContentType() != null ? file.getContentType() : DEFAULT_CONTENT_TYPE;
 			minioClient.putObject(
 					PutObjectArgs.builder()
 							.bucket(getBucket())
@@ -149,13 +170,13 @@ public class TurMinioService {
 							.contentType(contentType)
 							.build());
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to upload object: " + objectName, e);
+			throw new IllegalStateException("Failed to upload object: " + objectName, e);
 		}
 	}
 
 	public void createFolder(String folderPath) {
-		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
-		String path = folderPath.endsWith("/") ? folderPath : folderPath + "/";
+		requireEnabled();
+		String path = folderPath.endsWith(PATH_DELIMITER) ? folderPath : folderPath + PATH_DELIMITER;
 		try {
 			minioClient.putObject(
 					PutObjectArgs.builder()
@@ -165,12 +186,12 @@ public class TurMinioService {
 							.contentType("application/x-directory")
 							.build());
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to create folder: " + path, e);
+			throw new IllegalStateException("Failed to create folder: " + path, e);
 		}
 	}
 
 	public void deleteObject(String objectName) {
-		if (minioClient == null) throw new IllegalStateException("MinIO is not configured.");
+		requireEnabled();
 		try {
 			minioClient.removeObject(
 					RemoveObjectArgs.builder()
@@ -178,8 +199,12 @@ public class TurMinioService {
 							.object(objectName)
 							.build());
 		} catch (Exception e) {
-			throw new RuntimeException("Failed to delete object: " + objectName, e);
+			throw new IllegalStateException("Failed to delete object: " + objectName, e);
 		}
+	}
+
+	private void requireEnabled() {
+		if (minioClient == null) throw new IllegalStateException(MINIO_NOT_CONFIGURED);
 	}
 
 	private String getBucket() {
@@ -198,21 +223,13 @@ public class TurMinioService {
 		}
 	}
 
-	private String guessContentType(String name) {
-		if (name == null) return "application/octet-stream";
+	String guessContentType(String name) {
+		if (name == null) return DEFAULT_CONTENT_TYPE;
 		String lower = name.toLowerCase();
-		if (lower.endsWith(".pdf")) return "application/pdf";
-		if (lower.endsWith(".png")) return "image/png";
-		if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-		if (lower.endsWith(".gif")) return "image/gif";
-		if (lower.endsWith(".svg")) return "image/svg+xml";
-		if (lower.endsWith(".txt")) return "text/plain";
-		if (lower.endsWith(".csv")) return "text/csv";
-		if (lower.endsWith(".json")) return "application/json";
-		if (lower.endsWith(".xml")) return "application/xml";
-		if (lower.endsWith(".zip")) return "application/zip";
-		if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "application/msword";
-		if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) return "application/vnd.ms-excel";
-		return "application/octet-stream";
+		return EXTENSION_TO_CONTENT_TYPE.entrySet().stream()
+				.filter(entry -> lower.endsWith(entry.getKey()))
+				.map(Map.Entry::getValue)
+				.findFirst()
+				.orElse(DEFAULT_CONTENT_TYPE);
 	}
 }

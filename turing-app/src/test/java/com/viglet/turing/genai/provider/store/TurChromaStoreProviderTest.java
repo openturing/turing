@@ -1,5 +1,6 @@
 package com.viglet.turing.genai.provider.store;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -261,7 +262,8 @@ class TurChromaStoreProviderTest {
         when(optionsParser.stringValue(any(), eq("basicPassword"))).thenReturn(null);
 
         // Should not throw -- logs warning instead
-        provider.deleteByMetadata(instance, null, "test_collection", "source_id", "doc1");
+        assertDoesNotThrow(() ->
+                provider.deleteByMetadata(instance, null, "test_collection", "source_id", "doc1"));
     }
 
     @Test

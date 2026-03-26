@@ -1,5 +1,6 @@
 package com.viglet.turing.genai;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -323,7 +324,7 @@ class TurSNGenAiTest {
         TurGenAiContext disabledContext = TurGenAiContext.disabled();
         when(contextFactory.build(eq(genAi), any())).thenReturn(disabledContext);
 
-        turSNGenAi.addDocuments(jobItems);
+        assertDoesNotThrow(() -> turSNGenAi.addDocuments(jobItems));
 
         // Context is disabled, so vectorStore.add should not be called
     }
@@ -367,7 +368,7 @@ class TurSNGenAiTest {
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(any(List.class));
+        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
     }
 
     @Test
@@ -396,11 +397,11 @@ class TurSNGenAiTest {
                 .enabled(true)
                 .vectorStore(vectorStore)
                 .build();
-        when(contextFactory.build(eq(genAi), eq(null))).thenReturn(context);
+        when(contextFactory.build(genAi, null)).thenReturn(context);
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(any(List.class));
+        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
     }
 
     @Test
@@ -430,11 +431,11 @@ class TurSNGenAiTest {
                 .enabled(true)
                 .vectorStore(vectorStore)
                 .build();
-        when(contextFactory.build(eq(genAi), eq(null))).thenReturn(context);
+        when(contextFactory.build(genAi, null)).thenReturn(context);
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(any(List.class));
+        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
     }
 
     @Test
@@ -468,11 +469,11 @@ class TurSNGenAiTest {
                 .enabled(true)
                 .vectorStore(vectorStore)
                 .build();
-        when(contextFactory.build(eq(genAi), eq(null))).thenReturn(context);
+        when(contextFactory.build(genAi, null)).thenReturn(context);
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(any(List.class));
+        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
     }
 
     @Test

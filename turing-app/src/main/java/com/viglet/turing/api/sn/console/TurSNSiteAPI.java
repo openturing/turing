@@ -123,7 +123,7 @@ public class TurSNSiteAPI {
     @Operation(summary = "Update a Semantic Navigation Site")
     @PutMapping("/{id}")
     @Secured({"ROLE_ADMIN", "SN_EDIT"})
-    public ResponseEntity<?> turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
+    public ResponseEntity<Object> turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
         Optional<TurSNSite> duplicate = turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName())
                 .filter(site -> !site.getId().equals(id));
         if (duplicate.isPresent()) {
@@ -214,7 +214,7 @@ public class TurSNSiteAPI {
     @Operation(summary = "Create a Semantic Navigation Site")
     @PostMapping
     @Secured({"ROLE_ADMIN", "SN_CREATE"})
-    public ResponseEntity<?> turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
+    public ResponseEntity<Object> turSNSiteAdd(@RequestBody TurSNSiteDto turSNSiteDto, Principal principal) {
         if (turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "A site with this name already exists."));

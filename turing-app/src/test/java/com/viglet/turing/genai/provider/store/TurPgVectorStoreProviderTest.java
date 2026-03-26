@@ -1,11 +1,11 @@
 package com.viglet.turing.genai.provider.store;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -23,7 +23,6 @@ import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
@@ -280,7 +279,8 @@ class TurPgVectorStoreProviderTest {
 
         try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
             // Should not throw -- logs warning instead
-            provider.deleteByMetadata(instance, null, "test_collection", "source_id", "doc1");
+            assertDoesNotThrow(() ->
+                    provider.deleteByMetadata(instance, null, "test_collection", "source_id", "doc1"));
         }
     }
 
@@ -340,7 +340,7 @@ class TurPgVectorStoreProviderTest {
             provider.createVectorStore(instance, embeddingModel, null);
 
             // Should not throw even when close fails
-            provider.shutdown();
+            assertDoesNotThrow(() -> provider.shutdown());
         }
     }
 

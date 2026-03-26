@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.plugins.se.elasticsearch;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -285,13 +286,15 @@ class TurElasticsearchSearchEnginePluginTest {
     void shouldNoOpForAddOrUpdateField() {
         TurSEInstance seInstance = new TurSEInstance();
         // Schema-less — should not throw
-        plugin.addOrUpdateField(seInstance, "idx", "title", TurSEFieldType.TEXT, true, false, true);
+        assertDoesNotThrow(() ->
+                plugin.addOrUpdateField(seInstance, "idx", "title", TurSEFieldType.TEXT, true, false, true));
     }
 
     @Test
     void shouldNoOpForDeleteField() {
         TurSEInstance seInstance = new TurSEInstance();
-        plugin.deleteField(seInstance, "idx", "title", TurSEFieldType.TEXT);
+        assertDoesNotThrow(() ->
+                plugin.deleteField(seInstance, "idx", "title", TurSEFieldType.TEXT));
     }
 
     @Test
@@ -336,11 +339,8 @@ class TurElasticsearchSearchEnginePluginTest {
 
         Map<String, TurSEFieldType> fieldTypes = Map.of("title", TurSEFieldType.TEXT);
 
-        try {
-            plugin.createIndex(seInstance, siteLocale, "my-index", fieldTypes);
-        } catch (Exception e) {
-            // Expected when ES is not running
-        }
+        assertDoesNotThrow(() ->
+                plugin.createIndex(seInstance, siteLocale, "my-index", fieldTypes));
     }
 
     @Test
@@ -351,11 +351,8 @@ class TurElasticsearchSearchEnginePluginTest {
         siteLocale.setLanguage(Locale.ENGLISH);
         siteLocale.setTurSNSite(null);
 
-        try {
-            plugin.createIndex(seInstance, siteLocale, "my-index", Collections.emptyMap());
-        } catch (Exception e) {
-            // Expected when ES is not running
-        }
+        assertDoesNotThrow(() ->
+                plugin.createIndex(seInstance, siteLocale, "my-index", Collections.emptyMap()));
     }
 
     // ---- deleteIndex ---------------------------------------------------------
@@ -365,11 +362,7 @@ class TurElasticsearchSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("http://localhost:9200");
 
-        try {
-            plugin.deleteIndex(seInstance, "my-index");
-        } catch (Exception e) {
-            // Expected when ES is not running
-        }
+        assertDoesNotThrow(() -> plugin.deleteIndex(seInstance, "my-index"));
     }
 
     // ---- clearIndex ----------------------------------------------------------
@@ -379,11 +372,7 @@ class TurElasticsearchSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("http://localhost:9200");
 
-        try {
-            plugin.clearIndex(seInstance, "my-index");
-        } catch (Exception e) {
-            // Expected when ES is not running
-        }
+        assertDoesNotThrow(() -> plugin.clearIndex(seInstance, "my-index"));
     }
 
     // ---- listIndexes ---------------------------------------------------------
@@ -393,10 +382,6 @@ class TurElasticsearchSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("http://localhost:9200");
 
-        try {
-            plugin.listIndexes(seInstance);
-        } catch (Exception e) {
-            // Expected when ES is not running
-        }
+        assertDoesNotThrow(() -> plugin.listIndexes(seInstance));
     }
 }

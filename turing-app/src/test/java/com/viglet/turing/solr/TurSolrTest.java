@@ -350,7 +350,7 @@ class TurSolrTest {
 
         TurSolr turSolr = buildTurSolr(false);
 
-        assertThat(turSolr.getDocumentTotal(turSolrInstance)).isEqualTo(0L);
+        assertThat(turSolr.getDocumentTotal(turSolrInstance)).isZero();
     }
 
     @Test
@@ -438,7 +438,7 @@ class TurSolrTest {
         params.setP(1);
         params.setRows(10);
         TurSEParameters seParams = new TurSEParameters(params);
-        assertThat(TurSolr.firstRowPositionFromCurrentPage(seParams)).isEqualTo(0);
+        assertThat(TurSolr.firstRowPositionFromCurrentPage(seParams)).isZero();
     }
 
     @Test
@@ -483,7 +483,7 @@ class TurSolrTest {
         when(solrClient.query(org.mockito.ArgumentMatchers.eq("core"), any(SolrQuery.class)))
                 .thenReturn(response);
 
-        var results = turSolr.retrieveSolr(turSolrInstance, parameters, "publishedDate");
+        turSolr.retrieveSolr(turSolrInstance, parameters, "publishedDate");
 
         org.mockito.ArgumentCaptor<SolrQuery> queryCaptor = org.mockito.ArgumentCaptor.forClass(SolrQuery.class);
         verify(solrClient, times(2)).query(org.mockito.ArgumentMatchers.eq("core"), queryCaptor.capture());

@@ -69,9 +69,9 @@ public class TurEmbeddingModelAPI {
     @PutMapping("/{id}")
     @Secured({"ROLE_ADMIN", "EMBEDDING_EDIT"})
     public TurEmbeddingModelDto turEmbeddingModelUpdate(@PathVariable String id,
-            @RequestBody TurEmbeddingModel turEmbeddingModel) {
+            @RequestBody TurEmbeddingModelDto turEmbeddingModelDto) {
         return turEmbeddingModelRepository.findById(id).map(existing -> {
-            turEmbeddingModelMapper.updateEntity(turEmbeddingModel, existing);
+            turEmbeddingModelMapper.updateEntityFromDto(turEmbeddingModelDto, existing);
             turEmbeddingModelRepository.save(existing);
             return turEmbeddingModelMapper.toDto(existing);
         }).orElse(new TurEmbeddingModelDto());
@@ -89,7 +89,8 @@ public class TurEmbeddingModelAPI {
     @Operation(summary = "Create an Embedding Model")
     @PostMapping
     @Secured({"ROLE_ADMIN", "EMBEDDING_CREATE"})
-    public TurEmbeddingModelDto turEmbeddingModelAdd(@RequestBody TurEmbeddingModel turEmbeddingModel) {
+    public TurEmbeddingModelDto turEmbeddingModelAdd(@RequestBody TurEmbeddingModelDto turEmbeddingModelDto) {
+        TurEmbeddingModel turEmbeddingModel = turEmbeddingModelMapper.toEntity(turEmbeddingModelDto);
         this.turEmbeddingModelRepository.save(turEmbeddingModel);
         return turEmbeddingModelMapper.toDto(turEmbeddingModel);
     }

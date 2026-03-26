@@ -1,6 +1,7 @@
 package com.viglet.turing.genai.tool;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -94,6 +95,6 @@ class TurMcpToolCallbackServiceTest {
     @Test
     void cleanupShouldNotThrowWhenEmpty() {
         // Should not throw even with no cached clients
-        service.cleanup();
+        assertDoesNotThrow(() -> service.cleanup());
     }
 }

@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 public class TurRagSearchToolService {
 
     private static final Logger log = LoggerFactory.getLogger(TurRagSearchToolService.class);
+    private static final String OBJECT_NAME_FIELD = "objectName";
+    private static final String RAG_NOT_ENABLED_MSG = "RAG is not enabled.";
 
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
@@ -81,7 +83,7 @@ public class TurRagSearchToolService {
 
             for (int i = 0; i < results.size(); i++) {
                 Document doc = results.get(i);
-                String objectName = doc.getMetadata().getOrDefault("objectName", "").toString();
+                String objectName = doc.getMetadata().getOrDefault(OBJECT_NAME_FIELD, "").toString();
                 String contentType = doc.getMetadata().getOrDefault("contentType", "").toString();
 
                 String downloadUrl = "/api/asset/download?objectName="
@@ -113,7 +115,7 @@ public class TurRagSearchToolService {
     @Tool(name = "knowledge_base_stats", description = ".")
     public String knowledgeBaseStats() {
         if (!isAvailable()) {
-            return "RAG is not enabled.";
+            return RAG_NOT_ENABLED_MSG;
         }
         try {
             List<TurAssetTrainingRecord> records = trainingRecordRepository.findAll();
@@ -150,7 +152,7 @@ public class TurRagSearchToolService {
     @Tool(name = "list_knowledge_base_files", description = ".")
     public String listKnowledgeBaseFiles(String filterKeyword, String filterContentType) {
         if (!isAvailable()) {
-            return "RAG is not enabled.";
+            return RAG_NOT_ENABLED_MSG;
         }
         try {
             List<TurAssetTrainingRecord> records;
@@ -192,7 +194,7 @@ public class TurRagSearchToolService {
     @Tool(name = "get_file_from_knowledge_base", description = ".")
     public String getFileFromKnowledgeBase(String fileName, Integer maxChunks) {
         if (!isAvailable()) {
-            return "RAG is not enabled.";
+            return RAG_NOT_ENABLED_MSG;
         }
         try {
             VectorStore vectorStore = ragContextBuilder.buildFromGlobalSettings()
@@ -211,7 +213,7 @@ public class TurRagSearchToolService {
             List<Document> fileChunks = results.stream()
                     .filter(d -> {
                         String docFileName = d.getMetadata().getOrDefault("fileName", "").toString();
-                        String docObjectName = d.getMetadata().getOrDefault("objectName", "").toString();
+                        String docObjectName = d.getMetadata().getOrDefault(OBJECT_NAME_FIELD, "").toString();
                         return docFileName.toLowerCase().contains(fileName.toLowerCase())
                                 || docObjectName.toLowerCase().contains(fileName.toLowerCase());
                     })
@@ -221,7 +223,7 @@ public class TurRagSearchToolService {
                 return "No content found for file: " + fileName + ". Make sure the file name is correct and has been indexed.";
             }
 
-            String matchedFile = fileChunks.getFirst().getMetadata().getOrDefault("objectName", fileName).toString();
+            String matchedFile = fileChunks.getFirst().getMetadata().getOrDefault(OBJECT_NAME_FIELD, fileName).toString();
             StringBuilder sb = new StringBuilder();
             sb.append("Content from: ").append(matchedFile).append("\n");
             sb.append("Showing ").append(fileChunks.size()).append(" chunk(s):\n\n");

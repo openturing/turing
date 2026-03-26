@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.plugins.se.solr;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -290,11 +291,7 @@ class TurSolrSearchEnginePluginTest {
         // we are mainly testing that the code path does not throw NPE
         // and delegates correctly based on cloud vs standalone.
         // Static calls are hard to mock without PowerMock, so we accept this as a light test.
-        try {
-            plugin.indexExists(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.indexExists(seInstance, "my-core"));
     }
 
     // ---- addOrUpdateField ----------------------------------------------------
@@ -306,11 +303,8 @@ class TurSolrSearchEnginePluginTest {
 
         // TurSolrUtils.addOrUpdateField is static - testing that the plugin delegates correctly
         // without an actual Solr server will result in an exception which is expected
-        try {
-            plugin.addOrUpdateField(seInstance, "my-core", "title", TurSEFieldType.TEXT, true, false, true);
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() ->
+                plugin.addOrUpdateField(seInstance, "my-core", "title", TurSEFieldType.TEXT, true, false, true));
     }
 
     // ---- fieldExists ---------------------------------------------------------
@@ -320,11 +314,7 @@ class TurSolrSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("http://localhost:8983/solr");
 
-        try {
-            plugin.fieldExists(seInstance, "my-core", "title");
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.fieldExists(seInstance, "my-core", "title"));
     }
 
     // ---- getSystemInfo -------------------------------------------------------
@@ -363,11 +353,7 @@ class TurSolrSearchEnginePluginTest {
         solrProp.setCloud(true);
         when(turConfigProperties.getSolr()).thenReturn(solrProp);
 
-        try {
-            plugin.deleteIndex(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.deleteIndex(seInstance, "my-core"));
     }
 
     @Test
@@ -378,11 +364,7 @@ class TurSolrSearchEnginePluginTest {
         solrProp.setCloud(false);
         when(turConfigProperties.getSolr()).thenReturn(solrProp);
 
-        try {
-            plugin.deleteIndex(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.deleteIndex(seInstance, "my-core"));
     }
 
     // ---- clearIndex ----------------------------------------------------------
@@ -392,11 +374,7 @@ class TurSolrSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("http://localhost:8983/solr");
 
-        try {
-            plugin.clearIndex(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.clearIndex(seInstance, "my-core"));
     }
 
     // ---- listIndexes ---------------------------------------------------------
@@ -409,11 +387,7 @@ class TurSolrSearchEnginePluginTest {
         solrProp.setCloud(true);
         when(turConfigProperties.getSolr()).thenReturn(solrProp);
 
-        try {
-            plugin.listIndexes(seInstance);
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.listIndexes(seInstance));
     }
 
     @Test
@@ -424,10 +398,6 @@ class TurSolrSearchEnginePluginTest {
         solrProp.setCloud(false);
         when(turConfigProperties.getSolr()).thenReturn(solrProp);
 
-        try {
-            plugin.listIndexes(seInstance);
-        } catch (Exception e) {
-            // Expected when Solr is not running
-        }
+        assertDoesNotThrow(() -> plugin.listIndexes(seInstance));
     }
 }

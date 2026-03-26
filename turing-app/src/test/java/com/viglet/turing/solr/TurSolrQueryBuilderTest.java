@@ -1097,7 +1097,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(facet));
 
                 SolrQuery query = new SolrQuery();
-                List<TurSNSiteFieldExt> result = builder().prepareQueryFacet(site, query,
+                builder().prepareQueryFacet(site, query,
                                 TurSNFilterParams.builder().build());
 
                 // itemsPerFacet is null so wasFacetConfigured returns false

@@ -21,6 +21,7 @@ import io.milvus.param.MetricType;
 public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
 
     private static final String DEFAULT_COLLECTION = "turing";
+    private static final String BASE_URL_OPTION = "baseUrl";
 
     private final TurProviderOptionsParser optionsParser;
 
@@ -39,7 +40,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
             String decryptedCredential) {
 
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-        String baseUri = firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl());
+        String baseUri = firstNonBlank(optionsParser.stringValue(options, BASE_URL_OPTION), turStoreInstance.getUrl());
 
         ConnectParam.Builder connectBuilder = ConnectParam.newBuilder()
                 .withUri(baseUri);
@@ -104,7 +105,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
             String collectionNameOverride) {
 
         Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-        String baseUri = firstNonBlank(optionsParser.stringValue(options, "baseUrl"), turStoreInstance.getUrl());
+        String baseUri = firstNonBlank(optionsParser.stringValue(options, BASE_URL_OPTION), turStoreInstance.getUrl());
 
         ConnectParam.Builder connectBuilder = ConnectParam.newBuilder().withUri(baseUri);
         if (StringUtils.hasText(decryptedCredential)) {
@@ -201,7 +202,7 @@ public class TurMilvusStoreProvider implements TurGenAiStoreProvider {
         info.put("store", "Milvus");
         try {
             java.util.Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-            String baseUri = firstNonBlank(optionsParser.stringValue(options, "baseUrl"),
+            String baseUri = firstNonBlank(optionsParser.stringValue(options, BASE_URL_OPTION),
                     turStoreInstance.getUrl());
             ConnectParam.Builder connectBuilder = ConnectParam.newBuilder().withUri(baseUri);
             if (StringUtils.hasText(decryptedCredential)) {

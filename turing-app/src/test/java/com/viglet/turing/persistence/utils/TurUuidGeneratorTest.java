@@ -1,6 +1,7 @@
 package com.viglet.turing.persistence.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -53,7 +54,7 @@ class TurUuidGeneratorTest {
         // Should not throw
         UUID parsed = UUID.fromString(generated);
         assertThat(parsed).isNotNull();
-        assertThat(parsed.toString()).isEqualTo(generated);
+        assertThat(parsed).hasToString(generated);
     }
 
     @Test
@@ -142,7 +143,7 @@ class TurUuidGeneratorTest {
     @Test
     void initializeShouldNotThrow() {
         // initialize is a no-op, but should not throw
-        generator.initialize(null, null, null);
+        assertDoesNotThrow(() -> generator.initialize(null, null, null));
     }
 
     // --- Default constructor ---

@@ -51,6 +51,8 @@ import java.util.Optional;
 @Component
 public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
+    private static final String VERSION_KEY = "version";
+
     private final TurSolr turSolr;
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurConfigProperties turConfigProperties;
@@ -239,21 +241,26 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 var root = mapper.readTree(json);
                 var lucene = root.path("lucene");
                 if (!lucene.isMissingNode()) {
-                    info.put("version", lucene.path("solr-spec-version").asText(""));
+                    info.put(VERSION_KEY, lucene.path("solr-spec-version").asText(""));
                     info.put("luceneVersion", lucene.path("lucene-spec-version").asText(""));
                 }
                 var system = root.path("system");
                 if (!system.isMissingNode()) {
                     info.put("os", system.path("name").asText("") + " "
-                            + system.path("version").asText(""));
+                            + system.path(VERSION_KEY).asText(""));
                 }
                 var jvm = root.path("jvm");
                 if (!jvm.isMissingNode()) {
-                    info.put("javaVersion", jvm.path("version").asText(""));
+                    info.put("javaVersion", jvm.path(VERSION_KEY).asText(""));
                     info.put("jvmMemory", jvm.path("memory").path("raw").path("used").asText(""));
                 }
             }
             info.put("status", "UP");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Failed to retrieve Solr system info: {}", e.getMessage());
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve Solr system info: {}", e.getMessage());
             info.put("status", "DOWN");

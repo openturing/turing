@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.plugins.se.lucene;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -329,13 +330,15 @@ class TurLuceneSearchEnginePluginTest {
     @Test
     void shouldNoOpForAddOrUpdateField() {
         TurSEInstance seInstance = new TurSEInstance();
-        plugin.addOrUpdateField(seInstance, "idx", "title", TurSEFieldType.TEXT, true, false, true);
+        assertDoesNotThrow(() ->
+                plugin.addOrUpdateField(seInstance, "idx", "title", TurSEFieldType.TEXT, true, false, true));
     }
 
     @Test
     void shouldNoOpForDeleteField() {
         TurSEInstance seInstance = new TurSEInstance();
-        plugin.deleteField(seInstance, "idx", "title", TurSEFieldType.TEXT);
+        assertDoesNotThrow(() ->
+                plugin.deleteField(seInstance, "idx", "title", TurSEFieldType.TEXT));
     }
 
     @Test
@@ -369,11 +372,8 @@ class TurLuceneSearchEnginePluginTest {
         siteLocale.setLanguage(Locale.ENGLISH);
 
         // Static calls to TurLuceneUtils - just ensure no exception
-        try {
-            plugin.createIndex(seInstance, siteLocale, "my-core", Collections.emptyMap());
-        } catch (Exception e) {
-            // May fail if filesystem path issues occur
-        }
+        assertDoesNotThrow(() ->
+                plugin.createIndex(seInstance, siteLocale, "my-core", Collections.emptyMap()));
     }
 
     @Test
@@ -381,11 +381,7 @@ class TurLuceneSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("/tmp/lucene-test");
 
-        try {
-            plugin.deleteIndex(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected if path does not exist
-        }
+        assertDoesNotThrow(() -> plugin.deleteIndex(seInstance, "my-core"));
     }
 
     @Test
@@ -393,11 +389,7 @@ class TurLuceneSearchEnginePluginTest {
         TurSEInstance seInstance = new TurSEInstance();
         seInstance.setEndpointUrl("/tmp/lucene-test");
 
-        try {
-            plugin.clearIndex(seInstance, "my-core");
-        } catch (Exception e) {
-            // Expected if path does not exist
-        }
+        assertDoesNotThrow(() -> plugin.clearIndex(seInstance, "my-core"));
     }
 
     @Test

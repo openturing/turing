@@ -172,13 +172,13 @@ public class TurElasticsearchUtils {
              RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
              ElasticsearchClient client = new ElasticsearchClient(transport)) {
             IndicesResponse catResponse = client.cat().indices();
-            for (IndicesRecord record : catResponse.indices()) {
-                String indexName = record.index();
+            for (IndicesRecord indicesRecord : catResponse.indices()) {
+                String indexName = indicesRecord.index();
                 if (indexName != null && !indexName.startsWith(".")) {
                     long docCount = 0;
-                    if (record.docsCount() != null) {
+                    if (indicesRecord.docsCount() != null) {
                         try {
-                            docCount = Long.parseLong(record.docsCount());
+                            docCount = Long.parseLong(indicesRecord.docsCount());
                         } catch (NumberFormatException ignored) {
                             // keep 0
                         }

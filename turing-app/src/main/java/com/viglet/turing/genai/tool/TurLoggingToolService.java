@@ -35,6 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 public class TurLoggingToolService {
 
     private static final String DATE_FIELD = "date";
+    private static final String STACK_TRACE_FIELD = "stackTrace";
+    private static final String MESSAGE_FIELD = "message";
+    private static final String RESULT_STATUS_FIELD = "resultStatus";
+    private static final String LEVEL_FIELD = "level";
+    private static final String LOGGING_DISABLED_MSG = "Logging is disabled. MongoDB is not configured.";
     private static final int MAX_RESULTS = 50;
 
     private final boolean enabled;
@@ -65,7 +70,7 @@ public class TurLoggingToolService {
         log.info("[Logging Tool] search_server_logs called: level={}, dateFrom={}, dateTo={}, search={}, rows={}, sort={}",
                 level, dateFrom, dateTo, search, rows, sort);
         if (!enabled) {
-            return "Logging is disabled. MongoDB is not configured.";
+            return LOGGING_DISABLED_MSG;
         }
         int effectiveRows = normalizeRows(rows);
         String effectiveSort = normalizeSort(sort);
@@ -77,7 +82,7 @@ public class TurLoggingToolService {
             List<Bson> filters = new ArrayList<>();
             addLevelFilter(filters, level);
             addDateRangeFilter(filters, dateFrom, dateTo);
-            addTextSearchFilter(filters, search, "message", "stackTrace");
+            addTextSearchFilter(filters, search, MESSAGE_FIELD, STACK_TRACE_FIELD);
 
             Bson filter = filters.isEmpty() ? new Document() : Filters.and(filters);
             long totalElements = collection.countDocuments(filter);
@@ -101,7 +106,7 @@ public class TurLoggingToolService {
         log.info("[Logging Tool] search_indexing_logs called: dateFrom={}, dateTo={}, status={}, contentId={}, resultStatus={}, url={}, rows={}, sort={}",
                 dateFrom, dateTo, status, contentId, resultStatus, url, rows, sort);
         if (!enabled) {
-            return "Logging is disabled. MongoDB is not configured.";
+            return LOGGING_DISABLED_MSG;
         }
         int effectiveRows = normalizeRows(rows);
         String effectiveSort = normalizeSort(sort);
@@ -114,7 +119,7 @@ public class TurLoggingToolService {
             addDateRangeFilter(filters, dateFrom, dateTo);
             addExactFilter(filters, "status", status);
             addRegexFilter(filters, "contentId", contentId);
-            addExactFilter(filters, "resultStatus", resultStatus);
+            addExactFilter(filters, RESULT_STATUS_FIELD, resultStatus);
             addRegexFilter(filters, "url", url);
 
             Bson filter = filters.isEmpty() ? new Document() : Filters.and(filters);
@@ -138,7 +143,7 @@ public class TurLoggingToolService {
         log.info("[Logging Tool] search_aem_logs called: level={}, dateFrom={}, dateTo={}, search={}, rows={}, sort={}",
                 level, dateFrom, dateTo, search, rows, sort);
         if (!enabled) {
-            return "Logging is disabled. MongoDB is not configured.";
+            return LOGGING_DISABLED_MSG;
         }
         int effectiveRows = normalizeRows(rows);
         String effectiveSort = normalizeSort(sort);
@@ -150,7 +155,7 @@ public class TurLoggingToolService {
             List<Bson> filters = new ArrayList<>();
             addLevelFilter(filters, level);
             addDateRangeFilter(filters, dateFrom, dateTo);
-            addTextSearchFilter(filters, search, "message", "stackTrace");
+            addTextSearchFilter(filters, search, MESSAGE_FIELD, STACK_TRACE_FIELD);
 
             Bson filter = filters.isEmpty() ? new Document() : Filters.and(filters);
             long totalElements = collection.countDocuments(filter);
@@ -171,7 +176,7 @@ public class TurLoggingToolService {
     public String getLogStats(String source, String dateFrom, String dateTo) {
         log.info("[Logging Tool] get_log_stats called: source={}, dateFrom={}, dateTo={}", source, dateFrom, dateTo);
         if (!enabled) {
-            return "Logging is disabled. MongoDB is not configured.";
+            return LOGGING_DISABLED_MSG;
         }
 
         String collectionName = resolveCollectionName(source);
@@ -229,7 +234,7 @@ public class TurLoggingToolService {
             if (!(dateFilter instanceof Document d && d.isEmpty())) {
                 filters.add(dateFilter);
             }
-            filters.add(Filters.eq("level", level));
+            filters.add(Filters.eq(LEVEL_FIELD, level));
             long count = collection.countDocuments(filters.isEmpty() ? new Document() : Filters.and(filters));
             if (count > 0) {
                 sb.append("  ").append(level).append(": ").append(count).append("\n");
@@ -244,7 +249,7 @@ public class TurLoggingToolService {
             if (!(dateFilter instanceof Document d && d.isEmpty())) {
                 filters.add(dateFilter);
             }
-            filters.add(Filters.eq("resultStatus", status));
+            filters.add(Filters.eq(RESULT_STATUS_FIELD, status));
             long count = collection.countDocuments(filters.isEmpty() ? new Document() : Filters.and(filters));
             if (count > 0) {
                 sb.append("  ").append(status).append(": ").append(count).append("\n");
@@ -262,10 +267,10 @@ public class TurLoggingToolService {
             Document doc = docs.get(i);
             sb.append("--- Entry ").append(i + 1).append(" ---\n");
             appendIfPresent(sb, "Date", doc.get(DATE_FIELD));
-            appendIfPresent(sb, "Level", doc.getString("level"));
+            appendIfPresent(sb, "Level", doc.getString(LEVEL_FIELD));
             appendIfPresent(sb, "Logger", doc.getString("loggerName"));
-            appendIfPresent(sb, "Message", doc.getString("message"));
-            String stackTrace = doc.getString("stackTrace");
+            appendIfPresent(sb, "Message", doc.getString(MESSAGE_FIELD));
+            String stackTrace = doc.getString(STACK_TRACE_FIELD);
             if (stackTrace != null && !stackTrace.isBlank()) {
                 String truncated = stackTrace.length() > 500
                         ? stackTrace.substring(0, 500) + "... (truncated)"
@@ -289,7 +294,7 @@ public class TurLoggingToolService {
             appendIfPresent(sb, "Date", doc.get(DATE_FIELD));
             appendIfPresent(sb, "Status", doc.getString("status"));
             appendIfPresent(sb, "ContentId", doc.getString("contentId"));
-            appendIfPresent(sb, "ResultStatus", doc.getString("resultStatus"));
+            appendIfPresent(sb, "ResultStatus", doc.getString(RESULT_STATUS_FIELD));
             appendIfPresent(sb, "URL", doc.getString("url"));
             appendIfPresent(sb, "Title", doc.getString("title"));
             appendIfPresent(sb, "Type", doc.getString("type"));
@@ -323,7 +328,7 @@ public class TurLoggingToolService {
 
     private void addLevelFilter(List<Bson> filters, String level) {
         if (level != null && !level.isBlank()) {
-            filters.add(Filters.eq("level", level.toUpperCase()));
+            filters.add(Filters.eq(LEVEL_FIELD, level.toUpperCase()));
         }
     }
 

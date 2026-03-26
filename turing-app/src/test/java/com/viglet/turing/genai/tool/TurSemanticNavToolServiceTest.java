@@ -46,7 +46,6 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -1536,7 +1535,7 @@ class TurSemanticNavToolServiceTest {
             StringBuilder sb = new StringBuilder();
             method.invoke(service, sb, fields, "title");
 
-            assertThat(sb.toString()).isEqualTo("title: My Title\n");
+            assertThat(sb).hasToString("title: My Title\n");
         }
 
         @Test
@@ -2304,7 +2303,7 @@ class TurSemanticNavToolServiceTest {
 
             long result = (long) method.invoke(service, response);
 
-            assertThat(result).isEqualTo(0);
+            assertThat(result).isZero();
         }
 
         @Test
@@ -2319,7 +2318,7 @@ class TurSemanticNavToolServiceTest {
 
             long result = (long) method.invoke(service, response);
 
-            assertThat(result).isEqualTo(0);
+            assertThat(result).isZero();
         }
     }
 
@@ -2830,10 +2829,10 @@ class TurSemanticNavToolServiceTest {
             Map<String, String> result = new LinkedHashMap<>();
             method.invoke(service, fieldNames, result);
 
-            assertThat(result).hasSize(3);
-            assertThat(result.get("title")).isEqualTo("(document not found)");
-            assertThat(result.get("description")).isEqualTo("(document not found)");
-            assertThat(result.get("type")).isEqualTo("(document not found)");
+            assertThat(result).hasSize(3)
+                    .containsEntry("title", "(document not found)")
+                    .containsEntry("description", "(document not found)")
+                    .containsEntry("type", "(document not found)");
         }
     }
 

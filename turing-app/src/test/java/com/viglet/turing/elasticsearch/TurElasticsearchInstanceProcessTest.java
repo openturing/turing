@@ -109,7 +109,7 @@ class TurElasticsearchInstanceProcessTest {
 
         assertThat(first).isPresent();
         assertThat(second).isPresent();
-        assertThat(first.get()).isSameAs(second.get());
+        assertThat(first).containsSame(second.get());
 
         // Cleanup
         process.shutdown();

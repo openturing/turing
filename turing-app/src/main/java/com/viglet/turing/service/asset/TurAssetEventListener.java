@@ -1,6 +1,5 @@
 package com.viglet.turing.service.asset;
 
-import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +36,12 @@ public class TurAssetEventListener {
             return;
         }
 
-        switch (event.type()) {
-            case UPLOADED -> {
-                log.info("[AssetEvent] File uploaded, indexing: {}", event.objectName());
-                trainingService.indexSingleFile(event.objectName(), event.contentType(), event.size());
-            }
-            case DELETED -> {
-                log.info("[AssetEvent] File deleted, deindexing: {}", event.objectName());
-                trainingService.deindexSingleFile(event.objectName());
-            }
+        if (event.type() == TurAssetEvent.Type.UPLOADED) {
+            log.info("[AssetEvent] File uploaded, indexing: {}", event.objectName());
+            trainingService.indexSingleFile(event.objectName(), event.contentType(), event.size());
+        } else if (event.type() == TurAssetEvent.Type.DELETED) {
+            log.info("[AssetEvent] File deleted, deindexing: {}", event.objectName());
+            trainingService.deindexSingleFile(event.objectName());
         }
     }
 }

@@ -28,6 +28,8 @@ import java.util.Map;
 @Tag(name = "System Information", description = "System Information API")
 public class TurSystemInfoAPI {
 
+    private static final String UNKNOWN = "Unknown";
+
     private final DataSource dataSource;
     private final TurMinioService turMinioService;
     private final TurConfigProperties turConfigProperties;
@@ -87,7 +89,7 @@ public class TurSystemInfoAPI {
             );
         } catch (Exception e) {
             return new TurSystemInfoBean.DatabaseInfo(
-                    "Unknown", "Unknown", "Unknown", "Unknown", "Unknown", "DOWN"
+                    UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, "DOWN"
             );
         }
     }
@@ -140,7 +142,7 @@ public class TurSystemInfoAPI {
         if (!mongoEnabled) {
             return new TurSystemInfoBean.ExternalServiceInfo(false, null, null, null);
         }
-        String version = "Unknown";
+        String version = UNKNOWN;
         String status = "DOWN";
         try (var mongoClient = com.mongodb.client.MongoClients.create(mongoUri)) {
             org.bson.Document buildInfo = mongoClient.getDatabase("admin")
@@ -159,7 +161,7 @@ public class TurSystemInfoAPI {
         }
         var minio = turConfigProperties.getMinio();
         String endpoint = minio != null ? minio.getEndpoint() : "";
-        String version = "Unknown";
+        String version = UNKNOWN;
         String status = "DOWN";
         try {
             var request = java.net.http.HttpRequest.newBuilder()
@@ -172,6 +174,8 @@ public class TurSystemInfoAPI {
                 version = serverHeader;
             }
             status = response.statusCode() < 500 ? "UP" : "DOWN";
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Exception ignored) {
             // MinIO may be unreachable
         }

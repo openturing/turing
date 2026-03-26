@@ -30,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 public class TurIntegrationMonitoringToolService {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
+    private static final String SOURCE_FIELD = "source";
+    private static final String RECORD_SEPARATOR = " ---\n";
+    private static final String RAW_RESPONSE_PREFIX = "Raw response: ";
 
     private final TurIntegrationInstanceRepository integrationRepository;
     private final HttpClient httpClient;
@@ -92,7 +95,7 @@ public class TurIntegrationMonitoringToolService {
         requestBody.put("sortBy", "modificationDate");
         requestBody.put("sortDirection", effectiveSort);
         putIfNotBlank(requestBody, "objectId", objectId);
-        putIfNotBlank(requestBody, "source", source);
+        putIfNotBlank(requestBody, SOURCE_FIELD, source);
         putIfNotBlank(requestBody, "environment", environment);
         putIfNotBlank(requestBody, "locale", locale);
         putIfNotBlank(requestBody, "site", site);
@@ -136,7 +139,7 @@ public class TurIntegrationMonitoringToolService {
     }
 
     private String callConnectorEndpoint(String integrationId, String path,
-                                         java.util.function.Function<String, String> formatter) {
+                                         java.util.function.UnaryOperator<String> formatter) {
         var optInstance = integrationRepository.findById(integrationId);
         if (optInstance.isEmpty()) {
             return "Integration not found: " + integrationId + ". Use list_integrations to see available ones.";
@@ -169,7 +172,7 @@ public class TurIntegrationMonitoringToolService {
 
     private String callConnectorPostEndpoint(String integrationId, String path,
                                               String body,
-                                              java.util.function.Function<String, String> formatter) {
+                                              java.util.function.UnaryOperator<String> formatter) {
         var optInstance = integrationRepository.findById(integrationId);
         if (optInstance.isEmpty()) {
             return "Integration not found: " + integrationId + ". Use list_integrations to see available ones.";
@@ -221,7 +224,7 @@ public class TurIntegrationMonitoringToolService {
             int limit = Math.min(indexing.length(), 50);
             for (int i = 0; i < limit; i++) {
                 JSONObject item = indexing.getJSONObject(i);
-                sb.append("--- Record ").append(i + 1).append(" ---\n");
+                sb.append("--- Record ").append(i + 1).append(RECORD_SEPARATOR);
                 formatIndexingRecord(sb, item);
                 sb.append("\n");
             }
@@ -230,7 +233,7 @@ public class TurIntegrationMonitoringToolService {
             }
             return sb.toString();
         } catch (Exception e) {
-            return "Raw response: " + truncate(responseBody, 2000);
+            return RAW_RESPONSE_PREFIX + truncate(responseBody, 2000);
         }
     }
 
@@ -272,13 +275,13 @@ public class TurIntegrationMonitoringToolService {
 
             for (int i = 0; i < content.length(); i++) {
                 JSONObject item = content.getJSONObject(i);
-                sb.append("--- Record ").append(i + 1).append(" ---\n");
+                sb.append("--- Record ").append(i + 1).append(RECORD_SEPARATOR);
                 formatIndexingRecord(sb, item);
                 sb.append("\n");
             }
             return sb.toString();
         } catch (Exception e) {
-            return "Raw response: " + truncate(responseBody, 2000);
+            return RAW_RESPONSE_PREFIX + truncate(responseBody, 2000);
         }
     }
 
@@ -292,9 +295,9 @@ public class TurIntegrationMonitoringToolService {
             sb.append("Indexing Statistics: ").append(stats.length()).append(" operation(s)\n\n");
             for (int i = 0; i < stats.length(); i++) {
                 JSONObject stat = stats.getJSONObject(i);
-                sb.append("--- Operation ").append(i + 1).append(" ---\n");
+                sb.append("--- Operation ").append(i + 1).append(RECORD_SEPARATOR);
                 appendJsonField(sb, "Provider", stat, "provider");
-                appendJsonField(sb, "Source", stat, "source");
+                appendJsonField(sb, "Source", stat, SOURCE_FIELD);
                 appendJsonField(sb, "Operation", stat, "operationType");
                 appendJsonField(sb, "Start", stat, "startTime");
                 appendJsonField(sb, "End", stat, "endTime");
@@ -304,7 +307,7 @@ public class TurIntegrationMonitoringToolService {
             }
             return sb.toString();
         } catch (Exception e) {
-            return "Raw response: " + truncate(responseBody, 2000);
+            return RAW_RESPONSE_PREFIX + truncate(responseBody, 2000);
         }
     }
 
@@ -328,43 +331,32 @@ public class TurIntegrationMonitoringToolService {
                 return sb.toString();
             }
 
-            if (missing != null && !missing.isEmpty()) {
-                sb.append("--- Missing Items ---\n");
-                for (String key : missing.keySet()) {
-                    JSONArray ids = missing.getJSONArray(key);
-                    sb.append("  ").append(key).append(": ");
-                    int limit = Math.min(ids.length(), 20);
-                    for (int i = 0; i < limit; i++) {
-                        if (i > 0) sb.append(", ");
-                        sb.append(ids.getString(i));
-                    }
-                    if (ids.length() > limit) {
-                        sb.append(" ... and ").append(ids.length() - limit).append(" more");
-                    }
-                    sb.append("\n");
-                }
-            }
-
-            if (extra != null && !extra.isEmpty()) {
-                sb.append("\n--- Extra Items ---\n");
-                for (String key : extra.keySet()) {
-                    JSONArray ids = extra.getJSONArray(key);
-                    sb.append("  ").append(key).append(": ");
-                    int limit = Math.min(ids.length(), 20);
-                    for (int i = 0; i < limit; i++) {
-                        if (i > 0) sb.append(", ");
-                        sb.append(ids.getString(i));
-                    }
-                    if (ids.length() > limit) {
-                        sb.append(" ... and ").append(ids.length() - limit).append(" more");
-                    }
-                    sb.append("\n");
-                }
-            }
+            appendValidationSection(sb, "--- Missing Items ---\n", missing);
+            appendValidationSection(sb, "\n--- Extra Items ---\n", extra);
 
             return sb.toString();
         } catch (Exception e) {
-            return "Raw response: " + truncate(responseBody, 2000);
+            return RAW_RESPONSE_PREFIX + truncate(responseBody, 2000);
+        }
+    }
+
+    private void appendValidationSection(StringBuilder sb, String header, JSONObject entries) {
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+        sb.append(header);
+        for (String key : entries.keySet()) {
+            JSONArray ids = entries.getJSONArray(key);
+            sb.append("  ").append(key).append(": ");
+            int limit = Math.min(ids.length(), 20);
+            for (int i = 0; i < limit; i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(ids.getString(i));
+            }
+            if (ids.length() > limit) {
+                sb.append(" ... and ").append(ids.length() - limit).append(" more");
+            }
+            sb.append("\n");
         }
     }
 
@@ -372,7 +364,7 @@ public class TurIntegrationMonitoringToolService {
         appendJsonField(sb, "ObjectId", item, "objectId");
         appendJsonField(sb, "Name", item, "name");
         appendJsonField(sb, "Status", item, "status");
-        appendJsonField(sb, "Source", item, "source");
+        appendJsonField(sb, "Source", item, SOURCE_FIELD);
         appendJsonField(sb, "Environment", item, "environment");
         appendJsonField(sb, "Locale", item, "locale");
         appendJsonField(sb, "TransactionId", item, "transactionId");
@@ -410,7 +402,7 @@ public class TurIntegrationMonitoringToolService {
 
     private String sanitizePath(String segment) {
         if (segment == null) return "";
-        return segment.replaceAll("[^a-zA-Z0-9_\\-.]", "");
+        return segment.replaceAll("[^\\w\\-.]", "");
     }
 
     private String truncate(String text, int maxLength) {

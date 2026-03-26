@@ -381,10 +381,9 @@ class TurSNUtilsTest {
     }
 
     private TurSNSiteSearchContext createContext(TurSEParameters params) {
-        TurSNSiteSearchContext context = new TurSNSiteSearchContext(
+        return new TurSNSiteSearchContext(
                 "testSite", null, params, null,
                 URI.create("http://localhost/search"), null);
-        return context;
     }
 
     private TurSNSite createSNSite(int spellCheck, int spellCheckFixes) {

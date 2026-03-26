@@ -29,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurNativeToolService {
 
+    private static final String TOOL_SERVICE_SUFFIX = "ToolService";
+
     private final List<Object> toolServiceInstances;
     private final Map<String, NativeToolGroup> toolGroups;
 
@@ -83,8 +85,8 @@ public class TurNativeToolService {
      */
     public static String groupIdFromClass(Class<?> serviceClass) {
         String name = serviceClass.getSimpleName();
-        if (name.startsWith("Tur") && name.endsWith("ToolService")) {
-            name = name.substring(3, name.length() - "ToolService".length());
+        if (name.startsWith("Tur") && name.endsWith(TOOL_SERVICE_SUFFIX)) {
+            name = name.substring(3, name.length() - TOOL_SERVICE_SUFFIX.length());
         }
         return camelToKebab(name);
     }
@@ -149,8 +151,8 @@ public class TurNativeToolService {
 
     private static String humanizeClassName(Class<?> clazz) {
         String name = clazz.getSimpleName();
-        if (name.startsWith("Tur") && name.endsWith("ToolService")) {
-            name = name.substring(3, name.length() - "ToolService".length());
+        if (name.startsWith("Tur") && name.endsWith(TOOL_SERVICE_SUFFIX)) {
+            name = name.substring(3, name.length() - TOOL_SERVICE_SUFFIX.length());
         }
         return Arrays.stream(name.split("(?=[A-Z])"))
                 .filter(s -> !s.isEmpty())

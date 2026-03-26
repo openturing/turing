@@ -25,4 +25,7 @@ public interface TurEmbeddingModelMapper {
 
     @Mapping(target = "id", ignore = true)
     void updateEntity(TurEmbeddingModel source, @MappingTarget TurEmbeddingModel target);
+
+    @Mapping(target = "id", ignore = true)
+    void updateEntityFromDto(TurEmbeddingModelDto source, @MappingTarget TurEmbeddingModel target);
 }

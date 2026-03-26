@@ -342,8 +342,8 @@ class TurCodeInterpreterToolServiceTest {
         method.setAccessible(true);
 
         java.nio.file.Path path = java.nio.file.Path.of("test.py");
-        method.invoke(service, "s1", path, 0,
-                new StringBuilder("output"), new StringBuilder(), null);
+        assertThat(method.invoke(service, "s1", path, 0,
+                new StringBuilder("output"), new StringBuilder(), null)).isNull();
     }
 
     @Test
@@ -354,8 +354,8 @@ class TurCodeInterpreterToolServiceTest {
         method.setAccessible(true);
 
         java.nio.file.Path path = java.nio.file.Path.of("test.py");
-        method.invoke(service, "s1", path, 0,
-                new StringBuilder("output"), new StringBuilder("warning"), null);
+        assertThat(method.invoke(service, "s1", path, 0,
+                new StringBuilder("output"), new StringBuilder("warning"), null)).isNull();
     }
 
     @Test
@@ -366,8 +366,8 @@ class TurCodeInterpreterToolServiceTest {
         method.setAccessible(true);
 
         java.nio.file.Path path = java.nio.file.Path.of("test.py");
-        method.invoke(service, "s1", path, 1,
-                new StringBuilder(), new StringBuilder("error"), new File[]{});
+        assertThat(method.invoke(service, "s1", path, 1,
+                new StringBuilder(), new StringBuilder("error"), new File[]{})).isNull();
     }
 
     @Test
@@ -381,8 +381,8 @@ class TurCodeInterpreterToolServiceTest {
         tempFile.deleteOnExit();
 
         java.nio.file.Path path = java.nio.file.Path.of("test.py");
-        method.invoke(service, "s1", path, 0,
-                new StringBuilder("ok"), new StringBuilder(), new File[]{tempFile});
+        assertThat(method.invoke(service, "s1", path, 0,
+                new StringBuilder("ok"), new StringBuilder(), new File[]{tempFile})).isNull();
     }
 
     // --- Additional coverage: resolvePythonExecutable with configuredPythonExecutable ---
@@ -537,7 +537,7 @@ class TurCodeInterpreterToolServiceTest {
         StringBuilder buffer = new StringBuilder();
 
         method.invoke(service, reader, buffer);
-        assertThat(buffer.toString()).isEqualTo("line1\nline2\nline3\n");
+        assertThat(buffer).hasToString("line1\nline2\nline3\n");
     }
 
     @Test

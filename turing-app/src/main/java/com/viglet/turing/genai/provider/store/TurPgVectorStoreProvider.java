@@ -37,6 +37,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
 
     private static final String DEFAULT_TABLE_NAME = "vector_store";
     private static final String DEFAULT_SCHEMA_NAME = "public";
+    private static final String SCHEMA_NAME_OPTION = "schemaName";
 
     private final TurProviderOptionsParser optionsParser;
     private final ConcurrentHashMap<String, HikariDataSource> dataSourceCache = new ConcurrentHashMap<>();
@@ -94,7 +95,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
         String tableName = sanitizeTableName(rawTableName);
 
         String schemaName = firstNonBlank(
-                optionsParser.stringValue(options, "schemaName"),
+                optionsParser.stringValue(options, SCHEMA_NAME_OPTION),
                 DEFAULT_SCHEMA_NAME);
 
         boolean initializeSchema = Boolean.TRUE
@@ -173,7 +174,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String schemaName = firstNonBlank(
-                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+                    optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
 
             String sql = """
                     SELECT t.tablename
@@ -238,7 +239,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String schemaName = firstNonBlank(
-                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+                    optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
 
             jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS vector");
             jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS hstore");
@@ -267,7 +268,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String schemaName = firstNonBlank(
-                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+                    optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
 
             String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
             jdbcTemplate.execute("DELETE FROM " + quotedTable);
@@ -286,7 +287,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String schemaName = firstNonBlank(
-                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+                    optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
 
             String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
             jdbcTemplate.execute("DROP TABLE IF EXISTS " + quotedTable);
@@ -307,7 +308,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String schemaName = firstNonBlank(
-                    optionsParser.stringValue(options, "schemaName"), DEFAULT_SCHEMA_NAME);
+                    optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
 
             String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
             String sql = "DELETE FROM " + quotedTable + " WHERE metadata ->> ? = ?";
@@ -319,7 +320,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
     }
 
     private String sanitizeTableName(String name) {
-        return name.replaceAll("[^a-zA-Z0-9_]", "_");
+        return name.replaceAll("\\W", "_");
     }
 
     private String quoteIdentifier(String identifier) {

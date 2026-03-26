@@ -1,9 +1,9 @@
 package com.viglet.turing.service.asset;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -102,10 +102,9 @@ class TurAssetTrainingServiceTest {
 
                 var result = service.getTrainedAtMap(List.of("file1.pdf", "file2.txt"));
 
-                assertThat(result).hasSize(2);
-                assertThat(result).containsKey("file1.pdf");
-                assertThat(result).containsKey("file2.txt");
-                assertThat(result.get("file1.pdf")).isEqualTo("2026-03-01T10:00:00Z");
+                assertThat(result).hasSize(2)
+                        .containsKey("file2.txt")
+                        .containsEntry("file1.pdf", "2026-03-01T10:00:00Z");
         }
 
         @Test
@@ -120,12 +119,12 @@ class TurAssetTrainingServiceTest {
 
         @Test
         void getTrainedAtMapPartialMatch() {
-                TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-                record.setObjectName("trained.pdf");
-                record.setTrainedAt(Instant.parse("2026-01-15T08:00:00Z"));
+                TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
+                trainingRecord.setObjectName("trained.pdf");
+                trainingRecord.setTrainedAt(Instant.parse("2026-01-15T08:00:00Z"));
 
                 when(trainingRecordRepository.findByObjectNameIn(List.of("trained.pdf", "untrained.pdf")))
-                                .thenReturn(List.of(record));
+                                .thenReturn(List.of(trainingRecord));
 
                 var result = service.getTrainedAtMap(List.of("trained.pdf", "untrained.pdf"));
 
@@ -219,8 +218,8 @@ class TurAssetTrainingServiceTest {
                 TurAssetTrainingStatus s2 = new TurAssetTrainingStatus(
                                 TurAssetTrainingState.COMPLETED, 10, 10, 0, "t1", "t2", "");
 
-                assertThat(s1).isEqualTo(s2);
-                assertThat(s1.hashCode()).isEqualTo(s2.hashCode());
+                assertThat(s1).isEqualTo(s2)
+                        .hasSameHashCodeAs(s2);
         }
 
         @Test
@@ -252,7 +251,7 @@ class TurAssetTrainingServiceTest {
                 when(ragContextBuilder.buildFromGlobalSettings())
                                 .thenThrow(new RuntimeException("Unexpected error"));
 
-                service.deindexSingleFile("bad-file.pdf");
+                assertDoesNotThrow(() -> service.deindexSingleFile("bad-file.pdf"));
 
                 // Should not propagate the exception
         }
@@ -262,7 +261,7 @@ class TurAssetTrainingServiceTest {
                 when(ragContextBuilder.buildFromGlobalSettings())
                                 .thenThrow(new RuntimeException("Unexpected error"));
 
-                service.indexSingleFile("bad-file.pdf", "application/pdf", 1024);
+                assertDoesNotThrow(() -> service.indexSingleFile("bad-file.pdf", "application/pdf", 1024));
 
                 // Should not propagate the exception
         }
@@ -270,7 +269,7 @@ class TurAssetTrainingServiceTest {
         // --- Additional coverage: deindexSingleFile success path ---
 
         @Test
-        void deindexSingleFileCallsDeleteWhenRagConfigured() throws Exception {
+        void deindexSingleFileCallsDeleteWhenRagConfigured() {
                 com.viglet.turing.genai.provider.store.TurGenAiStoreProvider mockStoreProvider = org.mockito.Mockito
                                 .mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class);
                 com.viglet.turing.persistence.model.store.TurStoreInstance mockStoreInstance = org.mockito.Mockito
@@ -288,8 +287,8 @@ class TurAssetTrainingServiceTest {
 
                 service.deindexSingleFile("docs/report.pdf");
 
-                verify(mockStoreProvider).deleteByMetadata(eq(mockStoreInstance), eq("cred"),
-                                eq("collection"), eq("objectName"), eq("docs/report.pdf"));
+                verify(mockStoreProvider).deleteByMetadata(mockStoreInstance, "cred",
+                                "collection", "objectName", "docs/report.pdf");
                 verify(trainingRecordRepository).deleteById("docs/report.pdf");
         }
 
@@ -312,17 +311,17 @@ class TurAssetTrainingServiceTest {
 
         @Test
         void getTrainedAtMapWithSingleRecord() {
-                TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-                record.setObjectName("single.pdf");
-                record.setTrainedAt(java.time.Instant.parse("2026-03-15T12:00:00Z"));
+                TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
+                trainingRecord.setObjectName("single.pdf");
+                trainingRecord.setTrainedAt(java.time.Instant.parse("2026-03-15T12:00:00Z"));
 
                 when(trainingRecordRepository.findByObjectNameIn(List.of("single.pdf")))
-                                .thenReturn(List.of(record));
+                                .thenReturn(List.of(trainingRecord));
 
                 var result = service.getTrainedAtMap(List.of("single.pdf"));
 
-                assertThat(result).hasSize(1);
-                assertThat(result.get("single.pdf")).isEqualTo("2026-03-15T12:00:00Z");
+                assertThat(result).hasSize(1)
+                        .containsEntry("single.pdf", "2026-03-15T12:00:00Z");
         }
 
         // --- TurAssetTrainingStatus toString ---
@@ -339,7 +338,7 @@ class TurAssetTrainingServiceTest {
         // --- deindexSingleFile when storeProvider throws ---
 
         @Test
-        void deindexSingleFileHandlesStoreProviderException() throws Exception {
+        void deindexSingleFileHandlesStoreProviderException() {
                 com.viglet.turing.genai.provider.store.TurGenAiStoreProvider mockStoreProvider = org.mockito.Mockito
                                 .mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class);
                 com.viglet.turing.persistence.model.store.TurStoreInstance mockStoreInstance = org.mockito.Mockito
@@ -358,7 +357,7 @@ class TurAssetTrainingServiceTest {
                                 .deleteByMetadata(any(), anyString(), anyString(), anyString(), anyString());
 
                 // Should not throw
-                service.deindexSingleFile("problem-file.pdf");
+                assertDoesNotThrow(() -> service.deindexSingleFile("problem-file.pdf"));
         }
 
         // --- getStatus after startTraining ---

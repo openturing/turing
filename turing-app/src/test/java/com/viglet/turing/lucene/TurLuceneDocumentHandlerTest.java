@@ -13,7 +13,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.MMapDirectory;
 import org.json.JSONArray;
@@ -82,7 +82,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         assertThat(topDocs.totalHits.value()).isEqualTo(1);
 
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
@@ -106,7 +106,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         assertThat(topDocs.totalHits.value()).isEqualTo(1);
 
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
@@ -266,7 +266,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         String[] tagValues = doc.getValues("tags");
         assertThat(tagValues).containsExactly("java", "spring");
@@ -289,7 +289,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         // Single-valued: only first element
         assertThat(doc.get("name")).isEqualTo("first");
@@ -312,7 +312,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         String[] authorValues = doc.getValues("authors");
         assertThat(authorValues).containsExactly("Alice", "Bob");
@@ -333,7 +333,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         String[] personValues = doc.getValues("turing_entity_person");
         assertThat(personValues).containsExactly("John", "Jane");
@@ -453,7 +453,7 @@ class TurLuceneDocumentHandlerTest {
         DirectoryReader reader = DirectoryReader.open(directory);
         assertThat(reader.numDocs()).isEqualTo(1);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         assertThat(doc.get("title")).isEqualTo("Updated");
         reader.close();
@@ -474,7 +474,7 @@ class TurLuceneDocumentHandlerTest {
         handler.deIndexing(instance, "toDelete");
 
         DirectoryReader reader = DirectoryReader.open(directory);
-        assertThat(reader.numDocs()).isEqualTo(0);
+        assertThat(reader.numDocs()).isZero();
         reader.close();
     }
 
@@ -493,7 +493,7 @@ class TurLuceneDocumentHandlerTest {
         handler.deIndexingByType(instance, "article");
 
         DirectoryReader reader = DirectoryReader.open(directory);
-        assertThat(reader.numDocs()).isEqualTo(0);
+        assertThat(reader.numDocs()).isZero();
         reader.close();
     }
 
@@ -513,7 +513,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         assertThat(doc.get("active")).isEqualTo("true");
         reader.close();
@@ -535,7 +535,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         String[] values = doc.getValues("items");
         assertThat(values).containsExactly("a", "b", "c");
@@ -557,7 +557,7 @@ class TurLuceneDocumentHandlerTest {
 
         DirectoryReader reader = DirectoryReader.open(directory);
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), 10);
+        TopDocs topDocs = searcher.search(new FieldExistsQuery("id"), 10);
         Document doc = searcher.storedFields().document(topDocs.scoreDocs[0].doc);
         assertThat(doc.get("unknown")).isEqualTo("somevalue");
         reader.close();

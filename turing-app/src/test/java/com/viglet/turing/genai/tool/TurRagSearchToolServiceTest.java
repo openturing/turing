@@ -195,12 +195,12 @@ class TurRagSearchToolServiceTest {
         when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
         when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
 
-        TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-        record.setChunkCount(3);
-        record.setFileSize(1024L);
-        record.setContentType(null);
+        TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
+        trainingRecord.setChunkCount(3);
+        trainingRecord.setFileSize(1024L);
+        trainingRecord.setContentType(null);
 
-        when(trainingRecordRepository.findAll()).thenReturn(List.of(record));
+        when(trainingRecordRepository.findAll()).thenReturn(List.of(trainingRecord));
 
         String result = service.knowledgeBaseStats();
         assertThat(result)
@@ -225,15 +225,15 @@ class TurRagSearchToolServiceTest {
         when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
         when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
 
-        TurAssetTrainingRecord record = new TurAssetTrainingRecord();
-        record.setFileName("report.pdf");
-        record.setObjectName("/docs/report.pdf");
-        record.setContentType("application/pdf");
-        record.setFileSize(2048L);
-        record.setChunkCount(10);
-        record.setTrainedAt(java.time.Instant.now());
+        TurAssetTrainingRecord trainingRecord = new TurAssetTrainingRecord();
+        trainingRecord.setFileName("report.pdf");
+        trainingRecord.setObjectName("/docs/report.pdf");
+        trainingRecord.setContentType("application/pdf");
+        trainingRecord.setFileSize(2048L);
+        trainingRecord.setChunkCount(10);
+        trainingRecord.setTrainedAt(java.time.Instant.now());
 
-        when(trainingRecordRepository.findAll()).thenReturn(List.of(record));
+        when(trainingRecordRepository.findAll()).thenReturn(List.of(trainingRecord));
 
         String result = service.listKnowledgeBaseFiles(null, null);
         assertThat(result)
