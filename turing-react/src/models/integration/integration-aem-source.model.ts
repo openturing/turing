@@ -1,4 +1,6 @@
+import type { TurIntegrationAemAttributeSpec } from "./integration-aem-attribute-spec.model";
 import type { TurIntegrationAemLocalePath } from "./integration-aem-locale-path.model";
+import type { TurIntegrationAemPluginModel } from "./integration-aem-plugin-model.model";
 
 export type TurIntegrationAemSource = {
   id: string;
@@ -20,6 +22,6 @@ export type TurIntegrationAemSource = {
   authorURLPrefix: string;
   publishURLPrefix: string;
   localePaths: TurIntegrationAemLocalePath[];
-  attributeSpecifications: object;
-  models: object;
+  attributeSpecifications: TurIntegrationAemAttributeSpec[];
+  models: TurIntegrationAemPluginModel[];
 };

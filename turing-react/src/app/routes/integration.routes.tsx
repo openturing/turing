@@ -12,6 +12,8 @@ import IntegrationInstancePage from "../console/integration/integration.instance
 import IntegrationInstanceRootPage from "../console/integration/integration.instance.root.page"
 import IntegrationInstanceSourceListPage from "../console/integration/integration.instance.source.list.page"
 import IntegrationInstanceSourcePage from "../console/integration/integration.instance.source.page"
+import IntegrationInstanceSourceSpecPage from "../console/integration/integration.instance.source.spec.page"
+import IntegrationInstanceSourceModelPage from "../console/integration/integration.instance.source.model.page"
 import { ROUTES } from "../routes.const"
 
 function RedirectToIntegrationDetail() {
@@ -28,6 +30,9 @@ export const IntegrationRoutes = (
             <Route path="detail" element={<IntegrationInstanceDetailPage />} />
             <Route path="source" element={<IntegrationInstanceSourceListPage />} />
             <Route path="source/:sourceId" element={<IntegrationInstanceSourcePage />} />
+            <Route path="source/:sourceId/:tab" element={<IntegrationInstanceSourcePage />} />
+            <Route path="source/:sourceId/specifications/:specIndex" element={<IntegrationInstanceSourceSpecPage />} />
+            <Route path="source/:sourceId/models/:modelIndex" element={<IntegrationInstanceSourceModelPage />} />
             <Route path="indexing-rule" element={<IntegrationInstanceIndexingRulesListPage />} />
             <Route path="indexing-rule/:ruleId" element={<IntegrationInstanceIndexingRulesPage />} />
             <Route path="indexing-manager" element={<IntegrationInstanceIndexAdminPage />} />

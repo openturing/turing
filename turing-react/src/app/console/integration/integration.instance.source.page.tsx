@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 export default function IntegrationInstanceSourcePage() {
   const navigate = useNavigate();
-  const { id, sourceId } = useParams() as { id: string, sourceId: string };
+  const { id, sourceId, tab = "general" } = useParams() as { id: string, sourceId: string, tab?: string };
   const [integrationAemSource, setIntegrationAemSource] = useState<TurIntegrationAemSource>({} as TurIntegrationAemSource);
   const [isNew, setIsNew] = useState<boolean>(true);
   const turIntegrationAemSourceService = useAemSourceService(id);
@@ -144,7 +144,7 @@ export default function IntegrationInstanceSourcePage() {
           </GradientButton>
         </div>
       </div>
-      <IntegrationSourceForm value={integrationAemSource} isNew={isNew} integrationId={id} />
+      <IntegrationSourceForm value={integrationAemSource} isNew={isNew} integrationId={id} sourceId={sourceId} tab={tab} onSourceUpdated={setIntegrationAemSource} />
 
     </>
   )
