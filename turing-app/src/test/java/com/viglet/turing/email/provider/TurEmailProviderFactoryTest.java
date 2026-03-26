@@ -7,6 +7,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for TurEmailProviderFactory.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.1.14
+ */
 class TurEmailProviderFactoryTest {
 
     @Test
@@ -21,12 +27,26 @@ class TurEmailProviderFactoryTest {
     }
 
     @Test
+    void getProviderShouldReturnMatchingProviderCaseInsensitive() {
+        TurEmailProvider provider = mock(TurEmailProvider.class);
+        when(provider.getProviderType()).thenReturn("SendGrid");
+
+        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of(provider));
+
+        assertSame(provider, factory.getProvider("sendgrid"));
+        assertSame(provider, factory.getProvider("SENDGRID"));
+        assertSame(provider, factory.getProvider("SendGrid"));
+    }
+
+    @Test
     void getProviderShouldThrowForUnknownType() {
         TurEmailProvider brevo = mock(TurEmailProvider.class);
         when(brevo.getProviderType()).thenReturn("BREVO");
         TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of(brevo));
 
-        assertThrows(IllegalStateException.class, () -> factory.getProvider("UNKNOWN"));
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> factory.getProvider("UNKNOWN"));
+        assertTrue(ex.getMessage().contains("UNKNOWN"));
     }
 
     @Test
@@ -39,5 +59,30 @@ class TurEmailProviderFactoryTest {
     void getProviderShouldThrowForBlankType() {
         TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
         assertThrows(IllegalArgumentException.class, () -> factory.getProvider("  "));
+    }
+
+    @Test
+    void getProviderShouldThrowForEmptyType() {
+        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
+        assertThrows(IllegalArgumentException.class, () -> factory.getProvider(""));
+    }
+
+    @Test
+    void factoryWithMultipleProvidersShouldResolveCorrectOne() {
+        TurEmailProvider brevo = mock(TurEmailProvider.class);
+        when(brevo.getProviderType()).thenReturn("BREVO");
+        TurEmailProvider sendGrid = mock(TurEmailProvider.class);
+        when(sendGrid.getProviderType()).thenReturn("SENDGRID");
+
+        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of(brevo, sendGrid));
+
+        assertSame(brevo, factory.getProvider("BREVO"));
+        assertSame(sendGrid, factory.getProvider("SENDGRID"));
+    }
+
+    @Test
+    void factoryWithEmptyProviderListShouldThrowForValidType() {
+        TurEmailProviderFactory factory = new TurEmailProviderFactory(List.of());
+        assertThrows(IllegalStateException.class, () -> factory.getProvider("BREVO"));
     }
 }

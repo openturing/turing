@@ -69,10 +69,10 @@ import com.viglet.turing.sn.facet.TurSNFacetTypeContext;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 
 /**
- * Unit tests for TurSolrQueryBuilder.
+ * Tests for TurSolrQueryBuilder.
  *
  * @author Alexandre Oliveira
- * @since 2026.1.10
+ * @since 2026.1.14
  */
 @ExtendWith(MockitoExtension.class)
 class TurSolrQueryBuilderTest {
@@ -774,5 +774,177 @@ class TurSolrQueryBuilderTest {
                 assertThat(entityQuery.getFacetFields()).isNotEmpty();
                 assertThat(String.join(",", entityQuery.getFacetFields())).contains("turing_entity_person");
                 assertThat(entityQuery.get("f.person.facet.sort")).isEqualTo("index");
+        }
+
+        @Test
+        void testHasGroupWithBlankStringReturnsFalse() {
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setGroup("   ");
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+
+                // StringUtils.hasText returns false for blank strings
+                assertThat(builder().hasGroup(parameters)).isFalse();
+        }
+
+        @Test
+        void testGetFqFieldsReturnsEmptyForNullParams() {
+                TurSNFilterParams params = TurSNFilterParams.builder().build();
+                List<String> keys = builder().getFqFields(params);
+                assertThat(keys).isEmpty();
+        }
+
+        @Test
+        void testGetFqFieldsExtractsKeysFromAllSources() {
+                TurSNFilterParams params = TurSNFilterParams.builder()
+                                .defaultValues(List.of("category:books"))
+                                .and(List.of("author:john"))
+                                .or(List.of("format:pdf"))
+                                .build();
+
+                List<String> keys = builder().getFqFields(params);
+
+                assertThat(keys).containsExactly("category", "author", "format");
+        }
+
+        @Test
+        void testGetFqFieldsHandlesEmptyLists() {
+                TurSNFilterParams params = TurSNFilterParams.builder()
+                                .defaultValues(Collections.emptyList())
+                                .and(Collections.emptyList())
+                                .or(Collections.emptyList())
+                                .build();
+
+                List<String> keys = builder().getFqFields(params);
+                assertThat(keys).isEmpty();
+        }
+
+        @Test
+        void testCustomFacetQuerySeparatorConstant() {
+                assertThat(TurSolrQueryBuilder.CUSTOM_FACET_QUERY_SEPARATOR).isEqualTo("::");
+        }
+
+        @Test
+        void testGetFacetTypeAndFacetItemTypeValuesWithParamOverrides() {
+                TurSNSite site = new TurSNSite();
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+                TurSNFilterParams params = TurSNFilterParams.builder()
+                                .operator(TurSNFilterQueryOperator.AND)
+                                .itemOperator(TurSNFilterQueryOperator.OR)
+                                .build();
+
+                TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
+
+                assertThat(TurSolrQueryBuilder.getFacetTypeAndFacetItemTypeValues(context))
+                                .isEqualTo("AND-OR");
+        }
+
+        @Test
+        void testGetFacetTypeAndFacetItemTypeValuesOrOr() {
+                TurSNSite site = new TurSNSite();
+                site.setFacetType(TurSNSiteFacetFieldEnum.OR);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
+                TurSNFilterParams params = TurSNFilterParams.builder()
+                                .operator(TurSNFilterQueryOperator.NONE)
+                                .itemOperator(TurSNFilterQueryOperator.NONE)
+                                .build();
+
+                TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
+
+                assertThat(TurSolrQueryBuilder.getFacetTypeAndFacetItemTypeValues(context))
+                                .isEqualTo("OR-OR");
+        }
+
+        @Test
+        void testPrepareQueryFacetReturnsFacetFields() {
+                TurSNSite site = new TurSNSite();
+                site.setFacet(1);
+                site.setItemsPerFacet(10);
+                site.setFacetSort(null);
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+
+                TurSNSiteFieldExt f1 = TurSNSiteFieldExt.builder()
+                                .name("category")
+                                .facet(1)
+                                .enabled(1)
+                                .facetPosition(2)
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .facetSort(TurSNSiteFacetFieldSortEnum.DEFAULT)
+                                .build();
+                TurSNSiteFieldExt f2 = TurSNSiteFieldExt.builder()
+                                .name("type")
+                                .facet(1)
+                                .enabled(1)
+                                .facetPosition(1)
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .facetSort(TurSNSiteFacetFieldSortEnum.DEFAULT)
+                                .build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(f1, f2));
+
+                SolrQuery query = new SolrQuery();
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
+                                TurSNFilterParams.builder().build());
+
+                assertThat(facets).hasSize(2);
+                assertThat(facets).extracting(TurSNSiteFieldExt::getName)
+                                .containsExactlyInAnyOrder("category", "type");
+                assertThat(query.getBool("facet")).isTrue();
+        }
+
+        @Test
+        void testPrepareQueryFacetWithDisabledFacetReturnsEmpty() {
+                TurSNSite site = new TurSNSite();
+                site.setFacet(0);
+
+                SolrQuery query = new SolrQuery();
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
+                                TurSNFilterParams.builder().build());
+
+                assertThat(facets).isEmpty();
+        }
+
+        @Test
+        void testPrepareSolrQueryWithNullSortUsesDefault() {
+                TurSNSite site = new TurSNSite();
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setQ("test");
+                searchParams.setRows(10);
+                searchParams.setSort(null);
+                TurSEParameters parameters = new TurSEParameters(searchParams, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(parameters, new TurSNSitePostParamsBean()), site,
+                                parameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getQuery()).isEqualTo("test");
+        }
+
+        @Test
+        void testPrepareQueryMLTWithMltDisabledReturnsFieldsButDoesNotConfigureQuery() {
+                TurSNSite site = new TurSNSite();
+                site.setMlt(0);
+                TurSNSiteFieldExt mltField = TurSNSiteFieldExt.builder().name("body").build();
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndMltAndEnabled(site, 1, 1))
+                                .thenReturn(List.of(mltField));
+
+                SolrQuery query = new SolrQuery();
+                List<TurSNSiteFieldExt> result = builder().prepareQueryMLT(site, query);
+
+                // Fields are always returned from the repository
+                assertThat(result).containsExactly(mltField);
+                // But the query is NOT configured with MLT params when mlt is disabled
+                assertThat(query.get(MoreLikeThisParams.MLT)).isNull();
         }
 }

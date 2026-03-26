@@ -52,10 +52,10 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 
 /**
- * Unit tests for TurSolrDocumentHandler.
+ * Tests for TurSolrDocumentHandler.
  *
  * @author Alexandre Oliveira
- * @since 2026.1.10
+ * @since 2026.1.14
  */
 @ExtendWith(MockitoExtension.class)
 class TurSolrDocumentHandlerTest {
@@ -150,6 +150,267 @@ class TurSolrDocumentHandlerTest {
                 SolrInputDocument document = updateRequest.getDocuments().getFirst();
 
                 assertThat(document.getFieldValue("preco_produto")).isEqualTo("150.00,BRL");
+        }
+
+        @Test
+        void testIndexingRemovesScoreVersionAndBoostKeys() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("id", "1");
+                attributes.put(TurSolrConstants.SCORE, 5.0);
+                attributes.put(TurSolrConstants.VERSION, 99);
+                attributes.put(TurSolrConstants.BOOST, 1.5);
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue(TurSolrConstants.SCORE)).isNull();
+                assertThat(document.getFieldValue(TurSolrConstants.VERSION)).isNull();
+                assertThat(document.getFieldValue(TurSolrConstants.BOOST)).isNull();
+                assertThat(document.getFieldValue("id")).isEqualTo("1");
+        }
+
+        @Test
+        void testIndexingHandlesNullAttributesThrowsNpe() {
+                // The indexing method calls attributes.remove() before null-checking,
+                // so null attributes cause a NullPointerException
+                assertThat(org.junit.jupiter.api.Assertions.assertThrows(
+                                NullPointerException.class,
+                                () -> turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, null)))
+                                .isNotNull();
+        }
+
+        @Test
+        void testIndexingHandlesEmptyAttributes() {
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(new HashMap<>());
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, new HashMap<>());
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldNames()).isEmpty();
+        }
+
+        @Test
+        void testIndexingSingleValuedJsonArrayConcatenatesValues() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("desc", TurSNSiteField.builder().name("desc").multiValued(0).build());
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("desc", new org.json.JSONArray(List.of("line1", "line2")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                String value = (String) document.getFieldValue("desc");
+                assertThat(value).contains("line1");
+                assertThat(value).contains("line2");
+        }
+
+        @Test
+        void testIndexingSingleValuedArrayListConcatenatesValues() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("body", TurSNSiteField.builder().name("body").multiValued(0).build());
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("body", new ArrayList<>(List.of("para1", "para2")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                String value = (String) document.getFieldValue("body");
+                assertThat(value).contains("para1");
+                assertThat(value).contains("para2");
+        }
+
+        @Test
+        void testIndexingMultiValuedArrayListAddsEachValue() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("authors", TurSNSiteField.builder().name("authors").multiValued(1).build());
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("authors", new ArrayList<>(List.of("Alice", "Bob")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValues("authors")).containsExactly("Alice", "Bob");
+        }
+
+        @Test
+        void testIndexingTuringEntityPrefixAlwaysMultiValued() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("turing_entity_org", new org.json.JSONArray(List.of("Viglet", "Turing")));
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValues("turing_entity_org")).containsExactly("Viglet", "Turing");
+        }
+
+        @Test
+        void testIndexingIntegerFieldPreservesType() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("count", 42);
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("count")).isEqualTo(42);
+        }
+
+        @Test
+        void testIndexingNullAttributeValueIsSkipped() {
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("id", "1");
+                attributes.put("nullField", null);
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("id")).isEqualTo("1");
+                assertThat(document.getFieldValue("nullField")).isNull();
+        }
+
+        @Test
+        void testCurrencyInvalidFormatIsSkipped() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", "invalid");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
+        }
+
+        @Test
+        void testCurrencyWithCommaSeparatedISOCodeIsValid() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("amount")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("amount", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("amount", "99.50,USD");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("amount")).isEqualTo("99.50,USD");
+        }
+
+        @Test
+        void testCurrencyLowercaseISOCodeIsNormalized() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("amount")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("amount", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("amount", "100.00,brl");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("amount")).isEqualTo("100.00,BRL");
+        }
+
+        @Test
+        void testCurrencyMissingCodeIsInvalid() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", "100.00,");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
+        }
+
+        @Test
+        void testCurrencyInvalidCodeLengthIsInvalid() {
+                TurSNSiteField currencyField = TurSNSiteField.builder()
+                                .name("price")
+                                .type(TurSEFieldType.CURRENCY)
+                                .multiValued(0)
+                                .build();
+
+                Map<String, TurSNSiteField> fieldMap = new HashMap<>();
+                fieldMap.put("price", currencyField);
+
+                when(turSNSiteFieldService.toMap(turSNSite)).thenReturn(fieldMap);
+                when(turDecimalFieldNormalizer.isDecimalFieldType(TurSEFieldType.CURRENCY)).thenReturn(true);
+
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("price", "100.00,ABCD");
+
+                turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+
+                UpdateRequest updateRequest = (UpdateRequest) capturingSolrClient.getLastRequest();
+                SolrInputDocument document = updateRequest.getDocuments().getFirst();
+                assertThat(document.getFieldValue("price")).isNull();
         }
 
         private static final class CapturingSolrClient extends SolrClient {

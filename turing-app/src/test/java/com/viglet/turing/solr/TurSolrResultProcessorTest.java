@@ -64,10 +64,10 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.TurSNFieldProcess;
 
 /**
- * Unit tests for TurSolrResultProcessor.
+ * Tests for TurSolrResultProcessor.
  *
  * @author Alexandre Oliveira
- * @since 2026.1.10
+ * @since 2026.1.14
  */
 @ExtendWith(MockitoExtension.class)
 class TurSolrResultProcessorTest {
@@ -345,6 +345,179 @@ class TurSolrResultProcessorTest {
                 assertThat(seResults.getResults()).hasSize(1);
                 assertThat(seResults.getSimilarResults()).hasSize(1);
                 assertThat(seResults.getGroups()).isNull();
+        }
+
+        @Test
+        void testCreateTurSEResultWithNullHighlightDoesNotFail() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
+                                .name("title")
+                                .type(TurSEFieldType.TEXT)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("title", titleField);
+                Map<String, Object> requiredFields = Collections.emptyMap();
+                SolrDocument document = new SolrDocument();
+                document.addField("id", "1");
+                document.addField("title", "plain");
+
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, requiredFields, document, null);
+
+                assertThat(result.getFields()).containsEntry("title", "plain");
+                assertThat(result.getFields()).containsEntry("id", "1");
+        }
+
+        @Test
+        void testCreateTurSEResultWithEmptyHighlightDoesNotReplace() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
+                                .name("title")
+                                .type(TurSEFieldType.TEXT)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("title", titleField);
+                SolrDocument document = new SolrDocument();
+                document.addField("id", "1");
+                document.addField("title", "plain");
+
+                Map<String, List<String>> hl = Collections.emptyMap();
+
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
+
+                assertThat(result.getFields()).containsEntry("title", "plain");
+        }
+
+        @Test
+        void testCreateTurSEResultDoesNotHighlightNonTextFields() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSiteFieldExt intField = TurSNSiteFieldExt.builder()
+                                .name("count")
+                                .type(TurSEFieldType.INT)
+                                .build();
+
+                Map<String, TurSNSiteFieldExt> fieldExtMap = Map.of("count", intField);
+                SolrDocument document = new SolrDocument();
+                document.addField("count", 42);
+
+                Map<String, List<String>> hl = Map.of("count", List.of("<em>42</em>"));
+
+                TurSEResult result = processor.createTurSEResult(fieldExtMap, Collections.emptyMap(), document, hl);
+
+                // INT field should not be highlighted
+                assertThat(result.getFields().get("count")).isEqualTo(42);
+        }
+
+        @Test
+        void testIsHLReturnsFalseForNullHl() {
+                TurSNSite site = new TurSNSite();
+                site.setHl(null);
+                assertThat(TurSolrResultProcessor.isHL(site, List.of(
+                                TurSNSiteFieldExt.builder().name("title").build()))).isFalse();
+        }
+
+        @Test
+        void testIsHLReturnsFalseForZeroHl() {
+                TurSNSite site = new TurSNSite();
+                site.setHl(0);
+                assertThat(TurSolrResultProcessor.isHL(site, List.of(
+                                TurSNSiteFieldExt.builder().name("title").build()))).isFalse();
+        }
+
+        @Test
+        void testIsHLReturnsFalseForEmptyFieldList() {
+                TurSNSite site = new TurSNSite();
+                site.setHl(1);
+                assertThat(TurSolrResultProcessor.isHL(site, Collections.emptyList())).isFalse();
+        }
+
+        @Test
+        void testIsHLReturnsTrueWhenEnabledAndFieldsPresent() {
+                TurSNSite site = new TurSNSite();
+                site.setHl(1);
+                assertThat(TurSolrResultProcessor.isHL(site, List.of(
+                                TurSNSiteFieldExt.builder().name("title").build()))).isTrue();
+        }
+
+        @Test
+        void testTurSEResultsParametersWithZeroResults() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                TurSNSearchParams searchParams = new TurSNSearchParams();
+                searchParams.setRows(10);
+                searchParams.setP(1);
+                TurSEParameters parameters = new TurSEParameters(searchParams);
+
+                SolrQuery query = new SolrQuery();
+                query.setQuery("nonexistent");
+
+                QueryResponse queryResponse = mock(QueryResponse.class);
+                SolrDocumentList docs = new SolrDocumentList();
+                docs.setNumFound(0);
+                docs.setStart(0);
+                when(queryResponse.getResults()).thenReturn(docs);
+                when(queryResponse.getElapsedTime()).thenReturn(1L);
+                when(queryResponse.getQTime()).thenReturn(0);
+
+                TurSEResults seResults = TurSEResults.builder().build();
+                processor.turSEResultsParameters(parameters, query, seResults, queryResponse);
+
+                assertThat(seResults.getNumFound()).isZero();
+                assertThat(seResults.getPageCount()).isZero();
+        }
+
+        @Test
+        void testGetFieldExtMapHandlesDuplicateFieldNames() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+
+                TurSNSiteFieldExt f1 = TurSNSiteFieldExt.builder().name("title").type(TurSEFieldType.TEXT).build();
+                TurSNSiteFieldExt f2 = TurSNSiteFieldExt.builder().name("title").type(TurSEFieldType.STRING).build();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(f1, f2));
+
+                Map<String, TurSNSiteFieldExt> fieldMap = processor.getFieldExtMap(site);
+
+                // Last one wins due to (a, b) -> b merge function
+                assertThat(fieldMap).hasSize(1);
+                assertThat(fieldMap.get("title").getType()).isEqualTo(TurSEFieldType.STRING);
+        }
+
+        @Test
+        void testGetRequiredFieldsReturnsEmptyMapWhenNoneRequired() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                TurSNSite site = new TurSNSite();
+
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndRequiredAndEnabled(site, 1, 1))
+                                .thenReturn(Collections.emptyList());
+
+                Map<String, Object> requiredFields = processor.getRequiredFields(site);
+                assertThat(requiredFields).isEmpty();
+        }
+
+        @Test
+        void testGetHLReturnsNullWhenHighlightingMapIsNull() {
+                TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+
+                TurSNSite site = new TurSNSite();
+                site.setHl(1);
+                TurSNSiteFieldExt hlField = TurSNSiteFieldExt.builder().name("title").build();
+
+                QueryResponse response = mock(QueryResponse.class);
+                when(response.getHighlighting()).thenReturn(null);
+
+                SolrDocument document = new SolrDocument();
+                document.addField("id", "1");
+
+                Map<String, List<String>> hl = processor.getHL(site, List.of(hlField), response, document);
+                assertThat(hl).isNull();
         }
 
         @Test
