@@ -13,6 +13,7 @@
       "advancedOptions": "Advanced Options",
       "vendor": "Vendor",
       "endpoint": "Endpoint",
+      "actions": "Actions",
       "copy": "Copy",
       "copied": "Copied!",
       "copyFailed": "Failed to copy",
