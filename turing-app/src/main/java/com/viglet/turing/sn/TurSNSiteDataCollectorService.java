@@ -49,16 +49,16 @@ public class TurSNSiteDataCollectorService {
                 ? site.getTurSEInstance().getTitle()
                 : "Not configured").append("\n");
         sb.append("Rows per page: ").append(site.getRowsPerPage()).append("\n");
-        sb.append("Highlight: ").append(site.getHl() == 1 ? ENABLED : DISABLED).append("\n");
-        sb.append("Spell check: ").append(site.getSpellCheck() == 1 ? ENABLED : DISABLED).append("\n");
-        sb.append("More like this: ").append(site.getMlt() == 1 ? ENABLED : DISABLED).append("\n");
-        sb.append("Facets: ").append(site.getFacet() == 1 ? ENABLED : DISABLED);
-        if (site.getFacet() == 1) {
+        sb.append("Highlight: ").append(isEnabled(site.getHl()) ? ENABLED : DISABLED).append("\n");
+        sb.append("Spell check: ").append(isEnabled(site.getSpellCheck()) ? ENABLED : DISABLED).append("\n");
+        sb.append("More like this: ").append(isEnabled(site.getMlt()) ? ENABLED : DISABLED).append("\n");
+        sb.append("Facets: ").append(isEnabled(site.getFacet()) ? ENABLED : DISABLED);
+        if (isEnabled(site.getFacet())) {
             sb.append(" (items per facet: ").append(site.getItemsPerFacet()).append(")");
         }
         sb.append("\n");
-        sb.append("Wildcard on no results: ").append(site.getWildcardNoResults() == 1 ? "yes" : "no").append("\n");
-        sb.append("Exact match: ").append(site.getExactMatch() == 1 ? ENABLED : DISABLED).append("\n\n");
+        sb.append("Wildcard on no results: ").append(isEnabled(site.getWildcardNoResults()) ? "yes" : "no").append("\n");
+        sb.append("Exact match: ").append(isEnabled(site.getExactMatch()) ? ENABLED : DISABLED).append("\n\n");
     }
 
     private void appendLocalesSection(StringBuilder sb, TurSNSite site) {
@@ -140,5 +140,9 @@ public class TurSNSiteDataCollectorService {
         } else {
             sb.append("- Enabled: no\n");
         }
+    }
+
+    private static boolean isEnabled(Integer value) {
+        return Integer.valueOf(1).equals(value);
     }
 }
