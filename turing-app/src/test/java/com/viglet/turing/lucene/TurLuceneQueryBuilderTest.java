@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.FieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +49,7 @@ class TurLuceneQueryBuilderTest {
         TurSEParameters params = createParams(queryStr);
         Query query = queryBuilder.buildQuery(site, params);
         assertNotNull(query);
-        assertInstanceOf(MatchAllDocsQuery.class, extractMainClause(query));
+        assertInstanceOf(FieldExistsQuery.class, extractMainClause(query));
     }
 
     @ParameterizedTest
