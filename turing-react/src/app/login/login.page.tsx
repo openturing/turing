@@ -4,17 +4,20 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { Globe, Search, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { LoginFloatingBg } from "./login-floating-bg"
+import { LoginSettingsButton, useLoginSettings } from "./login-settings"
 import "./login-animations.css"
 
 const LoginPage = () => {
     const { t } = useTranslation()
+    const { settings, update } = useLoginSettings()
     return (
-        <div className="relative min-h-svh flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <div className={`relative min-h-svh flex items-center justify-center overflow-hidden ${settings.animations ? "bg-slate-50 dark:bg-slate-950" : "bg-blue-200 dark:bg-slate-950"}`}>
             {/* Animated background — full screen */}
-            <LoginFloatingBg />
+            <LoginFloatingBg settings={settings} />
 
-            {/* Theme toggle */}
-            <div className="absolute top-4 right-4 z-30">
+            {/* Theme toggle + Animation settings */}
+            <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+                <LoginSettingsButton settings={settings} onUpdate={update} />
                 <ModeToggle />
             </div>
 
@@ -22,7 +25,7 @@ const LoginPage = () => {
             <div className="relative z-20 flex flex-col items-center w-full max-w-md px-6 py-4">
                 {/* Logo with pulse ring */}
                 <div className="login-fade-in mb-3">
-                    <div className="login-logo-ring flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg ring-1 ring-blue-200/50 dark:ring-blue-500/20">
+                    <div className={`${settings.animations ? "login-logo-ring" : ""} flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg ring-1 ring-blue-200/50 dark:ring-blue-500/20`}>
                         <TurLogo size={52} />
                     </div>
                 </div>
