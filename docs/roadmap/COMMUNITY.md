@@ -399,9 +399,9 @@ Proposed implementation timeline
 **Purpose**: Important announcements, RFCs
 
 **Lists**:
-- `announce@viglet.org`: Low-traffic announcements
-- `dev@viglet.org`: Development discussions
-- `users@viglet.org`: User discussions
+- `announce@viglet.com`: Low-traffic announcements
+- `dev@viglet.com`: Development discussions
+- `users@viglet.com`: User discussions
 
 ### 5. Twitter/X
 **Purpose**: News, updates, community highlights

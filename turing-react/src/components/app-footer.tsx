@@ -22,7 +22,7 @@ export function AppFooter() {
           Viglet Turing ES{version ? ` ${version}` : ""}
         </span>
         <span className="text-xs text-muted-foreground/40">·</span>
-        <a href="https://docs.viglet.com/turing/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+        <a href="https://docs.viglet.org/turing/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
           Docs
         </a>
         <span className="text-xs text-muted-foreground/40">·</span>

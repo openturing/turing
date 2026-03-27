@@ -1,4 +1,5 @@
 import { BadgeColorful } from "@/components/badge-colorful";
+import { JsonViewer } from "@/components/json-viewer";
 import { TurLogo } from "@/components/logo/tur-logo";
 import {
   Accordion,
@@ -29,7 +30,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { JsonViewer } from "@/components/json-viewer";
 import { IconBraces } from "@tabler/icons-react";
 import { Search } from "lucide-react";
 import moment from "moment";
@@ -374,8 +374,8 @@ export default function SearchPage() {
                             key={`${facet.label || facet.link}-${facet.link}`}
                             variant="ghost"
                             className={`w-full px-4 py-2 text-left hover:bg-accent text-sm justify-start rounded-none ${index < snSearch.widget.facetToRemove.facets.length - 1
-                                ? "border-b border-border"
-                                : ""
+                              ? "border-b border-border"
+                              : ""
                               }`}
                             onClick={() => turRedirect(facet.link)}
                           >
@@ -653,7 +653,7 @@ export default function SearchPage() {
               <a href="https://github.com/openturing" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Github
               </a>
-              <a href="https://linkedin.com/company/viglet" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              <a href="https://linkedin.com/company/viglet.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 LinkedIn
               </a>
               <NavLink to="/swagger-ui.html" className="hover:text-foreground">
@@ -664,16 +664,16 @@ export default function SearchPage() {
               </NavLink>
             </div>
             <div className="flex gap-4">
-              <a href="https://viglet.com/#contact" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              <a href="https://viglet.org/#contact" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Contact
               </a>
-              <a href="https://viglet.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              <a href="https://viglet.org" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Viglet
               </a>
-              <a href="https://docs.viglet.com/turing" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              <a href="https://docs.viglet.org/turing" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Documentation
               </a>
-              <a href="https://viglet.com/turing" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+              <a href="https://viglet.org/turing" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
                 Website
               </a>
             </div>
