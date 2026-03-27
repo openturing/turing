@@ -204,15 +204,26 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             List<TurStoreCollectionInfo> result,
             String tableName) {
         String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
-        long chunkCount = 0;
-        long documentCount = 0;
+        long chunkCount = queryChunkCount(jdbcTemplate, quotedTable, tableName);
+        long documentCount = queryDocumentCount(jdbcTemplate, quotedTable, tableName);
+        if (documentCount == 0) {
+            documentCount = chunkCount;
+        }
+        result.add(new TurStoreCollectionInfo(tableName, tableName, documentCount, chunkCount));
+    }
+
+    private long queryChunkCount(JdbcTemplate jdbcTemplate, String quotedTable, String tableName) {
         try {
             Long count = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM " + quotedTable, Long.class);
-            chunkCount = count != null ? count : 0;
+            return count != null ? count : 0;
         } catch (Exception e) {
             log.debug("Failed to count chunks for {}: {}", tableName, e.getMessage());
+            return 0;
         }
+    }
+
+    private long queryDocumentCount(JdbcTemplate jdbcTemplate, String quotedTable, String tableName) {
         try {
             Long count = jdbcTemplate.queryForObject(
                     "SELECT COUNT(DISTINCT COALESCE("
@@ -226,14 +237,11 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
                             + "metadata ->> 'fileName'"
                             + ") IS NOT NULL",
                     Long.class);
-            documentCount = count != null ? count : 0;
+            return count != null ? count : 0;
         } catch (Exception e) {
             log.debug("Failed to count documents for {}: {}", tableName, e.getMessage());
+            return 0;
         }
-        if (documentCount == 0) {
-            documentCount = chunkCount;
-        }
-        result.add(new TurStoreCollectionInfo(tableName, tableName, documentCount, chunkCount));
     }
 
     @Override
@@ -344,15 +352,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
             String version = jdbcTemplate.queryForObject("SELECT version()", String.class);
             info.put("version", version != null ? version : "unknown");
-
-            try {
-                String extVersion = jdbcTemplate.queryForObject(
-                        "SELECT extversion FROM pg_extension WHERE extname = 'vector'", String.class);
-                info.put("pgvectorExtension", extVersion != null ? extVersion : "not installed");
-            } catch (Exception e) {
-                info.put("pgvectorExtension", "not installed");
-            }
-
+            info.put("pgvectorExtension", queryPgVectorExtVersion(jdbcTemplate));
             info.put("status", "UP");
         } catch (Exception e) {
             log.warn("Failed to retrieve PGVector system info: {}", e.getMessage());
@@ -360,6 +360,16 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             info.put("error", e.getMessage());
         }
         return info;
+    }
+
+    private String queryPgVectorExtVersion(JdbcTemplate jdbcTemplate) {
+        try {
+            String extVersion = jdbcTemplate.queryForObject(
+                    "SELECT extversion FROM pg_extension WHERE extname = 'vector'", String.class);
+            return extVersion != null ? extVersion : "not installed";
+        } catch (Exception e) {
+            return "not installed";
+        }
     }
 
     private PgDistanceType parseDistanceType(String value) {
