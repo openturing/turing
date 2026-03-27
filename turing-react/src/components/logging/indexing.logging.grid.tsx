@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/table";
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurLoggingIndexing } from "@/models/logging/logging-indexing.model";
-import { IconRefresh, IconSearch } from "@tabler/icons-react";
+import { exportToXlsx } from "@/lib/export-xlsx";
+import { IconDownload, IconRefresh, IconSearch } from "@tabler/icons-react";
 import { type Locale, formatDistanceToNow } from "date-fns";
 import { useDateLocale } from "@/hooks/use-date-locale";
 import { NavLink } from "react-router-dom";
@@ -269,6 +270,31 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             className="h-8 text-xs"
                         />
                     </div>
+                    <GradientButton
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        disabled={gridItemList.length === 0}
+                        onClick={() => exportToXlsx(
+                            gridItemList as unknown as Record<string, unknown>[],
+                            [
+                                { key: "date", label: t("forms.indexingLoggingGrid.date") },
+                                { key: "source", label: t("forms.indexingLoggingGrid.source") },
+                                { key: "status", label: t("forms.indexingLoggingGrid.status") },
+                                { key: "resultStatus", label: t("forms.indexingLoggingGrid.resultStatus") },
+                                { key: "url", label: t("forms.indexingLoggingGrid.url") },
+                                { key: "environment", label: t("forms.indexingLoggingGrid.environment") },
+                                { key: "locale", label: t("forms.indexingLoggingGrid.locale") },
+                                { key: "sites", label: t("forms.indexingLoggingGrid.sites") },
+                                { key: "contentId", label: "Content ID" },
+                                { key: "transactionId", label: "Transaction ID" },
+                            ],
+                            `logging-indexing-${new Date().toISOString().slice(0, 10)}`
+                        )}
+                    >
+                        <IconDownload className="h-4 w-4 mr-1" />
+                        Excel
+                    </GradientButton>
                 </div>
                 <div className="rounded-md">
                     <Table>

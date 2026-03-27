@@ -30,7 +30,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import type { TurLoggingGeneral } from "@/models/logging/logging-general.model";
-import { IconFileAlert, IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
+import { exportToXlsx } from "@/lib/export-xlsx";
+import { IconDownload, IconFileAlert, IconRefresh, IconSearch, IconX } from "@tabler/icons-react";
 import type { Locale } from "date-fns";
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { useDateLocale } from "@/hooks/use-date-locale";
@@ -241,6 +242,27 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             className="h-8 text-xs"
                         />
                     </div>
+                    <GradientButton
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        disabled={gridItemList.length === 0}
+                        onClick={() => exportToXlsx(
+                            gridItemList as unknown as Record<string, unknown>[],
+                            [
+                                { key: "date", label: t("forms.loggingGrid.date") },
+                                { key: "clusterNode", label: t("forms.loggingGrid.node") },
+                                { key: "level", label: t("forms.loggingGrid.level") },
+                                { key: "logger", label: t("forms.loggingGrid.logger") },
+                                { key: "message", label: t("forms.loggingGrid.message") },
+                                { key: "stackTrace", label: t("forms.loggingGrid.stackTrace") },
+                            ],
+                            `logging-${new Date().toISOString().slice(0, 10)}`
+                        )}
+                    >
+                        <IconDownload className="h-4 w-4 mr-1" />
+                        Excel
+                    </GradientButton>
                 </div>
                 <div className="rounded-md">
                     <Table>
