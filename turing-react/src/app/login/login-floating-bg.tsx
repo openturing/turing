@@ -82,6 +82,8 @@ export function LoginFloatingBg() {
       <div className="login-lightning login-lightning--c3" />
       {/* Nuke pulse */}
       <div className="login-lightning login-lightning--nuke" />
+      {/* Blue flood after nuke */}
+      <div className="login-lightning--flood" />
       {/* Ambient glow */}
       <div className="login-orb login-orb--1" />
       <div className="login-orb login-orb--2" />

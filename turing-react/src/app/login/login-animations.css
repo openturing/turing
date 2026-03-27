@@ -214,14 +214,28 @@
   animation: login-flash-nuke 50s linear 20s infinite;
   mix-blend-mode: multiply;
   transform: scale(0.15);
+  will-change: transform, opacity;
 }
 .dark .login-lightning--nuke {
   background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(199, 210, 254, 1), rgba(147, 197, 253, 0.8) 25%, rgba(96, 165, 250, 0.45) 50%, transparent 75%);
   mix-blend-mode: screen;
 }
 
+/* Blue flood overlay — fills entire screen at end of nuke */
+.login-lightning--flood {
+  position: absolute; inset: 0;
+  background: rgba(37, 99, 235, 0.95);
+  opacity: 0;
+  animation: login-flash-flood 50s linear 20s infinite;
+  will-change: opacity;
+}
+.dark .login-lightning--flood {
+  background: rgba(255, 255, 255, 0.95);
+}
+
 @keyframes login-flash-nuke {
   0%, 100% { opacity: 0; transform: scale(0.15); }
+  /* flicker start */
   3%       { opacity: 0; transform: scale(0.15); }
   3.2%     { opacity: 0.4; transform: scale(0.2); }
   3.4%     { opacity: 0.05; transform: scale(0.15); }
@@ -232,11 +246,33 @@
   4.8%     { opacity: 1; transform: scale(0.75); }
   5.5%     { opacity: 1; transform: scale(0.9); }
   6.5%     { opacity: 1; transform: scale(1.05); }
-  8%       { opacity: 0.95; transform: scale(1.15); }
-  10%      { opacity: 0.7; transform: scale(1.2); }
-  12%      { opacity: 0.4; transform: scale(1.25); }
-  14%      { opacity: 0.15; transform: scale(1.25); }
-  17%      { opacity: 0; transform: scale(1.25); }
+  /* hold bright — explosion stays visible */
+  8%       { opacity: 1; transform: scale(1.1); }
+  10%      { opacity: 1; transform: scale(1.15); }
+  13%      { opacity: 1; transform: scale(1.2); }
+  16%      { opacity: 0.95; transform: scale(1.25); }
+  /* slow fade */
+  20%      { opacity: 0.7; transform: scale(1.25); }
+  24%      { opacity: 0.4; transform: scale(1.25); }
+  28%      { opacity: 0.15; transform: scale(1.25); }
+  32%      { opacity: 0; transform: scale(1.25); }
+}
+
+@keyframes login-flash-flood {
+  0%       { opacity: 0; }
+  /* flood rises during explosion peak (5-8%) */
+  6%       { opacity: 0; }
+  7%       { opacity: 0.1; }
+  8%       { opacity: 0.3; }
+  9%       { opacity: 0.55; }
+  10%      { opacity: 0.8; }
+  11%      { opacity: 1; }
+  /* hold full blue for 3s = 6% */
+  17%      { opacity: 1; }
+  19%      { opacity: 0.7; }
+  21%      { opacity: 0.4; }
+  23%      { opacity: 0.15; }
+  25%      { opacity: 0; }
 }
 
 /* ── Fade-in-up ── */
