@@ -16,11 +16,11 @@
 
 package com.viglet.turing.commons.sn.bean;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for TurSNSiteSearchDocumentMetadataBean.
@@ -33,7 +33,7 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     @Test
     void testDefaultConstructor() {
         TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean();
-        
+
         assertThat(metadata.getHref()).isNull();
         assertThat(metadata.getText()).isNull();
     }
@@ -42,10 +42,9 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     void testAllArgsConstructor() {
         String href = "https://example.com/document/123";
         String text = "Example Document Title";
-        
-        TurSNSiteSearchDocumentMetadataBean metadata = 
-                new TurSNSiteSearchDocumentMetadataBean(href, text);
-        
+
+        TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean(href, text);
+
         assertThat(metadata.getHref()).isEqualTo(href);
         assertThat(metadata.getText()).isEqualTo(text);
     }
@@ -53,11 +52,11 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     @Test
     void testBuilderPattern() {
         TurSNSiteSearchDocumentMetadataBean metadata = TurSNSiteSearchDocumentMetadataBean.builder()
-                .href("https://viglet.com")
+                .href("https://viglet.org")
                 .text("Viglet Turing")
                 .build();
-        
-        assertThat(metadata.getHref()).isEqualTo("https://viglet.com");
+
+        assertThat(metadata.getHref()).isEqualTo("https://viglet.org");
         assertThat(metadata.getText()).isEqualTo("Viglet Turing");
     }
 
@@ -67,7 +66,7 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
                 .href(null)
                 .text(null)
                 .build();
-        
+
         assertThat(metadata.getHref()).isNull();
         assertThat(metadata.getText()).isNull();
     }
@@ -75,10 +74,10 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     @Test
     void testSettersAndGetters() {
         TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean();
-        
+
         metadata.setHref("https://example.org/page");
         metadata.setText("Sample Page");
-        
+
         assertThat(metadata.getHref()).isEqualTo("https://example.org/page");
         assertThat(metadata.getText()).isEqualTo("Sample Page");
     }
@@ -89,15 +88,15 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
                 .href("https://original.com")
                 .text("Original Text")
                 .build();
-        
+
         TurSNSiteSearchDocumentMetadataBean modified = original.toBuilder()
                 .text("Modified Text")
                 .build();
-        
+
         // Original should remain unchanged
         assertThat(original.getHref()).isEqualTo("https://original.com");
         assertThat(original.getText()).isEqualTo("Original Text");
-        
+
         // Modified should have updated text but same href
         assertThat(modified.getHref()).isEqualTo("https://original.com");
         assertThat(modified.getText()).isEqualTo("Modified Text");
@@ -106,29 +105,29 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     @Test
     void testImplementsSerializable() {
         TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean();
-        
+
         assertThat(metadata).isInstanceOf(Serializable.class);
     }
 
     @Test
     void testUpdateFields() {
         TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean();
-        
+
         // Start with null values
         assertThat(metadata.getHref()).isNull();
         assertThat(metadata.getText()).isNull();
-        
+
         // Set initial values
         metadata.setHref("https://first.com");
         metadata.setText("First Text");
-        
+
         assertThat(metadata.getHref()).isEqualTo("https://first.com");
         assertThat(metadata.getText()).isEqualTo("First Text");
-        
+
         // Update values
         metadata.setHref("https://second.com");
         metadata.setText("Second Text");
-        
+
         assertThat(metadata.getHref()).isEqualTo("https://second.com");
         assertThat(metadata.getText()).isEqualTo("Second Text");
     }
@@ -139,7 +138,7 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
                 .href("")
                 .text("")
                 .build();
-        
+
         assertThat(metadata.getHref()).isEmpty();
         assertThat(metadata.getText()).isEmpty();
     }
@@ -148,12 +147,12 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     void testLongUrlAndText() {
         String longUrl = "https://example.com/very/long/path/to/document/with/many/segments/and/parameters?param1=value1&param2=value2&param3=value3";
         String longText = "This is a very long document title that might contain multiple sentences and special characters like émotions, números, and símbolos.";
-        
+
         TurSNSiteSearchDocumentMetadataBean metadata = TurSNSiteSearchDocumentMetadataBean.builder()
                 .href(longUrl)
                 .text(longText)
                 .build();
-        
+
         assertThat(metadata.getHref()).isEqualTo(longUrl);
         assertThat(metadata.getText()).isEqualTo(longText);
         assertThat(metadata.getHref().length()).isGreaterThan(100);
@@ -164,11 +163,11 @@ class TurSNSiteSearchDocumentMetadataBeanTest {
     void testSpecialCharacters() {
         String specialHref = "https://example.com/документ/文档/مستند";
         String specialText = "Document with émotions (1), números [2], and símbolos {3}";
-        
+
         TurSNSiteSearchDocumentMetadataBean metadata = new TurSNSiteSearchDocumentMetadataBean();
         metadata.setHref(specialHref);
         metadata.setText(specialText);
-        
+
         assertThat(metadata.getHref()).isEqualTo(specialHref);
         assertThat(metadata.getText()).isEqualTo(specialText);
     }

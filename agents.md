@@ -654,7 +654,7 @@ services:
 ### Developer Community
 - **GitHub**: https://github.com/openviglet/turing
 - **Discussions**: https://github.com/openviglet/turing/discussions
-- **Documentation**: https://docs.viglet.com/turing/
+- **Documentation**: https://docs.viglet.org/turing/
 
 ## Future Roadmap for AI Agent Capabilities
 
@@ -699,4 +699,4 @@ The platform's open-source nature, comprehensive APIs, and scalable architecture
 
 **License**: Apache 2.0 - enabling open research and collaboration  
 **Repository**: https://github.com/openviglet/turing  
-**Documentation**: https://docs.viglet.com/turing/
+**Documentation**: https://docs.viglet.org/turing/

@@ -21,8 +21,8 @@ class SwaggerConfigTest {
         assertEquals("Semantic Navigation, Chatbot using Search Engine.", openAPI.getInfo().getDescription());
         assertEquals("v2.0", openAPI.getInfo().getVersion());
         assertEquals("Apache 2.0", openAPI.getInfo().getLicense().getName());
-        assertEquals("http://viglet.com/turing", openAPI.getInfo().getLicense().getUrl());
+        assertEquals("http://viglet.org/turing", openAPI.getInfo().getLicense().getUrl());
         assertEquals("Turing ES Documentation", openAPI.getExternalDocs().getDescription());
-        assertEquals("https://docs.viglet.com/turing", openAPI.getExternalDocs().getUrl());
+        assertEquals("https://docs.viglet.org/turing", openAPI.getExternalDocs().getUrl());
     }
 }

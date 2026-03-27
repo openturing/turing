@@ -21,12 +21,13 @@
 
 package com.viglet.turing.swagger;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SwaggerConfig {
@@ -36,9 +37,9 @@ public class SwaggerConfig {
 				.info(new Info().title("Turing ES")
 						.description("Semantic Navigation, Chatbot using Search Engine.")
 						.version("v2.0")
-						.license(new License().name("Apache 2.0").url("http://viglet.com/turing")))
+						.license(new License().name("Apache 2.0").url("http://viglet.org/turing")))
 				.externalDocs(new ExternalDocumentation()
 						.description("Turing ES Documentation")
-						.url("https://docs.viglet.com/turing"));
+						.url("https://docs.viglet.org/turing"));
 	}
 }

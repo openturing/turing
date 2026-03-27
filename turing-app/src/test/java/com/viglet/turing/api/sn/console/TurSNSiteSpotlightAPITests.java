@@ -81,7 +81,7 @@ class TurSNSiteSpotlightAPITests {
         turSNSiteSpotlightTerm.setName("foobar");
         TurSNSiteSpotlightDocument turSNSiteSpotlightDocument = new TurSNSiteSpotlightDocument();
         turSNSiteSpotlightDocument.setContent("Ad");
-        turSNSiteSpotlightDocument.setLink("https://viglet.com");
+        turSNSiteSpotlightDocument.setLink("https://viglet.org");
         turSNSiteSpotlightDocument.setPosition(1);
         turSNSiteSpotlightDocument.setTitle("Ad");
         turSNSiteSpotlightDocument.setReferenceId("CMS");
