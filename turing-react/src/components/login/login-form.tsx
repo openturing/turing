@@ -47,7 +47,7 @@ export function LoginForm({
         }
     };
     return (
-        <Card className="border-0 shadow-xl shadow-black/5">
+        <Card className="border-0 shadow-none bg-transparent">
             <CardHeader className="text-center pb-2">
                 <CardTitle className="text-2xl font-bold tracking-tight">
                     {t('login.welcomeBack')}

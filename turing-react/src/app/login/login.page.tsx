@@ -3,63 +3,72 @@ import { TurLogo } from "@/components/logo/tur-logo"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Globe, Search, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { LoginFloatingBg } from "./login-floating-bg"
+import "./login-animations.css"
 
 const LoginPage = () => {
     const { t } = useTranslation()
     return (
-        <div className="grid min-h-svh lg:grid-cols-2">
-            {/* Left panel - Branding / Hero */}
-            <div className="relative hidden lg:flex flex-col items-center justify-center overflow-hidden bg-linear-to-br from-blue-600 via-indigo-600 to-blue-700">
-                {/* Animated background pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,white_1px,transparent_1px),radial-gradient(circle_at_75%_75%,white_1px,transparent_1px)] bg-size-[50px_50px]" />
-                </div>
-                <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl" />
+        <div className="relative min-h-svh flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-slate-950">
+            {/* Animated background — full screen */}
+            <LoginFloatingBg />
 
-                <div className="relative z-10 flex flex-col items-center gap-8 px-12 text-center text-white">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm shadow-lg ring-1 ring-white/20">
-                        <TurLogo size={80} />
-                    </div>
-                    <div className="space-y-3">
-                        <h1 className="text-4xl font-bold tracking-tight">Viglet Turing ES</h1>
-                        <p className="text-lg text-white/80 max-w-md leading-relaxed">
-                            {t("login.heroTagline")}
-                        </p>
-                    </div>
-
-                    {/* Feature highlights */}
-                    <div className="mt-6 grid gap-4 w-full max-w-sm">
-                        <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
-                            <Search className="h-5 w-5 shrink-0 text-blue-200" />
-                            <span className="text-sm text-white/90">{t("login.featureSearch")}</span>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
-                            <Sparkles className="h-5 w-5 shrink-0 text-purple-200" />
-                            <span className="text-sm text-white/90">{t("login.featureAi")}</span>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3 ring-1 ring-white/10">
-                            <Globe className="h-5 w-5 shrink-0 text-cyan-200" />
-                            <span className="text-sm text-white/90">{t("login.featureKnowledge")}</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Theme toggle */}
+            <div className="absolute top-4 right-4 z-30">
+                <ModeToggle />
             </div>
 
-            {/* Right panel - Login Form */}
-            <div className="relative flex flex-col items-center justify-center bg-background px-6 py-12">
-                <div className="absolute top-4 right-4">
-                    <ModeToggle />
-                </div>
-                <div className="w-full max-w-sm">
-                    {/* Mobile-only branding */}
-                    <div className="mb-8 flex flex-col items-center gap-3 lg:hidden">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 shadow-lg">
-                            <TurLogo size={56} />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight">Viglet Turing ES</span>
+            {/* Centered content */}
+            <div className="relative z-20 flex flex-col items-center w-full max-w-md px-6 py-4">
+                {/* Logo with pulse ring */}
+                <div className="login-fade-in mb-3">
+                    <div className="login-logo-ring flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg ring-1 ring-blue-200/50 dark:ring-blue-500/20">
+                        <TurLogo size={52} />
                     </div>
-                    <LoginForm />
+                </div>
+
+                {/* Title */}
+                <div className="login-fade-in-d1 text-center mb-1">
+                    <h1 className="text-2xl font-bold tracking-tight bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                        Viglet Turing ES
+                    </h1>
+                </div>
+
+                {/* Tagline */}
+                <div className="login-fade-in-d1 text-center mb-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+                        {t("login.heroTagline")}
+                    </p>
+                </div>
+
+                {/* Feature pills */}
+                <div className="login-fade-in-d2 flex flex-wrap justify-center gap-2 mb-5">
+                    <div className="login-feature-pill flex items-center gap-1.5 rounded-full px-3 py-1">
+                        <Search className="h-3.5 w-3.5 text-blue-500" />
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("login.featureSearch")}</span>
+                    </div>
+                    <div className="login-feature-pill flex items-center gap-1.5 rounded-full px-3 py-1">
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("login.featureAi")}</span>
+                    </div>
+                    <div className="login-feature-pill flex items-center gap-1.5 rounded-full px-3 py-1">
+                        <Globe className="h-3.5 w-3.5 text-cyan-500" />
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("login.featureKnowledge")}</span>
+                    </div>
+                </div>
+
+                {/* Login form in glass card */}
+                <div className="login-fade-in-d3 w-full">
+                    <div className="login-glass-card rounded-2xl">
+                        <LoginForm />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="login-fade-in-d3 mt-4 text-center">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                        Viglet Turing ES &mdash; Enterprise Search Intelligence
+                    </p>
                 </div>
             </div>
         </div>
