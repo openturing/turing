@@ -97,7 +97,7 @@ i18n
       escapeValue: false,
     },
     detection: {
-      order: ["navigator", "htmlTag", "localStorage", "cookie"],
+      order: ["localStorage", "navigator", "htmlTag", "cookie"],
       caches: ["localStorage"],
     },
   });

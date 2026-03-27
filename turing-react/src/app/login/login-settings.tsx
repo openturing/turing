@@ -7,7 +7,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { useTranslation } from "react-i18next";
+
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "pt", label: "Português" },
+] as const;
 
 const STORAGE_KEY = "turing-login-settings";
 
@@ -55,7 +61,7 @@ interface LoginSettingsButtonProps {
 }
 
 export function LoginSettingsButton({ settings, onUpdate }: LoginSettingsButtonProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <Popover>
@@ -95,6 +101,28 @@ export function LoginSettingsButton({ settings, onUpdate }: LoginSettingsButtonP
               checked={settings.formulas}
               onCheckedChange={(checked) => onUpdate({ formulas: checked })}
             />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
+              {t("login.settingsLanguage", "Language")}
+            </span>
+            <div className="flex gap-1">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => i18n.changeLanguage(lang.code)}
+                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                    i18n.language?.startsWith(lang.code)
+                      ? "bg-blue-600 text-white dark:bg-blue-500"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
           </div>
         </PopoverContent>
       </Popover>
