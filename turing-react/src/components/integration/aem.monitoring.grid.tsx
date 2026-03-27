@@ -24,9 +24,10 @@ import {
 } from "@/components/ui/table";
 import { cn, truncateMiddle } from "@/lib/utils";
 import type { TurIntegrationIndexing } from "@/models/integration/integration-indexing.model";
+import { exportToXlsx } from "@/lib/export-xlsx";
 import { type Locale, formatDistanceToNow } from 'date-fns';
 import { useDateLocale } from "@/hooks/use-date-locale";
-import { ArrowUpDown, RefreshCcw } from "lucide-react";
+import { ArrowUpDown, Download, RefreshCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { BadgeAemEnv } from "../badge-aem-env";
@@ -206,6 +207,27 @@ export const AemMonitoringGrid: React.FC<PropsWithChildren<Props>> = ({
                 <div className="flex items-center gap-2">
                     <RefreshCcw className="h-3 w-3 animate-spin-slow" />
                     {t("forms.loggingGrid.lastSync", { time: new Date(lastUpdated).toLocaleTimeString() })}
+                    <GradientButton
+                        variant="outline"
+                        size="sm"
+                        className="h-7 ml-2"
+                        disabled={gridItemList.length === 0}
+                        onClick={() => exportToXlsx(
+                            gridItemList as unknown as Record<string, unknown>[],
+                            [
+                                { key: "modificationDate", label: t("forms.indexingLoggingGrid.date") },
+                                { key: "objectId", label: t("integration.indexingManager.objectId") },
+                                { key: "status", label: t("forms.indexingLoggingGrid.status") },
+                                { key: "environment", label: t("forms.indexingLoggingGrid.environment") },
+                                { key: "locale", label: t("forms.indexingLoggingGrid.locale") },
+                                { key: "sites", label: t("forms.indexingLoggingGrid.sites") },
+                            ],
+                            `monitoring-${new Date().toISOString().slice(0, 10)}`
+                        )}
+                    >
+                        <Download className="h-3.5 w-3.5 mr-1" />
+                        Excel
+                    </GradientButton>
                 </div>
             </div>
             <Card>
