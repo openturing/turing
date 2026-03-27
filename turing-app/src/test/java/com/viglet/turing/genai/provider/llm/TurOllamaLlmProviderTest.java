@@ -2,6 +2,7 @@ package com.viglet.turing.genai.provider.llm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -285,5 +286,147 @@ class TurOllamaLlmProviderTest {
 
         ChatModel model = provider.createChatModel(instance, "dummy-key");
         assertNotNull(model);
+    }
+
+    @Test
+    void testParseStopSequences() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("parseStopSequences", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> result = (List<String>) method.invoke(provider, "stop1, stop2, stop3");
+        assertEquals(3, result.size());
+        assertEquals("stop1", result.get(0));
+        assertEquals("stop2", result.get(1));
+        assertEquals("stop3", result.get(2));
+    }
+
+    @Test
+    void testParseStopSequences_empty() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("parseStopSequences", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> result = (List<String>) method.invoke(provider, "");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testParseStopSequences_null() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("parseStopSequences", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> result = (List<String>) method.invoke(provider, (String) null);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testParseStopSequences_withBlankEntries() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("parseStopSequences", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> result = (List<String>) method.invoke(provider, "a, , b, , c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    void testExtractContextLength_exactMatch() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "llama3", "context_length", 4096);
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isPresent());
+        assertEquals(4096, result.getAsInt());
+    }
+
+    @Test
+    void testExtractContextLength_withTagSuffix() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "llama3:8b", "context_length", 8192);
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isPresent());
+        assertEquals(8192, result.getAsInt());
+    }
+
+    @Test
+    void testExtractContextLength_matchByModelField() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "other-name", "model", "llama3", "context_length", 2048);
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isPresent());
+        assertEquals(2048, result.getAsInt());
+    }
+
+    @Test
+    void testExtractContextLength_noMatch() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "mistral", "context_length", 4096);
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testExtractContextLength_zeroContextLength() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "llama3", "context_length", 0);
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testExtractContextLength_nonNumberContextLength() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("extractContextLength", Map.class, String.class);
+        method.setAccessible(true);
+
+        Map<String, Object> model = Map.of("name", "llama3", "context_length", "not-a-number");
+        OptionalInt result = (OptionalInt) method.invoke(provider, model, "llama3");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testFirstNonNull() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("firstNonNull", Object[].class);
+        method.setAccessible(true);
+
+        assertEquals(42, method.invoke(provider, (Object) new Object[]{null, 42, 99}));
+        assertEquals(1, method.invoke(provider, (Object) new Object[]{1, 2, 3}));
+        assertNull(method.invoke(provider, (Object) new Object[]{null, null, null}));
+    }
+
+    @Test
+    void testFirstNonBlank() throws Exception {
+        var method = TurOllamaLlmProvider.class.getDeclaredMethod("firstNonBlank", String[].class);
+        method.setAccessible(true);
+
+        assertEquals("hello", method.invoke(provider, (Object) new String[]{null, "", "hello"}));
+        assertEquals("first", method.invoke(provider, (Object) new String[]{"first", "second"}));
+        assertNull(method.invoke(provider, (Object) new String[]{null, "", "  "}));
+    }
+
+    @Test
+    void testFetchContextWindow_urlFromOptions() {
+        instance.setUrl(null);
+        instance.setModelName(null);
+        when(optionsParser.parse(any())).thenReturn(Map.of());
+        when(optionsParser.stringValue(any(), eq("baseUrl"))).thenReturn("http://invalid-host-99999:99999");
+        when(optionsParser.stringValue(any(), eq("model"))).thenReturn("llama3");
+
+        // URL is valid but unreachable, should fall through to empty
+        OptionalInt result = provider.fetchContextWindow(instance, "dummy-key");
+        assertTrue(result.isEmpty());
     }
 }

@@ -288,6 +288,380 @@ class TurWeeklySearchReportServiceTest {
     }
 
     @Test
+    void buildReportHtmlShouldUseCachedLlmSummary() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("CachedSite");
+        when(site.getId()).thenReturn("site-cache-1");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // Setup LLM with cached summary
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-1");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("GPT-4");
+        llmInstance.setModelName("gpt-4-turbo");
+        llmInstance.setApiKeyEncrypted("enc-key");
+        when(llmInstanceRepository.findById("llm-1")).thenReturn(Optional.of(llmInstance));
+
+        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
+        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
+        var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(secretCryptoService.decrypt("enc-key")).thenReturn("decrypted-key");
+
+        // Return cached content
+        when(llmCacheService.get("site-cache-1")).thenReturn("<p>Cached AI insight</p>");
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-ai-insights.html"))
+                .thenReturn("AI:{{aiInsightsContent}}|Model:{{llmModelName}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteSummary}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        assertTrue(html.contains("Cached AI insight"));
+        assertTrue(html.contains("(cached)"));
+    }
+
+    @Test
+    void buildReportHtmlShouldGenerateLlmSummaryWhenNotCached() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("LiveSite");
+        when(site.getId()).thenReturn("site-live-1");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // Setup LLM
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-2");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("Claude");
+        llmInstance.setModelName(null);
+        llmInstance.setApiKeyEncrypted("enc-key-2");
+        when(llmInstanceRepository.findById("llm-2")).thenReturn(Optional.of(llmInstance));
+
+        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
+        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
+        var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(secretCryptoService.decrypt("enc-key-2")).thenReturn("decrypted-key");
+
+        // No cache
+        when(llmCacheService.get("site-live-1")).thenReturn(null);
+
+        // Mock chat call
+        when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data for analysis");
+
+        var chatResponse = mock(org.springframework.ai.chat.model.ChatResponse.class);
+        var generation = mock(org.springframework.ai.chat.model.Generation.class);
+        var assistantMessage = mock(org.springframework.ai.chat.messages.AssistantMessage.class);
+        when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class))).thenReturn(chatResponse);
+        when(chatResponse.getResult()).thenReturn(generation);
+        when(generation.getOutput()).thenReturn(assistantMessage);
+        when(assistantMessage.getText()).thenReturn("<h3>Overview</h3><p>Analysis here</p>");
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-ai-insights.html"))
+                .thenReturn("AI:{{aiInsightsContent}}|Model:{{llmModelName}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteSummary}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        assertTrue(html.contains("Analysis here"));
+        assertTrue(html.contains("Claude"));
+        verify(llmCacheService).put(eq("site-live-1"), any());
+    }
+
+    @Test
+    void buildReportHtmlShouldHandleLlmExceptionGracefully() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("ErrorLlmSite");
+        when(site.getId()).thenReturn("site-err-1");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // Setup LLM that throws during summary
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-3");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("Broken LLM");
+        llmInstance.setModelName("broken");
+        llmInstance.setApiKeyEncrypted("enc-key-3");
+        when(llmInstanceRepository.findById("llm-3")).thenReturn(Optional.of(llmInstance));
+
+        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
+        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
+        var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(secretCryptoService.decrypt("enc-key-3")).thenReturn("decrypted-key");
+
+        when(llmCacheService.get("site-err-1")).thenReturn(null);
+        when(siteDataCollectorService.collectSiteData(site)).thenThrow(new RuntimeException("LLM failed"));
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteSummary}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        assertNotNull(html);
+    }
+
+    @Test
+    void buildReportHtmlShouldSkipDisabledLlmInstance() {
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(Collections.emptyList());
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-disabled");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(0);
+        when(llmInstanceRepository.findById("llm-disabled")).thenReturn(Optional.of(llmInstance));
+        when(emailService.loadTemplate(anyString())).thenReturn("{{reportPeriod}}{{totalSearches}}{{siteCards}}{{generatedAt}}");
+
+        String html = service.buildReportHtml();
+
+        assertNotNull(html);
+        verifyNoInteractions(llmProviderFactory);
+    }
+
+    @Test
+    void buildReportHtmlShouldBuildTopSearchRowsWithMultipleTerms() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("MultiTermSite");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("");
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(15);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+
+        // 3 terms to test first/middle/last border-radius logic
+        TurSNSiteMetricAccessTerm term1 = new TurSNSiteMetricAccessTerm("java", 10, 50.0);
+        TurSNSiteMetricAccessTerm term2 = new TurSNSiteMetricAccessTerm("spring", 7, 30.0);
+        TurSNSiteMetricAccessTerm term3 = new TurSNSiteMetricAccessTerm("python", 3, 20.0);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(List.of(term1, term2, term3));
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{topSearchRows}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        assertTrue(html.contains("java"));
+        assertTrue(html.contains("spring"));
+        assertTrue(html.contains("python"));
+        assertTrue(html.contains("10x"));
+        assertTrue(html.contains("7x"));
+        assertTrue(html.contains("3x"));
+        // First term should have top border-radius
+        assertTrue(html.contains("border-radius:12px 12px 0 0"));
+        // Last term should have bottom border-radius
+        assertTrue(html.contains("border-radius:0 0 12px 12px"));
+    }
+
+    @Test
+    void buildReportHtmlShouldCountDocumentsFromMultipleLocales() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("MultiLocaleSite");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("");
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        var enLocale = mock(com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
+        var ptLocale = mock(com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(List.of(enLocale, ptLocale));
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.getDocumentTotal(enLocale)).thenReturn(1000L);
+        when(plugin.getDocumentTotal(ptLocale)).thenReturn(500L);
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteDocumentCount}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        // 1000 + 500 = 1500
+        assertTrue(html.contains("1,500"));
+    }
+
+    @Test
+    void buildReportHtmlShouldHandleLocaleDocumentCountException() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("LocaleErrSite");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("");
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        var enLocale = mock(com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(List.of(enLocale));
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(plugin.getDocumentTotal(enLocale)).thenThrow(new RuntimeException("Solr down"));
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteDocumentCount}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        assertTrue(html.contains("0"));
+    }
+
+    @Test
+    void buildReportHtmlShouldHandleLlmProviderCreationException() {
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(Collections.emptyList());
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-fail");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("Failing LLM");
+        llmInstance.setApiKeyEncrypted("enc");
+        when(llmInstanceRepository.findById("llm-fail")).thenReturn(Optional.of(llmInstance));
+        when(llmProviderFactory.getProvider(llmInstance)).thenThrow(new RuntimeException("Provider init failed"));
+        when(emailService.loadTemplate(anyString())).thenReturn("{{reportPeriod}}{{totalSearches}}{{siteCards}}{{generatedAt}}");
+
+        String html = service.buildReportHtml();
+
+        assertNotNull(html);
+        // Should still generate report without AI summaries
+    }
+
+    @Test
+    void buildReportHtmlShouldHandleEmptyAiContent() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("EmptyAiSite");
+        when(site.getId()).thenReturn("site-empty-ai");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-empty");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("EmptyLLM");
+        llmInstance.setModelName("empty-model");
+        llmInstance.setApiKeyEncrypted("enc-empty");
+        when(llmInstanceRepository.findById("llm-empty")).thenReturn(Optional.of(llmInstance));
+
+        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
+        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
+        var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(secretCryptoService.decrypt("enc-empty")).thenReturn("key");
+
+        when(llmCacheService.get("site-empty-ai")).thenReturn(null);
+        when(siteDataCollectorService.collectSiteData(site)).thenReturn("data");
+
+        var chatResponse = mock(org.springframework.ai.chat.model.ChatResponse.class);
+        var generation = mock(org.springframework.ai.chat.model.Generation.class);
+        var assistantMessage = mock(org.springframework.ai.chat.messages.AssistantMessage.class);
+        when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class))).thenReturn(chatResponse);
+        when(chatResponse.getResult()).thenReturn(generation);
+        when(generation.getOutput()).thenReturn(assistantMessage);
+        when(assistantMessage.getText()).thenReturn(""); // empty AI content
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("Summary:{{siteSummary}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        // Empty AI content should result in empty summary
+        assertTrue(html.contains("Summary:"));
+        assertFalse(html.contains("{{siteSummary}}"));
+    }
+
+    @Test
+    void buildReportHtmlShouldUseLlmTitleWithModelName() {
+        TurSNSite site = mock(TurSNSite.class);
+        when(site.getName()).thenReturn("ModelNameSite");
+        when(site.getId()).thenReturn("site-mn");
+        when(snSiteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
+        when(metricAccessRepository.countTermsByPeriod(eq(site), any(), any())).thenReturn(0);
+        when(snSiteLocaleRepository.findByTurSNSite(site)).thenReturn(Collections.emptyList());
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+        when(metricAccessRepository.topTermsBetweenDates(eq(site), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        when(globalSettingsService.getDefaultLlmId()).thenReturn("llm-mn");
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance =
+                new com.viglet.turing.persistence.model.llm.TurLLMInstance();
+        llmInstance.setEnabled(1);
+        llmInstance.setTitle("OpenAI");
+        llmInstance.setModelName("gpt-4o");
+        llmInstance.setApiKeyEncrypted("enc-mn");
+        when(llmInstanceRepository.findById("llm-mn")).thenReturn(Optional.of(llmInstance));
+
+        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
+        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
+        var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
+        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(secretCryptoService.decrypt("enc-mn")).thenReturn("key");
+
+        // Return cached content to test model name format
+        when(llmCacheService.get("site-mn")).thenReturn("<p>cached</p>");
+
+        when(emailService.loadTemplate("templates/email/weekly-search-report-ai-insights.html"))
+                .thenReturn("{{llmModelName}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report-site-card.html"))
+                .thenReturn("{{siteSummary}}");
+        when(emailService.loadTemplate("templates/email/weekly-search-report.html"))
+                .thenReturn("{{siteCards}}");
+
+        String html = service.buildReportHtml();
+
+        // Should contain "OpenAI (gpt-4o) (cached)"
+        assertTrue(html.contains("OpenAI (gpt-4o)"));
+    }
+
+    @Test
     void buildReportHtmlShouldCycleAccentColors() {
         // Create 11 sites to test color cycling (array has 10 colors)
         List<TurSNSite> sites = new java.util.ArrayList<>();

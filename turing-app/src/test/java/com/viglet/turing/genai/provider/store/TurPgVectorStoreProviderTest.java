@@ -278,8 +278,7 @@ class TurPgVectorStoreProviderTest {
         when(optionsParser.stringValue(any(), eq("schemaName"))).thenReturn(null);
 
         try (MockedConstruction<HikariDataSource> ignored = Mockito.mockConstruction(HikariDataSource.class)) {
-            // Should not throw -- logs warning instead
-            assertDoesNotThrow(() ->
+            assertThrows(com.viglet.turing.commons.exception.TurRuntimeException.class, () ->
                     provider.deleteByMetadata(instance, null, "test_collection", "source_id", "doc1"));
         }
     }

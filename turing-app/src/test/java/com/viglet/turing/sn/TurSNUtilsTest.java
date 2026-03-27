@@ -8,13 +8,17 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.se.result.TurSEResult;
 
 /**
  * Tests for TurSNUtils.
@@ -368,6 +372,158 @@ class TurSNUtilsTest {
         List<String> result = TurSNUtils.filterQueryByFieldNames(uri, Arrays.asList("category", "type"));
 
         assertThat(result).hasSize(2);
+    }
+
+    // --- addSNDocument / addSNDocumentWithPosition ---
+
+    @Test
+    void addSNDocumentShouldAppendDocumentToList() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        Map<String, TurSNSiteFieldExtDto> fieldExtMap = new java.util.HashMap<>();
+        TurSNSiteFieldExtDto titleDto = new TurSNSiteFieldExtDto();
+        titleDto.setName("title");
+        fieldExtMap.put("title", titleDto);
+
+        Map<String, TurSNSiteFieldExtDto> facetMap = new java.util.HashMap<>();
+
+        TurSEResult result = TurSEResult.builder()
+                .fields(Map.of("title", "My Document", "url", "http://example.com/doc"))
+                .build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, fieldExtMap, facetMap, docs, result, false);
+
+        assertThat(docs).hasSize(1);
+        assertThat(docs.get(0).getFields()).containsEntry("title", "My Document");
+        assertThat(docs.get(0).getSource()).isEqualTo("http://example.com/doc");
+        assertThat(docs.get(0).isElevate()).isFalse();
+    }
+
+    @Test
+    void addSNDocumentShouldSetElevateTrue() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        TurSEResult result = TurSEResult.builder()
+                .fields(Map.of("title", "Promoted"))
+                .build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result, true);
+
+        assertThat(docs).hasSize(1);
+        assertThat(docs.get(0).isElevate()).isTrue();
+    }
+
+    @Test
+    void addSNDocumentWithPositionShouldInsertAtSpecificPosition() {
+        URI uri = URI.create("http://localhost/search?q=test");
+
+        TurSEResult result1 = TurSEResult.builder().fields(Map.of("title", "First")).build();
+        TurSEResult result2 = TurSEResult.builder().fields(Map.of("title", "Second")).build();
+        TurSEResult result3 = TurSEResult.builder().fields(Map.of("title", "Inserted")).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result1, false);
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result2, false);
+        TurSNUtils.addSNDocumentWithPosition(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result3, true, 1);
+
+        assertThat(docs).hasSize(3);
+        assertThat(docs.get(1).getFields()).containsEntry("title", "Inserted");
+        assertThat(docs.get(1).isElevate()).isTrue();
+    }
+
+    @Test
+    void addSNDocumentShouldHandleNullFields() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        TurSEResult result = TurSEResult.builder().fields(null).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result, false);
+
+        assertThat(docs).hasSize(1);
+        // should return empty bean
+        assertThat(docs.get(0).getFields()).isNull();
+    }
+
+    @Test
+    void addSNDocumentShouldFilterTuringEntityFields() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("title", "Doc");
+        fields.put("turing_entity_person", "John");
+        TurSEResult result = TurSEResult.builder().fields(fields).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result, false);
+
+        assertThat(docs.get(0).getFields()).containsKey("title");
+        assertThat(docs.get(0).getFields()).doesNotContainKey("turing_entity_person");
+    }
+
+    @Test
+    void addSNDocumentShouldMapFieldNamesUsingFieldExtMap() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        Map<String, TurSNSiteFieldExtDto> fieldExtMap = new java.util.HashMap<>();
+        TurSNSiteFieldExtDto dto = new TurSNSiteFieldExtDto();
+        dto.setName("displayTitle");
+        fieldExtMap.put("title", dto);
+
+        TurSEResult result = TurSEResult.builder().fields(Map.of("title", "Mapped")).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, fieldExtMap, new java.util.HashMap<>(), docs, result, false);
+
+        assertThat(docs.get(0).getFields()).containsEntry("displayTitle", "Mapped");
+        assertThat(docs.get(0).getFields()).doesNotContainKey("title");
+    }
+
+    @Test
+    void addSNDocumentShouldReturnNullSourceWhenNoUrl() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        TurSEResult result = TurSEResult.builder().fields(Map.of("title", "No URL")).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), new java.util.HashMap<>(), docs, result, false);
+
+        assertThat(docs.get(0).getSource()).isNull();
+    }
+
+    @Test
+    void addSNDocumentShouldBuildMetadataFromFacetMap() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        Map<String, TurSNSiteFieldExtDto> facetMap = new java.util.HashMap<>();
+        TurSNSiteFieldExtDto categoryDto = new TurSNSiteFieldExtDto();
+        categoryDto.setName("category");
+        facetMap.put("category", categoryDto);
+
+        TurSEResult result = TurSEResult.builder()
+                .fields(Map.of("category", "books", "title", "Test"))
+                .build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), facetMap, docs, result, false);
+
+        assertThat(docs.get(0).getMetadata()).isNotEmpty();
+        assertThat(docs.get(0).getMetadata().get(0).getText()).isEqualTo("books");
+    }
+
+    @Test
+    void addSNDocumentShouldBuildMetadataFromArrayListFacetValues() {
+        URI uri = URI.create("http://localhost/search?q=test");
+        Map<String, TurSNSiteFieldExtDto> facetMap = new java.util.HashMap<>();
+        TurSNSiteFieldExtDto tagDto = new TurSNSiteFieldExtDto();
+        tagDto.setName("tags");
+        facetMap.put("tags", tagDto);
+
+        java.util.ArrayList<String> tagValues = new java.util.ArrayList<>(List.of("java", "spring"));
+        Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("tags", tagValues);
+        fields.put("title", "Test");
+        TurSEResult result = TurSEResult.builder().fields(fields).build();
+
+        List<TurSNSiteSearchDocumentBean> docs = new java.util.ArrayList<>();
+        TurSNUtils.addSNDocument(uri, new java.util.HashMap<>(), facetMap, docs, result, false);
+
+        assertThat(docs.get(0).getMetadata()).hasSize(2);
     }
 
     // --- Helpers ---

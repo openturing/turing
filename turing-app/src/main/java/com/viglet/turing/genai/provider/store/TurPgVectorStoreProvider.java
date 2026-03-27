@@ -5,8 +5,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.annotation.PreDestroy;
-
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
@@ -16,12 +14,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -192,43 +191,49 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             List<String> tableNames = jdbcTemplate.queryForList(sql, String.class, schemaName);
             List<TurStoreCollectionInfo> result = new java.util.ArrayList<>();
             for (String tableName : tableNames) {
-                String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
-                long chunkCount = 0;
-                long documentCount = 0;
-                try {
-                    Long count = jdbcTemplate.queryForObject(
-                            "SELECT COUNT(*) FROM " + quotedTable, Long.class);
-                    chunkCount = count != null ? count : 0;
-                } catch (Exception e) {
-                    log.debug("Failed to count chunks for {}: {}", tableName, e.getMessage());
-                }
-                try {
-                    Long count = jdbcTemplate.queryForObject(
-                            "SELECT COUNT(DISTINCT COALESCE("
-                                    + "metadata ->> 'source_id', "
-                                    + "metadata ->> 'objectName', "
-                                    + "metadata ->> 'fileName'"
-                                    + ")) FROM " + quotedTable
-                                    + " WHERE COALESCE("
-                                    + "metadata ->> 'source_id', "
-                                    + "metadata ->> 'objectName', "
-                                    + "metadata ->> 'fileName'"
-                                    + ") IS NOT NULL",
-                            Long.class);
-                    documentCount = count != null ? count : 0;
-                } catch (Exception e) {
-                    log.debug("Failed to count documents for {}: {}", tableName, e.getMessage());
-                }
-                if (documentCount == 0) {
-                    documentCount = chunkCount;
-                }
-                result.add(new TurStoreCollectionInfo(tableName, tableName, documentCount, chunkCount));
+                retrieveDocumentCount(jdbcTemplate, schemaName, result, tableName);
             }
             return result;
         } catch (Exception e) {
             log.error("Failed to list PGVector collections", e);
             return List.of();
         }
+    }
+
+    private void retrieveDocumentCount(JdbcTemplate jdbcTemplate, String schemaName,
+            List<TurStoreCollectionInfo> result,
+            String tableName) {
+        String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(tableName);
+        long chunkCount = 0;
+        long documentCount = 0;
+        try {
+            Long count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM " + quotedTable, Long.class);
+            chunkCount = count != null ? count : 0;
+        } catch (Exception e) {
+            log.debug("Failed to count chunks for {}: {}", tableName, e.getMessage());
+        }
+        try {
+            Long count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(DISTINCT COALESCE("
+                            + "metadata ->> 'source_id', "
+                            + "metadata ->> 'objectName', "
+                            + "metadata ->> 'fileName'"
+                            + ")) FROM " + quotedTable
+                            + " WHERE COALESCE("
+                            + "metadata ->> 'source_id', "
+                            + "metadata ->> 'objectName', "
+                            + "metadata ->> 'fileName'"
+                            + ") IS NOT NULL",
+                    Long.class);
+            documentCount = count != null ? count : 0;
+        } catch (Exception e) {
+            log.debug("Failed to count documents for {}: {}", tableName, e.getMessage());
+        }
+        if (documentCount == 0) {
+            documentCount = chunkCount;
+        }
+        result.add(new TurStoreCollectionInfo(tableName, tableName, documentCount, chunkCount));
     }
 
     @Override
@@ -256,7 +261,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             log.info("[PGVector] Created collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[PGVector] Failed to create collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to create collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to create collection: " + collectionName, e);
         }
     }
 
@@ -275,7 +280,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             log.info("[PGVector] Cleared collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[PGVector] Failed to clear collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to clear collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to clear collection: " + collectionName, e);
         }
     }
 
@@ -294,7 +299,7 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             log.info("[PGVector] Deleted collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[PGVector] Failed to delete collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to delete collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to delete collection: " + collectionName, e);
         }
     }
 
@@ -313,9 +318,11 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
             String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
             String sql = "DELETE FROM " + quotedTable + " WHERE metadata ->> ? = ?";
             int deleted = jdbcTemplate.update(sql, metadataKey, metadataValue);
-            log.info("[PGVector] Deleted {} rows where {}={} from {}", deleted, metadataKey, metadataValue, collectionName);
+            log.info("[PGVector] Deleted {} rows where {}={} from {}", deleted, metadataKey, metadataValue,
+                    collectionName);
         } catch (Exception e) {
             log.warn("[PGVector] Failed to delete by metadata: {}={}", metadataKey, metadataValue, e);
+            throw new TurRuntimeException("Failed to delete by metadata: " + metadataKey + "=" + metadataValue, e);
         }
     }
 

@@ -11,6 +11,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurChromaStoreProvider implements TurGenAiStoreProvider {
 
+    private static final String STATUS = "status";
     private static final String DEFAULT_COLLECTION = "turing";
     private static final String DEFAULT_TENANT = "default_tenant";
     private static final String DEFAULT_DATABASE = "default_database";
@@ -115,7 +117,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             log.info("[Chroma] Created collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[Chroma] Failed to create collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to create collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to create collection: " + collectionName, e);
         }
     }
 
@@ -146,21 +148,26 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             List<ChromaApi.Collection> collections = chromaApi.listCollections(tenantName, databaseName);
             List<TurStoreCollectionInfo> result = new ArrayList<>();
             for (ChromaApi.Collection col : collections) {
-                long count = 0;
-                try {
-                    Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
-                    if (c != null)
-                        count = c;
-                } catch (Exception e) {
-                    log.warn("Failed to count embeddings for collection: {}", col.name(), e);
-                }
-                result.add(new TurStoreCollectionInfo(col.name(), col.id(), count, count));
+                retrieveEmbeddingCount(chromaApi, tenantName, databaseName, result, col);
             }
             return result;
         } catch (Exception e) {
             log.error("Failed to list Chroma collections", e);
             return List.of();
         }
+    }
+
+    private void retrieveEmbeddingCount(ChromaApi chromaApi, String tenantName, String databaseName,
+            List<TurStoreCollectionInfo> result, ChromaApi.Collection col) {
+        long count = 0;
+        try {
+            Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
+            if (c != null)
+                count = c;
+        } catch (Exception e) {
+            log.warn("Failed to count embeddings for collection: {}", col.name(), e);
+        }
+        result.add(new TurStoreCollectionInfo(col.name(), col.id(), count, count));
     }
 
     @Override
@@ -179,7 +186,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             log.info("[Chroma] Cleared collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[Chroma] Failed to clear collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to clear collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to clear collection: " + collectionName, e);
         }
     }
 
@@ -196,7 +203,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             log.info("[Chroma] Deleted collection: {}", collectionName);
         } catch (Exception e) {
             log.error("[Chroma] Failed to delete collection: {}", collectionName, e);
-            throw new RuntimeException("Failed to delete collection: " + collectionName, e);
+            throw new TurRuntimeException("Failed to delete collection: " + collectionName, e);
         }
     }
 
@@ -277,15 +284,15 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
                 body = body.replace("\"", "").trim();
                 info.put("version", body);
             }
-            info.put("status", "UP");
+            info.put(STATUS, "UP");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Interrupted while retrieving ChromaDB version: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to retrieve ChromaDB version: {}", e.getMessage());
-            info.put("status", "DOWN");
+            info.put(STATUS, "DOWN");
             info.put("error", e.getMessage());
         }
         return info;
