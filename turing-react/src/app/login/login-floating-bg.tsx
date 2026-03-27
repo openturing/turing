@@ -9,24 +9,31 @@ const FORMULAS = [
   "Ca(OH)\u2082", "HNO\u2083", "P\u2084O\u2081\u2080", "Cl\u2082", "Br\u2082",
 ];
 
-const FORMULA_ITEMS = FORMULAS.map((text, i) => {
-  const cols = 7;
-  const rows = Math.ceil(FORMULAS.length / cols);
-  const col = i % cols;
-  const row = Math.floor(i / cols);
-  const cellW = 100 / cols;
-  const cellH = 90 / rows;
-  return {
-    text,
-    top: `${3 + row * cellH + ((i * 7) % (cellH * 0.6))}%`,
-    left: `${1 + col * cellW + ((i * 11) % (cellW * 0.6))}%`,
-    size: 0.8 + (i % 5) * 0.25,
-    duration: 14 + (i % 7) * 4,
-    delay: (i % 8) * -2.5,
-    drift: ["login-drift-a", "login-drift-b", "login-drift-c"][i % 3],
-    opacity: 0.25 + (i % 4) * 0.08,
+// Seeded pseudo-random for deterministic but scattered layout per session
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
   };
-});
+}
+const rand = seededRandom(Date.now() % 100000);
+
+const DRIFT_CLASSES = [
+  "login-drift-a", "login-drift-b", "login-drift-c",
+  "login-drift-d", "login-drift-e",
+];
+
+const FORMULA_ITEMS = FORMULAS.map((text, i) => ({
+  text,
+  top: `${rand() * 85 + 2}%`,
+  left: `${rand() * 88 + 2}%`,
+  size: 0.8 + rand() * 1.2,
+  duration: 10 + rand() * 20,
+  delay: -(rand() * 20),
+  drift: DRIFT_CLASSES[Math.floor(rand() * DRIFT_CLASSES.length)],
+  opacity: 0.2 + rand() * 0.35,
+}));
 
 interface Bond {
   top: string; left: string; size: number;

@@ -67,31 +67,51 @@
 .dark .login-bond-line { stroke: #60a5fa; opacity: 0.4; }
 .dark .login-bond-node { fill: #60a5fa; opacity: 0.5; }
 
-/* ── 3 Drift Animations ── */
+/* ── 5 Drift Animations (wide movement) ── */
 .login-drift-a { animation: login-drift-a ease-in-out infinite; }
 .login-drift-b { animation: login-drift-b ease-in-out infinite; }
 .login-drift-c { animation: login-drift-c ease-in-out infinite; }
+.login-drift-d { animation: login-drift-d ease-in-out infinite; }
+.login-drift-e { animation: login-drift-e ease-in-out infinite; }
 
 @keyframes login-drift-a {
   0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
-  25%  { transform: translate(30px, -20px) scale(1.15) rotate(3deg); }
-  50%  { transform: translate(-10px, -40px) scale(0.85) rotate(-2deg); }
-  75%  { transform: translate(-30px, -15px) scale(1.1) rotate(2deg); }
+  20%  { transform: translate(80px, -60px) scale(1.15) rotate(5deg); }
+  40%  { transform: translate(-40px, -120px) scale(0.85) rotate(-4deg); }
+  60%  { transform: translate(-100px, -30px) scale(1.1) rotate(3deg); }
+  80%  { transform: translate(50px, 60px) scale(0.9) rotate(-2deg); }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
 @keyframes login-drift-b {
   0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
-  25%  { transform: translate(-25px, 15px) scale(0.9) rotate(-3deg); }
-  50%  { transform: translate(15px, 35px) scale(1.2) rotate(2deg); }
-  75%  { transform: translate(25px, 10px) scale(0.85) rotate(-1deg); }
+  25%  { transform: translate(-90px, 70px) scale(0.88) rotate(-5deg); }
+  50%  { transform: translate(60px, 130px) scale(1.2) rotate(4deg); }
+  75%  { transform: translate(100px, -40px) scale(0.85) rotate(-3deg); }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
 @keyframes login-drift-c {
   0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
-  20%  { transform: translate(20px, 25px) scale(1.1) rotate(2deg); }
-  40%  { transform: translate(-15px, 10px) scale(0.88) rotate(-3deg); }
-  60%  { transform: translate(-25px, -20px) scale(1.15) rotate(1deg); }
-  80%  { transform: translate(10px, -30px) scale(0.92) rotate(-2deg); }
+  16%  { transform: translate(70px, 80px) scale(1.12) rotate(4deg); }
+  33%  { transform: translate(-50px, 40px) scale(0.86) rotate(-5deg); }
+  50%  { transform: translate(-110px, -60px) scale(1.18) rotate(2deg); }
+  66%  { transform: translate(30px, -100px) scale(0.9) rotate(-3deg); }
+  83%  { transform: translate(90px, -20px) scale(1.05) rotate(4deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes login-drift-d {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  20%  { transform: translate(-70px, -90px) scale(1.1) rotate(-4deg); }
+  40%  { transform: translate(100px, -50px) scale(0.88) rotate(5deg); }
+  60%  { transform: translate(40px, 100px) scale(1.15) rotate(-2deg); }
+  80%  { transform: translate(-80px, 50px) scale(0.92) rotate(3deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes login-drift-e {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  15%  { transform: translate(60px, 90px) scale(0.9) rotate(5deg); }
+  35%  { transform: translate(110px, -30px) scale(1.12) rotate(-3deg); }
+  55%  { transform: translate(-30px, -110px) scale(0.87) rotate(4deg); }
+  75%  { transform: translate(-100px, 40px) scale(1.1) rotate(-5deg); }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
 
