@@ -1,19 +1,9 @@
 import { Navigate, Route, useParams } from "react-router-dom"
 import IntegrationInstanceDetailPage from "../console/integration/integration.instance.detail.page"
-import IntegrationInstanceDoubleCheckPage from "../console/integration/integration.instance.double.check.page"
-import IntegrationInstanceSystemInfoPage from "../console/integration/integration.instance.system-info.page"
-import IntegrationInstanceIndexAdminPage from "../console/integration/integration.instance.indexing.manager.page"
-import IntegrationInstanceIndexingRulesListPage from "../console/integration/integration.instance.indexing.rules.list.page"
-import IntegrationInstanceIndexingStatsPage from "../console/integration/integration.instance.indexing.stats.page"
-import IntegrationInstanceIndexingRulesPage from "../console/integration/integration.instance.indexing.rules.page"
+import IntegrationInstanceDumontPage from "../console/integration/integration.instance.dumont.page"
 import IntegrationInstanceListPage from "../console/integration/integration.instance.list.page"
-import IntegrationInstanceMonitoringPage from "../console/integration/integration.instance.monitoring.page"
 import IntegrationInstancePage from "../console/integration/integration.instance.page"
 import IntegrationInstanceRootPage from "../console/integration/integration.instance.root.page"
-import IntegrationInstanceSourceListPage from "../console/integration/integration.instance.source.list.page"
-import IntegrationInstanceSourcePage from "../console/integration/integration.instance.source.page"
-import IntegrationInstanceSourceSpecPage from "../console/integration/integration.instance.source.spec.page"
-import IntegrationInstanceSourceModelPage from "../console/integration/integration.instance.source.model.page"
 import { ROUTES } from "../routes.const"
 
 function RedirectToIntegrationDetail() {
@@ -27,23 +17,10 @@ export const IntegrationRoutes = (
         <Route path={ROUTES.INTEGRATION_INSTANCE} element={<IntegrationInstanceListPage />} />
         <Route path={`${ROUTES.INTEGRATION_INSTANCE}/:id`} element={<IntegrationInstancePage />}>
             <Route index element={<RedirectToIntegrationDetail />} />
+            {/* Turing-owned: Settings */}
             <Route path="detail" element={<IntegrationInstanceDetailPage />} />
-            <Route path="source" element={<IntegrationInstanceSourceListPage />} />
-            <Route path="source/:sourceId" element={<IntegrationInstanceSourcePage />} />
-            <Route path="source/:sourceId/:tab" element={<IntegrationInstanceSourcePage />} />
-            <Route path="source/:sourceId/specifications/:specIndex" element={<IntegrationInstanceSourceSpecPage />} />
-            <Route path="source/:sourceId/models/:modelIndex" element={<IntegrationInstanceSourceModelPage />} />
-            <Route path="indexing-rule" element={<IntegrationInstanceIndexingRulesListPage />} />
-            <Route path="indexing-rule/:ruleId" element={<IntegrationInstanceIndexingRulesPage />} />
-            <Route path="indexing-manager" element={<IntegrationInstanceIndexAdminPage />} />
-            <Route path="indexing-manager/:mode" element={<IntegrationInstanceIndexAdminPage />} />
-            <Route path="monitoring">
-                <Route index element={<Navigate to="all" replace />} />
-                <Route path=":source" element={<IntegrationInstanceMonitoringPage />} />
-            </Route>
-            <Route path="indexing-stats" element={<IntegrationInstanceIndexingStatsPage />} />
-            <Route path="double-check" element={<IntegrationInstanceDoubleCheckPage />} />
-            <Route path="system-info" element={<IntegrationInstanceSystemInfoPage />} />
+            {/* All dumont-owned routes via Module Federation */}
+            <Route path="*" element={<IntegrationInstanceDumontPage />} />
         </Route>
     </Route>
 )

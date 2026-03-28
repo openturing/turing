@@ -51,3 +51,4 @@ turing-js-sdk/js-sdk-sample/package-lock.json
 turing-react/package-lock.json
 turing-js-sdk/package-lock.json
 /.github/appmod
+/turing-react/.__mf__temp

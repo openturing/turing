@@ -3,18 +3,13 @@ import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
+import { resolveIcon } from "@/lib/icon-resolver";
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model";
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
+import { loadRemote, registerRemotes } from "@module-federation/runtime";
 import {
-    IconAdjustmentsSearch,
-    IconChartBar,
-    IconGitCommit,
-    IconGraph,
-    IconInfoCircle,
-    IconListCheck,
     IconPlugConnectedX,
     IconSettings,
-    IconTools
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,15 +18,42 @@ import { toast } from "sonner";
 
 const turIntegrationInstanceService = new TurIntegrationInstanceService();
 
+const registeredEndpoints = new Set<string>();
+
+function registerDumontRemote(endpoint: string) {
+    const normalizedEndpoint = endpoint.replace(/\/$/, "");
+    if (registeredEndpoints.has(normalizedEndpoint)) return;
+
+    registerRemotes(
+        [
+            {
+                name: "dumont_react",
+                type: "module",
+                entry: `${normalizedEndpoint}/dumont/remoteEntry.js`,
+            },
+        ],
+        { force: true }
+    );
+    registeredEndpoints.add(normalizedEndpoint);
+}
+
+interface DumontNavItem {
+    titleKey: string;
+    url: string;
+    icon: string;
+    order: number;
+}
+
 export default function IntegrationInstancePage() {
     const { id } = useParams() as { id: string };
     const { t } = useTranslation();
     const [integration, setIntegration] = useState<TurIntegrationInstance>();
+    const [dumontNavItems, setDumontNavItems] = useState<{ title: string; url: string; icon: React.ElementType }[]>([]);
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate()
-    const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`
+    const navigate = useNavigate();
+    const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`;
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
         id === "new" ? [{ label: t("integration.newIntegration") }] : [{ label: "…" }]
     );
@@ -43,43 +65,9 @@ export default function IntegrationInstancePage() {
                 url: "/detail",
                 icon: IconSettings,
             },
-            {
-                title: t("integration.nav.sources"),
-                url: "/source",
-                icon: IconGitCommit,
-            },
-            {
-                title: t("integration.nav.indexingRules"),
-                url: "/indexing-rule",
-                icon: IconTools,
-            },
-            {
-                title: t("integration.nav.indexingManager"),
-                url: "/indexing-manager",
-                icon: IconAdjustmentsSearch
-            },
-            {
-                title: t("integration.nav.monitoring"),
-                url: "/monitoring",
-                icon: IconGraph,
-            },
-            {
-                title: t("integration.nav.indexingStats"),
-                url: "/indexing-stats",
-                icon: IconChartBar,
-            },
-            {
-                title: t("integration.nav.doubleCheck"),
-                url: "/double-check",
-                icon: IconListCheck,
-            },
-            {
-                title: t("integration.nav.systemInfo"),
-                url: "/system-info",
-                icon: IconInfoCircle,
-            },
+            ...dumontNavItems,
         ],
-    }), [t]);
+    }), [t, dumontNavItems]);
 
     useEffect(() => {
         if (id === "new") {
@@ -88,9 +76,34 @@ export default function IntegrationInstancePage() {
             }).catch(() => setError(t("common.connectionError", { resource: "Integration instances" })));
             setIsNew(true);
         } else {
-            turIntegrationInstanceService.get(id).then((integration) => {
-                setIntegration(integration);
-                setBreadcrumb([{ label: integration.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${integration.id}` }]);
+            turIntegrationInstanceService.get(id).then((instance) => {
+                setIntegration(instance);
+                setBreadcrumb([{ label: instance.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${instance.id}` }]);
+
+                // Load dumont manifest dynamically from the connector endpoint
+                registerDumontRemote(instance.endpoint);
+
+                loadRemote("dumont_react/register")
+                    .then((mod) => {
+                        (mod as { registerDumontTranslations: () => void }).registerDumontTranslations();
+                    })
+                    .catch(() => { /* dumont i18n unavailable */ });
+
+                loadRemote("dumont_react/manifest")
+                    .then((mod) => {
+                        const manifest = (mod as { default: { navItems: DumontNavItem[] } }).default;
+                        const items = manifest.navItems
+                            .sort((a, b) => a.order - b.order)
+                            .map((item) => ({
+                                title: t(item.titleKey),
+                                url: item.url,
+                                icon: resolveIcon(item.icon),
+                            }));
+                        setDumontNavItems(items);
+                    })
+                    .catch(() => {
+                        console.warn("Dumont manifest unavailable; showing turing-only nav");
+                    });
             }).catch(() => setError(t("common.connectionError", { resource: "Integration instance" })));
             setIsNew(false);
         }
@@ -98,10 +111,7 @@ export default function IntegrationInstancePage() {
 
     useSubPageBreadcrumb(breadcrumb);
 
-
-
     async function onDelete() {
-        console.log("delete");
         if (!integration) {
             toast.error(t("integration.notLoaded"));
             setOpen(false);
@@ -114,7 +124,6 @@ export default function IntegrationInstancePage() {
             } else {
                 toast.error(t("integration.notDeleted", { name: integration.title }));
             }
-
         } catch (error) {
             console.error("Form submission error", error);
             toast.error(t("integration.notDeleted", { name: integration.title }));
@@ -127,5 +136,5 @@ export default function IntegrationInstancePage() {
             {integration && <SubPage icon={IconPlugConnectedX} feature={t("integration.title")} name={integration.title}
                 onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />}
         </LoadProvider>
-    )
+    );
 }

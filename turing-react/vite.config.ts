@@ -1,3 +1,4 @@
+import { federation } from "@module-federation/vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
@@ -6,7 +7,24 @@ import { d2DevPlugin } from "./vite-plugin-d2";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), d2DevPlugin()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    d2DevPlugin(),
+    federation({
+      name: "turing_react",
+      remotes: {},
+      shared: {
+        react: { singleton: true, requiredVersion: "*" },
+        "react-dom": { singleton: true, requiredVersion: "*" },
+        "react-router-dom": { singleton: true, requiredVersion: "*" },
+        "react-i18next": { singleton: true, requiredVersion: "*" },
+        i18next: { singleton: true, requiredVersion: "*" },
+        axios: { singleton: true, requiredVersion: "*" },
+        sonner: { singleton: true, requiredVersion: "*" },
+      },
+    }),
+  ],
   build: {
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
