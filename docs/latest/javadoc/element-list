@@ -9,6 +9,7 @@ com.viglet.turing.api.embedding
 com.viglet.turing.api.exchange
 com.viglet.turing.api.genai
 com.viglet.turing.api.integration
+com.viglet.turing.api.intent
 com.viglet.turing.api.llm
 com.viglet.turing.api.llm.chat
 com.viglet.turing.api.llm.tokenusage
@@ -86,6 +87,7 @@ com.viglet.turing.persistence.dto.auth
 com.viglet.turing.persistence.dto.dev.token
 com.viglet.turing.persistence.dto.embedding
 com.viglet.turing.persistence.dto.integration
+com.viglet.turing.persistence.dto.intent
 com.viglet.turing.persistence.dto.llm
 com.viglet.turing.persistence.dto.mcp
 com.viglet.turing.persistence.dto.se
@@ -105,6 +107,7 @@ com.viglet.turing.persistence.mapper.auth
 com.viglet.turing.persistence.mapper.dev.token
 com.viglet.turing.persistence.mapper.embedding
 com.viglet.turing.persistence.mapper.integration
+com.viglet.turing.persistence.mapper.intent
 com.viglet.turing.persistence.mapper.llm
 com.viglet.turing.persistence.mapper.mcp
 com.viglet.turing.persistence.mapper.se
@@ -125,6 +128,7 @@ com.viglet.turing.persistence.model.auth
 com.viglet.turing.persistence.model.dev.token
 com.viglet.turing.persistence.model.embedding
 com.viglet.turing.persistence.model.integration
+com.viglet.turing.persistence.model.intent
 com.viglet.turing.persistence.model.llm
 com.viglet.turing.persistence.model.mcp
 com.viglet.turing.persistence.model.se
@@ -145,6 +149,7 @@ com.viglet.turing.persistence.repository.auth
 com.viglet.turing.persistence.repository.dev.token
 com.viglet.turing.persistence.repository.embedding
 com.viglet.turing.persistence.repository.integration
+com.viglet.turing.persistence.repository.intent
 com.viglet.turing.persistence.repository.llm
 com.viglet.turing.persistence.repository.mcp
 com.viglet.turing.persistence.repository.se
