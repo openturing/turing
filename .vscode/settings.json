@@ -27,7 +27,6 @@
     "**/.project": true,
     "**/.settings": true
   },
-
   // Postman extension tweak
   "postman.settings.dotenv-detection-notification-visibility": false,
   "java.configuration.updateBuildConfiguration": "automatic",
