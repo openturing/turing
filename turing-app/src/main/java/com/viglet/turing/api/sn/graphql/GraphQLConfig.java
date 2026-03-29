@@ -120,6 +120,7 @@ public class GraphQLConfig implements RuntimeWiringConfigurer {
                 .map(TurSNSiteFieldExt::getName)
                 .filter(StringUtils::isNotBlank)
                 .map(String::trim)
+                .map(TurSNSiteGraphQLNameUtils::toGraphQLFieldName)
                 .filter(this::isValidGraphQLFieldName)
                 .filter(fieldName -> !STATIC_FIELDS.contains(fieldName))
                 .sorted(Comparator.comparing(String::toLowerCase))

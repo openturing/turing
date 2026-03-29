@@ -406,6 +406,53 @@ class TurSNSiteSearchGraphQLControllerTest {
     }
 
     @Test
+    void testSiteSearchConvertsHyphenatedFieldNamesToDoubleUnderscore() {
+        TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
+        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
+        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
+                searchProcess, siteRepository, fieldExtRepository);
+
+        TurSNSite site = new TurSNSite();
+        site.setName("demo");
+        site.setHl(0);
+
+        TurSNSiteFieldExt hyphenField = TurSNSiteFieldExt.builder()
+                .name("content-type")
+                .externalId("content-type_s")
+                .enabled(1)
+                .build();
+        TurSNSiteFieldExt normalField = TurSNSiteFieldExt.builder()
+                .name("author")
+                .externalId("author_s")
+                .enabled(1)
+                .build();
+
+        TurSNSiteSearchDocumentBean document = TurSNSiteSearchDocumentBean.builder()
+                .fields(Map.of(
+                        "content-type_s", "article",
+                        "author_s", "John"))
+                .build();
+        TurSNSiteSearchBean response = new TurSNSiteSearchBean()
+                .setResults(new TurSNSiteSearchResultsBean().setDocument(List.of(document)));
+
+        when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
+        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
+        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
+        when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(hyphenField, normalField));
+        when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
+
+        TurSNSiteSearchBean result = controller.siteSearch("demo", new TurSNSearchParamsInput(), "en");
+
+        Map<String, Object> fields = result.getResults().getDocument().get(0).getFields();
+        // Hyphenated field name should be converted to double underscore
+        assertEquals("article", fields.get("content__type"));
+        assertEquals("John", fields.get("author"));
+        // Original hyphenated key should not be present
+        assertNull(fields.get("content-type"));
+    }
+
+    @Test
     void testSearchParamsInputCreation() {
         TurSNSearchParamsInput input = new TurSNSearchParamsInput();
 
