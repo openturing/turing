@@ -111,7 +111,7 @@ echo "    $(du -h "$APPIMAGE_OUTPUT" | cut -f1)"
 if command -v makensis &>/dev/null; then
   EXE_OUTPUT="${PROJECT_ROOT}/target/${DIST_NAME}.exe"
   echo "==> Creating Windows installer: $EXE_OUTPUT"
-  makensis -V2 -DOUTDIR="../../target" "$SCRIPT_DIR/installer/turing.nsi"
+  makensis -V2 -DOUTDIR="../../target" -DSTAGE="$STAGE" "$SCRIPT_DIR/installer/turing.nsi"
   echo "    $(du -h "$EXE_OUTPUT" | cut -f1)"
 else
   echo "==> Skipping Windows installer (makensis not found)"
