@@ -1,0 +1,17 @@
+{
+  "setup": {
+    "title": "Criar Senha do Administrador",
+    "subtitle": "Complete a configuracao inicial para comecar",
+    "description": "Defina a senha do administrador da sua instancia do Turing ES",
+    "firstAccess": "Primeiro Acesso",
+    "password": "Senha",
+    "enterPassword": "Digite a senha do administrador",
+    "confirmPassword": "Confirmar senha",
+    "repeatPassword": "Repita a senha",
+    "save": "Definir Senha",
+    "saving": "Definindo senha...",
+    "passwordMinLength": "A senha deve ter pelo menos 6 caracteres",
+    "passwordMismatch": "As senhas nao coincidem",
+    "setupFailed": "Falha ao definir a senha. Tente novamente."
+  }
+}

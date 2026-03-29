@@ -1,0 +1,17 @@
+{
+  "setup": {
+    "title": "Create Admin Password",
+    "subtitle": "Complete the initial setup to get started",
+    "description": "Set the administrator password for your Turing ES instance",
+    "firstAccess": "First Access Setup",
+    "password": "Password",
+    "enterPassword": "Enter admin password",
+    "confirmPassword": "Confirm password",
+    "repeatPassword": "Repeat the password",
+    "save": "Set Password",
+    "saving": "Setting password...",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "passwordMismatch": "Passwords do not match",
+    "setupFailed": "Failed to set password. Please try again."
+  }
+}

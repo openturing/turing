@@ -185,11 +185,15 @@ public class TurSNSiteSearchGraphQLController {
         Map<String, String> externalIdToName = new LinkedHashMap<>();
         siteFieldExtList.forEach(siteFieldExt -> {
             if (StringUtils.isNotBlank(siteFieldExt.getName())) {
-                fieldNames.add(siteFieldExt.getName());
+                String graphQLName = TurSNSiteGraphQLNameUtils
+                        .toGraphQLFieldName(siteFieldExt.getName());
+                fieldNames.add(graphQLName);
             }
             if (StringUtils.isNotBlank(siteFieldExt.getExternalId())
                     && StringUtils.isNotBlank(siteFieldExt.getName())) {
-                externalIdToName.putIfAbsent(siteFieldExt.getExternalId(), siteFieldExt.getName());
+                String graphQLName = TurSNSiteGraphQLNameUtils
+                        .toGraphQLFieldName(siteFieldExt.getName());
+                externalIdToName.putIfAbsent(siteFieldExt.getExternalId(), graphQLName);
             }
         });
 
@@ -274,7 +278,10 @@ public class TurSNSiteSearchGraphQLController {
         if (fieldNames.contains(rawKey)) {
             return rawKey;
         }
-        return externalIdToName.getOrDefault(rawKey, rawKey);
+        if (externalIdToName.containsKey(rawKey)) {
+            return externalIdToName.get(rawKey);
+        }
+        return TurSNSiteGraphQLNameUtils.toGraphQLFieldName(rawKey);
     }
 
     private static @NonNull String getLocale(String locale, TurSNSearchParams turSNSearchParams) {

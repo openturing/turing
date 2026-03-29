@@ -41,9 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Transactional
 public class TurOnStartup implements ApplicationRunner {
-	public static final String TURING_ADMIN_PASSWORD = "TURING_ADMIN_PASSWORD";
 	public static final String FIRST_TIME = "FIRST_TIME";
-	public static final int PASSWORD_MINIMUM_SIZE = 6;
 	private final TurConfigVarRepository turConfigVarRepository;
 	private final TurLocaleOnStartup turLocaleOnStartup;
 	private final TurSEVendorOnStartup turSEVendorOnStartup;
@@ -76,26 +74,18 @@ public class TurOnStartup implements ApplicationRunner {
 	@Override
 	public void run(ApplicationArguments arg0) {
 		if (turConfigVarRepository.findById(FIRST_TIME).isEmpty()) {
-			String turAdminPassword = System.getenv(TURING_ADMIN_PASSWORD);
+			log.info("First Time Configuration ...");
 
-			if (turAdminPassword != null && turAdminPassword.trim().length() >= PASSWORD_MINIMUM_SIZE) {
-				log.info("First Time Configuration ...");
+			turLocaleOnStartup.createDefaultRows();
+			turRoleOnStartup.createDefaultRows();
+			turGroupOnStartup.createDefaultRows();
+			turUserOnStartup.createDefaultRows();
+			turSEVendorOnStartup.createDefaultRows();
+			turLLMVendorOnStartup.createDefaultRows();
+			turStoreVendorOnStartup.createDefaultRows();
+			turConfigVarOnStartup.createDefaultRows();
 
-				turLocaleOnStartup.createDefaultRows();
-				turRoleOnStartup.createDefaultRows();
-				turGroupOnStartup.createDefaultRows();
-				turUserOnStartup.createDefaultRows(turAdminPassword);
-				turSEVendorOnStartup.createDefaultRows();
-				turLLMVendorOnStartup.createDefaultRows();
-				turStoreVendorOnStartup.createDefaultRows();
-				turConfigVarOnStartup.createDefaultRows();
-
-				log.info("Configuration finished.");
-			} else {
-				log.info("It is necessary to define the Operating System Variable {} " +
-						"with a password of at least {} characters. Please try again.",
-						TURING_ADMIN_PASSWORD, PASSWORD_MINIMUM_SIZE);
-			}
+			log.info("First Time Configuration completed. Set the admin password via the web interface.");
 		}
 
 	}

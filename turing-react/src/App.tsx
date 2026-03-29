@@ -3,6 +3,7 @@ import ConsoleRootPage from "./app/console/console.root.page"
 import RealTimeDashboardPage from "./app/console/dashboard/dashboard.page"
 import HomePage from "./app/console/home/home.page"
 import LoginPage from "./app/login/login.page"
+import SetupPage from "./app/setup/setup.page"
 import {
   AdminRoutes,
   AIAgentRoutes,
@@ -40,6 +41,7 @@ function App() {
               <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.CONSOLE} replace />} />
               <Route path={ROUTES.DASHBOARD} element={<RealTimeDashboardPage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
                 <Route index element={<Navigate to={ROUTES.HOME} replace />} />

@@ -1,0 +1,10 @@
+{
+  "latestErrorEvent": {
+    "code": "TYPE-001",
+    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"npx tsc --project D:\\\\Git\\\\viglet\\\\turing\\\\2026.1\\\\turing-react\\\\node_modules\\\\.federation\\\\tsconfig.4890d1c7dccf638d5cefd9870aceb8d2.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
+    "args": {
+      "cmd": "npx tsc --project D:\\Git\\viglet\\turing\\2026.1\\turing-react\\node_modules\\.federation\\tsconfig.4890d1c7dccf638d5cefd9870aceb8d2.json"
+    },
+    "timestamp": 1774708298042
+  }
+}

@@ -61,6 +61,20 @@ public final class TurSNSiteGraphQLNameUtils {
                 .orElse(siteArgument);
     }
 
+    /**
+     * Converts a field name to a valid GraphQL field name by replacing hyphens
+     * with double underscores ({@code __}).
+     *
+     * @param fieldName the original field name (e.g. "my-field")
+     * @return a GraphQL-safe field name (e.g. "my__field"), or the original if no hyphens
+     */
+    public static String toGraphQLFieldName(String fieldName) {
+        if (fieldName == null || !fieldName.contains("-")) {
+            return fieldName;
+        }
+        return fieldName.replace("-", "__");
+    }
+
     public static String toGraphQLEnumValue(String siteName) {
         String upper = siteName.toUpperCase(Locale.ROOT);
         StringBuilder sb = new StringBuilder(upper.length());

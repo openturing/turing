@@ -9,7 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "2026.1"
+    target-branch: "2026.2"
     open-pull-requests-limit: 15
     groups:
       java:
@@ -20,7 +20,7 @@ updates:
     directory: "/turing-react" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "2026.1"
+    target-branch: "2026.2"
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"
@@ -33,7 +33,7 @@ updates:
     directory: "/turing-js-sdk/js-sdk-lib" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "2026.1"
+    target-branch: "2026.2"
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"
@@ -46,7 +46,7 @@ updates:
     directory: "/turing-js-sdk/js-sdk-sample" # Location of package manifests
     schedule:
       interval: "weekly"
-    target-branch: "2026.1"
+    target-branch: "2026.2"
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"

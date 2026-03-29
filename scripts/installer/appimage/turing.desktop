@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Viglet Turing ES
+Comment=Enterprise Search Platform powered by AI
+Exec=turing
+Icon=turing
+Categories=Development;Java;
+Terminal=true
+StartupNotify=false

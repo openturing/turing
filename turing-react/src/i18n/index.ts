@@ -18,6 +18,7 @@ import enGraphql from "./locales/en/graphql.json";
 import enHome from "./locales/en/home.json";
 import enIntegration from "./locales/en/integration.json";
 import enLogin from "./locales/en/login.json";
+import enSetup from "./locales/en/setup.json";
 import enIntent from "./locales/en/intent.json";
 import enLlm from "./locales/en/llm.json";
 import enLogging from "./locales/en/logging.json";
@@ -47,6 +48,7 @@ import ptGraphql from "./locales/pt/graphql.json";
 import ptHome from "./locales/pt/home.json";
 import ptIntegration from "./locales/pt/integration.json";
 import ptLogin from "./locales/pt/login.json";
+import ptSetup from "./locales/pt/setup.json";
 import ptIntent from "./locales/pt/intent.json";
 import ptLlm from "./locales/pt/llm.json";
 import ptLogging from "./locales/pt/logging.json";
@@ -61,7 +63,7 @@ import ptTheme from "./locales/pt/theme.json";
 import ptTokenUsage from "./locales/pt/tokenUsage.json";
 
 const en = {
-  ...enCommon, ...enTheme, ...enLogin, ...enDialog, ...enChat,
+  ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat,
   ...enSidebar, ...enNav, ...enHome, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enEmbeddingModel,
   ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
@@ -70,7 +72,7 @@ const en = {
 };
 
 const pt = {
-  ...ptCommon, ...ptTheme, ...ptLogin, ...ptDialog, ...ptChat,
+  ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat,
   ...ptSidebar, ...ptNav, ...ptHome, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,

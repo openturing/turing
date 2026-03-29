@@ -1,6 +1,7 @@
 package com.viglet.turing.api.sn.graphql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -43,6 +44,15 @@ class TurSNSiteGraphQLNameUtilsTest {
         assertEquals("Sample Site", TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument("SAMPLE_SITE", map));
         assertEquals("Sample Site", TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument("sample_site", map));
         assertEquals("not_found", TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument("not_found", map));
+    }
+
+    @Test
+    void testToGraphQLFieldName() {
+        assertNull(TurSNSiteGraphQLNameUtils.toGraphQLFieldName(null));
+        assertEquals("simple", TurSNSiteGraphQLNameUtils.toGraphQLFieldName("simple"));
+        assertEquals("my__field", TurSNSiteGraphQLNameUtils.toGraphQLFieldName("my-field"));
+        assertEquals("a__b__c", TurSNSiteGraphQLNameUtils.toGraphQLFieldName("a-b-c"));
+        assertEquals("no_hyphens", TurSNSiteGraphQLNameUtils.toGraphQLFieldName("no_hyphens"));
     }
 
     @Test

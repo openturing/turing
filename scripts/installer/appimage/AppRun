@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# --------------------------------------------------------------------------
+# AppRun - Entry point for the Turing ES AppImage.
+#
+# Usage:
+#   ./Turing-ES.AppImage
+#   ./Turing-ES.AppImage --server.port=2701
+# --------------------------------------------------------------------------
+set -euo pipefail
+
+APPDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+JAR="$APPDIR/usr/lib/turing/server/viglet-turing.jar"
+PROPS="$APPDIR/usr/lib/turing/server/viglet-turing.properties"
+
+if [ ! -f "$JAR" ]; then
+  echo "Error: $JAR not found." >&2
+  exit 1
+fi
+
+SPRING_CONFIG=""
+if [ -f "$PROPS" ]; then
+  SPRING_CONFIG="--spring.config.additional-location=file:$PROPS"
+fi
+
+echo "Starting Viglet Turing ES..."
+exec java -Xmx1g -Xms1g -jar "$JAR" $SPRING_CONFIG "$@"

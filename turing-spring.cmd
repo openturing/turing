@@ -8,7 +8,6 @@ for %%A in (%*) do (
     if /i "%%A"=="/?" goto :help
 )
 
-set TURING_ADMIN_PASSWORD=turing
 set LOGGING_CONFIG=classpath:logback-spring.xml
 set MONGO_ENABLED=false
 set MINIO_ENABLED=false
