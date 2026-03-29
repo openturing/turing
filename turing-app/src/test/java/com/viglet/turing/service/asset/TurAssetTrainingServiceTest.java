@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -162,16 +164,21 @@ class TurAssetTrainingServiceTest {
         }
 
         @Test
-        void startTrainingReturnsRunningWhenAlreadyRunning() {
+        void startTrainingReturnsRunningWhenAlreadyRunning() throws Exception {
+                CountDownLatch holdTraining = new CountDownLatch(1);
                 when(globalSettingsService.isRagEnabled()).thenReturn(true);
-                when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
-                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+                when(ragContextBuilder.buildFromGlobalSettings()).thenAnswer(inv -> {
+                        holdTraining.await(5, TimeUnit.SECONDS);
+                        return Optional.of(ragInfrastructure);
+                });
 
                 TurAssetTrainingStatus firstCall = service.startTraining();
                 assertThat(firstCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
 
                 TurAssetTrainingStatus secondCall = service.startTraining();
                 assertThat(secondCall.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+
+                holdTraining.countDown();
         }
 
         @Test

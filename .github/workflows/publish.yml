@@ -96,7 +96,7 @@ jobs:
           gh release upload ${TAG_NAME} turing-utils/target/turing-utils.zip --clobber
           gh release upload ${TAG_NAME} target/turing-install.zip --clobber
           gh release upload ${TAG_NAME} target/turing-install.exe --clobber
-          gh release upload ${TAG_NAME} target/Turing-ES-*.AppImage --clobber
+          gh release upload ${TAG_NAME} target/Turing-ES-x86_64.AppImage --clobber
       - name: Deploy JavaDoc 🚀
         uses: MathieuSoysal/Javadoc-publisher.yml@fda475b197081ba1eca7a1dfadf0c017080a1623 # v3.0.2
         with:
