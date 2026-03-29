@@ -25,7 +25,7 @@ export interface LoginAnimationSettings {
 
 const DEFAULTS: LoginAnimationSettings = {
   animations: true,
-  explosion: true,
+  explosion: false,
   formulas: true,
 };
 

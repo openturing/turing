@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { cn } from "@/lib/utils.ts";
 import type { TurRestInfo } from '@/models/auth/rest-info';
 import { TurAuthorizationService } from '@/services/auth/authorization.service';
+import { TurSetupService } from '@/services/auth/setup.service';
 import { AlertCircle, KeyRound, Loader2, LogIn, User } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -24,6 +25,15 @@ export function LoginForm({
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const authorization = new TurAuthorizationService()
+
+    useEffect(() => {
+        new TurSetupService().status().then((status) => {
+            if (status.required) {
+                globalThis.location.href = ROUTES.SETUP;
+            }
+        }).catch(() => { /* ignore — login page is still usable */ });
+    }, []);
+
     function onSubmit(turRestInfo: TurRestInfo) {
         setError('');
         setIsLoading(true);

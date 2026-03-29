@@ -61,6 +61,7 @@ import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 public class TurSecurityConfigProduction {
         private static final String LOGIN_PATH = "/api/login";
         private static final String LOGOUT_PATH = "/logout";
+        private static final String SETUP_PATH = "/api/setup";
         public static final String ERROR_PATH = "/error/**";
         private final UserDetailsService userDetailsService;
 
@@ -115,7 +116,8 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/genai/**"),
                                                 mvc.matcher("/api/v2/guest/**"),
                                                 mvc.matcher("/h2/**"),
-                                                mvc.matcher(LOGIN_PATH)))
+                                                mvc.matcher(LOGIN_PATH),
+                                                mvc.matcher(SETUP_PATH)))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
                 if (turConfigProperties.isKeycloak()) {
                         String keycloakUrlFormat = String.format(
@@ -145,7 +147,8 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
                                                 mvc.matcher("/api/sn/*/*/spell-check"),
-                                                mvc.matcher(LOGIN_PATH)).permitAll();
+                                                mvc.matcher(LOGIN_PATH),
+                                                mvc.matcher(SETUP_PATH)).permitAll();
                                 authorizeRequests.anyRequest().authenticated();
                         });
                         http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
@@ -161,6 +164,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/index.html"),
                                                                 mvc.matcher("/welcome/**"),
                                                                 mvc.matcher("/login/**"),
+                                                                mvc.matcher("/setup/**"),
                                                                 mvc.matcher("/admin/**"),
                                                                 mvc.matcher("/"),
                                                                 mvc.matcher("/assets/**"),
@@ -182,7 +186,8 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/browserconfig.xml"),
                                                                 mvc.matcher("/console/**"),
                                                                 mvc.matcher("/api/v2/guest/**"),
-                                                                mvc.matcher(LOGIN_PATH)).permitAll();
+                                                                mvc.matcher(LOGIN_PATH),
+                                                                mvc.matcher(SETUP_PATH)).permitAll();
                                                 authorizeRequests.anyRequest().authenticated();
 
                                         });

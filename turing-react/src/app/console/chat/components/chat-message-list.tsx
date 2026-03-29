@@ -8,7 +8,6 @@ import ReactMarkdown from "react-markdown"
 import rehypeHighlight from "rehype-highlight"
 import remarkGfm from "remark-gfm"
 import { type ChatMessage, formatFileSize } from "../chat.types"
-import { D2Diagram } from "./d2-diagram"
 import { SandboxPlayer } from "./sandbox-player"
 
 interface ChatMessageListProps {
@@ -21,10 +20,9 @@ interface ChatMessageListProps {
 
 type ContentSegment =
   | { type: "markdown"; text: string }
-  | { type: "d2"; code: string }
   | { type: "html"; code: string }
 
-const SPECIAL_BLOCK_RE = /```(d2|html)\n([\s\S]*?)```/g
+const SPECIAL_BLOCK_RE = /```(html)\n([\s\S]*?)```/g
 
 function splitContent(content: string): ContentSegment[] {
   const segments: ContentSegment[] = []
@@ -32,8 +30,7 @@ function splitContent(content: string): ContentSegment[] {
   for (const match of content.matchAll(SPECIAL_BLOCK_RE)) {
     const before = content.slice(lastIndex, match.index)
     if (before) segments.push({ type: "markdown", text: before })
-    const lang = match[1] as "d2" | "html"
-    segments.push({ type: lang, code: match[2].replace(/\n$/, "") })
+    segments.push({ type: "html", code: match[2].replace(/\n$/, "") })
     lastIndex = match.index + match[0].length
   }
   const after = content.slice(lastIndex)
@@ -64,8 +61,7 @@ function AssistantContent({ content }: Readonly<{ content: string }>) {
   return (
     <>
       {segments.map((seg, i) =>
-        seg.type === "d2" ? <D2Diagram key={i} code={seg.code} />
-        : seg.type === "html" ? <SandboxPlayer key={i} htmlCode={seg.code} />
+        seg.type === "html" ? <SandboxPlayer key={i} htmlCode={seg.code} />
         : <MarkdownBlock key={i} text={seg.text} />
       )}
     </>
