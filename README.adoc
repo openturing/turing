@@ -1,14 +1,13 @@
-= 🔍 Viglet Turing ES
+= Viglet Turing ES
 Viglet Team <opensource@viglet.org>
 :organization: Viglet Turing
-:viglet-version: 2025.3
+:viglet-version: 2026.2
 :icons: font
 :git-project: openviglet/turing
 
 [.lead]
-*Enterprise Search Platform with Semantic Navigation, Chatbots, and Generative AI*
+**Enterprise Search Intelligence Platform** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling.
 
-[.badges]
 image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
 image:https://img.shields.io/github/license/{git-project}.svg?style=for-the-badge&logo=Apache["License"]
 image:https://img.shields.io/github/last-commit/{git-project}.svg?style=for-the-badge&logo=java)[GitHub last commit]
@@ -16,332 +15,140 @@ image:https://img.shields.io/github/actions/workflow/status/openviglet/turing/va
 image:https://img.shields.io/badge/Sonar-Code%20Quality-brightgreen?style=for-the-badge&logo=SonarCloud[link="https://sonarcloud.io/project/overview?id=viglet_turing"]
 image:https://img.shields.io/badge/Javadoc-Release%20{viglet-version}-brightgreen?style=for-the-badge&logo=OpenJDK[link="https://turing.viglet.org/latest/javadoc/"]
 
-== 🚀 What is Viglet Turing?
+== What is Viglet Turing ES?
 
-Viglet Turing (https://viglet.org/turing/) is a powerful **enterprise search platform** that revolutionizes how organizations discover, search, and interact with their content. By combining cutting-edge technologies like semantic navigation, intelligent chatbots, and generative artificial intelligence, Turing provides a comprehensive solution for modern enterprise search needs.
+https://viglet.org/turing/[Viglet Turing ES] is an open-source platform that combines enterprise search with generative AI. Index content from any source, deliver faceted search experiences, and enable conversational AI grounded in real data.
 
-[.features-grid]
-=== ⭐ Key Features
+* **Semantic Navigation** — faceted search, spotlights, targeting rules, autocomplete, multi-language
+* **Generative AI (RAG)** — LLM responses grounded in your indexed content
+* **AI Agents** — assistants with independent LLMs, 27 native tools, and MCP server support
+* **Multi-Engine** — pluggable backend: Apache Solr, Elasticsearch, or Lucene
+* **Connectors** — Adobe AEM, web crawler, databases, filesystem, WordPress via https://github.com/openviglet/dumont[Viglet Dumont DEP]
+* **SDKs** — Java (Maven Central) and JavaScript/TypeScript (npm)
 
-[cols="1,3", options="header"]
-|===
-| Feature | Description
-| 🧠 *Semantic Navigation* | Advanced search with intelligent content understanding and contextual results
-| 🤖 *AI-Powered Chatbots* | Interactive conversational search with natural language processing
-| ✨ *Generative AI Integration* | Leverage modern AI models for enhanced search experiences
-| 🔗 *Enterprise Connectors* | Seamless integration with CMS platforms, databases, and file systems
-| 🌐 *Multi-Source Indexing* | Index content from websites, documents, databases, and more
-| 📊 *Real-time Analytics* | Monitor search performance and user behavior
-| 🔒 *Enterprise Security* | Built-in authentication and authorization capabilities
-| 📱 *Modern UI/UX* | React-based responsive interface with customizable themes
-|===
+== Quick Start
 
-== 🏗️ Architecture & Components
-
-Viglet Turing is built with a modern, scalable architecture supporting multiple deployment scenarios:
-
-=== Core Components
-- **Turing App**: Main Spring Boot application with REST APIs
-- **Turing UI**: Modern React-based user interface
-- **Search Engine**: Apache Solr integration with intelligent indexing
-- **Database Layer**: Support for H2, MariaDB, and other databases
-- **Message Queue**: Apache Artemis for asynchronous processing
-
-=== Integration Ecosystem
-
-==== 🔌 **Content Sources**
-- **CMS Connectors**: Adobe Experience Manager (AEM), WordPress, and more
-- **Web Crawler**: Automated website content indexing
-- **Database Connectors**: MySQL, PostgreSQL, Oracle, SQL Server
-- **File System**: Local and network file indexing
-
-==== 🛠️ **Developer Tools**
-- **Java SDK**: Full-featured client library for Java applications
-- **JavaScript SDK**: TypeScript-ready SDK for web applications
-- **REST APIs**: Comprehensive RESTful API for all operations
-
-== 🚦 Quick Start
-
-=== Prerequisites
-- Java 21+ ☕
-- Maven 3.6+ 📦
-- Docker & Docker Compose (recommended) 🐳
-
-=== Option 1: Docker Compose (Recommended)
+=== Docker (Fastest)
 
 [source,bash]
 ----
-# Clone the repository
+docker pull openviglet/turing:latest
+docker run -p 2700:2700 openviglet/turing:latest
+----
+
+Open http://localhost:2700/console — set admin password via `TURING_ADMIN_PASSWORD` env var on first run.
+
+=== Docker Compose
+
+[source,bash]
+----
 git clone https://github.com/openviglet/turing.git
 cd turing
-
-# Start all services with Docker Compose
 docker-compose up -d
-
-# Access Turing at http://localhost:2700
 ----
 
-=== Option 2: Local Development
+=== Build from Source
+
+Requires **Java 21+** and **Maven 3.6+**.
 
 [source,bash]
 ----
-# Clone and build
 git clone https://github.com/openviglet/turing.git
 cd turing
-
-# Build the project
 ./mvnw clean install
-
-# Run the application
-./mvnw spring-boot:run -pl turing-app
-
-# Access Turing at http://localhost:2700
-----
-
-=== 🎯 First Steps After Installation
-
-1. **Access the Console**: Open http://localhost:2700/console
-2. **Create a Site**: Set up your first search site
-3. **Index Content**: Use connectors or APIs to add your content
-4. **Start Searching**: Experience semantic search with your data
-
-== 💻 Code Examples
-
-=== Java SDK Example
-
-[source,java]
-----
-import com.viglet.turing.client.sn.HttpTurSNServer;
-import com.viglet.turing.client.sn.TurSNQuery;
-import com.viglet.turing.client.sn.response.QueryTurSNResponse;
-
-// Connect to Turing server
-HttpTurSNServer turSNServer = new HttpTurSNServer("http://localhost:2700/api/sn/MySite");
-
-// Create search query
-TurSNQuery query = new TurSNQuery();
-query.setQuery("artificial intelligence");
-query.setRows(10);
-query.setPageNumber(1);
-
-// Execute search
-QueryTurSNResponse response = turSNServer.query(query);
-response.getResults().getDocument().forEach(doc -> {
-    System.out.println("Title: " + doc.getFields().get("title"));
-    System.out.println("Content: " + doc.getFields().get("content"));
-});
-----
-
-=== JavaScript SDK Example
-
-[source,javascript]
-----
-import { TurSNSiteSearchService } from '@openviglet/turing-js-sdk';
-
-// Initialize search service
-const searchService = new TurSNSiteSearchService('http://localhost:2700');
-
-// Perform search
-const results = await searchService.search('sample-site', {
-  q: 'machine learning',
-  rows: 10,
-  currentPage: 1,
-  localeRequest: 'en_US',
-});
-
-console.log(`Found ${results.queryContext?.count} results`);
-results.results?.document?.forEach(doc => {
-  console.log(`Title: ${doc.fields?.title}`);
-  console.log(`Description: ${doc.fields?.description}`);
-});
-----
-
-=== REST API Example
-
-[source,bash]
-----
-# Search via REST API
-curl -X GET "http://localhost:2700/api/sn/sample-site/search?q=artificial%20intelligence&rows=10&_setlocale=en_US"
-----
-
-=== GraphQL API Example
-
-=== API Endpoints
-
-- **GraphQL API**: `POST /graphql`
-- **GraphiQL Interface**: `GET /graphiql`
-
-=== Example Usage
-
-[source,graphql]
-----
-query {
-  siteSearch(
-    siteName: "sample-site"
-    searchParams: {
-      q: "technology"
-      rows: 10
-      p: 1
-      sort: "relevance"
-    }
-    locale: "en_US"
-  ) {
-    queryContext {
-      count
-      responseTime
-    }
-    results {
-      numFound
-      document {
-        fields {
-          title
-          text
-          url
-        }
-      }
-    }
-  }
-}
-----
-
-=== Integration Benefits
-
-1. **Type Safety**: Strong typing prevents runtime errors
-2. **Flexible Queries**: Clients can request exactly the data they need
-3. **Single Endpoint**: All search operations through one GraphQL endpoint
-4. **Backward Compatibility**: Existing REST API remains unchanged
-5. **Interactive Development**: GraphiQL interface for query development
-6. **Consistent Results**: Uses same search engine and processing as REST API
-
-== 🛠️ Development Setup
-
-=== Building from Source
-
-[source,bash]
-----
-# Clone repository
-git clone https://github.com/openviglet/turing.git
-cd turing
-
-# Build all modules
-./mvnw clean install
-
-# Build specific components
-./mvnw clean install -pl turing-app          # Main application
-./mvnw clean install -pl turing-java-sdk     # Java SDK
-cd turing-js-sdk/js-sdk-lib; npm run build              # JavaScript SDK
-----
-
-=== Running Tests
-
-[source,bash]
-----
-# Run all tests
-./mvnw test
-
-# Run specific module tests
-./mvnw test -pl turing-app
-----
-
-=== Development Environment
-
-[source,bash]
-----
-# Start development stack
-docker-compose -f docker-compose.dev.yml up -d
-
-# Run app in development mode
-./mvnw spring-boot:run -pl turing-app -Dspring-boot.run.profiles=development
-----
-
-== 🤝 Community & Contributing
-
-=== Getting Involved
-
-We welcome contributions from developers of all skill levels! Here's how you can get started:
-
-1. **🐛 Report Issues**: Found a bug? Create an issue on GitHub
-2. **💡 Feature Requests**: Have an idea? We'd love to hear it
-3. **📖 Documentation**: Help improve our docs and examples
-4. **🔧 Code Contributions**: Submit pull requests for bug fixes and features
-
-=== Contribution Guidelines
-
-- Review our link:CONTRIBUTING.md[Contributing Guide]
-- Follow our link:CODE_OF_CONDUCT.md[Code of Conduct]
-- Check out issues labeled https://github.com/{git-project}/labels/good%20first%20issue["good first issue"] for beginners
-
-=== Connect with Us
-
-- 🌐 **Website**: https://viglet.org/turing/
-- 🐛 **Issues**: https://github.com/{git-project}/issues
-- 📋 **Discussions**: https://github.com/{git-project}/discussions
-
-== 📚 Documentation & Resources
-
-=== Essential Links
-
-- 📖 **Full Documentation**: https://docs.viglet.org/turing/
-- 💾 **Downloads**: https://viglet.org/turing/download/
-- 🔧 **API Documentation**: https://turing.viglet.org/latest/javadoc/
-
-=== SDK Documentation
-
-- **Java SDK**: link:turing-java-sdk/README.md[Java SDK Guide]
-- **JavaScript SDK**: link:turing-js-sdk/js-sdk-lib/README.md[JS SDK Guide]
-
-== 🐳 Deployment Options
-
-=== Docker Production Setup
-
-[source,bash]
-----
-# Production with external database
-docker-compose -f docker-compose.yml up -d
-
-# Kubernetes deployment
-kubectl apply -f k8s/
-----
-
-=== Traditional Deployment
-
-[source,bash]
-----
-# Build production JAR
-./mvnw clean package -pl turing-app
-
-# Run with production profile
 java -jar turing-app/target/viglet-turing.jar
 ----
 
-== 🆘 Troubleshooting
+== Code Examples
 
-=== Common Issues
+=== Java SDK
 
-**Q: Search results are empty**
-A: Ensure your content is properly indexed and the search site is configured correctly.
+[source,java]
+----
+HttpTurSNServer server = new HttpTurSNServer("http://localhost:2700/api/sn/MySite");
 
-**Q: Docker containers won't start**
-A: Check that ports 2700, 8983, and 3306 are not in use by other applications.
+TurSNQuery query = new TurSNQuery();
+query.setQuery("artificial intelligence");
+query.setRows(10);
 
-**Q: Build fails with Java version error**
-A: Ensure you're using Java 21 or higher. Check with `java -version`.
+QueryTurSNResponse response = server.query(query);
+response.getResults().getDocument().forEach(doc ->
+    System.out.println(doc.getFields().get("title"))
+);
+----
 
-=== Getting Help
+=== JavaScript / TypeScript SDK
 
-- 📋 Check our https://github.com/openviglet/turing/discussions[GitHub Discussions]
-- 🐛 Report bugs via https://github.com/openviglet/turing/issues[GitHub Issues]
-- 📧 Email us at opensource@viglet.com
+[source,typescript]
+----
+import { TurSNSiteSearchService } from '@openviglet/turing-js-sdk';
 
-== 📄 License
+const search = new TurSNSiteSearchService('http://localhost:2700');
+const results = await search.search('sample-site', {
+  q: 'machine learning', rows: 10, localeRequest: 'en_US'
+});
 
-This project is licensed under the Apache License 2.0 - see the link:LICENSE[LICENSE] file for details.
+results.results?.document?.forEach(doc =>
+  console.log(doc.fields?.title)
+);
+----
 
-== 🌟 Star History
+=== REST API
 
-If you find Viglet Turing useful, please consider giving us a star on GitHub! ⭐
+[source,bash]
+----
+# Search
+curl "http://localhost:2700/api/sn/sample-site/search?q=enterprise+search&rows=10&_setlocale=en_US"
+
+# Autocomplete
+curl "http://localhost:2700/api/sn/sample-site/ac?q=enterp&_setlocale=en_US"
+
+# RAG Chat (SSE stream)
+curl "http://localhost:2700/api/sn/sample-site/chat?q=What+is+enterprise+search"
+----
+
+GraphiQL IDE available at http://localhost:2700/graphiql.
+
+== Project Structure
+
+[source]
+----
+turing/
+├── turing-app/           # Spring Boot 4 backend (Java 21)
+├── turing-react/         # React + TypeScript frontend (Vite, shadcn/ui)
+├── turing-commons/       # Shared library
+├── turing-java-sdk/      # Java SDK
+├── turing-js-sdk/        # JavaScript/TypeScript SDK
+├── k8s/                  # Kubernetes manifests
+└── docker-compose.yaml   # Docker Compose stack
+----
+
+== Documentation
+
+For architecture details, configuration, connectors, API reference, deployment guides, and more:
+
+**https://docs.viglet.org/turing/[docs.viglet.org/turing]**
+
+[cols="1,2"]
+|===
+| https://docs.viglet.org/turing/[Full Documentation] | Architecture, configuration, connectors, admin guide
+| https://turing.viglet.org/latest/javadoc/[Javadoc] | API reference for Java classes
+| https://viglet.org/turing/download/[Downloads] | Release packages
+| link:turing-java-sdk/README.md[Java SDK Guide] | SDK usage and examples
+| link:turing-js-sdk/js-sdk-lib/README.md[JS SDK Guide] | SDK usage and examples
+|===
+
+== Contributing
+
+1. **Report Issues** — https://github.com/{git-project}/issues[GitHub Issues]
+2. **Discussions** — https://github.com/{git-project}/discussions[GitHub Discussions]
+3. **Code** — fork, branch, PR — check https://github.com/{git-project}/labels/good%20first%20issue["good first issue"] labels
+
+== License
+
+Apache License 2.0 — see link:LICENSE[LICENSE].
 
 ---
 
 [.text-center]
-*Built with ❤️ by the Viglet Team*
+Built by the https://viglet.org[Viglet] Team
