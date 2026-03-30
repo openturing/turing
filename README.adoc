@@ -8,7 +8,7 @@ Viglet Team <opensource@viglet.org>
 [.lead]
 **Enterprise Search Intelligence Platform** — Semantic Navigation, Generative AI (RAG), AI Agents, and Tool Calling.
 
-image:https://img.shields.io/badge/Download-Release%20{viglet-version}-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
+image:https://img.shields.io/badge/Download-Release%202026.1.18-blue?style=for-the-badge&logo=OpenJDK[link="https://viglet.org/turing/download/"]
 image:https://img.shields.io/github/license/{git-project}.svg?style=for-the-badge&logo=Apache["License"]
 image:https://img.shields.io/github/last-commit/{git-project}.svg?style=for-the-badge&logo=java)[GitHub last commit]
 image:https://img.shields.io/github/actions/workflow/status/openviglet/turing/validate.yml?branch={viglet-version}&style=for-the-badge&logo=GitHub[link="https://github.com/openviglet/turing/actions/workflows/validate.yml"]
@@ -107,7 +107,27 @@ curl "http://localhost:2700/api/sn/sample-site/ac?q=enterp&_setlocale=en_US"
 curl "http://localhost:2700/api/sn/sample-site/chat?q=What+is+enterprise+search"
 ----
 
-GraphiQL IDE available at http://localhost:2700/graphiql.
+=== GraphQL
+
+[source,graphql]
+----
+query {
+  siteSearch(
+    siteName: "sample-site"
+    searchParams: { q: "technology", rows: 10, p: 1 }
+    locale: "en_US"
+  ) {
+    queryContext { count, responseTime }
+    results {
+      document {
+        fields { title, text, url }
+      }
+    }
+  }
+}
+----
+
+Interactive GraphiQL IDE at http://localhost:2700/graphiql.
 
 == Project Structure
 
