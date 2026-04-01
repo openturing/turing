@@ -11,6 +11,7 @@ import {
     IconPlugConnectedX,
     IconSettings,
 } from "@tabler/icons-react";
+import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -42,6 +43,7 @@ interface DumontNavItem {
     url: string;
     icon: string;
     order: number;
+    provider?: string;
 }
 
 export default function IntegrationInstancePage() {
@@ -83,16 +85,30 @@ export default function IntegrationInstancePage() {
                 // Load dumont manifest dynamically from the connector endpoint
                 registerDumontRemote(instance.endpoint);
 
-                loadRemote("dumont_react/register")
+                // Fetch provider, translations and manifest, then build nav
+                const providerPromise = axios
+                    .get<{ provider?: string }>(`/v2/integration/${id}/connector/status`)
+                    .then(({ data }) => data.provider ?? null)
+                    .catch(() => null as string | null);
+
+                const i18nPromise = loadRemote("dumont_react/register")
                     .then((mod) => {
                         (mod as { registerDumontTranslations: () => void }).registerDumontTranslations();
                     })
                     .catch(() => { /* dumont i18n unavailable */ });
 
-                loadRemote("dumont_react/manifest")
-                    .then((mod) => {
-                        const manifest = (mod as { default: { navItems: DumontNavItem[] } }).default;
+                const manifestPromise = loadRemote("dumont_react/manifest")
+                    .then((mod) => (mod as { default: { navItems: DumontNavItem[] } }).default)
+                    .catch(() => null);
+
+                Promise.all([providerPromise, i18nPromise, manifestPromise])
+                    .then(([activeProvider, , manifest]) => {
+                        if (!manifest) {
+                            console.warn("Dumont manifest unavailable; showing turing-only nav");
+                            return;
+                        }
                         const items = manifest.navItems
+                            .filter((item) => !item.provider || item.provider === activeProvider)
                             .sort((a, b) => a.order - b.order)
                             .map((item) => ({
                                 title: t(item.titleKey),
@@ -100,9 +116,6 @@ export default function IntegrationInstancePage() {
                                 icon: resolveIcon(item.icon),
                             }));
                         setDumontNavItems(items);
-                    })
-                    .catch(() => {
-                        console.warn("Dumont manifest unavailable; showing turing-only nav");
                     });
             }).catch(() => setError(t("common.connectionError", { resource: "Integration instance" })));
             setIsNew(false);

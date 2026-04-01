@@ -10,7 +10,8 @@
     "notDeleted": "A Instância de Integração {{name}} não foi excluída",
     "nav": {
       "settings": "Configurações",
-      "sources": "Fontes",
+      "sources": "Fontes AEM",
+      "dbSources": "Fontes de Banco de Dados",
       "indexingRules": "Regras de Indexação",
       "indexingManager": "Gerenciador de Indexação",
       "monitoring": "Monitoramento",

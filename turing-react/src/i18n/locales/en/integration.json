@@ -10,7 +10,8 @@
     "notDeleted": "The {{name}} Integration Instance was not deleted",
     "nav": {
       "settings": "Settings",
-      "sources": "Sources",
+      "sources": "AEM Sources",
+      "dbSources": "Database Sources",
       "indexingRules": "Indexing Rules",
       "indexingManager": "Indexing Manager",
       "monitoring": "Monitoring",
