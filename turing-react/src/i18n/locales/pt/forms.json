@@ -249,6 +249,8 @@
       "typeDesc": "Escolha a plataforma ou tecnologia que deseja conectar.",
       "selectType": "Selecione um tipo...",
       "adobeAem": "Adobe AEM",
+      "assets": "Assets (Sistema de Arquivos)",
+      "jdbcDatabase": "Banco de Dados JDBC",
       "webCrawler": "Web Crawler",
       "endpointDesc": "Digite o endereço web onde o Turing deve se conectar ao seu sistema.",
       "endpointPlaceholder": "https://seu-sistema.exemplo.com/api",

@@ -171,6 +171,8 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem key="AEM" value="AEM">{t("forms.integration.adobeAem")}</SelectItem>
+                              <SelectItem key="ASSETS" value="ASSETS">{t("forms.integration.assets")}</SelectItem>
+                              <SelectItem key="JDBC_DATABASE" value="JDBC_DATABASE">{t("forms.integration.jdbcDatabase")}</SelectItem>
                               <SelectItem key="WEB_CRAWLER" value="WEB_CRAWLER">{t("forms.integration.webCrawler")}</SelectItem>
                             </SelectContent>
                           </Select>

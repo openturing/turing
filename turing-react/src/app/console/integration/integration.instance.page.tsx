@@ -108,7 +108,7 @@ export default function IntegrationInstancePage() {
                             return;
                         }
                         const items = manifest.navItems
-                            .filter((item) => !item.provider || item.provider === activeProvider)
+                            .filter((item) => !activeProvider || !item.provider || item.provider === activeProvider)
                             .sort((a, b) => a.order - b.order)
                             .map((item) => ({
                                 title: t(item.titleKey),

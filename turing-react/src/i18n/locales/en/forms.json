@@ -249,6 +249,8 @@
       "typeDesc": "Pick the platform or technology you want to connect with.",
       "selectType": "Select a type...",
       "adobeAem": "Adobe AEM",
+      "assets": "Assets (Filesystem)",
+      "jdbcDatabase": "JDBC Database",
       "webCrawler": "Web Crawler",
       "endpointDesc": "Enter the web address where Turing should connect to your system.",
       "endpointPlaceholder": "https://your-system.example.com/api",

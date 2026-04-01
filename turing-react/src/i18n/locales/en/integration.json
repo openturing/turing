@@ -12,6 +12,8 @@
       "settings": "Settings",
       "sources": "AEM Sources",
       "dbSources": "Database Sources",
+      "wcSources": "Web Crawler Sources",
+      "assetsSources": "Assets Sources",
       "indexingRules": "Indexing Rules",
       "indexingManager": "Indexing Manager",
       "monitoring": "Monitoring",

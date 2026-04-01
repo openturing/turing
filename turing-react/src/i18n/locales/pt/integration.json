@@ -12,6 +12,8 @@
       "settings": "Configurações",
       "sources": "Fontes AEM",
       "dbSources": "Fontes de Banco de Dados",
+      "wcSources": "Fontes Web Crawler",
+      "assetsSources": "Fontes de Assets",
       "indexingRules": "Regras de Indexação",
       "indexingManager": "Gerenciador de Indexação",
       "monitoring": "Monitoramento",
