@@ -15,7 +15,7 @@ import {
   TurSNSiteService,
 } from "@/services/sn/sn.service";
 import { IconDownload, IconLoader2 } from "@tabler/icons-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -42,54 +42,72 @@ export function DialogExport({ snSite, open, onOpenChange }: Props) {
   const [progress, setProgress] = useState<ContentExchangeProgress | null>(
     null,
   );
-  const esRef = useRef<EventSource | null>(null);
+  const downloadBlob = useCallback(
+    (blob: Blob) => {
+      const fileName = `sn-site-${snSite.name}-${new Date().toISOString()}.zip`;
+      const url = globalThis.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      globalThis.URL.revokeObjectURL(url);
+      a.remove();
+    },
+    [snSite.name],
+  );
 
   const handleExport = useCallback(async () => {
     setExporting(true);
     setProgress(null);
 
-    const taskId = `export-${snSite.id}-${Date.now()}`;
-
     try {
-      if (includeContent) {
-        turSNSiteService.subscribeExportProgress(
-          taskId,
-          (data) => setProgress(data),
-          () => {},
-          () => {},
-        );
-      }
-
-      const response = await turSNSiteService.export(
-        snSite,
-        includeContent,
-        includeContent ? taskId : undefined,
-      );
-
-      if (response) {
-        const fileName = `sn-site-${snSite.name}-${new Date().toISOString()}.zip`;
-        const url = globalThis.URL.createObjectURL(response);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        globalThis.URL.revokeObjectURL(url);
-        a.remove();
-        toast.success(t("sn.siteExported", { name: snSite.name }));
+      if (!includeContent) {
+        const response = await turSNSiteService.export(snSite);
+        if (response) {
+          downloadBlob(response);
+          toast.success(t("sn.siteExported", { name: snSite.name }));
+        } else {
+          toast.error(t("sn.siteNotExported", { name: snSite.name }));
+        }
       } else {
-        toast.error(t("sn.siteNotExported", { name: snSite.name }));
+        const taskId = `export-${snSite.id}-${Date.now()}`;
+
+        const asyncTaskId = await turSNSiteService.exportAsync(
+          snSite.id.toString(),
+          taskId,
+        );
+        if (!asyncTaskId) {
+          toast.error(t("sn.siteNotExported", { name: snSite.name }));
+          return;
+        }
+
+        await new Promise<void>((resolve) => {
+          turSNSiteService.subscribeExportProgress(
+            taskId,
+            (data) => setProgress(data),
+            () => resolve(),
+            () => resolve(),
+          );
+        });
+
+        const blob = await turSNSiteService.downloadExport(taskId);
+        if (blob) {
+          downloadBlob(blob);
+          toast.success(t("sn.siteExported", { name: snSite.name }));
+        } else {
+          toast.error(t("sn.siteNotExported", { name: snSite.name }));
+        }
       }
     } catch (error) {
       console.error("Export error", error);
       toast.error(t("sn.siteNotExported", { name: snSite.name }));
     } finally {
-      esRef.current?.close();
       setExporting(false);
       setProgress(null);
       onOpenChange(false);
     }
-  }, [snSite, includeContent, onOpenChange, t]);
+  }, [snSite, includeContent, onOpenChange, t, downloadBlob]);
 
   const handleClose = useCallback(
     (value: boolean) => {

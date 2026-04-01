@@ -52,21 +52,40 @@ export class TurSNSiteService {
       });
     return response;
   }
-  async export(
-    turSNSite: TurSNSite,
-    includeContent = false,
-    taskId?: string,
-  ): Promise<Blob | null> {
-    const params: Record<string, string | boolean> = { includeContent };
-    if (taskId) params.taskId = taskId;
+  async export(turSNSite: TurSNSite): Promise<Blob | null> {
     const response = await axios
       .get<Blob>(`/sn/${turSNSite.id.toString()}/export`, {
         responseType: "blob",
-        params,
       })
       .then((res) => res.data)
       .catch((error) => {
         console.error("Failed to export SN site", error);
+        return null;
+      });
+    return response;
+  }
+
+  async exportAsync(siteId: string, taskId: string): Promise<string | null> {
+    const response = await axios
+      .post<{ taskId: string }>(`/sn/${siteId}/export/async`, null, {
+        params: { taskId },
+      })
+      .then((res) => res.data.taskId)
+      .catch((error) => {
+        console.error("Failed to start async export", error);
+        return null;
+      });
+    return response;
+  }
+
+  async downloadExport(taskId: string): Promise<Blob | null> {
+    const response = await axios
+      .get<Blob>(`/sn/export/download/${taskId}`, {
+        responseType: "blob",
+      })
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error("Failed to download export", error);
         return null;
       });
     return response;

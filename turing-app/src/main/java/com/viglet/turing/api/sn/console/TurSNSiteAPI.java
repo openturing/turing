@@ -257,6 +257,27 @@ public class TurSNSiteAPI {
         return null;
     }
 
+    @PostMapping(value = "/{id}/export/async")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public Map<String, String> turSNSiteExportAsync(@PathVariable String id,
+            @RequestParam(required = false) String taskId) {
+        String effectiveTaskId = taskId != null ? taskId : "export-" + id + "-" + System.currentTimeMillis();
+        Thread.ofVirtual().start(() -> {
+            try {
+                turSNSiteExport.exportBySiteIdAsync(id, true, effectiveTaskId);
+            } catch (Exception e) {
+                log.error("Async export failed for site {}: {}", id, e.getMessage(), e);
+            }
+        });
+        return Map.of("taskId", effectiveTaskId);
+    }
+
+    @GetMapping(value = "/export/download/{taskId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public StreamingResponseBody downloadExport(@PathVariable String taskId, HttpServletResponse response) {
+        return turSNSiteExport.downloadAsyncExport(taskId, response);
+    }
+
     @GetMapping(value = "/export/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public SseEmitter exportProgress(@PathVariable String taskId) {

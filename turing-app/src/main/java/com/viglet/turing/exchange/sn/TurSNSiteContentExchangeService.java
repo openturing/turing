@@ -99,6 +99,18 @@ public class TurSNSiteContentExchangeService {
         progressMap.remove(taskId);
     }
 
+    public void updatePhase(String taskId, String phase) {
+        var current = progressMap.get(taskId);
+        if (current != null) {
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    current.totalDocuments(), current.processedDocuments(),
+                    current.currentLocale(), phase, current.startTimeMillis()));
+        } else {
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    0, 0, "", phase, System.currentTimeMillis()));
+        }
+    }
+
     /**
      * Exports all indexed content for a site, organized by locale.
      * Structure: { "siteName": { "en_US": [ {doc1}, {doc2}, ... ], "pt_BR": [...] } }
@@ -145,9 +157,6 @@ public class TurSNSiteContentExchangeService {
                 localeContent.put(localeKey, documents);
             }
             contentMap.put(turSNSite.getName(), localeContent);
-
-            progressMap.put(taskId, new ContentExchangeProgress(
-                    (int) totalDocs, processedSoFar, "", "completed", startTime));
 
             return contentMap;
         }).orElse(Map.of());

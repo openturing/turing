@@ -29,6 +29,9 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -53,6 +56,7 @@ public class TurSNSiteExport {
 	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurSNSiteExportFileService exportFileService;
 	private final TurSNSiteContentExchangeService contentExchangeService;
+	private final ConcurrentHashMap<String, Path> asyncExportFiles = new ConcurrentHashMap<>();
 
 	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository,
 			TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
@@ -138,6 +142,52 @@ public class TurSNSiteExport {
 			log.error("Error exporting SNSites: {}", e.getMessage(), e);
 			return null;
 		}
+	}
+
+	public void exportBySiteIdAsync(String siteId, boolean includeContent, String taskId) {
+		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
+		if (turSNSites.isEmpty()) {
+			return;
+		}
+		turSNSites.forEach(this::hydrateExportCollections);
+
+		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
+		if (includeContent) {
+			contentMap = contentExchangeService.exportContent(siteId, taskId);
+		}
+
+		contentExchangeService.updatePhase(taskId, "packaging");
+		Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap);
+		asyncExportFiles.put(taskId, zipFilePath);
+		contentExchangeService.updatePhase(taskId, "completed");
+	}
+
+	public StreamingResponseBody downloadAsyncExport(String taskId, HttpServletResponse response) {
+		Path zipFilePath = asyncExportFiles.remove(taskId);
+		if (zipFilePath == null || !Files.exists(zipFilePath)) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return null;
+		}
+
+		String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
+		response.addHeader("Content-disposition", "attachment;filename=sn-site-export_" + strDate + ".zip");
+		response.setContentType("application/octet-stream");
+		response.setStatus(HttpServletResponse.SC_OK);
+
+		return output -> {
+			try {
+				Files.copy(zipFilePath, output);
+				output.flush();
+			} catch (IOException e) {
+				log.error("Error streaming async export zip: {}", e.getMessage(), e);
+			} finally {
+				try {
+					Files.deleteIfExists(zipFilePath);
+				} catch (IOException e) {
+					log.warn("Could not delete temporary export file: {}", zipFilePath);
+				}
+			}
+		};
 	}
 
 }
