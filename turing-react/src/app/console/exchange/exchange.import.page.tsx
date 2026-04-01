@@ -10,6 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ContentExchangeProgressBar } from "@/components/ui/content-exchange-progress";
+import { FloatingFormulasBg } from "@/components/ui/floating-formulas-bg";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurExchangeImportService } from "@/services/exchange/exchange.import.service";
 import {
@@ -28,14 +30,6 @@ import { toast } from "sonner";
 const importService = new TurExchangeImportService();
 
 type ImportStatus = "idle" | "uploading" | "success" | "error" | "content-prompt" | "indexing";
-
-function formatTime(ms: number): string {
-    if (ms < 0) return "--:--";
-    const totalSec = Math.ceil(ms / 1000);
-    const min = Math.floor(totalSec / 60);
-    const sec = totalSec % 60;
-    return `${min}:${sec.toString().padStart(2, "0")}`;
-}
 
 export default function ExchangeImportPage() {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -223,6 +217,8 @@ export default function ExchangeImportPage() {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
+                    <FloatingFormulasBg />
+
                     {/* Progress bar background */}
                     {status === "uploading" && (
                         <div
@@ -314,35 +310,13 @@ export default function ExchangeImportPage() {
                             )}
 
                             {status === "indexing" && (
-                                <>
-                                    <p className="text-lg font-semibold text-blue-500">
-                                        {t("exchange.indexingContent")}
-                                    </p>
-                                    {contentProgress && (
-                                        <div className="w-full max-w-xs space-y-2 mt-2">
-                                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300 ease-out"
-                                                    style={{ width: `${contentProgress.percentage}%` }}
-                                                />
-                                            </div>
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>
-                                                    {contentProgress.processedDocuments.toLocaleString()} / {contentProgress.totalDocuments.toLocaleString()}
-                                                </span>
-                                                <span>
-                                                    {contentProgress.percentage}%
-                                                    {contentProgress.estimatedRemainingMillis > 0 && ` - ${formatTime(contentProgress.estimatedRemainingMillis)}`}
-                                                </span>
-                                            </div>
-                                            {contentProgress.currentLocale && (
-                                                <p className="text-xs text-center text-muted-foreground">
-                                                    Locale: {contentProgress.currentLocale}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
+                                <div className="w-full max-w-xs mt-2">
+                                    <ContentExchangeProgressBar
+                                        progress={contentProgress}
+                                        label={t("exchange.indexingContent")}
+                                        preparingLabel={t("exchange.indexingContent")}
+                                    />
+                                </div>
                             )}
 
                             {status === "error" && (
@@ -439,11 +413,10 @@ export default function ExchangeImportPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button variant="outline" onClick={() => file && doImport(file, false)}>
+                        <Button className="flex-1 h-11" variant="outline" onClick={() => file && doImport(file, false)}>
                             {t("exchange.importSiteOnly")}
                         </Button>
-                        <GradientButton onClick={() => file && doImport(file, true)}>
-                            <IconDatabase className="size-4 mr-2" />
+                        <GradientButton className="flex-1" onClick={() => file && doImport(file, true)}>
                             {t("exchange.importWithContent")}
                         </GradientButton>
                     </DialogFooter>

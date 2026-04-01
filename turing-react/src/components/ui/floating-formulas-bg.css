@@ -1,0 +1,48 @@
+/* ══════════════════════════════════════════════════════
+   FLOATING FORMULAS — Compact card background
+   Reuses Turing blue/indigo palette, smaller movements
+   ══════════════════════════════════════════════════════ */
+
+.ff-term {
+  position: absolute;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-weight: 700;
+  color: #2563eb;
+  white-space: nowrap;
+  user-select: none;
+  will-change: transform;
+}
+.dark .ff-term { color: #60a5fa; }
+
+.ff-bond { position: absolute; will-change: transform; }
+.ff-bond-line { stroke: #2563eb; opacity: 0.5; }
+.ff-bond-node { fill: #2563eb; opacity: 0.6; }
+.dark .ff-bond-line { stroke: #60a5fa; opacity: 0.4; }
+.dark .ff-bond-node { fill: #60a5fa; opacity: 0.5; }
+
+/* ── 3 Compact Drift Animations (smaller radius) ── */
+.ff-drift-a { animation: ff-drift-a ease-in-out infinite; }
+.ff-drift-b { animation: ff-drift-b ease-in-out infinite; }
+.ff-drift-c { animation: ff-drift-c ease-in-out infinite; }
+
+@keyframes ff-drift-a {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25%  { transform: translate(20px, -15px) scale(1.05) rotate(2deg); }
+  50%  { transform: translate(-10px, -30px) scale(0.95) rotate(-2deg); }
+  75%  { transform: translate(-25px, 10px) scale(1.03) rotate(1deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes ff-drift-b {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33%  { transform: translate(-20px, 20px) scale(0.95) rotate(-2deg); }
+  66%  { transform: translate(15px, -10px) scale(1.05) rotate(2deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
+@keyframes ff-drift-c {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  20%  { transform: translate(15px, 20px) scale(1.04) rotate(1deg); }
+  40%  { transform: translate(-20px, 10px) scale(0.96) rotate(-2deg); }
+  60%  { transform: translate(-10px, -20px) scale(1.06) rotate(2deg); }
+  80%  { transform: translate(18px, -8px) scale(0.97) rotate(-1deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+}
