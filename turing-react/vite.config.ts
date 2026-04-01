@@ -63,6 +63,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@viglet/turing-react-sdk": path.resolve(__dirname, "../turing-js-sdk/turing-react-sdk/src/index.ts"),
     },
   },
 });

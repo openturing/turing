@@ -24,7 +24,8 @@
     "noUncheckedSideEffectImports": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@viglet/turing-react-sdk": ["../turing-js-sdk/turing-react-sdk/src/index.ts"]
     }
   },
   "include": ["src"]

@@ -1,0 +1,30 @@
+{
+  "search": {
+    "placeholder": "Search across all content...",
+    "language": "Language",
+    "loading": "Searching...",
+    "noContent": "No content to display",
+    "errorMessage": "Try adjusting your query or locale to find what you're looking for.",
+    "showAll": "Show all content",
+    "aiAssistant": "AI Assistant",
+    "noResults": "No results for \u201c{{query}}\u201d",
+    "didYouMean": "Did you mean",
+    "tryDifferent": "Try different keywords or browse all content.",
+    "browseAll": "Browse all content",
+    "results": "results",
+    "sort": "Sort",
+    "selectSort": "Select",
+    "viewJson": "View JSON",
+    "documentJson": "Document JSON",
+    "updated": "Updated {{date}}",
+    "appliedFilters": "Active Filters",
+    "clearAll": "Clear all",
+    "clearFacet": "Clean up",
+    "remove": "Remove",
+    "resultsSummary": "<strong>{{count}}</strong> results found",
+    "pageRange": "Showing {{start}} to {{end}}",
+    "pageOf": "Page {{current}} of {{total}}",
+    "showingResultsFor": "Showing results for",
+    "searchInsteadFor": "Instead, search for"
+  }
+}

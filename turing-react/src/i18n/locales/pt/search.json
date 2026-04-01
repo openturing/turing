@@ -1,0 +1,30 @@
+{
+  "search": {
+    "placeholder": "Pesquisar em todo o conteúdo...",
+    "language": "Idioma",
+    "loading": "Pesquisando...",
+    "noContent": "Nenhum conteúdo para exibir",
+    "errorMessage": "Tente ajustar sua pesquisa ou idioma para encontrar o que procura.",
+    "showAll": "Mostrar todo o conteúdo",
+    "aiAssistant": "Assistente IA",
+    "noResults": "Nenhum resultado para \u201c{{query}}\u201d",
+    "didYouMean": "Você quis dizer",
+    "tryDifferent": "Tente palavras-chave diferentes ou navegue por todo o conteúdo.",
+    "browseAll": "Navegar por todo o conteúdo",
+    "results": "resultados",
+    "sort": "Ordenar",
+    "selectSort": "Selecionar",
+    "viewJson": "Ver JSON",
+    "documentJson": "JSON do Documento",
+    "updated": "Atualizado em {{date}}",
+    "appliedFilters": "Filtros Ativos",
+    "clearAll": "Limpar todos",
+    "clearFacet": "Limpar",
+    "remove": "Remover",
+    "resultsSummary": "<strong>{{count}}</strong> resultados encontrados",
+    "pageRange": "Exibindo {{start}} a {{end}}",
+    "pageOf": "Página {{current}} de {{total}}",
+    "showingResultsFor": "Mostrando resultados para",
+    "searchInsteadFor": "Em vez disso, pesquise por"
+  }
+}

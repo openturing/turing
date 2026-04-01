@@ -45,6 +45,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,13 +61,16 @@ public class TurSNSiteSearchAPI {
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
         private final TurSNSiteRepository turSNSiteRepository;
+        private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteRepository turSNSiteRepository) {
+                        TurSNSiteRepository turSNSiteRepository,
+                        TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
                 this.turSNSiteRepository = turSNSiteRepository;
+                this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -159,6 +163,38 @@ public class TurSNSiteSearchAPI {
                         return TurSNSiteSearchService.getTurSNSiteLocaleBeans();
                 }).orElse(Collections.emptyList());
         }
+
+        /**
+         * Returns the available sort options for a site: the three built-in options
+         * (relevance, newest, oldest) plus any custom sorts configured for the site.
+         *
+         * @since 2026.1.14
+         */
+        @GetMapping("sort-options")
+        public ResponseEntity<List<TurSNSiteSortOptionBean>> turSNSiteSearchSortOptions(
+                        @PathVariable String siteName) {
+                return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                                .map(site -> {
+                                        List<TurSNSiteSortOptionBean> options = new java.util.ArrayList<>();
+                                        options.add(new TurSNSiteSortOptionBean("relevance", "Relevance"));
+                                        options.add(new TurSNSiteSortOptionBean("newest", "Newest"));
+                                        options.add(new TurSNSiteSortOptionBean("oldest", "Oldest"));
+                                        turSNSiteCustomSortRepository.findByTurSNSiteWithItems(site)
+                                                        .forEach(cs -> options.add(new TurSNSiteSortOptionBean(
+                                                                        cs.getName(), cs.getDescription() != null
+                                                                                        ? cs.getDescription()
+                                                                                        : cs.getName())));
+                                        return ResponseEntity.ok(options);
+                                })
+                                .orElse(ResponseEntity.notFound().build());
+        }
+
+        /**
+         * Sort option DTO returned by the sort-options endpoint.
+         *
+         * @since 2026.1.14
+         */
+        public record TurSNSiteSortOptionBean(String value, String label) {}
 
         @PostMapping("latest")
         public ResponseEntity<List<String>> turSNSiteSearchLatestImpersonate(

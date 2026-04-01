@@ -65,7 +65,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectPost("site",
                 new TurSNSearchParams(), null, null, null, TurSNFilterQueryOperator.NONE,
@@ -82,7 +82,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
@@ -103,7 +103,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSearchParams params = new TurSNSearchParams();
         HttpServletRequest request = mock(HttpServletRequest.class);
         TurSNSite site = mock(TurSNSite.class);
@@ -129,7 +129,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
@@ -149,7 +149,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
@@ -169,7 +169,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSearchParams params = new TurSNSearchParams();
         TurSNSitePostParamsBean postParams = new TurSNSitePostParamsBean();
         postParams.setLocale("pt_BR");
@@ -197,7 +197,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
 
         ResponseEntity<List<String>> response = api.turSNSiteSearchLatestImpersonate("site", 5, "en_US",
                 Optional.empty(), null);
@@ -210,7 +210,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
-        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository);
+        TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, repository, mock(com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository.class));
         TurSNSite site = mock(TurSNSite.class);
         List<TurSNSiteLocaleBean> locales = List.of(new TurSNSiteLocaleBean());
 

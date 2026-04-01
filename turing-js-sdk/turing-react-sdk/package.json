@@ -1,0 +1,46 @@
+{
+  "name": "@viglet/turing-react-sdk",
+  "version": "2026.2.0",
+  "description": "React SDK for Viglet Turing ES - Headless hooks + UI components for enterprise search",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
+    "build:run": "npx tsc",
+    "build": "npm run build:deps && npm run build:run",
+    "dev": "tsc --watch"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "turing",
+    "react",
+    "search",
+    "semantic-navigation",
+    "headless",
+    "hooks",
+    "enterprise-search",
+    "sdk"
+  ],
+  "author": "Viglet",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "axios": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "axios": "^1.11.0",
+    "react": "^19.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openviglet/turing.git",
+    "directory": "turing-js-sdk/turing-react-sdk"
+  },
+  "files": [
+    "dist/**/*"
+  ]
+}
