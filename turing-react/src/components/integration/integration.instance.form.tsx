@@ -12,13 +12,6 @@ import {
 import {
   Input
 } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts"
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service"
 import { useEffect } from "react"
@@ -28,7 +21,6 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
@@ -41,10 +33,14 @@ interface Props {
   isNew: boolean;
 }
 
+const DEFAULT_ENDPOINT = "http://localhost:30130/";
+
 export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
   const form = useForm<TurIntegrationInstance>({
-    defaultValues: value
+    defaultValues: isNew
+      ? { ...value, endpoint: value.endpoint || DEFAULT_ENDPOINT }
+      : value,
   });
   const navigate = useNavigate()
   useEffect(() => {
@@ -146,42 +142,10 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
               </SectionCard.Content>
             </SectionCard>
 
-            {/* Connection Details Section */}
+            {/* Dumont DEP Connection Section */}
             <SectionCard variant="violet">
-              <SectionCard.Header icon={IconPlug} title={t("forms.integration.connectionDetails")} description={t("forms.integration.connectionDetailsDesc")} />
+              <SectionCard.Header icon={IconPlug} title={t("forms.integration.connectionDetails")} description={t("forms.integration.dumontDepDesc")} />
               <SectionCard.Content>
-                {/* Vendor (50/50 row) */}
-                <FormField
-                  control={form.control}
-                  name="vendor"
-                  rules={{ required: t("forms.integration.vendorRequired") }}
-                  render={({ field }) => (
-                    <FormItemTwoColumns>
-                      <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>{t("forms.integration.typeLabel")}</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description>
-                          {t("forms.integration.typeDesc")}
-                        </FormItemTwoColumns.Description>
-                      </FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Right>
-                        <FormControl>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder={t("forms.integration.selectType")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem key="AEM" value="AEM">{t("forms.integration.adobeAem")}</SelectItem>
-                              <SelectItem key="ASSETS" value="ASSETS">{t("forms.integration.assets")}</SelectItem>
-                              <SelectItem key="JDBC_DATABASE" value="JDBC_DATABASE">{t("forms.integration.jdbcDatabase")}</SelectItem>
-                              <SelectItem key="WEB_CRAWLER" value="WEB_CRAWLER">{t("forms.integration.webCrawler")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItemTwoColumns.Right>
-                      <FormMessage />
-                    </FormItemTwoColumns>
-                  )}
-                />
                 {/* Endpoint */}
                 <FormField
                   control={form.control}
@@ -189,13 +153,13 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   rules={{ required: t("forms.integration.endpointRequired") }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("forms.common.endpointUrl")}</FormLabel>
+                      <FormLabel>{t("forms.integration.dumontEndpointLabel")}</FormLabel>
                       <FormDescription>
-                        {t("forms.integration.endpointDesc")}
+                        {t("forms.integration.dumontEndpointDesc")}
                       </FormDescription>
                       <FormControl>
                         <Input
-                          placeholder={t("forms.integration.endpointPlaceholder")}
+                          placeholder={DEFAULT_ENDPOINT}
                           type="url"
                           {...field}
                         />
