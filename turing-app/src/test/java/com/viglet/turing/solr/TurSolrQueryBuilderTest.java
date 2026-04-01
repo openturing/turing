@@ -327,7 +327,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 TurSNFilterParams params = TurSNFilterParams.builder().build();
-                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query, params, null);
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query, params, (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(1);
                 assertThat(query.getBool("facet")).isTrue();
@@ -367,7 +367,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build(), null);
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(1);
                 assertThat(query.getFacetQuery()).isNotEmpty();
@@ -412,7 +412,7 @@ class TurSolrQueryBuilderTest {
                                 .itemOperator(TurSNFilterQueryOperator.NONE)
                                 .build();
 
-                builder().prepareQueryFacet(site, query, params, null);
+                builder().prepareQueryFacet(site, query, params, (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(query.getFacetQuery()).isNotEmpty();
                 assertThat(List.of(query.getFacetQuery()))
@@ -895,7 +895,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build(), null);
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(2);
                 assertThat(facets).extracting(TurSNSiteFieldExt::getName)
@@ -910,7 +910,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build(), null);
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).isEmpty();
         }
@@ -1106,7 +1106,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build(), null);
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 // itemsPerFacet is null so wasFacetConfigured returns false
                 assertThat(query.get("facet")).isNull();

@@ -1,6 +1,6 @@
 export type TurSNSiteSearchRuleParameter = "QUERY" | "FILTER_QUERY" | "SORT" | "LOCALE";
 export type TurSNSiteSearchRuleOperator = "EQUALS" | "CONTAINS" | "STARTS_WITH" | "MATCHES_ANY" | "IS_EMPTY";
-export type TurSNSiteSearchRuleActionType = "SET_SORT" | "SET_FACETS" | "SET_ROWS" | "ADD_FILTER_QUERY" | "SET_BOOST_QUERY";
+export type TurSNSiteSearchRuleActionType = "SET_SORT" | "ADD_FACETS" | "REMOVE_FACETS" | "SET_ROWS" | "ADD_FILTER_QUERY" | "SET_BOOST_QUERY";
 export type TurSNSiteSearchRuleLogicOperator = "AND" | "OR";
 
 export interface TurSNSiteSearchRuleCondition {
@@ -32,4 +32,6 @@ export interface TurSNSiteSearchRuleFieldOption {
   id: string;
   name: string;
   type?: string;
+  facet?: boolean;
+  facetName?: string;
 }

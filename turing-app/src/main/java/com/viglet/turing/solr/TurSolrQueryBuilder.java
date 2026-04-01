@@ -128,7 +128,7 @@ public class TurSolrQueryBuilder {
         SolrQuery query = new SolrQuery();
         query.set(DEF_TYPE, EDISMAX);
         query.set(Q_OP, AND);
-        turSNSearchRuleEvaluator.applyRules(turSNSite, turSEParameters);
+        turSNSearchRuleEvaluator.applyRules(turSNSite, turSEParameters, context.getLocale());
         setRows(turSNSite, turSEParameters);
         setSortEntry(turSNSite, query, turSEParameters);
 
@@ -685,12 +685,24 @@ public class TurSolrQueryBuilder {
     }
 
     public List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite, SolrQuery query,
-            TurSNFilterParams turSNFilterParams, Set<String> allowedFacets) {
+            TurSNFilterParams turSNFilterParams, TurSEParameters turSEParameters) {
         List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(turSNSite);
-        if (allowedFacets != null && !allowedFacets.isEmpty()) {
+        Set<String> removedFacets = turSEParameters != null ? turSEParameters.getRemovedFacets() : null;
+        Set<String> addedFacets = turSEParameters != null ? turSEParameters.getAddedFacets() : null;
+        if (removedFacets != null && !removedFacets.isEmpty()) {
             enabledFacets = enabledFacets.stream()
-                    .filter(f -> allowedFacets.contains(f.getName()))
+                    .filter(f -> !removedFacets.contains(f.getName()))
                     .toList();
+        }
+        if (addedFacets != null && !addedFacets.isEmpty()) {
+            List<TurSNSiteFieldExt> allFields = getEnabledFields(turSNSite);
+            Set<String> existingNames = enabledFacets.stream()
+                    .map(TurSNSiteFieldExt::getName).collect(Collectors.toSet());
+            List<TurSNSiteFieldExt> extraFacets = allFields.stream()
+                    .filter(f -> addedFacets.contains(f.getName()) && !existingNames.contains(f.getName()))
+                    .toList();
+            enabledFacets = new ArrayList<>(enabledFacets);
+            enabledFacets.addAll(extraFacets);
         }
         return setFacetFields(turSNSite, query, turSNFilterParams, enabledFacets);
     }

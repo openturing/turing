@@ -27,6 +27,8 @@ public class TurSEParameters implements Serializable {
     private Integer autoCorrectionDisabled;
     private TurSNSitePostParamsBean turSNSitePostParamsBean;
     private Set<String> allowedFacets;
+    private Set<String> addedFacets;
+    private Set<String> removedFacets;
 
     public TurSEParameters(TurSNSearchParams turSNSearchParams) {
         this(turSNSearchParams, null);

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,10 +49,10 @@ public class TurSNSearchRuleEvaluator {
         this.searchRuleRepository = searchRuleRepository;
     }
 
-    public void applyRules(TurSNSite turSNSite, TurSEParameters turSEParameters) {
+    public void applyRules(TurSNSite turSNSite, TurSEParameters turSEParameters, Locale locale) {
         List<TurSNSiteSearchRule> enabledRules = searchRuleRepository.findEnabledByTurSNSite(turSNSite);
         for (TurSNSiteSearchRule rule : enabledRules) {
-            if (allGroupsMatch(rule, turSEParameters)) {
+            if (allGroupsMatch(rule, turSEParameters, locale)) {
                 log.debug("Search rule '{}' matched for site '{}'", rule.getName(), turSNSite.getName());
                 applyActions(rule, turSEParameters);
                 return;
@@ -59,14 +60,14 @@ public class TurSNSearchRuleEvaluator {
         }
     }
 
-    private boolean allGroupsMatch(TurSNSiteSearchRule rule, TurSEParameters params) {
+    private boolean allGroupsMatch(TurSNSiteSearchRule rule, TurSEParameters params, Locale locale) {
         if (rule.getConditions() == null || rule.getConditions().isEmpty()) {
             return false;
         }
         Map<TurSNSiteSearchRuleParameterEnum, List<TurSNSiteSearchRuleCondition>> groups =
                 groupByParameter(rule.getConditions());
         return groups.values().stream()
-                .allMatch(group -> evaluateGroup(group, params));
+                .allMatch(group -> evaluateGroup(group, params, locale));
     }
 
     private Map<TurSNSiteSearchRuleParameterEnum, List<TurSNSiteSearchRuleCondition>> groupByParameter(
@@ -78,15 +79,17 @@ public class TurSNSearchRuleEvaluator {
         return groups;
     }
 
-    private boolean evaluateGroup(List<TurSNSiteSearchRuleCondition> group, TurSEParameters params) {
+    private boolean evaluateGroup(List<TurSNSiteSearchRuleCondition> group, TurSEParameters params, Locale locale) {
         if (group.isEmpty()) {
             return true;
         }
-        boolean result = conditionMatches(group.getFirst(), params);
+        boolean result = conditionMatches(group.getFirst(), params, locale);
         for (int i = 1; i < group.size(); i++) {
             TurSNSiteSearchRuleCondition condition = group.get(i);
-            boolean condResult = conditionMatches(condition, params);
-            TurSNSiteSearchRuleLogicOperatorEnum logic = condition.getLogicOperator();
+            boolean condResult = conditionMatches(condition, params, locale);
+            TurSNSiteSearchRuleLogicOperatorEnum logic = isOrOnlyParameter(condition.getParameter())
+                    ? TurSNSiteSearchRuleLogicOperatorEnum.OR
+                    : condition.getLogicOperator();
             if (logic == TurSNSiteSearchRuleLogicOperatorEnum.OR) {
                 result = result || condResult;
             } else {
@@ -96,9 +99,17 @@ public class TurSNSearchRuleEvaluator {
         return result;
     }
 
-    private boolean conditionMatches(TurSNSiteSearchRuleCondition condition, TurSEParameters params) {
+    private boolean conditionMatches(TurSNSiteSearchRuleCondition condition, TurSEParameters params, Locale locale) {
         if (condition.getParameter() == TurSNSiteSearchRuleParameterEnum.FILTER_QUERY) {
             return filterQueryConditionMatches(condition, params);
+        }
+        if (condition.getParameter() == TurSNSiteSearchRuleParameterEnum.LOCALE) {
+            String localeStr = locale != null ? locale.toLanguageTag().replace("-", "_") : null;
+            return condition.getValue() != null && condition.getValue().equals(localeStr);
+        }
+        if (condition.getParameter() == TurSNSiteSearchRuleParameterEnum.SORT) {
+            String actualSort = params.getSort();
+            return condition.getValue() != null && condition.getValue().equals(actualSort);
         }
         String actualValue = getParameterValue(condition.getParameter(), params);
         return operatorMatches(condition.getOperator(), actualValue, condition.getValue());
@@ -150,6 +161,11 @@ public class TurSNSearchRuleEvaluator {
         };
     }
 
+    private static boolean isOrOnlyParameter(TurSNSiteSearchRuleParameterEnum parameter) {
+        return parameter == TurSNSiteSearchRuleParameterEnum.SORT
+                || parameter == TurSNSiteSearchRuleParameterEnum.LOCALE;
+    }
+
     private String getParameterValue(TurSNSiteSearchRuleParameterEnum parameter, TurSEParameters params) {
         return switch (parameter) {
             case QUERY -> params.getQuery();
@@ -178,12 +194,25 @@ public class TurSNSearchRuleEvaluator {
                     log.warn("Invalid rows value in search rule action: {}", value);
                 }
             }
-            case SET_FACETS -> {
-                Set<String> facetNames = Arrays.stream(value.split(","))
+            case ADD_FACETS -> {
+                Set<String> toAdd = Arrays.stream(value.split(","))
                         .map(String::trim)
                         .filter(StringUtils::hasText)
                         .collect(Collectors.toSet());
-                params.setAllowedFacets(facetNames);
+                if (params.getAddedFacets() == null) {
+                    params.setAddedFacets(new java.util.HashSet<>());
+                }
+                params.getAddedFacets().addAll(toAdd);
+            }
+            case REMOVE_FACETS -> {
+                Set<String> toRemove = Arrays.stream(value.split(","))
+                        .map(String::trim)
+                        .filter(StringUtils::hasText)
+                        .collect(Collectors.toSet());
+                if (params.getRemovedFacets() == null) {
+                    params.setRemovedFacets(new java.util.HashSet<>());
+                }
+                params.getRemovedFacets().addAll(toRemove);
             }
             case ADD_FILTER_QUERY -> {
                 if (params.getTurSNFilterParams() != null) {

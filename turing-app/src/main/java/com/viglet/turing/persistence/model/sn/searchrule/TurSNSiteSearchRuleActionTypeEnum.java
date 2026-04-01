@@ -8,7 +8,8 @@ package com.viglet.turing.persistence.model.sn.searchrule;
  */
 public enum TurSNSiteSearchRuleActionTypeEnum {
     SET_SORT,
-    SET_FACETS,
+    ADD_FACETS,
+    REMOVE_FACETS,
     SET_ROWS,
     ADD_FILTER_QUERY,
     SET_BOOST_QUERY

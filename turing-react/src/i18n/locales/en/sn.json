@@ -103,6 +103,7 @@
       "actions": "Actions",
       "actionsDesc": "Actions to apply when all condition groups match.",
       "addCondition": "Add Condition",
+      "addGroup": "Add condition group",
       "addAction": "Add Action",
       "parameter": "Parameter",
       "operator": "Operator",
@@ -110,10 +111,10 @@
       "actionType": "Action Type",
       "value": "Value",
       "parameterValues": {
-        "QUERY": "Query",
-        "FILTER_QUERY": "Filter",
-        "SORT": "Sort",
-        "LOCALE": "Locale"
+        "QUERY": "Query (q)",
+        "FILTER_QUERY": "Filter (fq)",
+        "SORT": "Sort (sort)",
+        "LOCALE": "Locale (locale)"
       },
       "operatorValues": {
         "EQUALS": "Equals",
@@ -123,15 +124,31 @@
         "IS_EMPTY": "Is empty"
       },
       "actionTypeValues": {
-        "SET_SORT": "Set Sort",
-        "SET_FACETS": "Set Facets",
-        "SET_ROWS": "Set Rows",
-        "ADD_FILTER_QUERY": "Add Filter",
-        "SET_BOOST_QUERY": "Set Boost Query"
+        "SET_SORT": "Set Sort (sort)",
+        "ADD_FACETS": "Show Facets",
+        "REMOVE_FACETS": "Hide Facets",
+        "SET_ROWS": "Set Rows (rows)",
+        "ADD_FILTER_QUERY": "Add Filter (fq)",
+        "SET_BOOST_QUERY": "Set Boost Query (bq)"
       },
+      "noFacets": "No facets configured for this site.",
+      "noNonFacetFields": "All fields are already facets.",
       "logicOperatorValues": {
         "AND": "AND",
         "OR": "OR"
+      },
+      "locale": "Locale",
+      "boostWeight": "Weight",
+      "sortValue": "Sort Value",
+      "sortMode": {
+        "preset": "Preset",
+        "customSort": "Custom Sort",
+        "field": "By Field"
+      },
+      "sortPresets": {
+        "relevance": "Relevance",
+        "newest": "Newest",
+        "oldest": "Oldest"
       }
     },
     "genai": {

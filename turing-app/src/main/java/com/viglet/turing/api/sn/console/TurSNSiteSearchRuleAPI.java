@@ -93,6 +93,8 @@ public class TurSNSiteSearchRuleAPI {
                     dto.setId(field.getId());
                     dto.setName(field.getName());
                     dto.setType(field.getType() != null ? field.getType().toString() : null);
+                    dto.setFacet(field.getFacet() == 1);
+                    dto.setFacetName(field.getFacetName());
                     return dto;
                 })
                 .toList();
@@ -275,5 +277,7 @@ public class TurSNSiteSearchRuleAPI {
         private String id;
         private String name;
         private String type;
+        private boolean facet;
+        private String facetName;
     }
 }

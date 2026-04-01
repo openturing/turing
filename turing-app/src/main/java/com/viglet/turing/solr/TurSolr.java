@@ -199,7 +199,7 @@ public class TurSolr {
                     .turSEParameters(turSEParameters)
                     .mltFieldExtList(turSolrQueryBuilder.prepareQueryMLT(turSNSite, query))
                     .facetFieldExtList(turSolrQueryBuilder.prepareQueryFacet(turSNSite, query,
-                            turSEParameters.getTurSNFilterParams(), turSEParameters.getAllowedFacets()))
+                            turSEParameters.getTurSNFilterParams(), turSEParameters))
                     .hlFieldExtList(turSolrQueryBuilder.prepareQueryHL(turSNSite, query, context))
                     .spellCheckResult(turSESpellCheckResult)
                     .queryToRenderFacet(false)

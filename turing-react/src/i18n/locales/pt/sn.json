@@ -103,6 +103,7 @@
       "actions": "Ações",
       "actionsDesc": "Ações a aplicar quando todos os grupos de condições corresponderem.",
       "addCondition": "Adicionar Condição",
+      "addGroup": "Adicionar grupo de condição",
       "addAction": "Adicionar Ação",
       "parameter": "Parâmetro",
       "operator": "Operador",
@@ -110,10 +111,10 @@
       "actionType": "Tipo de Ação",
       "value": "Valor",
       "parameterValues": {
-        "QUERY": "Consulta",
-        "FILTER_QUERY": "Filtro",
-        "SORT": "Ordenação",
-        "LOCALE": "Idioma"
+        "QUERY": "Consulta (q)",
+        "FILTER_QUERY": "Filtro (fq)",
+        "SORT": "Ordenação (sort)",
+        "LOCALE": "Idioma (locale)"
       },
       "operatorValues": {
         "EQUALS": "Igual a",
@@ -123,15 +124,31 @@
         "IS_EMPTY": "Está vazio"
       },
       "actionTypeValues": {
-        "SET_SORT": "Definir Ordenação",
-        "SET_FACETS": "Definir Facetas",
-        "SET_ROWS": "Definir Resultados",
-        "ADD_FILTER_QUERY": "Adicionar Filtro",
-        "SET_BOOST_QUERY": "Definir Boost"
+        "SET_SORT": "Definir Ordenação (sort)",
+        "ADD_FACETS": "Exibir Facetas",
+        "REMOVE_FACETS": "Ocultar Facetas",
+        "SET_ROWS": "Definir Resultados (rows)",
+        "ADD_FILTER_QUERY": "Adicionar Filtro (fq)",
+        "SET_BOOST_QUERY": "Definir Boost (bq)"
       },
+      "noFacets": "Nenhuma faceta configurada para este site.",
+      "noNonFacetFields": "Todos os campos já são facetas.",
       "logicOperatorValues": {
         "AND": "E",
         "OR": "OU"
+      },
+      "locale": "Idioma",
+      "boostWeight": "Peso",
+      "sortValue": "Valor da Ordenação",
+      "sortMode": {
+        "preset": "Padrão",
+        "customSort": "Ordenação Personalizada",
+        "field": "Por Campo"
+      },
+      "sortPresets": {
+        "relevance": "Relevância",
+        "newest": "Mais Recente",
+        "oldest": "Mais Antigo"
       }
     },
     "genai": {
