@@ -18,6 +18,19 @@
     "siteNotDeleted": "The {{name}} Semantic Navigation was not deleted",
     "siteExported": "The {{name}} Semantic Navigation was exported",
     "siteNotExported": "The {{name}} Semantic Navigation was not exported",
+    "export": {
+      "title": "Export Site",
+      "description": "Choose what to include in the export file.",
+      "includeContent": "Include indexed content",
+      "includeContentDescription": "Export all indexed documents along with the site configuration. This may take longer for large indexes.",
+      "cancel": "Cancel",
+      "exportButton": "Export",
+      "preparingExport": "Preparing export...",
+      "exportingContent": "Exporting indexed content...",
+      "documents": "documents",
+      "remaining": "remaining",
+      "locale": "Locale"
+    },
     "queue": "Queue",
     "indexed": "Indexed",
     "settings": {

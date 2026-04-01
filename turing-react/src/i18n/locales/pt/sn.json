@@ -18,6 +18,19 @@
     "siteNotDeleted": "A Navegação Semântica {{name}} não foi excluída",
     "siteExported": "A Navegação Semântica {{name}} foi exportada",
     "siteNotExported": "A Navegação Semântica {{name}} não foi exportada",
+    "export": {
+      "title": "Exportar Site",
+      "description": "Escolha o que incluir no arquivo de exportação.",
+      "includeContent": "Incluir conteúdo indexado",
+      "includeContentDescription": "Exportar todos os documentos indexados junto com a configuração do site. Pode demorar mais para índices grandes.",
+      "cancel": "Cancelar",
+      "exportButton": "Exportar",
+      "preparingExport": "Preparando exportação...",
+      "exportingContent": "Exportando conteúdo indexado...",
+      "documents": "documentos",
+      "remaining": "restante",
+      "locale": "Idioma"
+    },
     "queue": "Fila",
     "indexed": "Indexados",
     "settings": {

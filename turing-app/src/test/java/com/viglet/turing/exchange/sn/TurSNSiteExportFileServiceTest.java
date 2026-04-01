@@ -94,7 +94,7 @@ class TurSNSiteExportFileServiceTest {
         siteB.setTurSEInstance(seInstance);
         siteB.setTurSNSiteGenAi(genAi);
 
-        Path zipPath = service.exportSNSitesToZip(List.of(siteA, siteB));
+        Path zipPath = service.exportSNSitesToZip(List.of(siteA, siteB), null);
         Path exportFolder = Path.of(zipPath.toString().replace(".zip", ""));
 
         try {

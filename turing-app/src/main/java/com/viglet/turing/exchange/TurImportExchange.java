@@ -20,6 +20,8 @@ package com.viglet.turing.exchange;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
@@ -28,11 +30,15 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -41,13 +47,25 @@ import tools.jackson.databind.json.JsonMapper;
 public class TurImportExchange {
 
 	private final TurSNSiteImport turSNSiteImport;
+	private final TurSNSiteContentExchangeService contentExchangeService;
+	private final TurSNSiteRepository turSNSiteRepository;
 	private static final String EXPORT_FILE = "export.json";
+	private static final String CONTENT_SUFFIX = "_content.json";
 
-	public TurImportExchange(TurSNSiteImport turSNSiteImport) {
+	public TurImportExchange(TurSNSiteImport turSNSiteImport,
+			TurSNSiteContentExchangeService contentExchangeService,
+			TurSNSiteRepository turSNSiteRepository) {
 		this.turSNSiteImport = turSNSiteImport;
+		this.contentExchangeService = contentExchangeService;
+		this.turSNSiteRepository = turSNSiteRepository;
 	}
 
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
+		return importFromMultipartFile(multipartFile, false, null);
+	}
+
+	public TurExchange importFromMultipartFile(MultipartFile multipartFile,
+			boolean includeContent, String taskId) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
@@ -62,12 +80,77 @@ public class TurImportExchange {
 					}
 				}
 			}
-			importSNSiteFromExportFile(extractFolder, parentExtractFolder);
+			importSNSiteFromExportFile(extractFolder, parentExtractFolder, !includeContent);
+
+			if (includeContent) {
+				importContentFiles(extractFolder, taskId);
+				try {
+					cleanupDirectories(extractFolder, parentExtractFolder);
+				} catch (IOException e) {
+					log.warn("Cleanup failed: {}", e.getMessage(), e);
+				}
+			}
 		}
 		return new TurExchange();
 	}
 
-	private void importSNSiteFromExportFile(File extractFolder, File parentExtractFolder) {
+	public boolean hasContentFile(MultipartFile multipartFile) {
+		File extractFolder = this.extractZipFile(multipartFile);
+		if (extractFolder == null) {
+			return false;
+		}
+		File workFolder = resolveExportFolder(extractFolder);
+		boolean found = findContentFiles(workFolder).length > 0;
+		try {
+			cleanupDirectories(extractFolder, null);
+		} catch (IOException e) {
+			log.warn("Cleanup failed: {}", e.getMessage(), e);
+		}
+		return found;
+	}
+
+	private File resolveExportFolder(File extractFolder) {
+		if (!(new File(extractFolder, EXPORT_FILE).exists())
+				&& extractFolder.listFiles() != null
+				&& Objects.requireNonNull(extractFolder.listFiles()).length == 1) {
+			for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
+				if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
+					return fileOrDirectory;
+				}
+			}
+		}
+		return extractFolder;
+	}
+
+	private File[] findContentFiles(File folder) {
+		File[] files = folder.listFiles((dir, name) -> name.endsWith(CONTENT_SUFFIX));
+		return files != null ? files : new File[0];
+	}
+
+	private void importContentFiles(File extractFolder, String taskId) {
+		ObjectMapper mapper = JsonMapper.builder().build();
+		for (File contentFile : findContentFiles(extractFolder)) {
+			try (FileInputStream fis = new FileInputStream(contentFile)) {
+				Map<String, Map<String, List<Map<String, Object>>>> contentMap =
+						mapper.readValue(fis, new TypeReference<>() {});
+				for (var siteEntry : contentMap.entrySet()) {
+					turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey())
+							.ifPresent(turSNSite -> {
+								String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
+								int indexed = contentExchangeService.importContent(
+										turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()),
+										effectiveTaskId);
+								log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
+							});
+				}
+			} catch (Exception e) {
+				log.error("Error importing content from '{}': {}", contentFile.getName(), e.getMessage(), e);
+			}
+		}
+	}
+
+	private void importSNSiteFromExportFile(File extractFolder, File parentExtractFolder,
+			boolean cleanup) {
 		ObjectMapper mapper = JsonMapper.builder().build();
 
 		try (FileInputStream fis = new FileInputStream(
@@ -75,7 +158,9 @@ public class TurImportExchange {
 
 			TurExchange turExchange = mapper.readValue(fis, TurExchange.class);
 			processTurExchange(turExchange);
-			cleanupDirectories(extractFolder, parentExtractFolder);
+			if (cleanup) {
+				cleanupDirectories(extractFolder, parentExtractFolder);
+			}
 		} catch (Exception e) {
 			log.error("Error importing SN Site: {}", e.getMessage(), e);
 		}

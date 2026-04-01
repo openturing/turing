@@ -28,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -51,33 +52,48 @@ public class TurSNSiteExport {
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurSNSiteExportFileService exportFileService;
+	private final TurSNSiteContentExchangeService contentExchangeService;
 
 	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository,
 			TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
 			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
-			TurSNSiteExportFileService exportFileService) {
+			TurSNSiteExportFileService exportFileService,
+			TurSNSiteContentExchangeService contentExchangeService) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
 		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
 		this.exportFileService = exportFileService;
+		this.contentExchangeService = contentExchangeService;
 	}
 
 	public StreamingResponseBody exportAll(HttpServletResponse response) {
 		List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
 		turSNSites.forEach(this::hydrateExportCollections);
 
-		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all");
+		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all", null);
 	}
 
 	public StreamingResponseBody exportBySiteId(String siteId, HttpServletResponse response) {
+		return exportBySiteId(siteId, false, null, response);
+	}
+
+	public StreamingResponseBody exportBySiteId(String siteId, boolean includeContent,
+			String taskId, HttpServletResponse response) {
 		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
 		if (turSNSites.isEmpty()) {
 			return null;
 		}
 		turSNSites.forEach(this::hydrateExportCollections);
-		return createSNSiteZipResponse(response, turSNSites, "sn-site-" + turSNSites.get(0).getName());
+
+		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
+		if (includeContent) {
+			contentMap = contentExchangeService.exportContent(siteId, taskId != null ? taskId : siteId);
+		}
+
+		return createSNSiteZipResponse(response, turSNSites,
+				"sn-site-" + turSNSites.get(0).getName(), contentMap);
 	}
 
 	private void hydrateExportCollections(TurSNSite turSNSite) {
@@ -94,11 +110,11 @@ public class TurSNSiteExport {
 	}
 
 	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,
-			String prefixZipFileName) {
+			String prefixZipFileName, Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
 		try {
 			String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
 			String zipFileName = prefixZipFileName + "_" + strDate + ".zip";
-			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites);
+			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap);
 
 			response.addHeader("Content-disposition", "attachment;filename=" + zipFileName);
 			response.setContentType("application/octet-stream");

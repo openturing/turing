@@ -1,14 +1,21 @@
+import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import axios from "axios";
 
 export class TurExchangeImportService {
   async importFile(
     file: File,
     onProgress?: (progress: number) => void,
+    includeContent = false,
+    taskId?: string,
   ): Promise<void> {
     const formData = new FormData();
     formData.append("file", file);
 
+    const params: Record<string, string | boolean> = { includeContent };
+    if (taskId) params.taskId = taskId;
+
     await axios.post("/import", formData, {
+      params,
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
           const percent = Math.round(
@@ -18,5 +25,60 @@ export class TurExchangeImportService {
         }
       },
     });
+  }
+
+  async checkContent(file: File): Promise<boolean> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axios.post<{ hasContent: boolean }>(
+      "/import/check-content",
+      formData,
+    );
+    return response.data.hasContent;
+  }
+
+  async subscribeImportProgress(
+    taskId: string,
+    onProgress: (data: ContentExchangeProgress) => void,
+    onComplete: () => void,
+    onError?: (error: unknown) => void,
+  ): Promise<void> {
+    const baseUrl = axios.defaults.baseURL || "/api";
+    try {
+      const response = await fetch(
+        `${baseUrl}/import/progress/${taskId}`,
+        { credentials: "include" },
+      );
+      if (!response.ok || !response.body) {
+        onError?.(new Error(`SSE failed: ${response.status}`));
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const json = line.slice(5).trim();
+            if (json) {
+              const data: ContentExchangeProgress = JSON.parse(json);
+              onProgress(data);
+              if (data.phase === "completed") {
+                onComplete();
+                return;
+              }
+            }
+          }
+        }
+      }
+      onComplete();
+    } catch (e) {
+      onError?.(e);
+    }
   }
 }

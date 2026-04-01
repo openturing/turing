@@ -35,11 +35,15 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+
+import org.apache.solr.client.solrj.request.SolrQuery;
 
 /**
  * Solr implementation of the search engine plugin interface.
@@ -202,6 +206,56 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), locale)
                 .map(turSolr::commit).orElse(false);
+    }
+
+    // ---- Content retrieval ------------------------------------------------
+
+    private static final java.util.Set<String> ALWAYS_EXPORT_FIELDS = java.util.Set.of("id", "type");
+
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPage(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, int start, int rows) {
+        return turSolrInstanceProcess.initSolrInstance(turSNSiteLocale)
+                .map(instance -> {
+                    SolrQuery query = new SolrQuery()
+                            .setQuery("*:*")
+                            .setStart(start)
+                            .setRows(rows)
+                            .addSort("id", SolrQuery.ORDER.asc);
+                    return TurSolr.executeSolrQuery(instance, query)
+                            .map(response -> {
+                                List<Map<String, Object>> docs = new ArrayList<>();
+                                for (var doc : response.getResults()) {
+                                    Map<String, Object> fields = new HashMap<>();
+                                    for (String fieldName : doc.getFieldNames()) {
+                                        if (!ALWAYS_EXPORT_FIELDS.contains(fieldName)
+                                                && !siteFieldMap.containsKey(fieldName)) {
+                                            continue;
+                                        }
+                                        Object value = doc.getFieldValue(fieldName);
+                                        boolean isMultiValued = isFieldMultiValued(siteFieldMap, fieldName);
+                                        if (!isMultiValued && value instanceof java.util.Collection<?> col) {
+                                            value = col.isEmpty() ? null : col.iterator().next();
+                                        }
+                                        if (value != null) {
+                                            fields.put(fieldName, value);
+                                        }
+                                    }
+                                    docs.add(fields);
+                                }
+                                return docs;
+                            })
+                            .orElse(List.of());
+                })
+                .orElse(List.of());
+    }
+
+    private static boolean isFieldMultiValued(Map<String, ?> siteFieldMap, String fieldName) {
+        Object field = siteFieldMap.get(fieldName);
+        if (field instanceof com.viglet.turing.persistence.model.sn.field.TurSNSiteField f) {
+            return f.getMultiValued() == 1;
+        }
+        return false;
     }
 
     // ---- Monitoring ------------------------------------------------------

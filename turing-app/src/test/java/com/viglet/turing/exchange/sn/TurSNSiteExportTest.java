@@ -42,8 +42,9 @@ class TurSNSiteExportTest {
         TurSNSiteCustomSortRepository customSortRepository = mock(TurSNSiteCustomSortRepository.class);
         TurSNSiteExportFileService exportFileService = mock(TurSNSiteExportFileService.class);
 
+        TurSNSiteContentExchangeService contentExchangeService = mock(TurSNSiteContentExchangeService.class);
         TurSNSiteExport turSNSiteExport = new TurSNSiteExport(siteRepository, spotlightRepository,
-                mergeProvidersRepository, customSortRepository, exportFileService);
+                mergeProvidersRepository, customSortRepository, exportFileService, contentExchangeService);
 
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
@@ -63,7 +64,7 @@ class TurSNSiteExportTest {
         when(spotlightRepository.findByTurSNSite(any(Sort.class), eq(site))).thenReturn(List.of(spotlight));
         when(mergeProvidersRepository.findByTurSNSite(site)).thenReturn(List.of(mergeProvider));
         when(customSortRepository.findByTurSNSiteWithItems(site)).thenReturn(List.of());
-        when(exportFileService.exportSNSitesToZip(any())).thenReturn(Path.of("site-export.zip"));
+        when(exportFileService.exportSNSitesToZip(any(), any())).thenReturn(Path.of("site-export.zip"));
 
         HttpServletResponse response = mock(HttpServletResponse.class);
         StreamingResponseBody responseBody = turSNSiteExport.exportAll(response);
@@ -77,6 +78,6 @@ class TurSNSiteExportTest {
 
         verify(spotlightRepository).findByTurSNSite(any(Sort.class), eq(site));
         verify(mergeProvidersRepository).findByTurSNSite(site);
-        verify(exportFileService).exportSNSitesToZip(List.of(site));
+        verify(exportFileService).exportSNSitesToZip(eq(List.of(site)), any());
     }
 }

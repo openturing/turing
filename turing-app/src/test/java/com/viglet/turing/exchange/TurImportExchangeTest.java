@@ -16,8 +16,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -26,7 +28,9 @@ class TurImportExchangeTest {
     @Test
     void shouldReturnEmptyExchangeWhenFileDoesNotExist() {
         TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
-        TurImportExchange turImportExchange = new TurImportExchange(turSNSiteImport);
+        TurImportExchange turImportExchange = new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class));
 
         TurExchange result = turImportExchange.importFromFile(new File("D:/this/path/does/not/exist.zip"));
 
@@ -37,7 +41,9 @@ class TurImportExchangeTest {
     @Test
     void shouldReturnEmptyExchangeWhenZipExtractionFails() {
         TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
-        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport));
+        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class)));
         MultipartFile multipartFile = new MockMultipartFile("file", "any.zip", "application/zip", new byte[] { 1, 2 });
 
         org.mockito.Mockito.doReturn(null).when(turImportExchange).extractZipFile(multipartFile);
@@ -51,7 +57,9 @@ class TurImportExchangeTest {
     @Test
     void shouldReadExportFromSingleSubDirectoryWhenRootHasNoExport(@TempDir Path tempDir) throws Exception {
         TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
-        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport));
+        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class)));
 
         File rootExtract = tempDir.resolve("rootExtract").toFile();
         File subDir = new File(rootExtract, "nested");
@@ -70,7 +78,9 @@ class TurImportExchangeTest {
     @Test
     void shouldImportSnSitesWhenExportContainsSnSite(@TempDir Path tempDir) throws Exception {
         TurSNSiteImport turSNSiteImport = org.mockito.Mockito.mock(TurSNSiteImport.class);
-        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport));
+        TurImportExchange turImportExchange = org.mockito.Mockito.spy(new TurImportExchange(turSNSiteImport,
+                org.mockito.Mockito.mock(TurSNSiteContentExchangeService.class),
+                org.mockito.Mockito.mock(TurSNSiteRepository.class)));
 
         File extract = tempDir.resolve("extract").toFile();
         Files.createDirectories(extract.toPath());

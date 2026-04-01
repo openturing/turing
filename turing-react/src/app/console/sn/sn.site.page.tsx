@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { DialogExport } from "./dialog.export";
 const turSNSiteService = new TurSNSiteService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 
@@ -38,6 +39,7 @@ export default function SNSitePage() {
     const [isNew, setIsNew] = useState<boolean>(true);
     const [hasDefaultLlm, setHasDefaultLlm] = useState(false);
     const [open, setOpen] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const navigate = useNavigate()
     const { t } = useTranslation();
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
@@ -183,35 +185,17 @@ export default function SNSitePage() {
         }
         setOpen(false);
     }
-    async function onExport() {
-        try {
-            const response: Blob | null = await turSNSiteService.export(snSite);
-            if (response) {
-                // If the Blob has a name property, use it; otherwise fallback
-                const fileName = (response as any).name || `sn-site-${snSite.name}-${new Date().toISOString()}.zip`;
-                const url = globalThis.URL.createObjectURL(response);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                globalThis.URL.revokeObjectURL(url);
-                a.remove();
-                toast.success(t("sn.siteExported", { name: snSite.name }));
-            } else {
-                toast.error(t("sn.siteNotExported", { name: snSite.name }));
-            }
-        } catch (error) {
-            console.error("Form submission error", error);
-            toast.error(t("sn.siteNotExported", { name: snSite.name }));
-        }
-        setOpen(false);
+    function onExport() {
+        setExportDialogOpen(true);
     }
 
     return (
         <LoadProvider checkIsNotUndefined={snSite} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}`}>
             <SubPage icon={IconSearch} feature={t("sn.title")} name={snSite.name}
                 onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} onExport={onExport} />
+            {snSite.id && (
+                <DialogExport snSite={snSite} open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
+            )}
         </LoadProvider>
     )
 }

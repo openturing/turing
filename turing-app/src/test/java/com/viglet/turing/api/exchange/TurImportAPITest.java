@@ -19,6 +19,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.exchange.TurImportExchange;
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
+import com.viglet.turing.exchange.sn.TurSNSiteExportValidator;
 
 @ExtendWith(MockitoExtension.class)
 class TurImportAPITest {
@@ -27,6 +29,12 @@ class TurImportAPITest {
 
     @Mock
     private TurImportExchange turImportExchange;
+
+    @Mock
+    private TurSNSiteExportValidator turSNSiteExportValidator;
+
+    @Mock
+    private TurSNSiteContentExchangeService contentExchangeService;
 
     @InjectMocks
     private TurImportAPI turImportAPI;
@@ -45,11 +53,11 @@ class TurImportAPITest {
                 "dummy content".getBytes());
 
         TurExchange turExchange = new TurExchange();
-        when(turImportExchange.importFromMultipartFile(any())).thenReturn(turExchange);
+        when(turImportExchange.importFromMultipartFile(any(), any(boolean.class), any())).thenReturn(turExchange);
 
         mockMvc.perform(multipart("/api/import").file(file))
                 .andExpect(status().isOk());
 
-        verify(turImportExchange, times(1)).importFromMultipartFile(any());
+        verify(turImportExchange, times(1)).importFromMultipartFile(any(), any(boolean.class), any());
     }
 }

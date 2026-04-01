@@ -52,10 +52,17 @@ export class TurSNSiteService {
       });
     return response;
   }
-  async export(turSNSite: TurSNSite): Promise<Blob | null> {
+  async export(
+    turSNSite: TurSNSite,
+    includeContent = false,
+    taskId?: string,
+  ): Promise<Blob | null> {
+    const params: Record<string, string | boolean> = { includeContent };
+    if (taskId) params.taskId = taskId;
     const response = await axios
       .get<Blob>(`/sn/${turSNSite.id.toString()}/export`, {
         responseType: "blob",
+        params,
       })
       .then((res) => res.data)
       .catch((error) => {
@@ -64,4 +71,58 @@ export class TurSNSiteService {
       });
     return response;
   }
+
+  async subscribeExportProgress(
+    taskId: string,
+    onProgress: (data: ContentExchangeProgress) => void,
+    onComplete: () => void,
+    onError?: (error: unknown) => void,
+  ): Promise<void> {
+    const baseUrl = axios.defaults.baseURL || "/api";
+    try {
+      const response = await fetch(
+        `${baseUrl}/sn/export/progress/${taskId}`,
+        { credentials: "include" },
+      );
+      if (!response.ok || !response.body) {
+        onError?.(new Error(`SSE failed: ${response.status}`));
+        return;
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const json = line.slice(5).trim();
+            if (json) {
+              const data: ContentExchangeProgress = JSON.parse(json);
+              onProgress(data);
+              if (data.phase === "completed") {
+                onComplete();
+                return;
+              }
+            }
+          }
+        }
+      }
+      onComplete();
+    } catch (e) {
+      onError?.(e);
+    }
+  }
+}
+
+export interface ContentExchangeProgress {
+  totalDocuments: number;
+  processedDocuments: number;
+  percentage: number;
+  currentLocale: string;
+  phase: string;
+  estimatedRemainingMillis: number;
 }

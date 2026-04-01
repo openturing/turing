@@ -42,9 +42,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
 import com.viglet.turing.persistence.mapper.sn.TurSNSiteMapper;
@@ -80,6 +82,7 @@ public class TurSNSiteAPI {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurSNSiteExport turSNSiteExport;
+    private final TurSNSiteContentExchangeService contentExchangeService;
     private final TurSNTemplate turSNTemplate;
     private final TurSNQueue turSNQueue;
     private final TurSearchEnginePluginFactory pluginFactory;
@@ -242,14 +245,54 @@ public class TurSNSiteAPI {
 
     @GetMapping(value = "/{id}/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
-    public StreamingResponseBody turSNSiteExport(@PathVariable String id, HttpServletResponse response) {
-
+    public StreamingResponseBody turSNSiteExport(@PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean includeContent,
+            @RequestParam(required = false) String taskId,
+            HttpServletResponse response) {
         try {
-            return turSNSiteExport.exportBySiteId(id, response);
+            return turSNSiteExport.exportBySiteId(id, includeContent, taskId, response);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    @GetMapping(value = "/export/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public SseEmitter exportProgress(@PathVariable String taskId) {
+        SseEmitter emitter = new SseEmitter(600_000L);
+        Thread.ofVirtual().start(() -> {
+            try {
+                boolean completed = false;
+                while (!completed) {
+                    var progress = contentExchangeService.getProgress(taskId);
+                    if (progress.isPresent()) {
+                        var p = progress.get();
+                        emitter.send(SseEmitter.event()
+                                .name("progress")
+                                .data(Map.of(
+                                        "totalDocuments", p.totalDocuments(),
+                                        "processedDocuments", p.processedDocuments(),
+                                        "percentage", p.percentage(),
+                                        "currentLocale", p.currentLocale(),
+                                        "phase", p.phase(),
+                                        "estimatedRemainingMillis", p.estimatedRemainingMillis()
+                                )));
+                        if ("completed".equals(p.phase())) {
+                            completed = true;
+                            contentExchangeService.removeProgress(taskId);
+                        }
+                    }
+                    if (!completed) {
+                        Thread.sleep(500);
+                    }
+                }
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        });
+        return emitter;
     }
 
     @Operation(summary = "Semantic Navigation Site Monitoring Status")

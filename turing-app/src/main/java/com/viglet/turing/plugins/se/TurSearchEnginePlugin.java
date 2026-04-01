@@ -118,6 +118,24 @@ public interface TurSearchEnginePlugin {
         // No-op for schema-less engines
     }
 
+    // ---- Content retrieval ------------------------------------------------
+
+    /**
+     * Retrieves a page of documents from the index for export purposes.
+     * Only returns fields defined in the SN Site field map, respecting
+     * multiValued settings (single-value fields are flattened from arrays).
+     *
+     * @param turSNSiteLocale  the site locale to query
+     * @param siteFieldMap     field definitions from TurSNSiteFieldService.toMap()
+     * @param start            pagination offset
+     * @param rows             number of documents per page
+     * @return list of documents as maps
+     */
+    default List<Map<String, Object>> retrieveDocumentPage(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, int start, int rows) {
+        return List.of();
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);

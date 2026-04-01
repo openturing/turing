@@ -128,7 +128,8 @@ public class TurSNSiteExportFileService {
 		this.exportValidator = exportValidator;
 	}
 
-	public Path exportSNSitesToZip(List<TurSNSite> turSNSites) {
+	public Path exportSNSitesToZip(List<TurSNSite> turSNSites,
+			Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
 		File tmpDir = getOrCreateTmpDir();
 		String folderName = "SNSite_" + System.currentTimeMillis();
 
@@ -150,8 +151,29 @@ public class TurSNSiteExportFileService {
 		turExchange.setEmbeddingModels(new ArrayList<>(embeddingModels.values()));
 		exportValidator.validate(turExchange);
 		File exportFile = prepareExportFile(tmpDir, folderName, turExchange);
+
+		if (contentMap != null && !contentMap.isEmpty()) {
+			writeContentFile(exportFile.getParentFile(), contentMap);
+		}
+
 		File zipFile = createZipFile(exportFile);
 		return zipFile.toPath();
+	}
+
+	private void writeContentFile(File exportDir,
+			Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
+		for (var entry : contentMap.entrySet()) {
+			String siteName = entry.getKey().replaceAll("[^a-zA-Z0-9_-]", "_");
+			File contentFile = new File(exportDir, siteName + "_content.json");
+			try {
+				JsonMapper mapper = JsonMapper.builder()
+						.configure(SerializationFeature.INDENT_OUTPUT, true)
+						.build();
+				mapper.writer().writeValue(contentFile, Map.of(entry.getKey(), entry.getValue()));
+			} catch (Exception e) {
+				log.error("Error writing content file for site '{}': {}", entry.getKey(), e.getMessage(), e);
+			}
+		}
 	}
 
 	private void collectReferences(TurSNSite turSNSite,

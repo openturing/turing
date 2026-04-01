@@ -14,6 +14,11 @@
     "invalidType": "Invalid file type. Only ZIP files are accepted.",
     "importSuccess": "Import completed successfully!",
     "importError": "An error occurred during import.",
-    "importFailedMsg": "Import failed: {{message}}"
+    "importFailedMsg": "Import failed: {{message}}",
+    "contentDetected": "Indexed Content Detected",
+    "contentDetectedDescription": "This export file contains indexed content. Would you like to import the content along with the site configuration?",
+    "importSiteOnly": "Site Only",
+    "importWithContent": "Import with Content",
+    "indexingContent": "Indexing content..."
   }
 }

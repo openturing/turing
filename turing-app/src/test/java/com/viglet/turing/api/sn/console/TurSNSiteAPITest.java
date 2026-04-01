@@ -43,6 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
 import com.viglet.turing.persistence.mapper.sn.TurSNSiteMapper;
@@ -87,7 +88,8 @@ class TurSNSiteAPITest {
                         TurConfigProperties configProperties,
                         TurSNSiteMapper siteMapper) {
                 return new TurSNSiteAPI(siteRepository, localeRepository, genAiRepository,
-                                export, template, queue, pluginFactory, configProperties, siteMapper);
+                                export, mock(TurSNSiteContentExchangeService.class),
+                                template, queue, pluginFactory, configProperties, siteMapper);
         }
 
         @Test

@@ -1,9 +1,21 @@
 import { ROUTES } from "@/app/routes.const";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurExchangeImportService } from "@/services/exchange/exchange.import.service";
 import {
     IconCheck,
     IconCloudUpload,
+    IconDatabase,
     IconFileZip,
     IconLoader2,
     IconX,
@@ -15,13 +27,22 @@ import { toast } from "sonner";
 
 const importService = new TurExchangeImportService();
 
-type ImportStatus = "idle" | "uploading" | "success" | "error";
+type ImportStatus = "idle" | "uploading" | "success" | "error" | "content-prompt" | "indexing";
+
+function formatTime(ms: number): string {
+    if (ms < 0) return "--:--";
+    const totalSec = Math.ceil(ms / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min}:${sec.toString().padStart(2, "0")}`;
+}
 
 export default function ExchangeImportPage() {
     const [isDragOver, setIsDragOver] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<ImportStatus>("idle");
     const [progress, setProgress] = useState(0);
+    const [contentProgress, setContentProgress] = useState<ContentExchangeProgress | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
@@ -35,6 +56,48 @@ export default function ExchangeImportPage() {
         ];
         return validTypes.includes(f.type) || f.name.endsWith(".zip");
     };
+
+    const doImport = useCallback(async (selectedFile: File, includeContent: boolean) => {
+        setStatus("uploading");
+        setProgress(0);
+        setErrorMessage("");
+
+        const taskId = `import-${Date.now()}`;
+
+        try {
+            if (includeContent) {
+                setStatus("indexing");
+                importService.subscribeImportProgress(
+                    taskId,
+                    (data) => setContentProgress(data),
+                    () => {},
+                    () => {},
+                );
+            }
+            await importService.importFile(
+                selectedFile,
+                (p) => setProgress(p),
+                includeContent,
+                includeContent ? taskId : undefined,
+            );
+            setStatus("success");
+            setProgress(100);
+            setContentProgress(null);
+            toast.success(t("exchange.importSuccess"));
+            setTimeout(() => {
+                navigate(ROUTES.SN_INSTANCE);
+            }, 2000);
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.message ||
+                err?.message ||
+                t("exchange.importError");
+            setErrorMessage(msg);
+            setStatus("error");
+            setContentProgress(null);
+            toast.error(t("exchange.importFailedMsg", { message: msg }));
+        }
+    }, [navigate, t]);
 
     const handleFile = useCallback(
         async (selectedFile: File) => {
@@ -51,13 +114,12 @@ export default function ExchangeImportPage() {
             setErrorMessage("");
 
             try {
-                await importService.importFile(selectedFile, (p) => setProgress(p));
-                setStatus("success");
-                setProgress(100);
-                toast.success(t("exchange.importSuccess"));
-                setTimeout(() => {
-                    navigate(ROUTES.SN_INSTANCE);
-                }, 2000);
+                const hasContent = await importService.checkContent(selectedFile);
+                if (hasContent) {
+                    setStatus("content-prompt");
+                    return;
+                }
+                await doImport(selectedFile, false);
             } catch (err: any) {
                 const msg =
                     err?.response?.data?.message ||
@@ -68,7 +130,7 @@ export default function ExchangeImportPage() {
                 toast.error(t("exchange.importFailedMsg", { message: msg }));
             }
         },
-        [navigate]
+        [navigate, doImport, t]
     );
 
     const handleDragOver = useCallback(
@@ -251,6 +313,38 @@ export default function ExchangeImportPage() {
                                 </>
                             )}
 
+                            {status === "indexing" && (
+                                <>
+                                    <p className="text-lg font-semibold text-blue-500">
+                                        {t("exchange.indexingContent")}
+                                    </p>
+                                    {contentProgress && (
+                                        <div className="w-full max-w-xs space-y-2 mt-2">
+                                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300 ease-out"
+                                                    style={{ width: `${contentProgress.percentage}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between text-xs text-muted-foreground">
+                                                <span>
+                                                    {contentProgress.processedDocuments.toLocaleString()} / {contentProgress.totalDocuments.toLocaleString()}
+                                                </span>
+                                                <span>
+                                                    {contentProgress.percentage}%
+                                                    {contentProgress.estimatedRemainingMillis > 0 && ` - ${formatTime(contentProgress.estimatedRemainingMillis)}`}
+                                                </span>
+                                            </div>
+                                            {contentProgress.currentLocale && (
+                                                <p className="text-xs text-center text-muted-foreground">
+                                                    Locale: {contentProgress.currentLocale}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             {status === "error" && (
                                 <>
                                     <p className="text-lg font-semibold text-red-500">
@@ -260,6 +354,7 @@ export default function ExchangeImportPage() {
                                         {errorMessage}
                                     </p>
                                     <button
+                                        type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleReset();
@@ -326,6 +421,34 @@ export default function ExchangeImportPage() {
                     </Card>
                 )}
             </div>
+
+            {/* Content import prompt dialog */}
+            <Dialog open={status === "content-prompt"} onOpenChange={(open) => {
+                if (!open) {
+                    handleReset();
+                }
+            }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <IconDatabase className="size-5" />
+                            {t("exchange.contentDetected")}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t("exchange.contentDetectedDescription")}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button variant="outline" onClick={() => file && doImport(file, false)}>
+                            {t("exchange.importSiteOnly")}
+                        </Button>
+                        <GradientButton onClick={() => file && doImport(file, true)}>
+                            <IconDatabase className="size-4 mr-2" />
+                            {t("exchange.importWithContent")}
+                        </GradientButton>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
