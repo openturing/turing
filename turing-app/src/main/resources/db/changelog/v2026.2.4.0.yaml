@@ -1,0 +1,83 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-sn-site-custom-sort
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_custom_sort
+      changes:
+        - createTable:
+            tableName: sn_site_custom_sort
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(500)
+              - column:
+                  name: sn_site_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_custom_sort_sn_site
+
+  - changeSet:
+      id: create-sn-site-custom-sort-item
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_custom_sort_item
+      changes:
+        - createTable:
+            tableName: sn_site_custom_sort_item
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: field_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sort_order
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: custom_sort_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort_item
+            baseColumnNames: custom_sort_id
+            referencedTableName: sn_site_custom_sort
+            referencedColumnNames: id
+            constraintName: fk_custom_sort_item_custom_sort

@@ -48,6 +48,32 @@
       "deletionError": "Erro ao excluir",
       "failedDelete": "Falha ao excluir: {{message}}"
     },
+    "customSort": {
+      "title": "Ordenação Personalizada",
+      "feature": "Ordenação Personalizada",
+      "description": "Defina configurações de ordenação reutilizáveis com múltiplos níveis para resultados de busca.",
+      "newCustomSort": "Nova Ordenação Personalizada",
+      "newCustomSortBlank": "Nova ordenação personalizada",
+      "blankTitle": "Você ainda não possui nenhuma ordenação personalizada.",
+      "blankDescription": "Crie uma ordenação personalizada para definir configurações reutilizáveis de ordenação em múltiplos níveis.",
+      "deleted": "A ordenação personalizada foi excluída",
+      "notDeleted": "A ordenação personalizada não foi excluída",
+      "saved": "A ordenação personalizada foi salva",
+      "notSaved": "A ordenação personalizada não foi salva",
+      "updated": "A ordenação personalizada foi atualizada",
+      "notUpdated": "A ordenação personalizada não foi atualizada",
+      "details": "Detalhes da Ordenação",
+      "detailsDesc": "Defina o nome e a descrição para esta ordenação personalizada.",
+      "nameRequired": "O nome é obrigatório.",
+      "nameDesc": "O nome da ordenação usado na API de busca (ex: sort_date).",
+      "descriptionPlaceholder": "Descreva o que esta ordenação faz...",
+      "descriptionDesc": "Descrição opcional para esta ordenação personalizada.",
+      "sortLevels": "Níveis de Ordenação",
+      "sortLevelsDesc": "Defina os campos e direções para cada nível de ordenação. Os itens são aplicados em ordem.",
+      "addLevel": "Adicionar Nível de Ordenação",
+      "field": "Campo",
+      "direction": "Direção"
+    },
     "genai": {
       "title": "IA Generativa",
       "description": "Use o Assistente na sua busca."

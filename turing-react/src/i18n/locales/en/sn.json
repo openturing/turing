@@ -48,6 +48,32 @@
       "deletionError": "Form deletion error",
       "failedDelete": "Failed to delete: {{message}}"
     },
+    "customSort": {
+      "title": "Custom Sort",
+      "feature": "Custom Sort",
+      "description": "Define reusable sort configurations with multiple levels for search results.",
+      "newCustomSort": "New Custom Sort",
+      "newCustomSortBlank": "New custom sort",
+      "blankTitle": "You don't seem to have any custom sort.",
+      "blankDescription": "Create a custom sort to define reusable multi-level sort configurations.",
+      "deleted": "The custom sort was deleted",
+      "notDeleted": "The custom sort was not deleted",
+      "saved": "The custom sort was saved",
+      "notSaved": "The custom sort was not saved",
+      "updated": "The custom sort was updated",
+      "notUpdated": "The custom sort was not updated",
+      "details": "Sort Details",
+      "detailsDesc": "Define the name and description for this custom sort.",
+      "nameRequired": "Name is required.",
+      "nameDesc": "The sort name used in the search API (e.g., sort_date).",
+      "descriptionPlaceholder": "Describe what this sort does...",
+      "descriptionDesc": "Optional description for this custom sort.",
+      "sortLevels": "Sort Levels",
+      "sortLevelsDesc": "Define the fields and directions for each sort level. Items are applied in order.",
+      "addLevel": "Add Sort Level",
+      "field": "Field",
+      "direction": "Direction"
+    },
     "genai": {
       "title": "Generative AI",
       "description": "Use Assistant in your search."

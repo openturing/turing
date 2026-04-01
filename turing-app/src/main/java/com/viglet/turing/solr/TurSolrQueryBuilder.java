@@ -72,7 +72,11 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
@@ -95,17 +99,20 @@ public class TurSolrQueryBuilder {
     public static final String CUSTOM_FACET_QUERY_SEPARATOR = "::";
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
     private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+    private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
     private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
     private final TurSNRankingConditionRepository turSNRankingConditionRepository;
     private final TurSNTargetingRules turSNTargetingRules;
 
     public TurSolrQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
             TurSNTargetingRules turSNTargetingRules) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
+        this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         this.turSNRankingExpressionRepository = turSNRankingExpressionRepository;
         this.turSNRankingConditionRepository = turSNRankingConditionRepository;
         this.turSNTargetingRules = turSNTargetingRules;
@@ -912,19 +919,41 @@ public class TurSolrQueryBuilder {
     private void setSortEntry(TurSNSite turSNSite, SolrQuery query,
             TurSEParameters turSEParameters) {
         Optional.ofNullable(turSEParameters.getSort())
-                .ifPresent(
-                        sort -> TurCommonsUtils.getKeyValueFromColon(sort)
-                                .ifPresentOrElse(
-                                        kv -> query.setSort(kv.getKey(),
-                                                kv.getValue().equals(ASC) ? SolrQuery.ORDER.asc : SolrQuery.ORDER.desc),
-                                        () -> {
-                                            if (sort.equalsIgnoreCase(NEWEST))
-                                                query.setSort(turSNSite.getDefaultDateField(),
-                                                        SolrQuery.ORDER.desc);
-                                            else if (sort.equalsIgnoreCase(OLDEST))
-                                                query.setSort(turSNSite.getDefaultDateField(),
-                                                        SolrQuery.ORDER.asc);
-                                        }));
+                .ifPresent(sort -> {
+                    Optional<KeyValue<String, String>> kv = TurCommonsUtils.getKeyValueFromColon(sort);
+                    if (kv.isPresent()) {
+                        query.setSort(kv.get().getKey(),
+                                kv.get().getValue().equals(ASC) ? SolrQuery.ORDER.asc : SolrQuery.ORDER.desc);
+                    } else if (sort.equalsIgnoreCase(NEWEST)) {
+                        query.setSort(turSNSite.getDefaultDateField(), SolrQuery.ORDER.desc);
+                    } else if (sort.equalsIgnoreCase(OLDEST)) {
+                        query.setSort(turSNSite.getDefaultDateField(), SolrQuery.ORDER.asc);
+                    } else if (!sort.equalsIgnoreCase("relevance")) {
+                        applyCustomSort(turSNSite, query, sort);
+                    }
+                });
+    }
+
+    private void applyCustomSort(TurSNSite turSNSite, SolrQuery query, String sortName) {
+        turSNSiteCustomSortRepository.findByTurSNSiteAndName(turSNSite, sortName)
+                .ifPresent(customSort -> {
+                    List<TurSNSiteCustomSortItem> sortedItems = customSort.getItems().stream()
+                            .sorted(java.util.Comparator.comparing(TurSNSiteCustomSortItem::getPosition,
+                                    java.util.Comparator.nullsLast(Integer::compareTo)))
+                            .toList();
+                    if (!sortedItems.isEmpty()) {
+                        TurSNSiteCustomSortItem first = sortedItems.getFirst();
+                        query.setSort(first.getFieldName(),
+                                first.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC
+                                        ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc);
+                        for (int i = 1; i < sortedItems.size(); i++) {
+                            TurSNSiteCustomSortItem item = sortedItems.get(i);
+                            query.addSort(item.getFieldName(),
+                                    item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC
+                                            ? SolrQuery.ORDER.desc : SolrQuery.ORDER.asc);
+                        }
+                    }
+                });
     }
 
     private boolean hasMLT(TurSNSite turSNSite, List<TurSNSiteFieldExt> turSNSiteMLTFieldExtList) {

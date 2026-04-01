@@ -9,6 +9,7 @@ import { TurSNSiteService } from "@/services/sn/sn.service";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import {
     IconAlignBoxCenterStretch,
+    IconArrowsSort,
     IconCpu2,
     IconDashboard,
     IconDatabase,
@@ -93,6 +94,11 @@ export default function SNSitePage() {
                 title: t("sn.facets.title"),
                 url: "/facet",
                 icon: IconFilter,
+            },
+            {
+                title: t("sn.customSort.title"),
+                url: "/custom-sort",
+                icon: IconArrowsSort,
             },
             {
                 title: t("sn.genai.title"),
