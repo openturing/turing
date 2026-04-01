@@ -26,6 +26,7 @@ import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocume
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightTerm;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,10 +39,11 @@ class TurSNSiteExportTest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteSpotlightRepository spotlightRepository = mock(TurSNSiteSpotlightRepository.class);
         TurSNSiteMergeProvidersRepository mergeProvidersRepository = mock(TurSNSiteMergeProvidersRepository.class);
+        TurSNSiteCustomSortRepository customSortRepository = mock(TurSNSiteCustomSortRepository.class);
         TurSNSiteExportFileService exportFileService = mock(TurSNSiteExportFileService.class);
 
         TurSNSiteExport turSNSiteExport = new TurSNSiteExport(siteRepository, spotlightRepository,
-                mergeProvidersRepository, exportFileService);
+                mergeProvidersRepository, customSortRepository, exportFileService);
 
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
@@ -60,6 +62,7 @@ class TurSNSiteExportTest {
         when(siteRepository.findAll()).thenReturn(List.of(site));
         when(spotlightRepository.findByTurSNSite(any(Sort.class), eq(site))).thenReturn(List.of(spotlight));
         when(mergeProvidersRepository.findByTurSNSite(site)).thenReturn(List.of(mergeProvider));
+        when(customSortRepository.findByTurSNSiteWithItems(site)).thenReturn(List.of());
         when(exportFileService.exportSNSitesToZip(any())).thenReturn(Path.of("site-export.zip"));
 
         HttpServletResponse response = mock(HttpServletResponse.class);

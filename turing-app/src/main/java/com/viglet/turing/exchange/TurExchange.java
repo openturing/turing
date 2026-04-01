@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
@@ -47,6 +48,9 @@ public class TurExchange {
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private List<TurSEInstance> se;
 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private List<TurEmbeddingModel> embeddingModels;
+
 	public void setSnSites(List<TurSNSiteExchange> snSites) {
 		this.snSites = snSites;
 	}
@@ -61,5 +65,9 @@ public class TurExchange {
 
 	public void setSe(List<TurSEInstance> se) {
 		this.se = se;
+	}
+
+	public void setEmbeddingModels(List<TurEmbeddingModel> embeddingModels) {
+		this.embeddingModels = embeddingModels;
 	}
 }

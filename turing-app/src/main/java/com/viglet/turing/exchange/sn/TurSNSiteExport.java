@@ -36,6 +36,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -48,15 +49,18 @@ public class TurSNSiteExport {
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurSNSiteSpotlightRepository turSNSiteSpotlightRepository;
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
+	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurSNSiteExportFileService exportFileService;
 
 	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository,
 			TurSNSiteSpotlightRepository turSNSiteSpotlightRepository,
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
+			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
 			TurSNSiteExportFileService exportFileService) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
+		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
 		this.exportFileService = exportFileService;
 	}
 
@@ -84,6 +88,9 @@ public class TurSNSiteExport {
 		var mergeProviders = turSNSiteMergeProvidersRepository.findByTurSNSite(turSNSite);
 		mergeProviders.forEach(mergeProvider -> mergeProvider.getOverwrittenFields().size());
 		turSNSite.setTurSNSiteMergeProviders(new HashSet<>(mergeProviders));
+
+		var customSorts = turSNSiteCustomSortRepository.findByTurSNSiteWithItems(turSNSite);
+		turSNSite.setTurSNSiteCustomSorts(new HashSet<>(customSorts));
 	}
 
 	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,

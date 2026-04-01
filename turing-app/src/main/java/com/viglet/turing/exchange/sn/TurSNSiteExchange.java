@@ -33,6 +33,7 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 
 import lombok.Getter;
@@ -48,6 +49,7 @@ public class TurSNSiteExchange {
 	private String id;
 	private String name;
 	private String description;
+	private String icon;
 	private Integer rowsPerPage;
 	private Integer wildcardNoResults;
 	private Integer wildcardAlways;
@@ -81,6 +83,7 @@ public class TurSNSiteExchange {
 	private Set<TurSNSiteLocale> turSNSiteLocales;
 	private Set<TurSNRankingExpression> turSNRankingExpressions;
 	private Set<TurSNSiteMergeProviders> turSNSiteMergeProviders;
+	private Set<TurSNSiteCustomSort> turSNSiteCustomSorts;
 
 	public TurSNSiteExchange(TurSNSite turSNSite) {
 		this.setDefaultDateField(turSNSite.getDefaultDateField());
@@ -90,6 +93,7 @@ public class TurSNSiteExchange {
 		this.setDefaultTitleField(turSNSite.getDefaultTitleField());
 		this.setDefaultURLField(turSNSite.getDefaultURLField());
 		this.setDescription(turSNSite.getDescription());
+		this.setIcon(turSNSite.getIcon());
 		this.setFacet(turSNSite.getFacet() == 1);
 		this.setHl(turSNSite.getHl() == 1);
 		this.setHlPost(turSNSite.getHlPost());
@@ -121,6 +125,7 @@ public class TurSNSiteExchange {
 		this.setTurSNSiteLocales(turSNSite.getTurSNSiteLocales());
 		this.setTurSNRankingExpressions(turSNSite.getTurSNRankingExpressions());
 		this.setTurSNSiteMergeProviders(turSNSite.getTurSNSiteMergeProviders());
+		this.setTurSNSiteCustomSorts(turSNSite.getTurSNSiteCustomSorts());
 	}
 
 	private TurSNSiteGenAiExchange toReferenceGenAi(TurSNSiteGenAi source) {
@@ -131,6 +136,10 @@ public class TurSNSiteExchange {
 		referenceGenAi.setId(source.getId());
 		referenceGenAi.setEnabled(source.isEnabled());
 		referenceGenAi.setSystemPrompt(source.getSystemPrompt());
+		referenceGenAi.setSitePrompt(source.getSitePrompt());
+		if (source.getTurEmbeddingModelInstance() != null && source.getTurEmbeddingModelInstance().getId() != null) {
+			referenceGenAi.setTurEmbeddingModelInstance(source.getTurEmbeddingModelInstance().getId());
+		}
 		if (source.getTurLLMInstance() != null && source.getTurLLMInstance().getId() != null) {
 			referenceGenAi.setTurLLMInstance(source.getTurLLMInstance().getId());
 		}

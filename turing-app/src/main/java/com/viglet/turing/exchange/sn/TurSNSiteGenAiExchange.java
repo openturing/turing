@@ -14,6 +14,8 @@ public class TurSNSiteGenAiExchange {
     private String id;
     private boolean enabled;
     private String systemPrompt;
+    private String sitePrompt;
     private String turLLMInstance;
     private String turStoreInstance;
+    private String turEmbeddingModelInstance;
 }

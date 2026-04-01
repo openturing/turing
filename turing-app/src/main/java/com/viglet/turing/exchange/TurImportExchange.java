@@ -114,6 +114,37 @@ public class TurImportExchange {
 		}
 	}
 
+	public TurExchange parseExportFile(MultipartFile multipartFile) {
+		File extractFolder = this.extractZipFile(multipartFile);
+		if (extractFolder == null) {
+			return new TurExchange();
+		}
+		File parentExtractFolder = null;
+		if (!(new File(extractFolder, EXPORT_FILE).exists())
+				&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+			for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
+				if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
+					parentExtractFolder = extractFolder;
+					extractFolder = fileOrDirectory;
+				}
+			}
+		}
+		ObjectMapper mapper = JsonMapper.builder().build();
+		try (FileInputStream fis = new FileInputStream(
+				extractFolder.getAbsolutePath().concat(File.separator).concat(EXPORT_FILE))) {
+			return mapper.readValue(fis, TurExchange.class);
+		} catch (Exception e) {
+			log.error("Error parsing export file: {}", e.getMessage(), e);
+			return new TurExchange();
+		} finally {
+			try {
+				cleanupDirectories(extractFolder, parentExtractFolder);
+			} catch (IOException e) {
+				log.warn("Cleanup failed: {}", e.getMessage(), e);
+			}
+		}
+	}
+
 	public TurExchange importFromFile(File file) {
 
 		try (FileInputStream input = new FileInputStream(file)) {

@@ -29,7 +29,7 @@ class TurSNSiteExportFileServiceTest {
 
     @Test
     void shouldExportRootReferencesWithoutDuplicatingLLMStoreAndSEInsideSNSite() throws Exception {
-        TurSNSiteExportFileService service = new TurSNSiteExportFileService();
+        TurSNSiteExportFileService service = new TurSNSiteExportFileService(new TurSNSiteExportValidator());
 
         TurSEVendor seVendor = new TurSEVendor();
         seVendor.setId("SOLR");

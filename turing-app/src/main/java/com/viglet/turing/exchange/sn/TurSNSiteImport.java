@@ -29,6 +29,7 @@ import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -39,6 +40,8 @@ import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProvidersField;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
@@ -56,10 +59,12 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldRepositor
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingConditionRepository;
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
+import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreVendorRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +87,8 @@ public class TurSNSiteImport {
 	private final TurStoreInstanceRepository turStoreInstanceRepository;
 	private final TurStoreVendorRepository turStoreVendorRepository;
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
+	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+	private final TurEmbeddingModelRepository turEmbeddingModelRepository;
 	private final CacheManager cacheManager;
 
 	public TurSNSiteImport(TurSNSiteRepository turSNSiteRepository,
@@ -99,6 +106,8 @@ public class TurSNSiteImport {
 			TurStoreInstanceRepository turStoreInstanceRepository,
 			TurStoreVendorRepository turStoreVendorRepository,
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
+			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
+			TurEmbeddingModelRepository turEmbeddingModelRepository,
 			CacheManager cacheManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSEInstanceRepository = turSEInstanceRepository;
@@ -115,6 +124,8 @@ public class TurSNSiteImport {
 		this.turStoreInstanceRepository = turStoreInstanceRepository;
 		this.turStoreVendorRepository = turStoreVendorRepository;
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
+		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
+		this.turEmbeddingModelRepository = turEmbeddingModelRepository;
 		this.cacheManager = cacheManager;
 	}
 
@@ -166,6 +177,7 @@ public class TurSNSiteImport {
 			saveSNSiteSpotlights(turSNSiteExchange, savedSite);
 			saveSNRankingExpressions(turSNSiteExchange, savedSite);
 			saveSNSiteMergeProviders(turSNSiteExchange, savedSite);
+			saveSNSiteCustomSorts(turSNSiteExchange, savedSite);
 
 			log.info("Imported SN Site: {} ({})", savedSite.getName(), savedSite.getId());
 		}
@@ -179,6 +191,7 @@ public class TurSNSiteImport {
 		importSEInstances(turExchange);
 		importLLMInstances(turExchange);
 		importStoreInstances(turExchange);
+		importEmbeddingModels(turExchange);
 	}
 
 	private void importSEInstances(TurExchange turExchange) {
@@ -205,6 +218,25 @@ public class TurSNSiteImport {
 		}
 		for (TurStoreInstance exportedStoreInstance : turExchange.getStore()) {
 			resolveOrCreateStoreInstance(exportedStoreInstance, turExchange);
+		}
+	}
+
+	private void importEmbeddingModels(TurExchange turExchange) {
+		if (turExchange.getEmbeddingModels() == null) {
+			return;
+		}
+		for (TurEmbeddingModel exportedModel : turExchange.getEmbeddingModels()) {
+			if (exportedModel.getId() != null
+					&& turEmbeddingModelRepository.findById(exportedModel.getId()).isPresent()) {
+				log.info("Embedding Model '{}' already exists, skipping.", exportedModel.getId());
+				continue;
+			}
+			if (exportedModel.getTurLLMInstance() != null && exportedModel.getTurLLMInstance().getId() != null) {
+				turLLMInstanceRepository.findById(exportedModel.getTurLLMInstance().getId())
+						.ifPresent(exportedModel::setTurLLMInstance);
+			}
+			turEmbeddingModelRepository.save(exportedModel);
+			log.info("Imported Embedding Model: {} ({})", exportedModel.getModelName(), exportedModel.getId());
 		}
 	}
 
@@ -243,6 +275,7 @@ public class TurSNSiteImport {
 		turSNSite.setId(turSNSiteExchange.getId());
 		turSNSite.setName(resolveUniqueName(turSNSiteExchange.getName(), turSNSiteExchange.getId()));
 		turSNSite.setDescription(turSNSiteExchange.getDescription());
+		turSNSite.setIcon(turSNSiteExchange.getIcon());
 		turSNSite.setRowsPerPage(turSNSiteExchange.getRowsPerPage());
 		turSNSite.setWildcardNoResults(turSNSiteExchange.getWildcardNoResults());
 		turSNSite.setWildcardAlways(turSNSiteExchange.getWildcardAlways());
@@ -343,6 +376,11 @@ public class TurSNSiteImport {
 			genAi.setId(genAiExchange.getId());
 			genAi.setEnabled(genAiExchange.isEnabled());
 			genAi.setSystemPrompt(genAiExchange.getSystemPrompt());
+			genAi.setSitePrompt(genAiExchange.getSitePrompt());
+			if (genAiExchange.getTurEmbeddingModelInstance() != null) {
+				turEmbeddingModelRepository.findById(genAiExchange.getTurEmbeddingModelInstance())
+						.ifPresent(genAi::setTurEmbeddingModelInstance);
+			}
 			genAi.setTurLLMInstance(resolveOrCreateLLMInstanceById(genAiExchange.getTurLLMInstance(), turExchange));
 			genAi.setTurStoreInstance(
 					resolveOrCreateStoreInstanceById(genAiExchange.getTurStoreInstance(), turExchange));
@@ -674,6 +712,20 @@ public class TurSNSiteImport {
 						turSNRankingConditionRepository.save(condition);
 					}
 				}
+			}
+		}
+	}
+
+	private void saveSNSiteCustomSorts(TurSNSiteExchange turSNSiteExchange, TurSNSite turSNSite) {
+		if (turSNSiteExchange.getTurSNSiteCustomSorts() != null) {
+			for (TurSNSiteCustomSort customSort : turSNSiteExchange.getTurSNSiteCustomSorts()) {
+				customSort.setTurSNSite(turSNSite);
+				if (customSort.getItems() != null) {
+					for (TurSNSiteCustomSortItem item : customSort.getItems()) {
+						item.setTurSNSiteCustomSort(customSort);
+					}
+				}
+				turSNSiteCustomSortRepository.save(customSort);
 			}
 		}
 	}

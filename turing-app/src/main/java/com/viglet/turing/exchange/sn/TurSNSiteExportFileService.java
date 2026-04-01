@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.exchange.sn.mixin.TurSNSiteExchangeMixin;
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -27,6 +28,7 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.merge.TurSNSiteMergeProviders;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingCondition;
 import com.viglet.turing.persistence.model.sn.ranking.TurSNRankingExpression;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlight;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
@@ -70,6 +72,7 @@ public class TurSNSiteExportFileService {
 					.addMixIn(TurSNSiteLocale.class, TurSNSiteExchangeMixin.class)
 					.addMixIn(TurSNSiteSpotlight.class, TurSNSiteExchangeMixin.class)
 					.addMixIn(TurSNSiteMergeProviders.class, TurSNSiteExchangeMixin.class)
+					.addMixIn(TurSNSiteCustomSort.class, TurSNSiteExchangeMixin.class)
 					.build();
 			// Write export file atomically
 			Path tempExportFile = Files.createTempFile(exportDir.toPath(), "export-", ".json");
@@ -119,6 +122,12 @@ public class TurSNSiteExportFileService {
 		return new TurSNSiteExchange(turSNSite);
 	}
 
+	private final TurSNSiteExportValidator exportValidator;
+
+	public TurSNSiteExportFileService(TurSNSiteExportValidator exportValidator) {
+		this.exportValidator = exportValidator;
+	}
+
 	public Path exportSNSitesToZip(List<TurSNSite> turSNSites) {
 		File tmpDir = getOrCreateTmpDir();
 		String folderName = "SNSite_" + System.currentTimeMillis();
@@ -127,16 +136,19 @@ public class TurSNSiteExportFileService {
 		Map<String, TurLLMInstance> llmInstances = new LinkedHashMap<>();
 		Map<String, TurStoreInstance> storeInstances = new LinkedHashMap<>();
 		Map<String, TurSEInstance> seInstances = new LinkedHashMap<>();
+		Map<String, TurEmbeddingModel> embeddingModels = new LinkedHashMap<>();
 
 		for (TurSNSite turSNSite : turSNSites) {
 			shSiteExchanges.add(this.exportSNSite(turSNSite));
-			collectReferences(turSNSite, llmInstances, storeInstances, seInstances);
+			collectReferences(turSNSite, llmInstances, storeInstances, seInstances, embeddingModels);
 		}
 		TurExchange turExchange = new TurExchange();
 		turExchange.setSnSites(shSiteExchanges);
 		turExchange.setLlm(new ArrayList<>(llmInstances.values()));
 		turExchange.setStore(new ArrayList<>(storeInstances.values()));
 		turExchange.setSe(new ArrayList<>(seInstances.values()));
+		turExchange.setEmbeddingModels(new ArrayList<>(embeddingModels.values()));
+		exportValidator.validate(turExchange);
 		File exportFile = prepareExportFile(tmpDir, folderName, turExchange);
 		File zipFile = createZipFile(exportFile);
 		return zipFile.toPath();
@@ -145,7 +157,8 @@ public class TurSNSiteExportFileService {
 	private void collectReferences(TurSNSite turSNSite,
 			Map<String, TurLLMInstance> llmInstances,
 			Map<String, TurStoreInstance> storeInstances,
-			Map<String, TurSEInstance> seInstances) {
+			Map<String, TurSEInstance> seInstances,
+			Map<String, TurEmbeddingModel> embeddingModels) {
 		if (turSNSite.getTurSEInstance() != null && turSNSite.getTurSEInstance().getId() != null) {
 			seInstances.putIfAbsent(turSNSite.getTurSEInstance().getId(), turSNSite.getTurSEInstance());
 		}
@@ -161,6 +174,11 @@ public class TurSNSiteExportFileService {
 
 		if (genAi.getTurStoreInstance() != null && genAi.getTurStoreInstance().getId() != null) {
 			storeInstances.putIfAbsent(genAi.getTurStoreInstance().getId(), genAi.getTurStoreInstance());
+		}
+
+		if (genAi.getTurEmbeddingModelInstance() != null && genAi.getTurEmbeddingModelInstance().getId() != null) {
+			embeddingModels.putIfAbsent(genAi.getTurEmbeddingModelInstance().getId(),
+					genAi.getTurEmbeddingModelInstance());
 		}
 	}
 }
