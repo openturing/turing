@@ -47,6 +47,7 @@ import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 
@@ -72,14 +73,16 @@ public class TurSolr {
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
             TurSNSiteRepository turSNSiteRepository, TurSNFieldProcess turSNFieldProcess,
-            TurDecimalFieldNormalizer turDecimalFieldNormalizer) {
+            TurDecimalFieldNormalizer turDecimalFieldNormalizer,
+            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator) {
         this.isCommitEnabled = isCommitEnabled;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
                 turDecimalFieldNormalizer);
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                 turSNSiteCustomFacetRepository, turSNSiteCustomSortRepository,
-                turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules,
+                turSNSearchRuleEvaluator);
         this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess,
                 turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
     }
@@ -196,7 +199,7 @@ public class TurSolr {
                     .turSEParameters(turSEParameters)
                     .mltFieldExtList(turSolrQueryBuilder.prepareQueryMLT(turSNSite, query))
                     .facetFieldExtList(turSolrQueryBuilder.prepareQueryFacet(turSNSite, query,
-                            turSEParameters.getTurSNFilterParams()))
+                            turSEParameters.getTurSNFilterParams(), turSEParameters.getAllowedFacets()))
                     .hlFieldExtList(turSolrQueryBuilder.prepareQueryHL(turSNSite, query, context))
                     .spellCheckResult(turSESpellCheckResult)
                     .queryToRenderFacet(false)

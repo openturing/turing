@@ -74,6 +74,66 @@
       "field": "Field",
       "direction": "Direction"
     },
+    "searchRule": {
+      "title": "Search Rules",
+      "feature": "Search Rule",
+      "description": "Define rules that dynamically change search behavior based on query criteria.",
+      "newSearchRule": "New Search Rule",
+      "newSearchRuleBlank": "New search rule",
+      "blankTitle": "You don't seem to have any search rules.",
+      "blankDescription": "Create a search rule to dynamically alter sort, facets, or filters based on query conditions.",
+      "deleted": "The search rule was deleted",
+      "notDeleted": "The search rule was not deleted",
+      "saved": "The search rule was saved",
+      "notSaved": "The search rule was not saved",
+      "updated": "The search rule was updated",
+      "notUpdated": "The search rule was not updated",
+      "details": "Rule Details",
+      "detailsDesc": "Define the name, priority, and description for this search rule.",
+      "nameRequired": "Name is required.",
+      "nameDesc": "A descriptive name for this rule (e.g., browse_education).",
+      "descriptionPlaceholder": "Describe when this rule should apply...",
+      "descriptionDesc": "Optional description for this search rule.",
+      "position": "Priority",
+      "positionDesc": "Lower number = higher priority. First matching rule wins.",
+      "enabled": "Enabled",
+      "enabledDesc": "Only enabled rules are evaluated during search.",
+      "conditions": "Conditions",
+      "conditionsDesc": "Conditions are grouped by parameter. Within each group, AND/OR logic applies. Between groups, AND is used.",
+      "actions": "Actions",
+      "actionsDesc": "Actions to apply when all condition groups match.",
+      "addCondition": "Add Condition",
+      "addAction": "Add Action",
+      "parameter": "Parameter",
+      "operator": "Operator",
+      "field": "Field",
+      "actionType": "Action Type",
+      "value": "Value",
+      "parameterValues": {
+        "QUERY": "Query",
+        "FILTER_QUERY": "Filter",
+        "SORT": "Sort",
+        "LOCALE": "Locale"
+      },
+      "operatorValues": {
+        "EQUALS": "Equals",
+        "CONTAINS": "Contains",
+        "STARTS_WITH": "Starts with",
+        "MATCHES_ANY": "Matches any",
+        "IS_EMPTY": "Is empty"
+      },
+      "actionTypeValues": {
+        "SET_SORT": "Set Sort",
+        "SET_FACETS": "Set Facets",
+        "SET_ROWS": "Set Rows",
+        "ADD_FILTER_QUERY": "Add Filter",
+        "SET_BOOST_QUERY": "Set Boost Query"
+      },
+      "logicOperatorValues": {
+        "AND": "AND",
+        "OR": "OR"
+      }
+    },
     "genai": {
       "title": "Generative AI",
       "description": "Use Assistant in your search."

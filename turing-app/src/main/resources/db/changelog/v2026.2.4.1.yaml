@@ -1,0 +1,139 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-sn-site-search-rule
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_search_rule
+      changes:
+        - createTable:
+            tableName: sn_site_search_rule
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(500)
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_search_rule
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_search_rule_sn_site
+
+  - changeSet:
+      id: create-sn-site-search-rule-condition
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_search_rule_condition
+      changes:
+        - createTable:
+            tableName: sn_site_search_rule_condition
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: parameter
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operator
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fieldName
+                  type: varchar(255)
+              - column:
+                  name: value
+                  type: varchar(500)
+              - column:
+                  name: logicOperator
+                  type: varchar(5)
+                  defaultValue: AND
+              - column:
+                  name: search_rule_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_search_rule_condition
+            baseColumnNames: search_rule_id
+            referencedTableName: sn_site_search_rule
+            referencedColumnNames: id
+            constraintName: fk_search_rule_condition_rule
+
+  - changeSet:
+      id: create-sn-site-search-rule-action
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_search_rule_action
+      changes:
+        - createTable:
+            tableName: sn_site_search_rule_action
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: actionType
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: varchar(1000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: search_rule_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_search_rule_action
+            baseColumnNames: search_rule_id
+            referencedTableName: sn_site_search_rule
+            referencedColumnNames: id
+            constraintName: fk_search_rule_action_rule

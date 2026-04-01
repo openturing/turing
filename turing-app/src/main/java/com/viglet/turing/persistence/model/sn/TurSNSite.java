@@ -33,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
+import com.viglet.turing.persistence.model.sn.searchrule.TurSNSiteSearchRule;
 import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSort;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
@@ -68,7 +69,7 @@ import lombok.Setter;
 @Table(name = "sn_site")
 @JsonIgnoreProperties({ "turSNSiteFields", "turSNSiteFieldExts", "turSNSiteSpotlights",
 		"turSNSiteLocales", "turSNSiteMetricAccesses", "turSNRankingExpressions", "turSNSiteMergeProviders",
-		"turSNSiteCustomSorts" })
+		"turSNSiteCustomSorts", "turSNSiteSearchRules" })
 @EntityListeners(AuditingEntityListener.class)
 public class TurSNSite extends TurAuditable<String> implements Serializable {
 
@@ -205,5 +206,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private Set<TurSNSiteCustomSort> turSNSiteCustomSorts = new HashSet<>();
+
+	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private Set<TurSNSiteSearchRule> turSNSiteSearchRules = new HashSet<>();
 
 }

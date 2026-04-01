@@ -106,6 +106,9 @@ class TurSolrTest {
     private TurDecimalFieldNormalizer turDecimalFieldNormalizer;
 
     @Mock
+    private com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
+
+    @Mock
     private HttpJdkSolrClient httpJdkSolrClient;
 
     @Mock
@@ -636,6 +639,7 @@ class TurSolrTest {
                 turSNRankingConditionRepository,
                 turSNSiteRepository,
                 turSNFieldProcess,
-                turDecimalFieldNormalizer);
+                turDecimalFieldNormalizer,
+                turSNSearchRuleEvaluator);
     }
 }

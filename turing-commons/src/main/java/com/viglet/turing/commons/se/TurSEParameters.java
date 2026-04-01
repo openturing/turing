@@ -3,6 +3,7 @@ package com.viglet.turing.commons.se;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
@@ -25,6 +26,7 @@ public class TurSEParameters implements Serializable {
     private String group;
     private Integer autoCorrectionDisabled;
     private TurSNSitePostParamsBean turSNSitePostParamsBean;
+    private Set<String> allowedFacets;
 
     public TurSEParameters(TurSNSearchParams turSNSearchParams) {
         this(turSNSearchParams, null);

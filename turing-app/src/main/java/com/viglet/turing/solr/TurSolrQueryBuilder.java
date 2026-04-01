@@ -82,6 +82,7 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingCondition
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
 import com.viglet.turing.sn.facet.TurSNCustomFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetMapForFilterQuery;
@@ -103,19 +104,22 @@ public class TurSolrQueryBuilder {
     private final TurSNRankingExpressionRepository turSNRankingExpressionRepository;
     private final TurSNRankingConditionRepository turSNRankingConditionRepository;
     private final TurSNTargetingRules turSNTargetingRules;
+    private final TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
 
     public TurSolrQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
             TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
-            TurSNTargetingRules turSNTargetingRules) {
+            TurSNTargetingRules turSNTargetingRules,
+            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         this.turSNRankingExpressionRepository = turSNRankingExpressionRepository;
         this.turSNRankingConditionRepository = turSNRankingConditionRepository;
         this.turSNTargetingRules = turSNTargetingRules;
+        this.turSNSearchRuleEvaluator = turSNSearchRuleEvaluator;
     }
 
     @NotNull
@@ -124,6 +128,7 @@ public class TurSolrQueryBuilder {
         SolrQuery query = new SolrQuery();
         query.set(DEF_TYPE, EDISMAX);
         query.set(Q_OP, AND);
+        turSNSearchRuleEvaluator.applyRules(turSNSite, turSEParameters);
         setRows(turSNSite, turSEParameters);
         setSortEntry(turSNSite, query, turSEParameters);
 
@@ -680,8 +685,13 @@ public class TurSolrQueryBuilder {
     }
 
     public List<TurSNSiteFieldExt> prepareQueryFacet(TurSNSite turSNSite, SolrQuery query,
-            TurSNFilterParams turSNFilterParams) {
+            TurSNFilterParams turSNFilterParams, Set<String> allowedFacets) {
         List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(turSNSite);
+        if (allowedFacets != null && !allowedFacets.isEmpty()) {
+            enabledFacets = enabledFacets.stream()
+                    .filter(f -> allowedFacets.contains(f.getName()))
+                    .toList();
+        }
         return setFacetFields(turSNSite, query, turSNFilterParams, enabledFacets);
     }
 
