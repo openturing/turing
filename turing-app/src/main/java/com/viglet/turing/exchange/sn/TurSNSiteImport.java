@@ -32,6 +32,8 @@ import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -608,6 +610,16 @@ public class TurSNSiteImport {
 				if (fieldExt.getFacetLocales() != null) {
 					for (TurSNSiteFieldExtFacet facet : fieldExt.getFacetLocales()) {
 						facet.setTurSNSiteFieldExt(fieldExt);
+					}
+				}
+				if (fieldExt.getCustomFacets() != null) {
+					for (TurSNSiteCustomFacet customFacet : fieldExt.getCustomFacets()) {
+						customFacet.setTurSNSiteFieldExt(fieldExt);
+						if (customFacet.getItems() != null) {
+							for (TurSNSiteCustomFacetItem item : customFacet.getItems()) {
+								item.setTurSNSiteCustomFacet(customFacet);
+							}
+						}
 					}
 				}
 				turSNSiteFieldExtRepository.save(fieldExt);
