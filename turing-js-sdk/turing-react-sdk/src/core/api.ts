@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { TurChatResponse, TurSearchResponse, TurSortOption } from "./types";
 
 /**
@@ -35,7 +36,6 @@ function buildQueryString(params: SearchParams): string {
 }
 
 async function get<T>(url: string): Promise<T> {
-  const axios = (await import("axios")).default;
   const { data } = await axios.get<T>(url);
   return data;
 }

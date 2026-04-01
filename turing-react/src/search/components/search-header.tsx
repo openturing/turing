@@ -7,34 +7,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { TurLocaleItem } from "@viglet/turing-react-sdk";
+import type { TurLocaleItem, UseTuringUrlSearchReturn } from "@viglet/turing-react-sdk";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 interface SearchHeaderProps {
   siteName: string;
-  inputValue: string;
+  turing: UseTuringUrlSearchReturn;
   locale: string;
   locales: TurLocaleItem[];
   suggestions: string[];
   onInputChange: (value: string) => void;
-  onSearch: () => void;
-  onShowAll: () => void;
-  onLocaleChange: (locale: string) => void;
   onSuggestionPick: (term: string) => void;
   onSuggestionsClose: () => void;
 }
 
 export function SearchHeader({
   siteName,
-  inputValue,
+  turing,
   locale,
   locales,
   suggestions,
   onInputChange,
-  onSearch,
-  onShowAll,
-  onLocaleChange,
   onSuggestionPick,
   onSuggestionsClose,
 }: Readonly<SearchHeaderProps>) {
@@ -47,7 +41,7 @@ export function SearchHeader({
           {/* Brand */}
           <button
             type="button"
-            onClick={onShowAll}
+            onClick={turing.showAll}
             className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
           >
             <TurLogo size={28} className="transition-transform group-hover:scale-110" />
@@ -63,9 +57,9 @@ export function SearchHeader({
               <div className="relative flex items-center">
                 <IconSearch className="absolute left-3 size-4 text-muted-foreground pointer-events-none" />
                 <input
-                  value={inputValue}
+                  value={turing.inputValue}
                   onChange={(e) => onInputChange(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && onSearch()}
+                  onKeyDown={(e) => e.key === "Enter" && turing.submitSearch()}
                   onBlur={() => globalThis.setTimeout(() => onSuggestionsClose(), 150)}
                   type="search"
                   className="w-full h-9 pl-9 pr-4 rounded-lg border border-border bg-muted/50 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"
@@ -104,7 +98,7 @@ export function SearchHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {locales.map((l) => (
-                  <DropdownMenuItem key={l.locale} onClick={() => onLocaleChange(l.locale)} className="gap-2">
+                  <DropdownMenuItem key={l.locale} onClick={() => turing.setLocale(l.locale)} className="gap-2">
                     <BadgeLocale locale={l.locale} />
                   </DropdownMenuItem>
                 ))}

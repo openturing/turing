@@ -7,10 +7,8 @@ import {
 } from "@/components/ui/select";
 import type {
   ResolvedDocument,
-  TurPaginationItem,
+  TurSearchResponse,
   TurSortOption,
-  TurSpellCheck,
-  TurWidget,
 } from "@viglet/turing-react-sdk";
 import { IconList, IconSortDescending } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -20,41 +18,27 @@ import { SearchPagination } from "./search-pagination";
 import { SpellCheckBanner } from "./spell-check-banner";
 
 interface SearchResultsPanelProps {
-  widget: TurWidget;
+  data: TurSearchResponse;
   documents: ResolvedDocument[];
-  pagination: TurPaginationItem[];
-  spellCheck: TurSpellCheck;
   sortOptions: TurSortOption[];
   currentSort: string;
-  count: number;
-  pageStart: number;
-  pageEnd: number;
-  pageCount: number;
-  currentPage: number;
-  isFacetItemTypeOr: boolean;
   onNavigate: (href: string) => void;
   onSortChange: (sort: string) => void;
   onViewJson: (doc: Record<string, unknown>) => void;
 }
 
 export function SearchResultsPanel({
-  widget,
+  data,
   documents,
-  pagination,
-  spellCheck,
   sortOptions,
   currentSort,
-  count,
-  pageStart,
-  pageEnd,
-  pageCount,
-  currentPage,
-  isFacetItemTypeOr,
   onNavigate,
   onSortChange,
   onViewJson,
 }: Readonly<SearchResultsPanelProps>) {
   const { t } = useTranslation();
+  const { queryContext, widget, pagination } = data;
+  const isFacetItemTypeOr = queryContext.facetItemType?.toUpperCase() === "OR";
 
   return (
     <div className="flex gap-8">
@@ -76,16 +60,16 @@ export function SearchResultsPanel({
                 className="text-sm"
                 dangerouslySetInnerHTML={{
                   __html: t("search.resultsSummary", {
-                    count: count.toLocaleString(),
+                    count: queryContext.count.toLocaleString(),
                   }),
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                {t("search.pageRange", { start: pageStart, end: pageEnd })}
-                {pageCount > 1 && (
+                {t("search.pageRange", { start: queryContext.pageStart, end: queryContext.pageEnd })}
+                {queryContext.pageCount > 1 && (
                   <>
                     <span className="mx-1.5 text-muted-foreground/40">&middot;</span>
-                    {t("search.pageOf", { current: currentPage, total: pageCount })}
+                    {t("search.pageOf", { current: queryContext.page, total: queryContext.pageCount })}
                   </>
                 )}
               </p>
@@ -109,7 +93,7 @@ export function SearchResultsPanel({
           </div>
         </div>
 
-        <SpellCheckBanner spellCheck={spellCheck} onNavigate={onNavigate} />
+        <SpellCheckBanner spellCheck={widget.spellCheck} onNavigate={onNavigate} />
 
         {/* Document list */}
         <div className="space-y-3">
@@ -126,8 +110,8 @@ export function SearchResultsPanel({
 
         <SearchPagination
           items={pagination}
-          currentPage={currentPage}
-          totalPages={pageCount}
+          currentPage={queryContext.page}
+          totalPages={queryContext.pageCount}
           onNavigate={onNavigate}
         />
       </div>

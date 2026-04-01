@@ -36,9 +36,7 @@ import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import type { TurSNSiteSpotlightDocument } from "@/models/sn/sn-site-spotlight-document.model"
 import type { TurSNSiteSpotlightTerm } from "@/models/sn/sn-site-spotlight-term.model"
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model"
-import type { TurSNSearchDocument } from "@/search/models/sn-search-document.model"
-import type { TurSNSearch } from "@/search/models/sn-search.model"
-import { TurSNSearchService } from "@/search/services/sn-search.service"
+import { fetchSearch, type TurSearchResponse, type TurDocument } from "@viglet/turing-react-sdk"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
 import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
@@ -68,7 +66,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
     const [locales, setLocales] = useState<TurSNSiteLocale[]>([]);
     const [searchDialogOpen, setSearchDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchResult, setSearchResult] = useState<TurSNSearch | null>(null);
+    const [searchResult, setSearchResult] = useState<TurSearchResponse | null>(null);
     const [termsError, setTermsError] = useState<string | null>(null);
     const [documentsError, setDocumentsError] = useState<string | null>(null);
 
@@ -160,18 +158,12 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
         const language = form.getValues("language");
         if (!siteName || !searchQuery) return;
         try {
-            const result = await TurSNSearchService.query(
-                siteName,
-                {
-                    q: searchQuery,
-                    p: page.toString(),
-                    _setlocale: language || "en-US",
-                    sort: "title:desc",
-                    fq: [],
-                    tr: [],
-                    nfpr: "",
-                }
-            );
+            const result = await fetchSearch(siteName, {
+                q: searchQuery,
+                p: page.toString(),
+                _setlocale: language || "en-US",
+                sort: "title:desc",
+            });
             setSearchResult(result);
         } catch (error) {
             console.error("Search error", error);
@@ -179,7 +171,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
         }
     }
 
-    function addDocument(searchDoc: TurSNSearchDocument) {
+    function addDocument(searchDoc: TurDocument) {
         const currentDocs = form.getValues("turSNSiteSpotlightDocuments") || [];
         const newDoc: TurSNSiteSpotlightDocument = {
             title: searchDoc.fields.title || "",

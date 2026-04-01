@@ -37,14 +37,11 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SearchHeader
         siteName={siteName}
-        inputValue={turing.inputValue}
+        turing={turing}
         locale={params._setlocale || "en_US"}
         locales={data.widget.locales}
         suggestions={suggestions}
-        onInputChange={(v) => { turing.setInputValue(v); fetchSuggestions(v); }}
-        onSearch={turing.submitSearch}
-        onShowAll={turing.showAll}
-        onLocaleChange={turing.setLocale}
+        onInputChange={(v) => { turing.setInputValue(v); fetchSuggestions(v, { _setlocale: params._setlocale }); }}
         onSuggestionPick={(term) => { turing.setInputValue(term); clearSuggestions(); }}
         onSuggestionsClose={clearSuggestions}
       />
@@ -62,18 +59,10 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
           />
         ) : (
           <SearchResultsPanel
-            widget={data.widget}
+            data={data}
             documents={documents}
-            pagination={data.pagination}
-            spellCheck={data.widget.spellCheck}
             sortOptions={sortOptions}
             currentSort={params.sort || "relevance"}
-            count={data.queryContext.count}
-            pageStart={data.queryContext.pageStart}
-            pageEnd={data.queryContext.pageEnd}
-            pageCount={data.queryContext.pageCount}
-            currentPage={data.queryContext.page}
-            isFacetItemTypeOr={data.queryContext.facetItemType?.toUpperCase() === "OR"}
             onNavigate={turing.navigate}
             onSortChange={turing.setSort}
             onViewJson={setJsonSheetDoc}
