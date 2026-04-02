@@ -8,6 +8,8 @@
     "compile:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
     "compile:build": "tsc -b && vite build",
     "compile": "npm run compile:deps && npm run compile:build",
+    "zip": "node ../../../turing-examples/zip-dist.mjs",
+    "package": "npm run compile && npm run zip",
     "preview": "vite preview"
   },
   "dependencies": {

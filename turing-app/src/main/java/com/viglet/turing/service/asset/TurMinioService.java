@@ -39,6 +39,16 @@ public class TurMinioService {
 			Map.entry(".csv", "text/csv"),
 			Map.entry(".json", "application/json"),
 			Map.entry(".xml", "application/xml"),
+			Map.entry(".html", "text/html"),
+			Map.entry(".htm", "text/html"),
+			Map.entry(".css", "text/css"),
+			Map.entry(".js", "application/javascript"),
+			Map.entry(".mjs", "application/javascript"),
+			Map.entry(".woff", "font/woff"),
+			Map.entry(".woff2", "font/woff2"),
+			Map.entry(".ttf", "font/ttf"),
+			Map.entry(".ico", "image/x-icon"),
+			Map.entry(".webp", "image/webp"),
 			Map.entry(".zip", "application/zip"),
 			Map.entry(".doc", "application/msword"),
 			Map.entry(".docx", "application/msword"),
@@ -190,6 +200,37 @@ public class TurMinioService {
 		}
 	}
 
+	public void uploadStream(String objectName, InputStream inputStream, long size, String contentType) {
+		requireEnabled();
+		try {
+			minioClient.putObject(
+					PutObjectArgs.builder()
+							.bucket(getBucket())
+							.object(objectName)
+							.stream(inputStream, size, -1L)
+							.contentType(contentType != null ? contentType : DEFAULT_CONTENT_TYPE)
+							.build());
+		} catch (Exception e) {
+			throw new IllegalStateException("Failed to upload stream: " + objectName, e);
+		}
+	}
+
+	public void deleteObjectsWithPrefix(String prefix) {
+		requireEnabled();
+		String normalizedPrefix = prefix.endsWith(PATH_DELIMITER) ? prefix : prefix + PATH_DELIMITER;
+		var builder = ListObjectsArgs.builder()
+				.bucket(getBucket())
+				.prefix(normalizedPrefix)
+				.recursive(true);
+		for (Result<Item> result : minioClient.listObjects(builder.build())) {
+			try {
+				deleteObject(result.get().objectName());
+			} catch (Exception e) {
+				log.error("Error deleting MinIO object during prefix cleanup", e);
+			}
+		}
+	}
+
 	public void deleteObject(String objectName) {
 		requireEnabled();
 		try {
@@ -223,7 +264,7 @@ public class TurMinioService {
 		}
 	}
 
-	String guessContentType(String name) {
+	public String guessContentType(String name) {
 		if (name == null) return DEFAULT_CONTENT_TYPE;
 		String lower = name.toLowerCase();
 		return EXTENSION_TO_CONTENT_TYPE.entrySet().stream()

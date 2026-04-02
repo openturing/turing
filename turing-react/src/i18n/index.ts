@@ -24,6 +24,7 @@ import enLlm from "./locales/en/llm.json";
 import enLogging from "./locales/en/logging.json";
 import enMcp from "./locales/en/mcp.json";
 import enNav from "./locales/en/nav.json";
+import enPage from "./locales/en/page.json";
 import enSe from "./locales/en/se.json";
 import enSearch from "./locales/en/search.json";
 import enSidebar from "./locales/en/sidebar.json";
@@ -55,6 +56,7 @@ import ptLlm from "./locales/pt/llm.json";
 import ptLogging from "./locales/pt/logging.json";
 import ptMcp from "./locales/pt/mcp.json";
 import ptNav from "./locales/pt/nav.json";
+import ptPage from "./locales/pt/page.json";
 import ptSe from "./locales/pt/se.json";
 import ptSearch from "./locales/pt/search.json";
 import ptSidebar from "./locales/pt/sidebar.json";
@@ -71,6 +73,7 @@ const en = {
   ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch,
+  ...enPage,
 };
 
 const pt = {
@@ -80,6 +83,7 @@ const pt = {
   ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch,
+  ...ptPage,
 };
 
 /**

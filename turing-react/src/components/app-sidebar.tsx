@@ -8,6 +8,7 @@ import {
   IconDatabase,
   IconFileImport,
   IconFolder,
+  IconGlobe,
   IconHome,
   IconMessageChatbot,
   IconPlugConnectedX,
@@ -75,6 +76,7 @@ const searchItems: SidebarNavItem[] = [
   { key: "searchEngine", titleKey: "home.features.searchEngine.title", url: "/admin/se/instance", icon: IconZoomCode },
   { key: "semanticNavigation", titleKey: "home.features.semanticNavigation.title", url: "/admin/sn/instance", icon: IconCompass },
   { key: "integration", titleKey: "home.features.integration.title", url: "/admin/integration/instance", icon: IconPlugConnectedX },
+  { key: "pages", titleKey: "home.features.pages.title", url: ROUTES.PAGE_ROOT, icon: IconGlobe },
   { key: "graphqlExplorer", titleKey: "home.features.graphqlExplorer.title", url: ROUTES.GRAPHQL_ROOT, icon: IconBrandGraphql },
 ]
 
@@ -121,9 +123,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     (items: SidebarNavItem[]) =>
       items.filter((item) => {
         if (LLM_ONLY_KEYS.has(item.key) && !hasEnabledLlm) return false
+        if (item.key === "pages" && !minioEnabled) return false
         return hasPrivilege(item.key)
       }),
-    [hasEnabledLlm, hasPrivilege]
+    [hasEnabledLlm, minioEnabled, hasPrivilege]
   )
 
   const filteredManagement = React.useMemo(

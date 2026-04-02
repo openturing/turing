@@ -9,6 +9,7 @@ import {
   AIAgentRoutes,
   IntentRoutes,
   AssetRoutes,
+  PageRoutes,
   ChatRoutes,
   EmbeddingModelRoutes,
   ExchangeRoutes,
@@ -59,6 +60,7 @@ function App() {
                 {ExchangeRoutes}
                 {GraphqlRoutes}
                 {AssetRoutes}
+                {PageRoutes}
                 {ChatRoutes}
                 {TokenUsageRoutes}
                 {UserRoutes}

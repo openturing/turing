@@ -101,6 +101,10 @@
         "title": "Explorador GraphQL",
         "description": "Consulte seus dados de navegação semântica usando o playground interativo GraphQL."
       },
+      "pages": {
+        "title": "Páginas",
+        "description": "Implante e gerencie sites SPA servidos pelo MinIO."
+      },
       "assets": {
         "title": "Ativos",
         "description": "Navegue e gerencie arquivos armazenados no MinIO."

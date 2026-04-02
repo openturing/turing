@@ -60,3 +60,10 @@ turing-js-sdk/package-lock.json
 /turing-app/turing-sample/mythical-creatures_en_US
 /turing-app/turing-sample/mythical-creatures_pt_BR
 /turing-app/turing-sample/space-missions_en_US
+package-lock.json
+/turing-examples/mythical-creatures/app/dist
+turing-examples/mythical-creatures/app/mythical-creatures.zip
+/turing-examples/vinyl-records/app/dist
+/turing-examples/space-missions/app/dist
+turing-examples/vinyl-records/app/vinyl-records.zip
+turing-examples/space-missions/app/space-missions.zip

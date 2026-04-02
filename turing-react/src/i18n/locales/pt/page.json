@@ -1,0 +1,25 @@
+{
+  "page": {
+    "title": "Páginas",
+    "description": "Implante e gerencie sites SPA. Faça upload de um ZIP com sua aplicação React compilada e ela será servida em /pages/{siteName}.",
+    "uploadButton": "Upload de Site SPA",
+    "loading": "Carregando sites...",
+    "empty": "Nenhum site SPA implantado",
+    "emptyHint": "Faça upload de um arquivo ZIP contendo uma aplicação React compilada para começar.",
+    "loadError": "Falha ao carregar sites.",
+    "uploadSuccess": "Site \"{{name}}\" implantado com sucesso.",
+    "uploadError": "Falha ao implantar site.",
+    "deleteSuccess": "Site \"{{name}}\" excluído.",
+    "deleteError": "Falha ao excluir site.",
+    "uploadDialog": {
+      "title": "Implantar Site SPA",
+      "description": "Faça upload de um ZIP contendo sua aplicação compilada. O conteúdo será extraído e servido como site estático.",
+      "siteNameLabel": "Caminho do Site",
+      "siteNamePlaceholder": "meu-site",
+      "siteNameHint": "Seu site estará disponível em {{url}}",
+      "cancel": "Cancelar",
+      "deploy": "Implantar",
+      "uploading": "Implantando..."
+    }
+  }
+}

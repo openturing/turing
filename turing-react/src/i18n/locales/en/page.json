@@ -1,0 +1,25 @@
+{
+  "page": {
+    "title": "Pages",
+    "description": "Deploy and manage SPA sites. Upload a ZIP with your compiled React app and it will be served at /pages/{siteName}.",
+    "uploadButton": "Upload SPA Site",
+    "loading": "Loading sites...",
+    "empty": "No SPA sites deployed yet",
+    "emptyHint": "Upload a ZIP file containing a compiled React application to get started.",
+    "loadError": "Failed to load sites.",
+    "uploadSuccess": "Site \"{{name}}\" deployed successfully.",
+    "uploadError": "Failed to deploy site.",
+    "deleteSuccess": "Site \"{{name}}\" deleted.",
+    "deleteError": "Failed to delete site.",
+    "uploadDialog": {
+      "title": "Deploy SPA Site",
+      "description": "Upload a ZIP containing your compiled application. The contents will be extracted and served as a static site.",
+      "siteNameLabel": "Site Path",
+      "siteNamePlaceholder": "my-site",
+      "siteNameHint": "Your site will be available at {{url}}",
+      "cancel": "Cancel",
+      "deploy": "Deploy",
+      "uploading": "Deploying..."
+    }
+  }
+}

@@ -101,6 +101,10 @@
         "title": "GraphQL Explorer",
         "description": "Query your semantic navigation data using the interactive GraphQL playground."
       },
+      "pages": {
+        "title": "Pages",
+        "description": "Deploy and manage SPA sites served from MinIO storage."
+      },
       "assets": {
         "title": "Assets",
         "description": "Browse and manage files stored in the MinIO object storage."

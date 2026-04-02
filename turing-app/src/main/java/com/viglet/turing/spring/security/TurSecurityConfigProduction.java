@@ -147,6 +147,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/chat"),
                                                 mvc.matcher("/api/sn/*/chat/**"),
                                                 mvc.matcher("/api/sn/*/*/spell-check"),
+                                                mvc.matcher("/pages/**"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                 authorizeRequests.anyRequest().authenticated();
@@ -180,6 +181,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/chat"),
                                                                 mvc.matcher("/api/sn/*/chat/**"),
                                                                 mvc.matcher("/api/sn/*/*/spell-check"),
+                                                                mvc.matcher("/pages/**"),
                                                                 mvc.matcher("/favicon.ico"),
                                                                 mvc.matcher("/*.png"),
                                                                 mvc.matcher("/manifest.json"),
