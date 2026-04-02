@@ -10,6 +10,7 @@ import {
     IconGraph,
     IconInfoCircle,
     IconListCheck,
+    IconSparkles,
     IconTools,
 } from "@tabler/icons-react";
 import type { ElementType } from "react";
@@ -25,6 +26,7 @@ const iconMap: Record<string, ElementType> = {
     IconGraph,
     IconInfoCircle,
     IconListCheck,
+    IconSparkles,
     IconTools,
 };
 

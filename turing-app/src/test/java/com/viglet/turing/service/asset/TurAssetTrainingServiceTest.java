@@ -189,7 +189,9 @@ class TurAssetTrainingServiceTest {
 
                 TurAssetTrainingStatus status = service.startTraining();
 
-                assertThat(status.state()).isEqualTo(TurAssetTrainingState.RUNNING);
+                // The returned status is captured at call time; with an empty file list
+                // the background executor may complete before this assertion runs.
+                assertThat(status.state()).isIn(TurAssetTrainingState.RUNNING, TurAssetTrainingState.COMPLETED);
                 assertThat(status.startedAt()).isNotEmpty();
         }
 

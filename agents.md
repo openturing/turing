@@ -42,14 +42,14 @@ mvn clean install
 
 ### File Header Convention
 - **Every new Java file** must include a `@since` tag in the class-level Javadoc with the current project version (check the `<version>` in the root `pom.xml`)
-- Current version: **2026.1.14**
+- Current version: **2026.2.4**
 - Example:
   ```java
   /**
    * Description of the class.
    *
    * @author Alexandre Oliveira
-   * @since 2026.1.14
+   * @since 2026.2.4
    */
   ```
 - When the project version changes, update the "Current version" line above so new files always reference the correct version
@@ -109,6 +109,71 @@ mvn clean install
 - Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
 - Anthropic and Gemini providers don't support embedding — throw `UnsupportedOperationException`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
+
+### Pluggable Storage Architecture
+The storage layer is abstracted via `TurStorageService` interface with three implementations:
+
+**Configuration** (`application.yaml`):
+```yaml
+turing:
+  storage:
+    type: none          # none | minio | filesystem
+    filesystem:
+      path: ./store/assets
+    minio:
+      endpoint: http://localhost:9000
+      access-key: admin
+      secret-key: minha_senha_forte
+      bucket: turing-assets
+```
+
+**Key classes** (all in `service/storage/`):
+- `TurStorageType` — enum: `NONE`, `MINIO`, `FILESYSTEM`
+- `TurStorageService` — interface: `isEnabled()`, `getType()`, `listObjects()`, `downloadObject()`, `statObject()`, `uploadObject()`, `uploadStream()`, `deleteObject()`, `deleteObjectsWithPrefix()`, `createFolder()`, `guessContentType()`
+- `TurStorageObjectStat` — neutral DTO replacing MinIO's `StatObjectResponse`
+- `TurStorageContentTypes` — shared static MIME type utility
+- `TurMinioStorageService` — MinIO implementation
+- `TurFilesystemStorageService` — filesystem implementation with path traversal protection (`resolveSafe()`)
+- `TurNoOpStorageService` — disabled/no-op implementation (lists return empty, mutations throw)
+- `TurStorageConfig` — `@Configuration` with `@Bean` factory that selects implementation based on `turing.storage.type`
+
+**Properties** (in `properties/`):
+- `TurStorageProperty` — `type` (enum), nested `minio` (TurMinioProperty), nested `filesystem` (TurFilesystemProperty with `path`)
+- `TurMinioProperty` — `endpoint`, `accessKey`, `secretKey`, `bucket` (no `enabled` field — type selection controls this)
+- Access pattern: `configProperties.getStorage().getMinio()` or `configProperties.getStorage().getFilesystem().getPath()`
+- Old `turing.minio.enabled` and `turing.minio.*` are **removed** — all storage config lives under `turing.storage.*`
+
+**Frontend feature flag**: `FeaturesResponse.storageEnabled` (renamed from `minioEnabled`)
+- Sidebar hides "assets" and "pages" when `storageEnabled=false`
+- System Info shows storage section with dynamic type label and property key
+
+### LLM Summary Service (Cached AI Insights)
+Reusable service for generating cached LLM summaries with regenerate support:
+
+**Backend** (`system/TurLlmSummaryService`):
+- `generate(cacheKey, data, systemPrompt, regenerate)` → `SummaryResult(success, error, content, canRegenerate)`
+- Uses `TurLlmCacheService` for in-memory caching (respects Global Settings TTL)
+- Uses default LLM from `TurGlobalSettingsService.getDefaultLlmId()`
+- `isAvailable()` — checks if default LLM is configured and enabled
+
+**Used by**:
+- `TurSNSiteSummaryAPI` — `GET /api/sn/{id}/summary?regenerate=false` for SN site insights
+- `TurSystemInfoAPI` — `GET /api/system/info/insights?regenerate=false` for system info AI insights
+- Both follow same pattern: collect data → call `llmSummaryService.generate()` → return `SummaryResult`
+
+**Frontend pattern** (same for both SN insights and System Info insights):
+```typescript
+const response = await axios.get<InsightsResponse>(url, { params: regenerate ? { regenerate: true } : {} });
+// InsightsResponse: { success, error, content, canRegenerate }
+```
+- Show regenerate button when `canRegenerate=true` (controlled by `llmCacheRegenerate` in Global Settings)
+- System Info uses a resizable side panel; SN insights uses a full page
+
+### ResizablePanel Customization (shadcn)
+The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `overflowHidden` prop:
+- `react-resizable-panels` injects an internal wrapper `div` with `style="overflow: auto"` that cannot be controlled via props
+- `overflowHidden` prop applies `overflow: hidden` on the Panel element and `[&>div]:overflow-hidden!` (with `!important`) to override the inline style on the internal wrapper
+- Use `<ResizablePanel overflowHidden>` when the panel content manages its own scroll (e.g., a Card with `overflow-auto` on its body)
 
 ### Agent Operational Memory (Repository)
 - In `react-hook-form`, `disabled` fields are omitted from submission payloads; use `readOnly` when a value must be non-editable but still sent.
