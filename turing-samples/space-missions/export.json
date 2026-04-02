@@ -1,0 +1,202 @@
+{
+  "snSites": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "space-missions",
+      "description": "A comprehensive catalog of human space exploration — from Mercury to Artemis. Search missions by agency, decade, crew, spacecraft, and mission outcome. Demonstrates facets, date ranges, highlighting, spell check, and multi-valued fields.",
+      "icon": null,
+      "rowsPerPage": 10,
+      "wildcardNoResults": 1,
+      "wildcardAlways": 0,
+      "exactMatch": 0,
+      "exactMatchField": "exact_match",
+      "facet": true,
+      "facetType": "AND",
+      "facetItemType": "OR",
+      "facetSort": "COUNT",
+      "hl": true,
+      "hlPre": "<mark>",
+      "hlPost": "</mark>",
+      "mlt": true,
+      "itemsPerFacet": 50,
+      "spellCheck": 1,
+      "spellCheckFixes": 3,
+      "spotlightWithResults": null,
+      "thesaurus": false,
+      "defaultField": "_text_",
+      "defaultTitleField": "title",
+      "defaultTextField": "text",
+      "defaultDescriptionField": "description",
+      "defaultDateField": "launch_date",
+      "defaultImageField": "image",
+      "defaultURLField": "url",
+      "turSEInstance": "00000000-0000-0000-0000-000000000001",
+      "turSNRankingExpressions": [],
+      "turSNSiteMergeProviders": [],
+      "turSNSiteSpotlights": [
+        {
+          "id": "spot-0001-0001-0001-000000000001",
+          "name": "Apollo 11",
+          "description": "Spotlight for the most iconic space mission",
+          "language": "en",
+          "turSNSiteSpotlightTerms": [
+            { "name": "moon landing" },
+            { "name": "apollo 11" },
+            { "name": "neil armstrong" }
+          ],
+          "turSNSiteSpotlightDocuments": [
+            {
+              "title": "Apollo 11 — First Steps on the Moon",
+              "type": "mission",
+              "position": 1,
+              "link": "/missions/apollo-11",
+              "referenceId": "doc-apollo-11"
+            }
+          ]
+        }
+      ],
+      "turSNSiteCustomSorts": [
+        {
+          "id": "csort-0001-0001-0001-000000000001",
+          "name": "crew-size",
+          "description": "Crew Size (largest first)",
+          "items": [
+            {
+              "id": "csitem-0001-0001-0001-000000000001",
+              "fieldName": "crew_size",
+              "sortOrder": "DESC",
+              "position": 1
+            }
+          ]
+        }
+      ],
+      "turSNSiteLocales": [
+        {
+          "id": "loc-en-0001-0001-000000000001",
+          "language": "en",
+          "core": "space-missions_en_US"
+        }
+      ],
+      "turSNSiteFields": [
+        { "id": "sf-001", "name": "title", "type": "TEXT", "multiValued": 0, "description": "Mission name" },
+        { "id": "sf-002", "name": "description", "type": "TEXT", "multiValued": 0, "description": "Mission summary" },
+        { "id": "sf-003", "name": "text", "type": "TEXT", "multiValued": 0, "description": "Full mission narrative" },
+        { "id": "sf-004", "name": "url", "type": "STRING", "multiValued": 0, "description": "Canonical URL" },
+        { "id": "sf-005", "name": "image", "type": "STRING", "multiValued": 0, "description": "Mission patch URL" },
+        { "id": "sf-006", "name": "launch_date", "type": "DATE", "multiValued": 0, "description": "Launch date" },
+        { "id": "sf-007", "name": "agency", "type": "STRING", "multiValued": 1, "description": "Space agency" },
+        { "id": "sf-008", "name": "program", "type": "STRING", "multiValued": 0, "description": "Program name" },
+        { "id": "sf-009", "name": "crew", "type": "STRING", "multiValued": 1, "description": "Crew members" },
+        { "id": "sf-010", "name": "crew_size", "type": "INT", "multiValued": 0, "description": "Number of crew" },
+        { "id": "sf-011", "name": "spacecraft", "type": "STRING", "multiValued": 0, "description": "Spacecraft name" },
+        { "id": "sf-012", "name": "outcome", "type": "STRING", "multiValued": 0, "description": "Mission outcome" },
+        { "id": "sf-013", "name": "destination", "type": "STRING", "multiValued": 1, "description": "Mission target" },
+        { "id": "sf-014", "name": "duration_days", "type": "FLOAT", "multiValued": 0, "description": "Mission duration in days" },
+        { "id": "sf-015", "name": "decade", "type": "STRING", "multiValued": 0, "description": "Decade of launch" },
+        { "id": "sf-016", "name": "has_eva", "type": "BOOL", "multiValued": 0, "description": "Included spacewalk" },
+        { "id": "sf-017", "name": "type", "type": "STRING", "multiValued": 0, "description": "Content type" }
+      ],
+      "turSNSiteFieldExts": [
+        {
+          "id": "fe-001", "externalId": "sf-007", "name": "agency", "description": "Space Agency",
+          "facetName": "Agency",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 1,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "fe-002", "externalId": "sf-008", "name": "program", "description": "Space Program",
+          "facetName": "Program",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "ALPHABETICAL", "facetPosition": 2,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "fe-003", "externalId": "sf-012", "name": "outcome", "description": "Mission Outcome",
+          "facetName": "Outcome",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 3,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "fe-004", "externalId": "sf-013", "name": "destination", "description": "Destination",
+          "facetName": "Destination",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 4,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "fe-005", "externalId": "sf-015", "name": "decade", "description": "Decade",
+          "facetName": "Decade",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "ALPHABETICAL", "facetPosition": 5,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "fe-006", "externalId": "sf-006", "name": "launch_date", "description": "Launch Year",
+          "facetName": "Launch Year",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "DATE", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "YEAR", "facetType": "AND", "facetItemType": null,
+          "facetSort": "DEFAULT", "facetPosition": 6,
+          "secondaryFacet": true, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "fe-007", "externalId": "sf-001", "name": "title", "description": "Title",
+          "facetName": "Title",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 1,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        },
+        {
+          "id": "fe-008", "externalId": "sf-002", "name": "description", "description": "Description",
+          "facetName": "Description",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        },
+        {
+          "id": "fe-009", "externalId": "sf-009", "name": "crew", "description": "Crew",
+          "facetName": "Crew",
+          "facetLocales": [],
+          "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "OR", "facetItemType": null,
+          "facetSort": "ALPHABETICAL", "facetPosition": 7,
+          "secondaryFacet": true, "showAllFacetItems": true, "defaultValue": null
+        }
+      ]
+    }
+  ]
+}
