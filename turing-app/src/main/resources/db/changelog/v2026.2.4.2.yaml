@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-cascade-delete-custom-sort-sn-site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_custom_sort_sn_site
+            foreignKeyTableName: sn_site_custom_sort
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort
+            constraintName: fk_custom_sort_sn_site
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_custom_sort_sn_site
+            onDelete: CASCADE
+
+  - changeSet:
+      id: add-cascade-delete-custom-sort-item-custom-sort
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_custom_sort_item_custom_sort
+            foreignKeyTableName: sn_site_custom_sort_item
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort_item
+            constraintName: fk_custom_sort_item_custom_sort
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_sort_item
+            baseColumnNames: custom_sort_id
+            referencedTableName: sn_site_custom_sort
+            referencedColumnNames: id
+            constraintName: fk_custom_sort_item_custom_sort
+            onDelete: CASCADE

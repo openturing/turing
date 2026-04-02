@@ -53,3 +53,10 @@ turing-js-sdk/package-lock.json
 /.github/appmod
 /turing-react/.__mf__temp
 /turing-js-sdk/turing-react-sdk/node_modules
+/turing-examples/mythical-creatures/app/node_modules
+/turing-examples/space-missions/app/node_modules
+/turing-examples/vinyl-records/app/node_modules
+/turing-js-sdk/turing-react-sdk/dist
+/turing-app/turing-sample/mythical-creatures_en_US
+/turing-app/turing-sample/mythical-creatures_pt_BR
+/turing-app/turing-sample/space-missions_en_US

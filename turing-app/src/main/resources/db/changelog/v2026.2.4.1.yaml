@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-apiToken-to-integration-instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: integration_instance
+                columnName: apiToken
+      changes:
+        - addColumn:
+            tableName: integration_instance
+            columns:
+              - column:
+                  name: apiToken
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: integration_instance
+            baseColumnNames: apiToken
+            referencedTableName: dev_token
+            referencedColumnNames: id
+            constraintName: fk_integration_instance_api_token

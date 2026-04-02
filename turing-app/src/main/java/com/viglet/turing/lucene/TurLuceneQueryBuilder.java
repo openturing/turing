@@ -175,14 +175,18 @@ public class TurLuceneQueryBuilder {
     private Optional<Query> parseFilterQuery(String fq) {
         if (!StringUtils.hasText(fq))
             return Optional.empty();
-        try {
-            // Filter queries use the format: fieldName:"value" or fieldName:value
-            QueryParser parser = new QueryParser(TurLuceneConstants.ID, new StandardAnalyzer());
-            parser.setAllowLeadingWildcard(true);
-            return Optional.of(parser.parse(fq));
-        } catch (ParseException e) {
-            log.warn("Cannot parse filter query '{}': {}", fq, e.getMessage());
+        int colonIndex = fq.indexOf(':');
+        if (colonIndex <= 0 || colonIndex >= fq.length() - 1) {
+            log.warn("Invalid filter query format '{}' — expected 'field:value'", fq);
             return Optional.empty();
         }
+        String field = fq.substring(0, colonIndex);
+        String value = fq.substring(colonIndex + 1);
+        // Strip surrounding quotes if present
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1);
+        }
+        // Use TermQuery to preserve exact case (StringField values are not analyzed)
+        return Optional.of(new TermQuery(new Term(field, value)));
     }
 }

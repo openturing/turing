@@ -1,0 +1,173 @@
+{
+  "se": [
+    {
+      "id": "00000000-0000-0000-0000-lucene000003",
+      "title": "Lucene (Vinyl Records)",
+      "description": "Local Lucene instance for Vinyl Records sample",
+      "enabled": 1,
+      "endpointUrl": "./turing-sample",
+      "turSEVendor": { "id": "LUCENE" }
+    }
+  ],
+  "snSites": [
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "vinyl-records",
+      "description": "A curated vinyl record collection spanning jazz, rock, electronic, and classical. Demonstrates currency fields, float ratings, multi-valued genres, date facets by decade, boolean fields, and OR-facet selection for genre filtering.",
+      "icon": null,
+      "rowsPerPage": 12,
+      "wildcardNoResults": 1,
+      "wildcardAlways": 0,
+      "exactMatch": 0,
+      "exactMatchField": "exact_match",
+      "facet": true,
+      "facetType": "AND",
+      "facetItemType": "OR",
+      "facetSort": "COUNT",
+      "hl": true,
+      "hlPre": "<mark>",
+      "hlPost": "</mark>",
+      "mlt": true,
+      "itemsPerFacet": 100,
+      "spellCheck": 1,
+      "spellCheckFixes": 3,
+      "spotlightWithResults": null,
+      "thesaurus": false,
+      "defaultField": "_text_",
+      "defaultTitleField": "title",
+      "defaultTextField": "text",
+      "defaultDescriptionField": "description",
+      "defaultDateField": "release_date",
+      "defaultImageField": "cover_art",
+      "defaultURLField": "url",
+      "turSEInstance": "00000000-0000-0000-0000-lucene000003",
+      "turSNRankingExpressions": [],
+      "turSNSiteMergeProviders": [],
+      "turSNSiteSpotlights": [],
+      "turSNSiteCustomSorts": [
+        {
+          "id": "csort-vinyl-001",
+          "name": "price-low",
+          "description": "Price (Low to High)",
+          "items": [{ "id": "csi-v-001", "fieldName": "price", "sortOrder": "ASC", "position": 1 }]
+        },
+        {
+          "id": "csort-vinyl-002",
+          "name": "price-high",
+          "description": "Price (High to Low)",
+          "items": [{ "id": "csi-v-002", "fieldName": "price", "sortOrder": "DESC", "position": 1 }]
+        },
+        {
+          "id": "csort-vinyl-003",
+          "name": "rating",
+          "description": "Highest Rated",
+          "items": [{ "id": "csi-v-003", "fieldName": "rating", "sortOrder": "DESC", "position": 1 }]
+        }
+      ],
+      "turSNSiteLocales": [
+        { "id": "loc-vinyl-en", "language": "en_US", "core": "vinyl-records_en_US" }
+      ],
+      "turSNSiteFields": [
+        { "id": "vf-001", "name": "title", "type": "TEXT", "multiValued": 0, "description": "Album title" },
+        { "id": "vf-002", "name": "description", "type": "TEXT", "multiValued": 0, "description": "Album review" },
+        { "id": "vf-003", "name": "text", "type": "TEXT", "multiValued": 0, "description": "Full review text" },
+        { "id": "vf-004", "name": "url", "type": "STRING", "multiValued": 0, "description": "Album page URL" },
+        { "id": "vf-005", "name": "cover_art", "type": "STRING", "multiValued": 0, "description": "Cover art URL" },
+        { "id": "vf-006", "name": "release_date", "type": "DATE", "multiValued": 0, "description": "Release date" },
+        { "id": "vf-007", "name": "artist", "type": "STRING", "multiValued": 0, "description": "Artist name" },
+        { "id": "vf-008", "name": "label", "type": "STRING", "multiValued": 0, "description": "Record label" },
+        { "id": "vf-009", "name": "genre", "type": "STRING", "multiValued": 1, "description": "Genres" },
+        { "id": "vf-010", "name": "format", "type": "STRING", "multiValued": 0, "description": "Vinyl format" },
+        { "id": "vf-011", "name": "condition", "type": "STRING", "multiValued": 0, "description": "Vinyl condition" },
+        { "id": "vf-012", "name": "price", "type": "DOUBLE", "multiValued": 0, "description": "Price in USD" },
+        { "id": "vf-013", "name": "rating", "type": "FLOAT", "multiValued": 0, "description": "Rating 0-5" },
+        { "id": "vf-014", "name": "tracks", "type": "INT", "multiValued": 0, "description": "Number of tracks" },
+        { "id": "vf-015", "name": "is_first_pressing", "type": "BOOL", "multiValued": 0, "description": "First pressing" },
+        { "id": "vf-016", "name": "decade", "type": "STRING", "multiValued": 0, "description": "Release decade" },
+        { "id": "vf-017", "name": "type", "type": "STRING", "multiValued": 0, "description": "Content type" }
+      ],
+      "turSNSiteFieldExts": [
+        {
+          "id": "vfe-001", "externalId": "vf-009", "name": "genre",
+          "description": "Genre", "facetName": "Genre",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 1,
+          "facet": 1, "hl": 0, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "OR", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 1,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "vfe-002", "externalId": "vf-011", "name": "condition",
+          "description": "Condition", "facetName": "Condition",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "ALPHABETICAL", "facetPosition": 2,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "vfe-003", "externalId": "vf-010", "name": "format",
+          "description": "Format", "facetName": "Format",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 3,
+          "secondaryFacet": false, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "vfe-004", "externalId": "vf-008", "name": "label",
+          "description": "Record Label", "facetName": "Label",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "COUNT", "facetPosition": 4,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "vfe-005", "externalId": "vf-016", "name": "decade",
+          "description": "Decade", "facetName": "Decade",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "STRING", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "ALPHABETICAL", "facetPosition": 5,
+          "secondaryFacet": false, "showAllFacetItems": true, "defaultValue": null
+        },
+        {
+          "id": "vfe-006", "externalId": "vf-015", "name": "is_first_pressing",
+          "description": "First Pressing", "facetName": "First Pressing",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "BOOL", "multiValued": 0,
+          "facet": 1, "hl": 0, "mlt": 0, "enabled": 1, "required": 0,
+          "facetRange": "DISABLED", "facetType": "AND", "facetItemType": null,
+          "facetSort": "DEFAULT", "facetPosition": 6,
+          "secondaryFacet": true, "showAllFacetItems": false, "defaultValue": null
+        },
+        {
+          "id": "vfe-007", "externalId": "vf-001", "name": "title",
+          "description": "Title", "facetName": "Title",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 1,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        },
+        {
+          "id": "vfe-008", "externalId": "vf-002", "name": "description",
+          "description": "Description", "facetName": "Description",
+          "facetLocales": [], "customFacets": [],
+          "snType": "SE", "type": "TEXT", "multiValued": 0,
+          "facet": 0, "hl": 1, "mlt": 1, "enabled": 1, "required": 0,
+          "facetRange": null, "facetType": null, "facetItemType": null,
+          "facetSort": null, "facetPosition": null,
+          "secondaryFacet": null, "showAllFacetItems": null, "defaultValue": null
+        }
+      ]
+    }
+  ]
+}

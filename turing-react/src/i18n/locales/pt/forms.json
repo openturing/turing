@@ -248,7 +248,11 @@
       "dumontEndpointLabel": "Endpoint do Dumont DEP",
       "dumontEndpointDesc": "A URL onde a instância do Dumont DEP está em execução. A porta padrão é 30130.",
       "nameRequired": "Dê um nome à sua integração.",
-      "endpointRequired": "Digite a URL do endpoint do Dumont DEP."
+      "endpointRequired": "Digite a URL do endpoint do Dumont DEP.",
+      "apiTokenLabel": "API Token",
+      "apiTokenDesc": "Selecione um API Token para autenticar as requisições à instância do Dumont DEP. O token será enviado como header Key.",
+      "apiTokenPlaceholder": "Selecione um API Token...",
+      "apiTokenNone": "Nenhum"
     },
     "formActions": {
       "cancel": "Cancelar",

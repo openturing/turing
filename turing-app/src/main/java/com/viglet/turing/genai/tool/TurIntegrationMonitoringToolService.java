@@ -150,11 +150,12 @@ public class TurIntegrationMonitoringToolService {
         }
         String url = instance.getEndpoint() + path;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(TIMEOUT)
-                    .GET()
-                    .build();
+                    .GET();
+            addApiKeyHeader(instance, requestBuilder);
+            HttpRequest request = requestBuilder.build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 return "Connector returned HTTP " + response.statusCode() + " for " + path;
@@ -183,12 +184,13 @@ public class TurIntegrationMonitoringToolService {
         }
         String url = instance.getEndpoint() + path;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(TIMEOUT)
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+                    .POST(HttpRequest.BodyPublishers.ofString(body));
+            addApiKeyHeader(instance, requestBuilder);
+            HttpRequest request = requestBuilder.build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
                 return "Connector returned HTTP " + response.statusCode() + " for " + path;
@@ -413,6 +415,12 @@ public class TurIntegrationMonitoringToolService {
     private void putIfNotBlank(JSONObject json, String key, String value) {
         if (value != null && !value.isBlank()) {
             json.put(key, value);
+        }
+    }
+
+    private void addApiKeyHeader(TurIntegrationInstance instance, HttpRequest.Builder requestBuilder) {
+        if (instance.getApiToken() != null && instance.getApiToken().getToken() != null) {
+            requestBuilder.header("Key", instance.getApiToken().getToken());
         }
     }
 }

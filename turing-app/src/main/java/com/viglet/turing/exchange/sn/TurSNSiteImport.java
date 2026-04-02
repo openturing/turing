@@ -66,6 +66,9 @@ import com.viglet.turing.persistence.repository.sn.spotlight.TurSNSiteSpotlightR
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreVendorRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+
+import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,6 +92,7 @@ public class TurSNSiteImport {
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurEmbeddingModelRepository turEmbeddingModelRepository;
+	private final TurSearchEnginePluginFactory turSearchEnginePluginFactory;
 	private final CacheManager cacheManager;
 
 	public TurSNSiteImport(TurSNSiteRepository turSNSiteRepository,
@@ -108,6 +112,7 @@ public class TurSNSiteImport {
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
 			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
 			TurEmbeddingModelRepository turEmbeddingModelRepository,
+			TurSearchEnginePluginFactory turSearchEnginePluginFactory,
 			CacheManager cacheManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSEInstanceRepository = turSEInstanceRepository;
@@ -126,6 +131,7 @@ public class TurSNSiteImport {
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
 		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
 		this.turEmbeddingModelRepository = turEmbeddingModelRepository;
+		this.turSearchEnginePluginFactory = turSearchEnginePluginFactory;
 		this.cacheManager = cacheManager;
 	}
 
@@ -670,7 +676,30 @@ public class TurSNSiteImport {
 			for (TurSNSiteLocale locale : turSNSiteExchange.getTurSNSiteLocales()) {
 				locale.setTurSNSite(turSNSite);
 				turSNSiteLocaleRepository.save(locale);
+				createIndexIfNotExists(turSNSite, locale);
 			}
+		}
+	}
+
+	private void createIndexIfNotExists(TurSNSite turSNSite, TurSNSiteLocale locale) {
+		TurSEInstance seInstance = turSNSite.getTurSEInstance();
+		if (seInstance == null || locale.getCore() == null) {
+			return;
+		}
+		try {
+			var plugin = turSearchEnginePluginFactory.getPluginForInstance(seInstance);
+			if (!plugin.indexExists(seInstance, locale.getCore())) {
+				log.info("Index '{}' does not exist in SE Instance '{}'. Creating it...",
+						locale.getCore(), seInstance.getTitle());
+				plugin.createIndex(seInstance, locale, locale.getCore(), Map.of());
+				log.info("Index '{}' created successfully.", locale.getCore());
+			} else {
+				log.info("Index '{}' already exists in SE Instance '{}'.",
+						locale.getCore(), seInstance.getTitle());
+			}
+		} catch (Exception e) {
+			log.error("Failed to create index '{}' in SE Instance '{}': {}",
+					locale.getCore(), seInstance.getTitle(), e.getMessage(), e);
 		}
 	}
 

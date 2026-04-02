@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* ── Light theme: warm cream / amber / brown ── */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.97 0.015 70);
+  --foreground: oklch(0.18 0.03 50);
+  --card: oklch(0.95 0.02 65);
+  --card-foreground: oklch(0.18 0.03 50);
+  --popover: oklch(0.97 0.015 70);
+  --popover-foreground: oklch(0.18 0.03 50);
+  --primary: oklch(0.6 0.18 50);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.92 0.03 65);
+  --secondary-foreground: oklch(0.25 0.05 50);
+  --muted: oklch(0.92 0.02 70);
+  --muted-foreground: oklch(0.5 0.04 50);
+  --accent: oklch(0.9 0.04 65);
+  --accent-foreground: oklch(0.25 0.05 50);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.86 0.03 65);
+  --input: oklch(0.86 0.03 65);
+  --ring: oklch(0.6 0.15 50);
+}
+
+/* ── Dark theme: deep warm brown / amber glow ── */
+.dark {
+  --background: oklch(0.13 0.02 40);
+  --foreground: oklch(0.92 0.03 65);
+  --card: oklch(0.18 0.03 40);
+  --card-foreground: oklch(0.92 0.03 65);
+  --popover: oklch(0.18 0.03 40);
+  --popover-foreground: oklch(0.92 0.03 65);
+  --primary: oklch(0.72 0.16 55);
+  --primary-foreground: oklch(0.13 0.02 40);
+  --secondary: oklch(0.22 0.04 40);
+  --secondary-foreground: oklch(0.88 0.03 65);
+  --muted: oklch(0.22 0.04 40);
+  --muted-foreground: oklch(0.62 0.05 65);
+  --accent: oklch(0.26 0.06 40);
+  --accent-foreground: oklch(0.88 0.03 65);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.28 0.04 40);
+  --input: oklch(0.22 0.03 40);
+  --ring: oklch(0.65 0.12 55);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ── Spinning vinyl record animation ── */
+@keyframes spin-vinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.vinyl-spin {
+  animation: spin-vinyl 4s linear infinite;
+}
+
+.vinyl-spin-slow {
+  animation: spin-vinyl 8s linear infinite;
+}

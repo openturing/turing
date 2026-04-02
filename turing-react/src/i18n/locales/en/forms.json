@@ -248,7 +248,11 @@
       "dumontEndpointLabel": "Dumont DEP Endpoint",
       "dumontEndpointDesc": "The URL where the Dumont DEP instance is running. The default port is 30130.",
       "nameRequired": "Please give your integration a name.",
-      "endpointRequired": "Please enter the Dumont DEP endpoint URL."
+      "endpointRequired": "Please enter the Dumont DEP endpoint URL.",
+      "apiTokenLabel": "API Token",
+      "apiTokenDesc": "Select an API Token to authenticate requests to the Dumont DEP instance. The token will be sent as a Key header.",
+      "apiTokenPlaceholder": "Select an API Token...",
+      "apiTokenNone": "None"
     },
     "formActions": {
       "cancel": "Cancel",

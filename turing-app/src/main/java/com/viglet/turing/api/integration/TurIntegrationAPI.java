@@ -92,6 +92,7 @@ public class TurIntegrationAPI {
                     .build();
 
             copyRequestHeaders(request, proxyRequest);
+            addApiKeyHeader(turIntegrationInstance, proxyRequest);
 
             proxyHttpClient.execute(proxyRequest, proxyResponse -> {
                 response.setStatus(proxyResponse.getCode());
@@ -146,6 +147,12 @@ public class TurIntegrationAPI {
             if (!name.equalsIgnoreCase(HttpHeaders.TRANSFER_ENCODING) && !isCorsHeader) {
                 response.setHeader(name, header.getValue());
             }
+        }
+    }
+
+    private void addApiKeyHeader(TurIntegrationInstance instance, ClassicHttpRequest proxyRequest) {
+        if (instance.getApiToken() != null && instance.getApiToken().getToken() != null) {
+            proxyRequest.setHeader("Key", instance.getApiToken().getToken());
         }
     }
 

@@ -1,0 +1,110 @@
+{
+  "vinyl-records": {
+    "en_US": [
+      {
+        "id": "vinyl-001", "type": "album",
+        "title": "Kind of Blue — Miles Davis",
+        "description": "The best-selling jazz record of all time. A modal jazz masterpiece that redefined improvisation, featuring John Coltrane, Cannonball Adderley, and Bill Evans in sessions that were largely first takes.",
+        "text": "Recorded in two sessions at Columbia's 30th Street Studio in New York City, Kind of Blue is the definitive modal jazz album. Miles Davis crafted minimal sketches rather than full charts, giving each musician freedom to explore. The result — tracks like 'So What,' 'Freddie Freeloader,' and 'Blue in Green' — became the blueprint for a generation of jazz musicians. Bill Evans' liner notes describe the spontaneous approach: each piece was performed with virtually no rehearsal. The album has sold over 5 million copies in the US alone and remains the entry point for countless jazz listeners.",
+        "url": "/records/kind-of-blue",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Miles_Davis_1987.png",
+        "release_date": "1959-08-17T00:00:00Z",
+        "artist": "Miles Davis", "label": "Columbia Records",
+        "genre": ["Jazz", "Modal Jazz", "Cool Jazz"],
+        "format": "LP", "condition": "Near Mint", "price": 89.99, "rating": 5.0,
+        "tracks": 5, "is_first_pressing": true, "decade": "1950s"
+      },
+      {
+        "id": "vinyl-002", "type": "album",
+        "title": "OK Computer — Radiohead",
+        "description": "A dystopian art-rock landmark about technology's alienation. From the paranoid 'Paranoid Android' to the resigned beauty of 'No Surprises,' OK Computer anticipated the anxieties of the digital age years before smartphones existed.",
+        "text": "Released in 1997, OK Computer abandoned the guitar-driven Britpop sound of The Bends for something far more ambitious: a concept album about modern disconnection, artificial intelligence, and the death of individuality. Produced by Nigel Godrich at Canned Applause studio (a converted apple shed), the album weaves electronic textures with orchestral arrangements. 'Paranoid Android' — a six-minute, three-section epic inspired by The Beatles' 'Happiness Is a Warm Gun' — became their signature song. The album won the Grammy for Best Alternative Music Album and has been ranked among the greatest albums of all time by virtually every music publication.",
+        "url": "/records/ok-computer",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/a/a1/RadioheadO2211125_composite.jpg",
+        "release_date": "1997-06-16T00:00:00Z",
+        "artist": "Radiohead", "label": "Parlophone",
+        "genre": ["Alternative Rock", "Art Rock", "Experimental"],
+        "format": "LP", "condition": "Very Good Plus", "price": 45.00, "rating": 4.9,
+        "tracks": 12, "is_first_pressing": false, "decade": "1990s"
+      },
+      {
+        "id": "vinyl-003", "type": "album",
+        "title": "Discovery — Daft Punk",
+        "description": "French house meets 70s disco and anime storytelling. Discovery is a love letter to the music that shaped Daft Punk — filtered through vocoders, sample wizardry, and robotic personas that became pop culture icons.",
+        "text": "Daft Punk's second album, released in 2001, drew heavily from disco, funk, and soft rock — a stark contrast to their raw debut Homework. 'One More Time,' produced with Romanthony's soaring vocals through a compressed filter, became a global anthem. 'Digital Love' sampled George Duke's 'I Love You More,' transforming a forgotten deep cut into pure euphoria. The album was accompanied by Interstella 5555, a feature-length anime directed by Leiji Matsumoto that told the album's story visually, track by track. Discovery proved that electronic music could be deeply emotional, commercially massive, and artistically ambitious simultaneously.",
+        "url": "/records/discovery",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/6/68/Daft_Punk_in_2013_2-_centered.jpg",
+        "release_date": "2001-03-12T00:00:00Z",
+        "artist": "Daft Punk", "label": "Virgin Records",
+        "genre": ["Electronic", "French House", "Disco", "Synth-pop"],
+        "format": "2xLP", "condition": "Mint", "price": 120.00, "rating": 4.8,
+        "tracks": 14, "is_first_pressing": true, "decade": "2000s"
+      },
+      {
+        "id": "vinyl-004", "type": "album",
+        "title": "The Köln Concert — Keith Jarrett",
+        "description": "An entirely improvised solo piano performance that became the best-selling solo jazz album and the best-selling piano album in history. Recorded on a broken piano that Jarrett almost refused to play.",
+        "text": "On January 24, 1975, Keith Jarrett arrived at the Cologne Opera House exhausted and in pain after a long drive. The Bösendorfer piano provided was a rehearsal instrument — tinny in the upper register and weak in the bass. Jarrett nearly walked out. The 17-year-old concert promoter, Vera Brandes, convinced him to play. What followed was 66 minutes of entirely improvised music that transcended the instrument's limitations. Jarrett used the piano's deficiencies as creative constraints, staying in the middle register and using repetitive ostinato patterns that built hypnotic intensity. The ECM recording sold over 3.5 million copies — an almost impossible figure for improvised solo piano.",
+        "url": "/records/koln-concert",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Keith_Jarrett.jpg",
+        "release_date": "1975-11-01T00:00:00Z",
+        "artist": "Keith Jarrett", "label": "ECM Records",
+        "genre": ["Jazz", "Improvisation", "Solo Piano"],
+        "format": "2xLP", "condition": "Very Good", "price": 65.00, "rating": 4.7,
+        "tracks": 4, "is_first_pressing": false, "decade": "1970s"
+      },
+      {
+        "id": "vinyl-005", "type": "album",
+        "title": "Abbey Road — The Beatles",
+        "description": "The last album The Beatles recorded together, featuring the iconic medley on side two and George Harrison's masterpieces 'Something' and 'Here Comes the Sun.' The crosswalk cover became the most imitated photo in music history.",
+        "text": "Although Let It Be was released later, Abbey Road was the final album recorded by The Beatles in the summer of 1969. The album represents the band at their most cohesive despite personal tensions. Side one features standalone classics — Lennon's heavy 'Come Together,' Harrison's sublime 'Something' (which Frank Sinatra called 'the greatest love song of the past fifty years'), and 'Here Comes the Sun.' Side two contains the legendary medley: eight songs woven into a continuous 16-minute suite ending with 'The End,' where each Beatle takes a guitar solo. The album cover, photographed by Iain Macmillan on the zebra crossing outside Abbey Road Studios, has been endlessly referenced and parodied.",
+        "url": "/records/abbey-road",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/a/a4/The_Beatles_Abbey_Road_album_cover.jpg",
+        "release_date": "1969-09-26T00:00:00Z",
+        "artist": "The Beatles", "label": "Apple Records",
+        "genre": ["Rock", "Pop Rock", "Blues Rock", "Progressive Rock"],
+        "format": "LP", "condition": "Good Plus", "price": 250.00, "rating": 5.0,
+        "tracks": 17, "is_first_pressing": true, "decade": "1960s"
+      },
+      {
+        "id": "vinyl-006", "type": "album",
+        "title": "Vespertine — Björk",
+        "description": "An intimate electronic masterpiece built from micro-sounds: shuffled cards, cracking ice, music boxes, and a choir recorded in a church. Björk's most delicate album is a whispered love letter to domestic bliss.",
+        "text": "Released in 2001, Vespertine is Björk's fourth studio album and her most sonically intricate. Collaborating with Matmos and harpist Zeena Parkins, she constructed songs from granular synthesis and field recordings — the crunch of footsteps in snow, the click of laptop keyboards. The Inuit choir on 'Pagan Poetry' and the celestial harps on 'Aurora' create an album that feels like being inside a snow globe. Vespertine explored intimacy in the internet age: Björk described it as music for 'being in your house on a laptop, with headphones on, in a nightgown.' The album debuted at number one in multiple countries and is considered her artistic peak.",
+        "url": "/records/vespertine",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Harp.png",
+        "release_date": "2001-08-27T00:00:00Z",
+        "artist": "Björk", "label": "One Little Independent",
+        "genre": ["Electronic", "Art Pop", "Glitch", "Chamber Pop"],
+        "format": "2xLP", "condition": "Near Mint", "price": 55.00, "rating": 4.6,
+        "tracks": 12, "is_first_pressing": false, "decade": "2000s"
+      },
+      {
+        "id": "vinyl-007", "type": "album",
+        "title": "Rumours — Fleetwood Mac",
+        "description": "Written during the simultaneous breakups of two couples within the band, Rumours turned personal devastation into pop perfection. Every track is a single-worthy masterpiece of harmonies, hooks, and heartbreak.",
+        "text": "Rumours, released in February 1977, was recorded during one of the most turbulent periods in rock history. Lindsey Buckingham and Stevie Nicks had split; John and Christine McVie were divorcing; Mick Fleetwood discovered his wife's affair. Yet from this emotional wreckage came 'Go Your Own Way,' 'Dreams,' 'The Chain,' 'Don't Stop,' and 'Gold Dust Woman.' The album spent 31 weeks at number one in the US and has sold over 40 million copies worldwide, making it one of the best-selling albums of all time. The pristine production by Buckingham, Ken Caillat, and Richard Dashut set a new standard for pop-rock recording.",
+        "url": "/records/rumours",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Fleetwood_Mac_Billboard_1977.jpg",
+        "release_date": "1977-02-04T00:00:00Z",
+        "artist": "Fleetwood Mac", "label": "Warner Bros. Records",
+        "genre": ["Rock", "Soft Rock", "Pop Rock"],
+        "format": "LP", "condition": "Very Good Plus", "price": 35.00, "rating": 4.9,
+        "tracks": 11, "is_first_pressing": false, "decade": "1970s"
+      },
+      {
+        "id": "vinyl-008", "type": "album",
+        "title": "Music for 18 Musicians — Steve Reich",
+        "description": "A 55-minute pulse-driven minimalist masterpiece for voices, piano, marimba, vibraphone, strings, clarinets, and bass clarinet. Reich's most celebrated work bridges classical and electronic music through sheer rhythmic hypnosis.",
+        "text": "Composed between 1974 and 1976, Music for 18 Musicians is structured around a cycle of eleven chords heard at the opening. Each section explores one chord through interlocking rhythmic patterns that shift gradually — Reich's signature technique of 'phasing.' The piece breathes through the performers: notes are sustained for the length of a human breath, giving the music an organic pulse. The ECM recording, made in 1978, sold over 100,000 copies — extraordinary for contemporary classical music. Brian Eno, David Bowie, and countless electronic producers have cited it as a primary influence. The piece demands extreme precision from its performers while sounding effortlessly fluid.",
+        "url": "/records/music-for-18-musicians",
+        "cover_art": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Holland_Festival_componist_Steve_Reich_kop%2C_Bestanddeelnr_928-6490.jpg",
+        "release_date": "1978-04-01T00:00:00Z",
+        "artist": "Steve Reich", "label": "ECM Records",
+        "genre": ["Classical", "Minimalism", "Contemporary"],
+        "format": "LP", "condition": "Very Good", "price": 42.00, "rating": 4.8,
+        "tracks": 1, "is_first_pressing": false, "decade": "1970s"
+      }
+    ]
+  }
+}

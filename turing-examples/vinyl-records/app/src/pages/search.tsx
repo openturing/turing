@@ -1,0 +1,573 @@
+import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  TuringProvider,
+  useTuringUrlSearch,
+  type ResolvedDocument,
+  type TurFacetGroup,
+  type TurFacetItem,
+  type TurPaginationItem,
+} from "@viglet/turing-react-sdk";
+import {
+  IconSearch,
+  IconVinyl,
+  IconMusic,
+  IconStar,
+  IconStarFilled,
+  IconDisc,
+  IconFilter,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconLoader2,
+  IconMoodEmpty,
+  IconX,
+  IconTag,
+  IconCertificate,
+} from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ModeToggle } from "@/components/mode-toggle";
+import { cn } from "@/lib/utils";
+
+/* ── Condition color map ── */
+const conditionColors: Record<string, string> = {
+  Mint: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  "Near Mint": "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+  "Very Good Plus": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  "Very Good": "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  "Good Plus": "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  Good: "bg-orange-500/15 text-orange-400 border-orange-500/25",
+  Fair: "bg-red-500/15 text-red-400 border-red-500/25",
+};
+
+function getConditionColor(condition: string): string {
+  return (
+    conditionColors[condition] ??
+    "bg-amber-500/20 text-amber-300 border-amber-500/30"
+  );
+}
+
+/* ── Star rating display ── */
+function StarRating({ rating }: { rating: number }) {
+  const stars = Math.round(rating);
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }, (_, i) =>
+        i < stars ? (
+          <IconStarFilled
+            key={i}
+            className="size-3.5 text-amber-400"
+          />
+        ) : (
+          <IconStar key={i} className="size-3.5 text-muted-foreground/30" />
+        )
+      )}
+      <span className="ml-1 text-xs text-muted-foreground font-mono">
+        {rating}
+      </span>
+    </div>
+  );
+}
+
+/* ── Spinning vinyl record SVG ── */
+function VinylRecord({ className }: { className?: string }) {
+  return (
+    <div className={cn("vinyl-spin", className)}>
+      <svg
+        viewBox="0 0 200 200"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full"
+      >
+        {/* Outer disc */}
+        <circle cx="100" cy="100" r="98" fill="#1a1a1a" stroke="#333" strokeWidth="1" />
+        {/* Grooves */}
+        <circle cx="100" cy="100" r="90" fill="none" stroke="#2a2a2a" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="82" fill="none" stroke="#222" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="74" fill="none" stroke="#2a2a2a" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="66" fill="none" stroke="#222" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="58" fill="none" stroke="#2a2a2a" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="50" fill="none" stroke="#222" strokeWidth="0.5" />
+        <circle cx="100" cy="100" r="42" fill="none" stroke="#2a2a2a" strokeWidth="0.5" />
+        {/* Label area */}
+        <circle cx="100" cy="100" r="34" fill="#d97706" />
+        <circle cx="100" cy="100" r="33" fill="url(#labelGradient)" />
+        {/* Center hole */}
+        <circle cx="100" cy="100" r="5" fill="#1a1a1a" />
+        {/* Light reflection */}
+        <ellipse cx="70" cy="70" rx="40" ry="20" fill="white" opacity="0.03" transform="rotate(-30 70 70)" />
+        {/* Gradient definition */}
+        <defs>
+          <radialGradient id="labelGradient">
+            <stop offset="0%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#d97706" />
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+/* ── Facet sidebar ── */
+function FacetSidebar({
+  groups,
+  onNavigate,
+}: {
+  groups: TurFacetGroup[];
+  onNavigate: (href: string) => void;
+}) {
+  if (!groups || groups.length === 0) return null;
+
+  return (
+    <aside className="w-64 shrink-0 space-y-6">
+      <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80 uppercase tracking-widest">
+        <IconFilter className="size-4" />
+        Browse By
+      </div>
+      {groups.map((group) => (
+        <div key={group.name} className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-primary/70 border-b border-primary/20 pb-1.5">
+            {group.label?.text ?? group.name}
+          </h3>
+          <div className="space-y-0.5">
+            {group.facets.map((facet: TurFacetItem) => (
+              <button
+                key={facet.label + facet.link}
+                onClick={() => onNavigate(facet.link)}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  facet.selected
+                    ? "bg-primary/15 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <span className="flex items-center gap-2 truncate">
+                  {facet.selected && (
+                    <IconX className="size-3 shrink-0 text-primary" />
+                  )}
+                  <span className="truncate">{facet.label}</span>
+                </span>
+                <span
+                  className={cn(
+                    "ml-2 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-mono",
+                    facet.selected
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {facet.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </aside>
+  );
+}
+
+/* ── Album card ── */
+function AlbumCard({
+  doc,
+  onClick,
+}: {
+  doc: ResolvedDocument;
+  onClick: () => void;
+}) {
+  const fields = doc.raw.fields;
+  const coverArt = fields.cover_art ?? doc.image;
+  const artist = fields.artist ?? "";
+  const genres: string[] = Array.isArray(fields.genre)
+    ? fields.genre
+    : fields.genre
+      ? [fields.genre]
+      : [];
+  const condition = fields.condition ?? "";
+  const format = fields.format ?? "";
+  const price = fields.price;
+  const rating = fields.rating ?? 0;
+  const isFirstPressing =
+    fields.is_first_pressing === true || fields.is_first_pressing === "true";
+
+  return (
+    <button
+      onClick={onClick}
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card text-left transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {/* Glow effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+
+      {/* Cover art */}
+      <div className="relative aspect-square overflow-hidden bg-muted/30">
+        {coverArt ? (
+          <img
+            src={coverArt}
+            alt={doc.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-900/20 to-orange-900/20">
+            <IconDisc className="size-16 text-muted-foreground/20" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+
+        {/* Price badge overlay */}
+        {price != null && (
+          <div className="absolute top-2 right-2 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-0.5 text-xs font-bold text-amber-300 border border-amber-500/30">
+            ${price}
+          </div>
+        )}
+
+        {/* First pressing badge */}
+        {isFirstPressing && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-amber-600/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-bold text-white">
+            <IconCertificate className="size-3" />
+            1st Press
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        {/* Title */}
+        <h3
+          className="text-base font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors"
+          dangerouslySetInnerHTML={{ __html: fields.title ?? doc.title }}
+        />
+
+        {/* Artist */}
+        {artist && (
+          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <IconMusic className="size-3.5 shrink-0" />
+            <span className="truncate">{artist}</span>
+          </p>
+        )}
+
+        {/* Rating */}
+        {rating > 0 && <StarRating rating={Number(rating)} />}
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
+          {genres.slice(0, 2).map((g) => (
+            <Badge
+              key={g}
+              variant="secondary"
+              className="text-[10px] py-0 h-5 bg-secondary/60"
+            >
+              <IconTag className="size-2.5 mr-0.5" />
+              {g}
+            </Badge>
+          ))}
+          {condition && (
+            <Badge
+              variant="outline"
+              className={cn("text-[10px] py-0 h-5", getConditionColor(condition))}
+            >
+              {condition}
+            </Badge>
+          )}
+          {format && (
+            <Badge
+              variant="outline"
+              className="text-[10px] py-0 h-5 bg-purple-500/10 text-purple-300 border-purple-500/20"
+            >
+              {format}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* ── Pagination ── */
+function Pagination({
+  items,
+  onNavigate,
+}: {
+  items: TurPaginationItem[];
+  onNavigate: (href: string) => void;
+}) {
+  if (!items || items.length === 0) return null;
+
+  const iconMap: Record<string, React.ReactNode> = {
+    FIRST: <IconChevronsLeft className="size-4" />,
+    PREVIOUS: <IconChevronLeft className="size-4" />,
+    NEXT: <IconChevronRight className="size-4" />,
+    LAST: <IconChevronsRight className="size-4" />,
+  };
+
+  return (
+    <nav className="flex items-center justify-center gap-1 py-8">
+      {items.map((item, i) => {
+        const isPage = item.type === "PAGE";
+        const isCurrent = isPage && !item.href;
+
+        return (
+          <Button
+            key={`${item.type}-${item.page}-${i}`}
+            variant={isCurrent ? "default" : "ghost"}
+            size="sm"
+            disabled={!item.href}
+            onClick={() => item.href && onNavigate(item.href)}
+            className={cn(
+              "min-w-8 font-mono",
+              isCurrent && "pointer-events-none"
+            )}
+          >
+            {isPage ? item.text : iconMap[item.type] ?? item.text}
+          </Button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/* ── Main search content ── */
+function SearchContent() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const turing = useTuringUrlSearch(searchParams, (s: string) =>
+    setSearchParams(s)
+  );
+
+  const query = turing.params.q ?? "*";
+  const isLanding = query === "*" && turing.status !== "loading";
+  const hasResults = turing.documents.length > 0;
+  const facetGroups = turing.data?.widget?.facet ?? [];
+  const pagination = turing.data?.pagination ?? [];
+  const totalCount = turing.data?.queryContext?.count ?? 0;
+
+  function goToDetail(doc: ResolvedDocument) {
+    navigate("/detail", { state: { document: doc } });
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <IconVinyl className="size-6 text-primary" />
+            <span className="font-bold text-sm tracking-wide uppercase">
+              The Crate
+            </span>
+          </div>
+          <ModeToggle />
+        </div>
+      </header>
+
+      {/* ── Hero ── */}
+      <section
+        className={cn(
+          "relative overflow-hidden transition-all duration-500",
+          isLanding ? "py-20 sm:py-28" : "py-8 sm:py-10"
+        )}
+      >
+        {/* Warm gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-amber-600/5 to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-500/8 via-transparent to-transparent" />
+
+        {/* Decorative warm particles */}
+        <div className="absolute top-8 left-[12%] size-2 rounded-full bg-amber-400/20 animate-pulse" />
+        <div className="absolute top-16 right-[18%] size-1.5 rounded-full bg-orange-400/25 animate-pulse [animation-delay:1s]" />
+        <div className="absolute bottom-12 left-[35%] size-1 rounded-full bg-amber-300/20 animate-pulse [animation-delay:0.5s]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 text-center">
+          {isLanding && (
+            <>
+              {/* Spinning vinyl record */}
+              <div className="mx-auto mb-6 w-32 h-32 sm:w-40 sm:h-40 opacity-80">
+                <VinylRecord />
+              </div>
+
+              <div className="mb-3 flex items-center justify-center gap-2 text-primary/70 text-sm font-medium uppercase tracking-widest">
+                <Separator className="w-8 bg-primary/30" />
+                Welcome to
+                <Separator className="w-8 bg-primary/30" />
+              </div>
+              <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight bg-gradient-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent pb-2 uppercase">
+                The Crate
+              </h1>
+              <p className="mt-4 max-w-xl mx-auto text-muted-foreground text-base sm:text-lg leading-relaxed">
+                Dig through the world&apos;s finest vinyl collection.
+                {totalCount > 0 && (
+                  <span className="block mt-1 text-primary/80 font-medium">
+                    {totalCount} records in the stacks
+                  </span>
+                )}
+              </p>
+            </>
+          )}
+
+          {/* Search bar */}
+          <div
+            className={cn(
+              "mx-auto w-full transition-all duration-500",
+              isLanding ? "mt-8 max-w-xl" : "max-w-2xl"
+            )}
+          >
+            <div className="relative group">
+              {/* Warm glow ring */}
+              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-amber-500/30 via-orange-500/20 to-amber-500/30 opacity-0 group-focus-within:opacity-100 blur-sm transition-opacity duration-300" />
+
+              <div className="relative flex items-center gap-2 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-4 py-2 shadow-lg shadow-primary/5 group-focus-within:border-primary/40">
+                <IconSearch className="size-5 text-muted-foreground shrink-0" />
+                <Input
+                  value={turing.inputValue}
+                  onChange={(e) => turing.setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && turing.submitSearch()}
+                  placeholder="Search for an album... Miles Davis, punk, 1970s..."
+                  className="border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:border-transparent text-base placeholder:text-muted-foreground/60"
+                />
+                <Button
+                  size="sm"
+                  onClick={turing.submitSearch}
+                  className="shrink-0 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-md"
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Content area ── */}
+      <main className="mx-auto flex w-full max-w-7xl flex-1 gap-8 px-4 sm:px-6 pb-12">
+        {/* Loading state */}
+        {turing.status === "loading" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24">
+            <IconLoader2 className="size-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Flipping through the crates...
+            </p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {turing.status === "error" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
+            <IconDisc className="size-10 text-destructive/60" />
+            <p className="text-sm text-destructive/80">
+              The turntable hit a scratch. {turing.error}
+            </p>
+            <Button variant="outline" size="sm" onClick={turing.showAll}>
+              Back to the Crate
+            </Button>
+          </div>
+        )}
+
+        {/* Results */}
+        {turing.status === "success" && (
+          <>
+            {/* Facets sidebar */}
+            <FacetSidebar
+              groups={facetGroups}
+              onNavigate={turing.navigate}
+            />
+
+            {/* Results area */}
+            <div className="flex-1 min-w-0">
+              {/* Results header */}
+              {query !== "*" && (
+                <div className="mb-6 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      {totalCount}
+                    </span>{" "}
+                    record{totalCount !== 1 ? "s" : ""} found
+                    {query !== "*" && (
+                      <>
+                        {" "}
+                        for{" "}
+                        <span className="font-medium text-primary">
+                          &ldquo;{query}&rdquo;
+                        </span>
+                      </>
+                    )}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={turing.showAll}
+                    className="text-xs text-muted-foreground"
+                  >
+                    Clear search
+                  </Button>
+                </div>
+              )}
+
+              {/* Grid */}
+              {hasResults ? (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {turing.documents.map((doc, i) => (
+                    <AlbumCard
+                      key={doc.raw.fields.id ?? `doc-${i}`}
+                      doc={doc}
+                      onClick={() => goToDetail(doc)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+                  <IconMoodEmpty className="size-10 text-muted-foreground/40" />
+                  <p className="text-muted-foreground text-sm">
+                    Nothing in this section. Try another genre?
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={turing.showAll}
+                  >
+                    Show all records
+                  </Button>
+                </div>
+              )}
+
+              {/* Pagination */}
+              <Pagination items={pagination} onNavigate={turing.navigate} />
+            </div>
+          </>
+        )}
+
+        {/* Landing state - idle */}
+        {turing.status === "idle" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
+            <IconVinyl className="size-10 text-primary/40" />
+            <p className="text-muted-foreground text-sm max-w-md">
+              Enter a search query or browse the full collection. Every record
+              has a story to tell.
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-border/30 bg-card/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex items-center justify-between text-xs text-muted-foreground">
+          <span>Powered by Viglet Turing ES</span>
+          <span className="flex items-center gap-1.5">
+            <IconVinyl className="size-3.5" />
+            The Crate — Vinyl Records
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <TuringProvider
+      config={{
+        site: import.meta.env.VITE_SN_SITE,
+        locale: import.meta.env.VITE_LOCALE,
+      }}
+    >
+      <SearchContent />
+    </TuringProvider>
+  );
+}

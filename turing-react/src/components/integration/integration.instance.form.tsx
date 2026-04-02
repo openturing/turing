@@ -13,8 +13,10 @@ import {
   Input
 } from "@/components/ui/input"
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts"
+import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service"
-import { useEffect } from "react"
+import { TurTokenInstanceService } from "@/services/token/token.service"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   useForm
@@ -25,9 +27,11 @@ import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { FormActions } from "../ui/form-actions"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { IconSettings, IconPlug } from "@tabler/icons-react"
 
 const turIntegrationInstanceService = new TurIntegrationInstanceService();
+const turTokenInstanceService = new TurTokenInstanceService();
 interface Props {
   value: TurIntegrationInstance;
   isNew: boolean;
@@ -37,6 +41,7 @@ const DEFAULT_ENDPOINT = "http://localhost:30130/";
 
 export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
+  const [tokens, setTokens] = useState<TurTokenInstance[]>([]);
   const form = useForm<TurIntegrationInstance>({
     defaultValues: isNew
       ? { ...value, endpoint: value.endpoint || DEFAULT_ENDPOINT }
@@ -46,6 +51,9 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   useEffect(() => {
     form.reset(value);
   }, [value]);
+  useEffect(() => {
+    turTokenInstanceService.query().then(setTokens);
+  }, []);
 
 
   function onSubmit(integrationInstance: TurIntegrationInstance) {
@@ -163,6 +171,45 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           type="url"
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* API Token */}
+                <FormField
+                  control={form.control}
+                  name="apiToken"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("forms.integration.apiTokenLabel")}</FormLabel>
+                      <FormDescription>
+                        {t("forms.integration.apiTokenDesc")}
+                      </FormDescription>
+                      <FormControl>
+                        <Select
+                          value={field.value?.id ?? ""}
+                          onValueChange={(val) => {
+                            if (val === "__none__") {
+                              field.onChange(null);
+                            } else {
+                              const selected = tokens.find((tk) => tk.id === val);
+                              field.onChange(selected ?? null);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("forms.integration.apiTokenPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">{t("forms.integration.apiTokenNone")}</SelectItem>
+                            {tokens.map((tk) => (
+                              <SelectItem key={tk.id} value={tk.id}>
+                                {tk.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -61,11 +61,10 @@ public class TurLuceneInstance {
      */
     public synchronized IndexSearcher getSearcher() throws IOException {
         DirectoryReader current = directoryReader.get();
-        try (DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter)) {
-            if (newReader != null) {
-                current.close();
-                directoryReader.set(newReader);
-            }
+        DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter);
+        if (newReader != null) {
+            current.close();
+            directoryReader.set(newReader);
         }
         return new IndexSearcher(directoryReader.get());
     }
@@ -76,11 +75,10 @@ public class TurLuceneInstance {
      */
     public synchronized DirectoryReader getReader() throws IOException {
         DirectoryReader current = directoryReader.get();
-        try (DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter)) {
-            if (newReader != null) {
-                current.close();
-                directoryReader.set(newReader);
-            }
+        DirectoryReader newReader = DirectoryReader.openIfChanged(current, indexWriter);
+        if (newReader != null) {
+            current.close();
+            directoryReader.set(newReader);
         }
         return directoryReader.get();
     }
