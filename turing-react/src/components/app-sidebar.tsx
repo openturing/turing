@@ -94,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
-  const [minioEnabled, setMinioEnabled] = React.useState(false);
+  const [storageEnabled, setMinioEnabled] = React.useState(false);
   const { toggleSidebar, state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -103,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
     turFeaturesService.getFeatures().then((features) => {
-      setMinioEnabled(features.minioEnabled);
+      setMinioEnabled(features.storageEnabled);
     }).catch(() => setMinioEnabled(false));
   }, [])
 
@@ -123,19 +123,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     (items: SidebarNavItem[]) =>
       items.filter((item) => {
         if (LLM_ONLY_KEYS.has(item.key) && !hasEnabledLlm) return false
-        if (item.key === "pages" && !minioEnabled) return false
+        if (item.key === "pages" && !storageEnabled) return false
         return hasPrivilege(item.key)
       }),
-    [hasEnabledLlm, minioEnabled, hasPrivilege]
+    [hasEnabledLlm, storageEnabled, hasPrivilege]
   )
 
   const filteredManagement = React.useMemo(
     () => managementItems.filter((item) => {
-      if (item.key === "assets" && !minioEnabled) return false
+      if (item.key === "assets" && !storageEnabled) return false
       if (item.key === "administration" && !isAdmin) return false
       return true
     }),
-    [minioEnabled, isAdmin]
+    [storageEnabled, isAdmin]
   )
 
   const toNavItems = React.useCallback(

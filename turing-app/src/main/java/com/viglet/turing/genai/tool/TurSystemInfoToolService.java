@@ -7,7 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.properties.TurConfigProperties;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
+import com.viglet.turing.service.storage.TurStorageType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,18 +35,18 @@ public class TurSystemInfoToolService {
     private static final String ERROR_PREFIX = "Error: ";
 
     private final DataSource dataSource;
-    private final TurMinioService turMinioService;
+    private final TurStorageService storageService;
     private final TurConfigProperties turConfigProperties;
     private final boolean mongoEnabled;
     private final String mongoUri;
 
     public TurSystemInfoToolService(DataSource dataSource,
-                                    TurMinioService turMinioService,
+                                    TurStorageService storageService,
                                     TurConfigProperties turConfigProperties,
                                     @Value("${turing.mongodb.enabled:false}") boolean mongoEnabled,
                                     @Value("${turing.mongodb.uri:mongodb://localhost:27017}") String mongoUri) {
         this.dataSource = dataSource;
-        this.turMinioService = turMinioService;
+        this.storageService = storageService;
         this.turConfigProperties = turConfigProperties;
         this.mongoEnabled = mongoEnabled;
         this.mongoUri = mongoUri;
@@ -62,7 +63,7 @@ public class TurSystemInfoToolService {
         appendMemoryStatus(sb);
         appendDiskStatus(sb);
         appendMongoDbStatus(sb);
-        appendMinioStatus(sb);
+        appendStorageStatus(sb);
         appendJvmInfo(sb);
 
         return sb.toString();
@@ -176,11 +177,11 @@ public class TurSystemInfoToolService {
             }
         }
 
-        sb.append("\n--- MinIO (Object Storage) ---\n");
-        if (!turMinioService.isEnabled()) {
+        sb.append("\n--- Storage (").append(storageService.getType()).append(") ---\n");
+        if (!storageService.isEnabled()) {
             sb.append("Status: DISABLED\n");
-        } else {
-            var minio = turConfigProperties.getMinio();
+        } else if (storageService.getType() == TurStorageType.MINIO) {
+            var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
             String endpoint = minio != null ? minio.getEndpoint() : "";
             try {
                 var request = java.net.http.HttpRequest.newBuilder()
@@ -203,6 +204,12 @@ public class TurSystemInfoToolService {
                 sb.append("Endpoint: ").append(endpoint).append("\n");
                 sb.append(ERROR_PREFIX).append(e.getMessage()).append("\n");
             }
+        } else {
+            var storage = turConfigProperties.getStorage();
+            String path = storage != null && storage.getFilesystem() != null && storage.getFilesystem().getPath() != null
+                    ? storage.getFilesystem().getPath() : "./store/assets";
+            sb.append("Path: ").append(path).append("\n");
+            sb.append("Status: ").append(new java.io.File(path).isDirectory() ? "UP" : "DOWN").append("\n");
         }
 
         return sb.toString();
@@ -261,13 +268,25 @@ public class TurSystemInfoToolService {
         }
     }
 
-    private void appendMinioStatus(StringBuilder sb) {
-        sb.append("--- MinIO ---\n");
-        if (!turMinioService.isEnabled()) {
+    private void appendStorageStatus(StringBuilder sb) {
+        sb.append("--- Storage (").append(storageService.getType()).append(") ---\n");
+        if (!storageService.isEnabled()) {
             sb.append("Status: DISABLED\n\n");
             return;
         }
-        var minio = turConfigProperties.getMinio();
+        if (storageService.getType() == TurStorageType.MINIO) {
+            appendMinioHealthCheck(sb);
+        } else {
+            var storage = turConfigProperties.getStorage();
+            String path = storage != null && storage.getFilesystem() != null && storage.getFilesystem().getPath() != null
+                    ? storage.getFilesystem().getPath() : "./store/assets";
+            sb.append("Path: ").append(path).append("\n");
+            sb.append("Status: ").append(new java.io.File(path).isDirectory() ? "UP" : "DOWN").append("\n\n");
+        }
+    }
+
+    private void appendMinioHealthCheck(StringBuilder sb) {
+        var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
         String endpoint = minio != null ? minio.getEndpoint() : "";
         try (var client = java.net.http.HttpClient.newHttpClient()) {
             var request = java.net.http.HttpRequest.newBuilder()

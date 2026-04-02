@@ -47,6 +47,8 @@
     "endpoint": "Endpoint",
     "minio": "MinIO",
     "minioDesc": "Object storage for assets.",
+    "storage": "Storage",
+    "storageDesc": "Storage backend for assets and pages.",
     "sysVarsDesc": "JVM system properties and environment values.",
     "searchVariables": "Search variables...",
     "property": "Property",

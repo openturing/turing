@@ -1,6 +1,6 @@
 package com.viglet.turing.api.system;
 
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Features", description = "Feature flags API")
 public class TurFeaturesAPI {
 
-    private final TurMinioService minioService;
+    private final TurStorageService storageService;
     private final TurGlobalSettingsService globalSettingsService;
 
-    public TurFeaturesAPI(TurMinioService minioService, TurGlobalSettingsService globalSettingsService) {
-        this.minioService = minioService;
+    public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService) {
+        this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
     }
 
-    public record FeaturesResponse(boolean minioEnabled, boolean ragEnabled) {}
+    public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled) {}
 
     @GetMapping
     public FeaturesResponse getFeatures() {
-        return new FeaturesResponse(minioService.isEnabled(), globalSettingsService.isRagEnabled());
+        return new FeaturesResponse(storageService.isEnabled(), globalSettingsService.isRagEnabled());
     }
 }

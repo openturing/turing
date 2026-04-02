@@ -20,7 +20,7 @@
  */
 package com.viglet.turing.api.page;
 
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -48,20 +48,20 @@ public class TurPageAPI {
 
     private static final String PAGES_PREFIX = "public/";
 
-    private final TurMinioService minioService;
+    private final TurStorageService storageService;
 
-    public TurPageAPI(TurMinioService minioService) {
-        this.minioService = minioService;
+    public TurPageAPI(TurStorageService storageService) {
+        this.storageService = storageService;
     }
 
     public record TurPageSite(String name) {}
 
     @GetMapping
     public ResponseEntity<List<TurPageSite>> list() {
-        if (!minioService.isEnabled()) {
+        if (!storageService.isEnabled()) {
             return ResponseEntity.ok(List.of());
         }
-        List<TurPageSite> sites = minioService.listObjects(PAGES_PREFIX).stream()
+        List<TurPageSite> sites = storageService.listObjects(PAGES_PREFIX).stream()
                 .filter(item -> item.directory())
                 .map(item -> {
                     String name = item.name();
@@ -82,7 +82,7 @@ public class TurPageAPI {
     public ResponseEntity<TurPageSite> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("siteName") String siteName) {
-        if (!minioService.isEnabled()) {
+        if (!storageService.isEnabled()) {
             return ResponseEntity.badRequest().build();
         }
         String normalizedName = siteName.trim().replaceAll("[^a-zA-Z0-9._-]", "-").toLowerCase();
@@ -91,7 +91,7 @@ public class TurPageAPI {
         }
         String prefix = PAGES_PREFIX + normalizedName + "/";
         // Delete existing site contents before uploading
-        minioService.deleteObjectsWithPrefix(prefix);
+        storageService.deleteObjectsWithPrefix(prefix);
         try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -107,9 +107,9 @@ public class TurPageAPI {
                     continue;
                 }
                 String objectName = prefix + entryName;
-                String contentType = minioService.guessContentType(entryName);
+                String contentType = storageService.guessContentType(entryName);
                 byte[] data = zis.readAllBytes();
-                minioService.uploadStream(objectName, new java.io.ByteArrayInputStream(data),
+                storageService.uploadStream(objectName, new java.io.ByteArrayInputStream(data),
                         data.length, contentType);
                 log.debug("Uploaded page file: {}", objectName);
                 zis.closeEntry();
@@ -124,11 +124,11 @@ public class TurPageAPI {
 
     @DeleteMapping("/{siteName}")
     public ResponseEntity<Void> delete(@PathVariable String siteName) {
-        if (!minioService.isEnabled()) {
+        if (!storageService.isEnabled()) {
             return ResponseEntity.badRequest().build();
         }
         String prefix = PAGES_PREFIX + siteName + "/";
-        minioService.deleteObjectsWithPrefix(prefix);
+        storageService.deleteObjectsWithPrefix(prefix);
         log.info("SPA site '{}' deleted from MinIO.", siteName);
         return ResponseEntity.noContent().build();
     }

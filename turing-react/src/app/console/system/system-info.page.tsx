@@ -311,21 +311,25 @@ export default function SystemInfoPage() {
                             </SectionCard>
                         )}
 
-                        {/* MinIO */}
-                        {info?.minio?.enabled && (
+                        {/* Storage */}
+                        {info?.storage?.enabled && (
                             <SectionCard variant="rose">
                                 <SectionCard.StaticHeader
                                     icon={IconBucket}
-                                    title={t("systemInfo.minio")}
-                                    description={t("systemInfo.minioDesc")}
+                                    title={`${t("systemInfo.storage")} (${info.storageType ?? "unknown"})`}
+                                    description={t("systemInfo.storageDesc")}
                                 />
                                 <SectionCard.Content>
                                     <div className="flex items-center justify-between py-2 border-b">
                                         <span className="text-sm text-muted-foreground">{t("systemInfo.status")}</span>
-                                        <StatusBadge status={info.minio.status} />
+                                        <StatusBadge status={info.storage.status} />
                                     </div>
-                                    <InfoRow label={t("systemInfo.version")} value={info.minio.version ?? "Unknown"} />
-                                    <InfoRow label={t("systemInfo.endpoint")} value={info.minio.endpoint ?? "N/A"} propertyKey="turing.minio.endpoint" />
+                                    <InfoRow label={t("systemInfo.version")} value={info.storage.version ?? "Unknown"} />
+                                    <InfoRow
+                                        label={t("systemInfo.endpoint")}
+                                        value={info.storage.endpoint ?? "N/A"}
+                                        propertyKey={info.storageType === "minio" ? "turing.storage.minio.endpoint" : "turing.storage.filesystem.path"}
+                                    />
                                 </SectionCard.Content>
                             </SectionCard>
                         )}

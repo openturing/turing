@@ -47,6 +47,8 @@
     "endpoint": "Endpoint",
     "minio": "MinIO",
     "minioDesc": "Armazenamento de objetos para ativos.",
+    "storage": "Armazenamento",
+    "storageDesc": "Backend de armazenamento para ativos e páginas.",
     "sysVarsDesc": "Propriedades do sistema JVM e variáveis de ambiente.",
     "searchVariables": "Pesquisar variáveis...",
     "property": "Propriedade",

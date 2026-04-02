@@ -20,7 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurMinioProperty;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.properties.TurStorageProperty;
+import com.viglet.turing.service.storage.TurStorageService;
+import com.viglet.turing.service.storage.TurStorageType;
 
 /**
  * Tests for TurSystemInfoToolService.
@@ -34,7 +36,7 @@ class TurSystemInfoToolServiceTest {
     @Mock
     private DataSource dataSource;
     @Mock
-    private TurMinioService turMinioService;
+    private TurStorageService storageService;
     @Mock
     private TurConfigProperties turConfigProperties;
 
@@ -43,7 +45,7 @@ class TurSystemInfoToolServiceTest {
     @BeforeEach
     void setUp() {
         service = new TurSystemInfoToolService(
-                dataSource, turMinioService, turConfigProperties, false, "mongodb://localhost:27017");
+                dataSource, storageService, turConfigProperties, false, "mongodb://localhost:27017");
     }
 
     @ParameterizedTest
@@ -160,11 +162,12 @@ class TurSystemInfoToolServiceTest {
     }
 
     @Test
-    void getExternalServicesStatusShouldShowMinioDisabled() {
-        when(turMinioService.isEnabled()).thenReturn(false);
+    void getExternalServicesStatusShouldShowStorageDisabled() {
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
         String result = service.getExternalServicesStatus();
         assertThat(result)
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("Status: DISABLED");
     }
 
@@ -176,7 +179,8 @@ class TurSystemInfoToolServiceTest {
         when(connection.getMetaData()).thenReturn(metadata);
         when(metadata.getDatabaseProductName()).thenReturn("H2");
         when(metadata.getDatabaseProductVersion()).thenReturn("2.2");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         String result = service.getSystemStatus();
         assertThat(result)
@@ -185,7 +189,7 @@ class TurSystemInfoToolServiceTest {
                 .contains("JVM Memory")
                 .contains("Disk")
                 .contains("MongoDB")
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("JVM")
                 .contains("Java:");
     }
@@ -193,7 +197,8 @@ class TurSystemInfoToolServiceTest {
     @Test
     void getSystemStatusShouldHandleDatabaseDown() throws Exception {
         when(dataSource.getConnection()).thenThrow(new RuntimeException("Connection refused"));
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         String result = service.getSystemStatus();
         assertThat(result)
@@ -240,9 +245,10 @@ class TurSystemInfoToolServiceTest {
     @Test
     void getExternalServicesStatusShouldShowMongoEnabled() {
         TurSystemInfoToolService enabledMongoService = new TurSystemInfoToolService(
-                dataSource, turMinioService, turConfigProperties,
+                dataSource, storageService, turConfigProperties,
                 true, "mongodb://invalid-host-99999:99999");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         String result = enabledMongoService.getExternalServicesStatus();
         assertThat(result)
@@ -254,24 +260,30 @@ class TurSystemInfoToolServiceTest {
     void getExternalServicesStatusShouldShowMinioEnabled() {
         TurMinioProperty minioProps = mock(TurMinioProperty.class);
         when(minioProps.getEndpoint()).thenReturn("http://invalid-host-99999:9000");
-        when(turMinioService.isEnabled()).thenReturn(true);
-        when(turConfigProperties.getMinio()).thenReturn(minioProps);
+        TurStorageProperty storageProperty = mock(TurStorageProperty.class);
+        when(storageProperty.getMinio()).thenReturn(minioProps);
+        when(storageService.isEnabled()).thenReturn(true);
+        when(storageService.getType()).thenReturn(TurStorageType.MINIO);
+        when(turConfigProperties.getStorage()).thenReturn(storageProperty);
 
         String result = service.getExternalServicesStatus();
         assertThat(result)
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("DOWN");
     }
 
     @Test
     void getExternalServicesStatusShouldHandleNullMinioProps() {
-        when(turMinioService.isEnabled()).thenReturn(true);
-        when(turConfigProperties.getMinio()).thenReturn(null);
+        TurStorageProperty storageProperty = mock(TurStorageProperty.class);
+        when(storageProperty.getMinio()).thenReturn(null);
+        when(storageService.isEnabled()).thenReturn(true);
+        when(storageService.getType()).thenReturn(TurStorageType.MINIO);
+        when(turConfigProperties.getStorage()).thenReturn(storageProperty);
 
         // This will try to build a URL with "" + "/minio/health/cluster" which should error
         String result = service.getExternalServicesStatus();
         assertThat(result)
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("DOWN");
     }
 
@@ -351,7 +363,7 @@ class TurSystemInfoToolServiceTest {
     @Test
     void appendMongoDbStatusShouldShowDownWhenEnabled() throws Exception {
         TurSystemInfoToolService enabledMongoService = new TurSystemInfoToolService(
-                dataSource, turMinioService, turConfigProperties,
+                dataSource, storageService, turConfigProperties,
                 true, "mongodb://invalid-host-99999:99999");
 
         java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
@@ -367,37 +379,41 @@ class TurSystemInfoToolServiceTest {
     }
 
     @Test
-    void appendMinioStatusShouldShowDisabled() throws Exception {
-        when(turMinioService.isEnabled()).thenReturn(false);
+    void appendStorageStatusShouldShowDisabled() throws Exception {
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
-                "appendMinioStatus", StringBuilder.class);
+                "appendStorageStatus", StringBuilder.class);
         method.setAccessible(true);
 
         StringBuilder sb = new StringBuilder();
         method.invoke(service, sb);
 
         assertThat(sb.toString())
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("DISABLED");
     }
 
     @Test
-    void appendMinioStatusShouldShowDownWhenEnabledButUnreachable() throws Exception {
+    void appendStorageStatusShouldShowDownWhenMinioUnreachable() throws Exception {
         TurMinioProperty minioProps = mock(TurMinioProperty.class);
         when(minioProps.getEndpoint()).thenReturn("http://invalid-host-99999:9000");
-        when(turMinioService.isEnabled()).thenReturn(true);
-        when(turConfigProperties.getMinio()).thenReturn(minioProps);
+        TurStorageProperty storageProperty = mock(TurStorageProperty.class);
+        when(storageProperty.getMinio()).thenReturn(minioProps);
+        when(storageService.isEnabled()).thenReturn(true);
+        when(storageService.getType()).thenReturn(TurStorageType.MINIO);
+        when(turConfigProperties.getStorage()).thenReturn(storageProperty);
 
         java.lang.reflect.Method method = TurSystemInfoToolService.class.getDeclaredMethod(
-                "appendMinioStatus", StringBuilder.class);
+                "appendStorageStatus", StringBuilder.class);
         method.setAccessible(true);
 
         StringBuilder sb = new StringBuilder();
         method.invoke(service, sb);
 
         assertThat(sb.toString())
-                .contains("MinIO")
+                .contains("Storage")
                 .contains("DOWN");
     }
 

@@ -37,5 +37,6 @@ export interface TurSystemInfo {
   memory: TurMemoryInfo;
   disk: TurDiskInfo;
   mongodb: TurExternalServiceInfo;
-  minio: TurExternalServiceInfo;
+  storage: TurExternalServiceInfo;
+  storageType: string;
 }

@@ -20,9 +20,9 @@ import com.viglet.turing.service.asset.TurAssetEvent;
 import com.viglet.turing.service.asset.TurAssetTrainingService;
 import com.viglet.turing.service.asset.TurAssetTrainingState;
 import com.viglet.turing.service.asset.TurAssetTrainingStatus;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageObjectStat;
+import com.viglet.turing.service.storage.TurStorageService;
 
-import io.minio.StatObjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -36,13 +36,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/asset")
 @Tag(name = "Assets", description = "Asset Management API (MinIO)")
 public class TurAssetAPI {
-	private final TurMinioService turMinioService;
+	private final TurStorageService storageService;
 	private final TurAssetTrainingService turAssetTrainingService;
 	private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-	public TurAssetAPI(TurMinioService turMinioService, TurAssetTrainingService turAssetTrainingService,
+	public TurAssetAPI(TurStorageService storageService, TurAssetTrainingService turAssetTrainingService,
 			org.springframework.context.ApplicationEventPublisher eventPublisher) {
-		this.turMinioService = turMinioService;
+		this.storageService = storageService;
 		this.turAssetTrainingService = turAssetTrainingService;
 		this.eventPublisher = eventPublisher;
 	}
@@ -50,14 +50,14 @@ public class TurAssetAPI {
 	@Operation(summary = "List assets in a folder")
 	@GetMapping
 	public List<TurAssetItem> list(@RequestParam(defaultValue = "") String prefix) {
-		return turMinioService.listObjects(prefix);
+		return storageService.listObjects(prefix);
 	}
 
 	@Operation(summary = "Download an asset")
 	@GetMapping("/download")
 	public ResponseEntity<InputStreamResource> download(@RequestParam String objectName) {
-		StatObjectResponse stat = turMinioService.statObject(objectName);
-		InputStream stream = turMinioService.downloadObject(objectName);
+		TurStorageObjectStat stat = storageService.statObject(objectName);
+		InputStream stream = storageService.downloadObject(objectName);
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + extractFileName(objectName) + "\"")
 				.contentType(MediaType.parseMediaType(stat.contentType()))
@@ -68,8 +68,8 @@ public class TurAssetAPI {
 	@Operation(summary = "Preview an asset inline (no download header)")
 	@GetMapping("/preview")
 	public ResponseEntity<InputStreamResource> preview(@RequestParam String objectName) {
-		StatObjectResponse stat = turMinioService.statObject(objectName);
-		InputStream stream = turMinioService.downloadObject(objectName);
+		TurStorageObjectStat stat = storageService.statObject(objectName);
+		InputStream stream = storageService.downloadObject(objectName);
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + extractFileName(objectName) + "\"")
 				.header("X-Frame-Options", "ALLOWALL")
@@ -82,7 +82,7 @@ public class TurAssetAPI {
 	@Operation(summary = "Get asset metadata")
 	@GetMapping("/metadata")
 	public TurAssetItem metadata(@RequestParam String objectName) {
-		StatObjectResponse stat = turMinioService.statObject(objectName);
+		TurStorageObjectStat stat = storageService.statObject(objectName);
 		return new TurAssetItem(
 				objectName,
 				stat.size(),
@@ -96,7 +96,7 @@ public class TurAssetAPI {
 	public ResponseEntity<Void> upload(@RequestParam("files") List<MultipartFile> files,
 			@RequestParam(defaultValue = "") String prefix) {
 		for (MultipartFile file : files) {
-			turMinioService.uploadObject(file, prefix);
+			storageService.uploadObject(file, prefix);
 			String objectName = (prefix != null && !prefix.isBlank() ? prefix : "") + file.getOriginalFilename();
 			String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
 			eventPublisher.publishEvent(TurAssetEvent.uploaded(objectName, contentType, file.getSize()));
@@ -107,14 +107,14 @@ public class TurAssetAPI {
 	@Operation(summary = "Create a folder")
 	@PostMapping("/folder")
 	public ResponseEntity<Void> createFolder(@RequestParam String path) {
-		turMinioService.createFolder(path);
+		storageService.createFolder(path);
 		return ResponseEntity.ok().build();
 	}
 
 	@Operation(summary = "Delete an asset")
 	@DeleteMapping
 	public ResponseEntity<Void> delete(@RequestParam String objectName) {
-		turMinioService.deleteObject(objectName);
+		storageService.deleteObject(objectName);
 		eventPublisher.publishEvent(TurAssetEvent.deleted(objectName));
 		return ResponseEntity.ok().build();
 	}

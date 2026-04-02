@@ -20,7 +20,7 @@
  */
 package com.viglet.turing.api.page;
 
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -48,16 +48,16 @@ public class TurPageController {
 
     private static final String PAGES_PREFIX = "public/";
 
-    private final TurMinioService minioService;
+    private final TurStorageService storageService;
 
-    public TurPageController(TurMinioService minioService) {
-        this.minioService = minioService;
+    public TurPageController(TurStorageService storageService) {
+        this.storageService = storageService;
     }
 
     @GetMapping("/{siteName}/**")
     public ResponseEntity<InputStreamResource> serve(@PathVariable String siteName,
                                                      HttpServletRequest request) {
-        if (!minioService.isEnabled()) {
+        if (!storageService.isEnabled()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -74,8 +74,8 @@ public class TurPageController {
         String objectName = PAGES_PREFIX + siteName + "/" + filePath;
 
         try {
-            InputStream stream = minioService.downloadObject(objectName);
-            String contentType = minioService.guessContentType(objectName);
+            InputStream stream = storageService.downloadObject(objectName);
+            String contentType = storageService.guessContentType(objectName);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, contentType)
                     .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
@@ -84,7 +84,7 @@ public class TurPageController {
             // SPA fallback: serve index.html for client-side routing
             String indexObject = PAGES_PREFIX + siteName + "/index.html";
             try {
-                InputStream indexStream = minioService.downloadObject(indexObject);
+                InputStream indexStream = storageService.downloadObject(indexObject);
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_HTML)
                         .body(new InputStreamResource(indexStream));

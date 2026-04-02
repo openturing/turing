@@ -16,6 +16,6 @@ public class TurConfigProperties {
 	private String keycloakAdminId;
 	private String allowedOrigins;
 	private TurSolrProperty solr;
-	private TurMinioProperty minio;
+	private TurStorageProperty storage;
 
 }

@@ -40,7 +40,7 @@ import com.viglet.turing.system.TurGlobalSettingsService;
 class TurAssetTrainingServiceTest {
 
         @Mock
-        private TurMinioService minioService;
+        private com.viglet.turing.service.storage.TurStorageService storageService;
 
         @Mock
         private TurGlobalSettingsService globalSettingsService;
@@ -59,7 +59,7 @@ class TurAssetTrainingServiceTest {
         @BeforeEach
         void setUp() {
                 service = new TurAssetTrainingService(
-                                minioService,
+                                storageService,
                                 globalSettingsService,
                                 ragContextBuilder,
                                 trainingRecordRepository);
@@ -185,7 +185,7 @@ class TurAssetTrainingServiceTest {
         void startTrainingReturnsRunningStatus() {
                 when(globalSettingsService.isRagEnabled()).thenReturn(true);
                 when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
-                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+                when(storageService.listAllObjects()).thenReturn(Collections.emptyList());
 
                 TurAssetTrainingStatus status = service.startTraining();
 
@@ -373,7 +373,7 @@ class TurAssetTrainingServiceTest {
         void getStatusReflectsRunningAfterStartTraining() {
                 when(globalSettingsService.isRagEnabled()).thenReturn(true);
                 when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(Optional.of(ragInfrastructure));
-                when(minioService.listAllObjects()).thenReturn(Collections.emptyList());
+                when(storageService.listAllObjects()).thenReturn(Collections.emptyList());
 
                 service.startTraining();
                 TurAssetTrainingStatus status = service.getStatus();

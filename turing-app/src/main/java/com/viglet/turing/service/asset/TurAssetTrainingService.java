@@ -6,6 +6,7 @@ import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
 import com.viglet.turing.genai.TurRagUtils;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
 import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
+import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.utils.TurFileUtils;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class TurAssetTrainingService {
     private static final Logger log = LoggerFactory.getLogger(TurAssetTrainingService.class);
     private static final String OBJECT_NAME_FIELD = "objectName";
 
-    private final TurMinioService minioService;
+    private final TurStorageService storageService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
     private final TurAssetTrainingRecordRepository trainingRecordRepository;
@@ -47,11 +48,11 @@ public class TurAssetTrainingService {
     private final AtomicReference<TurAssetTrainingStatus> status =
             new AtomicReference<>(TurAssetTrainingStatus.idle());
 
-    public TurAssetTrainingService(TurMinioService minioService,
+    public TurAssetTrainingService(TurStorageService storageService,
                                     TurGlobalSettingsService globalSettingsService,
                                     TurRagContextBuilder ragContextBuilder,
                                     TurAssetTrainingRecordRepository trainingRecordRepository) {
-        this.minioService = minioService;
+        this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
@@ -130,7 +131,7 @@ public class TurAssetTrainingService {
             var infra = ragContextBuilder.buildFromGlobalSettings()
                     .orElseThrow(() -> new IllegalStateException(
                             "Embedding Model and Store must be configured in Global Settings."));
-            List<TurAssetItem> allFiles = minioService.listAllObjects();
+            List<TurAssetItem> allFiles = storageService.listAllObjects();
 
             int total = allFiles.size();
             int processed = 0;
@@ -172,7 +173,7 @@ public class TurAssetTrainingService {
         infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
                 infra.collectionName(), OBJECT_NAME_FIELD, objectName);
 
-        try (InputStream is = minioService.downloadObject(objectName)) {
+        try (InputStream is = storageService.downloadObject(objectName)) {
             String text = TurFileUtils.parseDocument(is).orElse("");
             if (text.isBlank()) {
                 log.info("[AssetTraining] Skipped (no text extracted): {}", objectName);
@@ -184,7 +185,7 @@ public class TurAssetTrainingService {
             log.info("[AssetTraining] Extracted {} chars from: {}", text.length(), objectName);
 
             Map<String, Object> metadata = Map.of(
-                    "source", "minio-asset",
+                    "source", "storage-asset",
                     OBJECT_NAME_FIELD, objectName,
                     "objectPath", path,
                     "fileName", fileName,

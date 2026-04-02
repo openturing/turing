@@ -1,7 +1,8 @@
 package com.viglet.turing.api.system;
 
 import com.viglet.turing.properties.TurConfigProperties;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
+import com.viglet.turing.service.storage.TurStorageType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,18 +32,18 @@ public class TurSystemInfoAPI {
     private static final String UNKNOWN = "Unknown";
 
     private final DataSource dataSource;
-    private final TurMinioService turMinioService;
+    private final TurStorageService storageService;
     private final TurConfigProperties turConfigProperties;
     private final boolean mongoEnabled;
     private final String mongoUri;
 
     public TurSystemInfoAPI(DataSource dataSource,
-                            TurMinioService turMinioService,
+                            TurStorageService storageService,
                             TurConfigProperties turConfigProperties,
                             @Value("${turing.mongodb.enabled:false}") boolean mongoEnabled,
                             @Value("${turing.mongodb.uri:mongodb://localhost:27017}") String mongoUri) {
         this.dataSource = dataSource;
-        this.turMinioService = turMinioService;
+        this.storageService = storageService;
         this.turConfigProperties = turConfigProperties;
         this.mongoEnabled = mongoEnabled;
         this.mongoUri = mongoUri;
@@ -57,7 +58,8 @@ public class TurSystemInfoAPI {
                 .memory(getMemoryInfo())
                 .disk(getDiskInfo())
                 .mongodb(getMongoDbInfo())
-                .minio(getMinioInfo())
+                .storage(getStorageInfo())
+                .storageType(storageService.getType().name().toLowerCase())
                 .build();
     }
 
@@ -155,11 +157,24 @@ public class TurSystemInfoAPI {
         return new TurSystemInfoBean.ExternalServiceInfo(true, version, mongoUri, status);
     }
 
-    private TurSystemInfoBean.ExternalServiceInfo getMinioInfo() {
-        if (!turMinioService.isEnabled()) {
+    private TurSystemInfoBean.ExternalServiceInfo getStorageInfo() {
+        if (!storageService.isEnabled()) {
             return new TurSystemInfoBean.ExternalServiceInfo(false, null, null, null);
         }
-        var minio = turConfigProperties.getMinio();
+        if (storageService.getType() == TurStorageType.MINIO) {
+            return getMinioHealthInfo();
+        }
+        // Filesystem storage
+        var storage = turConfigProperties.getStorage();
+        String path = storage != null && storage.getFilesystem() != null && storage.getFilesystem().getPath() != null
+                ? storage.getFilesystem().getPath() : "./store/assets";
+        java.io.File dir = new java.io.File(path);
+        String status = dir.isDirectory() ? "UP" : "DOWN";
+        return new TurSystemInfoBean.ExternalServiceInfo(true, "filesystem", path, status);
+    }
+
+    private TurSystemInfoBean.ExternalServiceInfo getMinioHealthInfo() {
+        var minio = turConfigProperties.getStorage() != null ? turConfigProperties.getStorage().getMinio() : null;
         String endpoint = minio != null ? minio.getEndpoint() : "";
         String version = UNKNOWN;
         String status = "DOWN";

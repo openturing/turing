@@ -16,7 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.properties.TurConfigProperties;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
+import com.viglet.turing.service.storage.TurStorageType;
 
 /**
  * Tests for TurSystemInfoAPI.
@@ -31,7 +32,7 @@ class TurSystemInfoAPITest {
     private DataSource dataSource;
 
     @Mock
-    private TurMinioService turMinioService;
+    private TurStorageService storageService;
 
     @Mock
     private TurConfigProperties turConfigProperties;
@@ -40,7 +41,7 @@ class TurSystemInfoAPITest {
 
     @BeforeEach
     void setUp() {
-        api = new TurSystemInfoAPI(dataSource, turMinioService, turConfigProperties,
+        api = new TurSystemInfoAPI(dataSource, storageService, turConfigProperties,
                 false, "mongodb://localhost:27017");
     }
 
@@ -55,7 +56,8 @@ class TurSystemInfoAPITest {
         when(meta.getDriverName()).thenReturn("H2 Driver");
         when(meta.getDriverVersion()).thenReturn("2.0.0");
         when(meta.getURL()).thenReturn("jdbc:h2:mem:test");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         TurSystemInfoBean result = api.getSystemInfo();
 
@@ -73,7 +75,8 @@ class TurSystemInfoAPITest {
     @Test
     void getSystemInfoShouldReturnDownDbWhenConnectionFails() throws Exception {
         when(dataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection refused"));
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         TurSystemInfoBean result = api.getSystemInfo();
 
@@ -92,7 +95,8 @@ class TurSystemInfoAPITest {
         when(meta.getDriverName()).thenReturn("H2 Driver");
         when(meta.getDriverVersion()).thenReturn("2.0.0");
         when(meta.getURL()).thenReturn("jdbc:h2:mem:test");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         TurSystemInfoBean result = api.getSystemInfo();
 
@@ -111,12 +115,13 @@ class TurSystemInfoAPITest {
         when(meta.getDriverName()).thenReturn("H2 Driver");
         when(meta.getDriverVersion()).thenReturn("2.0.0");
         when(meta.getURL()).thenReturn("jdbc:h2:mem:test");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         TurSystemInfoBean result = api.getSystemInfo();
 
-        assertThat(result.getMinio()).isNotNull();
-        assertThat(result.getMinio().enabled()).isFalse();
+        assertThat(result.getStorage()).isNotNull();
+        assertThat(result.getStorage().enabled()).isFalse();
     }
 
     @Test
@@ -149,7 +154,8 @@ class TurSystemInfoAPITest {
         when(meta.getDriverName()).thenReturn("H2 Driver");
         when(meta.getDriverVersion()).thenReturn("2.0.0");
         when(meta.getURL()).thenReturn("jdbc:h2:mem:test");
-        when(turMinioService.isEnabled()).thenReturn(false);
+        when(storageService.isEnabled()).thenReturn(false);
+        when(storageService.getType()).thenReturn(TurStorageType.NONE);
 
         TurSystemInfoBean result = api.getSystemInfo();
 

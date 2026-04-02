@@ -36,27 +36,32 @@
       "description": "Keycloak user ID that is automatically granted the Administrator group on every application startup."
     },
     {
-      "name": "turing.minio.enabled",
-      "type": "java.lang.Boolean",
-      "description": "Enable or disable MinIO object storage integration for asset management. When disabled, asset operations are not available."
+      "name": "turing.storage.type",
+      "type": "java.lang.String",
+      "description": "Storage backend type: 'none' (default, no storage), 'minio' (MinIO object storage), 'filesystem' (local filesystem at turing.storage.path)."
     },
     {
-      "name": "turing.minio.endpoint",
+      "name": "turing.storage.filesystem.path",
+      "type": "java.lang.String",
+      "description": "Base directory for filesystem storage. Only used when turing.storage.type=filesystem. Default: ./store/assets"
+    },
+    {
+      "name": "turing.storage.minio.endpoint",
       "type": "java.lang.String",
       "description": "MinIO server endpoint URL (e.g., http://localhost:9000)."
     },
     {
-      "name": "turing.minio.access-key",
+      "name": "turing.storage.minio.access-key",
       "type": "java.lang.String",
       "description": "Access key (username) for authenticating with the MinIO server."
     },
     {
-      "name": "turing.minio.secret-key",
+      "name": "turing.storage.minio.secret-key",
       "type": "java.lang.String",
       "description": "Secret key (password) for authenticating with the MinIO server."
     },
     {
-      "name": "turing.minio.bucket",
+      "name": "turing.storage.minio.bucket",
       "type": "java.lang.String",
       "description": "Name of the MinIO bucket used to store application assets (e.g., 'turing-assets')."
     },

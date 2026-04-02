@@ -29,7 +29,7 @@ import com.viglet.turing.service.asset.TurAssetEvent;
 import com.viglet.turing.service.asset.TurAssetTrainingService;
 import com.viglet.turing.service.asset.TurAssetTrainingState;
 import com.viglet.turing.service.asset.TurAssetTrainingStatus;
-import com.viglet.turing.service.asset.TurMinioService;
+import com.viglet.turing.service.storage.TurStorageService;
 
 /**
  * Tests for TurAssetAPI.
@@ -43,7 +43,7 @@ class TurAssetAPITest {
         private MockMvc mockMvc;
 
         @Mock
-        private TurMinioService turMinioService;
+        private TurStorageService storageService;
 
         @Mock
         private TurAssetTrainingService turAssetTrainingService;
@@ -64,7 +64,7 @@ class TurAssetAPITest {
                 List<TurAssetItem> items = List.of(
                                 new TurAssetItem("folder/", 0, "", "", true),
                                 new TurAssetItem("file.pdf", 1024, "application/pdf", "2026-01-01", false));
-                when(turMinioService.listObjects("")).thenReturn(items);
+                when(storageService.listObjects("")).thenReturn(items);
 
                 mockMvc.perform(get("/api/asset"))
                                 .andExpect(status().isOk())
@@ -78,7 +78,7 @@ class TurAssetAPITest {
         void testListWithPrefix() throws Exception {
                 List<TurAssetItem> items = List.of(
                                 new TurAssetItem("docs/readme.md", 512, "text/markdown", "2026-01-01", false));
-                when(turMinioService.listObjects("docs/")).thenReturn(items);
+                when(storageService.listObjects("docs/")).thenReturn(items);
 
                 mockMvc.perform(get("/api/asset").param("prefix", "docs/"))
                                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ class TurAssetAPITest {
                 mockMvc.perform(post("/api/asset/folder").param("path", "new-folder/"))
                                 .andExpect(status().isOk());
 
-                verify(turMinioService, times(1)).createFolder("new-folder/");
+                verify(storageService, times(1)).createFolder("new-folder/");
         }
 
         @Test
@@ -98,7 +98,7 @@ class TurAssetAPITest {
                 mockMvc.perform(delete("/api/asset").param("objectName", "test.pdf"))
                                 .andExpect(status().isOk());
 
-                verify(turMinioService, times(1)).deleteObject("test.pdf");
+                verify(storageService, times(1)).deleteObject("test.pdf");
                 verify(eventPublisher, times(1)).publishEvent(any(TurAssetEvent.class));
         }
 
@@ -153,7 +153,7 @@ class TurAssetAPITest {
                 mockMvc.perform(multipart("/api/asset").file(file))
                                 .andExpect(status().isOk());
 
-                verify(turMinioService, times(1)).uploadObject(any(), eq(""));
+                verify(storageService, times(1)).uploadObject(any(), eq(""));
                 verify(eventPublisher, times(1)).publishEvent(any(TurAssetEvent.class));
         }
 }

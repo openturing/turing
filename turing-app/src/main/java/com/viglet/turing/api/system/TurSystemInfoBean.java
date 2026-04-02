@@ -20,7 +20,8 @@ public class TurSystemInfoBean {
     private MemoryInfo memory;
     private DiskInfo disk;
     private ExternalServiceInfo mongodb;
-    private ExternalServiceInfo minio;
+    private ExternalServiceInfo storage;
+    private String storageType;
 
     public record DatabaseInfo(
             String productName,

@@ -1,7 +1,7 @@
 import axios from "axios"
 
 export interface FeaturesResponse {
-  minioEnabled: boolean
+  storageEnabled: boolean
   ragEnabled: boolean
 }
 
