@@ -20,9 +20,18 @@ function ResizablePanelGroup({
 }
 
 function ResizablePanel({
+  overflowHidden,
+  className,
   ...props
-}: React.ComponentProps<typeof Panel>) {
-  return <Panel data-slot="resizable-panel" {...props} />
+}: React.ComponentProps<typeof Panel> & { overflowHidden?: boolean }) {
+  return (
+    <Panel
+      data-slot="resizable-panel"
+      className={cn(overflowHidden && "[&>div]:overflow-hidden!", className)}
+      style={overflowHidden ? { overflow: "hidden" } : undefined}
+      {...props}
+    />
+  )
 }
 
 function ResizableHandle({

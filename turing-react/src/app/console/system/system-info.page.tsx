@@ -459,13 +459,13 @@ export default function SystemInfoPage() {
     if (!insightsOpen) return mainContent;
 
     return (
-        <ResizablePanelGroup orientation="horizontal" className="min-h-[calc(100vh-4rem)]">
+        <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={60} minSize={30}>
                 {mainContent}
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40} minSize={20}>
-                <Card className="h-full flex flex-col m-2 overflow-hidden sticky top-4">
+            <ResizablePanel defaultSize={40} minSize={20} overflowHidden>
+                <Card className="h-full flex flex-col m-2 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                         <div className="flex items-center gap-2 min-w-0">
                             <IconSparkles className="size-4 text-blue-500 shrink-0" />
