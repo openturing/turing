@@ -48,10 +48,15 @@ function ProgressBar({ value, color }: Readonly<{ value: number; color: string }
     );
 }
 
-function InfoRow({ label, value }: Readonly<{ label: string; value: string }>) {
+function InfoRow({ label, value, propertyKey }: Readonly<{ label: string; value: string; propertyKey?: string }>) {
     return (
         <div className="flex items-center justify-between py-2 border-b last:border-b-0">
-            <span className="text-sm text-muted-foreground">{label}</span>
+            <div className="flex flex-col gap-0.5">
+                <span className="text-sm text-muted-foreground">{label}</span>
+                {propertyKey && (
+                    <span className="text-[11px] font-mono text-muted-foreground/60">{propertyKey}</span>
+                )}
+            </div>
             <span className="text-sm font-medium font-mono">{value}</span>
         </div>
     );
@@ -188,7 +193,7 @@ export default function SystemInfoPage() {
                                 <InfoRow label={t("systemInfo.version")} value={info?.database.productVersion ?? "Unknown"} />
                                 <InfoRow label={t("systemInfo.driver")} value={info?.database.driverName ?? "Unknown"} />
                                 <InfoRow label={t("systemInfo.driverVersion")} value={info?.database.driverVersion ?? "Unknown"} />
-                                <InfoRow label={t("systemInfo.url")} value={info?.database.url ?? "Unknown"} />
+                                <InfoRow label={t("systemInfo.url")} value={info?.database.url ?? "Unknown"} propertyKey="spring.datasource.url" />
                             </SectionCard.Content>
                         </SectionCard>
 
@@ -301,7 +306,7 @@ export default function SystemInfoPage() {
                                         <StatusBadge status={info.mongodb.status} />
                                     </div>
                                     <InfoRow label={t("systemInfo.version")} value={info.mongodb.version ?? "Unknown"} />
-                                    <InfoRow label={t("systemInfo.endpoint")} value={info.mongodb.endpoint ?? "N/A"} />
+                                    <InfoRow label={t("systemInfo.endpoint")} value={info.mongodb.endpoint ?? "N/A"} propertyKey="turing.mongodb.uri" />
                                 </SectionCard.Content>
                             </SectionCard>
                         )}
@@ -320,7 +325,7 @@ export default function SystemInfoPage() {
                                         <StatusBadge status={info.minio.status} />
                                     </div>
                                     <InfoRow label={t("systemInfo.version")} value={info.minio.version ?? "Unknown"} />
-                                    <InfoRow label={t("systemInfo.endpoint")} value={info.minio.endpoint ?? "N/A"} />
+                                    <InfoRow label={t("systemInfo.endpoint")} value={info.minio.endpoint ?? "N/A"} propertyKey="turing.minio.endpoint" />
                                 </SectionCard.Content>
                             </SectionCard>
                         )}
