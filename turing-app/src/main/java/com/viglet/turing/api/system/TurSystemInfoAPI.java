@@ -1,13 +1,17 @@
 package com.viglet.turing.api.system;
 
+import com.viglet.turing.genai.tool.TurSystemInfoToolService;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.service.storage.TurStorageType;
+import com.viglet.turing.system.TurLlmSummaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
@@ -30,21 +34,76 @@ import java.util.Map;
 public class TurSystemInfoAPI {
 
     private static final String UNKNOWN = "Unknown";
+    private static final String INSIGHTS_CACHE_KEY = "system-info-insights";
+    private static final String INSIGHTS_SYSTEM_PROMPT = """
+            You are a system administrator expert analyzing a **Viglet Turing ES** (Enterprise Search) application server.
+
+            ## About the Platform
+            Viglet Turing ES is a Java-based enterprise search platform that combines:
+            - **Apache Solr** (or Elasticsearch/Lucene) as its search engine for indexing and querying content
+            - **Spring Boot 4 + Java 21** as the application runtime
+            - **Spring AI** for LLM integration (chat, RAG, embeddings)
+            - **React + TypeScript** frontend served by the same JVM process
+            - **H2** (dev) or **MySQL/PostgreSQL** (production) as the relational database for configuration, users, and metadata
+            - **Apache Artemis** message queue for asynchronous document indexing
+
+            ## About Optional Components
+            - **MongoDB**: When enabled, used exclusively for **persisting application logs to disk** \
+            (server logs, AEM connector logs, indexing operation logs). It is NOT the primary database. \
+            If MongoDB is disabled, logs are only available via standard application logging (stdout/files). \
+            When reviewing MongoDB, focus on connectivity and whether log persistence is needed for the workload.
+            - **Storage (MinIO or Filesystem)**: Used for **asset management and SPA page hosting**. \
+            MinIO provides S3-compatible object storage; Filesystem stores files locally under a configured path. \
+            When storage type is "none", asset upload/download and SPA page features are disabled entirely. \
+            When reviewing storage, consider whether the chosen backend fits the deployment (e.g., filesystem \
+            is simpler for single-node, MinIO for distributed/cloud deployments).
+
+            ## Analysis Instructions
+            Analyze the runtime data provided and generate a comprehensive summary in Markdown format. \
+            Include these sections:
+
+            ## Health Summary
+            Brief overall health assessment — is the system healthy? Any services down?
+
+            ## Resource Usage
+            Evaluate JVM heap, physical RAM, swap, and disk usage. Flag high utilization or imbalanced allocation \
+            (e.g., JVM heap too small relative to available RAM, or swap being used heavily).
+
+            ## Configuration Review
+            Review the database setup (H2 vs production DB), storage backend choice, and optional services. \
+            Flag anything unusual for a production environment (e.g., H2 in production, storage disabled, etc.).
+
+            ## Warnings
+            Any concerning metrics, potential issues, or misconfigurations that need attention.
+
+            ## Optimization Suggestions
+            Actionable recommendations to improve performance, reliability, or resource usage. \
+            Be specific — suggest concrete values or changes when possible (e.g., "increase -Xmx to 4G", \
+            "switch from H2 to PostgreSQL for production", "enable storage for asset management").
+
+            Be concise but insightful. Use bullet points where appropriate. \
+            Tailor suggestions to the actual data — avoid generic advice that doesn't match the metrics.""";
 
     private final DataSource dataSource;
     private final TurStorageService storageService;
     private final TurConfigProperties turConfigProperties;
+    private final TurLlmSummaryService llmSummaryService;
+    private final TurSystemInfoToolService systemInfoToolService;
     private final boolean mongoEnabled;
     private final String mongoUri;
 
     public TurSystemInfoAPI(DataSource dataSource,
                             TurStorageService storageService,
                             TurConfigProperties turConfigProperties,
+                            TurLlmSummaryService llmSummaryService,
+                            TurSystemInfoToolService systemInfoToolService,
                             @Value("${turing.mongodb.enabled:false}") boolean mongoEnabled,
                             @Value("${turing.mongodb.uri:mongodb://localhost:27017}") String mongoUri) {
         this.dataSource = dataSource;
         this.storageService = storageService;
         this.turConfigProperties = turConfigProperties;
+        this.llmSummaryService = llmSummaryService;
+        this.systemInfoToolService = systemInfoToolService;
         this.mongoEnabled = mongoEnabled;
         this.mongoUri = mongoUri;
     }
@@ -71,6 +130,31 @@ public class TurSystemInfoAPI {
                 .sorted()
                 .forEach(key -> variables.put(key, System.getProperty(key)));
         return variables;
+    }
+
+    @Operation(summary = "Check if AI insights are available")
+    @GetMapping("/insights/available")
+    public ResponseEntity<Boolean> isInsightsAvailable() {
+        return ResponseEntity.ok(llmSummaryService.isAvailable());
+    }
+
+    @Operation(summary = "Generate AI insights for system information")
+    @GetMapping("/insights")
+    public ResponseEntity<TurLlmSummaryService.SummaryResult> getInsights(
+            @RequestParam(defaultValue = "false") boolean regenerate) {
+        String systemData = systemInfoToolService.getSystemStatus();
+        String userData = systemData
+                + "\nPlease analyze all this data and provide a comprehensive summary with suggestions.";
+
+        TurLlmSummaryService.SummaryResult result = llmSummaryService.generate(
+                INSIGHTS_CACHE_KEY, userData, INSIGHTS_SYSTEM_PROMPT, regenerate);
+
+        if (!result.success() && result.content() == null && result.error() != null
+                && result.error().startsWith("No default LLM")) {
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     private String getAppVersion() {

@@ -98,7 +98,8 @@
       "failedGenerate": "Falha ao gerar resumo.",
       "failedConnect": "Falha ao conectar ao serviço de resumo. Tente novamente.",
       "statistics": "Estatísticas",
-      "searchTerms": "termos de busca"
+      "searchTerms": "termos de busca",
+      "regenerate": "Regenerar"
     },
     "multiLanguage": {
       "title": "Multi Idiomas",

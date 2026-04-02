@@ -2,6 +2,13 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { GradientButton } from "@/components/ui/gradient-button";
+import {
+    ResizablePanelGroup,
+    ResizablePanel,
+    ResizableHandle,
+} from "@/components/ui/resizable";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSystemInfo } from "@/models/system/system-info.model";
 import { TurSystemInfoService } from "@/services/system/system-info.service";
@@ -14,15 +21,28 @@ import {
     IconInfoCircle,
     IconLeaf,
     IconLoader2,
+    IconRefresh,
     IconSearch,
     IconServer,
+    IconSparkles,
     IconVariable,
+    IconX,
 } from "@tabler/icons-react";
-import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const turSystemInfoService = new TurSystemInfoService();
+
+interface InsightsResponse {
+    success: boolean;
+    error: string | null;
+    content: string | null;
+    canRegenerate: boolean;
+}
 
 function formatBytes(bytes: number): string {
     if (bytes < 0) return "N/A";
@@ -86,14 +106,23 @@ export default function SystemInfoPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [varSearch, setVarSearch] = useState("");
 
+    const [insightsAvailable, setInsightsAvailable] = useState(false);
+    const [insightsOpen, setInsightsOpen] = useState(false);
+    const [insightsContent, setInsightsContent] = useState<string | null>(null);
+    const [insightsError, setInsightsError] = useState<string | null>(null);
+    const [insightsLoading, setInsightsLoading] = useState(false);
+    const [canRegenerate, setCanRegenerate] = useState(false);
+
     useEffect(() => {
         Promise.all([
             turSystemInfoService.getInfo(),
             turSystemInfoService.getVariables(),
+            axios.get<boolean>("/system/info/insights/available").then(r => r.data),
         ])
-            .then(([sysInfo, sysVars]) => {
+            .then(([sysInfo, sysVars, available]) => {
                 setInfo(sysInfo);
                 setVariables(sysVars);
+                setInsightsAvailable(available);
             })
             .catch(() => {
                 toast.error(t("systemInfo.loadFailed"));
@@ -109,6 +138,29 @@ export default function SystemInfoPage() {
                 value.toLowerCase().includes(search),
         );
     }, [variables, varSearch]);
+
+    const fetchInsights = useCallback(async (regenerate = false) => {
+        setInsightsOpen(true);
+        setInsightsLoading(true);
+        setInsightsError(null);
+        setInsightsContent(null);
+        try {
+            const response = await axios.get<InsightsResponse>(
+                "/system/info/insights",
+                { params: regenerate ? { regenerate: true } : {} },
+            );
+            if (response.data.success && response.data.content) {
+                setInsightsContent(response.data.content);
+            } else {
+                setInsightsError(response.data.error ?? t("systemInfo.insightsFailed"));
+            }
+            setCanRegenerate(response.data.canRegenerate ?? false);
+        } catch {
+            setInsightsError(t("systemInfo.insightsFailed"));
+        } finally {
+            setInsightsLoading(false);
+        }
+    }, [t]);
 
     if (isLoading) {
         return (
@@ -140,7 +192,7 @@ export default function SystemInfoPage() {
         ? usagePercent(mem.totalSwap - mem.freeSwap, mem.totalSwap)
         : -1;
 
-    return (
+    const mainContent = (
         <>
             <SubPageHeader
                 icon={IconInfoCircle}
@@ -150,6 +202,7 @@ export default function SystemInfoPage() {
             />
             <div className="py-6 px-6">
                 <Tabs defaultValue="overview">
+                    <div className="flex items-center justify-between gap-4">
                     <TabsList>
                         <TabsTrigger value="overview">
                             <IconServer className="size-4 mr-1" />
@@ -160,6 +213,19 @@ export default function SystemInfoPage() {
                             {t("systemInfo.systemVariables")}
                         </TabsTrigger>
                     </TabsList>
+                    {insightsAvailable && (
+                        <GradientButton
+                            onClick={() => fetchInsights()}
+                            disabled={insightsLoading}
+                            size="sm"
+                        >
+                            {insightsLoading
+                                ? <IconLoader2 className="size-4 mr-1.5 animate-spin" />
+                                : <IconSparkles className="size-4 mr-1.5" />}
+                            {t("systemInfo.aiInsights")}
+                        </GradientButton>
+                    )}
+                    </div>
 
                     <TabsContent value="overview" className="space-y-4 mt-4">
                         {/* Application */}
@@ -388,5 +454,67 @@ export default function SystemInfoPage() {
                 </Tabs>
             </div>
         </>
+    );
+
+    if (!insightsOpen) return mainContent;
+
+    return (
+        <ResizablePanelGroup orientation="horizontal" className="min-h-[calc(100vh-4rem)]">
+            <ResizablePanel defaultSize={60} minSize={30}>
+                {mainContent}
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={40} minSize={20}>
+                <Card className="h-full flex flex-col m-2 overflow-hidden sticky top-4">
+                    <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <IconSparkles className="size-4 text-blue-500 shrink-0" />
+                            <h3 className="text-sm font-semibold">{t("systemInfo.aiInsights")}</h3>
+                            {insightsLoading && (
+                                <IconLoader2 className="size-3.5 animate-spin text-muted-foreground shrink-0" />
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                            {!insightsLoading && canRegenerate && (
+                                <button
+                                    type="button"
+                                    onClick={() => fetchInsights(true)}
+                                    className="p-1 rounded hover:bg-muted cursor-pointer"
+                                    title={t("systemInfo.regenerate")}
+                                >
+                                    <IconRefresh className="h-4 w-4" />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => { setInsightsOpen(false); setInsightsContent(null); setInsightsError(null); }}
+                                className="p-1 rounded hover:bg-muted cursor-pointer"
+                                title={t("systemInfo.close")}
+                            >
+                                <IconX className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-auto p-4">
+                        {insightsLoading && (
+                            <div className="flex items-center gap-2 text-muted-foreground py-4">
+                                <IconLoader2 className="size-4 animate-spin" />
+                                <span className="text-sm">{t("systemInfo.insightsGenerating")}</span>
+                            </div>
+                        )}
+                        {insightsError && !insightsLoading && (
+                            <p className="text-sm text-destructive">{insightsError}</p>
+                        )}
+                        {insightsContent && !insightsLoading && (
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {insightsContent}
+                                </ReactMarkdown>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            </ResizablePanel>
+        </ResizablePanelGroup>
     );
 }

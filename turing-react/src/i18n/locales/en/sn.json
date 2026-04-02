@@ -98,7 +98,8 @@
       "failedGenerate": "Failed to generate summary.",
       "failedConnect": "Failed to connect to the summary service. Please try again.",
       "statistics": "Statistics",
-      "searchTerms": "search terms"
+      "searchTerms": "search terms",
+      "regenerate": "Regenerate"
     },
     "multiLanguage": {
       "title": "Multi Languages",
