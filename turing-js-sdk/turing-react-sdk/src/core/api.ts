@@ -41,22 +41,22 @@ async function get<T>(url: string): Promise<T> {
 }
 
 export function fetchSearch(site: string, params: SearchParams): Promise<TurSearchResponse> {
-  return get<TurSearchResponse>(`/api/sn/${site}/search?${buildQueryString(params)}`);
+  return get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
 }
 
 export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlocale">): Promise<TurChatResponse> {
   const qs = new URLSearchParams();
   qs.append("q", params.q);
   if (params._setlocale) qs.append("_setlocale", params._setlocale);
-  return get<TurChatResponse>(`/api/sn/${site}/chat?${qs}`);
+  return get<TurChatResponse>(`/sn/${site}/chat?${qs}`);
 }
 
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
-  return get<string[]>(`/api/sn/${site}/ac?${buildQueryString(params)}`);
+  return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }
 
 export function fetchSortOptions(site: string): Promise<TurSortOption[]> {
-  return get<TurSortOption[]>(`/api/sn/${site}/search/sort-options`);
+  return get<TurSortOption[]>(`/sn/${site}/search/sort-options`);
 }
 
 /**

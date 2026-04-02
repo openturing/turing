@@ -11,7 +11,6 @@ import {
   IconCalendar,
   IconTag,
   IconCertificate,
-  IconExternalLink,
   IconCurrencyDollar,
   IconNumber,
   IconClock,
@@ -89,6 +88,20 @@ function toArray(value: unknown): string[] {
   return [];
 }
 
+function formatDate(value: unknown): string {
+  if (!value) return "";
+  const date =
+    typeof value === "number"
+      ? new Date(value)
+      : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export default function DetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -109,7 +122,7 @@ export default function DetailPage() {
   const price = fields.price;
   const rating = fields.rating ?? 0;
   const label = fields.label ?? "";
-  const releaseDate = fields.release_date ?? fields.date ?? "";
+  const releaseDate = formatDate(fields.release_date ?? fields.date);
   const decade = fields.decade ?? "";
   const numTracks = fields.num_tracks ?? fields.tracks ?? "";
   const isFirstPressing =
@@ -245,22 +258,6 @@ export default function DetailPage() {
               </div>
             )}
 
-            {/* View original link */}
-            {doc.url && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="gap-1.5"
-                  >
-                    <IconExternalLink className="size-4" />
-                    View Details
-                  </a>
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* ── Sidebar metadata — record sleeve info panel ── */}

@@ -9,7 +9,6 @@ import {
   IconUsers,
   IconSatellite,
   IconPlanet,
-  IconExternalLink,
   IconStars,
   IconBuildingFactory,
   IconWalk,
@@ -84,6 +83,20 @@ function toArray(value: unknown): string[] {
   return [];
 }
 
+function formatDate(value: unknown): string {
+  if (!value) return "";
+  const date =
+    typeof value === "number"
+      ? new Date(value)
+      : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export default function DetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -102,7 +115,7 @@ export default function DetailPage() {
   const outcome = (fields.outcome as string) ?? "";
   const program = (fields.program as string) ?? "";
   const spacecraft = (fields.spacecraft as string) ?? "";
-  const launchDate = (fields.launch_date as string) ?? "";
+  const launchDate = formatDate(fields.launch_date ?? fields.date);
   const duration = (fields.duration as string) ?? "";
   const crewSize = (fields.crew_size as number) ?? 0;
   const hasEva = fields.eva === true || fields.eva === "true";
@@ -261,22 +274,6 @@ export default function DetailPage() {
               </div>
             )}
 
-            {/* View original link */}
-            {doc.url && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" asChild className="font-mono">
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="gap-1.5"
-                  >
-                    <IconExternalLink className="size-4" />
-                    View Mission Source
-                  </a>
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* ── Sidebar metadata ── */}

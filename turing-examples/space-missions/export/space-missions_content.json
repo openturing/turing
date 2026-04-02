@@ -8,15 +8,24 @@
         "description": "Commander Neil Armstrong and Lunar Module Pilot Buzz Aldrin landed the Apollo Lunar Module Eagle on July 20, 1969. Armstrong became the first person to step onto the lunar surface six hours later. Collins orbited above in the Command Module Columbia.",
         "text": "Apollo 11 was the American spaceflight that first landed humans on the Moon. The three-astronaut crew — Commander Neil Armstrong, Command Module Pilot Michael Collins, and Lunar Module Pilot Edwin 'Buzz' Aldrin — launched from Kennedy Space Center aboard a Saturn V rocket. The mission fulfilled President Kennedy's 1961 goal. Armstrong's first step onto the lunar surface was broadcast on live TV to a worldwide audience. They spent about two and a quarter hours together outside the spacecraft, collecting 47.5 pounds of lunar material. After more than 21 hours on the lunar surface, they rejoined Collins in orbit. The crew splashed down in the Pacific Ocean on July 24.",
         "url": "/missions/apollo-11",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/4/41/A_Man_on_the_Moon%2C_AS11-40-5903_%28cropped%29.jpg",
+        "image": "images/A_Man_on_the_Moon__AS11-40-5903__cropped_.jpg",
         "launch_date": "1969-07-16T13:32:00Z",
-        "agency": ["NASA"],
+        "agency": [
+          "NASA"
+        ],
         "program": "Apollo",
-        "crew": ["Neil Armstrong", "Buzz Aldrin", "Michael Collins"],
+        "crew": [
+          "Neil Armstrong",
+          "Buzz Aldrin",
+          "Michael Collins"
+        ],
         "crew_size": 3,
         "spacecraft": "Saturn V / Columbia / Eagle",
         "outcome": "Success",
-        "destination": ["Moon", "Low Earth Orbit"],
+        "destination": [
+          "Moon",
+          "Low Earth Orbit"
+        ],
         "duration_days": 8.14,
         "decade": "1960s",
         "has_eva": true
@@ -28,15 +37,22 @@
         "description": "Launched in 1977, Voyager 1 is now in interstellar space — the first spacecraft to cross the heliopause. It continues to transmit data from over 15 billion miles away, carrying the Golden Record for any extraterrestrial civilization that may find it.",
         "text": "Voyager 1 is a space probe launched by NASA on September 5, 1977, as part of the Voyager program to study the outer Solar System and interstellar space. It flew by Jupiter in 1979 and Saturn in 1980, making detailed images of their moons and rings. On August 25, 2012, Voyager 1 crossed the heliopause and entered interstellar space, becoming the first human-made object to do so. The spacecraft carries a Golden Record — a 12-inch gold-plated copper disk containing sounds and images selected to portray the diversity of life and culture on Earth. Despite being over 45 years old, its radioisotope thermoelectric generators still power five scientific instruments.",
         "url": "/missions/voyager-1",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/6/60/Voyager_spacecraft_model.png",
+        "image": "images/Voyager_spacecraft_model.png",
         "launch_date": "1977-09-05T12:56:00Z",
-        "agency": ["NASA", "JPL"],
+        "agency": [
+          "NASA",
+          "JPL"
+        ],
         "program": "Voyager",
         "crew": [],
         "crew_size": 0,
         "spacecraft": "Voyager 1",
         "outcome": "Success",
-        "destination": ["Jupiter", "Saturn", "Interstellar Space"],
+        "destination": [
+          "Jupiter",
+          "Saturn",
+          "Interstellar Space"
+        ],
         "duration_days": 17340,
         "decade": "1970s",
         "has_eva": false
@@ -48,15 +64,25 @@
         "description": "The first long-duration crew arrived at the International Space Station on November 2, 2000. Commander Bill Shepherd and cosmonauts Yuri Gidzenko and Sergei Krikalev began a continuous human presence in space that has lasted over two decades.",
         "text": "Expedition 1 was the first long-duration stay on the International Space Station. The three-person crew launched aboard a Soyuz TM-31 spacecraft from the Baikonur Cosmodrome in Kazakhstan. For 136 days, they activated station systems, conducted experiments in microgravity, and performed maintenance. Their stay marked the beginning of an unbroken human presence in space — the longest continuous inhabitation of a space station in history. The crew conducted multiple spacewalks and received several visiting supply craft. This mission demonstrated that international cooperation in space was not only possible but essential for humanity's future beyond Earth.",
         "url": "/missions/iss-expedition-1",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/6/65/The_station_pictured_from_the_SpaceX_Crew_Dragon_1.jpg",
+        "image": "images/The_station_pictured_from_the_SpaceX_Crew_Dragon_1.jpg",
         "launch_date": "2000-10-31T07:52:00Z",
-        "agency": ["NASA", "Roscosmos"],
+        "agency": [
+          "NASA",
+          "Roscosmos"
+        ],
         "program": "International Space Station",
-        "crew": ["Bill Shepherd", "Yuri Gidzenko", "Sergei Krikalev"],
+        "crew": [
+          "Bill Shepherd",
+          "Yuri Gidzenko",
+          "Sergei Krikalev"
+        ],
         "crew_size": 3,
         "spacecraft": "Soyuz TM-31",
         "outcome": "Success",
-        "destination": ["Low Earth Orbit", "ISS"],
+        "destination": [
+          "Low Earth Orbit",
+          "ISS"
+        ],
         "duration_days": 136.2,
         "decade": "2000s",
         "has_eva": true
@@ -68,15 +94,24 @@
         "description": "An oxygen tank explosion 200,000 miles from Earth turned a lunar landing mission into a desperate survival saga. The crew of Lovell, Swigert, and Haise used the Lunar Module as a lifeboat and returned safely, making Apollo 13 NASA's finest hour.",
         "text": "Apollo 13 was the seventh crewed mission in the Apollo space program and the third meant to land on the Moon. The craft was launched from Kennedy Space Center on April 11, 1970. The lunar landing was aborted after an oxygen tank in the Service Module exploded two days into the mission, crippling the spacecraft. The crew — Commander Jim Lovell, Command Module Pilot Jack Swigert, and Lunar Module Pilot Fred Haise — worked with mission control to devise emergency procedures. They used the Lunar Module Aquarius as a lifeboat, swung around the Moon, and returned to Earth on April 17. Despite great hardship, all three astronauts returned safely. The mission has been called a 'successful failure' — a triumph of human ingenuity under pressure.",
         "url": "/missions/apollo-13",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Apollo_13-insignia.png",
+        "image": "images/Apollo_13-insignia.png",
         "launch_date": "1970-04-11T19:13:00Z",
-        "agency": ["NASA"],
+        "agency": [
+          "NASA"
+        ],
         "program": "Apollo",
-        "crew": ["Jim Lovell", "Jack Swigert", "Fred Haise"],
+        "crew": [
+          "Jim Lovell",
+          "Jack Swigert",
+          "Fred Haise"
+        ],
         "crew_size": 3,
         "spacecraft": "Saturn V / Odyssey / Aquarius",
         "outcome": "Partial Success",
-        "destination": ["Moon", "Low Earth Orbit"],
+        "destination": [
+          "Moon",
+          "Low Earth Orbit"
+        ],
         "duration_days": 5.95,
         "decade": "1970s",
         "has_eva": false
@@ -88,15 +123,20 @@
         "description": "NASA's Perseverance rover landed in Jezero Crater on February 18, 2021, accompanied by Ingenuity — the first helicopter to fly on another planet. The rover searches for signs of ancient microbial life and collects samples for future return to Earth.",
         "text": "The Mars 2020 mission delivered the Perseverance rover to the surface of Mars on February 18, 2021, after a 203-day journey. The rover landed in Jezero Crater, believed to be the site of an ancient river delta. Perseverance carries seven scientific instruments, 23 cameras, and a drill for collecting rock and soil samples. It also carried Ingenuity, a 1.8 kg helicopter that achieved the first powered, controlled flight on another planet on April 19, 2021. Ingenuity completed over 70 flights, far exceeding its planned five. The mission's MOXIE experiment successfully produced oxygen from Mars' carbon dioxide atmosphere. Perseverance has cached 24 sample tubes on the Martian surface, awaiting a future Mars Sample Return mission that would bring them to Earth — a first in planetary exploration.",
         "url": "/missions/mars-perseverance",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Mars_2020_selfie_containing_both_perseverance_rover_and_ingenuity.gif",
+        "image": "images/Mars_2020_selfie_containing_both_perseverance_rover_and_ingenuity.gif",
         "launch_date": "2020-07-30T11:50:00Z",
-        "agency": ["NASA", "JPL"],
+        "agency": [
+          "NASA",
+          "JPL"
+        ],
         "program": "Mars Exploration Program",
         "crew": [],
         "crew_size": 0,
         "spacecraft": "Perseverance / Ingenuity",
         "outcome": "Success",
-        "destination": ["Mars"],
+        "destination": [
+          "Mars"
+        ],
         "duration_days": 1800,
         "decade": "2020s",
         "has_eva": false
@@ -108,15 +148,24 @@
         "description": "On May 30, 2020, Doug Hurley and Bob Behnken launched aboard a SpaceX Crew Dragon, marking the first crewed orbital launch from American soil since the Space Shuttle retired in 2011, and the first by a private company.",
         "text": "SpaceX Crew Dragon Demo-2 was the first crewed test flight of the Crew Dragon spacecraft. NASA astronauts Douglas Hurley and Robert Behnken launched from Kennedy Space Center's Launch Complex 39A on a Falcon 9 rocket. The mission ended a nine-year gap in American crewed spaceflight capability following the retirement of the Space Shuttle program. The astronauts spent 63 days aboard the International Space Station before returning to Earth with a splashdown in the Gulf of Mexico on August 2, 2020. This mission validated the Commercial Crew Program model and opened a new chapter in human spaceflight — one where private companies are primary providers of crew transportation services.",
         "url": "/missions/spacex-crew-dragon-demo-2",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Iss071e052057.jpg",
+        "image": "images/Iss071e052057.jpg",
         "launch_date": "2020-05-30T19:22:00Z",
-        "agency": ["NASA", "SpaceX"],
+        "agency": [
+          "NASA",
+          "SpaceX"
+        ],
         "program": "Commercial Crew Program",
-        "crew": ["Doug Hurley", "Bob Behnken"],
+        "crew": [
+          "Doug Hurley",
+          "Bob Behnken"
+        ],
         "crew_size": 2,
         "spacecraft": "Falcon 9 / Crew Dragon Endeavour",
         "outcome": "Success",
-        "destination": ["Low Earth Orbit", "ISS"],
+        "destination": [
+          "Low Earth Orbit",
+          "ISS"
+        ],
         "duration_days": 63.6,
         "decade": "2020s",
         "has_eva": true
@@ -128,15 +177,29 @@
         "description": "The last Space Shuttle mission to the Hubble Space Telescope replaced all six gyroscopes, installed two new scientific instruments, and repaired two others — extending Hubble's life by at least a decade and producing its most spectacular images.",
         "text": "STS-125 was the fifth and final Space Shuttle servicing mission to the Hubble Space Telescope. Launched aboard Space Shuttle Atlantis on May 11, 2009, the seven-member crew performed five spacewalks over 12 days. They replaced Hubble's batteries, gyroscopes, and fine guidance sensor; installed the Wide Field Camera 3 and the Cosmic Origins Spectrograph; and repaired the Advanced Camera for Surveys and the Space Telescope Imaging Spectrograph. These upgrades made Hubble 100 times more powerful than at its original launch and enabled groundbreaking discoveries about dark energy, exoplanets, and the age of the universe. It remains one of the most complex and successful repair missions in space history.",
         "url": "/missions/sts-125-hubble",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/0/06/Hubble_docked_in_the_cargo_bay.jpg",
+        "image": "images/Hubble_docked_in_the_cargo_bay.jpg",
         "launch_date": "2009-05-11T18:01:00Z",
-        "agency": ["NASA", "ESA"],
+        "agency": [
+          "NASA",
+          "ESA"
+        ],
         "program": "Space Shuttle",
-        "crew": ["Scott Altman", "Gregory Johnson", "Michael Good", "Megan McArthur", "John Grunsfeld", "Mike Massimino", "Andrew Feustel"],
+        "crew": [
+          "Scott Altman",
+          "Gregory Johnson",
+          "Michael Good",
+          "Megan McArthur",
+          "John Grunsfeld",
+          "Mike Massimino",
+          "Andrew Feustel"
+        ],
         "crew_size": 7,
         "spacecraft": "Space Shuttle Atlantis",
         "outcome": "Success",
-        "destination": ["Low Earth Orbit", "Hubble Space Telescope"],
+        "destination": [
+          "Low Earth Orbit",
+          "Hubble Space Telescope"
+        ],
         "duration_days": 12.9,
         "decade": "2000s",
         "has_eva": true
@@ -148,15 +211,21 @@
         "description": "The uncrewed Artemis I mission sent the Orion spacecraft on a 25.5-day journey around the Moon and back, validating the Space Launch System rocket and Orion's heat shield for future crewed lunar missions.",
         "text": "Artemis I was the first integrated test of NASA's deep space exploration systems: the Space Launch System (SLS) rocket, the Orion spacecraft, and the ground systems at Kennedy Space Center. Launched on November 16, 2022, after multiple delays, the uncrewed Orion capsule flew beyond the Moon, entering a distant retrograde orbit 268,563 miles from Earth — farther than any spacecraft built for humans had ever traveled. Over 25.5 days, Orion performed multiple engine burns, tested its communication systems, and collected radiation data. On December 11, Orion re-entered Earth's atmosphere at 24,607 mph and splashed down in the Pacific Ocean. The mission's success paved the way for Artemis II (crewed flyby) and Artemis III (first woman and first person of color on the Moon).",
         "url": "/missions/artemis-1",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/6/66/Orion_Approaches_Moon_for_Outbound_Powered_Flyby.jpg",
+        "image": "images/Orion_Approaches_Moon_for_Outbound_Powered_Flyby.jpg",
         "launch_date": "2022-11-16T06:47:00Z",
-        "agency": ["NASA", "ESA"],
+        "agency": [
+          "NASA",
+          "ESA"
+        ],
         "program": "Artemis",
         "crew": [],
         "crew_size": 0,
         "spacecraft": "SLS / Orion",
         "outcome": "Success",
-        "destination": ["Moon", "Distant Retrograde Orbit"],
+        "destination": [
+          "Moon",
+          "Distant Retrograde Orbit"
+        ],
         "duration_days": 25.5,
         "decade": "2020s",
         "has_eva": false
@@ -168,15 +237,27 @@
         "description": "The Space Shuttle Challenger broke apart 73 seconds after launch on January 28, 1986, killing all seven crew members. The disaster led to a 32-month hiatus and sweeping safety reforms in NASA's shuttle program.",
         "text": "STS-51-L was the 25th mission of the Space Shuttle program. On January 28, 1986, Challenger disintegrated 73 seconds after launch due to the failure of an O-ring seal in the right solid rocket booster, which was exacerbated by unusually cold temperatures at launch. The seven crew members — Francis Scobee, Michael Smith, Judith Resnik, Ellison Onizuka, Ronald McNair, Gregory Jarvis, and Christa McAuliffe (a teacher selected through the Teacher in Space Project) — were all killed. The Rogers Commission investigation found NASA's organizational culture and decision-making processes had contributed to the disaster. The tragedy led to extensive redesign of the solid rocket boosters, new safety protocols, and a fundamental shift in how NASA manages risk.",
         "url": "/missions/sts-51l-challenger",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Challenger_explosion.jpg",
+        "image": "images/Challenger_explosion.jpg",
         "launch_date": "1986-01-28T16:38:00Z",
-        "agency": ["NASA"],
+        "agency": [
+          "NASA"
+        ],
         "program": "Space Shuttle",
-        "crew": ["Francis Scobee", "Michael Smith", "Judith Resnik", "Ellison Onizuka", "Ronald McNair", "Gregory Jarvis", "Christa McAuliffe"],
+        "crew": [
+          "Francis Scobee",
+          "Michael Smith",
+          "Judith Resnik",
+          "Ellison Onizuka",
+          "Ronald McNair",
+          "Gregory Jarvis",
+          "Christa McAuliffe"
+        ],
         "crew_size": 7,
         "spacecraft": "Space Shuttle Challenger",
         "outcome": "Failure",
-        "destination": ["Low Earth Orbit"],
+        "destination": [
+          "Low Earth Orbit"
+        ],
         "duration_days": 0.001,
         "decade": "1980s",
         "has_eva": false
@@ -188,15 +269,21 @@
         "description": "On April 12, 1961, Soviet cosmonaut Yuri Gagarin became the first human to journey into outer space, completing one orbit of Earth in 108 minutes aboard the Vostok 3KA spacecraft — changing history forever.",
         "text": "Vostok 1 was the first spaceflight of the Vostok programme and the first human spaceflight in history. The Vostok 3KA spacecraft launched from Baikonur Cosmodrome on April 12, 1961, carrying Soviet cosmonaut Yuri Gagarin. Gagarin completed one orbit of Earth in 108 minutes, reaching a maximum altitude of 327 kilometers. The flight was entirely controlled from the ground due to concerns about how weightlessness might affect the pilot. Gagarin ejected from the capsule at an altitude of 7 km during descent and parachuted to Earth separately. He landed in a field near the city of Engels in the Saratov Oblast. Gagarin's flight was a triumph for the Soviet space program and marked the beginning of the Space Age. April 12 is celebrated worldwide as Yuri's Night.",
         "url": "/missions/vostok-1",
-        "image": "https://upload.wikimedia.org/wikipedia/commons/7/74/Vostok_1_after_landing.jpg",
+        "image": "images/Gagarin_before_flight.jpg",
         "launch_date": "1961-04-12T06:07:00Z",
-        "agency": ["Roscosmos"],
+        "agency": [
+          "Roscosmos"
+        ],
         "program": "Vostok",
-        "crew": ["Yuri Gagarin"],
+        "crew": [
+          "Yuri Gagarin"
+        ],
         "crew_size": 1,
         "spacecraft": "Vostok 3KA",
         "outcome": "Success",
-        "destination": ["Low Earth Orbit"],
+        "destination": [
+          "Low Earth Orbit"
+        ],
         "duration_days": 0.075,
         "decade": "1960s",
         "has_eva": false

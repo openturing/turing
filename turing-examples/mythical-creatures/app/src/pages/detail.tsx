@@ -12,7 +12,6 @@ import {
   IconTransform,
   IconInfinity,
   IconSword,
-  IconExternalLink,
   IconSparkles,
   IconFeather,
 } from "@tabler/icons-react";
@@ -255,22 +254,6 @@ export default function DetailPage() {
               </div>
             )}
 
-            {/* View original link */}
-            {doc.url && (
-              <div className="pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="gap-1.5"
-                  >
-                    <IconExternalLink className="size-4" />
-                    View Original
-                  </a>
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* ── Sidebar metadata ── */}
