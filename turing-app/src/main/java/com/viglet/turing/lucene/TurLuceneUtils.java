@@ -47,8 +47,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class TurLuceneUtils {
 
+    private static final String LUCENE_BASE_DIR = "store/lucene";
+
     private TurLuceneUtils() {
         throw new IllegalStateException("Lucene Utility class");
+    }
+
+    private static Path resolvePath(String basePath, String coreName) {
+        return Path.of(LUCENE_BASE_DIR, basePath, coreName);
+    }
+
+    private static Path resolveBasePath(String basePath) {
+        return Path.of(LUCENE_BASE_DIR, basePath);
     }
 
     // -------------------------------------------------------------------------
@@ -62,7 +72,7 @@ public final class TurLuceneUtils {
      * @param coreName the core name (sub-directory)
      */
     public static void createCore(String basePath, String coreName) {
-        Path corePath = Path.of(basePath, coreName);
+        Path corePath = resolvePath(basePath, coreName);
         try {
             Files.createDirectories(corePath);
             log.info("Lucene core created at: {}", corePath);
@@ -78,7 +88,7 @@ public final class TurLuceneUtils {
      * @param coreName the core name (sub-directory)
      */
     public static void deleteCore(String basePath, String coreName) {
-        Path corePath = Path.of(basePath, coreName);
+        Path corePath = resolvePath(basePath, coreName);
         if (!Files.exists(corePath)) {
             log.warn("Lucene core path does not exist, nothing to delete: {}", corePath);
             return;
@@ -102,7 +112,7 @@ public final class TurLuceneUtils {
      * Returns true if the given core directory exists and is a directory.
      */
     public static boolean coreExists(String basePath, String coreName) {
-        return Files.isDirectory(Path.of(basePath, coreName));
+        return Files.isDirectory(resolvePath(basePath, coreName));
     }
 
     /**
@@ -111,7 +121,7 @@ public final class TurLuceneUtils {
      * the index).
      */
     public static List<TurSECoreInfo> listCores(String basePath) {
-        Path base = Path.of(basePath);
+        Path base = resolveBasePath(basePath);
         if (!Files.isDirectory(base)) {
             return Collections.emptyList();
         }

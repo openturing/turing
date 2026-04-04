@@ -89,8 +89,10 @@ public class TurLuceneInstanceProcess {
                 turSNSiteLocale.getCore());
     }
 
+    private static final String LUCENE_BASE_DIR = "store/lucene";
+
     private Optional<TurLuceneInstance> getLuceneInstance(TurSEInstance turSEInstance, String coreName) {
-        Path indexPath = Paths.get(turSEInstance.getEndpointUrl(), coreName);
+        Path indexPath = Paths.get(LUCENE_BASE_DIR, turSEInstance.getEndpointUrl(), coreName);
         String cacheKey = indexPath.toString();
         try {
             TurLuceneInstance instance = instanceCache.computeIfAbsent(cacheKey, key -> {
@@ -121,7 +123,7 @@ public class TurLuceneInstanceProcess {
 
     /** Evicts a cached instance (e.g. after a core is deleted). */
     public void evict(String basePath, String coreName) {
-        String cacheKey = Paths.get(basePath, coreName).toString();
+        String cacheKey = Paths.get(LUCENE_BASE_DIR, basePath, coreName).toString();
         TurLuceneInstance removed = instanceCache.remove(cacheKey);
         if (removed != null) {
             try {
