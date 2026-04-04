@@ -3,6 +3,7 @@ package com.viglet.turing.exchange.sn;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +17,9 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.api.asset.TurAssetItem;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.exchange.TurExchange;
 import com.viglet.turing.exchange.sn.mixin.TurSNSiteExchangeMixin;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -123,9 +126,12 @@ public class TurSNSiteExportFileService {
 	}
 
 	private final TurSNSiteExportValidator exportValidator;
+	private final TurStorageService storageService;
 
-	public TurSNSiteExportFileService(TurSNSiteExportValidator exportValidator) {
+	public TurSNSiteExportFileService(TurSNSiteExportValidator exportValidator,
+									  TurStorageService storageService) {
 		this.exportValidator = exportValidator;
+		this.storageService = storageService;
 	}
 
 	public Path exportSNSitesToZip(List<TurSNSite> turSNSites,
@@ -156,6 +162,10 @@ public class TurSNSiteExportFileService {
 			writeContentFile(exportFile.getParentFile(), contentMap);
 		}
 
+		for (TurSNSite turSNSite : turSNSites) {
+			copySearchTemplateToExport(turSNSite, exportFile.getParentFile());
+		}
+
 		File zipFile = createZipFile(exportFile);
 		return zipFile.toPath();
 	}
@@ -174,6 +184,35 @@ public class TurSNSiteExportFileService {
 				log.error("Error writing content file for site '{}': {}", entry.getKey(), e.getMessage(), e);
 			}
 		}
+	}
+
+	private void copySearchTemplateToExport(TurSNSite turSNSite, File exportDir) {
+		String template = turSNSite.getSearchTemplate();
+		if (template == null || template.isBlank() || !storageService.isEnabled()) {
+			return;
+		}
+		String prefix = "public/" + template + "/";
+		List<TurAssetItem> files = storageService.listAllObjects().stream()
+				.filter(item -> !item.directory() && item.name().startsWith(prefix))
+				.toList();
+		if (files.isEmpty()) {
+			log.debug("No SPA template files found for template '{}'", template);
+			return;
+		}
+		File appDir = new File(exportDir, "app");
+		for (TurAssetItem file : files) {
+			String relativePath = file.name().substring(prefix.length());
+			File targetFile = new File(appDir, relativePath);
+			try {
+				Files.createDirectories(targetFile.getParentFile().toPath());
+				try (InputStream is = storageService.downloadObject(file.name())) {
+					Files.copy(is, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
+			} catch (Exception e) {
+				log.warn("Failed to copy template file '{}': {}", file.name(), e.getMessage());
+			}
+		}
+		log.info("Exported SPA template '{}' ({} files) to export zip", template, files.size());
 	}
 
 	private void collectReferences(TurSNSite turSNSite,
