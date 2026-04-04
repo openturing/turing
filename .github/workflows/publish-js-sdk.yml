@@ -1,0 +1,45 @@
+name: Publish JavaScript SDKs
+
+on:
+  push:
+    branches:
+      - publish/javascript
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@viglet"
+
+      # ── Build & Publish turing-sdk (JS SDK) ──
+      - name: Build turing-sdk
+        working-directory: turing-js-sdk/js-sdk-lib
+        run: npm run build
+
+      - name: Publish turing-sdk
+        working-directory: turing-js-sdk/js-sdk-lib
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build & Publish turing-react-sdk ──
+      - name: Build turing-react-sdk
+        working-directory: turing-js-sdk/turing-react-sdk
+        run: npm run build
+
+      - name: Publish turing-react-sdk
+        working-directory: turing-js-sdk/turing-react-sdk
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
