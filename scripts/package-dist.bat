@@ -70,6 +70,15 @@ rem Config and docs
 copy "%SCRIPT_DIR%config\viglet-turing.properties" "%STAGE%\server\" >nul
 copy "%SCRIPT_DIR%config\README.txt" "%STAGE%\" >nul
 
+rem Example exports
+echo ==^> Packaging example exports...
+call "%SCRIPT_DIR%package-examples.bat"
+set EXAMPLES_OUT=%PROJECT_ROOT%\target\examples
+mkdir "%STAGE%\examples" 2>nul
+if exist "%EXAMPLES_OUT%\mythical-creatures.zip" copy "%EXAMPLES_OUT%\mythical-creatures.zip" "%STAGE%\examples\" >nul
+if exist "%EXAMPLES_OUT%\space-missions.zip"     copy "%EXAMPLES_OUT%\space-missions.zip"     "%STAGE%\examples\" >nul
+if exist "%EXAMPLES_OUT%\vinyl-records.zip"       copy "%EXAMPLES_OUT%\vinyl-records.zip"       "%STAGE%\examples\" >nul
+
 rem =====================================================================
 rem  1. Zip
 rem =====================================================================

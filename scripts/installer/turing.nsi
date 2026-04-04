@@ -8,6 +8,7 @@
 !include "FileFunc.nsh"
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
+!include "Sections.nsh"
 
 ; --------------------------------------------------------------------------
 ; General
@@ -25,9 +26,9 @@ SetCompressor /SOLID lzma
 ; --------------------------------------------------------------------------
 ; Version info
 ; --------------------------------------------------------------------------
-VIProductVersion "2026.2.1.0"
+VIProductVersion "2026.2.4.0"
 VIAddVersionKey "ProductName" "Viglet Turing ES"
-VIAddVersionKey "FileVersion" "2026.2.1.0"
+VIAddVersionKey "FileVersion" "2026.2.4.0"
 VIAddVersionKey "CompanyName" "Viglet"
 VIAddVersionKey "FileDescription" "Viglet Turing ES Installer"
 VIAddVersionKey "LegalCopyright" "Apache License 2.0"
@@ -40,6 +41,7 @@ Var JavaDialog
 Var JavaDirText
 Var JavaDirBrowse
 Var JavaStatusLabel
+Var ExamplesAnySelected
 
 ; --------------------------------------------------------------------------
 ; MUI Settings
@@ -60,6 +62,7 @@ Var JavaStatusLabel
 !insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom JavaPageCreate JavaPageLeave
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -68,6 +71,24 @@ Page custom JavaPageCreate JavaPageLeave
 
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "Portuguese"
+
+; --------------------------------------------------------------------------
+; Component descriptions
+; --------------------------------------------------------------------------
+LangString DESC_SecMain       ${LANG_ENGLISH} "Turing ES search platform (required). Includes the server, CLI tools, and administration console."
+LangString DESC_SecMain       ${LANG_PORTUGUESE} "Plataforma de busca Turing ES (obrigatorio). Inclui o servidor, ferramentas CLI e console de administracao."
+
+LangString DESC_SecExamples   ${LANG_ENGLISH} "Sample search sites with SPA templates and demo content. Great for learning and testing."
+LangString DESC_SecExamples   ${LANG_PORTUGUESE} "Sites de busca de exemplo com templates SPA e conteudo de demonstracao. Otimo para aprender e testar."
+
+LangString DESC_SecMythical   ${LANG_ENGLISH} "The Bestiary - Encyclopedia of mythical creatures with multi-language search, faceted filters, danger ratings, and More Like This recommendations."
+LangString DESC_SecMythical   ${LANG_PORTUGUESE} "O Bestiario - Enciclopedia de criaturas miticas com busca multi-idioma, filtros facetados, nivel de perigo e recomendacoes."
+
+LangString DESC_SecSpace      ${LANG_ENGLISH} "Mission Control - Space missions search with agency filters, launch dates, crew data, and a futuristic HUD-style interface."
+LangString DESC_SecSpace      ${LANG_PORTUGUESE} "Controle de Missao - Busca de missoes espaciais com filtros de agencia, datas de lancamento, dados de tripulacao e interface futurista."
+
+LangString DESC_SecVinyl      ${LANG_ENGLISH} "The Crate - Vinyl records catalog with album art, artist search, genre facets, star ratings, and condition grading."
+LangString DESC_SecVinyl      ${LANG_PORTUGUESE} "The Crate - Catalogo de discos de vinil com capas, busca por artista, facetas de genero, avaliacoes e classificacao de condicao."
 
 ; --------------------------------------------------------------------------
 ; Java Page
@@ -166,9 +187,11 @@ Function JavaPageLeave
 FunctionEnd
 
 ; --------------------------------------------------------------------------
-; Installer Section
+; Installer Sections
 ; --------------------------------------------------------------------------
-Section "Turing ES" SecMain
+
+; ---- Core (always installed) ----
+Section "Turing ES (required)" SecMain
     SectionIn RO
 
     SetOutPath "$INSTDIR"
@@ -193,6 +216,9 @@ Section "Turing ES" SecMain
     FileOpen $0 "$INSTDIR\bin\java-home.conf" w
     FileWrite $0 "$JavaHome"
     FileClose $0
+
+    ; Create export dir for auto-import
+    CreateDirectory "$INSTDIR\export"
 
     ; Registry
     WriteRegStr HKLM "Software\Viglet\Turing" "InstallDir" "$INSTDIR"
@@ -231,6 +257,54 @@ Section "Turing ES" SecMain
 
 SectionEnd
 
+; ---- Example Sites Group ----
+SectionGroup "Example Sites" SecExamples
+
+    Section "Mythical Creatures (Bestiary)" SecMythical
+        SetOutPath "$INSTDIR\export"
+        File /nonfatal "${STAGE}\examples\mythical-creatures.zip"
+        StrCpy $ExamplesAnySelected "1"
+    SectionEnd
+
+    Section "Space Missions (Mission Control)" SecSpace
+        SetOutPath "$INSTDIR\export"
+        File /nonfatal "${STAGE}\examples\space-missions.zip"
+        StrCpy $ExamplesAnySelected "1"
+    SectionEnd
+
+    Section "Vinyl Records (The Crate)" SecVinyl
+        SetOutPath "$INSTDIR\export"
+        File /nonfatal "${STAGE}\examples\vinyl-records.zip"
+        StrCpy $ExamplesAnySelected "1"
+    SectionEnd
+
+SectionGroupEnd
+
+; ---- Enable filesystem storage if any example was selected ----
+Section "-ConfigureStorage"
+    ${If} $ExamplesAnySelected == "1"
+        ; Append storage config to properties file
+        FileOpen $0 "$INSTDIR\server\viglet-turing.properties" a
+        FileSeek $0 0 END
+        FileWrite $0 "$\r$\n"
+        FileWrite $0 "# Storage enabled for SPA page templates$\r$\n"
+        FileWrite $0 "turing.storage.type=FILESYSTEM$\r$\n"
+        FileWrite $0 "turing.storage.filesystem.path=./store/assets$\r$\n"
+        FileClose $0
+    ${EndIf}
+SectionEnd
+
+; --------------------------------------------------------------------------
+; Section descriptions
+; --------------------------------------------------------------------------
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecMain}     $(DESC_SecMain)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecExamples}  $(DESC_SecExamples)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecMythical}  $(DESC_SecMythical)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSpace}     $(DESC_SecSpace)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecVinyl}     $(DESC_SecVinyl)
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
 ; --------------------------------------------------------------------------
 ; Uninstaller Section
 ; --------------------------------------------------------------------------
@@ -239,6 +313,8 @@ Section "Uninstall"
     RMDir /r "$INSTDIR\server"
     RMDir /r "$INSTDIR\utils"
     RMDir /r "$INSTDIR\bin"
+    RMDir /r "$INSTDIR\export"
+    RMDir /r "$INSTDIR\store"
     Delete "$INSTDIR\README.txt"
     Delete "$INSTDIR\turing.ico"
     Delete "$INSTDIR\uninstall.exe"
