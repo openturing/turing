@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-search-template-to-sn-site
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site
+                columnName: searchTemplate
+      changes:
+        - addColumn:
+            tableName: sn_site
+            columns:
+              - column:
+                  name: searchTemplate
+                  type: varchar(255)
+                  constraints:
+                    nullable: true

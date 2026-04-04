@@ -164,6 +164,7 @@ public class TurSNSiteAPI {
             turSNSiteEdit.setDefaultImageField(turSNSite.getDefaultImageField());
             turSNSiteEdit.setDefaultURLField(turSNSite.getDefaultURLField());
             turSNSiteEdit.setExactMatch(turSNSite.getExactMatch());
+            turSNSiteEdit.setSearchTemplate(turSNSite.getSearchTemplate());
             Optional.ofNullable(turSNSite.getTurSNSiteGenAi()).ifPresent(genAi -> {
                 TurSNSiteGenAi turSNSiteGenAi = Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi())
                         .orElse(new TurSNSiteGenAi());

@@ -351,7 +351,10 @@
       "searchEngineDesc": "Backend engine powering this site.",
       "seInstanceLabel": "Search Engine Instance",
       "seInstanceDesc": "Select the search engine instance powering this semantic navigation site. This determines which backend is used for indexing and searching content.",
-      "seInstanceRequired": "Search engine instance is required."
+      "seInstanceRequired": "Search engine instance is required.",
+      "searchTemplateLabel": "Search Template",
+      "searchTemplateDesc": "Select a SPA page to use as the search interface. When set, \"Open Search\" in Multi Language will open this page instead of the default search.",
+      "searchTemplateNone": "Default (built-in search)"
     },
     "snGenai": {
       "sitePrompt": "Site Prompt",

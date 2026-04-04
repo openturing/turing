@@ -18,8 +18,10 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import type { TurPageSite } from "@/models/page/page-site.model"
 import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
+import { TurPageService } from "@/services/page/page.service"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { useCallback, useEffect, useState } from "react"
@@ -38,6 +40,7 @@ import { Skeleton } from "../ui/skeleton"
 import { IconSettings, IconSearch } from "@tabler/icons-react"
 const turSNSiteService = new TurSNSiteService();
 const turSEInstanceService = new TurSEInstanceService();
+const turPageService = new TurPageService();
 interface Props {
   value: TurSNSite;
   isNew: boolean;
@@ -46,6 +49,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
+  const [pages, setPages] = useState<TurPageSite[]>([]);
   const form = useForm<TurSNSite>({
     defaultValues: value
   });
@@ -64,6 +68,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
 
   useEffect(() => {
     turSEInstanceService.query().then(setSeInstances);
+    turPageService.query().then(setPages).catch(() => setPages([]));
     form.reset(value);
     setIsLoading(false);
   }, [value])
@@ -245,6 +250,42 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                         </FormItemTwoColumns>
                       )}
                     />
+
+                    {/* Search Template (Page) */}
+                    {pages.length > 0 && (
+                      <FormField
+                        control={form.control}
+                        name="searchTemplate"
+                        render={({ field }) => (
+                          <FormItemTwoColumns>
+                            <FormItemTwoColumns.Left>
+                              <FormItemTwoColumns.Label>{t("forms.snSiteForm.searchTemplateLabel")}</FormItemTwoColumns.Label>
+                              <FormItemTwoColumns.Description>
+                                {t("forms.snSiteForm.searchTemplateDesc")}
+                              </FormItemTwoColumns.Description>
+                            </FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Right>
+                              <FormControl>
+                                <Select onValueChange={(v) => field.onChange(v === "__none__" ? null : v)} value={field.value ?? "__none__"}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t("forms.snSiteForm.searchTemplateNone")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">{t("forms.snSiteForm.searchTemplateNone")}</SelectItem>
+                                    {pages.map((page) => (
+                                      <SelectItem key={page.name} value={page.name}>
+                                        {page.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                            </FormItemTwoColumns.Right>
+                            <FormMessage />
+                          </FormItemTwoColumns>
+                        )}
+                      />
+                    )}
                   </SectionCard.Content>
                 </SectionCard>
 

@@ -70,7 +70,10 @@ export const buildColumns = (t: (key: string) => string): ColumnDef<TurSNSiteLoc
                         {t("forms.common.edit")}
                     </GradientButton>
                     <GradientButton asChild size={"sm"}>
-                        <a href={`/sn/${locale.turSNSite.name}?_setlocale=${locale.language}`} target="_blank">
+                        <a href={locale.turSNSite.searchTemplate
+                            ? `/pages/${locale.turSNSite.searchTemplate}/?_setlocale=${locale.language}`
+                            : `/sn/${locale.turSNSite.name}?_setlocale=${locale.language}`}
+                           target="_blank">
                             {t("forms.localeTable.openSearch")}
                         </a>
                     </GradientButton>

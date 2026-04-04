@@ -37,4 +37,5 @@ export type TurSNSite = {
   exactMatch: number;
   turSNSiteGenAi: TurSNSiteGenAi;
   icon?: string | null;
+  searchTemplate?: string | null;
 };

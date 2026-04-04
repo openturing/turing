@@ -351,7 +351,10 @@
       "searchEngineDesc": "Mecanismo de busca que alimenta este site.",
       "seInstanceLabel": "Instância do Mecanismo de Busca",
       "seInstanceDesc": "Selecione a instância do mecanismo de busca que alimenta este site de navegação semântica. Isso determina qual backend é usado para indexação e busca de conteúdo.",
-      "seInstanceRequired": "Instância do mecanismo de busca é obrigatória."
+      "seInstanceRequired": "Instância do mecanismo de busca é obrigatória.",
+      "searchTemplateLabel": "Template de Busca",
+      "searchTemplateDesc": "Selecione uma página SPA para usar como interface de busca. Quando definido, \"Abrir Busca\" em Multi Idiomas abrirá esta página em vez da busca padrão.",
+      "searchTemplateNone": "Padrão (busca integrada)"
     },
     "snGenai": {
       "sitePrompt": "Prompt do Site",

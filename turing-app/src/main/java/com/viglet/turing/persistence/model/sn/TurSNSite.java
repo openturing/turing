@@ -167,6 +167,9 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@Column
 	private Integer spotlightWithResults;
 
+	@Column(length = 255)
+	private String searchTemplate;
+
 	@ManyToOne
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
