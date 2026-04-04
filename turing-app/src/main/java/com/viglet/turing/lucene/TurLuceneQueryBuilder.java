@@ -118,6 +118,13 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
+     * Returns the list of enabled highlight fields for the given site.
+     */
+    public List<TurSNSiteFieldExt> getHLFields(TurSNSite turSNSite) {
+        return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+    }
+
+    /**
      * Builds a wildcard-appended version of the query (for no-results fallback).
      */
     public Query buildWildcardQuery(TurSNSite turSNSite, TurSEParameters params) {

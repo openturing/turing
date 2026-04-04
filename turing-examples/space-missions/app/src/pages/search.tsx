@@ -233,9 +233,9 @@ function MissionCard({
 
         {/* Description */}
         {doc.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {doc.description}
-          </p>
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: doc.description }}
+          />
         )}
 
         {/* Meta info row */}

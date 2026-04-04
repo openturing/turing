@@ -234,9 +234,9 @@ export default function DetailPage() {
               </div>
 
               {doc.description && (
-                <p className="mt-4 text-sm text-muted-foreground max-w-2xl leading-relaxed">
-                  {doc.description}
-                </p>
+                <p className="mt-4 text-sm text-muted-foreground max-w-2xl leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: doc.description }}
+                />
               )}
             </div>
           </div>

@@ -18,10 +18,14 @@ package com.viglet.turing.lucene;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.FacetsCollector;
 import org.apache.lucene.facet.FacetsCollectorManager;
@@ -32,6 +36,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
 
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
@@ -41,6 +46,7 @@ import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.facet.TurSEFacetResultAttr;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.sn.TurSNUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +61,8 @@ import lombok.extern.slf4j.Slf4j;
 public class TurLuceneResultProcessor {
 
     private static final int MAX_FACET_VALUES = 100;
+    private static final Set<TurSEFieldType> HL_FIELD_TYPES = Collections
+            .unmodifiableSet(EnumSet.of(TurSEFieldType.TEXT, TurSEFieldType.STRING));
 
     // -------------------------------------------------------------------------
     // Main entry point
@@ -62,7 +70,7 @@ public class TurLuceneResultProcessor {
 
     /**
      * Executes a search against the Lucene index and returns a fully
-     * populated {@link TurSEResults}, including facet counts.
+     * populated {@link TurSEResults}, including facet counts and highlighting.
      *
      * <p>
      * Uses {@link FacetsCollector} to collect matched documents across all
@@ -71,7 +79,7 @@ public class TurLuceneResultProcessor {
      */
     public TurSEResults getResults(TurLuceneInstance instance, TurSNSite turSNSite,
             Query query, TurSEParameters params, List<TurSNSiteFieldExt> facetFields,
-            long startTime) {
+            List<TurSNSiteFieldExt> hlFields, long startTime) {
         TurSEResults results = TurSEResults.builder().build();
         populateResultsParameters(params, results);
 
@@ -98,12 +106,18 @@ public class TurLuceneResultProcessor {
             results.setStart(start);
             results.setPageCount((int) Math.ceil(numFound / (double) rows));
 
+            // Prepare highlighting
+            Map<String, Map<String, String>> hlByDoc = buildHighlighting(
+                    searcher, query, topDocs, turSNSite, hlFields);
+
             // Map hits to TurSEResult (apply pagination offset)
             List<TurSEResult> resultList = new ArrayList<>();
             for (int i = start; i < Math.min(topDocs.scoreDocs.length, hitsNeeded); i++) {
                 ScoreDoc sd = topDocs.scoreDocs[i];
                 Document doc = searcher.storedFields().document(sd.doc);
-                resultList.add(createTurSEResult(doc, sd.score));
+                String docId = doc.get(TurLuceneConstants.ID);
+                Map<String, String> docHL = docId != null ? hlByDoc.getOrDefault(docId, Map.of()) : Map.of();
+                resultList.add(createTurSEResult(doc, sd.score, docHL, hlFields));
             }
             results.setResults(resultList);
 
@@ -121,17 +135,89 @@ public class TurLuceneResultProcessor {
     }
 
     // -------------------------------------------------------------------------
+    // Highlighting
+    // -------------------------------------------------------------------------
+
+    private Map<String, Map<String, String>> buildHighlighting(IndexSearcher searcher,
+            Query query, TopDocs topDocs, TurSNSite turSNSite,
+            List<TurSNSiteFieldExt> hlFields) {
+        if (!isHL(turSNSite, hlFields) || topDocs.scoreDocs.length == 0) {
+            return Map.of();
+        }
+
+        Map<String, Map<String, String>> hlByDoc = new LinkedHashMap<>();
+        String preTags = turSNSite.getHlPre() != null ? turSNSite.getHlPre() : "<em>";
+        String postTags = turSNSite.getHlPost() != null ? turSNSite.getHlPost() : "</em>";
+
+        try {
+            UnifiedHighlighter highlighter = new UnifiedHighlighter.Builder(searcher, new StandardAnalyzer())
+                    .build();
+
+            for (TurSNSiteFieldExt hlField : hlFields) {
+                if (hlField.getType() == null || !HL_FIELD_TYPES.contains(hlField.getType())) {
+                    continue;
+                }
+                String fieldName = hlField.getName();
+                try {
+                    String[] snippets = highlighter.highlight(fieldName, query, topDocs, 1);
+                    if (snippets == null) continue;
+                    for (int i = 0; i < snippets.length && i < topDocs.scoreDocs.length; i++) {
+                        if (snippets[i] == null) continue;
+                        // Replace default <b>/</b> tags with configured HL tags
+                        String highlighted = snippets[i]
+                                .replace("<b>", preTags)
+                                .replace("</b>", postTags);
+                        Document doc = searcher.storedFields().document(topDocs.scoreDocs[i].doc);
+                        String docId = doc.get(TurLuceneConstants.ID);
+                        if (docId != null) {
+                            hlByDoc.computeIfAbsent(docId, k -> new LinkedHashMap<>())
+                                    .put(fieldName, highlighted);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("Could not highlight field '{}': {}", fieldName, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error building highlighting: {}", e.getMessage());
+        }
+
+        return hlByDoc;
+    }
+
+    static boolean isHL(TurSNSite turSNSite, List<TurSNSiteFieldExt> hlFields) {
+        return TurSNUtils.isTrue(turSNSite.getHl()) && hlFields != null && !hlFields.isEmpty();
+    }
+
+    // -------------------------------------------------------------------------
     // Document → TurSEResult
     // -------------------------------------------------------------------------
 
-    TurSEResult createTurSEResult(Document doc, float score) {
+    TurSEResult createTurSEResult(Document doc, float score,
+            Map<String, String> docHL, List<TurSNSiteFieldExt> hlFields) {
         Map<String, Object> fields = new LinkedHashMap<>();
+        Map<String, TurSEFieldType> hlFieldTypes = new LinkedHashMap<>();
+        if (hlFields != null) {
+            for (TurSNSiteFieldExt f : hlFields) {
+                if (f.getType() != null) {
+                    hlFieldTypes.put(f.getName(), f.getType());
+                }
+            }
+        }
+
         for (IndexableField f : doc.getFields()) {
             String name = f.name();
             // Skip Lucene-internal facet storage fields
             if (name.startsWith("$"))
                 continue;
+
             Object newVal = extractStoredValue(f);
+
+            // Apply highlighting if available for this field
+            if (docHL.containsKey(name) && isHLAttribute(hlFieldTypes, name)) {
+                newVal = docHL.get(name);
+            }
+
             Object existing = fields.get(name);
             if (existing == null) {
                 fields.put(name, newVal);
@@ -145,6 +231,11 @@ public class TurLuceneResultProcessor {
         }
         fields.put(TurLuceneConstants.SCORE, score);
         return TurSEResult.builder().fields(fields).build();
+    }
+
+    private static boolean isHLAttribute(Map<String, TurSEFieldType> hlFieldTypes, String attribute) {
+        TurSEFieldType type = hlFieldTypes.get(attribute);
+        return type != null && HL_FIELD_TYPES.contains(type);
     }
 
     private Object extractStoredValue(IndexableField f) {

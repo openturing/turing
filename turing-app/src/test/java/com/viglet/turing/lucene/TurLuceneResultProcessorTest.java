@@ -32,7 +32,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("id", "doc1", Field.Store.YES));
         doc.add(new StringField("title", "Test Title", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.5f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.5f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("doc1", result.getFields().get("id"));
         assertEquals("Test Title", result.getFields().get("title"));
@@ -47,7 +47,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("id", "doc1", Field.Store.YES));
         doc.add(new StringField("$facets", "internal", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertFalse(result.getFields().containsKey("$facets"));
         assertTrue(result.getFields().containsKey("id"));
@@ -60,7 +60,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("$internal2", "val2", Field.Store.YES));
         doc.add(new StringField("normal", "val3", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertFalse(result.getFields().containsKey("$internal1"));
         assertFalse(result.getFields().containsKey("$internal2"));
@@ -75,7 +75,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("tag", "java", Field.Store.YES));
         doc.add(new StringField("tag", "spring", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         Object tagValue = result.getFields().get("tag");
         assertInstanceOf(List.class, tagValue);
@@ -92,7 +92,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("tag", "spring", Field.Store.YES));
         doc.add(new StringField("tag", "lucene", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         Object tagValue = result.getFields().get("tag");
         assertInstanceOf(List.class, tagValue);
@@ -110,7 +110,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StoredField("count", 42));
 
-        TurSEResult result = processor.createTurSEResult(doc, 0.8f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.8f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(42, result.getFields().get("count"));
     }
@@ -120,7 +120,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StoredField("timestamp", 9999999999L));
 
-        TurSEResult result = processor.createTurSEResult(doc, 0.5f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.5f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(9999999999L, result.getFields().get("timestamp"));
     }
@@ -130,7 +130,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StoredField("weight", 3.14f));
 
-        TurSEResult result = processor.createTurSEResult(doc, 0.5f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.5f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(3.14f, result.getFields().get("weight"));
     }
@@ -140,7 +140,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StoredField("amount", 99.99));
 
-        TurSEResult result = processor.createTurSEResult(doc, 0.5f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.5f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(99.99, result.getFields().get("amount"));
     }
@@ -152,7 +152,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new TextField("body", "This is body text", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("This is body text", result.getFields().get("body"));
     }
@@ -162,7 +162,7 @@ class TurLuceneResultProcessorTest {
     @Test
     void createTurSEResultShouldHandleEmptyDocument() {
         Document doc = new Document();
-        TurSEResult result = processor.createTurSEResult(doc, 0.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.0f, java.util.Map.of(), java.util.List.of());
         // Only score should be present
         assertEquals(1, result.getFields().size());
         assertEquals(0.0f, result.getFields().get(TurLuceneConstants.SCORE));
@@ -175,7 +175,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StringField("id", "1", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 0.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 0.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(0.0f, result.getFields().get(TurLuceneConstants.SCORE));
     }
@@ -185,7 +185,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StringField("id", "1", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, Float.MAX_VALUE);
+        TurSEResult result = processor.createTurSEResult(doc, Float.MAX_VALUE, java.util.Map.of(), java.util.List.of());
 
         assertEquals(Float.MAX_VALUE, result.getFields().get(TurLuceneConstants.SCORE));
     }
@@ -195,7 +195,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StringField("id", "1", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, -1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, -1.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals(-1.0f, result.getFields().get(TurLuceneConstants.SCORE));
     }
@@ -210,7 +210,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StoredField("count", 10));
         doc.add(new StoredField("price", 19.99));
 
-        TurSEResult result = processor.createTurSEResult(doc, 2.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 2.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("doc1", result.getFields().get("id"));
         assertEquals("Hello world", result.getFields().get("body"));
@@ -228,7 +228,7 @@ class TurLuceneResultProcessorTest {
         // IntPoint is not stored, so numericValue() and stringValue() return null
         // extractStoredValue returns ""
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         // IntPoint fields have no stored value, so they appear as empty string
         // But the field starts with no "$" so it's not skipped
@@ -244,7 +244,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("id", "1", Field.Store.YES));
         doc.add(new StringField("name", "test", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         // id + name + score = 3
         assertEquals(3, result.getFields().size());
@@ -258,7 +258,7 @@ class TurLuceneResultProcessorTest {
         doc.add(new StringField("id", "doc<>&\"'", Field.Store.YES));
         doc.add(new TextField("body", "Hello <world> & \"quotes\"", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("doc<>&\"'", result.getFields().get("id"));
         assertEquals("Hello <world> & \"quotes\"", result.getFields().get("body"));
@@ -269,7 +269,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StringField("title", "Titulo em portugues", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("Titulo em portugues", result.getFields().get("title"));
     }
@@ -279,7 +279,7 @@ class TurLuceneResultProcessorTest {
         Document doc = new Document();
         doc.add(new StringField("empty", "", Field.Store.YES));
 
-        TurSEResult result = processor.createTurSEResult(doc, 1.0f);
+        TurSEResult result = processor.createTurSEResult(doc, 1.0f, java.util.Map.of(), java.util.List.of());
 
         assertEquals("", result.getFields().get("empty"));
     }

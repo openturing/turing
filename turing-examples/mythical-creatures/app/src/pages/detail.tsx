@@ -198,9 +198,9 @@ export default function DetailPage() {
               </h1>
 
               {doc.description && (
-                <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
-                  {doc.description}
-                </p>
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: doc.description }}
+                />
               )}
             </div>
           </div>
@@ -224,9 +224,9 @@ export default function DetailPage() {
               {doc.title}
             </h1>
             {doc.description && (
-              <p className="mt-3 text-muted-foreground max-w-2xl leading-relaxed">
-                {doc.description}
-              </p>
+              <p className="mt-3 text-muted-foreground max-w-2xl leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: doc.description }}
+              />
             )}
           </div>
         )}

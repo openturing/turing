@@ -189,9 +189,9 @@ function CreatureCard({
 
         {/* Description */}
         {doc.description && (
-          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-            {doc.description}
-          </p>
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: doc.description }}
+          />
         )}
 
         {/* Tags */}
