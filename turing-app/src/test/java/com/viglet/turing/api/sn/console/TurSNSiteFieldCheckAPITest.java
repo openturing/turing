@@ -37,6 +37,7 @@ import org.mockito.Mockito;
 import com.viglet.turing.api.sn.bean.TurSNFieldExtCheck;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
+import com.viglet.turing.persistence.model.se.TurSEVendor;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -54,12 +55,34 @@ import com.viglet.turing.solr.bean.TurSolrFieldBean;
  */
 class TurSNSiteFieldCheckAPITest {
 
+    private static TurSEInstance createSolrInstance() {
+        TurSEVendor vendor = new TurSEVendor();
+        vendor.setId("SOLR");
+        TurSEInstance instance = new TurSEInstance();
+        instance.setTurSEVendor(vendor);
+        return instance;
+    }
+
+    private static com.viglet.turing.plugins.se.TurSearchEnginePluginFactory stubPluginFactory() {
+        return stubPluginFactory(true, true);
+    }
+
+    private static com.viglet.turing.plugins.se.TurSearchEnginePluginFactory stubPluginFactory(
+            boolean indexExists, boolean fieldExists) {
+        var plugin = mock(com.viglet.turing.plugins.se.TurSearchEnginePlugin.class);
+        when(plugin.indexExists(any(), any())).thenReturn(indexExists);
+        when(plugin.fieldExists(any(), any(), any())).thenReturn(fieldExists);
+        var factory = mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class);
+        when(factory.getPluginForSite(any())).thenReturn(plugin);
+        return factory;
+    }
+
     @Test
     void testFieldCheckReturnsEmptyWhenSiteMissing() {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory());
 
         when(siteRepository.findById("site")).thenReturn(Optional.empty());
 
@@ -73,7 +96,7 @@ class TurSNSiteFieldCheckAPITest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory());
         TurSNSite site = new TurSNSite();
 
         when(siteRepository.findById("site")).thenReturn(Optional.of(site));
@@ -93,9 +116,9 @@ class TurSNSiteFieldCheckAPITest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory());
 
-        TurSEInstance instance = new TurSEInstance();
+        TurSEInstance instance = createSolrInstance();
         TurSNSite site = new TurSNSite();
         site.setTurSEInstance(instance);
 
@@ -140,9 +163,9 @@ class TurSNSiteFieldCheckAPITest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory(false, false));
 
-        TurSEInstance instance = new TurSEInstance();
+        TurSEInstance instance = createSolrInstance();
         TurSNSite site = new TurSNSite();
         site.setTurSEInstance(instance);
 
@@ -183,9 +206,9 @@ class TurSNSiteFieldCheckAPITest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory());
 
-        TurSEInstance instance = new TurSEInstance();
+        TurSEInstance instance = createSolrInstance();
         TurSNSite site = new TurSNSite();
         site.setTurSEInstance(instance);
 
@@ -229,9 +252,9 @@ class TurSNSiteFieldCheckAPITest {
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
         TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, mock(com.viglet.turing.plugins.se.TurSearchEnginePluginFactory.class));
+        TurSNSiteFieldCheckAPI api = new TurSNSiteFieldCheckAPI(siteRepository, fieldExtRepository, localeRepository, stubPluginFactory());
 
-        TurSEInstance instance = new TurSEInstance();
+        TurSEInstance instance = createSolrInstance();
         TurSNSite site = new TurSNSite();
         site.setTurSEInstance(instance);
 

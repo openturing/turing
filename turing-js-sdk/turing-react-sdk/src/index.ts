@@ -16,6 +16,8 @@ export { useTuringSortOptions } from "./hooks/use-turing-sort-options";
 export type { UseTuringSortOptionsReturn } from "./hooks/use-turing-sort-options";
 export { useTuringUrlSearch } from "./hooks/use-turing-url-search";
 export type { UseTuringUrlSearchReturn } from "./hooks/use-turing-url-search";
+export { useTuringSearchHistory } from "./hooks/use-turing-search-history";
+export type { UseTuringSearchHistoryReturn, SearchHistoryEntry } from "./hooks/use-turing-search-history";
 
 // ── UI Components ──
 export { TuringSearchBar } from "./ui/TuringSearchBar";

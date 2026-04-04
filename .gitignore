@@ -1,76 +1,74 @@
-db-encrypted.properties
+# ── Build outputs ────────────────────────────────────────────
+/bin/
+/build/
+/target/
+/dist/
+/backup/
 
-node
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.war
-*.ear
+# ── IDE & editor ─────────────────────────────────────────────
+/.idea
 /.classpath
 /.settings
 /.project
-/volumes/mariadb/*
-/volumes/turing/*
-!/volumes/turing/.gitkeep
-!/volumes/mariadb/.gitkeep
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-/bin/
-/target/
-/store/
 /.gradle/
-/logs/
-/build/
-/backup/
-/nashorn_code_cache
+/.claude
 .sts4-cache
-/store.*
-/node_modules
-
-/activemq-data
-/models
 .metals
 .bloop
 .sonar_lock
-/.idea
+.mtj.tmp/
 
+# ── JVM crash logs ───────────────────────────────────────────
+hs_err_pid*
+
+# ── Package archives ────────────────────────────────────────
+*.war
+*.ear
+
+# ── Node / npm ───────────────────────────────────────────────
+node
+node_modules/
+package-lock.json
+
+# ── Maven flatten / shade ───────────────────────────────────
 .flattened-pom.xml
 dependency-reduced-pom.xml
-/dist/
+
+# ── Runtime data & storage ──────────────────────────────────
+/store/
+/store.*
+/logs/
+/activemq-data
+/models
+/nashorn_code_cache
+db-encrypted.properties
+
+# ── Docker volumes ──────────────────────────────────────────
+/volumes/mariadb/*
+!/volumes/mariadb/.gitkeep
+/volumes/turing/*
+!/volumes/turing/.gitkeep
+
+# ── Turing App ──────────────────────────────────────────────
+/turing-app/export
 turing-app/src/main/resources/public/index.html
 turing-app/src/main/resources/public/favicon.ico
 
-# Turing JS SDK
-turing-js-sdk/node_modules/
-turing-js-sdk/dist/
-/.claude
-/turing-utils/scripts/index_test/__pycache__
-turing-js-sdk/js-sdk-lib/package-lock.json
-turing-js-sdk/js-sdk-sample/package-lock.json
-turing-react/package-lock.json
-turing-js-sdk/package-lock.json
-/.github/appmod
+# ── Turing React ────────────────────────────────────────────
 /turing-react/.__mf__temp
-/turing-js-sdk/turing-react-sdk/node_modules
-/turing-examples/mythical-creatures/app/node_modules
-/turing-examples/space-missions/app/node_modules
-/turing-examples/vinyl-records/app/node_modules
-/turing-js-sdk/turing-react-sdk/dist
-/turing-app/turing-sample/mythical-creatures_en_US
-/turing-app/turing-sample/mythical-creatures_pt_BR
-/turing-app/turing-sample/space-missions_en_US
-package-lock.json
-/turing-examples/mythical-creatures/app/dist
-turing-examples/mythical-creatures/app/mythical-creatures.zip
-/turing-examples/vinyl-records/app/dist
-/turing-examples/space-missions/app/dist
-turing-examples/vinyl-records/app/vinyl-records.zip
-turing-examples/space-missions/app/space-missions.zip
-/turing-app/turing-sample/vinyl-records_en_US
-turing-examples/vinyl-records/export/export.zip
-/turing-app/export
-turing-examples/mythical-creatures/app/public/turing-manifest.json
-turing-examples/space-missions/app/public/turing-manifest.json
-turing-examples/vinyl-records/app/public/turing-manifest.json
-turing-examples/mythical-creatures/export/export.zip
+
+# ── Turing JS SDK ───────────────────────────────────────────
+turing-js-sdk/dist/
+turing-js-sdk/turing-react-sdk/dist
+
+# ── Turing Examples (generated manifests, builds, exports) ──
+turing-examples/*/app/public/turing-manifest.json
+turing-examples/*/app/dist
+turing-examples/*/app/*.zip
+turing-examples/*/export/*.zip
+
+# ── GitHub Actions ──────────────────────────────────────────
+/.github/appmod
+
+# ── Python cache ────────────────────────────────────────────
+__pycache__/

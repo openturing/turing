@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { resolveSiteName } from "@/lib/resolve-site";
 import {
   TuringProvider,
   useTuringUrlSearch,
   useTuringAutoComplete,
+  useTuringSearchHistory,
   type ResolvedDocument,
   type TurFacetGroup,
   type TurFacetItem,
@@ -27,6 +28,7 @@ import {
   IconX,
   IconPlanet,
   IconStars,
+  IconTrash,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -338,6 +340,8 @@ function SearchContent() {
     setSearchParams(s)
   );
   const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
+  const { history, save: saveSearch, remove: removeSearch, clear: clearHistory } = useTuringSearchHistory();
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const query = turing.params.q ?? "*";
   const isLanding = query === "*" && turing.status !== "loading";
@@ -453,24 +457,32 @@ function SearchContent() {
                     turing.setInputValue(e.target.value);
                     fetchSuggestions(e.target.value);
                   }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { clearSuggestions(); turing.submitSearch(); } }}
-                  onBlur={() => globalThis.setTimeout(() => clearSuggestions(), 150)}
+                  onFocus={() => setShowDropdown(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      clearSuggestions();
+                      setShowDropdown(false);
+                      saveSearch(turing.inputValue);
+                      turing.submitSearch();
+                    }
+                  }}
+                  onBlur={() => globalThis.setTimeout(() => { clearSuggestions(); setShowDropdown(false); }, 150)}
                   placeholder="Search missions... Apollo, Voyager, Mars..."
                   className="border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:border-transparent text-base placeholder:text-muted-foreground/50 font-mono"
                   autoComplete="off"
                 />
                 <Button
                   size="sm"
-                  onClick={turing.submitSearch}
+                  onClick={() => { saveSearch(turing.inputValue); turing.submitSearch(); setShowDropdown(false); }}
                   className="shrink-0 bg-gradient-to-r from-primary to-cyan-600 hover:from-primary/90 hover:to-cyan-600/90 text-primary-foreground shadow-md font-mono tracking-wider text-xs uppercase"
                 >
                   Launch
                 </Button>
               </div>
 
-              {/* Autocomplete Dropdown */}
-              {suggestions.length > 0 && (
-                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden">
+              {/* Autocomplete / History Dropdown */}
+              {suggestions.length > 0 ? (
+                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
                   {suggestions.map((term) => (
                     <button
                       key={term}
@@ -482,6 +494,42 @@ function SearchContent() {
                       <IconSearch className="size-3.5 text-muted-foreground shrink-0" />
                       {term}
                     </button>
+                  ))}
+                </div>
+              ) : showDropdown && history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).length > 0 && (
+                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Recent searches</span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer font-mono"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { clearHistory(); setShowDropdown(false); }}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  {history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).slice(0, 8).map((term) => (
+                    <div key={term} className="flex items-center hover:bg-accent transition-colors">
+                      <button
+                        type="button"
+                        className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer font-mono"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { turing.setInputValue(term); setShowDropdown(false); }}
+                      >
+                        <IconClock className="size-3.5 text-muted-foreground shrink-0" />
+                        {term}
+                      </button>
+                      <button
+                        type="button"
+                        title="Remove from history"
+                        className="px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => removeSearch(term)}
+                      >
+                        <IconTrash className="size-3.5" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
