@@ -54,7 +54,7 @@ public class TurPageController {
         this.storageService = storageService;
     }
 
-    @GetMapping("/{siteName}/**")
+    @GetMapping({"/{siteName}/", "/{siteName}/**"})
     public ResponseEntity<InputStreamResource> serve(@PathVariable String siteName,
                                                      HttpServletRequest request) {
         if (!storageService.isEnabled()) {

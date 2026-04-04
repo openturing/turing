@@ -1,8 +1,9 @@
-import { IconFileZip, IconGlobe, IconTrash, IconUpload } from "@tabler/icons-react";
+import { IconCode, IconFileZip, IconGlobe, IconTag, IconUpload, IconUser } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { DialogDelete } from "@/components/dialog.delete";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ export default function PagePage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteOpenFor, setDeleteOpenFor] = useState<string | null>(null);
   const [siteName, setSiteName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +87,7 @@ export default function PagePage() {
     try {
       await pageService.delete(name);
       toast.success(t("page.deleteSuccess", { name }));
+      setDeleteOpenFor(null);
       await loadSites();
     } catch {
       toast.error(t("page.deleteError"));
@@ -129,7 +132,9 @@ export default function PagePage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sites.map((site) => (
+          {sites.map((site) => {
+            const m = site.manifest;
+            return (
             <Card key={site.name}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -140,20 +145,24 @@ export default function PagePage() {
                     <div>
                       <CardTitle className="text-base">{site.name}</CardTitle>
                       <CardDescription>
-                        <Badge variant="outline" className="mt-1">SPA</Badge>
+                        {m?.description ? (
+                          <span className="line-clamp-2">{m.description}</span>
+                        ) : (
+                          <Badge variant="outline" className="mt-1">SPA</Badge>
+                        )}
                       </CardDescription>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(site.name)}
-                  >
-                    <IconTrash className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <DialogDelete
+                    feature={t("page.title")}
+                    name={site.name}
+                    onDelete={() => handleDelete(site.name)}
+                    open={deleteOpenFor === site.name}
+                    setOpen={(v) => setDeleteOpenFor(v ? site.name : null)}
+                  />
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <a
                   href={pageService.getSiteUrl(site.name)}
                   target="_blank"
@@ -163,9 +172,35 @@ export default function PagePage() {
                   <IconGlobe className="h-3.5 w-3.5" />
                   /pages/{site.name}
                 </a>
+                {m && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                    {m.version && (
+                      <span className="flex items-center gap-1">
+                        <IconTag className="h-3 w-3" />
+                        v{m.version}
+                      </span>
+                    )}
+                    {m.author && (
+                      <span className="flex items-center gap-1">
+                        <IconUser className="h-3 w-3" />
+                        {m.author}
+                      </span>
+                    )}
+                    {m.framework && (
+                      <span className="flex items-center gap-1">
+                        <IconCode className="h-3 w-3" />
+                        {m.framework}{m.buildTool ? ` + ${m.buildTool}` : ""}
+                      </span>
+                    )}
+                    {m.snSite && (
+                      <Badge variant="secondary" className="text-xs h-5">{m.snSite}</Badge>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

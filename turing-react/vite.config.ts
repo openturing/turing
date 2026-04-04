@@ -6,6 +6,18 @@ import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    proxy: {
+      "/pages": {
+        target: "http://localhost:2700",
+        changeOrigin: true,
+      },
+      "/api/sn": {
+        target: "http://localhost:2700",
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

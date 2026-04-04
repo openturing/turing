@@ -20,6 +20,7 @@
  */
 package com.viglet.turing.api.page;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.service.storage.TurStorageService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +28,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -47,6 +51,8 @@ import java.util.zip.ZipInputStream;
 public class TurPageAPI {
 
     private static final String PAGES_PREFIX = "public/";
+    private static final String MANIFEST_FILE = "turing-manifest.json";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final TurStorageService storageService;
 
@@ -54,7 +60,20 @@ public class TurPageAPI {
         this.storageService = storageService;
     }
 
-    public record TurPageSite(String name) {}
+    public record TurPageManifest(
+            String name,
+            String version,
+            String author,
+            String repository,
+            String description,
+            String buildDate,
+            String snSite,
+            String locale,
+            String framework,
+            String buildTool
+    ) {}
+
+    public record TurPageSite(String name, TurPageManifest manifest) {}
 
     @GetMapping
     public ResponseEntity<List<TurPageSite>> list() {
@@ -64,14 +83,14 @@ public class TurPageAPI {
         List<TurPageSite> sites = storageService.listObjects(PAGES_PREFIX).stream()
                 .filter(item -> item.directory())
                 .map(item -> {
-                    String name = item.name();
-                    if (name.startsWith(PAGES_PREFIX)) {
-                        name = name.substring(PAGES_PREFIX.length());
+                    String dirName = item.name();
+                    if (dirName.startsWith(PAGES_PREFIX)) {
+                        dirName = dirName.substring(PAGES_PREFIX.length());
                     }
-                    if (name.endsWith("/")) {
-                        name = name.substring(0, name.length() - 1);
+                    if (dirName.endsWith("/")) {
+                        dirName = dirName.substring(0, dirName.length() - 1);
                     }
-                    return new TurPageSite(name);
+                    return new TurPageSite(dirName, readManifestFromStorage(dirName));
                 })
                 .filter(site -> !site.name().isBlank())
                 .toList();
@@ -92,6 +111,7 @@ public class TurPageAPI {
         String prefix = PAGES_PREFIX + normalizedName + "/";
         // Delete existing site contents before uploading
         storageService.deleteObjectsWithPrefix(prefix);
+        TurPageManifest manifest = null;
         try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -106,10 +126,14 @@ public class TurPageAPI {
                     zis.closeEntry();
                     continue;
                 }
+                byte[] data = zis.readAllBytes();
+                // Parse manifest if found
+                if (entryName.equals(MANIFEST_FILE) || entryName.endsWith("/" + MANIFEST_FILE)) {
+                    manifest = parseManifest(data);
+                }
                 String objectName = prefix + entryName;
                 String contentType = storageService.guessContentType(entryName);
-                byte[] data = zis.readAllBytes();
-                storageService.uploadStream(objectName, new java.io.ByteArrayInputStream(data),
+                storageService.uploadStream(objectName, new ByteArrayInputStream(data),
                         data.length, contentType);
                 log.debug("Uploaded page file: {}", objectName);
                 zis.closeEntry();
@@ -118,8 +142,8 @@ public class TurPageAPI {
             log.error("Failed to extract ZIP for site '{}'", normalizedName, e);
             return ResponseEntity.internalServerError().build();
         }
-        log.info("SPA site '{}' deployed successfully to MinIO.", normalizedName);
-        return ResponseEntity.ok(new TurPageSite(normalizedName));
+        log.info("SPA site '{}' deployed successfully.", normalizedName);
+        return ResponseEntity.ok(new TurPageSite(normalizedName, manifest));
     }
 
     @DeleteMapping("/{siteName}")
@@ -131,5 +155,45 @@ public class TurPageAPI {
         storageService.deleteObjectsWithPrefix(prefix);
         log.info("SPA site '{}' deleted from MinIO.", siteName);
         return ResponseEntity.noContent().build();
+    }
+
+    private TurPageManifest readManifestFromStorage(String siteName) {
+        String manifestObject = PAGES_PREFIX + siteName + "/" + MANIFEST_FILE;
+        try (InputStream is = storageService.downloadObject(manifestObject)) {
+            if (is == null) {
+                return null;
+            }
+            return parseManifest(is.readAllBytes());
+        } catch (Exception e) {
+            log.debug("No manifest found for site '{}'", siteName);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private TurPageManifest parseManifest(byte[] data) {
+        try {
+            Map<String, Object> json = OBJECT_MAPPER.readValue(data, Map.class);
+            return new TurPageManifest(
+                    str(json, "name"),
+                    str(json, "version"),
+                    str(json, "author"),
+                    str(json, "repository"),
+                    str(json, "description"),
+                    str(json, "buildDate"),
+                    str(json, "snSite"),
+                    str(json, "locale"),
+                    str(json, "framework"),
+                    str(json, "buildTool")
+            );
+        } catch (IOException e) {
+            log.warn("Failed to parse turing-manifest.json: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static String str(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        return val != null ? val.toString() : null;
     }
 }
