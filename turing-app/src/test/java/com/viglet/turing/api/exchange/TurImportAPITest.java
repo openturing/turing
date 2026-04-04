@@ -53,11 +53,11 @@ class TurImportAPITest {
                 "dummy content".getBytes());
 
         TurExchange turExchange = new TurExchange();
-        when(turImportExchange.importFromMultipartFile(any(), any(boolean.class), any())).thenReturn(turExchange);
+        when(turImportExchange.importFromMultipartFile(any(), any(boolean.class), any(boolean.class), any())).thenReturn(turExchange);
 
         mockMvc.perform(multipart("/api/import").file(file))
                 .andExpect(status().isOk());
 
-        verify(turImportExchange, times(1)).importFromMultipartFile(any(), any(boolean.class), any());
+        verify(turImportExchange, times(1)).importFromMultipartFile(any(), any(boolean.class), any(boolean.class), any());
     }
 }

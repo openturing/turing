@@ -54,10 +54,18 @@ public final class TurLuceneUtils {
     }
 
     private static Path resolvePath(String basePath, String coreName) {
+        Path base = Path.of(basePath);
+        if (base.isAbsolute()) {
+            return base.resolve(coreName);
+        }
         return Path.of(LUCENE_BASE_DIR, basePath, coreName);
     }
 
     private static Path resolveBasePath(String basePath) {
+        Path base = Path.of(basePath);
+        if (base.isAbsolute()) {
+            return base;
+        }
         return Path.of(LUCENE_BASE_DIR, basePath);
     }
 

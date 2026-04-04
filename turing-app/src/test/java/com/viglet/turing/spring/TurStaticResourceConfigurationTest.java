@@ -81,15 +81,13 @@ class TurStaticResourceConfigurationTest {
 
         configuration.addViewControllers(viewControllerRegistry);
 
-        verify(viewControllerRegistry).addViewController("/sn");
-        verify(viewControllerRegistry).addViewController("/sn/");
         verify(viewControllerRegistry).addViewController("/login");
         verify(viewControllerRegistry).addViewController("/login/");
         verify(viewControllerRegistry).addViewController("/admin");
         verify(viewControllerRegistry).addViewController("/admin/");
         verify(viewControllerRegistry).addViewController("/setup");
         verify(viewControllerRegistry).addViewController("/setup/");
-        verify(viewControllerRegistration, times(8)).setViewName(anyString());
+        verify(viewControllerRegistration, times(6)).setViewName(anyString());
     }
 
     @Test
@@ -103,8 +101,7 @@ class TurStaticResourceConfigurationTest {
 
         verify(resourceHandlerRegistry).addResourceHandler("/login/**");
         verify(resourceHandlerRegistry).addResourceHandler("/admin/**");
-        verify(resourceHandlerRegistry).addResourceHandler("/sn/**");
         verify(resourceHandlerRegistry).addResourceHandler("/setup/**");
-        verify(resourceHandlerRegistration, times(4)).resourceChain(true);
+        verify(resourceHandlerRegistration, times(3)).resourceChain(true);
     }
 }
