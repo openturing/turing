@@ -64,7 +64,7 @@ class TurSNSiteExportTest {
         when(spotlightRepository.findByTurSNSite(any(Sort.class), eq(site))).thenReturn(List.of(spotlight));
         when(mergeProvidersRepository.findByTurSNSite(site)).thenReturn(List.of(mergeProvider));
         when(customSortRepository.findByTurSNSiteWithItems(site)).thenReturn(List.of());
-        when(exportFileService.exportSNSitesToZip(any(), any())).thenReturn(Path.of("site-export.zip"));
+        when(exportFileService.exportSNSitesToZip(any(), any(), eq(false))).thenReturn(Path.of("site-export.zip"));
 
         HttpServletResponse response = mock(HttpServletResponse.class);
         StreamingResponseBody responseBody = turSNSiteExport.exportAll(response);
@@ -78,6 +78,6 @@ class TurSNSiteExportTest {
 
         verify(spotlightRepository).findByTurSNSite(any(Sort.class), eq(site));
         verify(mergeProvidersRepository).findByTurSNSite(site);
-        verify(exportFileService).exportSNSitesToZip(eq(List.of(site)), any());
+        verify(exportFileService).exportSNSitesToZip(eq(List.of(site)), any(), eq(false));
     }
 }

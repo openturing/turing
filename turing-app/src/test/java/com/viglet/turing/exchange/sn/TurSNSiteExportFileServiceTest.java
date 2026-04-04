@@ -29,7 +29,8 @@ class TurSNSiteExportFileServiceTest {
 
     @Test
     void shouldExportRootReferencesWithoutDuplicatingLLMStoreAndSEInsideSNSite() throws Exception {
-        TurSNSiteExportFileService service = new TurSNSiteExportFileService(new TurSNSiteExportValidator());
+        TurSNSiteExportFileService service = new TurSNSiteExportFileService(new TurSNSiteExportValidator(),
+                org.mockito.Mockito.mock(com.viglet.turing.service.storage.TurStorageService.class));
 
         TurSEVendor seVendor = new TurSEVendor();
         seVendor.setId("SOLR");
@@ -94,7 +95,7 @@ class TurSNSiteExportFileServiceTest {
         siteB.setTurSEInstance(seInstance);
         siteB.setTurSNSiteGenAi(genAi);
 
-        Path zipPath = service.exportSNSitesToZip(List.of(siteA, siteB), null);
+        Path zipPath = service.exportSNSitesToZip(List.of(siteA, siteB), null, false);
         Path exportFolder = Path.of(zipPath.toString().replace(".zip", ""));
 
         try {

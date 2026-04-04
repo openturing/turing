@@ -174,6 +174,64 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         return true;
     }
 
+    // ---- Content export ---------------------------------------------------
+
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPage(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, int start, int rows) {
+        log.info("[Lucene] retrieveDocumentPage locale={} start={} rows={} siteFields={}",
+                turSNSiteLocale.getLanguage(), start, rows, siteFieldMap.size());
+        return turLuceneInstanceProcess.initLuceneInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        var searcher = instance.getSearcher();
+                        int totalDocs = searcher.getIndexReader().numDocs();
+                        log.info("[Lucene] IndexReader numDocs={}", totalDocs);
+                        if (totalDocs == 0) {
+                            return List.<Map<String, Object>>of();
+                        }
+                        var topDocs = searcher.search(
+                                new org.apache.lucene.search.MatchAllDocsQuery(),
+                                start + rows);
+                        var scoreDocs = topDocs.scoreDocs;
+                        log.info("[Lucene] Search returned {} scoreDocs (requested start={} rows={})",
+                                scoreDocs.length, start, rows);
+                        List<Map<String, Object>> docs = new java.util.ArrayList<>();
+                        for (int i = start; i < scoreDocs.length && i < start + rows; i++) {
+                            var doc = searcher.storedFields().document(scoreDocs[i].doc);
+                            Map<String, Object> fields = new java.util.LinkedHashMap<>();
+                            for (var field : doc.getFields()) {
+                                String name = field.name();
+                                if (!siteFieldMap.containsKey(name) && !"id".equals(name) && !"type".equals(name)) {
+                                    continue;
+                                }
+                                Object existing = fields.get(name);
+                                if (existing != null) {
+                                    // Multi-valued: collect into list
+                                    if (existing instanceof List<?> list) {
+                                        @SuppressWarnings("unchecked")
+                                        var mutableList = (List<Object>) list;
+                                        mutableList.add(field.stringValue());
+                                    } else {
+                                        var list = new java.util.ArrayList<>();
+                                        list.add(existing);
+                                        list.add(field.stringValue());
+                                        fields.put(name, list);
+                                    }
+                                } else {
+                                    fields.put(name, field.stringValue());
+                                }
+                            }
+                            docs.add(fields);
+                        }
+                        return docs;
+                    } catch (Exception e) {
+                        log.warn("[Lucene] Failed to retrieve document page: {}", e.getMessage());
+                        return List.<Map<String, Object>>of();
+                    }
+                }).orElse(List.of());
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     @Override

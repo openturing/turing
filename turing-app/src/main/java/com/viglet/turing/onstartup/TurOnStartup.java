@@ -22,6 +22,7 @@ package com.viglet.turing.onstartup;
 
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @Transactional
+@Order(1)
 public class TurOnStartup implements ApplicationRunner {
 	public static final String FIRST_TIME = "FIRST_TIME";
 	private final TurConfigVarRepository turConfigVarRepository;

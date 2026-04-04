@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.spring.utils.TurSpringUtils;
@@ -247,20 +248,35 @@ public class TurImportExchange {
 	}
 
 	private void importContentFiles(File extractFolder, String taskId) {
+		File[] contentFiles = findContentFiles(extractFolder);
+		log.info("Found {} content file(s) in '{}'", contentFiles.length, extractFolder.getAbsolutePath());
+		if (contentFiles.length == 0) {
+			File[] allFiles = extractFolder.listFiles();
+			if (allFiles != null) {
+				for (File f : allFiles) {
+					log.info("  File in extract folder: {} (dir={})", f.getName(), f.isDirectory());
+				}
+			}
+		}
 		ObjectMapper mapper = JsonMapper.builder().build();
-		for (File contentFile : findContentFiles(extractFolder)) {
+		for (File contentFile : contentFiles) {
+			log.info("Processing content file: {}", contentFile.getName());
 			try (FileInputStream fis = new FileInputStream(contentFile)) {
 				Map<String, Map<String, List<Map<String, Object>>>> contentMap =
 						mapper.readValue(fis, new TypeReference<>() {});
 				for (var siteEntry : contentMap.entrySet()) {
-					turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey())
-							.ifPresent(turSNSite -> {
-								String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
-								int indexed = contentExchangeService.importContent(
-										turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()),
-										effectiveTaskId);
-								log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
-							});
+					var siteOpt = turSNSiteRepository.findByNameIgnoreCase(siteEntry.getKey());
+					if (siteOpt.isEmpty()) {
+						log.warn("Content references site '{}' but no matching SN Site found in database.",
+								siteEntry.getKey());
+						continue;
+					}
+					TurSNSite turSNSite = siteOpt.get();
+					String effectiveTaskId = taskId != null ? taskId : turSNSite.getId();
+					int indexed = contentExchangeService.importContent(
+							turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()),
+							effectiveTaskId);
+					log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
 				}
 			} catch (Exception e) {
 				log.error("Error importing content from '{}': {}", contentFile.getName(), e.getMessage(), e);

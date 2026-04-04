@@ -188,6 +188,45 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
         return true;
     }
 
+    // ---- Content export ---------------------------------------------------
+
+    @Override
+    public List<Map<String, Object>> retrieveDocumentPage(TurSNSiteLocale turSNSiteLocale,
+            Map<String, ?> siteFieldMap, int start, int rows) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(turSNSiteLocale)
+                .map(instance -> {
+                    try {
+                        var response = instance.getClient().search(s -> s
+                                .index(instance.getIndex())
+                                .query(q -> q.matchAll(m -> m))
+                                .from(start)
+                                .size(rows)
+                                .sort(so -> so.field(f -> f.field("id").order(
+                                        co.elastic.clients.elasticsearch._types.SortOrder.Asc))),
+                                (java.lang.reflect.Type) Map.class);
+                        List<Map<String, Object>> docs = new java.util.ArrayList<>();
+                        for (var hit : response.hits().hits()) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> source = (Map<String, Object>) hit.source();
+                            if (source == null) continue;
+                            Map<String, Object> fields = new java.util.LinkedHashMap<>();
+                            for (var entry : source.entrySet()) {
+                                if (siteFieldMap.containsKey(entry.getKey())
+                                        || "id".equals(entry.getKey())
+                                        || "type".equals(entry.getKey())) {
+                                    fields.put(entry.getKey(), entry.getValue());
+                                }
+                            }
+                            docs.add(fields);
+                        }
+                        return docs;
+                    } catch (Exception e) {
+                        log.warn("[Elasticsearch] Failed to retrieve document page: {}", e.getMessage());
+                        return List.<Map<String, Object>>of();
+                    }
+                }).orElse(List.of());
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     @Override

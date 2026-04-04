@@ -123,8 +123,12 @@ public class TurSNSiteContentExchangeService {
             Map<String, TurSNSiteField> siteFieldMap = turSNSiteFieldService.toMap(turSNSite);
 
             long totalDocs = 0;
+            log.info("Exporting content for site '{}': plugin={}, locales={}, siteFields={}",
+                    turSNSite.getName(), plugin.getClass().getSimpleName(), locales.size(), siteFieldMap.size());
             for (TurSNSiteLocale locale : locales) {
-                totalDocs += plugin.getDocumentTotal(locale);
+                long localeCount = plugin.getDocumentTotal(locale);
+                log.info("  Locale '{}' (core='{}'): {} documents", locale.getLanguage(), locale.getCore(), localeCount);
+                totalDocs += localeCount;
             }
 
             progressMap.put(taskId, new ContentExchangeProgress(

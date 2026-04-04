@@ -75,6 +75,7 @@ public class TurSNSiteExchange {
 	private Integer spellCheck;
 	private Integer spellCheckFixes;
 	private Integer spotlightWithResults;
+	private String searchTemplate;
 	private String turSEInstance;
 	private TurSNSiteGenAiExchange turSNSiteGenAi;
 	private Set<TurSNSiteField> turSNSiteFields;
@@ -115,6 +116,7 @@ public class TurSNSiteExchange {
 		this.setSpellCheck(turSNSite.getSpellCheck());
 		this.setSpellCheckFixes(turSNSite.getSpellCheckFixes());
 		this.setSpotlightWithResults(turSNSite.getSpotlightWithResults());
+		this.setSearchTemplate(turSNSite.getSearchTemplate());
 		if (turSNSite.getTurSEInstance() != null) {
 			this.setTurSEInstance(turSNSite.getTurSEInstance().getId());
 		}

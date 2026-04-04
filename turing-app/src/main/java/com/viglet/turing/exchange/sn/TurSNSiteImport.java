@@ -307,6 +307,7 @@ public class TurSNSiteImport {
 		turSNSite.setSpellCheck(turSNSiteExchange.getSpellCheck());
 		turSNSite.setSpellCheckFixes(turSNSiteExchange.getSpellCheckFixes());
 		turSNSite.setSpotlightWithResults(turSNSiteExchange.getSpotlightWithResults());
+		turSNSite.setSearchTemplate(turSNSiteExchange.getSearchTemplate());
 
 		// Resolve SE Instance: try the exported ID first, then fall back to any
 		// available instance
