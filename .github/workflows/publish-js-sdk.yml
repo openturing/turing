@@ -33,9 +33,15 @@ jobs:
       - name: Configure npm registry
         run: |
           for dir in turing-js-sdk/js-sdk-lib turing-js-sdk/turing-react-sdk; do
-            echo "@viglet:registry=https://npm.pkg.github.com" > "$dir/.npmrc"
+            echo "@openviglet:registry=https://npm.pkg.github.com" > "$dir/.npmrc"
             echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> "$dir/.npmrc"
           done
+
+      # ── Rewrite package names to match GitHub owner scope ──
+      - name: Set GitHub Packages scope
+        run: |
+          sed -i 's/"name": "@viglet\/turing-sdk"/"name": "@openviglet\/turing-sdk"/' turing-js-sdk/js-sdk-lib/package.json
+          sed -i 's/"name": "@viglet\/turing-react-sdk"/"name": "@openviglet\/turing-react-sdk"/' turing-js-sdk/turing-react-sdk/package.json
 
       # ── Build, Bump & Publish turing-sdk (JS SDK) ──
       - name: Build turing-sdk
@@ -63,9 +69,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Commit version bumps back to branch ──
+      # ── Commit version bumps back to branch (restore original scope first) ──
       - name: Commit version bumps
         run: |
+          sed -i 's/"name": "@openviglet\/turing-sdk"/"name": "@viglet\/turing-sdk"/' turing-js-sdk/js-sdk-lib/package.json
+          sed -i 's/"name": "@openviglet\/turing-react-sdk"/"name": "@viglet\/turing-react-sdk"/' turing-js-sdk/turing-react-sdk/package.json
           git add turing-js-sdk/js-sdk-lib/package.json turing-js-sdk/turing-react-sdk/package.json
           git commit -m "chore: bump JS SDK versions [skip ci]" || echo "No changes to commit"
           git push
