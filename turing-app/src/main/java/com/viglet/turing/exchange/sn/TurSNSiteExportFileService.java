@@ -135,7 +135,8 @@ public class TurSNSiteExportFileService {
 	}
 
 	public Path exportSNSitesToZip(List<TurSNSite> turSNSites,
-			Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
+			Map<String, Map<String, List<Map<String, Object>>>> contentMap,
+			boolean includeTemplate) {
 		File tmpDir = getOrCreateTmpDir();
 		String folderName = "SNSite_" + System.currentTimeMillis();
 
@@ -162,8 +163,10 @@ public class TurSNSiteExportFileService {
 			writeContentFile(exportFile.getParentFile(), contentMap);
 		}
 
-		for (TurSNSite turSNSite : turSNSites) {
-			copySearchTemplateToExport(turSNSite, exportFile.getParentFile());
+		if (includeTemplate) {
+			for (TurSNSite turSNSite : turSNSites) {
+				copySearchTemplateToExport(turSNSite, exportFile.getParentFile());
+			}
 		}
 
 		File zipFile = createZipFile(exportFile);

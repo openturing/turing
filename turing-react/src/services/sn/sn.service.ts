@@ -52,10 +52,11 @@ export class TurSNSiteService {
       });
     return response;
   }
-  async export(turSNSite: TurSNSite): Promise<Blob | null> {
+  async export(turSNSite: TurSNSite, includeTemplate = false): Promise<Blob | null> {
     const response = await axios
       .get<Blob>(`/sn/${turSNSite.id.toString()}/export`, {
         responseType: "blob",
+        params: { includeTemplate },
       })
       .then((res) => res.data)
       .catch((error) => {
@@ -65,10 +66,10 @@ export class TurSNSiteService {
     return response;
   }
 
-  async exportAsync(siteId: string, taskId: string): Promise<string | null> {
+  async exportAsync(siteId: string, taskId: string, includeTemplate = false): Promise<string | null> {
     const response = await axios
       .post<{ taskId: string }>(`/sn/${siteId}/export/async`, null, {
-        params: { taskId },
+        params: { taskId, includeTemplate },
       })
       .then((res) => res.data.taskId)
       .catch((error) => {

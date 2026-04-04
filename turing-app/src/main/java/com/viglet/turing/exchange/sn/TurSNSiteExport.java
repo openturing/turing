@@ -76,15 +76,15 @@ public class TurSNSiteExport {
 		List<TurSNSite> turSNSites = turSNSiteRepository.findAll();
 		turSNSites.forEach(this::hydrateExportCollections);
 
-		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all", null);
+		return createSNSiteZipResponse(response, turSNSites, "sn-sites-all", null, false);
 	}
 
 	public StreamingResponseBody exportBySiteId(String siteId, HttpServletResponse response) {
-		return exportBySiteId(siteId, false, null, response);
+		return exportBySiteId(siteId, false, false, null, response);
 	}
 
 	public StreamingResponseBody exportBySiteId(String siteId, boolean includeContent,
-			String taskId, HttpServletResponse response) {
+			boolean includeTemplate, String taskId, HttpServletResponse response) {
 		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
 		if (turSNSites.isEmpty()) {
 			return null;
@@ -97,7 +97,7 @@ public class TurSNSiteExport {
 		}
 
 		return createSNSiteZipResponse(response, turSNSites,
-				"sn-site-" + turSNSites.get(0).getName(), contentMap);
+				"sn-site-" + turSNSites.get(0).getName(), contentMap, includeTemplate);
 	}
 
 	private void hydrateExportCollections(TurSNSite turSNSite) {
@@ -114,11 +114,12 @@ public class TurSNSiteExport {
 	}
 
 	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,
-			String prefixZipFileName, Map<String, Map<String, List<Map<String, Object>>>> contentMap) {
+			String prefixZipFileName, Map<String, Map<String, List<Map<String, Object>>>> contentMap,
+			boolean includeTemplate) {
 		try {
 			String strDate = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
 			String zipFileName = prefixZipFileName + "_" + strDate + ".zip";
-			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap);
+			Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap, includeTemplate);
 
 			response.addHeader("Content-disposition", "attachment;filename=" + zipFileName);
 			response.setContentType("application/octet-stream");
@@ -144,7 +145,7 @@ public class TurSNSiteExport {
 		}
 	}
 
-	public void exportBySiteIdAsync(String siteId, boolean includeContent, String taskId) {
+	public void exportBySiteIdAsync(String siteId, boolean includeContent, boolean includeTemplate, String taskId) {
 		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
 		if (turSNSites.isEmpty()) {
 			return;
@@ -157,7 +158,7 @@ public class TurSNSiteExport {
 		}
 
 		contentExchangeService.updatePhase(taskId, "packaging");
-		Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap);
+		Path zipFilePath = exportFileService.exportSNSitesToZip(turSNSites, contentMap, includeTemplate);
 		asyncExportFiles.put(taskId, zipFilePath);
 		contentExchangeService.updatePhase(taskId, "completed");
 	}

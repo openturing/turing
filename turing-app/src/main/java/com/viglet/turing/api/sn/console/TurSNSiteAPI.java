@@ -248,10 +248,11 @@ public class TurSNSiteAPI {
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public StreamingResponseBody turSNSiteExport(@PathVariable String id,
             @RequestParam(defaultValue = "false") boolean includeContent,
+            @RequestParam(defaultValue = "false") boolean includeTemplate,
             @RequestParam(required = false) String taskId,
             HttpServletResponse response) {
         try {
-            return turSNSiteExport.exportBySiteId(id, includeContent, taskId, response);
+            return turSNSiteExport.exportBySiteId(id, includeContent, includeTemplate, taskId, response);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -261,11 +262,12 @@ public class TurSNSiteAPI {
     @PostMapping(value = "/{id}/export/async")
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public Map<String, String> turSNSiteExportAsync(@PathVariable String id,
+            @RequestParam(defaultValue = "false") boolean includeTemplate,
             @RequestParam(required = false) String taskId) {
         String effectiveTaskId = taskId != null ? taskId : "export-" + id + "-" + System.currentTimeMillis();
         Thread.ofVirtual().start(() -> {
             try {
-                turSNSiteExport.exportBySiteIdAsync(id, true, effectiveTaskId);
+                turSNSiteExport.exportBySiteIdAsync(id, true, includeTemplate, effectiveTaskId);
             } catch (Exception e) {
                 log.error("Async export failed for site {}: {}", id, e.getMessage(), e);
             }
