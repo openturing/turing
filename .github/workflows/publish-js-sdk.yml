@@ -29,6 +29,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # ── Create .npmrc in each package dir to force GitHub Packages ──
+      - name: Configure npm registry
+        run: |
+          for dir in turing-js-sdk/js-sdk-lib turing-js-sdk/turing-react-sdk; do
+            echo "@viglet:registry=https://npm.pkg.github.com" > "$dir/.npmrc"
+            echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> "$dir/.npmrc"
+          done
+
       # ── Build, Bump & Publish turing-sdk (JS SDK) ──
       - name: Build turing-sdk
         working-directory: turing-js-sdk/js-sdk-lib
@@ -38,7 +46,7 @@ jobs:
         working-directory: turing-js-sdk/js-sdk-lib
         run: |
           npm version patch --no-git-tag-version
-          npm publish --registry=https://npm.pkg.github.com
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -51,7 +59,7 @@ jobs:
         working-directory: turing-js-sdk/turing-react-sdk
         run: |
           npm version patch --no-git-tag-version
-          npm publish --registry=https://npm.pkg.github.com
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
