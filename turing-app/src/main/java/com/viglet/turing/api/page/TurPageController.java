@@ -76,9 +76,12 @@ public class TurPageController {
         try {
             InputStream stream = storageService.downloadObject(objectName);
             String contentType = storageService.guessContentType(objectName);
+            String cacheControl = "index.html".equals(filePath)
+                    ? "no-cache, no-store, must-revalidate"
+                    : "public, max-age=31536000, immutable";
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, contentType)
-                    .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                    .header(HttpHeaders.CACHE_CONTROL, cacheControl)
                     .body(new InputStreamResource(stream));
         } catch (Exception e) {
             // SPA fallback: serve index.html for client-side routing

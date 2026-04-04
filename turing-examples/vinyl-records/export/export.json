@@ -32,6 +32,7 @@
       "spellCheck": 1,
       "spellCheckFixes": 3,
       "spotlightWithResults": null,
+      "searchTemplate": "vinyl-records",
       "thesaurus": false,
       "defaultField": "_text_",
       "defaultTitleField": "title",

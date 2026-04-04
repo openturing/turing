@@ -116,15 +116,25 @@ public class TurSNSearchController {
             filePath = "index.html";
         }
 
-        String objectName = PAGES_PREFIX + template + "/" + filePath;
+        // Decode URL-encoded characters (e.g. %20 -> space)
+        String decodedPath = java.net.URLDecoder.decode(filePath, java.nio.charset.StandardCharsets.UTF_8);
+        if (decodedPath.isBlank()) {
+            decodedPath = "index.html";
+        }
+
+        String objectName = PAGES_PREFIX + template + "/" + decodedPath;
         try {
             InputStream stream = storageService.downloadObject(objectName);
             String contentType = storageService.guessContentType(objectName);
+            String cacheControl = decodedPath.equals("index.html")
+                    ? "no-cache, no-store, must-revalidate"
+                    : "public, max-age=31536000, immutable";
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, contentType)
-                    .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                    .header(HttpHeaders.CACHE_CONTROL, cacheControl)
                     .body(new InputStreamResource(stream));
         } catch (Exception e) {
+            log.debug("File not found in template '{}': {} (object={})", template, decodedPath, objectName);
             // SPA fallback: serve template's index.html for client-side routing
             String indexObject = PAGES_PREFIX + template + "/index.html";
             try {
@@ -133,7 +143,7 @@ public class TurSNSearchController {
                         .contentType(MediaType.TEXT_HTML)
                         .body(new InputStreamResource(indexStream));
             } catch (Exception ex) {
-                log.debug("Template '{}' not found in storage, falling back to default", template);
+                log.debug("Template '{}' index.html not found in storage, falling back to default", template);
                 return serveDefaultIndexFallback();
             }
         }

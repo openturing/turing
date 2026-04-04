@@ -32,6 +32,7 @@
       "spellCheck": 1,
       "spellCheckFixes": 3,
       "spotlightWithResults": 1,
+      "searchTemplate": "mythical-creatures",
       "thesaurus": false,
       "defaultField": "_text_",
       "defaultTitleField": "title",
