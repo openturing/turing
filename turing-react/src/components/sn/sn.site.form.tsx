@@ -24,6 +24,7 @@ import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
 import { TurPageService } from "@/services/page/page.service"
 import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
+import { TurFeaturesService } from "@/services/system/features.service"
 import { useCallback, useEffect, useState } from "react"
 import {
   useForm
@@ -37,10 +38,11 @@ import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { Skeleton } from "../ui/skeleton"
-import { IconSettings, IconSearch } from "@tabler/icons-react"
+import { IconSettings, IconSearch, IconCloudOff } from "@tabler/icons-react"
 const turSNSiteService = new TurSNSiteService();
 const turSEInstanceService = new TurSEInstanceService();
 const turPageService = new TurPageService();
+const turFeaturesService = new TurFeaturesService();
 interface Props {
   value: TurSNSite;
   isNew: boolean;
@@ -50,6 +52,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
   const [pages, setPages] = useState<TurPageSite[]>([]);
+  const [storageEnabled, setStorageEnabled] = useState(true);
   const form = useForm<TurSNSite>({
     defaultValues: value
   });
@@ -68,7 +71,14 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
 
   useEffect(() => {
     turSEInstanceService.query().then(setSeInstances);
-    turPageService.query().then(setPages).catch(() => setPages([]));
+    turFeaturesService.getFeatures()
+      .then((f) => {
+        setStorageEnabled(f.storageEnabled);
+        if (f.storageEnabled) {
+          turPageService.query().then(setPages).catch(() => setPages([]));
+        }
+      })
+      .catch(() => setStorageEnabled(false));
     form.reset(value);
     setIsLoading(false);
   }, [value])
@@ -252,39 +262,63 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                     />
 
                     {/* Search Template (Page) */}
-                    {pages.length > 0 && (
-                      <FormField
-                        control={form.control}
-                        name="searchTemplate"
-                        render={({ field }) => (
-                          <FormItemTwoColumns>
-                            <FormItemTwoColumns.Left>
-                              <FormItemTwoColumns.Label>{t("forms.snSiteForm.searchTemplateLabel")}</FormItemTwoColumns.Label>
-                              <FormItemTwoColumns.Description>
-                                {t("forms.snSiteForm.searchTemplateDesc")}
-                              </FormItemTwoColumns.Description>
-                            </FormItemTwoColumns.Left>
-                            <FormItemTwoColumns.Right>
-                              <FormControl>
-                                <Select onValueChange={(v) => field.onChange(v === "__none__" ? null : v)} value={field.value ?? "__none__"}>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={t("forms.snSiteForm.searchTemplateNone")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">{t("forms.snSiteForm.searchTemplateNone")}</SelectItem>
-                                    {pages.map((page) => (
-                                      <SelectItem key={page.name} value={page.name}>
-                                        {page.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                            </FormItemTwoColumns.Right>
-                            <FormMessage />
-                          </FormItemTwoColumns>
-                        )}
-                      />
+                    {storageEnabled ? (
+                      pages.length > 0 ? (
+                        <FormField
+                          control={form.control}
+                          name="searchTemplate"
+                          render={({ field }) => (
+                            <FormItemTwoColumns>
+                              <FormItemTwoColumns.Left>
+                                <FormItemTwoColumns.Label>{t("forms.snSiteForm.searchTemplateLabel")}</FormItemTwoColumns.Label>
+                                <FormItemTwoColumns.Description>
+                                  {t("forms.snSiteForm.searchTemplateDesc")}
+                                </FormItemTwoColumns.Description>
+                              </FormItemTwoColumns.Left>
+                              <FormItemTwoColumns.Right>
+                                <FormControl>
+                                  <Select onValueChange={(v) => field.onChange(v === "__none__" ? null : v)} value={field.value ?? "__none__"}>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder={t("forms.snSiteForm.searchTemplateNone")} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__none__">{t("forms.snSiteForm.searchTemplateNone")}</SelectItem>
+                                      {pages.map((page) => (
+                                        <SelectItem key={page.name} value={page.name}>
+                                          {page.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                              </FormItemTwoColumns.Right>
+                              <FormMessage />
+                            </FormItemTwoColumns>
+                          )}
+                        />
+                      ) : (
+                        <FormItemTwoColumns>
+                          <FormItemTwoColumns.Left>
+                            <FormItemTwoColumns.Label>{t("forms.snSiteForm.searchTemplateLabel")}</FormItemTwoColumns.Label>
+                            <FormItemTwoColumns.Description>
+                              {t("forms.snSiteForm.searchTemplateDesc")}
+                            </FormItemTwoColumns.Description>
+                          </FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Right>
+                            <p className="text-sm text-muted-foreground italic">
+                              {t("forms.snSiteForm.searchTemplateNoPages")}
+                            </p>
+                          </FormItemTwoColumns.Right>
+                        </FormItemTwoColumns>
+                      )
+                    ) : (
+                      <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                        <IconCloudOff className="size-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{t("forms.snSiteForm.searchTemplateLabel")}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{t("forms.snSiteForm.searchTemplateStorageDisabled")}</p>
+                        </div>
+                      </div>
                     )}
                   </SectionCard.Content>
                 </SectionCard>

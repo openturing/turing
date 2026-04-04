@@ -354,7 +354,9 @@
       "seInstanceRequired": "Instância do mecanismo de busca é obrigatória.",
       "searchTemplateLabel": "Template de Busca",
       "searchTemplateDesc": "Selecione uma página SPA para usar como interface de busca. Quando definido, \"Abrir Busca\" em Multi Idiomas abrirá esta página em vez da busca padrão.",
-      "searchTemplateNone": "Padrão (busca integrada)"
+      "searchTemplateNone": "Padrão (busca integrada)",
+      "searchTemplateNoPages": "Nenhuma página SPA implantada. Faça upload de um site SPA em Páginas para usá-lo como template de busca.",
+      "searchTemplateStorageDisabled": "Templates de busca requerem que o armazenamento esteja habilitado. Configure o tipo de armazenamento para Filesystem ou MinIO nas configurações da aplicação para fazer upload e usar templates de busca personalizados."
     },
     "snGenai": {
       "sitePrompt": "Prompt do Site",

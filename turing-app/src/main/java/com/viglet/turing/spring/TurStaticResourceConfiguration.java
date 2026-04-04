@@ -56,8 +56,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/sn").setViewName(FORWARD_INDEX_HTML);
-        registry.addViewController("/sn/").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/login").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/login/").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/admin").setViewName(FORWARD_INDEX_HTML);
@@ -76,7 +74,6 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
     public void addResourceHandlers(@NotNull ResourceHandlerRegistry registry) {
         registryReact(registry, "/login");
         registryReact(registry, "/admin");
-        registryReact(registry, "/sn");
         registryReact(registry, "/setup");
     }
 

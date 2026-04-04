@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { resolveSiteName } from "@/lib/resolve-site";
 import {
   TuringProvider,
   useTuringUrlSearch,
@@ -595,10 +596,11 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const site = resolveSiteName();
   return (
     <TuringProvider
       config={{
-        site: import.meta.env.VITE_SN_SITE,
+        site,
         locale: import.meta.env.VITE_LOCALE,
       }}
     >

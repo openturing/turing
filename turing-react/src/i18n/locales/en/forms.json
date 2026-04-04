@@ -354,7 +354,9 @@
       "seInstanceRequired": "Search engine instance is required.",
       "searchTemplateLabel": "Search Template",
       "searchTemplateDesc": "Select a SPA page to use as the search interface. When set, \"Open Search\" in Multi Language will open this page instead of the default search.",
-      "searchTemplateNone": "Default (built-in search)"
+      "searchTemplateNone": "Default (built-in search)",
+      "searchTemplateNoPages": "No SPA pages deployed yet. Upload a SPA site in Pages to use it as a search template.",
+      "searchTemplateStorageDisabled": "Search templates require storage to be enabled. Configure storage type to Filesystem or MinIO in your application settings to upload and use custom SPA search templates."
     },
     "snGenai": {
       "sitePrompt": "Site Prompt",

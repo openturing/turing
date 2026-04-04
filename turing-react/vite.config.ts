@@ -16,6 +16,10 @@ export default defineConfig({
         target: "http://localhost:2700",
         changeOrigin: true,
       },
+      "/sn": {
+        target: "http://localhost:2700",
+        changeOrigin: true,
+      },
     },
   },
   plugins: [
