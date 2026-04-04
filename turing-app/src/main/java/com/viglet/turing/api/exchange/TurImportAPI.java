@@ -60,14 +60,20 @@ public class TurImportAPI {
 	@PostMapping
 	public TurExchange turImport(@RequestParam("file") MultipartFile multipartFile,
 			@RequestParam(defaultValue = "false") boolean includeContent,
+			@RequestParam(defaultValue = "false") boolean includeTemplate,
 			@RequestParam(required = false) String taskId) {
-		return turImportExchange.importFromMultipartFile(multipartFile, includeContent, taskId);
+		return turImportExchange.importFromMultipartFile(multipartFile, includeContent, includeTemplate, taskId);
 	}
 
 	@PostMapping("/check-content")
 	public Map<String, Object> checkContent(@RequestParam("file") MultipartFile multipartFile) {
 		boolean hasContent = turImportExchange.hasContentFile(multipartFile);
 		return Map.of("hasContent", hasContent);
+	}
+
+	@PostMapping("/check-zip")
+	public Map<String, Object> checkZip(@RequestParam("file") MultipartFile multipartFile) {
+		return turImportExchange.checkZip(multipartFile);
 	}
 
 	@GetMapping(value = "/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

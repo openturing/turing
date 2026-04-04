@@ -1,17 +1,24 @@
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import axios from "axios";
 
+export interface ZipCheckResult {
+  hasContent: boolean;
+  hasTemplate: boolean;
+  templateName: string | null;
+}
+
 export class TurExchangeImportService {
   async importFile(
     file: File,
     onProgress?: (progress: number) => void,
     includeContent = false,
+    includeTemplate = false,
     taskId?: string,
   ): Promise<void> {
     const formData = new FormData();
     formData.append("file", file);
 
-    const params: Record<string, string | boolean> = { includeContent };
+    const params: Record<string, string | boolean> = { includeContent, includeTemplate };
     if (taskId) params.taskId = taskId;
 
     await axios.post("/import", formData, {
@@ -27,14 +34,19 @@ export class TurExchangeImportService {
     });
   }
 
-  async checkContent(file: File): Promise<boolean> {
+  async checkZip(file: File): Promise<ZipCheckResult> {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await axios.post<{ hasContent: boolean }>(
-      "/import/check-content",
+    const response = await axios.post<ZipCheckResult>(
+      "/import/check-zip",
       formData,
     );
-    return response.data.hasContent;
+    return response.data;
+  }
+
+  async checkContent(file: File): Promise<boolean> {
+    const result = await this.checkZip(file);
+    return result.hasContent;
   }
 
   async subscribeImportProgress(

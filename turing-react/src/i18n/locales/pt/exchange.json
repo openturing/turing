@@ -19,6 +19,18 @@
     "contentDetectedDescription": "Este arquivo de exportação contém conteúdo indexado. Deseja importar o conteúdo junto com a configuração do site?",
     "importSiteOnly": "Apenas Site",
     "importWithContent": "Importar com Conteúdo",
-    "indexingContent": "Indexando conteúdo..."
+    "indexingContent": "Indexando conteúdo...",
+    "importOptions": {
+      "title": "Importar Pacote",
+      "description": "Encontramos dados adicionais nesta exportação. Escolha o que importar.",
+      "configAlwaysIncluded": "Configuração do site, campos, idiomas e spotlights são sempre importados.",
+      "includeContent": "Conteúdo indexado",
+      "includeContentDescription": "Re-indexar todos os documentos exportados. Recomendado para migração completa de ambientes.",
+      "includeTemplate": "Template de busca (SPA)",
+      "includeTemplateDescription": "Implantar a aplicação SPA \"{{name}}\" em Páginas e usá-la como interface de busca.",
+      "templateRequiresStorage": "O armazenamento deve estar habilitado (Filesystem ou MinIO) para importar o template.",
+      "cancel": "Cancelar",
+      "importButton": "Importar"
+    }
   }
 }

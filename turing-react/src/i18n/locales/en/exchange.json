@@ -19,6 +19,18 @@
     "contentDetectedDescription": "This export file contains indexed content. Would you like to import the content along with the site configuration?",
     "importSiteOnly": "Site Only",
     "importWithContent": "Import with Content",
-    "indexingContent": "Indexing content..."
+    "indexingContent": "Indexing content...",
+    "importOptions": {
+      "title": "Import Package",
+      "description": "We found additional data in this export. Choose what to import.",
+      "configAlwaysIncluded": "Site configuration, fields, locales and spotlights are always imported.",
+      "includeContent": "Indexed content",
+      "includeContentDescription": "Re-index all documents that were exported. Recommended for full environment migration.",
+      "includeTemplate": "Search template (SPA)",
+      "includeTemplateDescription": "Deploy the \"{{name}}\" SPA application to Pages and use it as the search interface.",
+      "templateRequiresStorage": "Storage must be enabled (Filesystem or MinIO) to import the template.",
+      "cancel": "Cancel",
+      "importButton": "Import"
+    }
   }
 }

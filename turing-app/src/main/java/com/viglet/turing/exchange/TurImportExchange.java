@@ -33,8 +33,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,15 +49,21 @@ public class TurImportExchange {
 	private final TurSNSiteImport turSNSiteImport;
 	private final TurSNSiteContentExchangeService contentExchangeService;
 	private final TurSNSiteRepository turSNSiteRepository;
+	private final TurStorageService storageService;
 	private static final String EXPORT_FILE = "export.json";
 	private static final String CONTENT_SUFFIX = "_content.json";
+	private static final String APP_DIR = "app";
+	private static final String TURING_MANIFEST = "turing-manifest.json";
+	private static final String PAGES_PREFIX = "public/";
 
 	public TurImportExchange(TurSNSiteImport turSNSiteImport,
 			TurSNSiteContentExchangeService contentExchangeService,
-			TurSNSiteRepository turSNSiteRepository) {
+			TurSNSiteRepository turSNSiteRepository,
+			TurStorageService storageService) {
 		this.turSNSiteImport = turSNSiteImport;
 		this.contentExchangeService = contentExchangeService;
 		this.turSNSiteRepository = turSNSiteRepository;
+		this.storageService = storageService;
 	}
 
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
@@ -65,12 +71,11 @@ public class TurImportExchange {
 	}
 
 	public TurExchange importFromMultipartFile(MultipartFile multipartFile,
-			boolean includeContent, String taskId) {
+			boolean includeContent, boolean includeTemplate, String taskId) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		File parentExtractFolder = null;
 
 		if (extractFolder != null) {
-			// Check if export.json exists, if it is not exist try access a sub directory
 			if (!(new File(extractFolder, EXPORT_FILE).exists())
 					&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
 				for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
@@ -80,10 +85,18 @@ public class TurImportExchange {
 					}
 				}
 			}
-			importSNSiteFromExportFile(extractFolder, parentExtractFolder, !includeContent);
+			boolean needsCleanup = !includeContent && !includeTemplate;
+			importSNSiteFromExportFile(extractFolder, parentExtractFolder, needsCleanup);
 
 			if (includeContent) {
 				importContentFiles(extractFolder, taskId);
+			}
+
+			if (includeTemplate) {
+				importTemplateFromAppFolder(extractFolder);
+			}
+
+			if (!needsCleanup) {
 				try {
 					cleanupDirectories(extractFolder, parentExtractFolder);
 				} catch (IOException e) {
@@ -92,6 +105,112 @@ public class TurImportExchange {
 			}
 		}
 		return new TurExchange();
+	}
+
+	public TurExchange importFromMultipartFile(MultipartFile multipartFile,
+			boolean includeContent, String taskId) {
+		return importFromMultipartFile(multipartFile, includeContent, false, taskId);
+	}
+
+	/**
+	 * Checks the ZIP for available import options: content files and valid SPA template.
+	 */
+	public Map<String, Object> checkZip(MultipartFile multipartFile) {
+		File extractFolder = this.extractZipFile(multipartFile);
+		if (extractFolder == null) {
+			return Map.of("hasContent", false, "hasTemplate", false);
+		}
+		File workFolder = resolveExportFolder(extractFolder);
+		boolean hasContent = findContentFiles(workFolder).length > 0;
+		boolean hasTemplate = hasValidTemplate(workFolder);
+		String templateName = null;
+		if (hasTemplate) {
+			templateName = readTemplateName(workFolder);
+		}
+		try {
+			cleanupDirectories(extractFolder, null);
+		} catch (IOException e) {
+			log.warn("Cleanup failed: {}", e.getMessage(), e);
+		}
+		Map<String, Object> result = new java.util.HashMap<>();
+		result.put("hasContent", hasContent);
+		result.put("hasTemplate", hasTemplate);
+		result.put("templateName", templateName);
+		return result;
+	}
+
+	private boolean hasValidTemplate(File workFolder) {
+		File appDir = new File(workFolder, APP_DIR);
+		if (!appDir.isDirectory()) return false;
+		File manifest = new File(appDir, TURING_MANIFEST);
+		if (!manifest.isFile()) return false;
+		try {
+			ObjectMapper mapper = JsonMapper.builder().build();
+			Map<String, Object> json = mapper.readValue(manifest, new TypeReference<>() {});
+			return json.containsKey("name") && json.get("name") != null
+					&& !json.get("name").toString().isBlank();
+		} catch (Exception e) {
+			log.debug("Invalid turing-manifest.json in app/: {}", e.getMessage());
+			return false;
+		}
+	}
+
+	private String readTemplateName(File workFolder) {
+		File manifest = new File(new File(workFolder, APP_DIR), TURING_MANIFEST);
+		try {
+			ObjectMapper mapper = JsonMapper.builder().build();
+			Map<String, Object> json = mapper.readValue(manifest, new TypeReference<>() {});
+			Object name = json.get("name");
+			return name != null ? name.toString() : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private void importTemplateFromAppFolder(File extractFolder) {
+		File appDir = new File(extractFolder, APP_DIR);
+		if (!appDir.isDirectory() || !storageService.isEnabled()) {
+			log.debug("Skipping template import: app/ dir missing or storage disabled");
+			return;
+		}
+		File manifest = new File(appDir, TURING_MANIFEST);
+		if (!manifest.isFile()) {
+			log.debug("Skipping template import: no valid turing-manifest.json");
+			return;
+		}
+		String templateName = readTemplateName(extractFolder);
+		if (templateName == null || templateName.isBlank()) {
+			log.warn("Skipping template import: turing-manifest.json has no name");
+			return;
+		}
+		String prefix = PAGES_PREFIX + templateName + "/";
+		// Clear existing template files
+		storageService.deleteObjectsWithPrefix(prefix);
+		// Upload all files from app/ to storage
+		int count = uploadDirectory(appDir, prefix, appDir);
+		log.info("Imported SPA template '{}' ({} files) from ZIP", templateName, count);
+	}
+
+	private int uploadDirectory(File dir, String storagePrefix, File baseDir) {
+		int count = 0;
+		File[] files = dir.listFiles();
+		if (files == null) return 0;
+		for (File file : files) {
+			if (file.isDirectory()) {
+				count += uploadDirectory(file, storagePrefix, baseDir);
+			} else {
+				String relativePath = baseDir.toPath().relativize(file.toPath()).toString().replace('\\', '/');
+				String objectName = storagePrefix + relativePath;
+				String contentType = storageService.guessContentType(objectName);
+				try (FileInputStream fis = new FileInputStream(file)) {
+					storageService.uploadStream(objectName, fis, file.length(), contentType);
+					count++;
+				} catch (Exception e) {
+					log.warn("Failed to upload template file '{}': {}", objectName, e.getMessage());
+				}
+			}
+		}
+		return count;
 	}
 
 	public boolean hasContentFile(MultipartFile multipartFile) {

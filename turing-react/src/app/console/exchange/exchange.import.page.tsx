@@ -13,13 +13,17 @@ import {
 import { ContentExchangeProgressBar } from "@/components/ui/content-exchange-progress";
 import { FloatingFormulasBg } from "@/components/ui/floating-formulas-bg";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
-import { TurExchangeImportService } from "@/services/exchange/exchange.import.service";
+import { TurExchangeImportService, type ZipCheckResult } from "@/services/exchange/exchange.import.service";
+import { TurFeaturesService } from "@/services/system/features.service";
 import {
+    IconBrowserCheck,
     IconCheck,
     IconCloudUpload,
     IconDatabase,
     IconFileZip,
     IconLoader2,
+    IconPackageImport,
+    IconSettings2,
     IconX,
 } from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
@@ -28,8 +32,69 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const importService = new TurExchangeImportService();
+const featuresService = new TurFeaturesService();
 
-type ImportStatus = "idle" | "uploading" | "success" | "error" | "content-prompt" | "indexing";
+type ImportStatus = "idle" | "uploading" | "success" | "error" | "import-prompt" | "indexing";
+
+/* ── Toggle card ── */
+function OptionCard({
+    icon,
+    title,
+    description,
+    checked,
+    onChange,
+    disabled,
+    hint,
+}: Readonly<{
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    disabled?: boolean;
+    hint?: string;
+}>) {
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={() => !disabled && onChange(!checked)}
+            className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${disabled
+                ? "opacity-50 cursor-not-allowed border-border bg-muted/30"
+                : checked
+                    ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                    : "border-border hover:border-primary/30 hover:bg-accent/50 cursor-pointer"
+                }`}
+        >
+            <div
+                className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${checked && !disabled
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground"
+                    }`}
+            >
+                {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{title}</span>
+                    {checked && !disabled && (
+                        <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            ON
+                        </span>
+                    )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    {description}
+                </p>
+                {hint && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                        {hint}
+                    </p>
+                )}
+            </div>
+        </button>
+    );
+}
 
 export default function ExchangeImportPage() {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -38,6 +103,10 @@ export default function ExchangeImportPage() {
     const [progress, setProgress] = useState(0);
     const [contentProgress, setContentProgress] = useState<ContentExchangeProgress | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>("");
+    const [zipCheck, setZipCheck] = useState<ZipCheckResult | null>(null);
+    const [storageEnabled, setStorageEnabled] = useState(false);
+    const [includeContent, setIncludeContent] = useState(false);
+    const [includeTemplate, setIncludeTemplate] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -51,7 +120,7 @@ export default function ExchangeImportPage() {
         return validTypes.includes(f.type) || f.name.endsWith(".zip");
     };
 
-    const doImport = useCallback(async (selectedFile: File, includeContent: boolean) => {
+    const doImport = useCallback(async (selectedFile: File, withContent: boolean, withTemplate: boolean) => {
         setStatus("uploading");
         setProgress(0);
         setErrorMessage("");
@@ -59,20 +128,21 @@ export default function ExchangeImportPage() {
         const taskId = `import-${Date.now()}`;
 
         try {
-            if (includeContent) {
+            if (withContent) {
                 setStatus("indexing");
                 importService.subscribeImportProgress(
                     taskId,
                     (data) => setContentProgress(data),
-                    () => {},
-                    () => {},
+                    () => { },
+                    () => { },
                 );
             }
             await importService.importFile(
                 selectedFile,
                 (p) => setProgress(p),
-                includeContent,
-                includeContent ? taskId : undefined,
+                withContent,
+                withTemplate,
+                withContent ? taskId : undefined,
             );
             setStatus("success");
             setProgress(100);
@@ -106,14 +176,23 @@ export default function ExchangeImportPage() {
             setStatus("uploading");
             setProgress(0);
             setErrorMessage("");
+            setIncludeContent(false);
+            setIncludeTemplate(false);
 
             try {
-                const hasContent = await importService.checkContent(selectedFile);
-                if (hasContent) {
-                    setStatus("content-prompt");
+                const [check, features] = await Promise.all([
+                    importService.checkZip(selectedFile),
+                    featuresService.getFeatures().catch(() => ({ storageEnabled: false, ragEnabled: false })),
+                ]);
+                setZipCheck(check);
+                setStorageEnabled(features.storageEnabled);
+
+                if (check.hasContent || check.hasTemplate) {
+                    setStatus("import-prompt");
                     return;
                 }
-                await doImport(selectedFile, false);
+                // Nothing extra detected — import directly
+                await doImport(selectedFile, false, false);
             } catch (err: any) {
                 const msg =
                     err?.response?.data?.message ||
@@ -124,7 +203,7 @@ export default function ExchangeImportPage() {
                 toast.error(t("exchange.importFailedMsg", { message: msg }));
             }
         },
-        [navigate, doImport, t]
+        [doImport, t]
     );
 
     const handleDragOver = useCallback(
@@ -184,6 +263,9 @@ export default function ExchangeImportPage() {
         setStatus("idle");
         setProgress(0);
         setErrorMessage("");
+        setZipCheck(null);
+        setIncludeContent(false);
+        setIncludeTemplate(false);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -194,6 +276,8 @@ export default function ExchangeImportPage() {
         if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / 1048576).toFixed(1)} MB`;
     };
+
+    const canIncludeTemplate = zipCheck?.hasTemplate === true && storageEnabled;
 
     return (
         <div className="flex flex-col items-center px-4 md:px-6 lg:px-8 py-2">
@@ -219,7 +303,6 @@ export default function ExchangeImportPage() {
                 >
                     <FloatingFormulasBg />
 
-                    {/* Progress bar background */}
                     {status === "uploading" && (
                         <div
                             className="absolute inset-0 bg-blue-500/8 transition-all duration-300 ease-out"
@@ -238,7 +321,6 @@ export default function ExchangeImportPage() {
                             aria-label={t("exchange.selectZip")}
                         />
 
-                        {/* Icon */}
                         <div
                             className={`
                 rounded-2xl p-4 transition-all duration-300
@@ -265,7 +347,6 @@ export default function ExchangeImportPage() {
                             )}
                         </div>
 
-                        {/* Text */}
                         <div className="text-center space-y-2">
                             {status === "idle" && (
                                 <>
@@ -344,7 +425,7 @@ export default function ExchangeImportPage() {
                 </Card>
 
                 {/* File info */}
-                {file && status !== "idle" && (
+                {file && status !== "idle" && status !== "import-prompt" && (
                     <Card className="transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
                         <CardContent className="flex items-center gap-4 py-4">
                             <div
@@ -396,30 +477,79 @@ export default function ExchangeImportPage() {
                 )}
             </div>
 
-            {/* Content import prompt dialog */}
-            <Dialog open={status === "content-prompt"} onOpenChange={(open) => {
-                if (!open) {
-                    handleReset();
-                }
+            {/* Import options dialog */}
+            <Dialog open={status === "import-prompt"} onOpenChange={(open) => {
+                if (!open) handleReset();
             }}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <IconDatabase className="size-5" />
-                            {t("exchange.contentDetected")}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {t("exchange.contentDetectedDescription")}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button className="flex-1 h-11" variant="outline" onClick={() => file && doImport(file, false)}>
-                            {t("exchange.importSiteOnly")}
-                        </Button>
-                        <GradientButton className="flex-1" onClick={() => file && doImport(file, true)}>
-                            {t("exchange.importWithContent")}
-                        </GradientButton>
-                    </DialogFooter>
+                <DialogContent className="sm:max-w-md !p-0">
+                    <div className="relative overflow-hidden rounded-lg p-6">
+                        <FloatingFormulasBg itemCount={8} />
+                        <div className="relative space-y-5">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <IconPackageImport className="size-5" />
+                                    {t("exchange.importOptions.title")}
+                                </DialogTitle>
+                                <DialogDescription>{t("exchange.importOptions.description")}</DialogDescription>
+                            </DialogHeader>
+
+                            {/* File info mini */}
+                            {file && (
+                                <div className="flex items-center gap-3 rounded-lg bg-muted/50 border border-border/60 px-3 py-2.5">
+                                    <IconFileZip className="size-4 text-muted-foreground shrink-0" />
+                                    <span className="text-sm truncate">{file.name}</span>
+                                    <span className="text-xs text-muted-foreground ml-auto shrink-0">{formatFileSize(file.size)}</span>
+                                </div>
+                            )}
+
+                            {/* Always included */}
+                            <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
+                                <IconSettings2 className="size-4 text-primary shrink-0" />
+                                <span className="text-sm text-foreground/80">{t("exchange.importOptions.configAlwaysIncluded")}</span>
+                            </div>
+
+                            {/* Option cards */}
+                            <div className="space-y-2.5">
+                                {zipCheck?.hasContent && (
+                                    <OptionCard
+                                        icon={<IconDatabase className="size-4" />}
+                                        title={t("exchange.importOptions.includeContent")}
+                                        description={t("exchange.importOptions.includeContentDescription")}
+                                        checked={includeContent}
+                                        onChange={setIncludeContent}
+                                    />
+                                )}
+
+                                {zipCheck?.hasTemplate && (
+                                    <OptionCard
+                                        icon={<IconBrowserCheck className="size-4" />}
+                                        title={t("exchange.importOptions.includeTemplate")}
+                                        description={
+                                            t("exchange.importOptions.includeTemplateDescription", { name: zipCheck.templateName ?? "SPA" })
+                                        }
+                                        checked={includeTemplate}
+                                        onChange={setIncludeTemplate}
+                                        disabled={!canIncludeTemplate}
+                                        hint={
+                                            !storageEnabled
+                                                ? t("exchange.importOptions.templateRequiresStorage")
+                                                : undefined
+                                        }
+                                    />
+                                )}
+                            </div>
+
+                            <DialogFooter>
+                                <Button className="flex-1 h-11" variant="outline" onClick={handleReset}>
+                                    {t("exchange.importOptions.cancel")}
+                                </Button>
+                                <GradientButton className="flex-1" onClick={() => file && doImport(file, includeContent, includeTemplate && canIncludeTemplate)}>
+                                    <IconPackageImport className="size-4" />
+                                    {t("exchange.importOptions.importButton")}
+                                </GradientButton>
+                            </DialogFooter>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
