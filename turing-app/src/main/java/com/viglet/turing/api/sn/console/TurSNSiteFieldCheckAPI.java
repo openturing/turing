@@ -42,6 +42,7 @@ import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.solr.bean.TurSolrFieldBean;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
@@ -58,13 +59,16 @@ public class TurSNSiteFieldCheckAPI {
         private final TurSNSiteRepository turSNSiteRepository;
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+        private final TurSearchEnginePluginFactory pluginFactory;
 
         public TurSNSiteFieldCheckAPI(TurSNSiteRepository turSNSiteRepository,
                         TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-                        TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+                        TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSearchEnginePluginFactory pluginFactory) {
                 this.turSNSiteRepository = turSNSiteRepository;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+                this.pluginFactory = pluginFactory;
         }
 
         @Operation(summary = "Semantic Navigation Site Field Ext Check List")
@@ -116,9 +120,26 @@ public class TurSNSiteFieldCheckAPI {
                                 .build();
         }
 
+        private boolean isSolrBased(TurSEInstance turSEInstance) {
+                return turSEInstance != null
+                        && turSEInstance.getTurSEVendor() != null
+                        && "SOLR".equalsIgnoreCase(turSEInstance.getTurSEVendor().getId());
+        }
+
         private TurSolrFieldCore validateFieldInCore(TurSNSiteFieldExt turSNSiteFieldExt,
                         TurSNSiteLocale locale, TurSEInstance turSEInstance) {
                 String coreName = locale.getCore();
+
+                // Non-Solr engines (Lucene, Elasticsearch) are schema-less — fields are always valid
+                if (!isSolrBased(turSEInstance)) {
+                        return TurSolrFieldCore.builder()
+                                        .name(coreName)
+                                        .exists(true)
+                                        .typeIsCorrect(true)
+                                        .multiValuedIsCorrect(true)
+                                        .correct(true)
+                                        .build();
+                }
 
                 if (!fieldExists(turSNSiteFieldExt, locale, turSEInstance)) {
                         return buildMissingFieldCore(coreName);
@@ -178,10 +199,11 @@ public class TurSNSiteFieldCheckAPI {
 
         private List<TurSolrCoreExists> coresExist(TurSNSite turSNSite) {
                 List<TurSolrCoreExists> coresExist = new ArrayList<>();
+                var plugin = pluginFactory.getPluginForSite(turSNSite);
                 turSNSiteLocaleRepository.findByTurSNSite(turSNSite)
                                 .forEach(turSNSiteLocale -> coresExist.add(TurSolrCoreExists.builder()
                                                 .name(turSNSiteLocale.getCore())
-                                                .exists(TurSolrUtils.coreExists(turSNSite.getTurSEInstance(),
+                                                .exists(plugin.indexExists(turSNSite.getTurSEInstance(),
                                                                 turSNSiteLocale.getCore()))
                                                 .build()));
                 return coresExist;
