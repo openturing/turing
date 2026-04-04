@@ -54,6 +54,7 @@ Var ExamplesAnySelected
 !define MUI_HEADERIMAGE_BITMAP "wizard-header.bmp"
 !define MUI_HEADERIMAGE_RIGHT
 !define MUI_ABORTWARNING
+!define MUI_COMPONENTSPAGE_SMALLDESC
 
 ; --------------------------------------------------------------------------
 ; Pages
@@ -260,19 +261,19 @@ SectionEnd
 ; ---- Example Sites Group ----
 SectionGroup "Example Sites" SecExamples
 
-    Section "Mythical Creatures (Bestiary)" SecMythical
+    Section "Mythical Creatures" SecMythical
         SetOutPath "$INSTDIR\export"
         File /nonfatal "${STAGE}\examples\mythical-creatures.zip"
         StrCpy $ExamplesAnySelected "1"
     SectionEnd
 
-    Section "Space Missions (Mission Control)" SecSpace
+    Section "Space Missions" SecSpace
         SetOutPath "$INSTDIR\export"
         File /nonfatal "${STAGE}\examples\space-missions.zip"
         StrCpy $ExamplesAnySelected "1"
     SectionEnd
 
-    Section "Vinyl Records (The Crate)" SecVinyl
+    Section "Vinyl Records" SecVinyl
         SetOutPath "$INSTDIR\export"
         File /nonfatal "${STAGE}\examples\vinyl-records.zip"
         StrCpy $ExamplesAnySelected "1"

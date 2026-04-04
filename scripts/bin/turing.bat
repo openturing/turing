@@ -42,6 +42,15 @@ echo.
 
 set "DATA_DIR=%LOCALAPPDATA%\Viglet\Turing"
 if not exist "!DATA_DIR!" mkdir "!DATA_DIR!"
+
+rem Copy export ZIPs from install dir on first run
+if exist "%BASE_DIR%\export" (
+    if not exist "!DATA_DIR!\export" (
+        mkdir "!DATA_DIR!\export"
+        copy "%BASE_DIR%\export\*.zip" "!DATA_DIR!\export\" >nul 2>&1
+    )
+)
+
 cd /d "!DATA_DIR!"
 "!JAVA_CMD!" -Xmx1g -Xms1g %* -Dspring.output.ansi.enabled=never -jar "%JAR%" "!SPRING_CONFIG!"
 
