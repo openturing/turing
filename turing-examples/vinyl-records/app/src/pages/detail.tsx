@@ -1,26 +1,26 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import type { ResolvedDocument } from "@viglet/turing-react-sdk";
-import {
-  IconArrowLeft,
-  IconVinyl,
-  IconMusic,
-  IconStar,
-  IconStarFilled,
-  IconDisc,
-  IconCalendar,
-  IconTag,
-  IconCertificate,
-  IconCurrencyDollar,
-  IconNumber,
-  IconClock,
-  IconBuilding,
-} from "@tabler/icons-react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/mode-toggle";
 import { cn } from "@/lib/utils";
+import {
+  IconArrowLeft,
+  IconBuilding,
+  IconCalendar,
+  IconCertificate,
+  IconClock,
+  IconCurrencyDollar,
+  IconDisc,
+  IconMusic,
+  IconNumber,
+  IconStar,
+  IconStarFilled,
+  IconTag,
+  IconVinyl,
+} from "@tabler/icons-react";
+import type { ResolvedDocument } from "@viglet/turing-react-sdk";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 /* ── Condition color map ── */
 const conditionColors: Record<string, string> = {
@@ -41,7 +41,7 @@ function getConditionColor(condition: string): string {
 }
 
 /* ── Star rating ── */
-function StarRating({ rating }: { rating: number }) {
+function StarRating({ rating }: Readonly<{ rating: number }>) {
   const stars = Math.round(rating);
   return (
     <div className="flex items-center gap-0.5">
@@ -64,11 +64,11 @@ function MetaRow({
   icon,
   label,
   children,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
@@ -148,7 +148,7 @@ export default function DetailPage() {
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6 py-8">
         {/* ── Hero section with cover art ── */}
-        <div className="relative mb-8 overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-br from-card via-card to-amber-900/5">
+        <div className="relative mb-8 overflow-hidden rounded-2xl border border-border/30 bg-linear-to-br from-card via-card to-amber-900/5">
           <div className="flex flex-col md:flex-row">
             {/* Cover art */}
             <div className="relative md:w-96 shrink-0">
@@ -159,10 +159,10 @@ export default function DetailPage() {
                     alt={doc.title}
                     className="h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/20 hidden md:block" />
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent to-card/20 hidden md:block" />
                 </div>
               ) : (
-                <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-amber-900/20 to-orange-900/20">
+                <div className="flex aspect-square items-center justify-center bg-linear-to-br from-amber-900/20 to-orange-900/20">
                   <IconDisc className="size-24 text-muted-foreground/20" />
                 </div>
               )}

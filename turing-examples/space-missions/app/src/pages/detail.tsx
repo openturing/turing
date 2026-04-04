@@ -1,23 +1,23 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import type { ResolvedDocument } from "@viglet/turing-react-sdk";
-import {
-  IconArrowLeft,
-  IconRocket,
-  IconCalendar,
-  IconClock,
-  IconUsers,
-  IconSatellite,
-  IconPlanet,
-  IconStars,
-  IconBuildingFactory,
-  IconWalk,
-} from "@tabler/icons-react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/mode-toggle";
 import { cn } from "@/lib/utils";
+import {
+  IconArrowLeft,
+  IconBuildingFactory,
+  IconCalendar,
+  IconClock,
+  IconPlanet,
+  IconRocket,
+  IconSatellite,
+  IconStars,
+  IconUsers,
+  IconWalk,
+} from "@tabler/icons-react";
+import type { ResolvedDocument } from "@viglet/turing-react-sdk";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 /* ── Outcome color map ── */
 const outcomeColors: Record<string, string> = {
@@ -55,15 +55,17 @@ function getAgencyColor(agency: string): string {
 }
 
 /* ── Metadata row ── */
+type MetaRowProps = Readonly<{
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}>;
+
 function MetaRow({
   icon,
   label,
   children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
+}: MetaRowProps) {
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="mt-0.5 text-primary/60 shrink-0">{icon}</div>
@@ -148,7 +150,7 @@ export default function DetailPage() {
                 alt={doc.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-background via-background/50 to-transparent" />
 
               {/* HUD corner brackets */}
               <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-primary/40 rounded-tl-lg pointer-events-none" />
@@ -400,7 +402,7 @@ export default function DetailPage() {
                 >
                   <span className="font-mono font-bold">{crewSize}</span>{" "}
                   <span className="text-muted-foreground text-xs">
-                    astronaut{crewSize !== 1 ? "s" : ""}
+                    astronaut{crewSize === 1 ? "" : "s"}
                   </span>
                 </MetaRow>
               </>

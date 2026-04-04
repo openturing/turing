@@ -1,0 +1,11 @@
+.danger-bar-fill[data-level="0"] { width: 0%; }
+.danger-bar-fill[data-level="1"] { width: 10%; }
+.danger-bar-fill[data-level="2"] { width: 20%; }
+.danger-bar-fill[data-level="3"] { width: 30%; }
+.danger-bar-fill[data-level="4"] { width: 40%; }
+.danger-bar-fill[data-level="5"] { width: 50%; }
+.danger-bar-fill[data-level="6"] { width: 60%; }
+.danger-bar-fill[data-level="7"] { width: 70%; }
+.danger-bar-fill[data-level="8"] { width: 80%; }
+.danger-bar-fill[data-level="9"] { width: 90%; }
+.danger-bar-fill[data-level="10"] { width: 100%; }

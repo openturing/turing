@@ -1,25 +1,26 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import type { ResolvedDocument } from "@viglet/turing-react-sdk";
-import {
-  IconArrowLeft,
-  IconFlame,
-  IconSkull,
-  IconShieldHalf,
-  IconMapPin,
-  IconClock,
-  IconGhost,
-  IconTransform,
-  IconInfinity,
-  IconSword,
-  IconSparkles,
-  IconFeather,
-} from "@tabler/icons-react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/mode-toggle";
 import { cn } from "@/lib/utils";
+import {
+  IconArrowLeft,
+  IconClock,
+  IconFeather,
+  IconFlame,
+  IconGhost,
+  IconInfinity,
+  IconMapPin,
+  IconShieldHalf,
+  IconSkull,
+  IconSparkles,
+  IconSword,
+  IconTransform,
+} from "@tabler/icons-react";
+import type { ResolvedDocument } from "@viglet/turing-react-sdk";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import "./detail.css";
 
 /* ── Element color map ── */
 const elementColors: Record<string, string> = {
@@ -39,24 +40,30 @@ function getElementColor(element: string): string {
 }
 
 /* ── Danger bar ── */
-function DangerBar({ level }: { level: number }) {
-  const percent = Math.min((level / 10) * 100, 100);
-  const color =
-    level >= 8
-      ? "from-red-600 to-red-400"
-      : level >= 5
-        ? "from-amber-600 to-amber-400"
-        : "from-emerald-600 to-emerald-400";
-  const label =
-    level >= 9
-      ? "Catastrophic"
-      : level >= 7
-        ? "Deadly"
-        : level >= 5
-          ? "Dangerous"
-          : level >= 3
-            ? "Moderate"
-            : "Low";
+function DangerBar({ level }: Readonly<{ level: number }>) {
+  const clampedLevel = Math.max(0, Math.min(Math.round(level), 10));
+
+  let color: string;
+  if (level >= 8) {
+    color = "from-red-600 to-red-400";
+  } else if (level >= 5) {
+    color = "from-amber-600 to-amber-400";
+  } else {
+    color = "from-emerald-600 to-emerald-400";
+  }
+
+  let label: string;
+  if (level >= 9) {
+    label = "Catastrophic";
+  } else if (level >= 7) {
+    label = "Deadly";
+  } else if (level >= 5) {
+    label = "Dangerous";
+  } else if (level >= 3) {
+    label = "Moderate";
+  } else {
+    label = "Low";
+  }
 
   return (
     <div className="space-y-1.5">
@@ -71,11 +78,11 @@ function DangerBar({ level }: { level: number }) {
       </div>
       <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden">
         <div
+          data-level={clampedLevel}
           className={cn(
-            "h-full rounded-full bg-gradient-to-r transition-all duration-700",
+            "danger-bar-fill h-full rounded-full bg-linear-to-r transition-all duration-700",
             color
           )}
-          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
@@ -87,11 +94,11 @@ function MetaRow({
   icon,
   label,
   children,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
@@ -162,7 +169,7 @@ export default function DetailPage() {
                 alt={doc.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-background via-background/40 to-transparent" />
             </div>
 
             {/* Title overlay */}

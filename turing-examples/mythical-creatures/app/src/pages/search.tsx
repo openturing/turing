@@ -1,39 +1,35 @@
-import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { resolveSiteName } from "@/lib/resolve-site";
+import { cn } from "@/lib/utils";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconClock,
+  IconFeather,
+  IconFilter,
+  IconFlame,
+  IconLoader2,
+  IconMoodEmpty,
+  IconSearch,
+  IconSkull,
+  IconSparkles,
+  IconX,
+} from "@tabler/icons-react";
 import {
   TuringProvider,
+  TuringSearchField,
   useTuringUrlSearch,
-  useTuringAutoComplete,
-  useTuringSearchHistory,
   type ResolvedDocument,
   type TurFacetGroup,
   type TurFacetItem,
   type TurPaginationItem,
 } from "@viglet/turing-react-sdk";
-import {
-  IconSearch,
-  IconFlame,
-  IconSkull,
-  IconFeather,
-  IconSparkles,
-  IconFilter,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconLoader2,
-  IconMoodEmpty,
-  IconX,
-  IconClock,
-  IconTrash,
-} from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/mode-toggle";
-import { cn } from "@/lib/utils";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 /* ── Element color map ── */
 const elementColors: Record<string, string> = {
@@ -53,23 +49,35 @@ function getElementColor(element: string): string {
 }
 
 /* ── Danger level bar ── */
-function DangerBar({ level }: { level: number }) {
-  const percent = Math.min((level / 10) * 100, 100);
-  const color =
-    level >= 8
-      ? "from-red-600 to-red-400"
-      : level >= 5
-        ? "from-amber-600 to-amber-400"
-        : "from-emerald-600 to-emerald-400";
+function DangerBar({ level }: Readonly<{ level: number }>) {
+  const safeLevel = Math.max(0, Math.min(Math.round(level), 10));
+  const widthClassByLevel = [
+    "w-0",
+    "w-[10%]",
+    "w-[20%]",
+    "w-[30%]",
+    "w-[40%]",
+    "w-[50%]",
+    "w-[60%]",
+    "w-[70%]",
+    "w-[80%]",
+    "w-[90%]",
+    "w-full",
+  ];
+  const widthClass = widthClassByLevel[safeLevel];
+  let color = "from-emerald-600 to-emerald-400";
+
+  if (level >= 8) {
+    color = "from-red-600 to-red-400";
+  } else if (level >= 5) {
+    color = "from-amber-600 to-amber-400";
+  }
 
   return (
     <div className="flex items-center gap-2">
       <IconSkull className="size-3.5 text-muted-foreground shrink-0" />
       <div className="h-1.5 flex-1 rounded-full bg-muted/50 overflow-hidden">
-        <div
-          className={cn("h-full rounded-full bg-gradient-to-r", color)}
-          style={{ width: `${percent}%` }}
-        />
+        <div className={cn("h-full rounded-full bg-linear-to-r", color, widthClass)} />
       </div>
       <span className="text-xs font-mono text-muted-foreground w-7 text-right">
         {level}
@@ -82,10 +90,10 @@ function DangerBar({ level }: { level: number }) {
 function FacetSidebar({
   groups,
   onNavigate,
-}: {
+}: Readonly<{
   groups: TurFacetGroup[];
   onNavigate: (href: string) => void;
-}) {
+}>) {
   if (!groups || groups.length === 0) return null;
 
   return (
@@ -140,22 +148,21 @@ function FacetSidebar({
 function CreatureCard({
   doc,
   onClick,
-}: {
+}: Readonly<{
   doc: ResolvedDocument;
   onClick: () => void;
-}) {
+}>) {
   const fields = doc.raw.fields;
   const dangerLevel = fields.danger_level ?? 0;
-  const elements: string[] = Array.isArray(fields.element)
-    ? fields.element
-    : fields.element
-      ? [fields.element]
-      : [];
-  const creatureTypes: string[] = Array.isArray(fields.creature_type)
-    ? fields.creature_type
-    : fields.creature_type
-      ? [fields.creature_type]
-      : [];
+
+  const normalizeToStringArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value as string[];
+    if (typeof value === "string" && value.length > 0) return [value];
+    return [];
+  };
+
+  const elements: string[] = normalizeToStringArray(fields.element);
+  const creatureTypes: string[] = normalizeToStringArray(fields.creature_type);
 
   return (
     <button
@@ -163,7 +170,7 @@ function CreatureCard({
       className="group relative flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card text-left transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {/* Glow effect on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-linear-to-b from-primary/5 via-transparent to-transparent" />
 
       {/* Image */}
       {doc.image && (
@@ -173,7 +180,7 @@ function CreatureCard({
             alt={doc.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-card via-transparent to-transparent" />
 
           {/* Danger badge overlay */}
           {dangerLevel > 0 && (
@@ -237,10 +244,10 @@ function CreatureCard({
 function Pagination({
   items,
   onNavigate,
-}: {
+}: Readonly<{
   items: TurPaginationItem[];
   onNavigate: (href: string) => void;
-}) {
+}>) {
   if (!items || items.length === 0) return null;
 
   const iconMap: Record<string, React.ReactNode> = {
@@ -283,10 +290,6 @@ function SearchContent() {
   const turing = useTuringUrlSearch(searchParams, (s: string) =>
     setSearchParams(s)
   );
-  const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
-  const { history, save: saveSearch, remove: removeSearch, clear: clearHistory } = useTuringSearchHistory();
-  const [showDropdown, setShowDropdown] = useState(false);
-
   const query = turing.params.q ?? "*";
   const isLanding = query === "*" && turing.status !== "loading";
   const hasResults = turing.documents.length > 0;
@@ -321,8 +324,8 @@ function SearchContent() {
         )}
       >
         {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-background to-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-primary/8 via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
 
         {/* Floating mystical particles - decorative */}
         <div className="absolute top-10 left-[15%] size-2 rounded-full bg-amber-400/20 animate-pulse" />
@@ -337,7 +340,7 @@ function SearchContent() {
                 Ancient Tome of
                 <Separator className="w-8 bg-primary/30" />
               </div>
-              <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent pb-2">
+              <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight bg-linear-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent pb-2">
                 The Bestiary
               </h1>
               <p className="mt-4 max-w-xl mx-auto text-muted-foreground text-base sm:text-lg leading-relaxed">
@@ -348,105 +351,53 @@ function SearchContent() {
           )}
 
           {/* Search bar */}
-          <div
+          <TuringSearchField
+            turing={turing}
             className={cn(
               "relative z-50 mx-auto w-full transition-all duration-500",
               isLanding ? "mt-8 max-w-xl" : "max-w-2xl"
             )}
           >
             <div className="relative group">
-              {/* Glow ring */}
-              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-primary/30 via-amber-500/20 to-primary/30 opacity-0 group-focus-within:opacity-100 blur-sm transition-opacity duration-300" />
-
+              <div className="absolute -inset-0.5 rounded-xl bg-linear-to-r from-primary/30 via-amber-500/20 to-primary/30 opacity-0 group-focus-within:opacity-100 blur-sm transition-opacity duration-300" />
               <div className="relative flex items-center gap-2 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-4 py-2 shadow-lg shadow-primary/5 group-focus-within:border-primary/40">
                 <IconSearch className="size-5 text-muted-foreground shrink-0" />
-                <Input
-                  value={turing.inputValue}
-                  onChange={(e) => {
-                    turing.setInputValue(e.target.value);
-                    fetchSuggestions(e.target.value);
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      clearSuggestions();
-                      setShowDropdown(false);
-                      saveSearch(turing.inputValue);
-                      turing.submitSearch();
-                    }
-                  }}
-                  onBlur={() => globalThis.setTimeout(() => { clearSuggestions(); setShowDropdown(false); }, 150)}
+                <TuringSearchField.Input
                   placeholder="Search for a creature... dragon, phoenix, kraken..."
-                  className="border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:border-transparent text-base placeholder:text-muted-foreground/60"
-                  autoComplete="off"
+                  className="flex-1 border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:outline-none text-base placeholder:text-muted-foreground/60"
                 />
-                <Button
-                  size="sm"
-                  onClick={() => { saveSearch(turing.inputValue); turing.submitSearch(); setShowDropdown(false); }}
-                  className="shrink-0 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-md"
-                >
+                <TuringSearchField.Button className="shrink-0 inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium bg-linear-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-md cursor-pointer">
                   Search
-                </Button>
+                </TuringSearchField.Button>
               </div>
-
-              {/* Autocomplete / History Dropdown */}
-              {suggestions.length > 0 ? (
-                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
-                  {suggestions.map((term) => (
-                    <button
-                      key={term}
-                      type="button"
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 cursor-pointer"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { turing.setInputValue(term); clearSuggestions(); }}
-                    >
-                      <IconSearch className="size-3.5 text-muted-foreground shrink-0" />
-                      {term}
+              <TuringSearchField.Dropdown
+                className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto"
+                renderSuggestion={(term, onClick) => (
+                  <button key={term} type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClick}
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 cursor-pointer">
+                    <IconSearch className="size-3.5 text-muted-foreground shrink-0" />{term}
+                  </button>
+                )}
+                renderHistory={(term, onClick, onRemove) => (
+                  <div key={term} className="flex items-center hover:bg-accent transition-colors">
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClick}
+                      className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer">
+                      <IconClock className="size-3.5 text-muted-foreground shrink-0" />{term}
                     </button>
-                  ))}
-                </div>
-              ) : showDropdown && history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).length > 0 && (
-                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
+                    <button type="button" title="Remove" onMouseDown={(e) => e.preventDefault()} onClick={onRemove}
+                      className="px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">&times;</button>
+                  </div>
+                )}
+                renderHistoryHeader={(onClearAll) => (
                   <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent searches</span>
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { clearHistory(); setShowDropdown(false); }}
-                    >
-                      Clear all
-                    </button>
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClearAll}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer">Clear all</button>
                   </div>
-                  {history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).slice(0, 8).map((term) => (
-                    <div
-                      key={term}
-                      className="flex items-center hover:bg-accent transition-colors"
-                    >
-                      <button
-                        type="button"
-                        className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { turing.setInputValue(term); setShowDropdown(false); }}
-                      >
-                        <IconClock className="size-3.5 text-muted-foreground shrink-0" />
-                        {term}
-                      </button>
-                      <button
-                        type="button"
-                        title="Remove from history"
-                        className="px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => removeSearch(term)}
-                      >
-                        <IconTrash className="size-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                )}
+              />
             </div>
-          </div>
+          </TuringSearchField>
         </div>
       </section>
 
@@ -493,7 +444,7 @@ function SearchContent() {
                     <span className="font-semibold text-foreground">
                       {totalCount}
                     </span>{" "}
-                    creature{totalCount !== 1 ? "s" : ""} found
+                    creature{totalCount === 1 ? "" : "s"} found
                     {query !== "*" && (
                       <>
                         {" "}

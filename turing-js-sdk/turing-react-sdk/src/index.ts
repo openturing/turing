@@ -21,6 +21,7 @@ export type { UseTuringSearchHistoryReturn, SearchHistoryEntry } from "./hooks/u
 
 // ── UI Components ──
 export { TuringSearchBar } from "./ui/TuringSearchBar";
+export { TuringSearchField } from "./ui/TuringSearchField";
 export { TuringResultList } from "./ui/TuringResultList";
 export { TuringPagination } from "./ui/TuringPagination";
 

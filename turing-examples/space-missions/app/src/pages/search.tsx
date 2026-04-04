@@ -1,41 +1,38 @@
-import { useMemo, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { resolveSiteName } from "@/lib/resolve-site";
+import { cn } from "@/lib/utils";
+import "@/styles/search.css";
+import {
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconClock,
+  IconFilter,
+  IconLoader2,
+  IconMoodEmpty,
+  IconPlanet,
+  IconRocket,
+  IconSatellite,
+  IconSearch,
+  IconStars,
+  IconUsers,
+  IconX,
+} from "@tabler/icons-react";
 import {
   TuringProvider,
+  TuringSearchField,
   useTuringUrlSearch,
-  useTuringAutoComplete,
-  useTuringSearchHistory,
   type ResolvedDocument,
   type TurFacetGroup,
   type TurFacetItem,
   type TurPaginationItem,
 } from "@viglet/turing-react-sdk";
-import {
-  IconSearch,
-  IconRocket,
-  IconSatellite,
-  IconUsers,
-  IconCalendar,
-  IconClock,
-  IconFilter,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconLoader2,
-  IconMoodEmpty,
-  IconX,
-  IconPlanet,
-  IconStars,
-  IconTrash,
-} from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/mode-toggle";
-import { cn } from "@/lib/utils";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 /* ── Outcome color map ── */
 const outcomeColors: Record<string, string> = {
@@ -73,36 +70,40 @@ function getAgencyColor(agency: string): string {
 }
 
 /* ── Starfield background ── */
-function Starfield() {
-  const stars = useMemo(() => {
-    const result: { id: number; x: number; y: number; size: number; duration: number; delay: number }[] = [];
-    for (let i = 0; i < 80; i++) {
-      result.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 2 + 0.5,
-        duration: Math.random() * 4 + 2,
-        delay: Math.random() * 5,
-      });
-    }
-    return result;
-  }, []);
+const STAR_CLASSES = [
+  "left-[3%] top-[8%] w-[1px] h-[1px] [--twinkle-duration:2.7s] [--twinkle-delay:0.2s]",
+  "left-[8%] top-[22%] w-[2px] h-[2px] [--twinkle-duration:4.1s] [--twinkle-delay:1.1s]",
+  "left-[12%] top-[65%] w-[1.5px] h-[1.5px] [--twinkle-duration:3.4s] [--twinkle-delay:0.7s]",
+  "left-[17%] top-[40%] w-[2px] h-[2px] [--twinkle-duration:5.5s] [--twinkle-delay:2.3s]",
+  "left-[21%] top-[12%] w-[1px] h-[1px] [--twinkle-duration:2.9s] [--twinkle-delay:0.9s]",
+  "left-[26%] top-[78%] w-[2px] h-[2px] [--twinkle-duration:4.8s] [--twinkle-delay:1.8s]",
+  "left-[30%] top-[33%] w-[1.5px] h-[1.5px] [--twinkle-duration:3.2s] [--twinkle-delay:0.4s]",
+  "left-[35%] top-[55%] w-[1px] h-[1px] [--twinkle-duration:5.1s] [--twinkle-delay:2.5s]",
+  "left-[39%] top-[18%] w-[2px] h-[2px] [--twinkle-duration:2.6s] [--twinkle-delay:0.5s]",
+  "left-[43%] top-[72%] w-[1.5px] h-[1.5px] [--twinkle-duration:4.5s] [--twinkle-delay:1.4s]",
+  "left-[48%] top-[28%] w-[1px] h-[1px] [--twinkle-duration:3.7s] [--twinkle-delay:2.1s]",
+  "left-[52%] top-[84%] w-[2px] h-[2px] [--twinkle-duration:5.8s] [--twinkle-delay:0.3s]",
+  "left-[57%] top-[46%] w-[1.5px] h-[1.5px] [--twinkle-duration:3.1s] [--twinkle-delay:1.6s]",
+  "left-[61%] top-[10%] w-[1px] h-[1px] [--twinkle-duration:4.9s] [--twinkle-delay:2.8s]",
+  "left-[66%] top-[63%] w-[2px] h-[2px] [--twinkle-duration:2.8s] [--twinkle-delay:0.6s]",
+  "left-[70%] top-[36%] w-[1.5px] h-[1.5px] [--twinkle-duration:5.2s] [--twinkle-delay:1.9s]",
+  "left-[74%] top-[81%] w-[1px] h-[1px] [--twinkle-duration:3.5s] [--twinkle-delay:0.8s]",
+  "left-[79%] top-[20%] w-[2px] h-[2px] [--twinkle-duration:4.3s] [--twinkle-delay:2.2s]",
+  "left-[83%] top-[58%] w-[1.5px] h-[1.5px] [--twinkle-duration:3.9s] [--twinkle-delay:1.2s]",
+  "left-[88%] top-[14%] w-[1px] h-[1px] [--twinkle-duration:5.6s] [--twinkle-delay:2.7s]",
+  "left-[92%] top-[69%] w-[2px] h-[2px] [--twinkle-duration:2.5s] [--twinkle-delay:0.1s]",
+  "left-[95%] top-[42%] w-[1.5px] h-[1.5px] [--twinkle-duration:4.7s] [--twinkle-delay:1.5s]",
+  "left-[6%] top-[90%] w-[1px] h-[1px] [--twinkle-duration:3.3s] [--twinkle-delay:2.0s]",
+  "left-[54%] top-[5%] w-[2px] h-[2px] [--twinkle-duration:5.0s] [--twinkle-delay:0.4s]",
+] as const;
 
+function Starfield() {
   return (
     <div className="starfield">
-      {stars.map((s) => (
+      {STAR_CLASSES.map((starClass) => (
         <div
-          key={s.id}
-          className="star"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: `${s.size}px`,
-            height: `${s.size}px`,
-            ["--twinkle-duration" as string]: `${s.duration}s`,
-            ["--twinkle-delay" as string]: `${s.delay}s`,
-          }}
+          key={starClass}
+          className={cn("star star-item", starClass)}
         />
       ))}
     </div>
@@ -113,10 +114,10 @@ function Starfield() {
 function FacetSidebar({
   groups,
   onNavigate,
-}: {
+}: Readonly<{
   groups: TurFacetGroup[];
   onNavigate: (href: string) => void;
-}) {
+}>) {
   if (!groups || groups.length === 0) return null;
 
   return (
@@ -175,17 +176,18 @@ function FacetSidebar({
 function MissionCard({
   doc,
   onClick,
-}: {
+}: Readonly<{
   doc: ResolvedDocument;
   onClick: () => void;
-}) {
+}>) {
   const fields = doc.raw.fields;
   const outcome = fields.outcome ?? "";
-  const agency: string[] = Array.isArray(fields.agency)
-    ? fields.agency
-    : fields.agency
-      ? [fields.agency]
-      : [];
+  let agency: string[] = [];
+  if (Array.isArray(fields.agency)) {
+    agency = fields.agency;
+  } else if (fields.agency) {
+    agency = [fields.agency];
+  }
   const program = fields.program ?? "";
   const launchDate = fields.launch_date ?? "";
   const duration = fields.duration ?? "";
@@ -197,7 +199,7 @@ function MissionCard({
       className="group relative flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card/60 backdrop-blur-sm text-left transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring scan-line"
     >
       {/* Glow effect on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-b from-primary/8 via-transparent to-transparent" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-linear-to-b from-primary/8 via-transparent to-transparent" />
 
       {/* HUD corner accents */}
       <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-primary/30 rounded-tl-xl pointer-events-none" />
@@ -211,7 +213,7 @@ function MissionCard({
             alt={doc.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-card via-card/30 to-transparent" />
 
           {/* Outcome badge overlay */}
           {outcome && (
@@ -293,10 +295,10 @@ function MissionCard({
 function Pagination({
   items,
   onNavigate,
-}: {
+}: Readonly<{
   items: TurPaginationItem[];
   onNavigate: (href: string) => void;
-}) {
+}>) {
   if (!items || items.length === 0) return null;
 
   const iconMap: Record<string, React.ReactNode> = {
@@ -339,10 +341,6 @@ function SearchContent() {
   const turing = useTuringUrlSearch(searchParams, (s: string) =>
     setSearchParams(s)
   );
-  const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
-  const { history, save: saveSearch, remove: removeSearch, clear: clearHistory } = useTuringSearchHistory();
-  const [showDropdown, setShowDropdown] = useState(false);
-
   const query = turing.params.q ?? "*";
   const isLanding = query === "*" && turing.status !== "loading";
   const hasResults = turing.documents.length > 0;
@@ -364,7 +362,7 @@ function SearchContent() {
               <IconRocket className="size-5 text-primary" />
               <div className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary animate-ping" />
             </div>
-            <span className="font-bold text-sm tracking-[0.1em] uppercase font-mono">
+            <span className="font-bold text-sm tracking-widest uppercase font-mono">
               Mission Control
             </span>
           </div>
@@ -380,21 +378,14 @@ function SearchContent() {
         )}
       >
         {/* Deep space gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[oklch(0.08_0.04_250)] via-background to-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-[oklch(0.08_0.04_250)] via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/15 via-transparent to-transparent" />
 
         {/* Starfield */}
         <Starfield />
 
         {/* Grid overlay for HUD effect */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(oklch(0.75 0.15 200 / 0.5) 1px, transparent 1px), linear-gradient(90deg, oklch(0.75 0.15 200 / 0.5) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(oklch(0.75_0.15_200/0.5)_1px,transparent_1px),linear-gradient(90deg,oklch(0.75_0.15_200/0.5)_1px,transparent_1px)] bg-size-[60px_60px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 text-center">
           {isLanding && (
@@ -407,7 +398,7 @@ function SearchContent() {
                 <Separator className="w-10 bg-primary/20" />
               </div>
 
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tighter font-mono bg-gradient-to-b from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent pb-2 uppercase">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tighter font-mono bg-linear-to-b from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent pb-2 uppercase">
                 Space Missions
               </h1>
 
@@ -439,102 +430,53 @@ function SearchContent() {
           )}
 
           {/* Search bar */}
-          <div
+          <TuringSearchField
+            turing={turing}
             className={cn(
               "relative z-50 mx-auto w-full transition-all duration-500",
               isLanding ? "mt-8 max-w-xl" : "max-w-2xl"
             )}
           >
             <div className="relative group">
-              {/* Glow ring */}
-              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-primary/40 via-cyan-400/20 to-primary/40 opacity-0 group-focus-within:opacity-100 blur-sm transition-opacity duration-300" />
-
+              <div className="absolute -inset-0.5 rounded-xl bg-linear-to-r from-primary/40 via-cyan-400/20 to-primary/40 opacity-0 group-focus-within:opacity-100 blur-sm transition-opacity duration-300" />
               <div className="relative flex items-center gap-2 rounded-xl border border-border/50 bg-card/70 backdrop-blur-md px-4 py-2 shadow-lg shadow-primary/5 group-focus-within:border-primary/50">
                 <IconSearch className="size-5 text-primary/60 shrink-0" />
-                <Input
-                  value={turing.inputValue}
-                  onChange={(e) => {
-                    turing.setInputValue(e.target.value);
-                    fetchSuggestions(e.target.value);
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      clearSuggestions();
-                      setShowDropdown(false);
-                      saveSearch(turing.inputValue);
-                      turing.submitSearch();
-                    }
-                  }}
-                  onBlur={() => globalThis.setTimeout(() => { clearSuggestions(); setShowDropdown(false); }, 150)}
+                <TuringSearchField.Input
                   placeholder="Search missions... Apollo, Voyager, Mars..."
-                  className="border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:border-transparent text-base placeholder:text-muted-foreground/50 font-mono"
-                  autoComplete="off"
+                  className="flex-1 border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:outline-none text-base placeholder:text-muted-foreground/50 font-mono"
                 />
-                <Button
-                  size="sm"
-                  onClick={() => { saveSearch(turing.inputValue); turing.submitSearch(); setShowDropdown(false); }}
-                  className="shrink-0 bg-gradient-to-r from-primary to-cyan-600 hover:from-primary/90 hover:to-cyan-600/90 text-primary-foreground shadow-md font-mono tracking-wider text-xs uppercase"
-                >
+                <TuringSearchField.Button className="shrink-0 inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium uppercase tracking-wider font-mono bg-linear-to-r from-primary to-cyan-600 hover:from-primary/90 hover:to-cyan-600/90 text-primary-foreground shadow-md cursor-pointer">
                   Launch
-                </Button>
+                </TuringSearchField.Button>
               </div>
-
-              {/* Autocomplete / History Dropdown */}
-              {suggestions.length > 0 ? (
-                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
-                  {suggestions.map((term) => (
-                    <button
-                      key={term}
-                      type="button"
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 cursor-pointer font-mono"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { turing.setInputValue(term); clearSuggestions(); }}
-                    >
-                      <IconSearch className="size-3.5 text-muted-foreground shrink-0" />
-                      {term}
+              <TuringSearchField.Dropdown
+                className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto"
+                renderSuggestion={(term, onClick) => (
+                  <button key={term} type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClick}
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 cursor-pointer font-mono">
+                    <IconSearch className="size-3.5 text-muted-foreground shrink-0" />{term}
+                  </button>
+                )}
+                renderHistory={(term, onClick, onRemove) => (
+                  <div key={term} className="flex items-center hover:bg-accent transition-colors">
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClick}
+                      className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer font-mono">
+                      <IconClock className="size-3.5 text-muted-foreground shrink-0" />{term}
                     </button>
-                  ))}
-                </div>
-              ) : showDropdown && history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).length > 0 && (
-                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden max-h-64 overflow-y-auto">
+                    <button type="button" title="Remove" onMouseDown={(e) => e.preventDefault()} onClick={onRemove}
+                      className="px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">&times;</button>
+                  </div>
+                )}
+                renderHistoryHeader={(onClearAll) => (
                   <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider font-mono">Recent searches</span>
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer font-mono"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { clearHistory(); setShowDropdown(false); }}
-                    >
-                      Clear all
-                    </button>
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={onClearAll}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer font-mono">Clear all</button>
                   </div>
-                  {history.filter((h) => !turing.inputValue || h.toLowerCase().includes(turing.inputValue.toLowerCase())).slice(0, 8).map((term) => (
-                    <div key={term} className="flex items-center hover:bg-accent transition-colors">
-                      <button
-                        type="button"
-                        className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-2 cursor-pointer font-mono"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { turing.setInputValue(term); setShowDropdown(false); }}
-                      >
-                        <IconClock className="size-3.5 text-muted-foreground shrink-0" />
-                        {term}
-                      </button>
-                      <button
-                        type="button"
-                        title="Remove from history"
-                        className="px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => removeSearch(term)}
-                      >
-                        <IconTrash className="size-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                )}
+              />
             </div>
-          </div>
+          </TuringSearchField>
         </div>
       </section>
 
@@ -586,7 +528,7 @@ function SearchContent() {
                     <span className="font-bold text-primary">
                       {totalCount}
                     </span>{" "}
-                    mission{totalCount !== 1 ? "s" : ""} found
+                    mission{totalCount === 1 ? "" : "s"} found
                     {query !== "*" && (
                       <>
                         {" "}
