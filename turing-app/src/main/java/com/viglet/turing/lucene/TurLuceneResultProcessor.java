@@ -79,7 +79,8 @@ public class TurLuceneResultProcessor {
      */
     public TurSEResults getResults(TurLuceneInstance instance, TurSNSite turSNSite,
             Query query, TurSEParameters params, List<TurSNSiteFieldExt> facetFields,
-            List<TurSNSiteFieldExt> hlFields, long startTime) {
+            List<TurSNSiteFieldExt> hlFields, org.apache.lucene.search.Sort sort,
+            long startTime) {
         TurSEResults results = TurSEResults.builder().build();
         populateResultsParameters(params, results);
 
@@ -95,10 +96,14 @@ public class TurLuceneResultProcessor {
 
             if (!facetFields.isEmpty()) {
                 // Two passes: hits first, then facets across all matching docs.
-                topDocs = searcher.search(query, hitsNeeded);
+                topDocs = sort != null
+                        ? searcher.search(query, hitsNeeded, sort)
+                        : searcher.search(query, hitsNeeded);
                 fc = searcher.search(query, new FacetsCollectorManager());
             } else {
-                topDocs = searcher.search(query, hitsNeeded);
+                topDocs = sort != null
+                        ? searcher.search(query, hitsNeeded, sort)
+                        : searcher.search(query, hitsNeeded);
             }
 
             long numFound = topDocs.totalHits.value();

@@ -39,8 +39,12 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortItem;
+import com.viglet.turing.persistence.model.sn.sort.TurSNSiteCustomSortOrderEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,9 +65,12 @@ public class TurLuceneQueryBuilder {
             TurSEFieldType.ARRAY);
 
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 
-    public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+    public TurLuceneQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
     }
 
     // -------------------------------------------------------------------------
@@ -122,6 +129,86 @@ public class TurLuceneQueryBuilder {
      */
     public List<TurSNSiteFieldExt> getHLFields(TurSNSite turSNSite) {
         return turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1);
+    }
+
+    /**
+     * Builds a Lucene {@link org.apache.lucene.search.Sort} from the search parameters,
+     * mirroring the Solr sort logic (relevance, newest, oldest, field:asc/desc, custom sort).
+     *
+     * @return null for relevance (default score sort), or a Sort object
+     */
+    public org.apache.lucene.search.Sort buildSort(TurSNSite turSNSite, TurSEParameters params) {
+        String sortParam = params.getSort();
+        if (sortParam == null || sortParam.isBlank() || sortParam.equalsIgnoreCase("relevance")) {
+            return null; // default score sort
+        }
+
+        if (sortParam.equalsIgnoreCase(TurLuceneConstants.NEWEST)) {
+            String dateField = turSNSite.getDefaultDateField();
+            if (dateField != null) {
+                return new org.apache.lucene.search.Sort(
+                        new org.apache.lucene.search.SortField(dateField,
+                                org.apache.lucene.search.SortField.Type.LONG, true));
+            }
+            return null;
+        }
+
+        if (sortParam.equalsIgnoreCase(TurLuceneConstants.OLDEST)) {
+            String dateField = turSNSite.getDefaultDateField();
+            if (dateField != null) {
+                return new org.apache.lucene.search.Sort(
+                        new org.apache.lucene.search.SortField(dateField,
+                                org.apache.lucene.search.SortField.Type.LONG, false));
+            }
+            return null;
+        }
+
+        // field:asc or field:desc
+        var kv = TurCommonsUtils.getKeyValueFromColon(sortParam);
+        if (kv.isPresent()) {
+            boolean reverse = kv.get().getValue().equalsIgnoreCase("desc");
+            return new org.apache.lucene.search.Sort(
+                    buildSortField(kv.get().getKey(), reverse));
+        }
+
+        // Custom sort name
+        return turSNSiteCustomSortRepository.findByTurSNSiteAndName(turSNSite, sortParam)
+                .map(customSort -> {
+                    List<TurSNSiteCustomSortItem> sortedItems = customSort.getItems().stream()
+                            .sorted(java.util.Comparator.comparing(TurSNSiteCustomSortItem::getPosition,
+                                    java.util.Comparator.nullsLast(Integer::compareTo)))
+                            .toList();
+                    if (sortedItems.isEmpty()) return null;
+                    org.apache.lucene.search.SortField[] fields = sortedItems.stream()
+                            .map(item -> buildSortField(item.getFieldName(),
+                                    item.getSortOrder() == TurSNSiteCustomSortOrderEnum.DESC))
+                            .toArray(org.apache.lucene.search.SortField[]::new);
+                    return new org.apache.lucene.search.Sort(fields);
+                })
+                .orElse(null);
+    }
+
+    private org.apache.lucene.search.SortField buildSortField(String fieldName, boolean reverse) {
+        // Determine the SortField type based on the field's configured type
+        List<TurSNSiteFieldExt> allFields = turSNSiteFieldExtRepository.findAll();
+        for (TurSNSiteFieldExt ext : allFields) {
+            if (fieldName.equals(ext.getName()) && ext.getType() != null) {
+                return switch (ext.getType()) {
+                    case INT -> new org.apache.lucene.search.SortField(fieldName,
+                            org.apache.lucene.search.SortField.Type.INT, reverse);
+                    case LONG, DATE -> new org.apache.lucene.search.SortField(fieldName,
+                            org.apache.lucene.search.SortField.Type.LONG, reverse);
+                    case FLOAT -> new org.apache.lucene.search.SortField(fieldName,
+                            org.apache.lucene.search.SortField.Type.FLOAT, reverse);
+                    case DOUBLE, CURRENCY -> new org.apache.lucene.search.SortField(fieldName,
+                            org.apache.lucene.search.SortField.Type.DOUBLE, reverse);
+                    // TEXT, STRING, ARRAY, BOOL use SortedSetDocValues (multi-value safe)
+                    default -> new org.apache.lucene.search.SortedSetSortField(fieldName, reverse);
+                };
+            }
+        }
+        // Unknown field — use SortedSetSortField (works with SortedSetDocValuesField from addFacetField)
+        return new org.apache.lucene.search.SortedSetSortField(fieldName, reverse);
     }
 
     /**

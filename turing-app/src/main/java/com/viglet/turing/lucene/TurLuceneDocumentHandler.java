@@ -185,6 +185,7 @@ public class TurLuceneDocumentHandler {
             int intVal = Integer.parseInt(strValue);
             doc.add(new IntPoint(key, intVal));
             doc.add(new StoredField(key, intVal));
+            doc.add(new NumericDocValuesField(key, intVal));
         } catch (NumberFormatException e) {
             log.warn("Cannot parse INT value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
@@ -211,6 +212,7 @@ public class TurLuceneDocumentHandler {
             float floatVal = Float.parseFloat(strValue);
             doc.add(new FloatPoint(key, floatVal));
             doc.add(new StoredField(key, floatVal));
+            doc.add(new NumericDocValuesField(key, Float.floatToRawIntBits(floatVal)));
         } catch (NumberFormatException e) {
             log.warn("Cannot parse FLOAT value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
@@ -225,6 +227,7 @@ public class TurLuceneDocumentHandler {
             double doubleVal = Double.parseDouble(numPart);
             doc.add(new DoublePoint(key, doubleVal));
             doc.add(new StoredField(key, doubleVal));
+            doc.add(new NumericDocValuesField(key, Double.doubleToRawLongBits(doubleVal)));
         } catch (NumberFormatException e) {
             log.warn("Cannot parse DOUBLE/CURRENCY value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
