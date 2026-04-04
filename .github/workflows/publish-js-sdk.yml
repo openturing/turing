@@ -9,11 +9,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -22,24 +24,40 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@viglet"
 
-      # ── Build & Publish turing-sdk (JS SDK) ──
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # ── Build, Bump & Publish turing-sdk (JS SDK) ──
       - name: Build turing-sdk
         working-directory: turing-js-sdk/js-sdk-lib
         run: npm run build
 
-      - name: Publish turing-sdk
+      - name: Bump & Publish turing-sdk
         working-directory: turing-js-sdk/js-sdk-lib
-        run: npm publish
+        run: |
+          npm version patch --no-git-tag-version
+          npm publish --registry=https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Build & Publish turing-react-sdk ──
+      # ── Build, Bump & Publish turing-react-sdk ──
       - name: Build turing-react-sdk
         working-directory: turing-js-sdk/turing-react-sdk
         run: npm run build
 
-      - name: Publish turing-react-sdk
+      - name: Bump & Publish turing-react-sdk
         working-directory: turing-js-sdk/turing-react-sdk
-        run: npm publish
+        run: |
+          npm version patch --no-git-tag-version
+          npm publish --registry=https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Commit version bumps back to branch ──
+      - name: Commit version bumps
+        run: |
+          git add turing-js-sdk/js-sdk-lib/package.json turing-js-sdk/turing-react-sdk/package.json
+          git commit -m "chore: bump JS SDK versions [skip ci]" || echo "No changes to commit"
+          git push
