@@ -3,6 +3,7 @@ import { resolveSiteName } from "@/lib/resolve-site";
 import {
   TuringProvider,
   useTuringUrlSearch,
+  useTuringAutoComplete,
   type ResolvedDocument,
   type TurFacetGroup,
   type TurFacetItem,
@@ -333,6 +334,7 @@ function SearchContent() {
   const turing = useTuringUrlSearch(searchParams, (s: string) =>
     setSearchParams(s)
   );
+  const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
 
   const query = turing.params.q ?? "*";
   const isLanding = query === "*" && turing.status !== "loading";
@@ -418,10 +420,15 @@ function SearchContent() {
                 <IconSearch className="size-5 text-muted-foreground shrink-0" />
                 <Input
                   value={turing.inputValue}
-                  onChange={(e) => turing.setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && turing.submitSearch()}
+                  onChange={(e) => {
+                    turing.setInputValue(e.target.value);
+                    fetchSuggestions(e.target.value);
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { clearSuggestions(); turing.submitSearch(); } }}
+                  onBlur={() => globalThis.setTimeout(() => clearSuggestions(), 150)}
                   placeholder="Search for an album... Miles Davis, punk, 1970s..."
                   className="border-0 shadow-none bg-transparent focus-visible:ring-0 focus-visible:border-transparent text-base placeholder:text-muted-foreground/60"
+                  autoComplete="off"
                 />
                 <Button
                   size="sm"
@@ -431,6 +438,24 @@ function SearchContent() {
                   Search
                 </Button>
               </div>
+
+              {/* Autocomplete Dropdown */}
+              {suggestions.length > 0 && (
+                <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-popover shadow-xl shadow-black/10 overflow-hidden">
+                  {suggestions.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2 cursor-pointer"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { turing.setInputValue(term); clearSuggestions(); }}
+                    >
+                      <IconSearch className="size-3.5 text-muted-foreground shrink-0" />
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
