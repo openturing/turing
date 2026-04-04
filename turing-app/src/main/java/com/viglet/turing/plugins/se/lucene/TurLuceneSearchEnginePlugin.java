@@ -19,11 +19,14 @@ package com.viglet.turing.plugins.se.lucene;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.lucene.TurLucene;
+import com.viglet.turing.lucene.TurLuceneInstance;
 import com.viglet.turing.lucene.TurLuceneInstanceProcess;
+import com.viglet.turing.lucene.TurLuceneQueryBuilder;
 import com.viglet.turing.lucene.TurLuceneUtils;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
@@ -35,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Lucene implementation of {@link TurSearchEnginePlugin}.
@@ -48,11 +52,17 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
 
     private final TurLucene turLucene;
     private final TurLuceneInstanceProcess turLuceneInstanceProcess;
+    private final TurLuceneQueryBuilder turLuceneQueryBuilder;
+    private final TurSNSiteRepository turSNSiteRepository;
 
     public TurLuceneSearchEnginePlugin(TurLucene turLucene,
-            TurLuceneInstanceProcess turLuceneInstanceProcess) {
+            TurLuceneInstanceProcess turLuceneInstanceProcess,
+            TurLuceneQueryBuilder turLuceneQueryBuilder,
+            TurSNSiteRepository turSNSiteRepository) {
         this.turLucene = turLucene;
         this.turLuceneInstanceProcess = turLuceneInstanceProcess;
+        this.turLuceneQueryBuilder = turLuceneQueryBuilder;
+        this.turSNSiteRepository = turSNSiteRepository;
     }
 
     @Override
@@ -133,7 +143,7 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         turLucene.indexing(luceneInstance, turSNSite, attributes);
                         return true;
                     } catch (IllegalArgumentException e) {
-                        if (e.getMessage() != null && e.getMessage().contains("doc values type")) {
+                        if (e.getMessage() != null && isSchemaConflict(e.getMessage())) {
                             log.warn("[Lucene] Schema conflict detected ({}). Recreating index and retrying.",
                                     e.getMessage());
                             turLuceneInstanceProcess.resetInstance(luceneInstance.getIndexPath());
@@ -148,6 +158,12 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         return false;
                     }
                 }).orElse(false);
+    }
+
+    private static boolean isSchemaConflict(String message) {
+        return message.contains("doc values type")
+                || message.contains("index options")
+                || message.contains("cannot change field");
     }
 
     @Override
@@ -230,6 +246,74 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
                         return List.<Map<String, Object>>of();
                     }
                 }).orElse(List.of());
+    }
+
+    // ---- Autocomplete -----------------------------------------------------
+
+    @Override
+    public List<String> autoComplete(String siteName, String term, Locale locale, long rows) {
+        if (term == null || term.length() < 2) {
+            return List.of();
+        }
+        var optInstance = turLuceneInstanceProcess.initLuceneInstance(siteName, locale);
+        var optSite = turSNSiteRepository.findByNameIgnoreCase(siteName);
+        if (optInstance.isEmpty() || optSite.isEmpty()) {
+            return List.of();
+        }
+        return executeAutoComplete(optInstance.get(), optSite.get(), term, rows);
+    }
+
+    /**
+     * Extracts individual word-level suggestions from the Lucene index,
+     * mimicking Solr's suggest component behavior.
+     *
+     * <p>Algorithm:
+     * <ol>
+     *   <li>Split query into tokens; the last token is the prefix being typed.</li>
+     *   <li>Search ngram {@code _ac} fields to find matching documents.</li>
+     *   <li>From matched docs, extract all stored text fields and tokenize them.</li>
+     *   <li>Collect words that start with the prefix and rebuild multi-word phrases
+     *       preserving the leading context words.</li>
+     * </ol>
+     */
+    private List<String> executeAutoComplete(TurLuceneInstance instance,
+            TurSNSite turSNSite, String term, long rows) {
+        try {
+            var searcher = instance.getSearcher();
+            int maxHits = rows > 0 ? (int) rows : 20;
+
+            var query = turLuceneQueryBuilder.buildAutoCompleteQuery(turSNSite, term);
+            var topDocs = searcher.search(query, maxHits * 5);
+
+            // Split query: leading completed words + last partial token
+            String[] queryTokens = term.trim().toLowerCase().split("\\s+");
+            String prefix = queryTokens[queryTokens.length - 1];
+            String leadingContext = queryTokens.length > 1
+                    ? String.join(" ", java.util.Arrays.copyOf(queryTokens, queryTokens.length - 1)) + " "
+                    : "";
+
+            Set<String> seen = new java.util.LinkedHashSet<>();
+            for (var scoreDoc : topDocs.scoreDocs) {
+                var doc = searcher.storedFields().document(scoreDoc.doc);
+                for (var field : doc.getFields()) {
+                    String value = field.stringValue();
+                    if (value == null) continue;
+                    // Tokenize stored value and find words matching the prefix
+                    for (String word : value.split("\\s+")) {
+                        String clean = word.replaceAll("[^\\p{L}\\p{N}]", "").toLowerCase();
+                        if (clean.length() >= prefix.length() && clean.startsWith(prefix)) {
+                            seen.add(leadingContext + clean);
+                        }
+                    }
+                }
+                if (seen.size() >= maxHits * 2) break;
+            }
+
+            return seen.stream().limit(maxHits).toList();
+        } catch (Exception e) {
+            log.warn("[Lucene] Autocomplete error: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     // ---- Monitoring ------------------------------------------------------

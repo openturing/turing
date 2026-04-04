@@ -43,8 +43,11 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.TurSEStopWord;
-import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,9 +62,6 @@ import jakarta.servlet.http.HttpServletRequest;
 class TurSNAutoCompleteTest {
 
         @Mock
-        private TurSolr turSolr;
-
-        @Mock
         private TurSEStopWord turSEStopWord;
 
         @Mock
@@ -70,27 +70,57 @@ class TurSNAutoCompleteTest {
         @Mock
         private TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
 
+        @Mock
+        private TurSearchEnginePluginFactory pluginFactory;
+
+        @Mock
+        private TurSNSiteRepository turSNSiteRepository;
+
         @Test
         void testAutoCompleteReturnsEmptyForShortQuery() {
-                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSolr, turSEStopWord,
-                                turSolrInstanceProcess, turSNSiteSearchCachedAPI);
+                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSEStopWord,
+                                turSNSiteSearchCachedAPI, pluginFactory, turSNSiteRepository,
+                                turSolrInstanceProcess);
 
                 assertThat(autoComplete.autoComplete("site", "a", Locale.US, 10)).isEmpty();
         }
 
         @Test
-        void testAutoCompleteReturnsEmptyWhenInstanceMissing() {
-                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSolr, turSEStopWord,
-                                turSolrInstanceProcess, turSNSiteSearchCachedAPI);
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
+        void testAutoCompleteReturnsEmptyWhenSiteNotFound() {
+                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSEStopWord,
+                                turSNSiteSearchCachedAPI, pluginFactory, turSNSiteRepository,
+                                turSolrInstanceProcess);
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
 
                 assertThat(autoComplete.autoComplete("site", "ab", Locale.US, 10)).isEmpty();
         }
 
         @Test
+        void testAutoCompleteReturnsSuggestionsFromPlugin() {
+                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSEStopWord,
+                                turSNSiteSearchCachedAPI, pluginFactory, turSNSiteRepository,
+                                turSolrInstanceProcess);
+
+                TurSNSite site = new TurSNSite();
+                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+
+                TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+                when(pluginFactory.getPluginForSite(site)).thenReturn(plugin);
+                when(plugin.autoComplete("site", "hello", Locale.US, 10))
+                                .thenReturn(List.of("helloworld", "hellothere"));
+                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
+                                .thenReturn(Optional.empty());
+
+                List<String> result = autoComplete.autoComplete("site", "hello", Locale.US, 10);
+
+                assertThat(result).containsExactly("hellothere", "helloworld");
+        }
+
+        @Test
         void testAutoCompleteWithRegularSearchExtractsTitles() {
-                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSolr, turSEStopWord,
-                                turSolrInstanceProcess, turSNSiteSearchCachedAPI);
+                TurSNAutoComplete autoComplete = new TurSNAutoComplete(turSEStopWord,
+                                turSNSiteSearchCachedAPI, pluginFactory, turSNSiteRepository,
+                                turSolrInstanceProcess);
                 HttpServletRequest request = mock(HttpServletRequest.class);
                 when(request.getRequestURL()).thenReturn(new StringBuffer("http://localhost/api"));
                 when(request.getQueryString()).thenReturn("q=hel");

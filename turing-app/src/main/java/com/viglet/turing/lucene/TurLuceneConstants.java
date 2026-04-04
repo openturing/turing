@@ -41,6 +41,15 @@ public final class TurLuceneConstants {
     public static final String OLDEST = "oldest";
     public static final String SOLR_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
+    /** Suffix for autocomplete ngram field. */
+    public static final String AC_SUFFIX = "_ac";
+
+    /** Minimum ngram length for autocomplete. */
+    public static final int AC_MIN_GRAM = 2;
+
+    /** Maximum ngram length for autocomplete. */
+    public static final int AC_MAX_GRAM = 20;
+
     /** Suffix for SortedSetDocValuesFacetField (faceting support). */
     public static final String FACET_DIM_CONFIG = "$facets";
 

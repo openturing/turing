@@ -123,7 +123,8 @@ public class TurLuceneInstanceProcess {
         Files.createDirectories(indexPath);
         log.info("Opening Lucene index at: {}", indexPath);
         Directory directory = FSDirectory.open(indexPath);
-        IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
+        IndexWriterConfig config = new IndexWriterConfig(
+                new TurLucenePerFieldAnalyzer());
         config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
         IndexWriter writer = new IndexWriter(directory, config);
         return new TurLuceneInstance(writer, directory, indexPath, new FacetsConfig());

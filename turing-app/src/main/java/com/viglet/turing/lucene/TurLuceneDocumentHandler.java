@@ -165,12 +165,19 @@ public class TurLuceneDocumentHandler {
 
     private void addTextField(Document doc, String key, String strValue) {
         doc.add(new TextField(key, strValue, Field.Store.YES));
+        addAutoCompleteField(doc, key, strValue);
         addFacetField(doc, key, strValue);
     }
 
     private void addStringField(Document doc, String key, String strValue) {
         doc.add(new StringField(key, strValue, Field.Store.YES));
+        addAutoCompleteField(doc, key, strValue);
         addFacetField(doc, key, strValue);
+    }
+
+    private void addAutoCompleteField(Document doc, String key, String strValue) {
+        // Add edge-ngram indexed field for autocomplete (not stored — title is stored separately)
+        doc.add(new TextField(key + TurLuceneConstants.AC_SUFFIX, strValue, Field.Store.NO));
     }
 
     private void addIntField(Document doc, String key, String strValue) {

@@ -371,7 +371,7 @@ function SearchContent() {
       {/* ── Hero ── */}
       <section
         className={cn(
-          "relative overflow-hidden transition-all duration-500",
+          "relative overflow-x-clip transition-all duration-500",
           isLanding ? "py-20 sm:py-28" : "py-8 sm:py-10"
         )}
       >
@@ -437,7 +437,7 @@ function SearchContent() {
           {/* Search bar */}
           <div
             className={cn(
-              "mx-auto w-full transition-all duration-500",
+              "relative z-50 mx-auto w-full transition-all duration-500",
               isLanding ? "mt-8 max-w-xl" : "max-w-2xl"
             )}
           >

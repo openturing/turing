@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +31,10 @@ import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.TurSEStopWord;
 import com.viglet.turing.sn.TurSNUtils;
-import com.viglet.turing.solr.TurSolr;
-import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,18 +44,22 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurSNAutoComplete {
     private static final String SPACE_CHAR = " ";
-    private final TurSolr turSolr;
     private final TurSEStopWord turSEStopword;
-    private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
+    private final TurSearchEnginePluginFactory pluginFactory;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSolrInstanceProcess turSolrInstanceProcess;
 
-    public TurSNAutoComplete(TurSolr turSolr, TurSEStopWord turSEStopword,
-            TurSolrInstanceProcess turSolrInstanceProcess,
-            TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI) {
-        this.turSolr = turSolr;
+    public TurSNAutoComplete(TurSEStopWord turSEStopword,
+            TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI,
+            TurSearchEnginePluginFactory pluginFactory,
+            TurSNSiteRepository turSNSiteRepository,
+            TurSolrInstanceProcess turSolrInstanceProcess) {
         this.turSEStopword = turSEStopword;
-        this.turSolrInstanceProcess = turSolrInstanceProcess;
         this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
+        this.pluginFactory = pluginFactory;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSolrInstanceProcess = turSolrInstanceProcess;
     }
 
     @NotNull
@@ -85,61 +88,26 @@ public class TurSNAutoComplete {
     }
 
     public List<String> autoComplete(String siteName, String q, Locale locale, long rows) {
-        // Only autocomplete if the query has more than one character
-        if (q.length() > 1) {
-            // Initialize Solr Instance
-            return turSolrInstanceProcess.initSolrInstance(siteName, locale).map(instance -> {
-                // Execute AutoComplete Solr API
-                SpellCheckResponse turSEResults = executeAutoCompleteFromSE(instance, q);
-                int numberOfWordsFromQuery = q.split(SPACE_CHAR).length;
-                // It would be possible to infer whether there is space at the end of the query
-                // if we do a
-                // split keeping the delimiters and seeing if the array size is even.
-                if (q.endsWith(SPACE_CHAR)) {
-                    numberOfWordsFromQuery++;
-                }
-
-                List<String> autoCompleteListFormatted = createFormattedList(turSEResults, instance,
-                        numberOfWordsFromQuery);
-                return autoCompleteListFormatted.stream().limit(rows >= 0 ? rows : 0).sorted()
-                        .toList();
-            }).orElse(Collections.emptyList());
-        } else {
+        if (q.length() <= 1) {
             return Collections.emptyList();
         }
-    }
+        return turSNSiteRepository.findByNameIgnoreCase(siteName).map(turSNSite -> {
+            var plugin = pluginFactory.getPluginForSite(turSNSite);
+            List<String> rawSuggestions = plugin.autoComplete(siteName, q, locale, rows);
 
-    private SpellCheckResponse executeAutoCompleteFromSE(TurSolrInstance turSolrInstance,
-            String q) {
-        SpellCheckResponse turSEResults = null;
-        try {
-            turSEResults = turSolr.autoComplete(turSolrInstance, q);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return turSEResults;
-    }
+            int numberOfWordsFromQuery = q.split(SPACE_CHAR).length;
+            if (q.endsWith(SPACE_CHAR)) {
+                numberOfWordsFromQuery++;
+            }
 
-    private List<String> createFormattedList(SpellCheckResponse turSEResults,
-            TurSolrInstance turSolrInstance, int numberOfWordsFromQuery) {
-        List<String> autoCompleteListFormatted = new ArrayList<>();
-        // if there are suggestions in the response.
-        if (hasSuggestions(turSEResults)) {
-            // autoCompleteList is the list of auto complete suggestions returned by Solr.
-            List<String> autoCompleteList = turSEResults.getSuggestions().getFirst().getAlternatives();
-            TurSNAutoCompleteListData autoCompleteListData = new TurSNAutoCompleteListData(
-                    turSEStopword.getStopWords(turSolrInstance));
-
-            TurSNSuggestionFilter suggestionFilter = new TurSNSuggestionFilter(autoCompleteListData.getStopWords());
+            List<String> stopWords = turSolrInstanceProcess.initSolrInstance(siteName, locale)
+                    .map(turSEStopword::getStopWords)
+                    .orElse(Collections.emptyList());
+            TurSNSuggestionFilter suggestionFilter = new TurSNSuggestionFilter(stopWords);
             suggestionFilter.automatonStrategyConfig(numberOfWordsFromQuery);
-            autoCompleteListFormatted = suggestionFilter.filter(autoCompleteList);
-        }
-        return autoCompleteListFormatted;
-    }
+            List<String> filtered = suggestionFilter.filter(rawSuggestions);
 
-    private boolean hasSuggestions(SpellCheckResponse turSEResults) {
-        return turSEResults != null && turSEResults.getSuggestions() != null
-                && !turSEResults.getSuggestions().isEmpty();
+            return filtered.stream().limit(rows >= 0 ? rows : 0).sorted().toList();
+        }).orElse(Collections.emptyList());
     }
-
 }

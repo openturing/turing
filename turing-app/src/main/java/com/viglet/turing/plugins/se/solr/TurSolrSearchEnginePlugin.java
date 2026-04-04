@@ -323,6 +323,25 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
         return info;
     }
 
+    // ---- Autocomplete -----------------------------------------------------
+
+    @Override
+    public List<String> autoComplete(String siteName, String term, Locale locale, long rows) {
+        return turSolrInstanceProcess.initSolrInstance(siteName, locale)
+                .map(instance -> {
+                    try {
+                        var response = turSolr.autoComplete(instance, term);
+                        if (response != null && response.getSuggestions() != null
+                                && !response.getSuggestions().isEmpty()) {
+                            return response.getSuggestions().getFirst().getAlternatives();
+                        }
+                    } catch (Exception e) {
+                        log.error("Solr autocomplete error: {}", e.getMessage(), e);
+                    }
+                    return List.<String>of();
+                }).orElse(List.of());
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private static String getSolrUrl(TurSEInstance seInstance) {

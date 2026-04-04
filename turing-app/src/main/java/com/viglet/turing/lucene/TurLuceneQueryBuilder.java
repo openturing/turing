@@ -125,6 +125,34 @@ public class TurLuceneQueryBuilder {
     }
 
     /**
+     * Builds an autocomplete query that searches across edge-ngram indexed
+     * {@code *_ac} fields. The query is analyzed with {@link StandardAnalyzer}
+     * (lowercase, tokenize) and matched against the ngram tokens in the index.
+     */
+    public Query buildAutoCompleteQuery(TurSNSite turSNSite, String term) {
+        String[] textFields = resolveTextFields(turSNSite);
+        // Map to _ac suffixed fields for ngram matching
+        String[] acFields;
+        if (textFields.length == 0) {
+            acFields = new String[]{TurLuceneConstants.TITLE + TurLuceneConstants.AC_SUFFIX};
+        } else {
+            acFields = java.util.Arrays.stream(textFields)
+                    .map(f -> f + TurLuceneConstants.AC_SUFFIX)
+                    .toArray(String[]::new);
+        }
+        try {
+            // Use StandardAnalyzer for the query side (lowercase + tokenize, no ngrams)
+            MultiFieldQueryParser parser = new MultiFieldQueryParser(acFields, new StandardAnalyzer());
+            parser.setDefaultOperator(QueryParser.Operator.OR);
+            return parser.parse(QueryParserBase.escape(term));
+        } catch (ParseException e) {
+            log.warn("Failed to parse autocomplete query '{}': {}", term, e.getMessage());
+            return new TermQuery(new Term(
+                    TurLuceneConstants.TITLE + TurLuceneConstants.AC_SUFFIX, term.toLowerCase()));
+        }
+    }
+
+    /**
      * Builds a wildcard-appended version of the query (for no-results fallback).
      */
     public Query buildWildcardQuery(TurSNSite turSNSite, TurSEParameters params) {

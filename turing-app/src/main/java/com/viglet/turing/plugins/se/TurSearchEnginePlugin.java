@@ -136,6 +136,22 @@ public interface TurSearchEnginePlugin {
         return List.of();
     }
 
+    // ---- Autocomplete -----------------------------------------------------
+
+    /**
+     * Returns autocomplete suggestions for the given query term.
+     * Implementations should return a list of suggested terms sorted by relevance.
+     *
+     * @param siteName the SN site name
+     * @param term     the partial query to complete
+     * @param locale   the locale for the search
+     * @param rows     maximum number of suggestions to return
+     * @return list of autocomplete suggestions
+     */
+    default List<String> autoComplete(String siteName, String term, Locale locale, long rows) {
+        return List.of();
+    }
+
     // ---- Monitoring ------------------------------------------------------
 
     long getDocumentTotal(TurSNSiteLocale turSNSiteLocale);
