@@ -90,6 +90,7 @@
       "sortLevelsDesc": "Defina os campos e direções para cada nível de ordenação. Os itens são aplicados em ordem.",
       "addLevel": "Adicionar Nível de Ordenação",
       "field": "Campo",
+      "selectField": "Selecione um campo...",
       "direction": "Direção"
     },
     "genai": {

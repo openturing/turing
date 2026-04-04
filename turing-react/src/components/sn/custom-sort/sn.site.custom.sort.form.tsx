@@ -32,14 +32,13 @@ import {
 import type {
     TurSNSiteCustomSort,
     TurSNSiteCustomSortFieldOption,
-    TurSNSiteCustomSortItem,
     TurSNSiteCustomSortOrder,
 } from "@/models/sn/sn-site-custom-sort.model"
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
 import { IconArrowsSort, IconFileText } from "@tabler/icons-react"
 import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -61,6 +60,11 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
     const urlBase = `${ROUTES.SN_INSTANCE}/${snSiteId}/custom-sort`;
     const [fieldOptions, setFieldOptions] = useState<TurSNSiteCustomSortFieldOption[]>([]);
 
+    const { fields, append, remove, swap, update } = useFieldArray({
+        control: form.control,
+        name: "items",
+    });
+
     useEffect(() => {
         form.reset(value);
     }, [value]);
@@ -69,53 +73,43 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
         turSNSiteCustomSortService.getFieldOptions(snSiteId).then(setFieldOptions).catch(console.error);
     }, [snSiteId]);
 
-    const items = form.watch("items") || [];
-
     function addSortLevel() {
-        const currentItems = form.getValues("items") || [];
-        const newItem: TurSNSiteCustomSortItem = {
+        append({
             fieldName: fieldOptions.length > 0 ? fieldOptions[0].name : "",
             sortOrder: "ASC",
-            position: currentItems.length,
-        };
-        form.setValue("items", [...currentItems, newItem]);
+            position: fields.length,
+        });
     }
 
     function removeSortLevel(index: number) {
-        const currentItems = form.getValues("items") || [];
-        const updated = currentItems
-            .filter((_, i) => i !== index)
-            .map((item, i) => ({ ...item, position: i }));
-        form.setValue("items", updated);
+        remove(index);
     }
 
     function updateItemField(index: number, fieldName: string) {
-        const currentItems = [...(form.getValues("items") || [])];
-        currentItems[index] = { ...currentItems[index], fieldName };
-        form.setValue("items", currentItems);
+        const current = form.getValues(`items.${index}`);
+        update(index, { ...current, fieldName });
     }
 
     function updateItemOrder(index: number, sortOrder: TurSNSiteCustomSortOrder) {
-        const currentItems = [...(form.getValues("items") || [])];
-        currentItems[index] = { ...currentItems[index], sortOrder };
-        form.setValue("items", currentItems);
+        const current = form.getValues(`items.${index}`);
+        update(index, { ...current, sortOrder });
     }
 
     function moveItem(index: number, direction: -1 | 1) {
-        const currentItems = [...(form.getValues("items") || [])];
         const targetIndex = index + direction;
-        if (targetIndex < 0 || targetIndex >= currentItems.length) return;
-        const temp = currentItems[index];
-        currentItems[index] = currentItems[targetIndex];
-        currentItems[targetIndex] = temp;
-        const reordered = currentItems.map((item, i) => ({ ...item, position: i }));
-        form.setValue("items", reordered);
+        if (targetIndex < 0 || targetIndex >= fields.length) return;
+        swap(index, targetIndex);
     }
 
     async function onSubmit(data: TurSNSiteCustomSort) {
+        // Re-number positions before saving
+        const normalized = {
+            ...data,
+            items: (data.items || []).map((item, i) => ({ ...item, position: i })),
+        };
         try {
             if (isNew) {
-                const result = await turSNSiteCustomSortService.create(snSiteId, data);
+                const result = await turSNSiteCustomSortService.create(snSiteId, normalized);
                 if (result) {
                     toast.success(t("sn.customSort.saved"));
                     navigate(urlBase);
@@ -123,7 +117,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                     toast.error(t("sn.customSort.notSaved"));
                 }
             } else {
-                const result = await turSNSiteCustomSortService.update(snSiteId, data);
+                const result = await turSNSiteCustomSortService.update(snSiteId, normalized);
                 if (result) {
                     toast.success(t("sn.customSort.updated"));
                 } else {
@@ -196,7 +190,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                                 {t("sn.customSort.addLevel")}
                             </GradientButton>
                         </div>
-                        {items.length > 0 && (
+                        {fields.length > 0 && (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -207,18 +201,28 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {items.map((item, index) => (
-                                        <TableRow key={item.id ?? `new-${index}`}>
+                                    {fields.map((field, index) => {
+                                        const watchedFieldName = form.watch(`items.${index}.fieldName`);
+                                        const watchedSortOrder = form.watch(`items.${index}.sortOrder`);
+                                        // If saved fieldName is not in fieldOptions, include it so Select can display it
+                                        const fieldNameInOptions = !watchedFieldName || fieldOptions.some((o) => o.name === watchedFieldName);
+                                        return (
+                                        <TableRow key={field.id}>
                                             <TableCell className="font-medium">{index + 1}</TableCell>
                                             <TableCell>
                                                 <Select
-                                                    value={item.fieldName}
+                                                    value={watchedFieldName || undefined}
                                                     onValueChange={(val) => updateItemField(index, val)}
                                                 >
                                                     <SelectTrigger>
-                                                        <SelectValue />
+                                                        <SelectValue placeholder={t("sn.customSort.selectField")} />
                                                     </SelectTrigger>
                                                     <SelectContent>
+                                                        {!fieldNameInOptions && (
+                                                            <SelectItem key={watchedFieldName} value={watchedFieldName}>
+                                                                {watchedFieldName}
+                                                            </SelectItem>
+                                                        )}
                                                         {fieldOptions.map((opt) => (
                                                             <SelectItem key={opt.id} value={opt.name}>
                                                                 {opt.name}
@@ -229,7 +233,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                                             </TableCell>
                                             <TableCell>
                                                 <Select
-                                                    value={item.sortOrder}
+                                                    value={watchedSortOrder || "ASC"}
                                                     onValueChange={(val) => updateItemOrder(index, val as TurSNSiteCustomSortOrder)}
                                                 >
                                                     <SelectTrigger>
@@ -257,7 +261,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                                                         size="icon"
                                                         type="button"
                                                         onClick={() => moveItem(index, 1)}
-                                                        disabled={index === items.length - 1}
+                                                        disabled={index === fields.length - 1}
                                                     >
                                                         <ArrowDown className="h-4 w-4" />
                                                     </GradientButton>
@@ -272,7 +276,8 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    );
+                                    })}
                                 </TableBody>
                             </Table>
                         )}

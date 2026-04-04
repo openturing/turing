@@ -90,6 +90,7 @@
       "sortLevelsDesc": "Define the fields and directions for each sort level. Items are applied in order.",
       "addLevel": "Add Sort Level",
       "field": "Field",
+      "selectField": "Select a field...",
       "direction": "Direction"
     },
     "genai": {
