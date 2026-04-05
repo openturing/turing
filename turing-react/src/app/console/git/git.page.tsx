@@ -37,6 +37,7 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 
@@ -53,6 +54,7 @@ function getPageUrl(siteName: string): string {
 
 export default function GitPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [repositories, setRepositories] = useState<TurGitRepository[] | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -201,10 +203,14 @@ export default function GitPage() {
                   return (
                     <TableRow key={repo.name}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer"
+                          onClick={() => navigate(`${ROUTES.GIT_ROOT}/${repo.name}`)}
+                        >
                           <IconGitBranch className="size-4 text-blue-500 shrink-0" />
-                          <span>{repo.name}</span>
-                        </div>
+                          <span className="hover:underline">{repo.name}</span>
+                        </button>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm font-mono">{repo.dirName}</TableCell>
                       <TableCell>

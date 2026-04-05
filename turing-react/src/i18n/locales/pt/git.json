@@ -31,6 +31,13 @@
       "cancel": "Cancelar",
       "create": "Criar"
     },
+    "browser": {
+      "description": "Navegue pelos arquivos e conteúdo do repositório.",
+      "back": "Voltar",
+      "name": "Nome",
+      "size": "Tamanho",
+      "empty": "Este repositório está vazio. Faça push de commits para ver arquivos aqui."
+    },
     "pipeline": {
       "run": "Executar pipeline de build",
       "running": "Compilando...",

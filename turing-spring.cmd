@@ -38,7 +38,7 @@ call mvn spring-boot:run -pl turing-app -Dskip.npm ^
 --turing.storage.type=%STORAGE_TYPE% ^
 --logging.config=%LOGGING_CONFIG% ^
 --turing.mongodb.enabled=%MONGO_ENABLED% ^
---turing.git.enabled=%GIT_ENABLED% ^
+--turing.git.server=%GIT_ENABLED% ^
 --logging.level.com.viglet=%LOG_LEVEL% ^
 "
 goto :eof

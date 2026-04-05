@@ -31,6 +31,13 @@
       "cancel": "Cancel",
       "create": "Create"
     },
+    "browser": {
+      "description": "Browse repository files and content.",
+      "back": "Back",
+      "name": "Name",
+      "size": "Size",
+      "empty": "This repository is empty. Push some commits to see files here."
+    },
     "pipeline": {
       "run": "Run build pipeline",
       "running": "Building...",

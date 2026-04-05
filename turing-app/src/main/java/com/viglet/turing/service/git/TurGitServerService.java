@@ -45,7 +45,7 @@ public class TurGitServerService {
     @PostConstruct
     void init() {
         if (!isEnabled()) {
-            log.info("Git server is disabled (turing.git.server=false or storage type is none).");
+            log.info("Git server is disabled (turing.git.server=false).");
             return;
         }
         reposBasePath = resolveReposBasePath();
@@ -57,12 +57,9 @@ public class TurGitServerService {
         }
     }
 
-    /** Returns true when git server is enabled and storage is active. */
+    /** Returns true when git server is enabled (no longer requires storage to be active). */
     public boolean isEnabled() {
-        boolean serverEnabled = configProperties.getGit() != null && configProperties.getGit().isServer();
-        boolean storageActive = storageService.isEnabled()
-                && storageService.getType() != TurStorageType.NONE;
-        return serverEnabled && storageActive;
+        return configProperties.getGit() != null && configProperties.getGit().isServer();
     }
 
     /**
@@ -152,20 +149,16 @@ public class TurGitServerService {
     // -----------------------------------------------------------------------
 
     private Path resolveReposBasePath() {
-        if (storageService.getType() == TurStorageType.FILESYSTEM) {
-            // Re-use the filesystem storage root (strip the /assets suffix if present)
+        if (storageService.isEnabled() && storageService.getType() == TurStorageType.FILESYSTEM) {
+            // Place repositories inside the filesystem storage directory
             String fsPath = configProperties.getStorage() != null
                     && configProperties.getStorage().getFilesystem() != null
                     && configProperties.getStorage().getFilesystem().getPath() != null
                     ? configProperties.getStorage().getFilesystem().getPath()
                     : "./store/assets";
-            Path assetsBase = Path.of(fsPath).toAbsolutePath().normalize();
-            // Place repositories alongside assets: <store-root>/repositories/
-            Path storeRoot = assetsBase.getParent() != null ? assetsBase.getParent() : assetsBase;
-            return storeRoot.resolve(REPOSITORIES_DIR);
+            return Path.of(fsPath).toAbsolutePath().normalize().resolve(REPOSITORIES_DIR);
         }
-        // For MinIO, use a local path so JGit can manipulate bare repos directly.
-        // The repos are stored locally and served over HTTP; they are not synced to MinIO.
+        // For MinIO or NONE: use local path for bare repos
         return Path.of("./store/" + REPOSITORIES_DIR).toAbsolutePath().normalize();
     }
 

@@ -1,11 +1,13 @@
 package com.viglet.turing.api.git;
 
+import com.viglet.turing.service.git.TurGitBrowseService;
 import com.viglet.turing.service.git.TurGitBuildStatus;
 import com.viglet.turing.service.git.TurGitPipelineService;
 import com.viglet.turing.service.git.TurGitRepositoryInfo;
 import com.viglet.turing.service.git.TurGitServerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -25,10 +27,14 @@ public class TurGitRepositoryAPI {
 
     private final TurGitServerService gitServerService;
     private final TurGitPipelineService gitPipelineService;
+    private final TurGitBrowseService gitBrowseService;
 
-    public TurGitRepositoryAPI(TurGitServerService gitServerService, TurGitPipelineService gitPipelineService) {
+    public TurGitRepositoryAPI(TurGitServerService gitServerService,
+                               TurGitPipelineService gitPipelineService,
+                               TurGitBrowseService gitBrowseService) {
         this.gitServerService = gitServerService;
         this.gitPipelineService = gitPipelineService;
+        this.gitBrowseService = gitBrowseService;
     }
 
     @Operation(summary = "List all Git repositories")
@@ -82,6 +88,42 @@ public class TurGitRepositoryAPI {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(gitPipelineService.getStatus(name));
+    }
+
+    // ── Browse endpoints ──
+
+    @Operation(summary = "List branches of a repository")
+    @GetMapping("/{name}/branches")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    public ResponseEntity<List<TurGitBrowseService.GitBranch>> listBranches(@PathVariable String name) {
+        if (!gitServerService.isEnabled()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(gitBrowseService.listBranches(name));
+    }
+
+    @Operation(summary = "List files and directories in a repository tree")
+    @GetMapping("/{name}/tree")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    public ResponseEntity<List<TurGitBrowseService.GitTreeEntry>> listTree(
+            @PathVariable String name,
+            @RequestParam(required = false) String ref,
+            @RequestParam(required = false) String path) {
+        if (!gitServerService.isEnabled()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(gitBrowseService.listTree(name, ref, path));
+    }
+
+    @Operation(summary = "Read file content from a repository")
+    @GetMapping("/{name}/file")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    public ResponseEntity<byte[]> readFile(
+            @PathVariable String name,
+            @RequestParam String path,
+            @RequestParam(required = false) String ref) {
+        if (!gitServerService.isEnabled()) return ResponseEntity.notFound().build();
+        return gitBrowseService.readFile(name, ref, path)
+                .map(content -> ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(content))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
