@@ -15,7 +15,8 @@
     "columns": {
       "name": "Nome",
       "directory": "Diretório",
-      "actions": "Ações"
+      "actions": "Ações",
+      "buildStatus": "Status do Build"
     },
     "cloneInfo": {
       "title": "Clonar \"{{name}}\"",
@@ -29,6 +30,18 @@
       "hint": "Somente letras, dígitos, hifens, underscores e pontos são permitidos.",
       "cancel": "Cancelar",
       "create": "Criar"
+    },
+    "pipeline": {
+      "run": "Executar pipeline de build",
+      "running": "Compilando...",
+      "idle": "-",
+      "deployed": "Publicado: {{name}}",
+      "failed": "Falhou",
+      "viewLogs": "Ver logs do build",
+      "logsTitle": "Logs do Build: {{name}}",
+      "startFailed": "Falha ao iniciar o pipeline de build.",
+      "buildFailed": "O pipeline de build falhou.",
+      "deployedSuccess": "Publicado como página: {{name}}"
     }
   }
 }

@@ -1,5 +1,7 @@
 package com.viglet.turing.api.git;
 
+import com.viglet.turing.service.git.TurGitBuildStatus;
+import com.viglet.turing.service.git.TurGitPipelineService;
 import com.viglet.turing.service.git.TurGitRepositoryInfo;
 import com.viglet.turing.service.git.TurGitServerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,9 +24,11 @@ import java.util.List;
 public class TurGitRepositoryAPI {
 
     private final TurGitServerService gitServerService;
+    private final TurGitPipelineService gitPipelineService;
 
-    public TurGitRepositoryAPI(TurGitServerService gitServerService) {
+    public TurGitRepositoryAPI(TurGitServerService gitServerService, TurGitPipelineService gitPipelineService) {
         this.gitServerService = gitServerService;
+        this.gitPipelineService = gitPipelineService;
     }
 
     @Operation(summary = "List all Git repositories")
@@ -57,6 +61,27 @@ public class TurGitRepositoryAPI {
         }
         gitServerService.deleteRepository(name);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Start the npm build pipeline for a Git repository and deploy as a Pages SPA")
+    @PostMapping("/{name}/build")
+    @Secured({"ROLE_ADMIN"})
+    public ResponseEntity<TurGitBuildStatus> startBuild(@PathVariable String name) {
+        if (!gitServerService.isEnabled()) {
+            return ResponseEntity.notFound().build();
+        }
+        TurGitBuildStatus status = gitPipelineService.startBuild(name);
+        return ResponseEntity.ok(status);
+    }
+
+    @Operation(summary = "Get the current build pipeline status for a Git repository")
+    @GetMapping("/{name}/build/status")
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+    public ResponseEntity<TurGitBuildStatus> getBuildStatus(@PathVariable String name) {
+        if (!gitServerService.isEnabled()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(gitPipelineService.getStatus(name));
     }
 
     /**
