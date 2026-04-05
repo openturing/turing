@@ -33,11 +33,13 @@ function loadWidgets(): WidgetConfig[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_WIDGETS;
     const saved: WidgetConfig[] = JSON.parse(raw);
-    // Merge in any new default widgets not yet in saved config
-    const savedIds = new Set(saved.map((w) => w.id));
+    const validIds = new Set(DEFAULT_WIDGETS.map((w) => w.id));
+    // Filter out widgets that no longer exist, then add new defaults at the end
+    const filtered = saved.filter((w) => validIds.has(w.id));
+    const filteredIds = new Set(filtered.map((w) => w.id));
     const merged = [
-      ...saved,
-      ...DEFAULT_WIDGETS.filter((w) => !savedIds.has(w.id)),
+      ...filtered,
+      ...DEFAULT_WIDGETS.filter((w) => !filteredIds.has(w.id)),
     ];
     return merged;
   } catch {

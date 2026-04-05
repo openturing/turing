@@ -40,8 +40,8 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
   useEffect(() => {
     turSNSiteService.query().then((list) => {
       setSites(list);
-      if (list.length > 0 && !selectedSiteId) {
-        setSelectedSiteId(list[0].id);
+      if (list.length > 0) {
+        setSelectedSiteId((prev) => prev || list[0].id);
       }
     }).catch(() => {});
   }, []);
@@ -53,11 +53,13 @@ export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
       const res = await turSNSiteMetricsService.live(siteId);
       const arr = Array.isArray(res) ? res : [res];
       setData((prev) => {
-        const next = [...prev, ...arr.map((p) => ({
-          time: typeof p.time === "number" ? p.time : parseFloat(String(p.time)) || (Date.now() / 1000),
-          accesses: p.accesses,
-        }))].slice(-60);
-        return next;
+        const newPoints: LivePoint[] = arr
+          .map((p) => {
+            const t = typeof p.time === "number" ? p.time : parseFloat(String(p.time));
+            return isNaN(t) ? null : { time: t, accesses: p.accesses };
+          })
+          .filter((p): p is LivePoint => p !== null);
+        return [...prev, ...newPoints].slice(-60);
       });
     } catch {
       // silently fail
