@@ -116,6 +116,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/genai/**"),
                                                 mvc.matcher("/api/v2/guest/**"),
                                                 mvc.matcher("/h2/**"),
+                                                mvc.matcher("/git/**"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH)))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);

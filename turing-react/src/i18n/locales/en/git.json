@@ -1,0 +1,34 @@
+{
+  "git": {
+    "title": "Git",
+    "description": "Create and manage Git repositories hosted by Turing.",
+    "newRepository": "New Repository",
+    "noRepositories": "No repositories found. Create your first repository.",
+    "loadError": "Failed to load repositories.",
+    "createSuccess": "Repository \"{{name}}\" created.",
+    "createError": "Failed to create repository.",
+    "deleteSuccess": "Repository \"{{name}}\" deleted.",
+    "deleteError": "Failed to delete repository.",
+    "copied": "Copied to clipboard.",
+    "info": "Clone info",
+    "delete": "Delete",
+    "columns": {
+      "name": "Name",
+      "directory": "Directory",
+      "actions": "Actions"
+    },
+    "cloneInfo": {
+      "title": "Clone \"{{name}}\"",
+      "https": "HTTPS",
+      "usage": "Clone command",
+      "authNote": "Use your Turing username and password when prompted."
+    },
+    "createDialog": {
+      "title": "New Repository",
+      "placeholder": "Repository name (e.g. my-project)",
+      "hint": "Only letters, digits, hyphens, underscores and dots are allowed.",
+      "cancel": "Cancel",
+      "create": "Create"
+    }
+  }
+}

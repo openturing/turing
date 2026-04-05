@@ -46,4 +46,6 @@ export const ROUTES = {
   ADMIN_SETTINGS: `${consolePath}/admin-settings/settings`,
   ADMIN_TOKENS: `${consolePath}/admin-settings/tokens`,
   ADMIN_SYSTEM_INFO: `${consolePath}/admin-settings/system-info`,
+  GIT_ROOT: `${consolePath}/git`,
+  GIT_INSTANCE: `${consolePath}/git/instance`,
 };

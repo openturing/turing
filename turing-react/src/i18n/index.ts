@@ -13,6 +13,7 @@ import enDialog from "./locales/en/dialog.json";
 import enEmbeddingModel from "./locales/en/embeddingModel.json";
 import enExchange from "./locales/en/exchange.json";
 import enForms from "./locales/en/forms.json";
+import enGit from "./locales/en/git.json";
 import enGlobalSettings from "./locales/en/globalSettings.json";
 import enGraphql from "./locales/en/graphql.json";
 import enHome from "./locales/en/home.json";
@@ -45,6 +46,7 @@ import ptDialog from "./locales/pt/dialog.json";
 import ptEmbeddingModel from "./locales/pt/embeddingModel.json";
 import ptExchange from "./locales/pt/exchange.json";
 import ptForms from "./locales/pt/forms.json";
+import ptGit from "./locales/pt/git.json";
 import ptGlobalSettings from "./locales/pt/globalSettings.json";
 import ptGraphql from "./locales/pt/graphql.json";
 import ptHome from "./locales/pt/home.json";
@@ -73,7 +75,7 @@ const en = {
   ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch,
-  ...enPage,
+  ...enPage, ...enGit,
 };
 
 const pt = {
@@ -83,7 +85,7 @@ const pt = {
   ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch,
-  ...ptPage,
+  ...ptPage, ...ptGit,
 };
 
 /**

@@ -120,6 +120,10 @@
       "administration": {
         "title": "Administration",
         "description": "Manage users, groups, roles, API tokens, and system settings."
+      },
+      "git": {
+        "title": "Git",
+        "description": "Create and manage Git repositories hosted by Turing."
       }
     }
   }

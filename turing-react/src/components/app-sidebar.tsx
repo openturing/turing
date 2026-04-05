@@ -8,6 +8,7 @@ import {
   IconDatabase,
   IconFileImport,
   IconFolder,
+  IconGitBranch,
   IconGlobe,
   IconHome,
   IconMessageChatbot,
@@ -82,6 +83,7 @@ const searchItems: SidebarNavItem[] = [
 
 const managementItems: SidebarNavItem[] = [
   { key: "assets", titleKey: "home.features.assets.title", url: ROUTES.ASSET_ROOT, icon: IconFolder },
+  { key: "git", titleKey: "home.features.git.title", url: ROUTES.GIT_ROOT, icon: IconGitBranch },
   { key: "import", titleKey: "home.features.import.title", url: "/admin/exchange/import", icon: IconFileImport },
   { key: "logging", titleKey: "home.features.logging.title", url: "/admin/logging/instance", icon: IconReceiptRupee },
   { key: "administration", titleKey: "home.features.administration.title", url: ROUTES.ADMIN_ROOT, icon: IconShieldCog },
@@ -95,6 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
   const [storageEnabled, setMinioEnabled] = React.useState(false);
+  const [gitServerEnabled, setGitServerEnabled] = React.useState(false);
   const { toggleSidebar, state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -104,7 +107,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
     turFeaturesService.getFeatures().then((features) => {
       setMinioEnabled(features.storageEnabled);
-    }).catch(() => setMinioEnabled(false));
+      setGitServerEnabled(features.gitServerEnabled ?? false);
+    }).catch(() => { setMinioEnabled(false); setGitServerEnabled(false); });
   }, [])
 
   const isAdmin = !!user?.admin
@@ -132,10 +136,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const filteredManagement = React.useMemo(
     () => managementItems.filter((item) => {
       if (item.key === "assets" && !storageEnabled) return false
+      if (item.key === "git" && !gitServerEnabled) return false
       if (item.key === "administration" && !isAdmin) return false
       return true
     }),
-    [storageEnabled, isAdmin]
+    [storageEnabled, gitServerEnabled, isAdmin]
   )
 
   const toNavItems = React.useCallback(

@@ -120,6 +120,10 @@
       "administration": {
         "title": "Administração",
         "description": "Gerencie usuários, grupos, papéis, tokens de API e configurações do sistema."
+      },
+      "git": {
+        "title": "Git",
+        "description": "Crie e gerencie repositórios Git hospedados pelo Turing."
       }
     }
   }
