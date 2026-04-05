@@ -46,7 +46,9 @@ export function WidgetWrapper({
   } = useSortable({ id });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    // Use Translate only — CSS.Transform includes scaleX/scaleY which distorts
+    // card content (images, text) when dragging across differently-sized grid cells
+    transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
     zIndex: isDragging ? 50 : undefined,

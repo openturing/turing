@@ -37,7 +37,6 @@ const ACTION_TYPES: TurSNSiteSearchRuleActionType[] = [
     "SET_ROWS", "ADD_FILTER_QUERY", "SET_BOOST_QUERY"
 ];
 const SINGLE_USE_ACTION_TYPES = new Set<TurSNSiteSearchRuleActionType>(["SET_SORT", "SET_ROWS"]);
-const FACET_ACTION_TYPES = new Set<TurSNSiteSearchRuleActionType>(["ADD_FACETS", "REMOVE_FACETS"]);
 
 // ── Facet Selector ──────────────────────────────────────────────────
 // Shows all available facets (field + custom) as a checkbox list.
