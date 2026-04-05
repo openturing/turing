@@ -17,5 +17,6 @@ public class TurConfigProperties {
 	private String allowedOrigins;
 	private TurSolrProperty solr;
 	private TurStorageProperty storage;
+	private TurGitProperty git;
 
 }

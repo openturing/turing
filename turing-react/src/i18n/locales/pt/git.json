@@ -1,0 +1,54 @@
+{
+  "git": {
+    "title": "Git",
+    "description": "Crie e gerencie repositórios Git hospedados pelo Turing.",
+    "newRepository": "Novo Repositório",
+    "noRepositories": "Nenhum repositório encontrado. Crie seu primeiro repositório.",
+    "loadError": "Falha ao carregar os repositórios.",
+    "createSuccess": "Repositório \"{{name}}\" criado.",
+    "createError": "Falha ao criar o repositório.",
+    "deleteSuccess": "Repositório \"{{name}}\" excluído.",
+    "deleteError": "Falha ao excluir o repositório.",
+    "copied": "Copiado para a área de transferência.",
+    "info": "Informações de clone",
+    "delete": "Excluir",
+    "columns": {
+      "name": "Nome",
+      "directory": "Diretório",
+      "actions": "Ações",
+      "buildStatus": "Status do Build"
+    },
+    "cloneInfo": {
+      "title": "Clonar \"{{name}}\"",
+      "https": "HTTPS",
+      "usage": "Comando de clone",
+      "authNote": "Use seu nome de usuário e senha do Turing quando solicitado."
+    },
+    "createDialog": {
+      "title": "Novo Repositório",
+      "placeholder": "Nome do repositório (ex: meu-projeto)",
+      "hint": "Somente letras, dígitos, hifens, underscores e pontos são permitidos.",
+      "cancel": "Cancelar",
+      "create": "Criar"
+    },
+    "browser": {
+      "description": "Navegue pelos arquivos e conteúdo do repositório.",
+      "back": "Voltar",
+      "name": "Nome",
+      "size": "Tamanho",
+      "empty": "Este repositório está vazio. Faça push de commits para ver arquivos aqui."
+    },
+    "pipeline": {
+      "run": "Executar pipeline de build",
+      "running": "Compilando...",
+      "idle": "-",
+      "deployed": "Publicado: {{name}}",
+      "failed": "Falhou",
+      "viewLogs": "Ver logs do build",
+      "logsTitle": "Logs do Build: {{name}}",
+      "startFailed": "Falha ao iniciar o pipeline de build.",
+      "buildFailed": "O pipeline de build falhou.",
+      "deployedSuccess": "Publicado como página: {{name}}"
+    }
+  }
+}

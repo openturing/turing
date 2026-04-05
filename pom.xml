@@ -49,6 +49,7 @@
         <minio.version>9.0.0</minio.version>
         <okhttp.version>5.3.2</okhttp.version>
         <tika.version>3.3.0</tika.version>
+        <jgit.version>7.3.0.202506031305-r</jgit.version>
     </properties>
     <build>
         <plugins>
@@ -551,6 +552,16 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-jvm</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>${jgit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit.http.server</artifactId>
+                <version>${jgit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

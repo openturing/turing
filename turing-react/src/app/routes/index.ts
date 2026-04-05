@@ -3,6 +3,7 @@ export { AIAgentRoutes } from "./ai-agent.routes";
 export { IntentRoutes } from "./intent.routes";
 export { EmbeddingModelRoutes } from "./embedding-model.routes";
 export { AssetRoutes } from "./asset.routes";
+export { GitRoutes } from "./git.routes";
 export { PageRoutes } from "./page.routes";
 export { ChatRoutes } from "./chat.routes";
 export { ExchangeRoutes } from "./exchange.routes";

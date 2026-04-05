@@ -37,6 +37,11 @@ public class TurAuthenticationEntryPoint implements AuthenticationEntryPoint {
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException authException) throws IOException {
+		// Git clients require WWW-Authenticate header to prompt for credentials
+		String uri = request.getRequestURI();
+		if (uri != null && uri.startsWith("/git/")) {
+			response.setHeader("WWW-Authenticate", "Basic realm=\"Turing Git\"");
+		}
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.getWriter().write("{\"error\":\"Unauthorized\"}");

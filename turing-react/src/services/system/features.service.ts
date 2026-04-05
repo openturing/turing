@@ -3,6 +3,7 @@ import axios from "axios"
 export interface FeaturesResponse {
   storageEnabled: boolean
   ragEnabled: boolean
+  gitServerEnabled: boolean
 }
 
 export class TurFeaturesService {

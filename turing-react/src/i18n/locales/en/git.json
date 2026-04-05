@@ -1,0 +1,54 @@
+{
+  "git": {
+    "title": "Git",
+    "description": "Create and manage Git repositories hosted by Turing.",
+    "newRepository": "New Repository",
+    "noRepositories": "No repositories found. Create your first repository.",
+    "loadError": "Failed to load repositories.",
+    "createSuccess": "Repository \"{{name}}\" created.",
+    "createError": "Failed to create repository.",
+    "deleteSuccess": "Repository \"{{name}}\" deleted.",
+    "deleteError": "Failed to delete repository.",
+    "copied": "Copied to clipboard.",
+    "info": "Clone info",
+    "delete": "Delete",
+    "columns": {
+      "name": "Name",
+      "directory": "Directory",
+      "actions": "Actions",
+      "buildStatus": "Build Status"
+    },
+    "cloneInfo": {
+      "title": "Clone \"{{name}}\"",
+      "https": "HTTPS",
+      "usage": "Clone command",
+      "authNote": "Use your Turing username and password when prompted."
+    },
+    "createDialog": {
+      "title": "New Repository",
+      "placeholder": "Repository name (e.g. my-project)",
+      "hint": "Only letters, digits, hyphens, underscores and dots are allowed.",
+      "cancel": "Cancel",
+      "create": "Create"
+    },
+    "browser": {
+      "description": "Browse repository files and content.",
+      "back": "Back",
+      "name": "Name",
+      "size": "Size",
+      "empty": "This repository is empty. Push some commits to see files here."
+    },
+    "pipeline": {
+      "run": "Run build pipeline",
+      "running": "Building...",
+      "idle": "-",
+      "deployed": "Deployed: {{name}}",
+      "failed": "Failed",
+      "viewLogs": "View build logs",
+      "logsTitle": "Build Logs: {{name}}",
+      "startFailed": "Failed to start build pipeline.",
+      "buildFailed": "Build pipeline failed.",
+      "deployedSuccess": "Deployed as page: {{name}}"
+    }
+  }
+}
