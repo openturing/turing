@@ -1,4 +1,3 @@
-import { ROUTES } from "@/app/routes.const"
 import { SubPageHeader } from "@/components/sub.page.header"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,7 +30,7 @@ import {
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 
 const turGitService = new TurGitService()
 
@@ -44,7 +43,6 @@ function formatSize(bytes: number): string {
 
 export default function GitRepoPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { name } = useParams<{ name: string }>()
 
   const [branches, setBranches] = useState<TurGitBranch[]>([])
@@ -134,10 +132,6 @@ export default function GitRepoPage() {
         feature={t("git.title")}
         name={name || ""}
         description={t("git.browser.description")}
-        breadcrumb={{
-          url: ROUTES.GIT_ROOT,
-          label: t("git.title"),
-        }}
       />
 
       <div className="px-4 lg:px-6 space-y-4">
