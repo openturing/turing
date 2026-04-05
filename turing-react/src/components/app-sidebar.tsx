@@ -10,6 +10,7 @@ import {
   IconFolder,
   IconGlobe,
   IconHome,
+  IconLayoutDashboard,
   IconMessageChatbot,
   IconPlugConnectedX,
   IconReceiptRupee,
@@ -145,7 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navGroups = React.useMemo(
     () => [
-      { items: [{ title: t("home.title"), url: ROUTES.HOME, icon: IconHome }] },
+      { items: [{ title: t("home.title"), url: ROUTES.HOME, icon: IconHome }, { title: t("dashboard.title"), url: ROUTES.DASHBOARD, icon: IconLayoutDashboard }] },
       { label: t("home.sections.generativeAi.label"), items: toNavItems(filterItems(generativeAiItems)) },
       { label: t("home.sections.enterpriseSearch.label"), items: toNavItems(filterItems(searchItems)) },
       { label: t("home.sections.management.label"), items: toNavItems(filteredManagement) },

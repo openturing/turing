@@ -1,0 +1,60 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "customize": "Customize",
+    "customizeTitle": "Customize Dashboard",
+    "resetLayout": "Reset layout",
+    "dragHint": "Drag widgets to reorder them.",
+    "columns": "columns",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "allHidden": "All widgets are hidden. Reset the layout to restore them.",
+    "dragToReorder": "Drag to reorder",
+    "hideWidget": "Hide widget",
+    "refresh": "Refresh",
+    "widgets": {
+      "systemHealth": {
+        "title": "System Health",
+        "memory": "Memory",
+        "disk": "Disk",
+        "used": "used",
+        "database": "Database"
+      },
+      "liveMetrics": {
+        "title": "Live Search Activity",
+        "accesses": "Accesses",
+        "noSites": "No semantic navigation sites found.",
+        "description": "Real-time search activity — updates every 2 seconds."
+      },
+      "snSites": {
+        "title": "Semantic Navigation Sites",
+        "docs": "docs",
+        "queued": "queued",
+        "noSites": "No sites configured yet.",
+        "createFirst": "Create your first site"
+      },
+      "topTerms": {
+        "title": "Top Search Terms",
+        "today": "Today",
+        "thisWeek": "This week",
+        "thisMonth": "This month",
+        "allTime": "All time",
+        "searches": "Searches",
+        "noSites": "No semantic navigation sites found."
+      },
+      "llmStatus": {
+        "title": "AI Models",
+        "active": "Active instances",
+        "noInstances": "No LLM instances configured.",
+        "configure": "Configure models"
+      },
+      "quickLinks": {
+        "title": "Quick Links"
+      },
+      "weather": {
+        "title": "Weather",
+        "unavailable": "Location permission denied or unavailable."
+      }
+    }
+  }
+}
