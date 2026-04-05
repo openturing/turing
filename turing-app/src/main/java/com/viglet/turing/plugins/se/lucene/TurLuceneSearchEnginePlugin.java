@@ -54,15 +54,18 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     private final TurLuceneInstanceProcess turLuceneInstanceProcess;
     private final TurLuceneQueryBuilder turLuceneQueryBuilder;
     private final TurSNSiteRepository turSNSiteRepository;
+    private final com.viglet.turing.lucene.TurLuceneStorageSync storageSync;
 
     public TurLuceneSearchEnginePlugin(TurLucene turLucene,
             TurLuceneInstanceProcess turLuceneInstanceProcess,
             TurLuceneQueryBuilder turLuceneQueryBuilder,
-            TurSNSiteRepository turSNSiteRepository) {
+            TurSNSiteRepository turSNSiteRepository,
+            com.viglet.turing.lucene.TurLuceneStorageSync storageSync) {
         this.turLucene = turLucene;
         this.turLuceneInstanceProcess = turLuceneInstanceProcess;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
         this.turSNSiteRepository = turSNSiteRepository;
+        this.storageSync = storageSync;
     }
 
     @Override
@@ -95,6 +98,9 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
     @Override
     public void deleteIndex(TurSEInstance seInstance, String indexName) {
         TurLuceneUtils.deleteCore(seInstance.getEndpointUrl(), indexName);
+        if (storageSync != null && storageSync.isEnabled()) {
+            storageSync.deleteFromStorage(indexName);
+        }
     }
 
     @Override
@@ -102,6 +108,9 @@ public class TurLuceneSearchEnginePlugin implements TurSearchEnginePlugin {
         // Lucene: clear by deleting and recreating the index
         TurLuceneUtils.deleteCore(seInstance.getEndpointUrl(), indexName);
         TurLuceneUtils.createCore(seInstance.getEndpointUrl(), indexName);
+        if (storageSync != null && storageSync.isEnabled()) {
+            storageSync.deleteFromStorage(indexName);
+        }
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.facet.FacetsConfig;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -53,11 +52,14 @@ public class TurLuceneInstanceProcess {
     private final ConcurrentHashMap<String, TurLuceneInstance> instanceCache = new ConcurrentHashMap<>();
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurLuceneStorageSync storageSync;
 
     public TurLuceneInstanceProcess(TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurLuceneStorageSync storageSync) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.storageSync = storageSync;
     }
 
     /**
@@ -121,6 +123,14 @@ public class TurLuceneInstanceProcess {
 
     private TurLuceneInstance createInstance(Path indexPath) throws IOException {
         Files.createDirectories(indexPath);
+        // Warm-up: download segments from storage if local index is empty
+        if (storageSync != null && storageSync.isEnabled()) {
+            String coreName = indexPath.getFileName().toString();
+            if (isLocalIndexEmpty(indexPath)) {
+                log.info("Local index empty, attempting warm-up from storage for core: {}", coreName);
+                storageSync.syncFromStorage(indexPath, coreName);
+            }
+        }
         log.info("Opening Lucene index at: {}", indexPath);
         Directory directory = FSDirectory.open(indexPath);
         IndexWriterConfig config = new IndexWriterConfig(
@@ -173,6 +183,17 @@ public class TurLuceneInstanceProcess {
             }
         } catch (IOException e) {
             log.error("Error deleting index directory during reset: {}", indexPath, e);
+        }
+        // Also clean up storage
+        if (storageSync != null && storageSync.isEnabled()) {
+            storageSync.deleteFromStorage(indexPath.getFileName().toString());
+        }
+    }
+
+    private static boolean isLocalIndexEmpty(Path indexPath) throws IOException {
+        if (!Files.isDirectory(indexPath)) return true;
+        try (var files = Files.list(indexPath)) {
+            return files.noneMatch(p -> p.getFileName().toString().startsWith("segments"));
         }
     }
 

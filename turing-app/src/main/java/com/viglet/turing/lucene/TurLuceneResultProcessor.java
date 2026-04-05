@@ -290,10 +290,10 @@ public class TurLuceneResultProcessor {
     private TurSEFacetResult processFacetField(TurSNSiteFieldExt fieldExt,
             List<FacetsCollector.MatchingDocs> matchingDocsList) {
         String fieldName = fieldExt.getName();
-        // LONG and DATE store SortedSetDocValues under a _sf-suffixed field to avoid
-        // conflict with their NumericDocValuesField on the same field name.
+        // Numeric types (INT, LONG, FLOAT, DOUBLE, DATE) store SortedSetDocValues under a
+        // _sf-suffixed field to avoid conflict with their NumericDocValuesField.
         TurSEFieldType type = fieldExt.getType();
-        String docValuesFieldName = (type == TurSEFieldType.LONG || type == TurSEFieldType.DATE)
+        String docValuesFieldName = usesNumericDocValues(type)
                 ? fieldName + TurLuceneConstants.SORTED_SET_FACET_SUFFIX
                 : fieldName;
         Map<String, Integer> counts = countFacetValues(fieldName, docValuesFieldName, matchingDocsList);
@@ -391,6 +391,12 @@ public class TurLuceneResultProcessor {
     // -------------------------------------------------------------------------
     // Pagination helpers
     // -------------------------------------------------------------------------
+
+    private static boolean usesNumericDocValues(TurSEFieldType type) {
+        return type == TurSEFieldType.INT || type == TurSEFieldType.LONG
+                || type == TurSEFieldType.FLOAT || type == TurSEFieldType.DOUBLE
+                || type == TurSEFieldType.CURRENCY || type == TurSEFieldType.DATE;
+    }
 
     private void populateResultsParameters(TurSEParameters params, TurSEResults results) {
         results.setLimit(params.getRows());

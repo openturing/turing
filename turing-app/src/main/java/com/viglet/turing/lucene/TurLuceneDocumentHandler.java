@@ -45,9 +45,12 @@ import java.util.stream.IntStream;
 public class TurLuceneDocumentHandler {
 
     private final TurSNSiteFieldService turSNSiteFieldService;
+    private final TurLuceneStorageSync storageSync;
 
-    public TurLuceneDocumentHandler(TurSNSiteFieldService turSNSiteFieldService) {
+    public TurLuceneDocumentHandler(TurSNSiteFieldService turSNSiteFieldService,
+            TurLuceneStorageSync storageSync) {
         this.turSNSiteFieldService = turSNSiteFieldService;
+        this.storageSync = storageSync;
     }
 
     // -------------------------------------------------------------------------
@@ -68,6 +71,7 @@ public class TurLuceneDocumentHandler {
         try {
             instance.getWriter().deleteDocuments(new Term(ID, id));
             instance.getWriter().commit();
+            syncAfterCommit(instance);
         } catch (IOException e) {
             log.error("Error deIndexing id={}", id, e);
         }
@@ -78,6 +82,7 @@ public class TurLuceneDocumentHandler {
         try {
             instance.getWriter().deleteDocuments(new Term(TYPE, type));
             instance.getWriter().commit();
+            syncAfterCommit(instance);
         } catch (IOException e) {
             log.error("Error deIndexing type={}", type, e);
         }
@@ -107,8 +112,16 @@ public class TurLuceneDocumentHandler {
         try {
             instance.getWriter().updateDocument(new Term(ID, docId), doc);
             instance.getWriter().commit();
+            syncAfterCommit(instance);
         } catch (IOException e) {
             log.error("Error writing Lucene document id={}", docId, e);
+        }
+    }
+
+    private void syncAfterCommit(TurLuceneInstance instance) {
+        if (storageSync != null && storageSync.isEnabled()) {
+            storageSync.syncToStorageAsync(instance.getIndexPath(),
+                    instance.getIndexPath().getFileName().toString());
         }
     }
 
@@ -190,7 +203,8 @@ public class TurLuceneDocumentHandler {
             log.warn("Cannot parse INT value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
         }
-        addFacetField(doc, key, strValue);
+        // Use _sf suffix to avoid conflict with NumericDocValuesField on same field name
+        addFacetField(doc, key + SORTED_SET_FACET_SUFFIX, strValue);
     }
 
     private void addLongField(Document doc, String key, String strValue) {
@@ -217,7 +231,8 @@ public class TurLuceneDocumentHandler {
             log.warn("Cannot parse FLOAT value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
         }
-        addFacetField(doc, key, strValue);
+        // Use _sf suffix to avoid conflict with NumericDocValuesField on same field name
+        addFacetField(doc, key + SORTED_SET_FACET_SUFFIX, strValue);
     }
 
     private void addDoubleField(Document doc, String key, String strValue) {
@@ -232,7 +247,8 @@ public class TurLuceneDocumentHandler {
             log.warn("Cannot parse DOUBLE/CURRENCY value '{}' for field '{}'", strValue, key);
             doc.add(new StringField(key, strValue, Field.Store.YES));
         }
-        addFacetField(doc, key, strValue);
+        // Use _sf suffix to avoid conflict with NumericDocValuesField on same field name
+        addFacetField(doc, key + SORTED_SET_FACET_SUFFIX, strValue);
     }
 
     private void addDateField(Document doc, String key, String strValue) {

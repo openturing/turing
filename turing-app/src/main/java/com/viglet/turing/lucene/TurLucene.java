@@ -51,11 +51,13 @@ public class TurLucene {
 
     public TurLucene(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldService turSNSiteFieldService,
-            TurLuceneQueryBuilder turLuceneQueryBuilder) {
+            TurLuceneQueryBuilder turLuceneQueryBuilder,
+            TurLuceneStorageSync turLuceneStorageSync) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turLuceneQueryBuilder = turLuceneQueryBuilder;
         this.turLuceneResultProcessor = new TurLuceneResultProcessor();
-        this.turLuceneDocumentHandler = new TurLuceneDocumentHandler(turSNSiteFieldService);
+        this.turLuceneDocumentHandler = new TurLuceneDocumentHandler(turSNSiteFieldService,
+                turLuceneStorageSync);
     }
 
     // -------------------------------------------------------------------------

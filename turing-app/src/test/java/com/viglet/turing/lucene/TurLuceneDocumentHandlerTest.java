@@ -56,7 +56,7 @@ class TurLuceneDocumentHandlerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        handler = new TurLuceneDocumentHandler(turSNSiteFieldService);
+        handler = new TurLuceneDocumentHandler(turSNSiteFieldService, null);
         directory = new MMapDirectory(tempDir);
         IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
         writer = new IndexWriter(directory, config);
@@ -588,7 +588,7 @@ class TurLuceneDocumentHandlerTest {
         // The cleaned map is a new LinkedHashMap(null) which throws NPE.
         // Use a separate handler/instance to avoid unnecessary stubbing from setUp.
         TurSNSiteFieldService localFieldService = mock(TurSNSiteFieldService.class);
-        TurLuceneDocumentHandler localHandler = new TurLuceneDocumentHandler(localFieldService);
+        TurLuceneDocumentHandler localHandler = new TurLuceneDocumentHandler(localFieldService, null);
         TurLuceneInstance localInstance = mock(TurLuceneInstance.class);
 
         assertThrows(NullPointerException.class,
