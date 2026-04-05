@@ -2,6 +2,8 @@ import { Navigate, Route, useParams } from "react-router-dom"
 import SNSiteBehaviorPage from "../console/sn/behavior/sn.site.behavior.page"
 import SNSiteCustomSortListPage from "../console/sn/custom-sort/sn.site.custom.sort.list.page"
 import SNSiteCustomSortPage from "../console/sn/custom-sort/sn.site.custom.sort.page"
+import SNSiteSearchRuleListPage from "../console/sn/search-rules/sn.site.search.rule.list.page"
+import SNSiteSearchRulePage from "../console/sn/search-rules/sn.site.search.rule.page"
 import SNSiteDetailPage from "../console/sn/detail/sn.site.detail.page"
 import SNSiteCustomFacetPage from "../console/sn/facet/sn.site.custom.facet.page"
 import SNSiteFacetListPage from "../console/sn/facet/sn.site.facet.list.page"
@@ -47,6 +49,8 @@ export const SNRoutes = (
             <Route path={'facet/field/:facetedFieldId'} element={<SNSiteFacetedFieldPage />} />
             <Route path={'custom-sort'} element={<SNSiteCustomSortListPage />} />
             <Route path={'custom-sort/:customSortId'} element={<SNSiteCustomSortPage />} />
+            <Route path={'search-rule'} element={<SNSiteSearchRuleListPage />} />
+            <Route path={'search-rule/:searchRuleId'} element={<SNSiteSearchRulePage />} />
             <Route path={'ai'} element={<SNSiteGenAIPage />} />
             <Route path={'result-ranking'} element={<SNSiteResultRankingListPage />} />
             <Route path={'merge-providers'} element={<SNSiteMergeProvidersListPage />} />

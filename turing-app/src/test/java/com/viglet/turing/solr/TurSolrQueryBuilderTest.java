@@ -97,12 +97,15 @@ class TurSolrQueryBuilderTest {
         @Mock
         private TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 
+        @Mock
+        private com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
+
         private TurSolrQueryBuilder builder() {
                 return new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteCustomSortRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository,
-                                turSNTargetingRules);
+                                turSNTargetingRules, turSNSearchRuleEvaluator);
         }
 
         private TurSNSiteSearchContext contextFrom(TurSEParameters parameters,
@@ -116,7 +119,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsPresent() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setGroup("group");
                 TurSEParameters parameters = new TurSEParameters(
@@ -128,7 +131,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsMissing() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 TurSEParameters parameters = new TurSEParameters(
                                 searchParams);
@@ -139,7 +142,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testGetFqFieldsExtractsKeys() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
                 TurSNFilterParams params = TurSNFilterParams.builder()
                                 .defaultValues(List.of("category:books", "type:article"))
                                 .and(List.of("author:john"))
@@ -181,7 +184,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(categoryFacet, typeFacet));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
                 TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
 
                 List<String> fields = builder.getFacetFieldsInFilterQuery(context);
@@ -248,7 +251,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(mltField));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
                 SolrQuery query = new SolrQuery();
 
                 List<TurSNSiteFieldExt> result = builder.prepareQueryMLT(site, query);
@@ -324,7 +327,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 TurSNFilterParams params = TurSNFilterParams.builder().build();
-                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query, params);
+                List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query, params, (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(1);
                 assertThat(query.getBool("facet")).isTrue();
@@ -364,7 +367,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build());
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(1);
                 assertThat(query.getFacetQuery()).isNotEmpty();
@@ -409,7 +412,7 @@ class TurSolrQueryBuilderTest {
                                 .itemOperator(TurSNFilterQueryOperator.NONE)
                                 .build();
 
-                builder().prepareQueryFacet(site, query, params);
+                builder().prepareQueryFacet(site, query, params, (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(query.getFacetQuery()).isNotEmpty();
                 assertThat(List.of(query.getFacetQuery()))
@@ -892,7 +895,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build());
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).hasSize(2);
                 assertThat(facets).extracting(TurSNSiteFieldExt::getName)
@@ -907,7 +910,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 List<TurSNSiteFieldExt> facets = builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build());
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 assertThat(facets).isEmpty();
         }
@@ -1028,7 +1031,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(facet));
 
                 SolrQuery query = new SolrQuery();
-                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build());
+                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build(), null);
 
                 assertThat(query.get("facet.sort")).isEqualTo("count");
         }
@@ -1054,7 +1057,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(facet));
 
                 SolrQuery query = new SolrQuery();
-                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build());
+                builder().prepareQueryFacet(site, query, TurSNFilterParams.builder().build(), null);
 
                 assertThat(query.get("facet.sort")).isEqualTo("index");
         }
@@ -1103,7 +1106,7 @@ class TurSolrQueryBuilderTest {
 
                 SolrQuery query = new SolrQuery();
                 builder().prepareQueryFacet(site, query,
-                                TurSNFilterParams.builder().build());
+                                TurSNFilterParams.builder().build(), (com.viglet.turing.commons.se.TurSEParameters) null);
 
                 // itemsPerFacet is null so wasFacetConfigured returns false
                 assertThat(query.get("facet")).isNull();

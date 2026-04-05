@@ -18,6 +18,7 @@ import {
     IconInbox,
     IconLanguage,
     IconNumber123,
+    IconGavel,
     IconScale,
     IconSearch,
     IconSettings,
@@ -101,6 +102,11 @@ export default function SNSitePage() {
                 title: t("sn.customSort.title"),
                 url: "/custom-sort",
                 icon: IconArrowsSort,
+            },
+            {
+                title: t("sn.searchRule.title"),
+                url: "/search-rule",
+                icon: IconGavel,
             },
             {
                 title: t("sn.genai.title"),

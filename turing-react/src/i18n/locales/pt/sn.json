@@ -93,6 +93,83 @@
       "selectField": "Selecione um campo...",
       "direction": "Direção"
     },
+    "searchRule": {
+      "title": "Regras de Busca",
+      "feature": "Regra de Busca",
+      "description": "Defina regras que alteram dinamicamente o comportamento da busca com base em critérios da consulta.",
+      "newSearchRule": "Nova Regra de Busca",
+      "newSearchRuleBlank": "Nova regra de busca",
+      "blankTitle": "Você ainda não possui nenhuma regra de busca.",
+      "blankDescription": "Crie uma regra de busca para alterar dinamicamente ordenação, facetas ou filtros com base nas condições da consulta.",
+      "deleted": "A regra de busca foi excluída",
+      "notDeleted": "A regra de busca não foi excluída",
+      "saved": "A regra de busca foi salva",
+      "notSaved": "A regra de busca não foi salva",
+      "updated": "A regra de busca foi atualizada",
+      "notUpdated": "A regra de busca não foi atualizada",
+      "details": "Detalhes da Regra",
+      "detailsDesc": "Defina o nome, prioridade e descrição para esta regra de busca.",
+      "nameRequired": "O nome é obrigatório.",
+      "nameDesc": "Um nome descritivo para esta regra (ex: browse_education).",
+      "descriptionPlaceholder": "Descreva quando esta regra deve ser aplicada...",
+      "descriptionDesc": "Descrição opcional para esta regra de busca.",
+      "position": "Prioridade",
+      "positionDesc": "Menor número = maior prioridade. A primeira regra que corresponder é aplicada.",
+      "enabled": "Habilitada",
+      "enabledDesc": "Apenas regras habilitadas são avaliadas durante a busca.",
+      "conditions": "Condições",
+      "conditionsDesc": "As condições são agrupadas por parâmetro. Dentro de cada grupo, a lógica AND/OR é aplicada. Entre grupos, AND é usado.",
+      "actions": "Ações",
+      "actionsDesc": "Ações a aplicar quando todos os grupos de condições corresponderem.",
+      "addCondition": "Adicionar Condição",
+      "addGroup": "Adicionar grupo de condição",
+      "addAction": "Adicionar Ação",
+      "parameter": "Parâmetro",
+      "operator": "Operador",
+      "field": "Campo",
+      "actionType": "Tipo de Ação",
+      "value": "Valor",
+      "parameterValues": {
+        "QUERY": "Consulta (q)",
+        "FILTER_QUERY": "Filtro (fq)",
+        "SORT": "Ordenação (sort)",
+        "LOCALE": "Idioma (locale)"
+      },
+      "operatorValues": {
+        "EQUALS": "Igual a",
+        "CONTAINS": "Contém",
+        "STARTS_WITH": "Começa com",
+        "MATCHES_ANY": "Corresponde a qualquer",
+        "IS_EMPTY": "Está vazio"
+      },
+      "actionTypeValues": {
+        "SET_SORT": "Definir Ordenação (sort)",
+        "ADD_FACETS": "Exibir Facetas",
+        "REMOVE_FACETS": "Ocultar Facetas",
+        "SET_ROWS": "Definir Resultados (rows)",
+        "ADD_FILTER_QUERY": "Adicionar Filtro (fq)",
+        "SET_BOOST_QUERY": "Definir Boost (bq)"
+      },
+      "noFacets": "Nenhuma faceta configurada para este site.",
+      "noNonFacetFields": "Todos os campos já são facetas.",
+      "logicOperatorValues": {
+        "AND": "E",
+        "OR": "OU"
+      },
+      "locale": "Idioma",
+      "boostWeight": "Peso",
+      "sortValue": "Valor da Ordenação",
+      "sortMode": {
+        "preset": "Padrão",
+        "customSort": "Ordenação Personalizada",
+        "field": "Por Campo"
+      },
+      "sortPresets": {
+        "relevance": "Relevância",
+        "newest": "Mais Recente",
+        "oldest": "Mais Antigo"
+      }
+    },
     "genai": {
       "title": "IA Generativa",
       "description": "Use o Assistente na sua busca."
