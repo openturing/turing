@@ -35,12 +35,9 @@ import { useTranslation } from "react-i18next"
 
 const turGitService = new TurGitService()
 
-function getCloneUrls(name: string): { https: string; ssh: string } {
+function getCloneUrl(name: string): string {
   const baseUrl = `${window.location.protocol}//${window.location.host}`
-  return {
-    https: `${baseUrl}/git/${name}.git`,
-    ssh: `git@${window.location.hostname}:${name}.git`,
-  }
+  return `${baseUrl}/git/${name}.git`
 }
 
 export default function GitPage() {
@@ -171,12 +168,12 @@ export default function GitPage() {
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("git.cloneInfo.https")}</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs bg-background border rounded px-3 py-2 font-mono truncate">
-                  {getCloneUrls(infoRepo.name).https}
+                  {getCloneUrl(infoRepo.name)}
                 </code>
                 <button
                   type="button"
                   className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  onClick={() => copyToClipboard(getCloneUrls(infoRepo.name).https)}
+                  onClick={() => copyToClipboard(getCloneUrl(infoRepo.name))}
                 >
                   <IconCopy className="size-4" />
                 </button>
@@ -186,7 +183,7 @@ export default function GitPage() {
             <div className="space-y-1 pt-1">
               <p className="text-xs text-muted-foreground font-medium">{t("git.cloneInfo.usage")}</p>
               <code className="block text-xs bg-background border rounded px-3 py-2 font-mono">
-                {`git clone ${getCloneUrls(infoRepo.name).https}`}
+                {`git clone ${getCloneUrl(infoRepo.name)}`}
               </code>
             </div>
 

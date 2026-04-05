@@ -96,7 +96,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [hasEnabledLlm, setHasEnabledLlm] = React.useState(false);
-  const [storageEnabled, setMinioEnabled] = React.useState(false);
+  const [storageEnabled, setStorageEnabled] = React.useState(false);
   const [gitServerEnabled, setGitServerEnabled] = React.useState(false);
   const { toggleSidebar, state, isMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -106,9 +106,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setHasEnabledLlm(instances.some((i) => i.enabled === 1));
     });
     turFeaturesService.getFeatures().then((features) => {
-      setMinioEnabled(features.storageEnabled);
+      setStorageEnabled(features.storageEnabled);
       setGitServerEnabled(features.gitServerEnabled ?? false);
-    }).catch(() => { setMinioEnabled(false); setGitServerEnabled(false); });
+    }).catch(() => { setStorageEnabled(false); setGitServerEnabled(false); });
   }, [])
 
   const isAdmin = !!user?.admin
