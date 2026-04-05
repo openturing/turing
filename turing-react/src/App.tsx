@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom"
 import ConsoleRootPage from "./app/console/console.root.page"
-import RealTimeDashboardPage from "./app/console/dashboard/dashboard.page"
+import DashboardPage from "./app/console/dashboard/dashboard.page"
 import HomePage from "./app/console/home/home.page"
 import LoginPage from "./app/login/login.page"
 import SetupPage from "./app/setup/setup.page"
@@ -40,13 +40,13 @@ function App() {
             <Toaster />
             <Routes>
               <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.CONSOLE} replace />} />
-              <Route path={ROUTES.DASHBOARD} element={<RealTimeDashboardPage />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
                 <Route index element={<Navigate to={ROUTES.HOME} replace />} />
                 <Route path="home" element={<HomePage />} />
+                <Route path="dashboard" element={<DashboardPage />} />
                 {SERoutes}
                 {SNRoutes}
                 {StoreRoutes}

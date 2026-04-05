@@ -13,9 +13,10 @@ interface MyComponentProps {
   turIcon?: React.ElementType;
   title: string;
   urlBase?: string;
+  children?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title, urlBase }) => {
+export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title, urlBase, children }) => {
   const { items } = useBreadcrumb();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -87,7 +88,8 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
         </div>
 
         {/* Right side: mode toggle (desktop only) + sidebar trigger (mobile only) */}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
+          {children && <div className="hidden md:flex items-center">{children}</div>}
           <div className="hidden md:block">
             <ModeToggle />
           </div>

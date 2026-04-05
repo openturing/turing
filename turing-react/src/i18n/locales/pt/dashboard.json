@@ -1,0 +1,60 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "customize": "Personalizar",
+    "customizeTitle": "Personalizar Dashboard",
+    "resetLayout": "Resetar layout",
+    "dragHint": "Arraste os widgets para reordená-los.",
+    "columns": "colunas",
+    "loading": "Carregando...",
+    "noData": "Nenhum dado disponível",
+    "allHidden": "Todos os widgets estão ocultos. Resetar o layout para restaurá-los.",
+    "dragToReorder": "Arraste para reordenar",
+    "hideWidget": "Ocultar widget",
+    "refresh": "Atualizar",
+    "widgets": {
+      "systemHealth": {
+        "title": "Saúde do Sistema",
+        "memory": "Memória",
+        "disk": "Disco",
+        "used": "usado",
+        "database": "Banco de dados"
+      },
+      "liveMetrics": {
+        "title": "Atividade de Busca em Tempo Real",
+        "accesses": "Acessos",
+        "noSites": "Nenhum site de navegação semântica encontrado.",
+        "description": "Atividade de busca em tempo real — atualiza a cada 2 segundos."
+      },
+      "snSites": {
+        "title": "Sites de Navegação Semântica",
+        "docs": "documentos",
+        "queued": "na fila",
+        "noSites": "Nenhum site configurado.",
+        "createFirst": "Criar primeiro site"
+      },
+      "topTerms": {
+        "title": "Termos Mais Buscados",
+        "today": "Hoje",
+        "thisWeek": "Esta semana",
+        "thisMonth": "Este mês",
+        "allTime": "Todo o período",
+        "searches": "Buscas",
+        "noSites": "Nenhum site de navegação semântica encontrado."
+      },
+      "llmStatus": {
+        "title": "Modelos de IA",
+        "active": "Instâncias ativas",
+        "noInstances": "Nenhuma instância de LLM configurada.",
+        "configure": "Configurar modelos"
+      },
+      "quickLinks": {
+        "title": "Acesso Rápido"
+      },
+      "weather": {
+        "title": "Clima",
+        "unavailable": "Permissão de localização negada ou indisponível."
+      }
+    }
+  }
+}
