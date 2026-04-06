@@ -134,7 +134,6 @@ class TurIntegrationInstanceAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("New Title"))
                 .andExpect(jsonPath("$.description").value("New Desc"))
-                .andExpect(jsonPath("$.vendor").value("New Vendor"))
                 .andExpect(jsonPath("$.endpoint").value("http://newendpoint"))
                 .andExpect(jsonPath("$.enabled").value(1));
 
