@@ -72,6 +72,8 @@ public class TurSecurityConfigProduction {
         private String clientId;
         @Value("${turing.url:'http://localhost:2700'}")
         private String turingUrl;
+        @Value("${server.servlet.session.cookie.name:JSESSIONID}")
+        private String sessionCookieName;
         PathPatternRequestMatcher.Builder mvc = PathPatternRequestMatcher.withDefaults();
 
         public TurSecurityConfigProduction(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
@@ -199,7 +201,7 @@ public class TurSecurityConfigProduction {
                                         .addLogoutHandler(turLogoutHandler)
                                         .invalidateHttpSession(true)
                                         .clearAuthentication(true)
-                                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                                        .deleteCookies(sessionCookieName, "XSRF-TOKEN")
                                         .logoutSuccessUrl("/login"));
                 }
                 return http.build();

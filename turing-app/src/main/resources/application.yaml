@@ -77,6 +77,10 @@ spring:
 
 server:
   port: ${PORT:2700}
+  servlet:
+    session:
+      cookie:
+        name: TURJSESSIONID
   compression:
     enabled: true
     mime-types: application/json,text/css,application/javascript
