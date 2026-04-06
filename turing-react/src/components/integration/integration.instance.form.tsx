@@ -219,8 +219,12 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             </SectionCard>
 
           <FormActions>
-            <FormActions.Cancel onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)} />
-            <FormActions.Submit />
+            <FormActions.Cancel onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)}>
+              {t("forms.formActions.cancel")}
+            </FormActions.Cancel>
+            <FormActions.Submit>
+              {t("forms.formActions.saveChanges")}
+            </FormActions.Submit>
           </FormActions>
         </form>
       </Form >

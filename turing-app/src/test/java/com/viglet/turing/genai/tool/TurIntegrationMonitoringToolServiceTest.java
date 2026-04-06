@@ -50,7 +50,6 @@ class TurIntegrationMonitoringToolServiceTest {
         TurIntegrationInstance instance = new TurIntegrationInstance();
         instance.setId("int-1");
         instance.setTitle("AEM Connector");
-        instance.setVendor("AEM");
         instance.setEndpoint("http://connector:8080");
         instance.setEnabled(1);
 
@@ -58,7 +57,7 @@ class TurIntegrationMonitoringToolServiceTest {
 
         String result = service.listIntegrations();
         assertThat(result)
-                .contains("id;title;vendor;endpoint;enabled")
+                .contains("id;title;endpoint;enabled")
                 .contains("int-1")
                 .contains("AEM Connector")
                 .contains("yes");
@@ -69,7 +68,6 @@ class TurIntegrationMonitoringToolServiceTest {
         TurIntegrationInstance instance = new TurIntegrationInstance();
         instance.setId("int-2");
         instance.setTitle("WP Connector");
-        instance.setVendor("WP");
         instance.setEndpoint("http://wp:8080");
         instance.setEnabled(0);
 

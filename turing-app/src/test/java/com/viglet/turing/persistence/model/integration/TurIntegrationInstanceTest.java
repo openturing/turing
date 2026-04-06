@@ -14,13 +14,11 @@ class TurIntegrationInstanceTest {
         instance.setDescription("Integration with CMS");
         instance.setEnabled(1);
         instance.setEndpoint("https://cms.example.com/api");
-        instance.setVendor("AEM");
 
         assertEquals("int-1", instance.getId());
         assertEquals("CMS Integration", instance.getTitle());
         assertEquals("Integration with CMS", instance.getDescription());
         assertEquals(1, instance.getEnabled());
         assertEquals("https://cms.example.com/api", instance.getEndpoint());
-        assertEquals("AEM", instance.getVendor());
     }
 }

@@ -123,7 +123,6 @@ class TurIntegrationInstanceAPITest {
         TurIntegrationInstance updatedInstance = new TurIntegrationInstance();
         updatedInstance.setTitle("New Title");
         updatedInstance.setDescription("New Desc");
-        updatedInstance.setVendor("New Vendor");
         updatedInstance.setEndpoint("http://newendpoint");
         updatedInstance.setEnabled(1);
 

@@ -5,7 +5,6 @@ export type TurIntegrationInstance = {
   title: string;
   description: string;
   endpoint: string;
-  vendor: string;
   enabled: number;
   icon?: string | null;
   apiToken?: TurTokenInstance | null;

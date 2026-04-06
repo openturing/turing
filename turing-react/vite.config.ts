@@ -2,7 +2,32 @@ import { federation } from "@module-federation/vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+// Redirect CJS use-sync-external-store imports to ESM shims.
+// React 19 has useSyncExternalStore built-in, but the CJS shim
+// does require('react') which breaks Rolldown's browser CJS interop.
+function syncExternalStoreShimPlugin(): Plugin {
+  const shimDir = path.resolve(__dirname, "./src/shims");
+  return {
+    name: "use-sync-external-store-shim",
+    enforce: "pre",
+    resolveId(source) {
+      if (source === "use-sync-external-store/shim/with-selector") {
+        return path.join(shimDir, "use-sync-external-store-with-selector.js");
+      }
+      if (source === "use-sync-external-store/shim") {
+        return path.join(shimDir, "use-sync-external-store-shim.js");
+      }
+      if (
+        source === "use-sync-external-store/with-selector" ||
+        source === "use-sync-external-store/with-selector.js"
+      ) {
+        return path.join(shimDir, "use-sync-external-store-with-selector.js");
+      }
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -23,6 +48,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    syncExternalStoreShimPlugin(),
     react(),
     tailwindcss(),
     federation({

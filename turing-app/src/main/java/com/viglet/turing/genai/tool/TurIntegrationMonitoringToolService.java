@@ -52,11 +52,10 @@ public class TurIntegrationMonitoringToolService {
         if (instances.isEmpty()) {
             return "No integration instances configured.";
         }
-        StringBuilder sb = new StringBuilder("id;title;vendor;endpoint;enabled\n");
+        StringBuilder sb = new StringBuilder("id;title;endpoint;enabled\n");
         for (TurIntegrationInstance instance : instances) {
             sb.append(instance.getId()).append(";")
                     .append(instance.getTitle()).append(";")
-                    .append(instance.getVendor()).append(";")
                     .append(instance.getEndpoint()).append(";")
                     .append(instance.getEnabled() == 1 ? "yes" : "no").append("\n");
         }

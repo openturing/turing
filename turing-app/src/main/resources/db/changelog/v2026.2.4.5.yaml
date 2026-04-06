@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-vendor-column-from-integration-instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: integration_instance
+            columnName: vendor
+      changes:
+        - dropColumn:
+            tableName: integration_instance
+            columnName: vendor

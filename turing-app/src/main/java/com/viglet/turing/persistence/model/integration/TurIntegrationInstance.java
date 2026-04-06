@@ -69,9 +69,6 @@ public class TurIntegrationInstance implements Serializable {
 	@Column(nullable = false)
 	private String endpoint;
 
-	@Column(nullable = false)
-	private String vendor;
-
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "apiToken")
 	private TurDevToken apiToken;

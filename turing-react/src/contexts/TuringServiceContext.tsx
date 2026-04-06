@@ -1,5 +1,4 @@
 import { TurIntegrationInstanceService } from '@/services/integration/integration-instance.service';
-import { TurIntegrationVendorService } from '@/services/integration/integration-vendor.service';
 import { TurLLMInstanceService } from '@/services/llm/llm.service';
 import { TurSEInstanceService } from '@/services/se/se.service';
 import { TurSNFacetedFieldService } from '@/services/sn/sn.faceted.field.service';
@@ -17,9 +16,8 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 interface TuringServiceContextType {
     axiosInstance: AxiosInstance;
 
-    // Integration Services (only instance + vendor remain in turing)
+    // Integration Services
     integrationInstanceService: TurIntegrationInstanceService;
-    integrationVendorService: TurIntegrationVendorService;
 
     // LLM Services
     llmService: TurLLMInstanceService;
@@ -55,7 +53,6 @@ export function TuringServiceProvider({
     const services = useMemo<TuringServiceContextType>(() => ({
         axiosInstance,
         integrationInstanceService: new TurIntegrationInstanceService(axiosInstance),
-        integrationVendorService: new TurIntegrationVendorService(axiosInstance),
         llmService: new TurLLMInstanceService(),
         seService: new TurSEInstanceService(),
         snService: new TurSNSiteService(),
