@@ -45,12 +45,13 @@ jobs:
       # ── Create .npmrc in each package dir to force GitHub Packages ──
       - name: Configure npm registry
         run: |
-          for dir in turing-js-sdk/js-sdk-lib turing-js-sdk/turing-react-sdk; do
+          for dir in turing-react turing-js-sdk/js-sdk-lib turing-js-sdk/turing-react-sdk; do
             echo "@openviglet:registry=https://npm.pkg.github.com" > "$dir/.npmrc"
             echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> "$dir/.npmrc"
           done
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dgpg.skip=true -Dsonar.projectKey=viglet_turing -Dturing.open-browser=false
