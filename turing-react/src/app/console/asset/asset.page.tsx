@@ -43,7 +43,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { AssetPreviewPanel } from "./asset-preview-panel"
 
 const turAssetService = new TurAssetService()

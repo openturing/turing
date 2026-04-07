@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@openviglet/viglet-design-system";
 
 const turSEInstanceService = new TurSEInstanceService();
 const turLocaleService = new TurLocaleService();

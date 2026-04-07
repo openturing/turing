@@ -31,7 +31,7 @@ import {
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"

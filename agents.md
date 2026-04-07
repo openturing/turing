@@ -28,6 +28,10 @@ cd turing-react && npm run compile
 
 # Full build
 mvn clean install
+
+# Copy design system to turing-react node_modules (after changes to viglet-design-system)
+# Builds the design system and copies dist + package.json to node_modules
+copy-ds.cmd
 ```
 > **Windows PowerShell**: quote `-D` flags, e.g. `"-Dskip.npm=true"`
 

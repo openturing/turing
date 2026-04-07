@@ -35,7 +35,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@openviglet/viglet-design-system";
 
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turLLMInstanceService = new TurLLMInstanceService();

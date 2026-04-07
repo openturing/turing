@@ -15,27 +15,26 @@ import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@openviglet/viglet-design-system";
 
 const turIntegrationInstanceService = new TurIntegrationInstanceService();
 
 const registeredEndpoints = new Set<string>();
 
-function registerDumontRemote(endpoint: string) {
-    const normalizedEndpoint = endpoint.replace(/\/$/, "");
-    if (registeredEndpoints.has(normalizedEndpoint)) return;
+function registerDumontRemote(integrationId: string) {
+    if (registeredEndpoints.has(integrationId)) return;
 
     registerRemotes(
         [
             {
                 name: "dumont_react",
                 type: "module",
-                entry: `${normalizedEndpoint}/dumont/remoteEntry.js`,
+                entry: `/api/v2/integration/${integrationId}/federation/dumont/remoteEntry.js`,
             },
         ],
         { force: true }
     );
-    registeredEndpoints.add(normalizedEndpoint);
+    registeredEndpoints.add(integrationId);
 }
 
 interface DumontNavItem {
@@ -82,8 +81,8 @@ export default function IntegrationInstancePage() {
                 setIntegration(instance);
                 setBreadcrumb([{ label: instance.title, href: `${ROUTES.INTEGRATION_INSTANCE}/${instance.id}` }]);
 
-                // Load dumont manifest dynamically from the connector endpoint
-                registerDumontRemote(instance.endpoint);
+                // Load dumont manifest dynamically via backend proxy
+                registerDumontRemote(instance.id);
 
                 // Fetch provider, translations and manifest, then build nav
                 const providerPromise = axios

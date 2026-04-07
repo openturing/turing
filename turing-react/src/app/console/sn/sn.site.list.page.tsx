@@ -9,7 +9,7 @@ import { TurSNSiteService } from "@/services/sn/sn.service";
 import { IconDownload, IconSearch } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@openviglet/viglet-design-system";
 
 const turSNSiteService = new TurSNSiteService();
 

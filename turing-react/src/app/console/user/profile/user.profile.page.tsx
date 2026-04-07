@@ -1,7 +1,7 @@
 import { IconDeviceFloppy, IconLoader2, IconLock } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@openviglet/viglet-design-system";
 
 import { SubPageHeader } from "@/components/sub.page.header";
 import { AvatarField } from "@/components/avatar-field";

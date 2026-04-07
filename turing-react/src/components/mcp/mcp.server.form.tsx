@@ -29,7 +29,7 @@ import {
   useForm
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"

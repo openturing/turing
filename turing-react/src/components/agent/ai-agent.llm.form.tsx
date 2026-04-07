@@ -7,7 +7,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { IconCheck, IconCpu2 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 

@@ -1,7 +1,7 @@
-@import "@openviglet/viglet-design-system/styles";
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
+@import "@openviglet/viglet-design-system/styles";
 
 @custom-variant dark (&:is(.dark *));
 

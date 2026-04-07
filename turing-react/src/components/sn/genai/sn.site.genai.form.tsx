@@ -40,7 +40,7 @@ import { IconBrain, IconFileDescription, IconLoader2, IconMessageChatbot, IconPo
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { Button } from "../../ui/button"
 import { FormActions } from "../../ui/form-actions"
 import { GradientButton } from "../../ui/gradient-button"

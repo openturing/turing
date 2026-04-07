@@ -38,7 +38,7 @@ import {
 } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 
 const turLocaleService = new TurLocaleService();
 const turSNFieldService = new TurSNFieldService();

@@ -28,7 +28,7 @@ import {
   useForm, useWatch
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { IconPlug, IconSettings } from "@tabler/icons-react"
 import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"

@@ -22,7 +22,7 @@ import {
   useForm
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { toast } from "@openviglet/viglet-design-system"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
