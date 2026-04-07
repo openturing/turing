@@ -28,7 +28,6 @@ hs_err_pid*
 # ── Node / npm ───────────────────────────────────────────────
 node
 node_modules/
-package-lock.json
 
 # ── Maven flatten / shade ───────────────────────────────────
 .flattened-pom.xml

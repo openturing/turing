@@ -265,7 +265,11 @@ public class TurLLMChatAPI {
             log.info("[Chat] Tools disabled, using stream for LLM instance {}", id);
             Prompt prompt = new Prompt(springMessages);
 
+            var lastStreamResponse = new java.util.concurrent.atomic.AtomicReference<
+                    org.springframework.ai.chat.model.ChatResponse>();
+
             return chatModel.stream(prompt)
+                    .doOnNext(lastStreamResponse::set)
                     .map(response -> {
                         String text = response.getResult() != null
                                 && response.getResult().getOutput() != null
@@ -275,6 +279,12 @@ public class TurLLMChatAPI {
                         return new ChatResponse(ROLE_ASSISTANT, text);
                     })
                     .filter(response -> !response.content().isEmpty())
+                    .doOnComplete(() -> {
+                        var finalResponse = lastStreamResponse.get();
+                        if (finalResponse != null) {
+                            tokenUsageService.recordUsage(turLLMInstance, finalResponse, username);
+                        }
+                    })
                     .doOnError(err -> log.error("[Chat] Stream error: {}", err.getMessage(), err));
         }
     }

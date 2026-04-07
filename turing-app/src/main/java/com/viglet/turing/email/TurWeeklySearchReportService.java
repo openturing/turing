@@ -30,6 +30,7 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.sn.TurSNSiteDataCollectorService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.TurLlmCacheService;
@@ -64,6 +65,7 @@ public class TurWeeklySearchReportService {
     private final TurSecretCryptoService secretCryptoService;
     private final TurSNSiteDataCollectorService siteDataCollectorService;
     private final TurLlmCacheService llmCacheService;
+    private final TurLLMTokenUsageService tokenUsageService;
 
     public TurWeeklySearchReportService(TurEmailService emailService,
             TurSNSiteRepository snSiteRepository,
@@ -75,7 +77,8 @@ public class TurWeeklySearchReportService {
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService secretCryptoService,
             TurSNSiteDataCollectorService siteDataCollectorService,
-            TurLlmCacheService llmCacheService) {
+            TurLlmCacheService llmCacheService,
+            TurLLMTokenUsageService tokenUsageService) {
         this.emailService = emailService;
         this.snSiteRepository = snSiteRepository;
         this.snSiteLocaleRepository = snSiteLocaleRepository;
@@ -87,6 +90,7 @@ public class TurWeeklySearchReportService {
         this.secretCryptoService = secretCryptoService;
         this.siteDataCollectorService = siteDataCollectorService;
         this.llmCacheService = llmCacheService;
+        this.tokenUsageService = tokenUsageService;
     }
 
     @Scheduled(cron = "0 0 8 * * MON")
@@ -115,10 +119,12 @@ public class TurWeeklySearchReportService {
         // Resolve LLM once for all sites
         ChatModel chatModel = null;
         String llmModelName = null;
+        TurLLMInstance resolvedLlmInstance = null;
         String defaultLlmId = globalSettingsService.getDefaultLlmId();
         if (StringUtils.hasText(defaultLlmId)) {
             TurLLMInstance llmInstance = llmInstanceRepository.findById(defaultLlmId).orElse(null);
             if (llmInstance != null && llmInstance.getEnabled() == 1) {
+                resolvedLlmInstance = llmInstance;
                 try {
                     var provider = llmProviderFactory.getProvider(llmInstance);
                     String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
@@ -150,7 +156,7 @@ public class TurWeeklySearchReportService {
                     .topTermsBetweenDates(site, startInstant, endInstant, PageRequest.of(0, TOP_SEARCHES_LIMIT));
 
             String topSearchRows = buildTopSearchRows(topTerms, accentColor);
-            String siteSummaryHtml = generateSiteSummary(site, chatModel, llmModelName);
+            String siteSummaryHtml = generateSiteSummary(site, chatModel, llmModelName, resolvedLlmInstance);
 
             String siteCard = siteCardTemplate
                     .replace("{{siteName}}", escapeHtml(site.getName()))
@@ -175,7 +181,8 @@ public class TurWeeklySearchReportService {
                 .replace("{{generatedAt}}", now.format(DATETIME_FORMAT));
     }
 
-    private String generateSiteSummary(TurSNSite site, ChatModel chatModel, String llmModelName) {
+    private String generateSiteSummary(TurSNSite site, ChatModel chatModel, String llmModelName,
+            TurLLMInstance llmInstance) {
         if (chatModel == null) {
             return "";
         }
@@ -215,6 +222,11 @@ public class TurWeeklySearchReportService {
 
             Prompt prompt = new Prompt(messages);
             var response = chatModel.call(prompt);
+
+            if (llmInstance != null) {
+                tokenUsageService.recordUsage(llmInstance, response, "system-scheduler");
+            }
+
             String aiContent = response.getResult().getOutput().getText();
 
             if (!StringUtils.hasText(aiContent)) {

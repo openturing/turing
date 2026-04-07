@@ -7,12 +7,15 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
+import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class TurLlmSummaryService {
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurLlmCacheService llmCacheService;
+    private final TurLLMTokenUsageService tokenUsageService;
 
     public record SummaryResult(boolean success, String error, String content, boolean canRegenerate) {
     }
@@ -65,6 +69,9 @@ public class TurLlmSummaryService {
 
             Prompt prompt = new Prompt(messages);
             var response = chatModel.call(prompt);
+
+            tokenUsageService.recordUsage(llmInstance, response, resolveUsername());
+
             String content = response.getResult().getOutput().getText();
 
             llmCacheService.put(cacheKey, content);
@@ -74,6 +81,11 @@ public class TurLlmSummaryService {
             log.error("Failed to generate AI summary for key {}", cacheKey, e);
             return new SummaryResult(false, "Failed to generate summary: " + e.getMessage(), null, canRegenerate);
         }
+    }
+
+    private String resolveUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
     }
 
     public boolean isAvailable() {

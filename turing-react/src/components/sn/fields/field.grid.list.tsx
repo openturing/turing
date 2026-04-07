@@ -163,7 +163,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
     )
 }
 
-type FieldToggleKey = "multiValued" | "mlt" | "facet" | "secondaryFacet" | "hl" | "enabled";
+type FieldToggleKey = "multiValued" | "mlt" | "facet" | "hl" | "enabled";
 
 const buildColumns = (
     statusFieldMap: Map<string, TurSNFieldCheck>,
@@ -267,25 +267,6 @@ const buildColumns = (
             },
         },
         {
-            accessorKey: "secondaryFacet",
-            header: () => <div className="text-right">{t("forms.fieldGrid.secondaryFacet")}</div>,
-            cell: ({ row }) => {
-                const secondaryFacet = row.original.secondaryFacet;
-                const fieldId = row.original.id;
-                return (
-                    <div className="text-right font-medium">
-                        <GradientSwitch
-                            checked={secondaryFacet}
-                            onCheckedChange={(checked) =>
-                                onToggle(fieldId, "secondaryFacet", checked)
-                            }
-                            disabled={isSavingField(fieldId)}
-                        />
-                    </div>
-                )
-            },
-        },
-        {
             accessorKey: "hl",
             header: () => <div className="text-right">{t("forms.fieldGrid.highlighting")}</div>,
             cell: ({ row }) => {
@@ -358,7 +339,6 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
             multiValued: false,
             mlt: false,
             facet: false,
-            secondaryFacet: false,
             hl: false,
             enabled: false,
         } : {})

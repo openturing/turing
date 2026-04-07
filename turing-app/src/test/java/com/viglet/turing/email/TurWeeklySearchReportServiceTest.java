@@ -25,6 +25,7 @@ import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.sn.TurSNSiteDataCollectorService;
 import com.viglet.turing.system.TurGlobalSettingsService;
+import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.TurLlmCacheService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -59,6 +60,8 @@ class TurWeeklySearchReportServiceTest {
     private TurSNSiteDataCollectorService siteDataCollectorService;
     @Mock
     private TurLlmCacheService llmCacheService;
+    @Mock
+    private TurLLMTokenUsageService tokenUsageService;
 
     private TurWeeklySearchReportService service;
 
@@ -67,7 +70,8 @@ class TurWeeklySearchReportServiceTest {
         service = new TurWeeklySearchReportService(emailService, snSiteRepository,
                 snSiteLocaleRepository, metricAccessRepository, pluginFactory,
                 globalSettingsService, llmInstanceRepository, llmProviderFactory,
-                secretCryptoService, siteDataCollectorService, llmCacheService);
+                secretCryptoService, siteDataCollectorService, llmCacheService,
+                tokenUsageService);
     }
 
     @Test
