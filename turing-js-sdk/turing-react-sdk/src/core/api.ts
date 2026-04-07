@@ -17,6 +17,10 @@ export interface SearchParams {
   fq?: string[];
   tr?: string[];
   nfpr?: string;
+  /** Group results by a field value (e.g. "templateName") */
+  group?: string;
+  /** Number of results per page */
+  rows?: string;
 }
 
 function buildQueryString(params: SearchParams): string {
@@ -31,6 +35,8 @@ function buildQueryString(params: SearchParams): string {
   for (const v of params.tr ?? []) qs.append("tr[]", v);
 
   if (params.nfpr) qs.append("nfpr", params.nfpr);
+  if (params.group) qs.append("group", params.group);
+  if (params.rows) qs.append("rows", params.rows);
 
   return qs.toString().replaceAll("%5B%5D", "[]");
 }
@@ -83,5 +89,7 @@ export function parseHrefToParams(href: string): SearchParams {
     fq: fq.length ? fq : undefined,
     tr: tr.length ? tr : undefined,
     nfpr: usp.get("nfpr") || undefined,
+    group: usp.get("group") || undefined,
+    rows: usp.get("rows") || undefined,
   };
 }

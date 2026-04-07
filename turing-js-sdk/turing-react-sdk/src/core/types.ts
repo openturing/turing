@@ -12,10 +12,25 @@ export interface TuringConfig {
 // ── Raw API Response Types (mirror Turing backend) ──
 
 export interface TurSearchResponse {
-  pagination: TurPaginationItem[];
+  pagination?: TurPaginationItem[];
   queryContext: TurQueryContext;
-  results: TurSearchResults;
+  results?: TurSearchResults;
   widget: TurWidget;
+  /** Present when the `group` parameter is used */
+  groups?: TurGroupBean[];
+}
+
+/** A single group in a grouped search response */
+export interface TurGroupBean {
+  name: string;
+  count: number;
+  page: number;
+  pageCount: number;
+  pageStart: number;
+  pageEnd: number;
+  limit: number;
+  results: TurSearchResults;
+  pagination: TurPaginationItem[];
 }
 
 export interface TurQueryContext {
@@ -145,6 +160,17 @@ export interface ResolvedDocument {
   image: string;
   text: string;
   raw: TurDocument;
+}
+
+/** A resolved group with documents mapped to default fields */
+export interface ResolvedGroup {
+  name: string;
+  count: number;
+  page: number;
+  pageCount: number;
+  limit: number;
+  documents: ResolvedDocument[];
+  pagination: TurPaginationItem[];
 }
 
 // ── UI Component Props ──

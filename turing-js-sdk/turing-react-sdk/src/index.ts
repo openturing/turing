@@ -46,6 +46,8 @@ export type {
   SearchStatus,
   SearchState,
   ResolvedDocument,
+  ResolvedGroup,
+  TurGroupBean,
   ResultItemProps,
   FacetGroupProps,
   PaginationItemProps,

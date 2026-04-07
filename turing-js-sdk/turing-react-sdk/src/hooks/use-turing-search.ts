@@ -3,6 +3,7 @@ import { fetchChat, fetchSearch, parseHrefToParams, type SearchParams } from "..
 import { useTuringContext } from "../core/use-turing-context";
 import type {
   ResolvedDocument,
+  ResolvedGroup,
   SearchStatus,
   TurChatResponse,
   TurSearchResponse,
@@ -17,6 +18,8 @@ export interface UseTuringSearchReturn {
   chat: TurChatResponse | null;
   /** Resolved documents with mapped default fields */
   documents: ResolvedDocument[];
+  /** Resolved groups (when `group` param is used) */
+  groups: ResolvedGroup[];
   /** Error message */
   error: string | null;
   /** Current search params (synced with URL) */
@@ -37,7 +40,9 @@ export interface UseTuringSearchReturn {
 
 function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
   const df = response.queryContext.defaultFields;
-  return response.results.document.map((doc) => ({
+  const docs = response.results?.document ??
+    response.groups?.flatMap((g) => g.results?.document ?? []) ?? [];
+  return docs.map((doc) => ({
     url: doc.fields[df.url] ?? "",
     title: doc.fields[df.title] ?? "",
     description: doc.fields[df.description] ?? "",
@@ -45,6 +50,28 @@ function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
     image: doc.fields[df.image] ?? "",
     text: doc.fields[df.text] ?? "",
     raw: doc,
+  }));
+}
+
+function resolveGroups(response: TurSearchResponse): ResolvedGroup[] {
+  if (!response.groups) return [];
+  const df = response.queryContext.defaultFields;
+  return response.groups.map((g) => ({
+    name: g.name,
+    count: g.count,
+    page: g.page,
+    pageCount: g.pageCount,
+    limit: g.limit,
+    pagination: g.pagination ?? [],
+    documents: (g.results?.document ?? []).map((doc) => ({
+      url: doc.fields[df.url] ?? "",
+      title: doc.fields[df.title] ?? "",
+      description: doc.fields[df.description] ?? "",
+      date: doc.fields[df.date] ?? "",
+      image: doc.fields[df.image] ?? "",
+      text: doc.fields[df.text] ?? "",
+      raw: doc,
+    })),
   }));
 }
 
@@ -77,6 +104,7 @@ export function useTuringSearch(
   const [data, setData] = useState<TurSearchResponse | null>(null);
   const [chatData, setChatData] = useState<TurChatResponse | null>(null);
   const [documents, setDocuments] = useState<ResolvedDocument[]>([]);
+  const [groups, setGroups] = useState<ResolvedGroup[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useState<SearchParams>(defaultParams);
 
@@ -103,6 +131,7 @@ export function useTuringSearch(
         setData(searchResult);
         setChatData(chatResult);
         setDocuments(resolveDocuments(searchResult));
+        setGroups(resolveGroups(searchResult));
         setStatus("success");
       } catch (err) {
         if (requestId !== abortRef.current) return;
@@ -151,6 +180,7 @@ export function useTuringSearch(
     data,
     chat: chatData,
     documents,
+    groups,
     error,
     params,
     search,

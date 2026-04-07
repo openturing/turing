@@ -1,9 +1,11 @@
 name: Publish JavaScript SDKs
 
 on:
-  push:
-    branches:
-      - publish/javascript
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   publish:

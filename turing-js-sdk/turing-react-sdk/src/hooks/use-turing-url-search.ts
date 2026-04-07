@@ -3,6 +3,7 @@ import { fetchChat, fetchSearch, parseHrefToParams, type SearchParams } from "..
 import { useTuringContext } from "../core/use-turing-context";
 import type {
   ResolvedDocument,
+  ResolvedGroup,
   SearchStatus,
   TurChatResponse,
   TurSearchResponse,
@@ -21,6 +22,8 @@ function urlToSearchParams(url: URLSearchParams, defaults: { locale?: string; so
     fq: [...url.getAll("fq"), ...url.getAll("fq[]")].filter(Boolean) || undefined,
     tr: [...url.getAll("tr"), ...url.getAll("tr[]")].filter(Boolean) || undefined,
     nfpr: url.get("nfpr") || undefined,
+    group: url.get("group") || undefined,
+    rows: url.get("rows") || undefined,
   };
 }
 
@@ -38,6 +41,8 @@ function searchParamsToUrl(params: SearchParams): string {
   for (const v of params.fq ?? []) url.append("fq[]", v);
   for (const v of params.tr ?? []) url.append("tr[]", v);
   if (params.nfpr) url.set("nfpr", params.nfpr);
+  if (params.group) url.set("group", params.group);
+  if (params.rows) url.set("rows", params.rows);
 
   return url.toString().replaceAll("%5B%5D", "[]");
 }
@@ -51,6 +56,8 @@ export interface UseTuringUrlSearchReturn {
   chat: TurChatResponse | null;
   /** Documents with resolved default fields */
   documents: ResolvedDocument[];
+  /** Resolved groups (when `group` param is used) */
+  groups: ResolvedGroup[];
   /** Error message */
   error: string | null;
   /** Current search params (derived from URL) */
@@ -73,7 +80,9 @@ export interface UseTuringUrlSearchReturn {
 
 function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
   const df = response.queryContext.defaultFields;
-  return response.results.document.map((doc) => ({
+  const docs = response.results?.document ??
+    response.groups?.flatMap((g) => g.results?.document ?? []) ?? [];
+  return docs.map((doc) => ({
     url: doc.fields[df.url] ?? "",
     title: doc.fields[df.title] ?? "",
     description: doc.fields[df.description] ?? "",
@@ -81,6 +90,28 @@ function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
     image: doc.fields[df.image] ?? "",
     text: doc.fields[df.text] ?? "",
     raw: doc,
+  }));
+}
+
+function resolveGroups(response: TurSearchResponse): ResolvedGroup[] {
+  if (!response.groups) return [];
+  const df = response.queryContext.defaultFields;
+  return response.groups.map((g) => ({
+    name: g.name,
+    count: g.count,
+    page: g.page,
+    pageCount: g.pageCount,
+    limit: g.limit,
+    pagination: g.pagination ?? [],
+    documents: (g.results?.document ?? []).map((doc) => ({
+      url: doc.fields[df.url] ?? "",
+      title: doc.fields[df.title] ?? "",
+      description: doc.fields[df.description] ?? "",
+      date: doc.fields[df.date] ?? "",
+      image: doc.fields[df.image] ?? "",
+      text: doc.fields[df.text] ?? "",
+      raw: doc,
+    })),
   }));
 }
 
@@ -128,6 +159,7 @@ export function useTuringUrlSearch(
   const [data, setData] = useState<TurSearchResponse | null>(null);
   const [chatData, setChatData] = useState<TurChatResponse | null>(null);
   const [documents, setDocuments] = useState<ResolvedDocument[]>([]);
+  const [groups, setGroups] = useState<ResolvedGroup[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState(searchParams.get("q") || "");
 
@@ -157,6 +189,7 @@ export function useTuringUrlSearch(
         setData(searchResult);
         setChatData(chatResult);
         setDocuments(resolveDocuments(searchResult));
+        setGroups(resolveGroups(searchResult));
         setStatus("success");
       })
       .catch((err) => {
@@ -208,6 +241,7 @@ export function useTuringUrlSearch(
     data,
     chat: chatData,
     documents,
+    groups,
     error,
     params,
     inputValue,
