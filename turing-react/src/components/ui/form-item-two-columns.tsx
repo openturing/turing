@@ -1,1 +1,1 @@
-export { FormItemTwoColumns } from "@openviglet/viglet-design-system";
+export { FormItemTwoColumns } from "@viglet/viglet-design-system";

@@ -1,1 +1,1 @@
-export { FormActions } from "@openviglet/viglet-design-system";
+export { FormActions } from "@viglet/viglet-design-system";

@@ -1,1 +1,1 @@
-export { Progress } from "@openviglet/viglet-design-system";
+export { Progress } from "@viglet/viglet-design-system";

@@ -1,1 +1,1 @@
-export { Toggle, toggleVariants } from "@openviglet/viglet-design-system";
+export { Toggle, toggleVariants } from "@viglet/viglet-design-system";

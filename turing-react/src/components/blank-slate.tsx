@@ -1,1 +1,1 @@
-export { BlankSlate } from "@openviglet/viglet-design-system";
+export { BlankSlate } from "@viglet/viglet-design-system";

@@ -1,1 +1,1 @@
-export { SectionCard } from "@openviglet/viglet-design-system";
+export { SectionCard } from "@viglet/viglet-design-system";

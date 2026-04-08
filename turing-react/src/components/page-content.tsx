@@ -1,1 +1,1 @@
-export { PageContent } from "@openviglet/viglet-design-system";
+export { PageContent } from "@viglet/viglet-design-system";

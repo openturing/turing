@@ -1,1 +1,1 @@
-export { exportToXlsx } from "@openviglet/viglet-design-system";
+export { exportToXlsx } from "@viglet/viglet-design-system";

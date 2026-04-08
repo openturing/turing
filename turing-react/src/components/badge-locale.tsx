@@ -1,1 +1,1 @@
-export { BadgeLocale, getLocaleCountryCode } from "@openviglet/viglet-design-system";
+export { BadgeLocale, getLocaleCountryCode } from "@viglet/viglet-design-system";

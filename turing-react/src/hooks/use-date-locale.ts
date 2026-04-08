@@ -1,1 +1,1 @@
-export { useDateLocale } from "@openviglet/viglet-design-system";
+export { useDateLocale } from "@viglet/viglet-design-system";

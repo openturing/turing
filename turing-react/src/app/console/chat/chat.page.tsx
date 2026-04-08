@@ -1,6 +1,6 @@
 "use client"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { toast } from "@openviglet/viglet-design-system"
+import { toast } from "@viglet/viglet-design-system"
 import "./chat-highlight.css"
 
 import { ROUTES } from "@/app/routes.const"

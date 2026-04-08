@@ -7,7 +7,7 @@ import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconCheck, IconServer2 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { toast } from "@openviglet/viglet-design-system"
+import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 

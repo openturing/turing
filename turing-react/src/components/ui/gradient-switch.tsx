@@ -1,1 +1,1 @@
-export { GradientSwitch } from "@openviglet/viglet-design-system";
+export { GradientSwitch } from "@viglet/viglet-design-system";

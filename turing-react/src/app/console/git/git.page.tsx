@@ -38,7 +38,7 @@ import {
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { toast } from "@openviglet/viglet-design-system"
+import { toast } from "@viglet/viglet-design-system"
 import { useTranslation } from "react-i18next"
 
 const turGitService = new TurGitService()

@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconWorld } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@openviglet/viglet-design-system";
+import { toast } from "@viglet/viglet-design-system";
 
 const LANGUAGES = [
     { code: "en", labelKey: "account.preferences.english" },

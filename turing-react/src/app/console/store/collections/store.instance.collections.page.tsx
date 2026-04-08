@@ -26,7 +26,7 @@ import { IconDatabase, IconEraser, IconLayersSubtract, IconPlus, IconTrash } fro
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
-import { toast } from "@openviglet/viglet-design-system"
+import { toast } from "@viglet/viglet-design-system"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 

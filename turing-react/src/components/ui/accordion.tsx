@@ -1,1 +1,1 @@
-export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@openviglet/viglet-design-system";
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@viglet/viglet-design-system";

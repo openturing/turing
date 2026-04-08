@@ -9,7 +9,7 @@ import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCode } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@openviglet/viglet-design-system";
+import { toast } from "@viglet/viglet-design-system";
 
 const turTokenInstanceService = new TurTokenInstanceService();
 

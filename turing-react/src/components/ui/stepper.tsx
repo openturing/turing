@@ -1,1 +1,1 @@
-export { Stepper } from "@openviglet/viglet-design-system";
+export { Stepper } from "@viglet/viglet-design-system";

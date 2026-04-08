@@ -1,1 +1,1 @@
-export { ToggleGroup, ToggleGroupItem } from "@openviglet/viglet-design-system";
+export { ToggleGroup, ToggleGroupItem } from "@viglet/viglet-design-system";

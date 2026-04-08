@@ -1,1 +1,1 @@
-export { NavSecondary } from "@openviglet/viglet-design-system";
+export { NavSecondary } from "@viglet/viglet-design-system";

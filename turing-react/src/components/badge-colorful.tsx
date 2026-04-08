@@ -1,1 +1,1 @@
-export { BadgeColorful } from "@openviglet/viglet-design-system";
+export { BadgeColorful } from "@viglet/viglet-design-system";

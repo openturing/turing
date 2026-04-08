@@ -1,7 +1,7 @@
 import { IconCode, IconFileZip, IconGlobe, IconTag, IconUpload, IconUser } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@openviglet/viglet-design-system";
+import { toast } from "@viglet/viglet-design-system";
 
 import { DialogDelete } from "@/components/dialog.delete";
 import { Badge } from "@/components/ui/badge";

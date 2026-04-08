@@ -1,1 +1,1 @@
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@openviglet/viglet-design-system";
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@viglet/viglet-design-system";
