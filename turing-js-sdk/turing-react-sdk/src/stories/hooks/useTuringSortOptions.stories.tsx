@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { sampleSortOptions } from "../__mocks__/fixtures";
 import type { TurSortOption } from "../../core/types";

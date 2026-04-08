@@ -72,3 +72,4 @@ turing-examples/*/export/*.zip
 # ── Python cache ────────────────────────────────────────────
 __pycache__/
 /turing-react/.mf
+turing-js-sdk/turing-react-sdk/debug-storybook.log
