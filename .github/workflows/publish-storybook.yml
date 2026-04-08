@@ -29,7 +29,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: turing-js-sdk/turing-react-sdk
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Build Storybook
         working-directory: turing-js-sdk/turing-react-sdk
