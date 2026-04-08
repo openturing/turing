@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { fetchChat, fetchSearch, parseHrefToParams, type SearchParams } from "../core/api";
 import { useTuringContext } from "../core/use-turing-context";
+import { resolveDocuments, resolveGroups } from "../core/resolve";
 import type {
   ResolvedDocument,
   ResolvedGroup,
@@ -38,46 +39,13 @@ export interface UseTuringSearchReturn {
   goToPage: (page: number) => Promise<void>;
 }
 
-function resolveDocuments(response: TurSearchResponse): ResolvedDocument[] {
-  const df = response.queryContext.defaultFields;
-  const docs = response.results?.document ??
-    response.groups?.flatMap((g) => g.results?.document ?? []) ?? [];
-  return docs.map((doc) => ({
-    url: doc.fields[df.url] ?? "",
-    title: doc.fields[df.title] ?? "",
-    description: doc.fields[df.description] ?? "",
-    date: doc.fields[df.date] ?? "",
-    image: doc.fields[df.image] ?? "",
-    text: doc.fields[df.text] ?? "",
-    raw: doc,
-  }));
-}
-
-function resolveGroups(response: TurSearchResponse): ResolvedGroup[] {
-  if (!response.groups) return [];
-  const df = response.queryContext.defaultFields;
-  return response.groups.map((g) => ({
-    name: g.name,
-    count: g.count,
-    page: g.page,
-    pageCount: g.pageCount,
-    limit: g.limit,
-    pagination: g.pagination ?? [],
-    documents: (g.results?.document ?? []).map((doc) => ({
-      url: doc.fields[df.url] ?? "",
-      title: doc.fields[df.title] ?? "",
-      description: doc.fields[df.description] ?? "",
-      date: doc.fields[df.date] ?? "",
-      image: doc.fields[df.image] ?? "",
-      text: doc.fields[df.text] ?? "",
-      raw: doc,
-    })),
-  }));
-}
-
 /**
- * Core search hook. Manages the full search lifecycle: query, results,
+ * Core search hook for manual (non-URL-synced) mode.
+ * Manages the full search lifecycle: query, results,
  * pagination, facet navigation, locale/sort changes, and AI chat.
+ *
+ * For URL-synced mode, use `<TuringProvider urlSync={...}>` and
+ * the derived hooks (useTuringFacets, useTuringPagination, etc.) instead.
  *
  * @example
  * ```tsx
