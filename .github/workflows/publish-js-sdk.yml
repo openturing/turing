@@ -1,18 +1,16 @@
-name: Publish JavaScript SDKs
+name: Publish turing-react-sdk
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
 
     steps:
       - uses: actions/checkout@v5
@@ -23,40 +21,13 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          registry-url: "https://npm.pkg.github.com"
+          registry-url: "https://registry.npmjs.org"
           scope: "@viglet"
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      # ── Create .npmrc in each package dir to force GitHub Packages ──
-      - name: Configure npm registry
-        run: |
-          for dir in turing-js-sdk/js-sdk-lib turing-js-sdk/turing-react-sdk; do
-            echo "@openviglet:registry=https://npm.pkg.github.com" > "$dir/.npmrc"
-            echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> "$dir/.npmrc"
-          done
-
-      # ── Rewrite package names to match GitHub owner scope ──
-      - name: Set GitHub Packages scope
-        run: |
-          sed -i 's/"name": "@viglet\/turing-sdk"/"name": "@openviglet\/turing-sdk"/' turing-js-sdk/js-sdk-lib/package.json
-          sed -i 's/"name": "@viglet\/turing-react-sdk"/"name": "@openviglet\/turing-react-sdk"/' turing-js-sdk/turing-react-sdk/package.json
-
-      # ── Build, Bump & Publish turing-sdk (JS SDK) ──
-      - name: Build turing-sdk
-        working-directory: turing-js-sdk/js-sdk-lib
-        run: npm run build
-
-      - name: Bump & Publish turing-sdk
-        working-directory: turing-js-sdk/js-sdk-lib
-        run: |
-          npm version patch --no-git-tag-version
-          npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ── Build, Bump & Publish turing-react-sdk ──
       - name: Build turing-react-sdk
@@ -67,15 +38,13 @@ jobs:
         working-directory: turing-js-sdk/turing-react-sdk
         run: |
           npm version patch --no-git-tag-version
-          npm publish
+          npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # ── Commit version bumps back to branch (restore original scope first) ──
-      - name: Commit version bumps
+      # ── Commit version bump back to branch ──
+      - name: Commit version bump
         run: |
-          sed -i 's/"name": "@openviglet\/turing-sdk"/"name": "@viglet\/turing-sdk"/' turing-js-sdk/js-sdk-lib/package.json
-          sed -i 's/"name": "@openviglet\/turing-react-sdk"/"name": "@viglet\/turing-react-sdk"/' turing-js-sdk/turing-react-sdk/package.json
-          git add turing-js-sdk/js-sdk-lib/package.json turing-js-sdk/turing-react-sdk/package.json
-          git commit -m "chore: bump JS SDK versions [skip ci]" || echo "No changes to commit"
+          git add turing-js-sdk/turing-react-sdk/package.json
+          git commit -m "chore: bump turing-react-sdk version [skip ci]" || echo "No changes to commit"
           git push
