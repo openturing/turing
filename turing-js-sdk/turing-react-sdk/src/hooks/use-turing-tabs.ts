@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSearchStore } from "../core/use-search-store";
 import type { ResolvedDocument, ResolvedGroup } from "../core/types";
 
@@ -16,11 +16,17 @@ export interface TabDefinition {
   /**
    * Group field name (e.g. "templateName"). When set, results are grouped
    * and `rows` limits per group. Typically used for the "All" tab.
+   *
+   * This is an **implicit param** — it is sent to the API but does NOT
+   * appear in the URL, keeping the URL clean.
    */
   group?: string | null;
-  /** Results per page/group. Defaults to server default when not set. */
+  /** Results per page/group (implicit). Defaults to server default when not set. */
   rows?: number;
-  /** Default sort for this tab (e.g. "title_str:asc") */
+  /**
+   * Default sort for this tab (implicit).
+   * Applied when this tab becomes active. Explicit URL sort overrides this.
+   */
   defaultSort?: string;
 }
 
@@ -69,13 +75,18 @@ export interface UseTuringTabsReturn {
  * Manages tab-based search navigation. Handles all the complexity of
  * switching fq[] filters, group params, rows, and sort when tabs change.
  *
+ * **Implicit params**: `group`, `rows`, and `defaultSort` from the active
+ * tab definition are registered as implicit params — they are sent to the
+ * API but do NOT appear in the URL. This keeps URLs clean:
+ * - Before: `?_setlocale=pt&group=templateName&rows=3`
+ * - After:  `?_setlocale=pt`
+ *
  * @example
  * ```tsx
  * const TABS = [
  *   { label: "All",     group: "templateName", rows: 3 },
  *   { label: "Courses", filter: "templateName:cursos" },
  *   { label: "News",    filter: "templateName:noticias" },
- *   { label: "Events",  filter: "templateName:evento" },
  *   { label: "Faculty", filter: "templateName:detalhe-de-docente", defaultSort: "title_str:asc" },
  * ];
  *
@@ -114,7 +125,7 @@ export interface UseTuringTabsReturn {
 export function useTuringTabs(options: UseTuringTabsOptions): UseTuringTabsReturn {
   const { attribute, items } = options;
   const store = useSearchStore();
-  const { params, updateParams, documents, groups } = store;
+  const { params, updateParams, documents, groups, setImplicitParams } = store;
 
   // Determine active tab from current fq[]
   const activeIndex = useMemo(() => {
@@ -136,6 +147,34 @@ export function useTuringTabs(options: UseTuringTabsOptions): UseTuringTabsRetur
     return 0;
   }, [params.fq, attribute, items]);
 
+  // Register implicit params for the active tab
+  useEffect(() => {
+    const activeDef = items[activeIndex];
+    if (!activeDef) return;
+
+    const implicit: Record<string, string | undefined> = {};
+
+    if (activeDef.group) {
+      implicit.group = activeDef.group;
+      implicit.rows = activeDef.rows ? String(activeDef.rows) : "3";
+    }
+
+    if (activeDef.defaultSort) {
+      implicit.sort = activeDef.defaultSort;
+    }
+
+    if (Object.keys(implicit).length > 0) {
+      setImplicitParams("tabs", implicit);
+    } else {
+      setImplicitParams("tabs", null);
+    }
+  }, [activeIndex, items, setImplicitParams]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => setImplicitParams("tabs", null);
+  }, [setImplicitParams]);
+
   const selectTab = useCallback(
     (tabIndex: number) => {
       const tab = items[tabIndex];
@@ -143,31 +182,22 @@ export function useTuringTabs(options: UseTuringTabsOptions): UseTuringTabsRetur
       const prefix = `${attribute}:`;
 
       // Keep all fq[] entries that are NOT tab-related
-      const otherFq = currentFq.filter((f) => !f.startsWith(prefix));
+      const otherFq = currentFq.filter(
+        (f) => !f.startsWith(prefix) && !f.startsWith("alphabet:"),
+      );
 
       // Build new fq[]
       const nextFq = tab.filter ? [...otherFq, tab.filter] : otherFq;
 
-      const next: Record<string, unknown> = {
+      // Only update explicit URL params: fq and p
+      // group/rows/sort are handled implicitly via the effect above
+      updateParams({
         fq: nextFq.length > 0 ? nextFq : undefined,
         p: "1",
-      };
-
-      // Group/rows
-      if (tab.group) {
-        next.group = tab.group;
-        next.rows = tab.rows ? String(tab.rows) : "3";
-      } else {
-        next.group = undefined;
-        next.rows = undefined;
-      }
-
-      // Default sort for this tab
-      if (tab.defaultSort) {
-        next.sort = tab.defaultSort;
-      }
-
-      updateParams(next as Partial<typeof params>);
+        // Clear explicit group/rows from URL (now implicit)
+        group: undefined,
+        rows: undefined,
+      });
     },
     [items, params.fq, attribute, updateParams],
   );

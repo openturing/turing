@@ -25,7 +25,10 @@ export interface SearchStoreValue {
   groups: ResolvedGroup[];
   /** Error message */
   error: string | null;
-  /** Current search params */
+  /**
+   * Effective search params (explicit URL + implicit merged).
+   * This is what gets sent to the API.
+   */
   params: SearchParams;
 
   /** Current text input value (for controlled inputs) */
@@ -44,10 +47,20 @@ export interface SearchStoreValue {
   showAll: () => void;
 
   /**
-   * Update multiple search params at once and trigger a new search.
-   * Merges the partial into current params. Set a key to `undefined` to remove it.
+   * Update multiple **explicit** (URL) params and trigger a new search.
+   * Merges the partial into current URL params. Set a key to `undefined` to remove it.
    */
   updateParams: (partial: Partial<SearchParams>) => void;
+
+  /**
+   * Register implicit params under a unique key. Implicit params are merged
+   * into every API request but do NOT appear in the URL.
+   * Hooks like useTuringTabs use this to inject group/rows/sort automatically.
+   *
+   * @param key   Unique identifier (e.g. "tabs", "sort-defaults")
+   * @param params  Partial search params to merge. Pass `null` to clear.
+   */
+  setImplicitParams: (key: string, params: Partial<SearchParams> | null) => void;
 }
 
 export const SearchStoreContext = createContext<SearchStoreValue | null>(null);

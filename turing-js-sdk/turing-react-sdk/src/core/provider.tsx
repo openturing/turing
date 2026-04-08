@@ -44,6 +44,31 @@ function searchParamsToUrl(params: SearchParams): string {
   return url.toString().replaceAll("%5B%5D", "[]");
 }
 
+/**
+ * Merges explicit (URL) params with all registered implicit params.
+ * Explicit values always win — implicit only fills gaps.
+ */
+function mergeParams(
+  explicit: SearchParams,
+  implicitMap: Map<string, Partial<SearchParams>>,
+): SearchParams {
+  if (implicitMap.size === 0) return explicit;
+
+  // Start with explicit, apply implicit only for missing keys
+  const merged: SearchParams = { ...explicit };
+
+  const mergedAny = merged as unknown as Record<string, unknown>;
+  for (const imp of implicitMap.values()) {
+    for (const [k, v] of Object.entries(imp)) {
+      if (v !== undefined && mergedAny[k] === undefined) {
+        mergedAny[k] = v;
+      }
+    }
+  }
+
+  return merged;
+}
+
 // ── Props ──
 
 interface UrlSyncOptions {
@@ -69,6 +94,11 @@ interface TuringProviderProps {
  * to all hooks. When `urlSync` is provided, it automatically manages
  * URL synchronization and search execution.
  *
+ * **Implicit params**: Hooks can register params (via `setImplicitParams`)
+ * that are merged into every API request without polluting the URL.
+ * For example, `useTuringTabs` registers `group` and `rows` for the
+ * active tab, keeping the URL clean.
+ *
  * @example
  * ```tsx
  * // With URL sync (recommended)
@@ -83,11 +113,6 @@ interface TuringProviderProps {
  *     </TuringProvider>
  *   );
  * }
- *
- * // Without URL sync (manual mode)
- * <TuringProvider config={{ site: "my-site" }}>
- *   <App />
- * </TuringProvider>
  * ```
  *
  * @since 2026.3.0
@@ -134,12 +159,42 @@ function UrlSyncSearchStore({
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState(searchParams.get("q") || "");
 
-  const params = urlToSearchParams(searchParams, {
+  // ── Implicit params registry ──
+  const [implicitMap, setImplicitMap] = useState<Map<string, Partial<SearchParams>>>(
+    () => new Map(),
+  );
+
+  const setImplicitParams = useCallback(
+    (key: string, params: Partial<SearchParams> | null) => {
+      setImplicitMap((prev) => {
+        const next = new Map(prev);
+        if (params === null) {
+          next.delete(key);
+        } else {
+          next.set(key, params);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  // Explicit params from URL
+  const explicitParams = urlToSearchParams(searchParams, {
     locale: config.locale,
     sort: config.sort,
   });
 
-  // Execute search whenever URL changes
+  // Effective params = explicit + implicit (explicit wins)
+  const params = useMemo(
+    () => mergeParams(explicitParams, implicitMap),
+    [explicitParams, implicitMap],
+  );
+
+  // Serialize for effect dependency (stable string comparison)
+  const paramsKey = useMemo(() => JSON.stringify(params), [params]);
+
+  // Execute search whenever effective params change
   useEffect(() => {
     const requestId = ++abortRef.current;
     setStatus("loading");
@@ -167,9 +222,9 @@ function UrlSyncSearchStore({
         setError(err instanceof Error ? err.message : "Search failed");
         setStatus("error");
       });
-  }, [searchParams.toString()]);
+  }, [paramsKey]);
 
-  // ── URL mutation helpers ──
+  // ── URL mutation helpers (operate on explicit params only) ──
 
   const setUrl = useCallback(
     (next: SearchParams) => setSearchParams(searchParamsToUrl(next)),
@@ -178,7 +233,7 @@ function UrlSyncSearchStore({
 
   const updateParams = useCallback(
     (partial: Partial<SearchParams>) => {
-      const next = { ...params };
+      const next = { ...explicitParams };
       for (const [key, value] of Object.entries(partial)) {
         if (value === undefined) {
           delete (next as Record<string, unknown>)[key];
@@ -188,7 +243,7 @@ function UrlSyncSearchStore({
       }
       setUrl(next);
     },
-    [params, setUrl],
+    [explicitParams, setUrl],
   );
 
   const navigate = useCallback(
@@ -231,9 +286,11 @@ function UrlSyncSearchStore({
     setSort,
     showAll,
     updateParams,
+    setImplicitParams,
   }), [
     status, data, chatData, documents, groups, error, params,
-    inputValue, submitSearch, navigate, setLocale, setSort, showAll, updateParams,
+    inputValue, submitSearch, navigate, setLocale, setSort, showAll,
+    updateParams, setImplicitParams,
   ]);
 
   return (
