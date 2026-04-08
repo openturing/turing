@@ -48,6 +48,27 @@ const ALL_TERMS = [
   "vinyl jazz", "vinyl rock", "vinyl pop",
 ];
 
+/**
+ * Safe text highlighter — splits text by the query match
+ * and wraps matches in <strong> without using dangerouslySetInnerHTML.
+ */
+function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
+  if (!highlight || highlight.length < 2) return <span>{text}</span>;
+  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return (
+    <span>
+      {parts.map((part, i) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <strong key={i}>{part}</strong>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </span>
+  );
+}
+
 function AutoCompleteDemo({
   debounceMs,
   maxSuggestions,
@@ -170,14 +191,7 @@ function AutoCompleteDemo({
                 onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <span style={{ color: "#94a3b8", fontSize: "12px" }}>🔍</span>
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: term.replace(
-                      new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi"),
-                      "<strong>$1</strong>",
-                    ),
-                  }}
-                />
+                <HighlightedText text={term} highlight={query} />
               </button>
             ))}
           </div>

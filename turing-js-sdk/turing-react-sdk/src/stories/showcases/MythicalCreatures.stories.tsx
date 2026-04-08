@@ -274,7 +274,7 @@ function BestiaryPage() {
               }}
             />
             <button
-              onClick={() => {}}
+              onClick={() => setQuery("")}
               style={{
                 padding: "6px 14px",
                 borderRadius: "8px",
