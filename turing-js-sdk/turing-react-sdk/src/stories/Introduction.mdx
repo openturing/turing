@@ -1,0 +1,107 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Introduction" />
+
+# 🔍 Turing React SDK — Storybook
+
+Welcome to the **@viglet/turing-react-sdk** component library! This Storybook provides
+interactive documentation and live examples for every hook and UI component in the SDK.
+
+---
+
+## What is Turing React SDK?
+
+The Turing React SDK provides **headless hooks** and **unstyled UI components** for building
+custom search experiences on top of the **Viglet Turing ES** Semantic Navigation API.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────┐
+│             Your React App              │
+│  ┌───────────────────────────────────┐  │
+│  │         TuringProvider            │  │
+│  │  (config, URL sync, search state) │  │
+│  │  ┌─────────┐   ┌──────────────┐  │  │
+│  │  │  Hooks   │   │ UI Components│  │  │
+│  │  │ useTuring│   │ SearchBar    │  │  │
+│  │  │ Search   │   │ ResultList   │  │  │
+│  │  │ Facets   │   │ Pagination   │  │  │
+│  │  │ Paginate │   │ SearchField  │  │  │
+│  │  └─────────┘   └──────────────┘  │  │
+│  └───────────────────────────────────┘  │
+│                    │                     │
+│            Turing REST API               │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## 📚 Storybook Sections
+
+### UI Components
+- **TuringSearchBar** — Simple search bar with customizable input/button render props
+- **TuringSearchField** — Advanced compound component with autocomplete, history, and dropdown
+- **TuringResultList** — Renders search results via slot/render-prop pattern
+- **TuringPagination** — Renders Turing pagination items with navigation actions
+
+### Hooks (Interactive Demos)
+- **useTuringSearch** — Core search hook for programmatic (non-URL) mode
+- **useTuringFacets** — Facet data with toggle/clear actions
+- **useTuringPagination** — Pagination data with navigation helpers
+- **useTuringDocument** — Typed field access for custom document fields
+- **useTuringAutoComplete** — Autocomplete with debouncing
+- **useTuringTabs** — Tab-based search navigation
+- **useTuringSortOptions** — Available sort options for a site
+- **useTuringSearchHistory** — Persisted search history (IndexedDB)
+
+### Showcases (Inspired by turing-examples)
+- **🐉 Mythical Creatures** — Fantasy bestiary with element badges and danger bars
+- **🚀 Space Missions** — Space exploration with agency/outcome facets and HUD cards
+- **🎵 Vinyl Records** — Record store with album art, star ratings, and condition grading
+
+---
+
+## Quick Start
+
+```tsx
+import { TuringProvider, useTuringSearch } from "@viglet/turing-react-sdk";
+
+function App() {
+  return (
+    <TuringProvider config={{ site: "my-site", locale: "en_US" }}>
+      <SearchPage />
+    </TuringProvider>
+  );
+}
+
+function SearchPage() {
+  const { documents, searchQuery, status } = useTuringSearch();
+
+  return (
+    <div>
+      <input
+        placeholder="Search..."
+        onKeyDown={(e) => {
+          if (e.key === "Enter") searchQuery(e.currentTarget.value);
+        }}
+      />
+      {status === "loading" && <p>Loading...</p>}
+      {documents.map((doc) => (
+        <div key={doc.url}>
+          <h3>{doc.title}</h3>
+          <p>{doc.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## Links
+
+- [GitHub Repository](https://github.com/openviglet/turing)
+- [npm Package](https://github.com/openviglet/turing/packages)
+- [Viglet Turing Documentation](https://docs.viglet.org/turing/)
