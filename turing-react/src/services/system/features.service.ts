@@ -4,6 +4,7 @@ export interface FeaturesResponse {
   storageEnabled: boolean
   ragEnabled: boolean
   gitServerEnabled: boolean
+  marketplaceEnabled: boolean
 }
 
 export class TurFeaturesService {

@@ -18,5 +18,6 @@ public class TurConfigProperties {
 	private TurSolrProperty solr;
 	private TurStorageProperty storage;
 	private TurGitProperty git;
+	private TurMarketplaceProperty marketplace;
 
 }

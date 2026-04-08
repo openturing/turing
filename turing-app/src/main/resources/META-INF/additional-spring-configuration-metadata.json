@@ -66,6 +66,16 @@
       "description": "Name of the MinIO bucket used to store application assets (e.g., 'turing-assets')."
     },
     {
+      "name": "turing.marketplace.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable the Marketplace feature, which allows browsing and importing pre-built packages from an external catalog."
+    },
+    {
+      "name": "turing.marketplace.url",
+      "type": "java.lang.String",
+      "description": "URL of the external marketplace catalog JSON. When the external URL is unreachable, falls back to the bundled sample catalog."
+    },
+    {
       "name": "turing.mongodb.enabled",
       "type": "java.lang.Boolean",
       "description": "Enable or disable MongoDB integration for logging and data persistence."

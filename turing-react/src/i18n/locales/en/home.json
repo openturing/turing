@@ -124,6 +124,10 @@
       "git": {
         "title": "Git",
         "description": "Create and manage Git repositories hosted by Turing."
+      },
+      "marketplace": {
+        "title": "Marketplace",
+        "description": "Browse and install pre-built search packages, templates and example sites."
       }
     }
   }

@@ -18,6 +18,7 @@ import {
   IntegrationRoutes,
   LLMRoutes,
   LoggingRoutes,
+  MarketplaceRoutes,
   McpServerRoutes,
   SERoutes,
   SNRoutes,
@@ -59,6 +60,7 @@ function App() {
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}
+                {MarketplaceRoutes}
                 {GraphqlRoutes}
                 {AssetRoutes}
                 {GitRoutes}

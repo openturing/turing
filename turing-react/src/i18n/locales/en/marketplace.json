@@ -1,0 +1,22 @@
+{
+  "marketplace": {
+    "byAuthor": "by {{author}}",
+    "content": "Content",
+    "template": "Template",
+    "install": "Install",
+    "installing": "Installing...",
+    "emptyTitle": "No packages available",
+    "emptyDescription": "The marketplace catalog is empty or could not be loaded.",
+    "importDialogTitle": "Install {{name}}",
+    "importDialogDescription": "Choose what to include when importing this package.",
+    "configAlwaysIncluded": "Site configuration is always included.",
+    "includeContent": "Include content",
+    "includeContentDescription": "Import sample documents and index them into the search engine.",
+    "includeTemplate": "Include template",
+    "includeTemplateDescription": "Deploy the SPA search template to Pages.",
+    "importSuccess": "{{name}} installed successfully!",
+    "importFailed": "Failed to install {{name}}. Please try again.",
+    "importCompleted": "Import completed!",
+    "importError": "Import failed. Check the server logs for details."
+  }
+}

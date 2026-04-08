@@ -1,0 +1,22 @@
+{
+  "marketplace": {
+    "byAuthor": "por {{author}}",
+    "content": "Conteúdo",
+    "template": "Template",
+    "install": "Instalar",
+    "installing": "Instalando...",
+    "emptyTitle": "Nenhum pacote disponível",
+    "emptyDescription": "O catálogo do marketplace está vazio ou não pôde ser carregado.",
+    "importDialogTitle": "Instalar {{name}}",
+    "importDialogDescription": "Escolha o que incluir ao importar este pacote.",
+    "configAlwaysIncluded": "A configuração do site é sempre incluída.",
+    "includeContent": "Incluir conteúdo",
+    "includeContentDescription": "Importar documentos de exemplo e indexá-los no mecanismo de busca.",
+    "includeTemplate": "Incluir template",
+    "includeTemplateDescription": "Implantar o template de busca SPA nas Páginas.",
+    "importSuccess": "{{name}} instalado com sucesso!",
+    "importFailed": "Falha ao instalar {{name}}. Tente novamente.",
+    "importCompleted": "Importação concluída!",
+    "importError": "Falha na importação. Verifique os logs do servidor para mais detalhes."
+  }
+}

@@ -11,6 +11,7 @@ export { GraphqlRoutes } from "./graphql.routes";
 export { IntegrationRoutes } from "./integration.routes";
 export { LLMRoutes } from "./llm.routes";
 export { LoggingRoutes } from "./logging.routes";
+export { MarketplaceRoutes } from "./marketplace.routes";
 export { McpServerRoutes } from "./mcp-server.routes";
 export { SERoutes } from "./se.routes";
 export { SNRoutes } from "./sn.routes";

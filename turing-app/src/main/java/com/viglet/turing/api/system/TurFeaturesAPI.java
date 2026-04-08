@@ -1,5 +1,6 @@
 package com.viglet.turing.api.system;
 
+import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.git.TurGitServerService;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -22,21 +23,27 @@ public class TurFeaturesAPI {
     private final TurStorageService storageService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurGitServerService gitServerService;
+    private final TurConfigProperties configProperties;
 
     public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService,
-                          TurGitServerService gitServerService) {
+                          TurGitServerService gitServerService, TurConfigProperties configProperties) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.gitServerService = gitServerService;
+        this.configProperties = configProperties;
     }
 
-    public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled) {}
+    public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled,
+                                   boolean marketplaceEnabled) {}
 
     @GetMapping
     public FeaturesResponse getFeatures() {
+        var marketplace = configProperties.getMarketplace();
+        boolean marketplaceEnabled = marketplace != null && marketplace.isEnabled();
         return new FeaturesResponse(
                 storageService.isEnabled(),
                 globalSettingsService.isRagEnabled(),
-                gitServerService.isEnabled());
+                gitServerService.isEnabled(),
+                marketplaceEnabled);
     }
 }

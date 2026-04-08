@@ -1,0 +1,80 @@
+[
+  {
+    "id": "mythical-creatures",
+    "title": "Mythical Creatures",
+    "description": "A fantasy bestiary search site featuring dragons, griffins, phoenixes and more. Includes a complete SN site with faceted search, content documents and a React SPA template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["fantasy", "bestiary", "search", "spa"],
+    "icon": "dragon",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/mythical-creatures.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "space-missions",
+    "title": "Space Missions",
+    "description": "Explore historic and fictional space missions with semantic search. Features mission data, crew information and launch details with a beautiful search interface.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["space", "science", "missions", "spa"],
+    "icon": "rocket",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/space-missions.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "vinyl-records",
+    "title": "Vinyl Records",
+    "description": "A music catalog search site for vinyl records. Browse albums by artist, genre, year and label. Complete with content index and a retro-styled React search template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["music", "vinyl", "catalog", "spa"],
+    "icon": "vinyl",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/vinyl-records.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "tech-blog",
+    "title": "Tech Blog",
+    "description": "A technology blog search site with articles about AI, cloud computing, DevOps and software engineering. Demonstrates full-text search with faceted navigation.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["blog", "technology", "articles", "search"],
+    "icon": "article",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/tech-blog.zip",
+    "hasContent": true,
+    "hasTemplate": false
+  },
+  {
+    "id": "movie-database",
+    "title": "Movie Database",
+    "description": "Search through a curated movie database with ratings, cast, directors and genres. Includes semantic search and AI-powered recommendations.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["movies", "entertainment", "database", "ai"],
+    "icon": "movie",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/movie-database.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "recipe-finder",
+    "title": "Recipe Finder",
+    "description": "A culinary search engine with recipes from around the world. Filter by cuisine, ingredients, dietary restrictions and cooking time.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "example",
+    "tags": ["recipes", "food", "cooking", "search"],
+    "icon": "chef-hat",
+    "downloadUrl": "https://github.com/openviglet/turing/releases/download/examples/recipe-finder.zip",
+    "hasContent": true,
+    "hasTemplate": false
+  }
+]
