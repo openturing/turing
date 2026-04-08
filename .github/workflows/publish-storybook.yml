@@ -1,0 +1,37 @@
+name: Publish Storybook
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: turing-js-sdk/turing-react-sdk
+        run: npm ci --no-audit --no-fund
+
+      - name: Build Storybook
+        working-directory: turing-js-sdk/turing-react-sdk
+        run: npx storybook build --output-dir storybook-static
+        env:
+          STORYBOOK_BASE: /react-sdk/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: turing-js-sdk/turing-react-sdk/storybook-static
+          destination_dir: react-sdk
+          keep_files: true
