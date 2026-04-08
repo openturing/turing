@@ -11,7 +11,7 @@ import {
   useTuringFacets,
   useTuringPagination,
   type ResolvedDocument,
-} from "@openviglet/turing-react-sdk";
+} from "@viglet/turing-react-sdk";
 import {
   IconChevronLeft,
   IconChevronRight,

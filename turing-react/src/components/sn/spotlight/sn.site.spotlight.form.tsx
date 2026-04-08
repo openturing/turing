@@ -36,7 +36,7 @@ import type { TurSNSiteSpotlightTerm } from "@/models/sn/sn-site-spotlight-term.
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
-import { fetchSearch, type TurDocument, type TurSearchResponse } from "@openviglet/turing-react-sdk"
+import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
 import { toast } from "@openviglet/viglet-design-system"
 import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
 import { PlusCircle, Search, Trash2 } from "lucide-react"

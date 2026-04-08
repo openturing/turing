@@ -1,17 +1,12 @@
-# @openviglet/turing-react-sdk
+# @viglet/turing-react-sdk
 
 React SDK for **Viglet Turing ES** — headless hooks and UI components for building custom search experiences on top of the Turing Semantic Navigation API.
 
 ## Installation
 
 ```bash
-npm install @openviglet/turing-react-sdk
+npm install @viglet/turing-react-sdk
 ```
-
-> **GitHub Packages registry:** add an `.npmrc` to your project root:
-> ```
-> @openviglet:registry=https://npm.pkg.github.com
-> ```
 
 ### Peer Dependencies
 
@@ -28,7 +23,7 @@ npm install react react-dom axios
 Wrap your app with `TuringProvider` and use hooks to search:
 
 ```tsx
-import { TuringProvider, useTuringSearch } from "@openviglet/turing-react-sdk";
+import { TuringProvider, useTuringSearch } from "@viglet/turing-react-sdk";
 
 function App() {
   return (
@@ -222,7 +217,7 @@ const {
 
 ```tsx
 import { useSearchParams } from "react-router-dom";
-import { TuringProvider, useTuringUrlSearch } from "@openviglet/turing-react-sdk";
+import { TuringProvider, useTuringUrlSearch } from "@viglet/turing-react-sdk";
 
 function SearchContent() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -336,7 +331,7 @@ Pre-built unstyled components for common search patterns. Use render props to cu
 #### TuringSearchBar
 
 ```tsx
-import { TuringSearchBar } from "@openviglet/turing-react-sdk";
+import { TuringSearchBar } from "@viglet/turing-react-sdk";
 
 <TuringSearchBar
   onSearch={(query) => turing.searchQuery(query)}
@@ -349,7 +344,7 @@ import { TuringSearchBar } from "@openviglet/turing-react-sdk";
 #### TuringResultList
 
 ```tsx
-import { TuringResultList } from "@openviglet/turing-react-sdk";
+import { TuringResultList } from "@viglet/turing-react-sdk";
 
 <TuringResultList
   documents={turing.documents}
@@ -365,7 +360,7 @@ import { TuringResultList } from "@openviglet/turing-react-sdk";
 #### TuringPagination
 
 ```tsx
-import { TuringPagination } from "@openviglet/turing-react-sdk";
+import { TuringPagination } from "@viglet/turing-react-sdk";
 
 <TuringPagination
   items={turing.data?.pagination ?? []}
@@ -385,7 +380,7 @@ import { TuringPagination } from "@openviglet/turing-react-sdk";
 For advanced use cases, the SDK exports direct API functions:
 
 ```tsx
-import { fetchSearch, fetchChat, fetchAutoComplete, fetchSortOptions } from "@openviglet/turing-react-sdk";
+import { fetchSearch, fetchChat, fetchAutoComplete, fetchSortOptions } from "@viglet/turing-react-sdk";
 
 // Search
 const results = await fetchSearch("my-site", { q: "dragon", _setlocale: "en_US" });
@@ -434,7 +429,7 @@ import type {
   SearchStatus,
   SearchParams,
   ResolvedDocument,
-} from "@openviglet/turing-react-sdk";
+} from "@viglet/turing-react-sdk";
 ```
 
 #### ResolvedDocument

@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSearchStore, useTuringFacets } from "@openviglet/turing-react-sdk";
+import { useSearchStore, useTuringFacets } from "@viglet/turing-react-sdk";
 import { IconFilter, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 

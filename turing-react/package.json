@@ -42,7 +42,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-table": "^8.21.3",
-    "@openviglet/turing-react-sdk": "file:../turing-js-sdk/turing-react-sdk",
+    "@viglet/turing-react-sdk": "2026.2.6",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

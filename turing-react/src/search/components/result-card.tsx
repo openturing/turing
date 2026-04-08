@@ -1,6 +1,6 @@
 import { BadgeColorful } from "@/components/badge-colorful";
 import { Button } from "@/components/ui/button";
-import type { ResolvedDocument, TurDocument } from "@openviglet/turing-react-sdk";
+import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
 import { IconBraces, IconCalendar, IconExternalLink } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";

@@ -1,4 +1,4 @@
-import { TuringProvider } from "@openviglet/turing-react-sdk";
+import { TuringProvider } from "@viglet/turing-react-sdk";
 import { useParams, useSearchParams } from "react-router-dom";
 import { SearchContent } from "../components/search-content";
 

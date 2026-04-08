@@ -1,4 +1,4 @@
-import { useTuringPagination } from "@openviglet/turing-react-sdk";
+import { useTuringPagination } from "@viglet/turing-react-sdk";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 

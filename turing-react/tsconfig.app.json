@@ -25,7 +25,7 @@
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@openviglet/turing-react-sdk": [
+      "@viglet/turing-react-sdk": [
         "../turing-js-sdk/turing-react-sdk/dist/index.d.ts"
       ]
     }
