@@ -4,11 +4,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}react-sdk/
 
     steps:
       - uses: actions/checkout@v5
@@ -28,10 +37,17 @@ jobs:
         env:
           STORYBOOK_BASE: /react-sdk/
 
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p _site/react-sdk
+          cp -r turing-js-sdk/turing-react-sdk/storybook-static/* _site/react-sdk/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: turing-js-sdk/turing-react-sdk/storybook-static
-          destination_dir: react-sdk
-          keep_files: true
+        id: deployment
+        uses: actions/deploy-pages@v4
