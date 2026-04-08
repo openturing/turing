@@ -1,4 +1,4 @@
-import type { TurSpellCheck } from "@viglet/turing-react-sdk";
+import type { TurSpellCheck } from "@openviglet/turing-react-sdk";
 import { IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 

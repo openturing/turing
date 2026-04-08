@@ -1,7 +1,5 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
-import { FormActions } from "../../ui/form-actions"
-import { SectionCard } from "../../ui/section-card"
 import {
     Dialog,
     DialogContent,
@@ -22,8 +20,8 @@ import {
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
-import { SmartDescription } from "@/components/ui/smart-description"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SmartDescription } from "@/components/ui/smart-description"
 import {
     Table,
     TableBody,
@@ -36,16 +34,18 @@ import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import type { TurSNSiteSpotlightDocument } from "@/models/sn/sn-site-spotlight-document.model"
 import type { TurSNSiteSpotlightTerm } from "@/models/sn/sn-site-spotlight-term.model"
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model"
-import { fetchSearch, type TurSearchResponse, type TurDocument } from "@viglet/turing-react-sdk"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
+import { fetchSearch, type TurDocument, type TurSearchResponse } from "@openviglet/turing-react-sdk"
+import { toast } from "@openviglet/viglet-design-system"
 import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
 import { PlusCircle, Search, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { toast } from "@openviglet/viglet-design-system"
+import { FormActions } from "../../ui/form-actions"
+import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
@@ -213,271 +213,271 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
 
         <Form {...form}>
             <form onSubmit={handleFormSubmit} className="space-y-4 py-8 px-6">
-                    {/* General Section */}
-                    <SectionCard variant="blue">
-                        <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")} />
-                        <SectionCard.Content>
-                            {/* Name */}
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                rules={{ required: t("forms.snSpotlight.nameRequired") }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t("forms.common.name")}</FormLabel>
-                                        <FormDescription>
-                                            {t("forms.snSpotlight.nameDesc")}
-                                        </FormDescription>
+                {/* General Section */}
+                <SectionCard variant="blue">
+                    <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")} />
+                    <SectionCard.Content>
+                        {/* Name */}
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            rules={{ required: t("forms.snSpotlight.nameRequired") }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t("forms.common.name")}</FormLabel>
+                                    <FormDescription>
+                                        {t("forms.snSpotlight.nameDesc")}
+                                    </FormDescription>
+                                    <FormControl>
+                                        <Input {...field} placeholder={t("forms.snSpotlight.namePlaceholder")} type="text" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {/* Description */}
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <SmartDescription
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder={t("forms.snSpotlight.descPlaceholder")}
+                                            maxLength={500}
+                                            title={form.watch("name")}
+                                            entityType="Spotlight"
+                                        >
+                                            <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
+                                            <SmartDescription.Description>
+                                                {t("forms.snSpotlight.descDesc")}
+                                            </SmartDescription.Description>
+                                        </SmartDescription>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {/* Language (50/50 row) */}
+                        <FormField
+                            control={form.control}
+                            name="language"
+                            rules={{ required: t("forms.snSpotlight.langRequired") }}
+                            render={({ field }) => (
+                                <FormItemTwoColumns>
+                                    <FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Label>{t("forms.snSpotlight.language")}</FormItemTwoColumns.Label>
+                                        <FormItemTwoColumns.Description>
+                                            {t("forms.snSpotlight.languageDesc")}
+                                        </FormItemTwoColumns.Description>
+                                    </FormItemTwoColumns.Left>
+                                    <FormItemTwoColumns.Right>
                                         <FormControl>
-                                            <Input {...field} placeholder={t("forms.snSpotlight.namePlaceholder")} type="text" />
+                                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder={t("forms.snSpotlight.chooseLang")} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {locales.map((locale) => (
+                                                        <SelectItem key={locale.id} value={locale.language}>
+                                                            {locale.language}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            {/* Description */}
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <SmartDescription
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                placeholder={t("forms.snSpotlight.descPlaceholder")}
-                                                maxLength={500}
-                                                title={form.watch("name")}
-                                                entityType="Spotlight"
-                                            >
-                                                <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
-                                                <SmartDescription.Description>
-                                                    {t("forms.snSpotlight.descDesc")}
-                                                </SmartDescription.Description>
-                                            </SmartDescription>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            {/* Language (50/50 row) */}
-                            <FormField
-                                control={form.control}
-                                name="language"
-                                rules={{ required: t("forms.snSpotlight.langRequired") }}
-                                render={({ field }) => (
-                                    <FormItemTwoColumns>
-                                        <FormItemTwoColumns.Left>
-                                            <FormItemTwoColumns.Label>{t("forms.snSpotlight.language")}</FormItemTwoColumns.Label>
-                                            <FormItemTwoColumns.Description>
-                                                {t("forms.snSpotlight.languageDesc")}
-                                            </FormItemTwoColumns.Description>
-                                        </FormItemTwoColumns.Left>
-                                        <FormItemTwoColumns.Right>
-                                            <FormControl>
-                                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder={t("forms.snSpotlight.chooseLang")} />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {locales.map((locale) => (
-                                                            <SelectItem key={locale.id} value={locale.language}>
-                                                                {locale.language}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
-                                        </FormItemTwoColumns.Right>
-                                        <FormMessage />
-                                    </FormItemTwoColumns>
-                                )}
-                            />
-                        </SectionCard.Content>
-                    </SectionCard>
+                                    </FormItemTwoColumns.Right>
+                                    <FormMessage />
+                                </FormItemTwoColumns>
+                            )}
+                        />
+                    </SectionCard.Content>
+                </SectionCard>
 
-                    {/* Terms Section */}
-                    <SectionCard variant="violet">
-                        <SectionCard.Header icon={IconTags} title={t("forms.snSpotlight.triggerTerms")} description={t("forms.snSpotlight.triggerTermsDesc")} />
-                        <SectionCard.Content>
-                            <div>
-                                <div className="mb-2 font-medium">{t("forms.snSpotlight.whenSearched")}</div>
-                                <div className="text-sm text-muted-foreground mb-4">
-                                    {t("forms.snSpotlight.addKeywords")}
-                                </div>
-                                <div className="space-y-2">
-                                    {terms.map((term, index) => (
-                                        <div key={term.id || `term-${index}`} className="flex items-center gap-1.5">
+                {/* Terms Section */}
+                <SectionCard variant="violet">
+                    <SectionCard.Header icon={IconTags} title={t("forms.snSpotlight.triggerTerms")} description={t("forms.snSpotlight.triggerTermsDesc")} />
+                    <SectionCard.Content>
+                        <div>
+                            <div className="mb-2 font-medium">{t("forms.snSpotlight.whenSearched")}</div>
+                            <div className="text-sm text-muted-foreground mb-4">
+                                {t("forms.snSpotlight.addKeywords")}
+                            </div>
+                            <div className="space-y-2">
+                                {terms.map((term, index) => (
+                                    <div key={term.id || `term-${index}`} className="flex items-center gap-1.5">
+                                        <Input
+                                            value={term.name}
+                                            onChange={(e) => updateTermName(index, e.target.value)}
+                                            placeholder={t("forms.snSpotlight.typeSearchTerm")}
+                                            className="grow"
+                                        />
+                                        <GradientButton
+                                            variant="ghost"
+                                            size="icon"
+                                            type="button"
+                                            onClick={() => removeTerm(index)}
+                                            aria-label="Remove term"
+                                        >
+                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                        </GradientButton>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-4">
+                                <GradientButton variant="outline" type="button" onClick={addTerm}>
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    {t("forms.snSpotlight.addTerm")}
+                                </GradientButton>
+                            </div>
+                            {termsError && (
+                                <p className="text-sm font-medium text-destructive mt-2">{termsError}</p>
+                            )}
+                        </div>
+                    </SectionCard.Content>
+                </SectionCard>
+
+                {/* Documents Section */}
+                <SectionCard variant="emerald">
+                    <SectionCard.Header icon={IconFileText} title={t("forms.snSpotlight.documents")} description={t("forms.snSpotlight.documentsDesc")} />
+                    <SectionCard.Content>
+                        <div>
+                            <div className="mb-2 font-medium">{t("forms.snSpotlight.showDocuments")}</div>
+                            <div className="text-sm text-muted-foreground mb-4">
+                                {t("forms.snSpotlight.chooseDocuments")}
+                            </div>
+                            <div className="mb-4">
+                                <Dialog open={searchDialogOpen} onOpenChange={(open) => {
+                                    setSearchDialogOpen(open);
+                                    if (!open) {
+                                        setSearchQuery("");
+                                        setSearchResult(null);
+                                    }
+                                }}>
+                                    <DialogTrigger asChild>
+                                        <GradientButton variant="outline" type="button">
+                                            <PlusCircle className="h-4 w-4 mr-2" />
+                                            {t("forms.snSpotlight.addDocument")}
+                                        </GradientButton>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle>{t("forms.snSpotlight.findDocument")}</DialogTitle>
+                                            <DialogDescription>
+                                                {t("forms.snSpotlight.findDocumentDesc")}
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="flex items-center gap-2">
                                             <Input
-                                                value={term.name}
-                                                onChange={(e) => updateTermName(index, e.target.value)}
-                                                placeholder={t("forms.snSpotlight.typeSearchTerm")}
+                                                placeholder={t("forms.snSpotlight.typeToSearch")}
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        searchDocument(1);
+                                                    }
+                                                }}
                                                 className="grow"
                                             />
                                             <GradientButton
-                                                variant="ghost"
-                                                size="icon"
                                                 type="button"
-                                                onClick={() => removeTerm(index)}
-                                                aria-label="Remove term"
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => searchDocument(1)}
                                             >
-                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                <Search className="h-4 w-4" />
                                             </GradientButton>
                                         </div>
-                                    ))}
-                                </div>
-                                <div className="mt-4">
-                                    <GradientButton variant="outline" type="button" onClick={addTerm}>
-                                        <PlusCircle className="h-4 w-4 mr-2" />
-                                        {t("forms.snSpotlight.addTerm")}
-                                    </GradientButton>
-                                </div>
-                                {termsError && (
-                                    <p className="text-sm font-medium text-destructive mt-2">{termsError}</p>
-                                )}
-                            </div>
-                        </SectionCard.Content>
-                    </SectionCard>
-
-                    {/* Documents Section */}
-                    <SectionCard variant="emerald">
-                        <SectionCard.Header icon={IconFileText} title={t("forms.snSpotlight.documents")} description={t("forms.snSpotlight.documentsDesc")} />
-                        <SectionCard.Content>
-                            <div>
-                                <div className="mb-2 font-medium">{t("forms.snSpotlight.showDocuments")}</div>
-                                <div className="text-sm text-muted-foreground mb-4">
-                                    {t("forms.snSpotlight.chooseDocuments")}
-                                </div>
-                                <div className="mb-4">
-                                    <Dialog open={searchDialogOpen} onOpenChange={(open) => {
-                                        setSearchDialogOpen(open);
-                                        if (!open) {
-                                            setSearchQuery("");
-                                            setSearchResult(null);
-                                        }
-                                    }}>
-                                        <DialogTrigger asChild>
-                                            <GradientButton variant="outline" type="button">
-                                                <PlusCircle className="h-4 w-4 mr-2" />
-                                                {t("forms.snSpotlight.addDocument")}
-                                            </GradientButton>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-2xl">
-                                            <DialogHeader>
-                                                <DialogTitle>{t("forms.snSpotlight.findDocument")}</DialogTitle>
-                                                <DialogDescription>
-                                                    {t("forms.snSpotlight.findDocumentDesc")}
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <div className="flex items-center gap-2">
-                                                <Input
-                                                    placeholder={t("forms.snSpotlight.typeToSearch")}
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === "Enter") {
-                                                            e.preventDefault();
-                                                            searchDocument(1);
-                                                        }
-                                                    }}
-                                                    className="grow"
-                                                />
-                                                <GradientButton
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() => searchDocument(1)}
-                                                >
-                                                    <Search className="h-4 w-4" />
-                                                </GradientButton>
-                                            </div>
-                                            {searchResult?.results?.document && searchResult.results.document.length > 0 && (
-                                                <div className="max-h-80 overflow-y-auto">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>{t("forms.common.title")}</TableHead>
-                                                                <TableHead>{t("forms.common.field")}</TableHead>
+                                        {searchResult?.results?.document && searchResult.results.document.length > 0 && (
+                                            <div className="max-h-80 overflow-y-auto">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>{t("forms.common.title")}</TableHead>
+                                                            <TableHead>{t("forms.common.field")}</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {searchResult.results.document.map((searchDoc, index) => (
+                                                            <TableRow
+                                                                key={searchDoc.fields.id || `search-${index}`}
+                                                                className="cursor-pointer"
+                                                                onClick={() => addDocument(searchDoc)}
+                                                            >
+                                                                <TableCell>{searchDoc.fields.title}</TableCell>
+                                                                <TableCell>{searchDoc.fields.type}</TableCell>
                                                             </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {searchResult.results.document.map((searchDoc, index) => (
-                                                                <TableRow
-                                                                    key={searchDoc.fields.id || `search-${index}`}
-                                                                    className="cursor-pointer"
-                                                                    onClick={() => addDocument(searchDoc)}
-                                                                >
-                                                                    <TableCell>{searchDoc.fields.title}</TableCell>
-                                                                    <TableCell>{searchDoc.fields.type}</TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            )}
-                                            {searchResult?.pagination && searchResult.pagination.length > 0 && (
-                                                <div className="flex items-center gap-1 pt-2">
-                                                    {searchResult.pagination.map((page) => (
-                                                        <GradientButton
-                                                            key={page.page}
-                                                            type="button"
-                                                            variant={page.type === "current" ? "default" : "outline"}
-                                                            size="sm"
-                                                            onClick={() => searchDocument(page.page)}
-                                                        >
-                                                            {page.text}
-                                                        </GradientButton>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                                {documents.length > 0 && (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-24">{t("forms.snSpotlight.order")}</TableHead>
-                                                <TableHead>{t("forms.common.title")}</TableHead>
-                                                <TableHead>{t("forms.common.field")}</TableHead>
-                                                <TableHead className="w-24 text-right">{t("forms.common.edit")}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {documents.map((doc, index) => (
-                                                <TableRow key={doc.id || `doc-${index}`}>
-                                                    <TableCell>
-                                                        <Input
-                                                            type="number"
-                                                            value={doc.position}
-                                                            onChange={(e) => updateDocumentPosition(index, Number(e.target.value))}
-                                                            className="w-20"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>{doc.title}</TableCell>
-                                                    <TableCell>{doc.type}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <GradientButton
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            type="button"
-                                                            onClick={() => removeDocument(index)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 mr-1" />
-                                                            {t("forms.common.remove")}
-                                                        </GradientButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                                {documentsError && (
-                                    <p className="text-sm font-medium text-destructive mt-2">{documentsError}</p>
-                                )}
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        )}
+                                        {searchResult?.pagination && searchResult.pagination.length > 0 && (
+                                            <div className="flex items-center gap-1 pt-2">
+                                                {searchResult.pagination.map((page) => (
+                                                    <GradientButton
+                                                        key={page.page}
+                                                        type="button"
+                                                        variant={page.type === "current" ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => searchDocument(page.page)}
+                                                    >
+                                                        {page.text}
+                                                    </GradientButton>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </DialogContent>
+                                </Dialog>
                             </div>
-                        </SectionCard.Content>
-                    </SectionCard>
+                            {documents.length > 0 && (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-24">{t("forms.snSpotlight.order")}</TableHead>
+                                            <TableHead>{t("forms.common.title")}</TableHead>
+                                            <TableHead>{t("forms.common.field")}</TableHead>
+                                            <TableHead className="w-24 text-right">{t("forms.common.edit")}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {documents.map((doc, index) => (
+                                            <TableRow key={doc.id || `doc-${index}`}>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        value={doc.position}
+                                                        onChange={(e) => updateDocumentPosition(index, Number(e.target.value))}
+                                                        className="w-20"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>{doc.title}</TableCell>
+                                                <TableCell>{doc.type}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <GradientButton
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        type="button"
+                                                        onClick={() => removeDocument(index)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 mr-1" />
+                                                        {t("forms.common.remove")}
+                                                    </GradientButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                            {documentsError && (
+                                <p className="text-sm font-medium text-destructive mt-2">{documentsError}</p>
+                            )}
+                        </div>
+                    </SectionCard.Content>
+                </SectionCard>
                 <FormActions>
                     <FormActions.Cancel onClick={() => navigate(urlBase)} />
                     <FormActions.Submit>{isNew ? t("forms.common.createButton", { feature: t("forms.snSpotlight.details") }) : t("forms.formActions.saveChanges")}</FormActions.Submit>

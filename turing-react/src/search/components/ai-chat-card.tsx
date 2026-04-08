@@ -1,5 +1,5 @@
+import type { TurChatResponse } from "@openviglet/turing-react-sdk";
 import { IconSparkles } from "@tabler/icons-react";
-import type { TurChatResponse } from "@viglet/turing-react-sdk";
 import { useTranslation } from "react-i18next";
 
 interface AiChatCardProps {

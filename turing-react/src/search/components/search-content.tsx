@@ -2,7 +2,7 @@ import {
   useSearchStore,
   useTuringAutoComplete,
   useTuringSortOptions,
-} from "@viglet/turing-react-sdk";
+} from "@openviglet/turing-react-sdk";
 import { useState } from "react";
 import { AiChatCard } from "./ai-chat-card";
 import { JsonSheet } from "./json-sheet";

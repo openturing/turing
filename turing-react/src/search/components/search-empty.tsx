@@ -1,6 +1,6 @@
 import { GradientButton } from "@/components/ui/gradient-button";
+import type { TurChatResponse, TurSpellCheck } from "@openviglet/turing-react-sdk";
 import { IconSearch } from "@tabler/icons-react";
-import type { TurChatResponse, TurSpellCheck } from "@viglet/turing-react-sdk";
 import { useTranslation } from "react-i18next";
 
 interface SearchEmptyProps {

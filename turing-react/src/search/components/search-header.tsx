@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SearchStoreValue, TurLocaleItem } from "@viglet/turing-react-sdk";
+import type { SearchStoreValue, TurLocaleItem } from "@openviglet/turing-react-sdk";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 

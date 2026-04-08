@@ -1,4 +1,4 @@
-import { useTuringPagination } from "@viglet/turing-react-sdk";
+import { useTuringPagination } from "@openviglet/turing-react-sdk";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -51,11 +51,10 @@ export function SearchPagination() {
               onClick={page.select}
               disabled={page.isCurrent}
               aria-current={page.isCurrent ? "page" : undefined}
-              className={`inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                page.isCurrent
+              className={`inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${page.isCurrent
                   ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+                }`}
             >
               {page.label}
             </button>

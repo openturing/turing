@@ -72,7 +72,8 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("recharts") || id.includes("d3")) return "vendor-charts";
+            if (id.includes("recharts") || id.includes("d3"))
+              return "vendor-charts";
             if (id.includes("@radix-ui")) return "vendor-ui";
             if (
               id.includes("react-markdown") ||
@@ -105,7 +106,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@viglet/turing-react-sdk": path.resolve(__dirname, "../turing-js-sdk/turing-react-sdk/src/index.ts"),
+      "@openviglet/turing-react-sdk": path.resolve(
+        __dirname,
+        "../turing-js-sdk/turing-react-sdk/src/index.ts",
+      ),
     },
   },
 });

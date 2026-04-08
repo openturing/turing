@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import type { ResolvedDocument } from "@openviglet/turing-react-sdk";
 import {
   IconArrowLeft,
   IconClock,
@@ -17,7 +18,6 @@ import {
   IconSword,
   IconTransform,
 } from "@tabler/icons-react";
-import type { ResolvedDocument } from "@viglet/turing-react-sdk";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./detail.css";

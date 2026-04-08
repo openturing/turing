@@ -5,6 +5,14 @@ import { Separator } from "@/components/ui/separator";
 import { resolveSiteName } from "@/lib/resolve-site";
 import { cn } from "@/lib/utils";
 import {
+  TuringProvider,
+  TuringSearchField,
+  useSearchStore,
+  useTuringFacets,
+  useTuringPagination,
+  type ResolvedDocument,
+} from "@openviglet/turing-react-sdk";
+import {
   IconCertificate,
   IconChevronLeft,
   IconChevronRight,
@@ -23,14 +31,6 @@ import {
   IconVinyl,
   IconX,
 } from "@tabler/icons-react";
-import {
-  TuringProvider,
-  TuringSearchField,
-  useSearchStore,
-  useTuringFacets,
-  useTuringPagination,
-  type ResolvedDocument,
-} from "@viglet/turing-react-sdk";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 /* ── Condition color map ── */

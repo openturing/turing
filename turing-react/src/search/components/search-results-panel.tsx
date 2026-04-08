@@ -9,8 +9,8 @@ import type {
   ResolvedDocument,
   TurSearchResponse,
   TurSortOption,
-} from "@viglet/turing-react-sdk";
-import { useSearchStore } from "@viglet/turing-react-sdk";
+} from "@openviglet/turing-react-sdk";
+import { useSearchStore } from "@openviglet/turing-react-sdk";
 import { IconList, IconSortDescending } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { FacetSidebar } from "./facet-sidebar";
