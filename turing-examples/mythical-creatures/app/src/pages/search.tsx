@@ -23,11 +23,10 @@ import {
 import {
   TuringProvider,
   TuringSearchField,
-  useTuringUrlSearch,
+  useSearchStore,
+  useTuringFacets,
+  useTuringPagination,
   type ResolvedDocument,
-  type TurFacetGroup,
-  type TurFacetItem,
-  type TurPaginationItem,
 } from "@viglet/turing-react-sdk";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -87,14 +86,9 @@ function DangerBar({ level }: Readonly<{ level: number }>) {
 }
 
 /* ── Facet sidebar ── */
-function FacetSidebar({
-  groups,
-  onNavigate,
-}: Readonly<{
-  groups: TurFacetGroup[];
-  onNavigate: (href: string) => void;
-}>) {
-  if (!groups || groups.length === 0) return null;
+function FacetSidebar() {
+  const { facetGroups } = useTuringFacets();
+  if (!facetGroups || facetGroups.length === 0) return null;
 
   return (
     <aside className="w-64 shrink-0 space-y-6">
@@ -102,16 +96,16 @@ function FacetSidebar({
         <IconFilter className="size-4" />
         Filters
       </div>
-      {groups.map((group) => (
+      {facetGroups.map((group) => (
         <div key={group.name} className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {group.label?.text ?? group.name}
+            {group.label}
           </h3>
           <div className="space-y-0.5">
-            {group.facets.map((facet: TurFacetItem) => (
+            {group.facets.map((facet) => (
               <button
                 key={facet.label + facet.link}
-                onClick={() => onNavigate(facet.link)}
+                onClick={facet.toggle}
                 className={cn(
                   "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   facet.selected
@@ -241,14 +235,9 @@ function CreatureCard({
 }
 
 /* ── Pagination ── */
-function Pagination({
-  items,
-  onNavigate,
-}: Readonly<{
-  items: TurPaginationItem[];
-  onNavigate: (href: string) => void;
-}>) {
-  if (!items || items.length === 0) return null;
+function Pagination() {
+  const { pages, hasPages } = useTuringPagination();
+  if (!hasPages) return null;
 
   const iconMap: Record<string, React.ReactNode> = {
     FIRST: <IconChevronsLeft className="size-4" />,
@@ -259,23 +248,22 @@ function Pagination({
 
   return (
     <nav className="flex items-center justify-center gap-1 py-8">
-      {items.map((item, i) => {
-        const isPage = item.type === "PAGE";
-        const isCurrent = isPage && !item.href;
+      {pages.map((page, i) => {
+        const isPage = page.type === "PAGE";
 
         return (
           <Button
-            key={`${item.type}-${item.page}-${i}`}
-            variant={isCurrent ? "default" : "ghost"}
+            key={`${page.type}-${page.label}-${i}`}
+            variant={page.isCurrent ? "default" : "ghost"}
             size="sm"
-            disabled={!item.href}
-            onClick={() => item.href && onNavigate(item.href)}
+            disabled={!page.isCurrent && !page.isEllipsis}
+            onClick={page.select}
             className={cn(
               "min-w-8 font-mono",
-              isCurrent && "pointer-events-none"
+              page.isCurrent && "pointer-events-none"
             )}
           >
-            {isPage ? item.text : iconMap[item.type] ?? item.text}
+            {isPage ? page.label : iconMap[page.type] ?? page.label}
           </Button>
         );
       })}
@@ -285,17 +273,12 @@ function Pagination({
 
 /* ── Main search content ── */
 function SearchContent() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const turing = useTuringUrlSearch(searchParams, (s: string) =>
-    setSearchParams(s)
-  );
-  const query = turing.params.q ?? "*";
-  const isLanding = query === "*" && turing.status !== "loading";
-  const hasResults = turing.documents.length > 0;
-  const facetGroups = turing.data?.widget?.facet ?? [];
-  const pagination = turing.data?.pagination ?? [];
-  const totalCount = turing.data?.queryContext?.count ?? 0;
+  const store = useSearchStore();
+  const { totalCount } = useTuringPagination();
+  const query = store.params.q ?? "*";
+  const isLanding = query === "*" && store.status !== "loading";
+  const hasResults = store.documents.length > 0;
 
   function goToDetail(doc: ResolvedDocument) {
     navigate("/detail", { state: { document: doc } });
@@ -352,7 +335,7 @@ function SearchContent() {
 
           {/* Search bar */}
           <TuringSearchField
-            turing={turing}
+            turing={store}
             className={cn(
               "relative z-50 mx-auto w-full transition-all duration-500",
               isLanding ? "mt-8 max-w-xl" : "max-w-2xl"
@@ -404,7 +387,7 @@ function SearchContent() {
       {/* ── Content area ── */}
       <main className="mx-auto flex w-full max-w-7xl flex-1 gap-8 px-4 sm:px-6 pb-12">
         {/* Loading state */}
-        {turing.status === "loading" && (
+        {store.status === "loading" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24">
             <IconLoader2 className="size-8 text-primary animate-spin" />
             <p className="text-sm text-muted-foreground">
@@ -414,26 +397,23 @@ function SearchContent() {
         )}
 
         {/* Error state */}
-        {turing.status === "error" && (
+        {store.status === "error" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
             <IconSkull className="size-10 text-destructive/60" />
             <p className="text-sm text-destructive/80">
-              The tome could not be read. {turing.error}
+              The tome could not be read. {store.error}
             </p>
-            <Button variant="outline" size="sm" onClick={turing.showAll}>
+            <Button variant="outline" size="sm" onClick={store.showAll}>
               Return to the Bestiary
             </Button>
           </div>
         )}
 
         {/* Results */}
-        {turing.status === "success" && (
+        {store.status === "success" && (
           <>
             {/* Facets sidebar */}
-            <FacetSidebar
-              groups={facetGroups}
-              onNavigate={turing.navigate}
-            />
+            <FacetSidebar />
 
             {/* Results area */}
             <div className="flex-1 min-w-0">
@@ -458,7 +438,7 @@ function SearchContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={turing.showAll}
+                    onClick={store.showAll}
                     className="text-xs text-muted-foreground"
                   >
                     Clear search
@@ -469,7 +449,7 @@ function SearchContent() {
               {/* Grid */}
               {hasResults ? (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {turing.documents.map((doc, i) => (
+                  {store.documents.map((doc, i) => (
                     <CreatureCard
                       key={doc.raw.fields.id ?? `doc-${i}`}
                       doc={doc}
@@ -487,7 +467,7 @@ function SearchContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={turing.showAll}
+                    onClick={store.showAll}
                   >
                     Show all creatures
                   </Button>
@@ -495,13 +475,13 @@ function SearchContent() {
               )}
 
               {/* Pagination */}
-              <Pagination items={pagination} onNavigate={turing.navigate} />
+              <Pagination />
             </div>
           </>
         )}
 
         {/* Landing state - no search yet, show all */}
-        {turing.status === "idle" && (
+        {store.status === "idle" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
             <IconSparkles className="size-10 text-primary/40" />
             <p className="text-muted-foreground text-sm max-w-md">
@@ -525,12 +505,11 @@ function SearchContent() {
 
 export default function SearchPage() {
   const site = resolveSiteName();
+  const [searchParams, setSearchParams] = useSearchParams();
   return (
     <TuringProvider
-      config={{
-        site,
-        locale: import.meta.env.VITE_LOCALE,
-      }}
+      config={{ site, locale: import.meta.env.VITE_LOCALE }}
+      urlSync={{ searchParams, setSearchParams: (s) => setSearchParams(s) }}
     >
       <SearchContent />
     </TuringProvider>

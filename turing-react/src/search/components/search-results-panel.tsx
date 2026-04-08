@@ -10,6 +10,7 @@ import type {
   TurSearchResponse,
   TurSortOption,
 } from "@viglet/turing-react-sdk";
+import { useSearchStore } from "@viglet/turing-react-sdk";
 import { IconList, IconSortDescending } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { FacetSidebar } from "./facet-sidebar";
@@ -22,7 +23,6 @@ interface SearchResultsPanelProps {
   documents: ResolvedDocument[];
   sortOptions: TurSortOption[];
   currentSort: string;
-  onNavigate: (href: string) => void;
   onSortChange: (sort: string) => void;
   onViewJson: (doc: Record<string, unknown>) => void;
 }
@@ -32,21 +32,16 @@ export function SearchResultsPanel({
   documents,
   sortOptions,
   currentSort,
-  onNavigate,
   onSortChange,
   onViewJson,
 }: Readonly<SearchResultsPanelProps>) {
   const { t } = useTranslation();
-  const { queryContext, widget, pagination } = data;
-  const isFacetItemTypeOr = queryContext.facetItemType?.toUpperCase() === "OR";
+  const store = useSearchStore();
+  const { queryContext, widget } = data;
 
   return (
     <div className="flex gap-8">
-      <FacetSidebar
-        widget={widget}
-        isFacetItemTypeOr={isFacetItemTypeOr}
-        onNavigate={onNavigate}
-      />
+      <FacetSidebar />
 
       <div className="flex-1 min-w-0">
         {/* Results toolbar */}
@@ -93,7 +88,7 @@ export function SearchResultsPanel({
           </div>
         </div>
 
-        <SpellCheckBanner spellCheck={widget.spellCheck} onNavigate={onNavigate} />
+        <SpellCheckBanner spellCheck={widget.spellCheck} onNavigate={store.navigate} />
 
         {/* Document list */}
         <div className="space-y-3">
@@ -102,18 +97,13 @@ export function SearchResultsPanel({
               key={doc.url || index}
               document={doc}
               raw={doc.raw}
-              onNavigate={onNavigate}
+              onNavigate={store.navigate}
               onViewJson={onViewJson}
             />
           ))}
         </div>
 
-        <SearchPagination
-          items={pagination}
-          currentPage={queryContext.page}
-          totalPages={queryContext.pageCount}
-          onNavigate={onNavigate}
-        />
+        <SearchPagination />
       </div>
     </div>
   );

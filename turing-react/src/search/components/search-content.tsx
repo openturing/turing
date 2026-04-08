@@ -1,10 +1,9 @@
 import {
+  useSearchStore,
   useTuringAutoComplete,
   useTuringSortOptions,
-  useTuringUrlSearch,
 } from "@viglet/turing-react-sdk";
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { AiChatCard } from "./ai-chat-card";
 import { JsonSheet } from "./json-sheet";
 import { SearchEmpty } from "./search-empty";
@@ -18,31 +17,30 @@ interface SearchContentProps {
 }
 
 export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [jsonSheetDoc, setJsonSheetDoc] = useState<Record<string, unknown> | null>(null);
 
-  const turing = useTuringUrlSearch(searchParams, setSearchParams);
+  const store = useSearchStore();
   const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
   const { sortOptions } = useTuringSortOptions();
 
-  if (turing.status === "loading" && !turing.data) return <SearchLoading />;
-  if ((turing.status === "error" || !turing.data) && turing.status !== "loading") {
-    return <SearchError siteName={siteName} error={turing.error} onShowAll={turing.showAll} />;
+  if (store.status === "loading" && !store.data) return <SearchLoading />;
+  if ((store.status === "error" || !store.data) && store.status !== "loading") {
+    return <SearchError siteName={siteName} error={store.error} onShowAll={store.showAll} />;
   }
-  if (!turing.data) return null;
+  if (!store.data) return null;
 
-  const { data, chat, documents, params } = turing;
+  const { data, chat, documents, params } = store;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SearchHeader
         siteName={siteName}
-        turing={turing}
+        store={store}
         locale={params._setlocale || "en_US"}
         locales={data.widget.locales}
         suggestions={suggestions}
-        onInputChange={(v) => { turing.setInputValue(v); fetchSuggestions(v, { _setlocale: params._setlocale }); }}
-        onSuggestionPick={(term) => { turing.setInputValue(term); clearSuggestions(); }}
+        onInputChange={(v) => { store.setInputValue(v); fetchSuggestions(v, { _setlocale: params._setlocale }); }}
+        onSuggestionPick={(term) => { store.setInputValue(term); clearSuggestions(); }}
         onSuggestionsClose={clearSuggestions}
       />
 
@@ -54,8 +52,8 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
             query={params.q}
             spellCheck={data.widget.spellCheck}
             chat={chat}
-            onNavigate={turing.navigate}
-            onShowAll={turing.showAll}
+            onNavigate={store.navigate}
+            onShowAll={store.showAll}
           />
         ) : (
           <SearchResultsPanel
@@ -63,8 +61,7 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
             documents={documents}
             sortOptions={sortOptions}
             currentSort={params.sort || "relevance"}
-            onNavigate={turing.navigate}
-            onSortChange={turing.setSort}
+            onSortChange={store.setSort}
             onViewJson={setJsonSheetDoc}
           />
         )}
