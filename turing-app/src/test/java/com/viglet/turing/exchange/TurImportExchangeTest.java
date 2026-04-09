@@ -33,7 +33,7 @@ class TurImportExchangeTest {
                 org.mockito.Mockito.mock(TurSNSiteRepository.class),
                 org.mockito.Mockito.mock(com.viglet.turing.service.storage.TurStorageService.class));
 
-        TurExchange result = turImportExchange.importFromFile(new File("D:/this/path/does/not/exist.zip"));
+        var result = turImportExchange.importFromFile(new File("D:/this/path/does/not/exist.zip"));
 
         assertNotNull(result);
         verifyNoInteractions(turSNSiteImport);
@@ -50,7 +50,7 @@ class TurImportExchangeTest {
 
         org.mockito.Mockito.doReturn(null).when(turImportExchange).extractZipFile(multipartFile);
 
-        TurExchange result = turImportExchange.importFromMultipartFile(multipartFile);
+        var result = turImportExchange.importFromMultipartFile(multipartFile);
 
         assertNotNull(result);
         verifyNoInteractions(turSNSiteImport);
@@ -72,7 +72,7 @@ class TurImportExchangeTest {
         MultipartFile multipartFile = new MockMultipartFile("file", "any.zip", "application/zip", new byte[] { 1 });
         org.mockito.Mockito.doReturn(rootExtract).when(turImportExchange).extractZipFile(multipartFile);
 
-        TurExchange result = turImportExchange.importFromMultipartFile(multipartFile);
+        var result = turImportExchange.importFromMultipartFile(multipartFile);
 
         assertNotNull(result);
         verifyNoInteractions(turSNSiteImport);
@@ -100,7 +100,7 @@ class TurImportExchangeTest {
         MultipartFile multipartFile = new MockMultipartFile("file", "any.zip", "application/zip", new byte[] { 1 });
         org.mockito.Mockito.doReturn(extract).when(turImportExchange).extractZipFile(multipartFile);
 
-        TurExchange result = turImportExchange.importFromMultipartFile(multipartFile);
+        var result = turImportExchange.importFromMultipartFile(multipartFile);
 
         assertNotNull(result);
         verify(turSNSiteImport, times(1)).importSNSite(org.mockito.ArgumentMatchers.any(TurExchange.class));
