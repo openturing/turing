@@ -8,6 +8,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.uhighlight.UnifiedHighlighter;
 import org.springframework.stereotype.Component;
 
@@ -170,6 +171,61 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                 for (String id : values) {
                     builder.add(new TermQuery(new Term("id", id)), BooleanClause.Occur.SHOULD);
                 }
+                yield builder.build();
+            }
+
+            case TurDslQuery.MatchPhrase(var field, var queryText, var slop) -> {
+                try {
+                    QueryParser parser = new QueryParser(field, new StandardAnalyzer());
+                    yield parser.parse("\"%s\"".formatted(queryText));
+                } catch (Exception e) {
+                    yield new TermQuery(new Term(field, queryText.toLowerCase()));
+                }
+            }
+
+            case TurDslQuery.MatchPhrasePrefix(var field, var queryText, var maxExp) -> {
+                try {
+                    QueryParser parser = new QueryParser(field, new StandardAnalyzer());
+                    yield parser.parse("\"%s\"".formatted(queryText));
+                } catch (Exception e) {
+                    yield new PrefixQuery(new Term(field, queryText.toLowerCase()));
+                }
+            }
+
+            case TurDslQuery.SimpleQueryString(var queryText, var fields, var defOp) -> {
+                try {
+                    String[] f = (fields != null && !fields.isEmpty())
+                            ? fields.toArray(String[]::new) : new String[]{"_text_"};
+                    MultiFieldQueryParser parser = new MultiFieldQueryParser(f, new StandardAnalyzer());
+                    if ("AND".equalsIgnoreCase(defOp))
+                        parser.setDefaultOperator(QueryParser.Operator.AND);
+                    yield parser.parse(queryText);
+                } catch (Exception e) {
+                    yield new MatchAllDocsQuery();
+                }
+            }
+
+            case TurDslQuery.Regexp(var field, var value, var flags) ->
+                    new RegexpQuery(new Term(field, value));
+
+            case TurDslQuery.ConstantScore(var filter, var boost) -> {
+                Query inner = translateQuery(filter);
+                ConstantScoreQuery csq = new ConstantScoreQuery(inner);
+                yield boost != null ? new BoostQuery(csq, boost.floatValue()) : csq;
+            }
+
+            case TurDslQuery.DisMax(var queries, var tieBreaker) -> {
+                DisjunctionMaxQuery dmq = new DisjunctionMaxQuery(
+                        queries.stream().map(this::translateQuery).toList(),
+                        tieBreaker != null ? tieBreaker.floatValue() : 0.0f);
+                yield dmq;
+            }
+
+            case TurDslQuery.Boosting(var positive, var negative, var negBoost) -> {
+                // Lucene: approximate boosting with bool must + must_not
+                BooleanQuery.Builder builder = new BooleanQuery.Builder();
+                builder.add(translateQuery(positive), BooleanClause.Occur.MUST);
+                builder.add(translateQuery(negative), BooleanClause.Occur.MUST_NOT);
                 yield builder.build();
             }
         };

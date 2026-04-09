@@ -192,6 +192,12 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         if (request.aggs() != null && !request.aggs().isEmpty()) {
             translateAggregationParams(request.aggs(), solrQuery);
         }
+        if (request.postFilter() != null) {
+            solrQuery.addFilterQuery(translateClause(request.postFilter()));
+        }
+        if (request.minScore() != null) {
+            solrQuery.setParam("minScore", request.minScore().toString());
+        }
         return solrQuery;
     }
 
@@ -257,6 +263,30 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         .collect(Collectors.joining(" OR "));
                 yield "id:(%s)".formatted(idList);
             }
+            case TurDslQuery.MatchPhrase(var field, var queryText, var slop) ->
+                    "%s:\"%s\"".formatted(field, escapeQuotes(queryText));
+            case TurDslQuery.MatchPhrasePrefix(var field, var queryText, var maxExp) ->
+                    "%s:\"%s\"".formatted(field, escapeQuotes(queryText));
+            case TurDslQuery.SimpleQueryString(var queryText, var fields, var defOp) -> {
+                if (fields != null && !fields.isEmpty()) {
+                    yield fields.stream()
+                            .map(f -> "%s:(%s)".formatted(f, escapeQuotes(queryText)))
+                            .collect(Collectors.joining(" OR ", "(", ")"));
+                }
+                yield escapeQuotes(queryText);
+            }
+            case TurDslQuery.Regexp(var field, var value, var flags) ->
+                    "%s:/%s/".formatted(field, value);
+            case TurDslQuery.ConstantScore(var filter, var boost) ->
+                    translateClause(filter);
+            case TurDslQuery.DisMax(var queries, var tieBreaker) -> {
+                if (queries.isEmpty()) yield "*:*";
+                yield queries.stream()
+                        .map(this::translateClause)
+                        .collect(Collectors.joining(" OR ", "(", ")"));
+            }
+            case TurDslQuery.Boosting(var positive, var negative, var negBoost) ->
+                    "+(%s) -(%s)".formatted(translateClause(positive), translateClause(negative));
         };
     }
 
@@ -312,6 +342,27 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 }
                 case TurDslAggregation.DateHistogramAgg dh ->
                         log.warn("date_histogram aggregation is not yet supported in Solr DSL translator");
+                case TurDslAggregation.AvgAgg a ->
+                        solrQuery.setParam("json.facet",
+                                "{%s:{type:func,func:\"avg(%s)\"}}".formatted(entry.getKey(), a.field()));
+                case TurDslAggregation.SumAgg a ->
+                        solrQuery.setParam("json.facet",
+                                "{%s:{type:func,func:\"sum(%s)\"}}".formatted(entry.getKey(), a.field()));
+                case TurDslAggregation.MinAgg a ->
+                        solrQuery.setParam("json.facet",
+                                "{%s:{type:func,func:\"min(%s)\"}}".formatted(entry.getKey(), a.field()));
+                case TurDslAggregation.MaxAgg a ->
+                        solrQuery.setParam("json.facet",
+                                "{%s:{type:func,func:\"max(%s)\"}}".formatted(entry.getKey(), a.field()));
+                case TurDslAggregation.CardinalityAgg a ->
+                        solrQuery.setParam("json.facet",
+                                "{%s:{type:func,func:\"unique(%s)\"}}".formatted(entry.getKey(), a.field()));
+                case TurDslAggregation.ValueCountAgg a ->
+                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.HistogramAgg h ->
+                        log.warn("histogram aggregation requires Solr JSON facet API — not yet implemented");
+                case TurDslAggregation.FilterAgg f ->
+                        solrQuery.addFacetQuery(translateClause(f.filter()));
             }
         }
     }

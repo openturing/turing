@@ -32,6 +32,26 @@ public sealed interface TurDslAggregation {
     record DateHistogramAgg(String field, String calendarInterval,
                             String fixedInterval, String format) implements TurDslAggregation {}
 
+    // --- Metric aggregations ---
+
+    record AvgAgg(String field) implements TurDslAggregation {}
+
+    record SumAgg(String field) implements TurDslAggregation {}
+
+    record MinAgg(String field) implements TurDslAggregation {}
+
+    record MaxAgg(String field) implements TurDslAggregation {}
+
+    record CardinalityAgg(String field, Integer precisionThreshold) implements TurDslAggregation {}
+
+    record ValueCountAgg(String field) implements TurDslAggregation {}
+
+    // --- Bucket aggregations ---
+
+    record HistogramAgg(String field, Double interval, Double offset) implements TurDslAggregation {}
+
+    record FilterAgg(TurDslQuery filter) implements TurDslAggregation {}
+
     record RangeBucket(Object from, Object to, String key) {}
 
     /**
@@ -70,6 +90,27 @@ public sealed interface TurDslAggregation {
                         dhNode.has("fixed_interval") ? dhNode.get("fixed_interval").asString() : null,
                         dhNode.has("format") ? dhNode.get("format").asString() : null
                 );
+            }
+            if (node.has("avg")) return new AvgAgg(node.get("avg").get("field").asString());
+            if (node.has("sum")) return new SumAgg(node.get("sum").get("field").asString());
+            if (node.has("min")) return new MinAgg(node.get("min").get("field").asString());
+            if (node.has("max")) return new MaxAgg(node.get("max").get("field").asString());
+            if (node.has("cardinality")) {
+                JsonNode cn = node.get("cardinality");
+                return new CardinalityAgg(cn.get("field").asString(),
+                        cn.has("precision_threshold") ? cn.get("precision_threshold").asInt() : null);
+            }
+            if (node.has("value_count"))
+                return new ValueCountAgg(node.get("value_count").get("field").asString());
+            if (node.has("histogram")) {
+                JsonNode hn = node.get("histogram");
+                return new HistogramAgg(hn.get("field").asString(),
+                        hn.has("interval") ? hn.get("interval").asDouble() : null,
+                        hn.has("offset") ? hn.get("offset").asDouble() : null);
+            }
+            if (node.has("filter")) {
+                return new FilterAgg(new TurDslQueryDeserializer()
+                        .deserializeNode(node.get("filter")));
             }
             throw new IllegalArgumentException("Unknown aggregation type in: " + node);
         }

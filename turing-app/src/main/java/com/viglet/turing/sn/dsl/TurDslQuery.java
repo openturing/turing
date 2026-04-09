@@ -48,4 +48,22 @@ public sealed interface TurDslQuery {
     record Fuzzy(String field, String value, Integer fuzziness) implements TurDslQuery {}
 
     record Ids(List<String> values) implements TurDslQuery {}
+
+    // --- Group 2: phrase, string, pattern queries ---
+
+    record MatchPhrase(String field, String query, Integer slop) implements TurDslQuery {}
+
+    record MatchPhrasePrefix(String field, String query, Integer maxExpansions) implements TurDslQuery {}
+
+    record SimpleQueryString(String query, List<String> fields, String defaultOperator) implements TurDslQuery {}
+
+    record Regexp(String field, String value, String flags) implements TurDslQuery {}
+
+    record ConstantScore(TurDslQuery filter, Double boost) implements TurDslQuery {}
+
+    // --- Group 3: compound scoring queries ---
+
+    record DisMax(List<TurDslQuery> queries, Double tieBreaker) implements TurDslQuery {}
+
+    record Boosting(TurDslQuery positive, TurDslQuery negative, Double negativeBoost) implements TurDslQuery {}
 }

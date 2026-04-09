@@ -26,7 +26,7 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
         return deserializeNode(node);
     }
 
-    private TurDslQuery deserializeNode(JsonNode node) {
+    TurDslQuery deserializeNode(JsonNode node) {
         if (node == null || node.isNull() || node.isEmpty()) {
             return new TurDslQuery.MatchAll();
         }
@@ -48,6 +48,13 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
             case "query_string" -> deserializeQueryString(body);
             case "fuzzy" -> deserializeFuzzy(body);
             case "ids" -> deserializeIds(body);
+            case "match_phrase" -> deserializeMatchPhrase(body);
+            case "match_phrase_prefix" -> deserializeMatchPhrasePrefix(body);
+            case "simple_query_string" -> deserializeSimpleQueryString(body);
+            case "regexp" -> deserializeSingleFieldWithFlags(body);
+            case "constant_score" -> deserializeConstantScore(body);
+            case "dis_max" -> deserializeDisMax(body);
+            case "boosting" -> deserializeBoosting(body);
             default -> throw new IllegalArgumentException("Unknown query type: " + type);
         };
     }
@@ -165,6 +172,74 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
             }
         }
         return new TurDslQuery.Ids(values);
+    }
+
+    // --- Group 2: phrase, string, pattern, compound queries ---
+
+    private TurDslQuery.MatchPhrase deserializeMatchPhrase(JsonNode body) {
+        Map.Entry<String, JsonNode> entry = body.properties().iterator().next();
+        String field = entry.getKey();
+        JsonNode value = entry.getValue();
+        if (value.isObject()) {
+            return new TurDslQuery.MatchPhrase(field,
+                    value.get("query").asString(),
+                    value.has("slop") ? value.get("slop").asInt() : null);
+        }
+        return new TurDslQuery.MatchPhrase(field, value.asString(), null);
+    }
+
+    private TurDslQuery.MatchPhrasePrefix deserializeMatchPhrasePrefix(JsonNode body) {
+        Map.Entry<String, JsonNode> entry = body.properties().iterator().next();
+        String field = entry.getKey();
+        JsonNode value = entry.getValue();
+        if (value.isObject()) {
+            return new TurDslQuery.MatchPhrasePrefix(field,
+                    value.get("query").asString(),
+                    value.has("max_expansions") ? value.get("max_expansions").asInt() : null);
+        }
+        return new TurDslQuery.MatchPhrasePrefix(field, value.asString(), null);
+    }
+
+    private TurDslQuery.SimpleQueryString deserializeSimpleQueryString(JsonNode body) {
+        String query = body.get("query").asString();
+        List<String> fields = new ArrayList<>();
+        if (body.has("fields")) {
+            for (JsonNode f : body.get("fields")) fields.add(f.asString());
+        }
+        String defaultOperator = body.has("default_operator")
+                ? body.get("default_operator").asString() : null;
+        return new TurDslQuery.SimpleQueryString(query, fields, defaultOperator);
+    }
+
+    private TurDslQuery.Regexp deserializeSingleFieldWithFlags(JsonNode body) {
+        Map.Entry<String, JsonNode> entry = body.properties().iterator().next();
+        String field = entry.getKey();
+        JsonNode value = entry.getValue();
+        if (value.isObject()) {
+            return new TurDslQuery.Regexp(field,
+                    value.get("value").asString(),
+                    value.has("flags") ? value.get("flags").asString() : null);
+        }
+        return new TurDslQuery.Regexp(field, value.asString(), null);
+    }
+
+    private TurDslQuery.ConstantScore deserializeConstantScore(JsonNode body) {
+        TurDslQuery filter = body.has("filter") ? deserializeNode(body.get("filter")) : new TurDslQuery.MatchAll();
+        Double boost = body.has("boost") ? body.get("boost").asDouble() : null;
+        return new TurDslQuery.ConstantScore(filter, boost);
+    }
+
+    private TurDslQuery.DisMax deserializeDisMax(JsonNode body) {
+        List<TurDslQuery> queries = deserializeQueryList(body.get("queries"));
+        Double tieBreaker = body.has("tie_breaker") ? body.get("tie_breaker").asDouble() : null;
+        return new TurDslQuery.DisMax(queries, tieBreaker);
+    }
+
+    private TurDslQuery.Boosting deserializeBoosting(JsonNode body) {
+        TurDslQuery positive = body.has("positive") ? deserializeNode(body.get("positive")) : new TurDslQuery.MatchAll();
+        TurDslQuery negative = body.has("negative") ? deserializeNode(body.get("negative")) : new TurDslQuery.MatchAll();
+        Double negativeBoost = body.has("negative_boost") ? body.get("negative_boost").asDouble() : null;
+        return new TurDslQuery.Boosting(positive, negative, negativeBoost);
     }
 
     private List<TurDslQuery> deserializeQueryList(JsonNode node) {

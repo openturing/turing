@@ -68,6 +68,7 @@ public class TurSNSiteDslSearchAPI {
             @PathVariable String siteName,
             @RequestParam(name = "locale", defaultValue = "en") String locale) {
         return search(siteName, locale,
-                new TurDslQueryRequest(null, null, null, null, null, null, null));
+                new TurDslQueryRequest(null, null, null, null, null, null, null,
+                        null, null, null));
     }
 }

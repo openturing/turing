@@ -34,7 +34,10 @@ public record TurDslQueryRequest(
         List<Object> sort,
         @JsonProperty("_source") Object source,
         TurDslHighlight highlight,
-        Map<String, TurDslAggregation> aggs
+        Map<String, TurDslAggregation> aggs,
+        @JsonProperty("post_filter") TurDslQuery postFilter,
+        @JsonProperty("min_score") Double minScore,
+        @JsonProperty("search_after") List<Object> searchAfter
 ) {
     /**
      * Highlight configuration following the Elasticsearch format.

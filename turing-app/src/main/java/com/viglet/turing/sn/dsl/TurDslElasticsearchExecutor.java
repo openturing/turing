@@ -82,6 +82,22 @@ public class TurDslElasticsearchExecutor
                             applyAggregationsToRequest(request.aggs(), reqBuilder);
                         }
 
+                        // Post filter
+                        if (request.postFilter() != null) {
+                            reqBuilder.postFilter(translateQuery(request.postFilter()));
+                        }
+
+                        // Min score
+                        if (request.minScore() != null) {
+                            reqBuilder.minScore(request.minScore());
+                        }
+
+                        // Search after (cursor-based pagination)
+                        if (request.searchAfter() != null && !request.searchAfter().isEmpty()) {
+                            reqBuilder.searchAfter(request.searchAfter().stream()
+                                    .map(v -> FieldValue.of(v.toString())).toList());
+                        }
+
                         SearchResponse<Map> response = client.search(
                                 reqBuilder.build(), (java.lang.reflect.Type) Map.class);
 
@@ -181,6 +197,59 @@ public class TurDslElasticsearchExecutor
 
             case TurDslQuery.Ids(var values) ->
                     Query.of(q -> q.ids(i -> i.values(values)));
+
+            case TurDslQuery.MatchPhrase(var field, var queryText, var slop) ->
+                    Query.of(q -> q.matchPhrase(mp -> {
+                        mp.field(field).query(queryText);
+                        if (slop != null) mp.slop(slop);
+                        return mp;
+                    }));
+
+            case TurDslQuery.MatchPhrasePrefix(var field, var queryText, var maxExp) ->
+                    Query.of(q -> q.matchPhrasePrefix(mpp -> {
+                        mpp.field(field).query(queryText);
+                        if (maxExp != null) mpp.maxExpansions(maxExp);
+                        return mpp;
+                    }));
+
+            case TurDslQuery.SimpleQueryString(var queryText, var fields, var defOp) ->
+                    Query.of(q -> q.simpleQueryString(sqs -> {
+                        sqs.query(queryText);
+                        if (fields != null && !fields.isEmpty()) sqs.fields(fields);
+                        if ("AND".equalsIgnoreCase(defOp))
+                            sqs.defaultOperator(
+                                    co.elastic.clients.elasticsearch._types.query_dsl.Operator.And);
+                        return sqs;
+                    }));
+
+            case TurDslQuery.Regexp(var field, var value, var flags) ->
+                    Query.of(q -> q.regexp(r -> {
+                        r.field(field).value(value);
+                        if (flags != null) r.flags(flags);
+                        return r;
+                    }));
+
+            case TurDslQuery.ConstantScore(var filter, var boost) ->
+                    Query.of(q -> q.constantScore(cs -> {
+                        cs.filter(translateQuery(filter));
+                        if (boost != null) cs.boost(boost.floatValue());
+                        return cs;
+                    }));
+
+            case TurDslQuery.DisMax(var queries, var tieBreaker) ->
+                    Query.of(q -> q.disMax(dm -> {
+                        dm.queries(queries.stream().map(this::translateQuery).toList());
+                        if (tieBreaker != null) dm.tieBreaker(tieBreaker);
+                        return dm;
+                    }));
+
+            case TurDslQuery.Boosting(var positive, var negative, var negBoost) ->
+                    Query.of(q -> q.boosting(b -> {
+                        b.positive(translateQuery(positive));
+                        b.negative(translateQuery(negative));
+                        if (negBoost != null) b.negativeBoost(negBoost);
+                        return b;
+                    }));
         };
     }
 
@@ -259,6 +328,20 @@ public class TurDslElasticsearchExecutor
                     result.put(aggName, new TurDslSearchResponse.AggregationResult(buckets));
                 } catch (Exception e) {
                     log.debug("Could not parse range aggregation '{}': {}", aggName, e.getMessage());
+                }
+            } else if (entry.getValue() instanceof TurDslAggregation.AvgAgg
+                    || entry.getValue() instanceof TurDslAggregation.SumAgg
+                    || entry.getValue() instanceof TurDslAggregation.MinAgg
+                    || entry.getValue() instanceof TurDslAggregation.MaxAgg
+                    || entry.getValue() instanceof TurDslAggregation.ValueCountAgg
+                    || entry.getValue() instanceof TurDslAggregation.CardinalityAgg) {
+                try {
+                    double value = esAgg._get()instanceof
+                            co.elastic.clients.elasticsearch._types.aggregations.SingleMetricAggregateBase sm
+                            ? sm.value() : 0.0;
+                    result.put(aggName, new TurDslSearchResponse.AggregationResult(value));
+                } catch (Exception e) {
+                    log.debug("Could not parse metric aggregation '{}': {}", aggName, e.getMessage());
                 }
             }
         }
@@ -372,6 +455,31 @@ public class TurDslElasticsearchExecutor
                             if (format != null) dh.format(format);
                             return dh;
                         })));
+                case TurDslAggregation.AvgAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.avg(av -> av.field(field))));
+                case TurDslAggregation.SumAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.sum(s -> s.field(field))));
+                case TurDslAggregation.MinAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.min(m -> m.field(field))));
+                case TurDslAggregation.MaxAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.max(m -> m.field(field))));
+                case TurDslAggregation.CardinalityAgg(var field, var precision) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.cardinality(c -> {
+                            c.field(field);
+                            if (precision != null) c.precisionThreshold(precision);
+                            return c;
+                        })));
+                case TurDslAggregation.ValueCountAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.valueCount(vc -> vc.field(field))));
+                case TurDslAggregation.HistogramAgg(var field, var interval, var offset) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.histogram(h -> {
+                            h.field(field);
+                            if (interval != null) h.interval(interval);
+                            if (offset != null) h.offset(offset);
+                            return h;
+                        })));
+                case TurDslAggregation.FilterAgg(var filter) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.filter(translateQuery(filter))));
             }
         }
         reqBuilder.aggregations(esAggs);

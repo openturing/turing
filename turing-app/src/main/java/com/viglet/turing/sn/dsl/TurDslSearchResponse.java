@@ -37,7 +37,12 @@ public record TurDslSearchResponse(
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record AggregationResult(List<Bucket> buckets) {}
+    public record AggregationResult(List<Bucket> buckets, Double value) {
+        /** Bucket aggregation constructor. */
+        public AggregationResult(List<Bucket> buckets) { this(buckets, null); }
+        /** Metric aggregation constructor. */
+        public AggregationResult(Double value) { this(null, value); }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Bucket(
