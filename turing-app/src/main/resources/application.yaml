@@ -124,7 +124,7 @@ turing:
         seconds: 86400000
       enabled: false
   storage:
-    type: none
+    type: FILESYSTEM
     filesystem:
       path: ./store/assets
     minio:

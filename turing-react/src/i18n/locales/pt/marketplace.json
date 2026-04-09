@@ -17,6 +17,12 @@
     "importSuccess": "{{name}} instalado com sucesso!",
     "importFailed": "Falha ao instalar {{name}}. Tente novamente.",
     "importCompleted": "Importação concluída!",
-    "importError": "Falha na importação. Verifique os logs do servidor para mais detalhes."
+    "importError": "Falha na importação. Verifique os logs do servidor para mais detalhes.",
+    "resultSite": "Site",
+    "resultContent": "Conteúdo",
+    "resultTemplate": "Template",
+    "resultDocuments": "{{count}} documento(s)",
+    "resultFiles": "{{count}} arquivo(s)",
+    "resultNotIncluded": "Não incluído"
   }
 }

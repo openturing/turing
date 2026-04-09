@@ -57,6 +57,16 @@ public class TurImportExchange {
 	private static final String TURING_MANIFEST = "turing-manifest.json";
 	private static final String PAGES_PREFIX = "public/";
 
+	public record ImportResult(boolean siteImported, String siteName,
+							   int contentDocuments, int contentFiles,
+							   boolean templateImported, String templateName, int templateFiles,
+							   String error) {
+
+		public static ImportResult error(String error) {
+			return new ImportResult(false, null, 0, 0, false, null, 0, error);
+		}
+	}
+
 	public TurImportExchange(TurSNSiteImport turSNSiteImport,
 			TurSNSiteContentExchangeService contentExchangeService,
 			TurSNSiteRepository turSNSiteRepository,
@@ -67,48 +77,76 @@ public class TurImportExchange {
 		this.storageService = storageService;
 	}
 
-	public TurExchange importFromMultipartFile(MultipartFile multipartFile) {
-		return importFromMultipartFile(multipartFile, false, null);
+	public ImportResult importFromMultipartFile(MultipartFile multipartFile) {
+		return importFromMultipartFile(multipartFile, false, false, null);
 	}
 
-	public TurExchange importFromMultipartFile(MultipartFile multipartFile,
+	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
 			boolean includeContent, boolean includeTemplate, String taskId) {
 		File extractFolder = this.extractZipFile(multipartFile);
+		if (extractFolder == null) {
+			return ImportResult.error("Failed to extract ZIP file");
+		}
 		File parentExtractFolder = null;
 
-		if (extractFolder != null) {
-			if (!(new File(extractFolder, EXPORT_FILE).exists())
-					&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
-				for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
-					if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
-						parentExtractFolder = extractFolder;
-						extractFolder = fileOrDirectory;
-					}
-				}
-			}
-			boolean needsCleanup = !includeContent && !includeTemplate;
-			importSNSiteFromExportFile(extractFolder, parentExtractFolder, needsCleanup);
-
-			if (includeContent) {
-				importContentFiles(extractFolder, taskId);
-			}
-
-			if (includeTemplate) {
-				importTemplateFromAppFolder(extractFolder);
-			}
-
-			if (!needsCleanup) {
-				try {
-					cleanupDirectories(extractFolder, parentExtractFolder);
-				} catch (IOException e) {
-					log.warn("Cleanup failed: {}", e.getMessage(), e);
+		if (!(new File(extractFolder, EXPORT_FILE).exists())
+				&& (Objects.requireNonNull(extractFolder.listFiles()).length == 1)) {
+			for (File fileOrDirectory : Objects.requireNonNull(extractFolder.listFiles())) {
+				if (fileOrDirectory.isDirectory() && new File(fileOrDirectory, EXPORT_FILE).exists()) {
+					parentExtractFolder = extractFolder;
+					extractFolder = fileOrDirectory;
 				}
 			}
 		}
-		return new TurExchange();
+
+		// export.json is mandatory
+		File exportFile = new File(extractFolder, EXPORT_FILE);
+		if (!exportFile.isFile()) {
+			cleanupSafely(extractFolder, parentExtractFolder);
+			return ImportResult.error("Missing required export.json in ZIP");
+		}
+
+		String siteName = importSNSiteFromExportFile(extractFolder);
+		boolean siteImported = siteName != null;
+		if (!siteImported) {
+			cleanupSafely(extractFolder, parentExtractFolder);
+			return ImportResult.error("Failed to import SN Site from export.json");
+		}
+
+		// content is optional
+		int contentDocuments = 0;
+		int contentFiles = 0;
+		if (includeContent) {
+			int[] contentResult = importContentFiles(extractFolder, taskId);
+			contentFiles = contentResult[0];
+			contentDocuments = contentResult[1];
+		}
+
+		// template is optional
+		boolean templateImported = false;
+		String templateName = null;
+		int templateFileCount = 0;
+		if (includeTemplate) {
+			templateFileCount = importTemplateFromAppFolder(extractFolder);
+			templateImported = templateFileCount > 0;
+			if (templateImported) {
+				templateName = readTemplateName(extractFolder);
+			}
+		}
+
+		cleanupSafely(extractFolder, parentExtractFolder);
+
+		log.info("Import complete — site: '{}', content: {} docs from {} files, template: '{}'  ({} files)",
+				siteName, contentDocuments, contentFiles,
+				templateName != null ? templateName : "none", templateFileCount);
+
+		return new ImportResult(true, siteName,
+				contentDocuments, contentFiles,
+				templateImported, templateName, templateFileCount,
+				null);
 	}
 
-	public TurExchange importFromMultipartFile(MultipartFile multipartFile,
+	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
 			boolean includeContent, String taskId) {
 		return importFromMultipartFile(multipartFile, includeContent, false, taskId);
 	}
@@ -168,28 +206,30 @@ public class TurImportExchange {
 		}
 	}
 
-	private void importTemplateFromAppFolder(File extractFolder) {
+	/**
+	 * @return {filesUploaded} — 0 if skipped
+	 */
+	private int importTemplateFromAppFolder(File extractFolder) {
 		File appDir = new File(extractFolder, APP_DIR);
 		if (!appDir.isDirectory() || !storageService.isEnabled()) {
 			log.debug("Skipping template import: app/ dir missing or storage disabled");
-			return;
+			return 0;
 		}
 		File manifest = new File(appDir, TURING_MANIFEST);
 		if (!manifest.isFile()) {
 			log.debug("Skipping template import: no valid turing-manifest.json");
-			return;
+			return 0;
 		}
 		String templateName = readTemplateName(extractFolder);
 		if (templateName == null || templateName.isBlank()) {
 			log.warn("Skipping template import: turing-manifest.json has no name");
-			return;
+			return 0;
 		}
 		String prefix = PAGES_PREFIX + templateName + "/";
-		// Clear existing template files
 		storageService.deleteObjectsWithPrefix(prefix);
-		// Upload all files from app/ to storage
 		int count = uploadDirectory(appDir, prefix, appDir);
 		log.info("Imported SPA template '{}' ({} files) from ZIP", templateName, count);
+		return count;
 	}
 
 	private int uploadDirectory(File dir, String storagePrefix, File baseDir) {
@@ -247,17 +287,16 @@ public class TurImportExchange {
 		return files != null ? files : new File[0];
 	}
 
-	private void importContentFiles(File extractFolder, String taskId) {
+	/**
+	 * @return {filesProcessed, totalDocuments}
+	 */
+	private int[] importContentFiles(File extractFolder, String taskId) {
 		File[] contentFiles = findContentFiles(extractFolder);
 		log.info("Found {} content file(s) in '{}'", contentFiles.length, extractFolder.getAbsolutePath());
 		if (contentFiles.length == 0) {
-			File[] allFiles = extractFolder.listFiles();
-			if (allFiles != null) {
-				for (File f : allFiles) {
-					log.info("  File in extract folder: {} (dir={})", f.getName(), f.isDirectory());
-				}
-			}
+			return new int[]{0, 0};
 		}
+		int totalDocuments = 0;
 		ObjectMapper mapper = JsonMapper.builder().build();
 		for (File contentFile : contentFiles) {
 			log.info("Processing content file: {}", contentFile.getName());
@@ -276,16 +315,20 @@ public class TurImportExchange {
 					int indexed = contentExchangeService.importContent(
 							turSNSite, Map.of(siteEntry.getKey(), siteEntry.getValue()),
 							effectiveTaskId);
+					totalDocuments += indexed;
 					log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
 				}
 			} catch (Exception e) {
 				log.error("Error importing content from '{}': {}", contentFile.getName(), e.getMessage(), e);
 			}
 		}
+		return new int[]{contentFiles.length, totalDocuments};
 	}
 
-	private void importSNSiteFromExportFile(File extractFolder, File parentExtractFolder,
-			boolean cleanup) {
+	/**
+	 * @return the imported site name, or null on failure
+	 */
+	private String importSNSiteFromExportFile(File extractFolder) {
 		ObjectMapper mapper = JsonMapper.builder().build();
 
 		try (FileInputStream fis = new FileInputStream(
@@ -293,11 +336,21 @@ public class TurImportExchange {
 
 			TurExchange turExchange = mapper.readValue(fis, TurExchange.class);
 			processTurExchange(turExchange);
-			if (cleanup) {
-				cleanupDirectories(extractFolder, parentExtractFolder);
+			if (turExchange.getSnSites() != null && !turExchange.getSnSites().isEmpty()) {
+				return turExchange.getSnSites().getFirst().getName();
 			}
+			return "unknown";
 		} catch (Exception e) {
 			log.error("Error importing SN Site: {}", e.getMessage(), e);
+			return null;
+		}
+	}
+
+	private void cleanupSafely(File extractFolder, File parentExtractFolder) {
+		try {
+			cleanupDirectories(extractFolder, parentExtractFolder);
+		} catch (IOException e) {
+			log.warn("Cleanup failed: {}", e.getMessage(), e);
 		}
 	}
 
@@ -365,15 +418,14 @@ public class TurImportExchange {
 		}
 	}
 
-	public TurExchange importFromFile(File file) {
-
+	public ImportResult importFromFile(File file) {
 		try (FileInputStream input = new FileInputStream(file)) {
 			MultipartFile multipartFile = new MockMultipartFile(file.getName(), IOUtils.toByteArray(input));
 			return this.importFromMultipartFile(multipartFile);
 		} catch (IOException | IllegalStateException e) {
 			log.error(e.getMessage(), e);
 		}
-		return new TurExchange();
+		return ImportResult.error("Failed to read file: " + file.getName());
 	}
 
 	public File extractZipFile(MultipartFile file) {

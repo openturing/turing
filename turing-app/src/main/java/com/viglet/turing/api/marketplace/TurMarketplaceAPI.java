@@ -69,7 +69,7 @@ public class TurMarketplaceAPI {
 
     @Operation(summary = "Import a package from the marketplace by downloading its ZIP")
     @PostMapping("/import")
-    public ResponseEntity<Void> importPackage(
+    public ResponseEntity<TurImportExchange.ImportResult> importPackage(
             @RequestParam String downloadUrl,
             @RequestParam(defaultValue = "false") boolean includeContent,
             @RequestParam(defaultValue = "false") boolean includeTemplate) {
@@ -80,11 +80,15 @@ public class TurMarketplaceAPI {
             byte[] zipBytes = downloadZip(downloadUrl);
             var multipartFile = new MockMultipartFile("file", "marketplace.zip",
                     "application/zip", zipBytes);
-            turImportExchange.importFromMultipartFile(multipartFile, includeContent, includeTemplate, null);
-            return ResponseEntity.ok().build();
+            var result = turImportExchange.importFromMultipartFile(multipartFile, includeContent, includeTemplate, null);
+            if (result.error() != null) {
+                return ResponseEntity.badRequest().body(result);
+            }
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("Marketplace import failed for URL '{}': {}", downloadUrl, e.getMessage(), e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(TurImportExchange.ImportResult.error(e.getMessage()));
         }
     }
 

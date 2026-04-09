@@ -58,7 +58,7 @@ public class TurImportAPI {
 	}
 
 	@PostMapping
-	public TurExchange turImport(@RequestParam("file") MultipartFile multipartFile,
+	public TurImportExchange.ImportResult turImport(@RequestParam("file") MultipartFile multipartFile,
 			@RequestParam(defaultValue = "false") boolean includeContent,
 			@RequestParam(defaultValue = "false") boolean includeTemplate,
 			@RequestParam(required = false) String taskId) {

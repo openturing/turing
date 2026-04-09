@@ -1,3 +1,4 @@
+import type { TurImportResult } from "@/models/marketplace/import-result.model";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import axios from "axios";
 
@@ -14,14 +15,14 @@ export class TurExchangeImportService {
     includeContent = false,
     includeTemplate = false,
     taskId?: string,
-  ): Promise<void> {
+  ): Promise<TurImportResult> {
     const formData = new FormData();
     formData.append("file", file);
 
     const params: Record<string, string | boolean> = { includeContent, includeTemplate };
     if (taskId) params.taskId = taskId;
 
-    await axios.post("/import", formData, {
+    const response = await axios.post<TurImportResult>("/import", formData, {
       params,
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
@@ -32,6 +33,7 @@ export class TurExchangeImportService {
         }
       },
     });
+    return response.data;
   }
 
   async checkZip(file: File): Promise<ZipCheckResult> {

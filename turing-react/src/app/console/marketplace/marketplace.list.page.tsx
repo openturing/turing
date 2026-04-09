@@ -1,4 +1,3 @@
-import { ROUTES } from "@/app/routes.const";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Button } from "@/components/ui/button";
@@ -13,11 +12,12 @@ import {
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import type { TurMarketplaceItem } from "@/models/marketplace/marketplace-item.model";
+import type { TurImportResult } from "@/models/marketplace/import-result.model";
+import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
 import * as TablerIcons from "@tabler/icons-react";
 import {
     IconBrowserCheck,
-    IconCheck,
     IconDatabase,
     IconLoader2,
     IconPackageImport,
@@ -26,7 +26,6 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const marketplaceService = new TurMarketplaceService();
@@ -49,7 +48,6 @@ function getItemIcon(key: string): React.ReactNode {
 
 export default function MarketplaceListPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const [items, setItems] = useState<TurMarketplaceItem[]>();
     const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +55,7 @@ export default function MarketplaceListPage() {
     const [includeContent, setIncludeContent] = useState(true);
     const [includeTemplate, setIncludeTemplate] = useState(true);
     const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
+    const [importResult, setImportResult] = useState<TurImportResult | null>(null);
 
     useEffect(() => {
         marketplaceService
@@ -70,6 +69,7 @@ export default function MarketplaceListPage() {
         setIncludeContent(item.hasContent);
         setIncludeTemplate(item.hasTemplate);
         setImportStatus("idle");
+        setImportResult(null);
     }, []);
 
     const closeDialog = useCallback(() => {
@@ -81,23 +81,26 @@ export default function MarketplaceListPage() {
     const doImport = useCallback(async () => {
         if (!selectedItem) return;
         setImportStatus("importing");
+        setImportResult(null);
         try {
-            await marketplaceService.importPackage(
+            const result = await marketplaceService.importPackage(
                 selectedItem.downloadUrl,
                 includeContent,
                 includeTemplate
             );
-            setImportStatus("success");
-            toast.success(t("marketplace.importSuccess", { name: selectedItem.title }));
-            setTimeout(() => {
-                setSelectedItem(null);
-                navigate(ROUTES.SN_INSTANCE);
-            }, 2000);
+            setImportResult(result);
+            if (result.error) {
+                setImportStatus("error");
+                toast.error(t("marketplace.importFailed", { name: selectedItem.title }));
+            } else {
+                setImportStatus("success");
+                toast.success(t("marketplace.importSuccess", { name: selectedItem.title }));
+            }
         } catch {
             setImportStatus("error");
             toast.error(t("marketplace.importFailed", { name: selectedItem.title }));
         }
-    }, [selectedItem, includeContent, includeTemplate, navigate, t]);
+    }, [selectedItem, includeContent, includeTemplate, t]);
 
     return (
         <div className="px-4 md:px-6 lg:px-8 py-2">
@@ -271,14 +274,11 @@ export default function MarketplaceListPage() {
                             </div>
 
                             {/* Status feedback */}
-                            {importStatus === "success" && (
-                                <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2.5 text-emerald-600 dark:text-emerald-400">
-                                    <IconCheck className="size-4" />
-                                    <span className="text-sm font-medium">{t("marketplace.importCompleted")}</span>
-                                </div>
+                            {importResult && (importStatus === "success" || importStatus === "error") && (
+                                <ImportResultPanel result={importResult} />
                             )}
 
-                            {importStatus === "error" && (
+                            {importStatus === "error" && !importResult && (
                                 <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2.5 text-red-600 dark:text-red-400">
                                     <IconX className="size-4" />
                                     <span className="text-sm font-medium">{t("marketplace.importError")}</span>

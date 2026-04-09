@@ -1,7 +1,7 @@
-import { ROUTES } from "@/app/routes.const";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import {
     Dialog,
     DialogContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { ContentExchangeProgressBar } from "@/components/ui/content-exchange-progress";
 import { FloatingFormulasBg } from "@/components/ui/floating-formulas-bg";
+import type { TurImportResult } from "@/models/marketplace/import-result.model";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurExchangeImportService, type ZipCheckResult } from "@/services/exchange/exchange.import.service";
 import { TurFeaturesService } from "@/services/system/features.service";
@@ -28,7 +29,6 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const importService = new TurExchangeImportService();
@@ -107,8 +107,8 @@ export default function ExchangeImportPage() {
     const [storageEnabled, setStorageEnabled] = useState(false);
     const [includeContent, setIncludeContent] = useState(false);
     const [includeTemplate, setIncludeTemplate] = useState(false);
+    const [importResult, setImportResult] = useState<TurImportResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const navigate = useNavigate();
     const { t } = useTranslation();
 
     const isValidFile = (f: File): boolean => {
@@ -124,6 +124,7 @@ export default function ExchangeImportPage() {
         setStatus("uploading");
         setProgress(0);
         setErrorMessage("");
+        setImportResult(null);
 
         const taskId = `import-${Date.now()}`;
 
@@ -137,20 +138,24 @@ export default function ExchangeImportPage() {
                     () => { },
                 );
             }
-            await importService.importFile(
+            const result = await importService.importFile(
                 selectedFile,
                 (p) => setProgress(p),
                 withContent,
                 withTemplate,
                 withContent ? taskId : undefined,
             );
-            setStatus("success");
-            setProgress(100);
+            setImportResult(result);
             setContentProgress(null);
-            toast.success(t("exchange.importSuccess"));
-            setTimeout(() => {
-                navigate(ROUTES.SN_INSTANCE);
-            }, 2000);
+            if (result.error) {
+                setErrorMessage(result.error);
+                setStatus("error");
+                toast.error(t("exchange.importFailedMsg", { message: result.error }));
+            } else {
+                setStatus("success");
+                setProgress(100);
+                toast.success(t("exchange.importSuccess"));
+            }
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
@@ -161,7 +166,7 @@ export default function ExchangeImportPage() {
             setContentProgress(null);
             toast.error(t("exchange.importFailedMsg", { message: msg }));
         }
-    }, [navigate, t]);
+    }, [t]);
 
     const handleFile = useCallback(
         async (selectedFile: File) => {
@@ -266,6 +271,7 @@ export default function ExchangeImportPage() {
         setZipCheck(null);
         setIncludeContent(false);
         setIncludeTemplate(false);
+        setImportResult(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -380,14 +386,15 @@ export default function ExchangeImportPage() {
                             )}
 
                             {status === "success" && (
-                                <>
-                                    <p className="text-lg font-semibold text-emerald-500">
-                                        {t("exchange.importCompleted")}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {t("exchange.redirecting")}
-                                    </p>
-                                </>
+                                <div className="w-full max-w-sm">
+                                    {importResult ? (
+                                        <ImportResultPanel result={importResult} />
+                                    ) : (
+                                        <p className="text-lg font-semibold text-emerald-500">
+                                            {t("exchange.importCompleted")}
+                                        </p>
+                                    )}
+                                </div>
                             )}
 
                             {status === "indexing" && (
