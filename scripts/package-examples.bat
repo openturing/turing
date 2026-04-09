@@ -13,7 +13,7 @@ setlocal enabledelayedexpansion
 
 set SCRIPT_DIR=%~dp0
 set PROJECT_ROOT=%SCRIPT_DIR%..
-set EXAMPLES_DIR=%PROJECT_ROOT%\turing-examples
+set EXAMPLES_DIR=%PROJECT_ROOT%\turing-marketplace
 set OUTPUT_DIR=%PROJECT_ROOT%\target\examples
 set "PS=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 

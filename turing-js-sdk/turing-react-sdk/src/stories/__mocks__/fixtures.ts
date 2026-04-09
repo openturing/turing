@@ -2,7 +2,7 @@
  * Mock data fixtures for Storybook stories.
  *
  * These fixtures mirror the Turing Semantic Navigation API response format.
- * Each dataset is inspired by one of the turing-examples projects:
+ * Each dataset is inspired by one of the turing-marketplace projects:
  * - Mythical Creatures (bestiary)
  * - Space Missions (exploration)
  * - Vinyl Records (music store)

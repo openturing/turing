@@ -60,11 +60,11 @@ turing-app/src/main/resources/public/favicon.ico
 turing-js-sdk/dist/
 turing-js-sdk/turing-react-sdk/dist
 
-# ── Turing Examples (generated manifests, builds, exports) ──
-turing-examples/*/app/public/turing-manifest.json
-turing-examples/*/app/dist
-turing-examples/*/app/*.zip
-turing-examples/*/export/*.zip
+# ── Turing Marketplace (generated manifests, builds, exports) ──
+turing-marketplace/*/app/public/turing-manifest.json
+turing-marketplace/*/app/dist
+turing-marketplace/*/app/*.zip
+turing-marketplace/*/export/*.zip
 
 # ── GitHub Actions ──────────────────────────────────────────
 /.github/appmod

@@ -11,7 +11,7 @@ import type { ResolvedDocument } from "../../core/types";
  * # 🐉 Mythical Creatures Showcase
  *
  * This showcase demonstrates a full search page inspired by the
- * `turing-examples/mythical-creatures` project — a fantasy bestiary
+ * `turing-marketplace/mythical-creatures` project — a fantasy bestiary
  * with element badges, danger-level bars, and faceted filtering.
  *
  * ## SDK Components Used
@@ -370,7 +370,7 @@ const meta: Meta<typeof BestiaryPage> = {
     docs: {
       description: {
         component:
-          "Full search page demo inspired by `turing-examples/mythical-creatures`. Features a dark bestiary theme with element badges, danger bars, facets, and search.",
+          "Full search page demo inspired by `turing-marketplace/mythical-creatures`. Features a dark bestiary theme with element badges, danger bars, facets, and search.",
       },
     },
   },

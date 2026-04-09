@@ -502,7 +502,7 @@ export default function SearchPage() {
 
 ## Examples
 
-The [turing-examples](https://github.com/openviglet/turing/tree/2026.2/turing-examples) directory contains complete working apps:
+The [turing-marketplace](https://github.com/openviglet/turing/tree/2026.2/turing-marketplace) directory contains complete working apps:
 
 | Example | Description |
 |---------|-------------|

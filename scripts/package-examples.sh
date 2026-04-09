@@ -13,7 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-EXAMPLES_DIR="$PROJECT_ROOT/turing-examples"
+EXAMPLES_DIR="$PROJECT_ROOT/turing-marketplace"
 OUTPUT_DIR="$PROJECT_ROOT/target/examples"
 
 rm -rf "$OUTPUT_DIR"

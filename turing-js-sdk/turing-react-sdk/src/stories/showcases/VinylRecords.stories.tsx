@@ -10,7 +10,7 @@ import type { ResolvedDocument } from "../../core/types";
 /**
  * # 🎵 Vinyl Records Showcase
  *
- * Full search page inspired by `turing-examples/vinyl-records` — a curated
+ * Full search page inspired by `turing-marketplace/vinyl-records` — a curated
  * record store with album art, star ratings, condition badges, and genre facets.
  *
  * ## SDK Components Used
@@ -363,7 +363,7 @@ const meta: Meta<typeof VinylStorePage> = {
     docs: {
       description: {
         component:
-          "Full search page demo inspired by `turing-examples/vinyl-records`. Features a warm vinyl-store theme with album art, star ratings, condition grades, and genre/condition facets.",
+          "Full search page demo inspired by `turing-marketplace/vinyl-records`. Features a warm vinyl-store theme with album art, star ratings, condition grades, and genre/condition facets.",
       },
     },
   },

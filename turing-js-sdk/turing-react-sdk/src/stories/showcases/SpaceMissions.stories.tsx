@@ -10,7 +10,7 @@ import type { ResolvedDocument } from "../../core/types";
 /**
  * # 🚀 Space Missions Showcase
  *
- * Full search page inspired by `turing-examples/space-missions` — a space exploration
+ * Full search page inspired by `turing-marketplace/space-missions` — a space exploration
  * catalog with agency badges, outcome indicators, and HUD-style cards.
  *
  * ## SDK Components Used
@@ -340,7 +340,7 @@ const meta: Meta<typeof SpaceMissionsPage> = {
     docs: {
       description: {
         component:
-          "Full search page demo inspired by `turing-examples/space-missions`. Features a deep-space theme with HUD cards, outcome badges, and agency filters.",
+          "Full search page demo inspired by `turing-marketplace/space-missions`. Features a deep-space theme with HUD cards, outcome badges, and agency filters.",
       },
     },
   },

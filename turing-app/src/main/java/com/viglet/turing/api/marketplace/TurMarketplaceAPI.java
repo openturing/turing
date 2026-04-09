@@ -32,7 +32,7 @@ import java.util.List;
 @Tag(name = "Marketplace", description = "Browse and import pre-built packages")
 public class TurMarketplaceAPI {
 
-    private static final String FALLBACK_CATALOG = "marketplace/marketplace.json";
+    private static final String FALLBACK_CATALOG = "marketplace.json";
 
     private final TurConfigProperties configProperties;
     private final TurImportExchange turImportExchange;

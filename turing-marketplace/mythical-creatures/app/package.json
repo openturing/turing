@@ -1,15 +1,15 @@
 {
-  "name": "turing-example-vinyl-records",
+  "name": "turing-example-mythical-creatures",
   "private": true,
   "version": "2026.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "gen-manifest": "node ../../../turing-examples/gen-manifest.mjs",
+    "gen-manifest": "node ../../../turing-marketplace/gen-manifest.mjs",
     "compile:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
     "compile:build": "npm run gen-manifest && tsc -b && vite build",
     "compile": "npm run compile:deps && npm run compile:build",
-    "zip": "node ../../../turing-examples/zip-dist.mjs",
+    "zip": "node ../../../turing-marketplace/zip-dist.mjs",
     "package": "npm run compile && npm run zip",
     "preview": "vite preview"
   },

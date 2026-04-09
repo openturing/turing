@@ -15,5 +15,5 @@ public class TurMarketplaceProperty {
     /** Whether the Marketplace feature is enabled. */
     private boolean enabled = false;
     /** External URL that serves the marketplace catalog JSON. */
-    private String url = "https://marketplace.viglet.org/marketplace.json";
+    private String url = "https://turing.viglet.org/marketplace/marketplace.json";
 }

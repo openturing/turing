@@ -71,7 +71,7 @@ export const Simple: Story = {
  * ## Styled Pagination
  *
  * Custom `itemComponent` with pill-style buttons and gradient active state.
- * This mirrors the style used in the turing-examples projects.
+ * This mirrors the style used in the turing-marketplace projects.
  */
 export const StyledPagination: Story = {
   name: "Styled (Pill Buttons)",
