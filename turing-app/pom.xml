@@ -461,27 +461,6 @@
                 <version>2.0.0</version>
                 <executions>
                     <execution>
-                        <id>react-sdk install node and npm</id>
-                        <goals>
-                            <goal>install-node-and-npm</goal>
-                        </goals>
-                        <configuration>
-                            <workingDirectory>../turing-js-sdk/turing-react-sdk</workingDirectory>
-                        </configuration>
-                        <phase>generate-resources</phase>
-                    </execution>
-                    <execution>
-                        <id>react-sdk build</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                            <workingDirectory>../turing-js-sdk/turing-react-sdk</workingDirectory>
-                        </configuration>
-                        <phase>generate-resources</phase>
-                    </execution>
-                    <execution>
                         <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
                         <id>react install node and npm</id>
                         <goals>
