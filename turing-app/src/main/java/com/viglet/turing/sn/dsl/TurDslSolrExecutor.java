@@ -224,6 +224,15 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 }
             }
         }
+        // Explain → Solr debugQuery
+        if (request.explain() != null && request.explain()) {
+            solrQuery.setParam("debugQuery", "true");
+        }
+        // Stored fields
+        if (request.storedFields() != null && !request.storedFields().isEmpty()) {
+            solrQuery.setParam("fl", String.join(",", request.storedFields()));
+        }
+        // Script fields, indices_boost, track_total_hits, scroll — not supported in Solr
         return solrQuery;
     }
 
@@ -339,11 +348,99 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                     translateClause(innerQuery);
             case TurDslQuery.Knn(var field, var queryVector, var k,
                                   var numCandidates, var similarity, var filter) -> {
-                // Solr: KNN via {!knn} query parser
                 yield "{!knn f=%s topK=%d}[%s]".formatted(field, k,
                         queryVector.stream().map(String::valueOf)
                                 .collect(Collectors.joining(",")));
             }
+            case TurDslQuery.MoreLikeThis(var fields, var likeText, var likeIds,
+                                           var mtf, var mdf, var mqt) -> {
+                // Solr: {!mlt} query parser
+                String fl = (fields != null && !fields.isEmpty())
+                        ? String.join(",", fields) : "*";
+                yield likeText != null
+                        ? "{!mlt qf=%s}%s".formatted(fl, escapeQuotes(likeText))
+                        : "*:*";
+            }
+            case TurDslQuery.CombinedFields(var queryText, var fields, var operator) -> {
+                if (fields == null || fields.isEmpty()) yield escapeQuotes(queryText);
+                yield fields.stream()
+                        .map(f -> "%s:(%s)".formatted(f, escapeQuotes(queryText)))
+                        .collect(Collectors.joining(
+                                "and".equalsIgnoreCase(operator) ? " AND " : " OR ",
+                                "(", ")"));
+            }
+            case TurDslQuery.MatchBoolPrefix(var field, var queryText) -> {
+                String[] tokens = queryText.trim().split("\\s+");
+                if (tokens.length <= 1) yield "%s:%s*".formatted(field, escapeQuotes(queryText));
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < tokens.length - 1; i++) {
+                    sb.append("+%s:%s ".formatted(field, escapeQuotes(tokens[i])));
+                }
+                sb.append("%s:%s*".formatted(field, escapeQuotes(tokens[tokens.length - 1])));
+                yield sb.toString();
+            }
+            case TurDslQuery.Pinned(var ids, var organic) -> {
+                // Solr: elevate or boost pinned IDs
+                String idBoost = ids.stream()
+                        .map(id -> "id:\"%s\"^1000".formatted(escapeQuotes(id)))
+                        .collect(Collectors.joining(" OR "));
+                String base = organic != null ? translateClause(organic) : "*:*";
+                yield "(%s) OR (%s)".formatted(idBoost, base);
+            }
+            case TurDslQuery.GeoDistance(var field, var distance, var location) -> {
+                if (location != null && distance != null) {
+                    yield "{!geofilt sfield=%s pt=%s,%s d=%s}".formatted(
+                            field, location.lat(), location.lon(),
+                            distance.replaceAll("[^0-9.]", ""));
+                }
+                yield "*:*";
+            }
+            case TurDslQuery.GeoBoundingBox(var field, var topLeft, var bottomRight) -> {
+                if (topLeft != null && bottomRight != null) {
+                    yield "%s:[%s,%s TO %s,%s]".formatted(field,
+                            bottomRight.lat(), topLeft.lon(),
+                            topLeft.lat(), bottomRight.lon());
+                }
+                yield "*:*";
+            }
+            case TurDslQuery.TermsSet(var field, var terms, var msmField, var msmScript) -> {
+                String joined = terms.stream()
+                        .map(v -> "\"%s\"".formatted(escapeQuotes(v.toString())))
+                        .collect(Collectors.joining(" OR "));
+                yield "%s:(%s)".formatted(field, joined);
+            }
+            // --- Low-priority queries (best-effort / translate inner query) ---
+            case TurDslQuery.HasChild(var type, var childQuery, var sm, var minC, var maxC) ->
+                    translateClause(childQuery);
+            case TurDslQuery.HasParent(var parentType, var parentQuery, var score) ->
+                    translateClause(parentQuery);
+            case TurDslQuery.Intervals(var field, var rule) ->
+                    rule != null && rule.query() != null
+                            ? "%s:\"%s\"".formatted(field, escapeQuotes(rule.query()))
+                            : "%s:[* TO *]".formatted(field);
+            case TurDslQuery.SpanTerm(var field, var value) ->
+                    "%s:\"%s\"".formatted(field, escapeQuotes(value));
+            case TurDslQuery.SpanNear(var clauses, var slop, var inOrder) -> {
+                if (clauses.isEmpty()) yield "*:*";
+                yield clauses.stream().map(this::translateClause)
+                        .collect(Collectors.joining(" AND ", "(", ")"));
+            }
+            case TurDslQuery.SpanOr(var clauses) -> {
+                if (clauses.isEmpty()) yield "*:*";
+                yield clauses.stream().map(this::translateClause)
+                        .collect(Collectors.joining(" OR ", "(", ")"));
+            }
+            case TurDslQuery.SpanNot(var include, var exclude) ->
+                    "+(%s) -(%s)".formatted(translateClause(include), translateClause(exclude));
+            case TurDslQuery.SpanFirst(var match, var end) -> translateClause(match);
+            case TurDslQuery.RankFeature(var field, var boost, var s1, var s2, var s3) ->
+                    "%s:[* TO *]".formatted(field);
+            case TurDslQuery.DistanceFeature(var field, var origin, var pivot) ->
+                    "%s:[* TO *]".formatted(field);
+            case TurDslQuery.Wrapper(var encodedQuery) -> "*:*";
+            case TurDslQuery.GeoShape(var field, var shape, var relation) ->
+                    "%s:[* TO *]".formatted(field);
+            case TurDslQuery.Percolate(var field, var document) -> "*:*";
         };
     }
 
@@ -437,6 +534,56 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                 }
                 case TurDslAggregation.WithSubAggs(var parent, var subAggs) ->
                         log.warn("Sub-aggregations are not supported in Solr DSL translator");
+                case TurDslAggregation.SignificantTermsAgg(var field, var size, var mdc) -> {
+                    solrQuery.addFacetField(field);
+                    if (size != null) solrQuery.setParam("f.%s.facet.limit".formatted(field), size.toString());
+                }
+                case TurDslAggregation.NestedAgg n ->
+                        log.warn("nested aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.ReverseNestedAgg rn ->
+                        log.warn("reverse_nested aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.AutoDateHistogramAgg adh ->
+                        log.warn("auto_date_histogram is not supported in Solr DSL translator");
+                case TurDslAggregation.MultiTermsAgg mt ->
+                        log.warn("multi_terms aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.RareTermsAgg(var field, var mdc) -> {
+                    solrQuery.addFacetField(field);
+                    solrQuery.setParam("f.%s.facet.sort".formatted(field), "count");
+                    solrQuery.setParam("f.%s.facet.limit".formatted(field),
+                            mdc != null ? mdc.toString() : "10");
+                }
+                case TurDslAggregation.TopMetricsAgg tm ->
+                        log.warn("top_metrics aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.PercentileRanksAgg pr ->
+                        solrQuery.addGetFieldStatistics(pr.field());
+                case TurDslAggregation.GeoDistanceAgg gd ->
+                        log.warn("geo_distance agg not supported in Solr DSL");
+                case TurDslAggregation.GeoBoundsAgg gb ->
+                        log.warn("geo_bounds agg not supported in Solr DSL");
+                case TurDslAggregation.GeoCentroidAgg gc ->
+                        log.warn("geo_centroid agg not supported in Solr DSL");
+                case TurDslAggregation.SamplerAgg s ->
+                        log.warn("sampler agg not supported in Solr DSL");
+                case TurDslAggregation.DiversifiedSamplerAgg ds ->
+                        log.warn("diversified_sampler agg not supported in Solr DSL");
+                case TurDslAggregation.AdjacencyMatrixAgg am ->
+                        log.warn("adjacency_matrix agg not supported in Solr DSL");
+                case TurDslAggregation.ScriptedMetricAgg sm ->
+                        log.warn("scripted_metric agg not supported in Solr DSL");
+                case TurDslAggregation.MedianAbsoluteDeviationAgg mad ->
+                        log.warn("median_absolute_deviation agg not supported in Solr DSL");
+                case TurDslAggregation.MatrixStatsAgg ms ->
+                        log.warn("matrix_stats agg not supported in Solr DSL");
+                case TurDslAggregation.BoxplotAgg bp ->
+                        log.warn("boxplot agg not supported in Solr DSL");
+                case TurDslAggregation.StringStatsAgg ss ->
+                        log.warn("string_stats agg not supported in Solr DSL");
+                case TurDslAggregation.TTestAgg tt ->
+                        log.warn("t_test agg not supported in Solr DSL");
+                case TurDslAggregation.VariableWidthHistogramAgg vwh ->
+                        log.warn("variable_width_histogram agg not supported in Solr DSL");
+                case TurDslAggregation.RateAgg r ->
+                        log.warn("rate agg not supported in Solr DSL");
             }
         }
     }

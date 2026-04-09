@@ -41,7 +41,24 @@ public record TurDslQueryRequest(
         TurDslCollapse collapse,
         Map<String, TurDslSuggest> suggest,
         List<TurDslRescore> rescore,
-        String timeout
+        String timeout,
+        // --- Medium-priority features ---
+        Boolean explain,
+        @JsonProperty("script_fields") Map<String, TurDslScriptField> scriptFields,
+        @JsonProperty("indices_boost") List<Map<String, Double>> indicesBoost,
+        @JsonProperty("track_total_hits") Object trackTotalHits,
+        @JsonProperty("stored_fields") List<String> storedFields,
+        String scroll,
+        // --- Low-priority features ---
+        Boolean profile,
+        TurDslPit pit,
+        @JsonProperty("docvalue_fields") List<Object> docvalueFields,
+        Boolean version,
+        @JsonProperty("seq_no_primary_term") Boolean seqNoPrimaryTerm,
+        String preference,
+        String routing,
+        @JsonProperty("search_type") String searchType,
+        @JsonProperty("terminate_after") Integer terminateAfter
 ) {
     /**
      * Highlight configuration following the Elasticsearch format.
@@ -118,5 +135,22 @@ public record TurDslQueryRequest(
             @JsonProperty("query_weight") Double queryWeight,
             @JsonProperty("rescore_query_weight") Double rescoreQueryWeight,
             @JsonProperty("score_mode") String scoreMode
+    ) {}
+
+    /**
+     * Script field definition.
+     * <pre>{@code "script_fields": { "my_field": { "script": { "source": "doc['price'].value * 2" } } } }</pre>
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslScriptField(TurDslQuery.Script script) {}
+
+    /**
+     * Point in time reference for consistent pagination.
+     * <pre>{@code "pit": { "id": "abc123", "keep_alive": "5m" } }</pre>
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslPit(
+            String id,
+            @JsonProperty("keep_alive") String keepAlive
     ) {}
 }
