@@ -24,12 +24,13 @@ import { useTranslation } from "react-i18next";
 
 interface Props {
     data: TurSNSiteLocale[]
+    storageEnabled?: boolean
     children?: React.ReactNode
 }
 
-export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, children }) => {
+export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, storageEnabled = false, children }) => {
     const { t } = useTranslation();
-    const columns = React.useMemo(() => buildColumns(t), [t]);
+    const columns = React.useMemo(() => buildColumns(t, storageEnabled), [t, storageEnabled]);
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []

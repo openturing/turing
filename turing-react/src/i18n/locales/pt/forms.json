@@ -943,7 +943,8 @@
       "language": "Idioma",
       "core": "Core",
       "action": "Ação",
-      "openSearch": "Abrir Busca"
+      "openSearch": "Abrir Busca",
+      "searchDefault": "Busca Padrão"
     },
     "loggingGrid": {
       "date": "Data",

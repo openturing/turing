@@ -1,13 +1,20 @@
 import { ROUTES } from "@/app/routes.const";
 import { BadgeColorful } from "@/components/badge-colorful";
 import { BadgeLocale } from "@/components/badge-locale";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { GradientButton } from "@/components/ui/gradient-button";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
+import { Icon } from "@iconify/react";
 import { Checkbox } from "@radix-ui/react-checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
 
-export const buildColumns = (t: (key: string) => string): ColumnDef<TurSNSiteLocale>[] => [
+export const buildColumns = (t: (key: string) => string, storageEnabled = false): ColumnDef<TurSNSiteLocale>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -64,16 +71,45 @@ export const buildColumns = (t: (key: string) => string): ColumnDef<TurSNSiteLoc
         header: () => <div className="text-right">{t("forms.localeTable.action")}</div>,
         cell: ({ row }) => {
             const locale = row.original;
+            const site = locale.turSNSite;
+            const hasTemplate = storageEnabled && !!site.searchTemplate?.trim();
+            const searchUrl = `/sn/${site.name}?_setlocale=${locale.language}`;
+            const defaultUrl = `/sn/${site.name}?_setlocale=${locale.language}&_embedded=true`;
             return (
                 <div className="flex justify-end gap-2">
-                    <GradientButton asChild variant="outline" size={"sm"} to={`${ROUTES.SN_INSTANCE}/${locale.turSNSite.id}/locale/${locale.id}`}>
+                    <GradientButton asChild variant="outline" size={"sm"} to={`${ROUTES.SN_INSTANCE}/${site.id}/locale/${locale.id}`}>
                         {t("forms.common.edit")}
                     </GradientButton>
-                    <GradientButton asChild size={"sm"}>
-                        <a href={`/sn/${locale.turSNSite.name}?_setlocale=${locale.language}`} target="_blank">
-                            {t("forms.localeTable.openSearch")}
-                        </a>
-                    </GradientButton>
+                    {hasTemplate ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <GradientButton size={"sm"}>
+                                    {t("forms.localeTable.openSearch")}
+                                    <ChevronDown className="size-3.5" />
+                                </GradientButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <a href={searchUrl} target="_blank">
+                                        <Icon icon="mdi:card-search" className="size-4" />
+                                        {t("forms.localeTable.openSearch")} ({site.searchTemplate})
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <a href={defaultUrl} target="_blank">
+                                        <Icon icon="mdi:card-search-outline" className="size-4" />
+                                        {t("forms.localeTable.searchDefault")}
+                                    </a>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <GradientButton asChild size={"sm"}>
+                            <a href={searchUrl} target="_blank">
+                                {t("forms.localeTable.openSearch")}
+                            </a>
+                        </GradientButton>
+                    )}
                 </div>
             )
         },

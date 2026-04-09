@@ -67,6 +67,9 @@ public class TurSNSearchController {
     @GetMapping("/{siteName}")
     public ResponseEntity<?> serveWithoutSlash(@PathVariable String siteName,
                                                HttpServletRequest request) {
+        if (isEmbeddedRequested(request)) {
+            return serveEmbeddedIndex();
+        }
         // If site has a template, redirect to trailing slash so relative asset paths resolve correctly
         // e.g. ./assets/index.css resolves to /sn/mythical-creatures/assets/index.css (not /sn/assets/index.css)
         String template = turSNSiteRepository.findByName(siteName)
@@ -79,7 +82,7 @@ public class TurSNSearchController {
                     .header(HttpHeaders.LOCATION, redirect)
                     .build();
         }
-        return serveDefaultIndex(request);
+        return serveEmbeddedIndex();
     }
 
     @GetMapping("/{siteName}/")
@@ -99,13 +102,21 @@ public class TurSNSearchController {
         return serve(siteName, filePath, request);
     }
 
+    private static boolean isEmbeddedRequested(HttpServletRequest request) {
+        return "true".equals(request.getParameter("_embedded"));
+    }
+
     private ResponseEntity<?> serve(String siteName, String filePath, HttpServletRequest request) {
+        if (isEmbeddedRequested(request)) {
+            return serveEmbeddedIndex();
+        }
+
         String template = turSNSiteRepository.findByName(siteName)
                 .map(site -> site.getSearchTemplate())
                 .orElse(null);
 
         if (template == null || template.isBlank() || !storageService.isEnabled()) {
-            return serveDefaultIndex(request);
+            return serveEmbeddedIndex();
         }
 
         return serveFromStorage(template, filePath);
@@ -144,17 +155,9 @@ public class TurSNSearchController {
                         .body(new InputStreamResource(indexStream));
             } catch (Exception ex) {
                 log.debug("Template '{}' index.html not found in storage, falling back to default", template);
-                return serveDefaultIndexFallback();
+                return serveEmbeddedIndex();
             }
         }
-    }
-
-    private ResponseEntity<?> serveDefaultIndex(HttpServletRequest request) {
-        return serveEmbeddedIndex();
-    }
-
-    private ResponseEntity<?> serveDefaultIndexFallback() {
-        return serveEmbeddedIndex();
     }
 
     private ResponseEntity<?> serveEmbeddedIndex() {
