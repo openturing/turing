@@ -325,31 +325,143 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
         Map<String, TurDslSearchResponse.AggregationResult> result = new LinkedHashMap<>();
         try {
             for (var entry : aggs.entrySet()) {
-                if (entry.getValue() instanceof TurDslAggregation.TermsAgg termsAgg) {
-                    Map<String, Long> counts = new LinkedHashMap<>();
-                    int maxSize = termsAgg.size() != null ? termsAgg.size() : 10;
-                    for (ScoreDoc sd : allDocs.scoreDocs) {
-                        Document doc = searcher.storedFields().document(sd.doc);
-                        String[] values = doc.getValues(termsAgg.field());
-                        for (String val : values) {
-                            if (val != null && !val.isEmpty()) {
-                                counts.merge(val, 1L, Long::sum);
-                            }
-                        }
-                    }
-                    List<TurDslSearchResponse.Bucket> buckets = counts.entrySet().stream()
-                            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                            .limit(maxSize)
-                            .map(e -> new TurDslSearchResponse.Bucket(e.getKey(), e.getValue()))
-                            .toList();
-                    result.put(entry.getKey(),
-                            new TurDslSearchResponse.AggregationResult(buckets));
+                TurDslAggregation agg = entry.getValue();
+                // Unwrap sub-aggs (process parent only at Lucene level)
+                if (agg instanceof TurDslAggregation.WithSubAggs wsa) agg = wsa.parent();
+
+                if (agg instanceof TurDslAggregation.TermsAgg termsAgg) {
+                    result.put(entry.getKey(), buildLuceneTermsAgg(allDocs, searcher, termsAgg));
+                } else if (agg instanceof TurDslAggregation.AvgAgg
+                        || agg instanceof TurDslAggregation.SumAgg
+                        || agg instanceof TurDslAggregation.MinAgg
+                        || agg instanceof TurDslAggregation.MaxAgg
+                        || agg instanceof TurDslAggregation.ValueCountAgg
+                        || agg instanceof TurDslAggregation.CardinalityAgg) {
+                    result.put(entry.getKey(), buildLuceneNumericAgg(allDocs, searcher, agg));
+                } else if (agg instanceof TurDslAggregation.StatsAgg statsAgg) {
+                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, statsAgg.field()));
+                } else if (agg instanceof TurDslAggregation.ExtendedStatsAgg esAgg) {
+                    result.put(entry.getKey(), buildLuceneStatsAgg(allDocs, searcher, esAgg.field()));
+                } else if (agg instanceof TurDslAggregation.PercentilesAgg pAgg) {
+                    result.put(entry.getKey(), buildLucenePercentilesAgg(allDocs, searcher, pAgg));
+                } else if (agg instanceof TurDslAggregation.FiltersAgg fAgg) {
+                    result.put(entry.getKey(), buildLuceneFiltersAgg(allDocs, searcher, fAgg));
                 }
+                // TopHitsAgg, CompositeAgg, etc. — not supported in Lucene DSL
             }
         } catch (IOException e) {
             log.warn("Error building Lucene aggregations: {}", e.getMessage());
         }
         return result.isEmpty() ? null : result;
+    }
+
+    private TurDslSearchResponse.AggregationResult buildLuceneTermsAgg(
+            TopDocs allDocs, IndexSearcher searcher, TurDslAggregation.TermsAgg termsAgg)
+            throws IOException {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        int maxSize = termsAgg.size() != null ? termsAgg.size() : 10;
+        for (ScoreDoc sd : allDocs.scoreDocs) {
+            Document doc = searcher.storedFields().document(sd.doc);
+            for (String val : doc.getValues(termsAgg.field())) {
+                if (val != null && !val.isEmpty()) counts.merge(val, 1L, Long::sum);
+            }
+        }
+        List<TurDslSearchResponse.Bucket> buckets = counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(maxSize)
+                .map(e -> new TurDslSearchResponse.Bucket(e.getKey(), e.getValue()))
+                .toList();
+        return new TurDslSearchResponse.AggregationResult(buckets);
+    }
+
+    private TurDslSearchResponse.AggregationResult buildLuceneNumericAgg(
+            TopDocs allDocs, IndexSearcher searcher, TurDslAggregation agg) throws IOException {
+        String field = switch (agg) {
+            case TurDslAggregation.AvgAgg a -> a.field();
+            case TurDslAggregation.SumAgg a -> a.field();
+            case TurDslAggregation.MinAgg a -> a.field();
+            case TurDslAggregation.MaxAgg a -> a.field();
+            case TurDslAggregation.ValueCountAgg a -> a.field();
+            case TurDslAggregation.CardinalityAgg a -> a.field();
+            default -> null;
+        };
+        if (field == null) return new TurDslSearchResponse.AggregationResult(0.0);
+
+        List<Double> values = new ArrayList<>();
+        Set<String> unique = new LinkedHashSet<>();
+        for (ScoreDoc sd : allDocs.scoreDocs) {
+            Document doc = searcher.storedFields().document(sd.doc);
+            for (String val : doc.getValues(field)) {
+                if (val != null && !val.isEmpty()) {
+                    unique.add(val);
+                    try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+
+        double result = switch (agg) {
+            case TurDslAggregation.AvgAgg a -> values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            case TurDslAggregation.SumAgg a -> values.stream().mapToDouble(Double::doubleValue).sum();
+            case TurDslAggregation.MinAgg a -> values.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+            case TurDslAggregation.MaxAgg a -> values.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            case TurDslAggregation.ValueCountAgg a -> values.size();
+            case TurDslAggregation.CardinalityAgg a -> unique.size();
+            default -> 0;
+        };
+        return new TurDslSearchResponse.AggregationResult(result);
+    }
+
+    private TurDslSearchResponse.AggregationResult buildLuceneStatsAgg(
+            TopDocs allDocs, IndexSearcher searcher, String field) throws IOException {
+        List<Double> values = new ArrayList<>();
+        for (ScoreDoc sd : allDocs.scoreDocs) {
+            Document doc = searcher.storedFields().document(sd.doc);
+            for (String val : doc.getValues(field)) {
+                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+            }
+        }
+        Map<String, Double> stats = new LinkedHashMap<>();
+        stats.put("count", (double) values.size());
+        stats.put("min", values.stream().mapToDouble(Double::doubleValue).min().orElse(0));
+        stats.put("max", values.stream().mapToDouble(Double::doubleValue).max().orElse(0));
+        stats.put("avg", values.stream().mapToDouble(Double::doubleValue).average().orElse(0));
+        stats.put("sum", values.stream().mapToDouble(Double::doubleValue).sum());
+        return new TurDslSearchResponse.AggregationResult(stats);
+    }
+
+    private TurDslSearchResponse.AggregationResult buildLucenePercentilesAgg(
+            TopDocs allDocs, IndexSearcher searcher, TurDslAggregation.PercentilesAgg pAgg)
+            throws IOException {
+        List<Double> values = new ArrayList<>();
+        for (ScoreDoc sd : allDocs.scoreDocs) {
+            Document doc = searcher.storedFields().document(sd.doc);
+            for (String val : doc.getValues(pAgg.field())) {
+                try { values.add(Double.parseDouble(val)); } catch (NumberFormatException ignored) {}
+            }
+        }
+        Collections.sort(values);
+        double[] percents = (pAgg.percents() != null && !pAgg.percents().isEmpty())
+                ? pAgg.percents().stream().mapToDouble(Double::doubleValue).toArray()
+                : new double[]{1, 5, 25, 50, 75, 95, 99};
+        Map<String, Double> percentiles = new LinkedHashMap<>();
+        for (double p : percents) {
+            int idx = (int) Math.ceil(p / 100.0 * values.size()) - 1;
+            idx = Math.max(0, Math.min(idx, values.size() - 1));
+            percentiles.put(String.valueOf(p), values.isEmpty() ? 0.0 : values.get(idx));
+        }
+        return new TurDslSearchResponse.AggregationResult(percentiles);
+    }
+
+    private TurDslSearchResponse.AggregationResult buildLuceneFiltersAgg(
+            TopDocs allDocs, IndexSearcher searcher, TurDslAggregation.FiltersAgg fAgg)
+            throws IOException {
+        List<TurDslSearchResponse.Bucket> buckets = new ArrayList<>();
+        for (var fe : fAgg.filters().entrySet()) {
+            Query filterQuery = translateQuery(fe.getValue());
+            TopDocs filtered = searcher.search(filterQuery, Integer.MAX_VALUE);
+            buckets.add(new TurDslSearchResponse.Bucket(fe.getKey(), filtered.totalHits.value()));
+        }
+        return new TurDslSearchResponse.AggregationResult(buckets);
     }
 
     // ==================== Highlighting ====================

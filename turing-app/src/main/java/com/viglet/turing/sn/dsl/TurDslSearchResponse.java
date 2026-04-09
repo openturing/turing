@@ -37,16 +37,39 @@ public record TurDslSearchResponse(
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record AggregationResult(List<Bucket> buckets, Double value) {
+    public record AggregationResult(
+            List<Bucket> buckets,
+            Double value,
+            Map<String, Double> values,
+            List<Hit> hits,
+            Map<String, AggregationResult> subAggregations
+    ) {
         /** Bucket aggregation constructor. */
-        public AggregationResult(List<Bucket> buckets) { this(buckets, null); }
-        /** Metric aggregation constructor. */
-        public AggregationResult(Double value) { this(null, value); }
+        public AggregationResult(List<Bucket> buckets) {
+            this(buckets, null, null, null, null);
+        }
+        /** Metric aggregation constructor (single value). */
+        public AggregationResult(Double value) {
+            this(null, value, null, null, null);
+        }
+        /** Multi-value metric (stats, percentiles). */
+        public AggregationResult(Map<String, Double> values) {
+            this(null, null, values, null, null);
+        }
+        /** Top hits constructor. */
+        public AggregationResult(List<Bucket> buckets, List<Hit> hits) {
+            this(buckets, null, null, hits, null);
+        }
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Bucket(
             String key,
-            @JsonProperty("doc_count") long docCount
-    ) {}
+            @JsonProperty("doc_count") long docCount,
+            Map<String, AggregationResult> subAggregations
+    ) {
+        public Bucket(String key, long docCount) {
+            this(key, docCount, null);
+        }
+    }
 }

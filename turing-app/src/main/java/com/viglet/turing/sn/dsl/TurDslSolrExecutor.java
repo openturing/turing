@@ -363,6 +363,23 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
                         log.warn("histogram aggregation requires Solr JSON facet API — not yet implemented");
                 case TurDslAggregation.FilterAgg f ->
                         solrQuery.addFacetQuery(translateClause(f.filter()));
+                case TurDslAggregation.StatsAgg a ->
+                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.ExtendedStatsAgg a ->
+                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.PercentilesAgg a ->
+                        solrQuery.addGetFieldStatistics(a.field());
+                case TurDslAggregation.TopHitsAgg th ->
+                        log.warn("top_hits aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.CompositeAgg c ->
+                        log.warn("composite aggregation is not supported in Solr DSL translator");
+                case TurDslAggregation.FiltersAgg f -> {
+                    for (var fe : f.filters().entrySet()) {
+                        solrQuery.addFacetQuery(translateClause(fe.getValue()));
+                    }
+                }
+                case TurDslAggregation.WithSubAggs(var parent, var subAggs) ->
+                        log.warn("Sub-aggregations are not supported in Solr DSL translator");
             }
         }
     }

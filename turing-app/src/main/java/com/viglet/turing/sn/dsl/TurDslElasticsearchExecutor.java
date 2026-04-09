@@ -420,6 +420,12 @@ public class TurDslElasticsearchExecutor
     private void applyAggregationsToRequest(Map<String, TurDslAggregation> aggs,
                                              SearchRequest.Builder reqBuilder) {
         Map<String, Aggregation> esAggs = new LinkedHashMap<>();
+        buildAggMap(aggs, esAggs);
+        reqBuilder.aggregations(esAggs);
+    }
+
+    private void buildAggMap(Map<String, TurDslAggregation> aggs,
+                              Map<String, Aggregation> esAggs) {
         for (var entry : aggs.entrySet()) {
             String aggName = entry.getKey();
             switch (entry.getValue()) {
@@ -480,9 +486,82 @@ public class TurDslElasticsearchExecutor
                         })));
                 case TurDslAggregation.FilterAgg(var filter) ->
                         esAggs.put(aggName, Aggregation.of(a -> a.filter(translateQuery(filter))));
+                case TurDslAggregation.StatsAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.stats(s -> s.field(field))));
+                case TurDslAggregation.ExtendedStatsAgg(var field) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.extendedStats(es -> es.field(field))));
+                case TurDslAggregation.PercentilesAgg(var field, var percents) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.percentiles(pc -> {
+                            pc.field(field);
+                            if (percents != null) pc.percents(percents);
+                            return pc;
+                        })));
+                case TurDslAggregation.TopHitsAgg(var size, var sort, var source) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.topHits(th -> {
+                            if (size != null) th.size(size);
+                            return th;
+                        })));
+                case TurDslAggregation.CompositeAgg(var sources, var size, var after) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.composite(c -> {
+                            if (size != null) c.size(size);
+                            List<co.elastic.clients.util.NamedValue<
+                                    co.elastic.clients.elasticsearch._types.aggregations
+                                            .CompositeAggregationSource>> esSources = new ArrayList<>();
+                            for (var srcMap : sources) {
+                                for (var e : srcMap.entrySet()) {
+                                    var cs = e.getValue();
+                                    esSources.add(co.elastic.clients.util.NamedValue.of(
+                                            e.getKey(),
+                                            co.elastic.clients.elasticsearch._types.aggregations
+                                                    .CompositeAggregationSource.of(cas ->
+                                                    cas.terms(t -> t.field(cs.field())))));
+                                }
+                            }
+                            c.sources(esSources);
+                            return c;
+                        })));
+                case TurDslAggregation.FiltersAgg(var filters) ->
+                        esAggs.put(aggName, Aggregation.of(a -> a.filters(f -> {
+                            Map<String, Query> esFilters = new LinkedHashMap<>();
+                            filters.forEach((k, v) -> esFilters.put(k, translateQuery(v)));
+                            f.filters(fb -> fb.keyed(esFilters));
+                            return f;
+                        })));
+                case TurDslAggregation.WithSubAggs(var parent, var subAggs) -> {
+                    // Build parent aggregation first
+                    Map<String, TurDslAggregation> parentWrapper = Map.of(aggName, parent);
+                    Map<String, Aggregation> builtParent = new LinkedHashMap<>();
+                    buildAggMap(parentWrapper, builtParent);
+                    // Build sub-aggregations
+                    Map<String, Aggregation> builtSubs = new LinkedHashMap<>();
+                    buildAggMap(subAggs, builtSubs);
+                    // Wrap: create a new Aggregation that has the parent type + sub-aggs
+                    if (builtParent.containsKey(aggName)) {
+                        esAggs.put(aggName, Aggregation.of(a -> {
+                            a.aggregations(builtSubs);
+                            // Copy the parent type — use the _kind and serialize approach
+                            // Simplification: re-add parent type directly
+                            if (parent instanceof TurDslAggregation.TermsAgg ta) {
+                                a.terms(t -> { t.field(ta.field()); if (ta.size() != null) t.size(ta.size()); return t; });
+                            } else if (parent instanceof TurDslAggregation.DateHistogramAgg dha) {
+                                a.dateHistogram(dh -> { dh.field(dha.field()); return dh; });
+                            } else if (parent instanceof TurDslAggregation.HistogramAgg ha) {
+                                a.histogram(h -> { h.field(ha.field()); if (ha.interval() != null) h.interval(ha.interval()); return h; });
+                            } else if (parent instanceof TurDslAggregation.FilterAgg fa) {
+                                a.filter(translateQuery(fa.filter()));
+                            } else if (parent instanceof TurDslAggregation.FiltersAgg fla) {
+                                Map<String, Query> ef = new LinkedHashMap<>();
+                                fla.filters().forEach((k, v) -> ef.put(k, translateQuery(v)));
+                                a.filters(f -> { f.filters(fb -> fb.keyed(ef)); return f; });
+                            } else if (parent instanceof TurDslAggregation.RangeAgg ra) {
+                                a.range(r -> { r.field(ra.field()); return r; });
+                            }
+                            return a;
+                        }));
+                    }
+                }
             }
         }
-        reqBuilder.aggregations(esAggs);
     }
 
     private static Double toDouble(Object value) {
