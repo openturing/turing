@@ -1,23 +1,31 @@
 /**
- * Creates a ZIP archive from the Vite dist/ output directory.
+ * Creates a ZIP archive for Turing Marketplace import.
+ *
+ * The ZIP contains:
+ *   - export.json            (SN site configuration, from ../export/)
+ *   - *_content.json         (indexed content, from ../export/)
+ *   - app/                   (compiled SPA template, from dist/)
+ *
  * The ZIP name is derived from the package.json name field
  * (stripping the "turing-example-" prefix).
  *
  * Usage: node zip-dist.mjs
  * Run from within the app/ directory (where dist/ and package.json live).
  */
-import { createWriteStream, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative, basename } from "node:path";
-import { pipeline } from "node:stream/promises";
+import { createWriteStream, readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { join, relative } from "node:path";
 import { createDeflateRaw } from "node:zlib";
 
-const DIST_DIR = join(process.cwd(), "dist");
-const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+const APP_DIR = process.cwd();
+const DIST_DIR = join(APP_DIR, "dist");
+const EXPORT_DIR = join(APP_DIR, "..", "export");
+const pkg = JSON.parse(readFileSync(join(APP_DIR, "package.json"), "utf-8"));
 const siteName = pkg.name.replace(/^turing-example-/, "");
-const zipPath = join(process.cwd(), `${siteName}.zip`);
+const zipPath = join(APP_DIR, `${siteName}.zip`);
 
 function collectFiles(dir) {
   const entries = [];
+  if (!existsSync(dir)) return entries;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -53,9 +61,32 @@ function dosDateTime(date) {
 }
 
 async function createZip() {
-  const files = collectFiles(DIST_DIR);
-  if (files.length === 0) {
-    console.error("dist/ directory is empty or missing. Run build first.");
+  // Collect files: export/*.json at root, dist/* under app/
+  const zipEntries = [];
+
+  // Export files (export.json, *_content.json) → zip root
+  if (existsSync(EXPORT_DIR)) {
+    for (const file of readdirSync(EXPORT_DIR)) {
+      if (file.endsWith(".json")) {
+        zipEntries.push({
+          filePath: join(EXPORT_DIR, file),
+          zipPath: file,
+        });
+      }
+    }
+  }
+
+  // Dist files → app/ folder in zip
+  const distFiles = collectFiles(DIST_DIR);
+  for (const filePath of distFiles) {
+    zipEntries.push({
+      filePath,
+      zipPath: "app/" + relative(DIST_DIR, filePath).replace(/\\/g, "/"),
+    });
+  }
+
+  if (zipEntries.length === 0) {
+    console.error("No files to package. Run build first and check export/ directory.");
     process.exit(1);
   }
 
@@ -70,9 +101,8 @@ async function createZip() {
     offset += buf.length;
   }
 
-  for (const filePath of files) {
-    const relPath = relative(DIST_DIR, filePath).replace(/\\/g, "/");
-    const data = readFileSync(filePath);
+  for (const entry of zipEntries) {
+    const data = readFileSync(entry.filePath);
     const crc = crc32(data);
 
     // Compress
@@ -85,7 +115,7 @@ async function createZip() {
       deflater.end(data);
     });
 
-    const nameBuffer = Buffer.from(relPath, "utf-8");
+    const nameBuffer = Buffer.from(entry.zipPath, "utf-8");
     const localHeaderOffset = offset;
 
     // Local file header
@@ -150,7 +180,11 @@ async function createZip() {
 
   out.end();
   await new Promise((resolve) => out.on("finish", resolve));
-  console.log(`\nZIP created: ${zipPath} (${files.length} files)`);
+
+  const exportCount = zipEntries.filter((e) => !e.zipPath.startsWith("app/")).length;
+  const appCount = zipEntries.filter((e) => e.zipPath.startsWith("app/")).length;
+  console.log(`\nZIP created: ${zipPath}`);
+  console.log(`  Export files: ${exportCount}, App files: ${appCount}, Total: ${zipEntries.length}`);
 }
 
 createZip().catch((err) => {
