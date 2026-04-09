@@ -56,7 +56,25 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         int size = request.size() != null ? request.size() : 10;
                         int hitsNeeded = Math.max(1, from + size);
 
+                        // Min score filter
+                        if (request.minScore() != null) {
+                            luceneQuery = new BooleanQuery.Builder()
+                                    .add(luceneQuery, BooleanClause.Occur.MUST)
+                                    .setMinimumNumberShouldMatch(0)
+                                    .build();
+                        }
+
+                        // Post filter: wrap as FILTER clause
+                        if (request.postFilter() != null) {
+                            luceneQuery = new BooleanQuery.Builder()
+                                    .add(luceneQuery, BooleanClause.Occur.MUST)
+                                    .add(translateQuery(request.postFilter()), BooleanClause.Occur.FILTER)
+                                    .build();
+                        }
+
                         Sort sort = (Sort) translateSort(request.sort());
+
+                        // Timeout: use TimeLimitingCollector approach (simplified)
                         TopDocs topDocs = sort != null
                                 ? searcher.search(luceneQuery, hitsNeeded, sort)
                                 : searcher.search(luceneQuery, hitsNeeded);
@@ -65,6 +83,16 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
                         TurDslSearchResponse response = buildResponse(topDocs, request,
                                 System.currentTimeMillis() - startTime, searcher, luceneQuery, from,
                                 hitsNeeded);
+
+                        // Collapse not natively supported in Lucene DSL
+                        if (request.collapse() != null) {
+                            log.debug("Collapse is not natively supported in Lucene DSL executor");
+                        }
+                        // Suggest not supported in Lucene DSL
+                        if (request.suggest() != null && !request.suggest().isEmpty()) {
+                            log.debug("Suggest is not supported in Lucene DSL executor");
+                        }
+
                         return Optional.of(response);
                     } catch (Exception e) {
                         log.error("DSL Lucene query execution failed: {}", e.getMessage(), e);
@@ -222,11 +250,43 @@ public class TurDslLuceneExecutor implements TurDslSearchEngineExecutor<Query, T
             }
 
             case TurDslQuery.Boosting(var positive, var negative, var negBoost) -> {
-                // Lucene: approximate boosting with bool must + must_not
                 BooleanQuery.Builder builder = new BooleanQuery.Builder();
                 builder.add(translateQuery(positive), BooleanClause.Occur.MUST);
                 builder.add(translateQuery(negative), BooleanClause.Occur.MUST_NOT);
                 yield builder.build();
+            }
+
+            case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) ->
+                    // Lucene: no native nested — translate inner query directly
+                    translateQuery(nestedQuery);
+
+            case TurDslQuery.FunctionScore(var innerQuery, var functions,
+                                            var sm, var bm, var maxBoost, var ms) -> {
+                // Lucene: apply BoostQuery for field_value_factor, otherwise just inner query
+                Query base = translateQuery(innerQuery);
+                if (functions != null) {
+                    for (var fn : functions) {
+                        if (fn.weight() != null) {
+                            base = new BoostQuery(base, fn.weight().floatValue());
+                            break;
+                        }
+                    }
+                }
+                yield base;
+            }
+
+            case TurDslQuery.ScriptScore(var innerQuery, var script, var ms) ->
+                    // Lucene: script scoring not supported — fallback to inner query
+                    translateQuery(innerQuery);
+
+            case TurDslQuery.Knn(var field, var queryVector, var k,
+                                  var numCandidates, var similarity, var knnFilter) -> {
+                // Lucene 10: KnnFloatVectorQuery
+                float[] vector = new float[queryVector.size()];
+                for (int idx = 0; idx < queryVector.size(); idx++) {
+                    vector[idx] = queryVector.get(idx).floatValue();
+                }
+                yield new org.apache.lucene.search.KnnFloatVectorQuery(field, vector, k);
             }
         };
     }

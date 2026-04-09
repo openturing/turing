@@ -69,6 +69,6 @@ public class TurSNSiteDslSearchAPI {
             @RequestParam(name = "locale", defaultValue = "en") String locale) {
         return search(siteName, locale,
                 new TurDslQueryRequest(null, null, null, null, null, null, null,
-                        null, null, null));
+                        null, null, null, null, null, null, null));
     }
 }

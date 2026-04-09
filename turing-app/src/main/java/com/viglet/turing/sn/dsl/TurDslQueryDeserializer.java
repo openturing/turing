@@ -55,6 +55,10 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
             case "constant_score" -> deserializeConstantScore(body);
             case "dis_max" -> deserializeDisMax(body);
             case "boosting" -> deserializeBoosting(body);
+            case "nested" -> deserializeNested(body);
+            case "function_score" -> deserializeFunctionScore(body);
+            case "script_score" -> deserializeScriptScore(body);
+            case "knn" -> deserializeKnn(body);
             default -> throw new IllegalArgumentException("Unknown query type: " + type);
         };
     }
@@ -240,6 +244,95 @@ public class TurDslQueryDeserializer extends ValueDeserializer<TurDslQuery> {
         TurDslQuery negative = body.has("negative") ? deserializeNode(body.get("negative")) : new TurDslQuery.MatchAll();
         Double negativeBoost = body.has("negative_boost") ? body.get("negative_boost").asDouble() : null;
         return new TurDslQuery.Boosting(positive, negative, negativeBoost);
+    }
+
+    // --- Group 4: nested, scoring, vector queries ---
+
+    private TurDslQuery.Nested deserializeNested(JsonNode body) {
+        String path = body.get("path").asString();
+        TurDslQuery query = body.has("query") ? deserializeNode(body.get("query")) : new TurDslQuery.MatchAll();
+        String scoreMode = body.has("score_mode") ? body.get("score_mode").asString() : null;
+        return new TurDslQuery.Nested(path, query, scoreMode);
+    }
+
+    private TurDslQuery.FunctionScore deserializeFunctionScore(JsonNode body) {
+        TurDslQuery query = body.has("query") ? deserializeNode(body.get("query")) : new TurDslQuery.MatchAll();
+        List<TurDslQuery.ScoreFunction> functions = new ArrayList<>();
+        if (body.has("functions") && body.get("functions").isArray()) {
+            for (JsonNode fn : body.get("functions")) {
+                functions.add(deserializeScoreFunction(fn));
+            }
+        }
+        return new TurDslQuery.FunctionScore(query, functions,
+                body.has("score_mode") ? body.get("score_mode").asString() : null,
+                body.has("boost_mode") ? body.get("boost_mode").asString() : null,
+                body.has("max_boost") ? body.get("max_boost").asDouble() : null,
+                body.has("min_score") ? body.get("min_score").asDouble() : null);
+    }
+
+    private TurDslQuery.ScoreFunction deserializeScoreFunction(JsonNode fn) {
+        TurDslQuery filter = fn.has("filter") ? deserializeNode(fn.get("filter")) : null;
+        Double weight = fn.has("weight") ? fn.get("weight").asDouble() : null;
+        TurDslQuery.FieldValueFactor fvf = fn.has("field_value_factor")
+                ? deserializeFieldValueFactor(fn.get("field_value_factor")) : null;
+        TurDslQuery.DecayFunction linear = fn.has("linear") ? deserializeDecay(fn.get("linear")) : null;
+        TurDslQuery.DecayFunction exp = fn.has("exp") ? deserializeDecay(fn.get("exp")) : null;
+        TurDslQuery.DecayFunction gauss = fn.has("gauss") ? deserializeDecay(fn.get("gauss")) : null;
+        TurDslQuery.Script scriptScore = fn.has("script_score") && fn.get("script_score").has("script")
+                ? deserializeScript(fn.get("script_score").get("script")) : null;
+        return new TurDslQuery.ScoreFunction(filter, weight, fvf, linear, exp, gauss, scriptScore);
+    }
+
+    private TurDslQuery.FieldValueFactor deserializeFieldValueFactor(JsonNode n) {
+        return new TurDslQuery.FieldValueFactor(
+                n.get("field").asString(),
+                n.has("factor") ? n.get("factor").asDouble() : null,
+                n.has("modifier") ? n.get("modifier").asString() : null,
+                n.has("missing") ? n.get("missing").asDouble() : null);
+    }
+
+    private TurDslQuery.DecayFunction deserializeDecay(JsonNode n) {
+        var entry = n.properties().iterator().next();
+        String field = entry.getKey();
+        JsonNode spec = entry.getValue();
+        return new TurDslQuery.DecayFunction(field,
+                spec.has("origin") ? spec.get("origin").asString() : null,
+                spec.has("scale") ? spec.get("scale").asString() : null,
+                spec.has("offset") ? spec.get("offset").asString() : null,
+                spec.has("decay") ? spec.get("decay").asDouble() : null);
+    }
+
+    private TurDslQuery.Script deserializeScript(JsonNode n) {
+        String source = n.has("source") ? n.get("source").asString() : null;
+        String lang = n.has("lang") ? n.get("lang").asString() : null;
+        java.util.Map<String, Object> params = null;
+        if (n.has("params") && n.get("params").isObject()) {
+            params = new java.util.LinkedHashMap<>();
+            for (var prop : n.get("params").properties()) {
+                params.put(prop.getKey(), nodeToObject(prop.getValue()));
+            }
+        }
+        return new TurDslQuery.Script(source, lang, params);
+    }
+
+    private TurDslQuery.ScriptScore deserializeScriptScore(JsonNode body) {
+        TurDslQuery query = body.has("query") ? deserializeNode(body.get("query")) : new TurDslQuery.MatchAll();
+        TurDslQuery.Script script = body.has("script") ? deserializeScript(body.get("script")) : null;
+        Double minScore = body.has("min_score") ? body.get("min_score").asDouble() : null;
+        return new TurDslQuery.ScriptScore(query, script, minScore);
+    }
+
+    private TurDslQuery.Knn deserializeKnn(JsonNode body) {
+        String field = body.get("field").asString();
+        List<Double> queryVector = new ArrayList<>();
+        if (body.has("query_vector")) {
+            for (JsonNode v : body.get("query_vector")) queryVector.add(v.asDouble());
+        }
+        int k = body.has("k") ? body.get("k").asInt() : 10;
+        int numCandidates = body.has("num_candidates") ? body.get("num_candidates").asInt() : 100;
+        Double similarity = body.has("similarity") ? body.get("similarity").asDouble() : null;
+        TurDslQuery filter = body.has("filter") ? deserializeNode(body.get("filter")) : null;
+        return new TurDslQuery.Knn(field, queryVector, k, numCandidates, similarity, filter);
     }
 
     private List<TurDslQuery> deserializeQueryList(JsonNode node) {

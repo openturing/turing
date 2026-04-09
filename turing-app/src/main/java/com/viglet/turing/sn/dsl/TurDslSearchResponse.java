@@ -17,8 +17,30 @@ public record TurDslSearchResponse(
         long took,
         @JsonProperty("timed_out") boolean timedOut,
         Hits hits,
-        Map<String, AggregationResult> aggregations
+        Map<String, AggregationResult> aggregations,
+        Map<String, List<SuggestResult>> suggest
 ) {
+    /** Constructor without suggest (backward-compatible). */
+    public TurDslSearchResponse(long took, boolean timedOut, Hits hits,
+                                 Map<String, AggregationResult> aggregations) {
+        this(took, timedOut, hits, aggregations, null);
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SuggestResult(
+            String text,
+            Integer offset,
+            Integer length,
+            List<SuggestOption> options
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SuggestOption(
+            String text,
+            Double score,
+            @JsonProperty("_id") String id,
+            @JsonProperty("_source") Map<String, Object> source
+    ) {}
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Hits(
             Total total,

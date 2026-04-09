@@ -3,6 +3,7 @@ package com.viglet.turing.sn.dsl;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Sealed interface representing all supported Query DSL clause types,
@@ -66,4 +67,32 @@ public sealed interface TurDslQuery {
     record DisMax(List<TurDslQuery> queries, Double tieBreaker) implements TurDslQuery {}
 
     record Boosting(TurDslQuery positive, TurDslQuery negative, Double negativeBoost) implements TurDslQuery {}
+
+    // --- Group 4: nested, scoring, vector queries ---
+
+    record Nested(String path, TurDslQuery query, String scoreMode) implements TurDslQuery {}
+
+    record FunctionScore(TurDslQuery query, List<ScoreFunction> functions,
+                         String scoreMode, String boostMode,
+                         Double maxBoost, Double minScore) implements TurDslQuery {}
+
+    record ScriptScore(TurDslQuery query, Script script, Double minScore) implements TurDslQuery {}
+
+    record Knn(String field, List<Double> queryVector, int k,
+               int numCandidates, Double similarity,
+               TurDslQuery filter) implements TurDslQuery {}
+
+    // --- Supporting records for function_score ---
+
+    record ScoreFunction(TurDslQuery filter, Double weight,
+                         FieldValueFactor fieldValueFactor,
+                         DecayFunction linear, DecayFunction exp, DecayFunction gauss,
+                         Script scriptScore) {}
+
+    record FieldValueFactor(String field, Double factor, String modifier, Double missing) {}
+
+    record DecayFunction(String field, String origin, String scale,
+                         String offset, Double decay) {}
+
+    record Script(String source, String lang, java.util.Map<String, Object> params) {}
 }

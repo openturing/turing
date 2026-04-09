@@ -37,7 +37,11 @@ public record TurDslQueryRequest(
         Map<String, TurDslAggregation> aggs,
         @JsonProperty("post_filter") TurDslQuery postFilter,
         @JsonProperty("min_score") Double minScore,
-        @JsonProperty("search_after") List<Object> searchAfter
+        @JsonProperty("search_after") List<Object> searchAfter,
+        TurDslCollapse collapse,
+        Map<String, TurDslSuggest> suggest,
+        List<TurDslRescore> rescore,
+        String timeout
 ) {
     /**
      * Highlight configuration following the Elasticsearch format.
@@ -49,5 +53,70 @@ public record TurDslQueryRequest(
             @JsonProperty("post_tags") List<String> postTags,
             @JsonProperty("fragment_size") Integer fragmentSize,
             @JsonProperty("number_of_fragments") Integer numberOfFragments
+    ) {}
+
+    /**
+     * Field collapsing configuration.
+     * <pre>{@code "collapse": { "field": "user_id", "inner_hits": { "name": "recent", "size": 3 } } }</pre>
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslCollapse(
+            String field,
+            @JsonProperty("max_concurrent_group_searches") Integer maxConcurrentGroupSearches,
+            @JsonProperty("inner_hits") TurDslInnerHits innerHits
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslInnerHits(
+            String name,
+            Integer size,
+            List<Object> sort,
+            @JsonProperty("_source") Object source
+    ) {}
+
+    /**
+     * Suggest configuration (term, phrase, or completion).
+     * <pre>{@code "suggest": { "my-suggest": { "text": "tring", "term": { "field": "title" } } } }</pre>
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslSuggest(
+            String text,
+            TurDslTermSuggest term,
+            TurDslPhraseSuggest phrase,
+            TurDslCompletionSuggest completion
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslTermSuggest(String field, Integer size) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslPhraseSuggest(String field, Integer size) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslCompletionSuggest(
+            String field, Integer size,
+            @JsonProperty("skip_duplicates") Boolean skipDuplicates,
+            @JsonProperty("fuzzy") TurDslCompletionFuzzy fuzzy
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslCompletionFuzzy(Integer fuzziness) {}
+
+    /**
+     * Rescore configuration for re-scoring top N results.
+     * <pre>{@code "rescore": { "window_size": 50, "query": { "rescore_query": { "match_phrase": ... }, "query_weight": 0.7, "rescore_query_weight": 1.2 } } }</pre>
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslRescore(
+            @JsonProperty("window_size") Integer windowSize,
+            TurDslRescoreQuery query
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TurDslRescoreQuery(
+            @JsonProperty("rescore_query") TurDslQuery rescoreQuery,
+            @JsonProperty("query_weight") Double queryWeight,
+            @JsonProperty("rescore_query_weight") Double rescoreQueryWeight,
+            @JsonProperty("score_mode") String scoreMode
     ) {}
 }

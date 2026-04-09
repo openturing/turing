@@ -98,11 +98,38 @@ public class TurDslElasticsearchExecutor
                                     .map(v -> FieldValue.of(v.toString())).toList());
                         }
 
+                        // Collapse (field collapsing / dedup)
+                        if (request.collapse() != null) {
+                            applyCollapseToRequest(request.collapse(), reqBuilder);
+                        }
+
+                        // Suggest
+                        if (request.suggest() != null && !request.suggest().isEmpty()) {
+                            applySuggestToRequest(request.suggest(), reqBuilder);
+                        }
+
+                        // Rescore
+                        if (request.rescore() != null && !request.rescore().isEmpty()) {
+                            applyRescoreToRequest(request.rescore(), reqBuilder);
+                        }
+
+                        // Timeout
+                        if (request.timeout() != null) {
+                            reqBuilder.timeout(request.timeout());
+                        }
+
                         SearchResponse<Map> response = client.search(
                                 reqBuilder.build(), (java.lang.reflect.Type) Map.class);
 
-                        return Optional.of(buildResponse(response, request,
-                                System.currentTimeMillis() - startTime));
+                        TurDslSearchResponse dslResponse = buildResponse(response, request,
+                                System.currentTimeMillis() - startTime);
+
+                        // Attach suggest results if present
+                        if (!response.suggest().isEmpty()) {
+                            dslResponse = attachSuggestResults(dslResponse, response);
+                        }
+
+                        return Optional.of(dslResponse);
                     } catch (Exception e) {
                         log.error("DSL Elasticsearch query execution failed: {}", e.getMessage(), e);
                         return Optional.empty();
@@ -250,7 +277,97 @@ public class TurDslElasticsearchExecutor
                         if (negBoost != null) b.negativeBoost(negBoost);
                         return b;
                     }));
+
+            case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) ->
+                    Query.of(q -> q.nested(n -> {
+                        n.path(path).query(translateQuery(nestedQuery));
+                        if (scoreMode != null) {
+                            n.scoreMode(co.elastic.clients.elasticsearch._types.query_dsl
+                                    .ChildScoreMode.valueOf(
+                                    scoreMode.substring(0, 1).toUpperCase()
+                                            + scoreMode.substring(1).toLowerCase()));
+                        }
+                        return n;
+                    }));
+
+            case TurDslQuery.FunctionScore(var innerQuery, var functions,
+                                            var scoreMd, var boostMd, var maxBoost, var minSc) ->
+                    Query.of(q -> q.functionScore(fs -> {
+                        fs.query(translateQuery(innerQuery));
+                        if (functions != null) {
+                            fs.functions(functions.stream().map(this::translateScoreFunction).toList());
+                        }
+                        if (maxBoost != null) fs.maxBoost(maxBoost);
+                        return fs;
+                    }));
+
+            case TurDslQuery.ScriptScore(var innerQuery, var script, var minSc) ->
+                    Query.of(q -> q.scriptScore(ss -> {
+                        ss.query(translateQuery(innerQuery));
+                        if (script != null) {
+                            ss.script(s -> {
+                                if (script.source() != null) {
+                                    s.source(src -> src.scriptString(script.source()));
+                                    if (script.lang() != null) s.lang(script.lang());
+                                    if (script.params() != null) {
+                                        java.util.Map<String, co.elastic.clients.json.JsonData> p =
+                                                new LinkedHashMap<>();
+                                        script.params().forEach((k, v) ->
+                                                p.put(k, co.elastic.clients.json.JsonData.of(v)));
+                                        s.params(p);
+                                    }
+                                }
+                                return s;
+                            });
+                        }
+                        if (minSc != null) ss.minScore(minSc.floatValue());
+                        return ss;
+                    }));
+
+            case TurDslQuery.Knn(var field, var queryVector, var k,
+                                  var numCandidates, var similarity, var knnFilter) ->
+                    Query.of(q -> q.knn(knn -> {
+                        knn.field(field)
+                                .queryVector(queryVector.stream()
+                                        .map(Double::floatValue).toList())
+                                .k(k)
+                                .numCandidates(numCandidates);
+                        if (similarity != null) knn.similarity(similarity.floatValue());
+                        if (knnFilter != null) knn.filter(translateQuery(knnFilter));
+                        return knn;
+                    }));
         };
+    }
+
+    private co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore
+    translateScoreFunction(TurDslQuery.ScoreFunction fn) {
+        return co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore.of(f -> {
+            if (fn.filter() != null) f.filter(translateQuery(fn.filter()));
+            if (fn.weight() != null) f.weight(fn.weight());
+            if (fn.fieldValueFactor() != null) {
+                var fvf = fn.fieldValueFactor();
+                f.fieldValueFactor(v -> {
+                    v.field(fvf.field());
+                    if (fvf.factor() != null) v.factor(fvf.factor());
+                    if (fvf.missing() != null) v.missing(fvf.missing());
+                    if (fvf.modifier() != null) {
+                        v.modifier(co.elastic.clients.elasticsearch._types.query_dsl
+                                .FieldValueFactorModifier.valueOf(
+                                fvf.modifier().substring(0, 1).toUpperCase()
+                                        + fvf.modifier().substring(1).toLowerCase()));
+                    }
+                    return v;
+                });
+            }
+            if (fn.scriptScore() != null) {
+                f.scriptScore(ss -> ss.script(s -> {
+                    s.source(src -> src.scriptString(fn.scriptScore().source()));
+                    if (fn.scriptScore().lang() != null) s.lang(fn.scriptScore().lang());
+                    return s;
+                }));
+            }
+            return f;
+        });
     }
 
     @Override
@@ -563,6 +680,126 @@ public class TurDslElasticsearchExecutor
             }
         }
     }
+
+    // ==================== Collapse ====================
+
+    private void applyCollapseToRequest(TurDslQueryRequest.TurDslCollapse collapse,
+                                         SearchRequest.Builder reqBuilder) {
+        reqBuilder.collapse(c -> {
+            c.field(collapse.field());
+            if (collapse.maxConcurrentGroupSearches() != null) {
+                c.maxConcurrentGroupSearches(collapse.maxConcurrentGroupSearches());
+            }
+            if (collapse.innerHits() != null) {
+                var ih = collapse.innerHits();
+                c.innerHits(i -> {
+                    if (ih.name() != null) i.name(ih.name());
+                    if (ih.size() != null) i.size(ih.size());
+                    return i;
+                });
+            }
+            return c;
+        });
+    }
+
+    // ==================== Suggest ====================
+
+    private void applySuggestToRequest(Map<String, TurDslQueryRequest.TurDslSuggest> suggests,
+                                        SearchRequest.Builder reqBuilder) {
+        reqBuilder.suggest(s -> {
+            for (var entry : suggests.entrySet()) {
+                String name = entry.getKey();
+                var suggest = entry.getValue();
+                s.suggesters(name, sg -> {
+                    if (suggest.text() != null) sg.text(suggest.text());
+                    if (suggest.term() != null) {
+                        sg.term(t -> {
+                            t.field(suggest.term().field());
+                            if (suggest.term().size() != null) t.size(suggest.term().size());
+                            return t;
+                        });
+                    } else if (suggest.phrase() != null) {
+                        sg.phrase(p -> {
+                            p.field(suggest.phrase().field());
+                            if (suggest.phrase().size() != null) p.size(suggest.phrase().size());
+                            return p;
+                        });
+                    } else if (suggest.completion() != null) {
+                        sg.completion(comp -> {
+                            comp.field(suggest.completion().field());
+                            if (suggest.completion().size() != null)
+                                comp.size(suggest.completion().size());
+                            if (suggest.completion().skipDuplicates() != null)
+                                comp.skipDuplicates(suggest.completion().skipDuplicates());
+                            if (suggest.completion().fuzzy() != null) {
+                                comp.fuzzy(fz -> fz.fuzziness(
+                                        suggest.completion().fuzzy().fuzziness() != null
+                                                ? suggest.completion().fuzzy().fuzziness().toString()
+                                                : "AUTO"));
+                            }
+                            return comp;
+                        });
+                    }
+                    return sg;
+                });
+            }
+            return s;
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private TurDslSearchResponse attachSuggestResults(TurDslSearchResponse dslResponse,
+                                                       SearchResponse<Map> response) {
+        Map<String, List<TurDslSearchResponse.SuggestResult>> suggestMap = new LinkedHashMap<>();
+        for (var entry : response.suggest().entrySet()) {
+            List<TurDslSearchResponse.SuggestResult> results = new ArrayList<>();
+            for (var suggestion : entry.getValue()) {
+                List<TurDslSearchResponse.SuggestOption> options = new ArrayList<>();
+                for (var option : suggestion.completion().options()) {
+                    Map<String, Object> src = option.source() != null
+                            ? (Map<String, Object>) option.source() : null;
+                    options.add(new TurDslSearchResponse.SuggestOption(
+                            option.text(), option.score(), option.id(), src));
+                }
+                results.add(new TurDslSearchResponse.SuggestResult(
+                        suggestion.completion().text(),
+                        suggestion.completion().offset(),
+                        suggestion.completion().length(),
+                        options));
+            }
+            suggestMap.put(entry.getKey(), results);
+        }
+        return new TurDslSearchResponse(dslResponse.took(), dslResponse.timedOut(),
+                dslResponse.hits(), dslResponse.aggregations(), suggestMap);
+    }
+
+    // ==================== Rescore ====================
+
+    private void applyRescoreToRequest(List<TurDslQueryRequest.TurDslRescore> rescores,
+                                        SearchRequest.Builder reqBuilder) {
+        for (var rescore : rescores) {
+            reqBuilder.rescore(r -> {
+                if (rescore.windowSize() != null) r.windowSize(rescore.windowSize());
+                if (rescore.query() != null) {
+                    r.query(rq -> {
+                        if (rescore.query().rescoreQuery() != null) {
+                            rq.query(translateQuery(rescore.query().rescoreQuery()));
+                        }
+                        if (rescore.query().queryWeight() != null) {
+                            rq.queryWeight(rescore.query().queryWeight());
+                        }
+                        if (rescore.query().rescoreQueryWeight() != null) {
+                            rq.rescoreQueryWeight(rescore.query().rescoreQueryWeight());
+                        }
+                        return rq;
+                    });
+                }
+                return r;
+            });
+        }
+    }
+
+    // ==================== Helpers ====================
 
     private static Double toDouble(Object value) {
         if (value instanceof Number n) return n.doubleValue();

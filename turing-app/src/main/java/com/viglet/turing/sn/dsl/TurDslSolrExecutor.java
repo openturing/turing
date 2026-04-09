@@ -198,6 +198,32 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
         if (request.minScore() != null) {
             solrQuery.setParam("minScore", request.minScore().toString());
         }
+        // Collapse → Solr group.field
+        if (request.collapse() != null && request.collapse().field() != null) {
+            solrQuery.setParam("group", "true");
+            solrQuery.setParam("group.field", request.collapse().field());
+            solrQuery.setParam("group.limit", "1");
+        }
+        // Timeout
+        if (request.timeout() != null) {
+            solrQuery.setParam("timeAllowed", request.timeout().replaceAll("[^0-9]", ""));
+        }
+        // Suggest → Solr spellcheck component
+        if (request.suggest() != null && !request.suggest().isEmpty()) {
+            solrQuery.setParam("spellcheck", "true");
+            request.suggest().values().stream().findFirst().ifPresent(s -> {
+                if (s.text() != null) solrQuery.setParam("spellcheck.q", s.text());
+            });
+        }
+        // Rescore not natively supported in Solr
+        if (request.rescore() != null && !request.rescore().isEmpty()) {
+            log.debug("Rescore is not supported in Solr DSL — applying boost query as fallback");
+            for (var rescore : request.rescore()) {
+                if (rescore.query() != null && rescore.query().rescoreQuery() != null) {
+                    solrQuery.setParam("bq", translateClause(rescore.query().rescoreQuery()));
+                }
+            }
+        }
         return solrQuery;
     }
 
@@ -287,6 +313,37 @@ public class TurDslSolrExecutor implements TurDslSearchEngineExecutor<SolrQuery,
             }
             case TurDslQuery.Boosting(var positive, var negative, var negBoost) ->
                     "+(%s) -(%s)".formatted(translateClause(positive), translateClause(negative));
+            case TurDslQuery.Nested(var path, var nestedQuery, var scoreMode) -> {
+                // Solr: {!parent} or flatten — best effort: translate inner query
+                yield translateClause(nestedQuery);
+            }
+            case TurDslQuery.FunctionScore(var innerQuery, var functions,
+                                            var sm, var bm, var mb, var ms) -> {
+                // Solr: boost query as fallback
+                String base = translateClause(innerQuery);
+                if (functions != null && !functions.isEmpty()) {
+                    for (var fn : functions) {
+                        if (fn.fieldValueFactor() != null) {
+                            base = "{!boost b=mul(%s,%s)}%s".formatted(
+                                    fn.fieldValueFactor().field(),
+                                    fn.fieldValueFactor().factor() != null
+                                            ? fn.fieldValueFactor().factor() : "1",
+                                    base);
+                            break;
+                        }
+                    }
+                }
+                yield base;
+            }
+            case TurDslQuery.ScriptScore(var innerQuery, var script, var ms) ->
+                    translateClause(innerQuery);
+            case TurDslQuery.Knn(var field, var queryVector, var k,
+                                  var numCandidates, var similarity, var filter) -> {
+                // Solr: KNN via {!knn} query parser
+                yield "{!knn f=%s topK=%d}[%s]".formatted(field, k,
+                        queryVector.stream().map(String::valueOf)
+                                .collect(Collectors.joining(",")));
+            }
         };
     }
 
