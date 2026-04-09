@@ -150,22 +150,19 @@ public class TurSNSearchController {
     }
 
     private ResponseEntity<?> serveDefaultIndex(HttpServletRequest request) {
-        // Forward to index.html — Spring's view resolver handles this
-        try {
-            InputStream is = DEFAULT_INDEX.getInputStream();
-            return ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_HTML)
-                    .body(new InputStreamResource(is));
-        } catch (IOException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return serveEmbeddedIndex();
     }
 
     private ResponseEntity<?> serveDefaultIndexFallback() {
+        return serveEmbeddedIndex();
+    }
+
+    private ResponseEntity<?> serveEmbeddedIndex() {
         try {
             InputStream is = DEFAULT_INDEX.getInputStream();
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
+                    .header("X-Turing-Embedded", "true")
                     .body(new InputStreamResource(is));
         } catch (IOException e) {
             return ResponseEntity.notFound().build();

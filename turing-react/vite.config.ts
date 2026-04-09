@@ -1,8 +1,22 @@
 import { federation } from "@module-federation/vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin, type ViteDevServer } from "vite";
+
+// Captures the Vite dev server instance so the /sn proxy can call
+// server.transformIndexHtml() and serve a properly transformed index.html
+// when the backend signals embedded-search mode (X-Turing-Embedded header).
+let viteServer: ViteDevServer | null = null;
+function captureServerPlugin(): Plugin {
+  return {
+    name: "turing-capture-server",
+    configureServer(server) {
+      viteServer = server;
+    },
+  };
+}
 
 // Redirect CJS use-sync-external-store imports to ESM shims.
 // React 19 has useSyncExternalStore built-in, but the CJS shim
@@ -44,10 +58,38 @@ export default defineConfig({
       "/sn": {
         target: "http://localhost:2700",
         changeOrigin: true,
+        selfHandleResponse: true,
+        configure(proxy) {
+          const rawHtml = fs.readFileSync(
+            path.resolve(__dirname, "index.html"),
+            "utf-8",
+          );
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            if (proxyRes.headers["x-turing-embedded"] === "true" && viteServer) {
+              // Backend says: use embedded search → serve Vite-transformed index.html
+              proxyRes.resume();
+              viteServer
+                .transformIndexHtml(req.url || "/", rawHtml)
+                .then((html) => {
+                  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+                  res.end(html);
+                })
+                .catch(() => {
+                  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+                  res.end(rawHtml);
+                });
+            } else {
+              // SPA template or API response → pass through
+              res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+              proxyRes.pipe(res);
+            }
+          });
+        },
       },
     },
   },
   plugins: [
+    captureServerPlugin(),
     syncExternalStoreShimPlugin(),
     react(),
     tailwindcss(),
