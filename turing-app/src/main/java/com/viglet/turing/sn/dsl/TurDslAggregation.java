@@ -1,12 +1,11 @@
 package com.viglet.turing.sn.dsl;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,27 +37,26 @@ public sealed interface TurDslAggregation {
     /**
      * Custom deserializer that inspects the JSON key to determine the aggregation type.
      */
-    class Deserializer extends JsonDeserializer<TurDslAggregation> {
+    class Deserializer extends ValueDeserializer<TurDslAggregation> {
         @Override
-        public TurDslAggregation deserialize(JsonParser p, DeserializationContext ctxt)
-                throws IOException {
-            JsonNode node = p.getCodec().readTree(p);
+        public TurDslAggregation deserialize(JsonParser p, DeserializationContext ctxt) {
+            JsonNode node = p.readValueAsTree();
 
             if (node.has("terms")) {
                 JsonNode termsNode = node.get("terms");
-                String field = termsNode.get("field").asText();
+                String field = termsNode.get("field").asString();
                 Integer size = termsNode.has("size") ? termsNode.get("size").asInt() : null;
                 return new TermsAgg(field, size);
             }
             if (node.has("range")) {
                 JsonNode rangeNode = node.get("range");
-                String field = rangeNode.get("field").asText();
+                String field = rangeNode.get("field").asString();
                 List<RangeBucket> ranges = new ArrayList<>();
                 if (rangeNode.has("ranges")) {
                     for (JsonNode r : rangeNode.get("ranges")) {
                         Object from = r.has("from") ? nodeToObject(r.get("from")) : null;
                         Object to = r.has("to") ? nodeToObject(r.get("to")) : null;
-                        String key = r.has("key") ? r.get("key").asText() : null;
+                        String key = r.has("key") ? r.get("key").asString() : null;
                         ranges.add(new RangeBucket(from, to, key));
                     }
                 }
@@ -67,20 +65,20 @@ public sealed interface TurDslAggregation {
             if (node.has("date_histogram")) {
                 JsonNode dhNode = node.get("date_histogram");
                 return new DateHistogramAgg(
-                        dhNode.get("field").asText(),
-                        dhNode.has("calendar_interval") ? dhNode.get("calendar_interval").asText() : null,
-                        dhNode.has("fixed_interval") ? dhNode.get("fixed_interval").asText() : null,
-                        dhNode.has("format") ? dhNode.get("format").asText() : null
+                        dhNode.get("field").asString(),
+                        dhNode.has("calendar_interval") ? dhNode.get("calendar_interval").asString() : null,
+                        dhNode.has("fixed_interval") ? dhNode.get("fixed_interval").asString() : null,
+                        dhNode.has("format") ? dhNode.get("format").asString() : null
                 );
             }
-            throw new IOException("Unknown aggregation type in: " + node);
+            throw new IllegalArgumentException("Unknown aggregation type in: " + node);
         }
 
         private static Object nodeToObject(JsonNode node) {
             if (node.isInt()) return node.asInt();
             if (node.isLong()) return node.asLong();
             if (node.isDouble()) return node.asDouble();
-            return node.asText();
+            return node.asString();
         }
     }
 }

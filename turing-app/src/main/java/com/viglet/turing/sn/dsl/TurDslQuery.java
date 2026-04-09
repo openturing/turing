@@ -1,6 +1,6 @@
 package com.viglet.turing.sn.dsl;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.List;
 
