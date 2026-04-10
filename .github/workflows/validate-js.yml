@@ -13,14 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: js-sdk-lib
-            directory: turing-js-sdk/js-sdk-lib
-            script: build
-          - name: js-sdk-sample
-            directory: turing-js-sdk/js-sdk-sample
-            script: compile
           - name: turing-react-sdk
-            directory: turing-js-sdk/turing-react-sdk
+            directory: turing-react-sdk
             script: build
           - name: mythical-creatures
             directory: turing-marketplace/mythical-creatures/app
@@ -39,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Build
         working-directory: ${{ matrix.directory }}

@@ -29,34 +29,8 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/turing-js-sdk/js-sdk-lib" # Location of package manifests
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    ignore:
-      - dependency-name: "typescript"
-    groups:
-      sdk-lib:
-        applies-to: version-updates
-        patterns:
-          - "*"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/turing-js-sdk/js-sdk-sample" # Location of package manifests
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    ignore:
-      - dependency-name: "typescript"
-    groups:
-      sdk-sample:
-        applies-to: version-updates
-        patterns:
-          - "*"
   - package-ecosystem: "npm"
-    directory: "/turing-js-sdk/turing-react-sdk"
+    directory: "/turing-react-sdk"
     schedule:
       interval: "weekly"
     target-branch: "2026.2"

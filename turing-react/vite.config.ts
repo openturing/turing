@@ -151,7 +151,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
       "@viglet/turing-react-sdk": path.resolve(
         __dirname,
-        "../turing-js-sdk/turing-react-sdk/src/index.ts",
+        "../turing-react-sdk/src/index.ts",
       ),
     },
   },

@@ -202,71 +202,39 @@
                         <version>2.0.0</version>
                         <executions>
                             <execution>
-                                <id>install-node-and-npm-lib</id>
+                                <id>install-node-and-npm-react-sdk</id>
                                 <goals>
                                     <goal>install-node-and-npm</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>turing-js-sdk/js-sdk-lib</workingDirectory>
+                                    <workingDirectory>turing-react-sdk</workingDirectory>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>npm-install-js-sdk-lib</id>
+                                <id>npm-install-react-sdk</id>
                                 <goals>
                                     <goal>npm</goal>
                                 </goals>
                                 <phase>generate-resources</phase>
                                 <configuration>
                                     <arguments>install</arguments>
-                                    <workingDirectory>turing-js-sdk/js-sdk-lib</workingDirectory>
+                                    <workingDirectory>turing-react-sdk</workingDirectory>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>npm-build-js-sdk-lib-sdk</id>
+                                <id>npm-build-react-sdk</id>
                                 <goals>
                                     <goal>npm</goal>
                                 </goals>
                                 <phase>generate-resources</phase>
                                 <configuration>
                                     <arguments>run build</arguments>
-                                    <workingDirectory>turing-js-sdk/js-sdk-lib</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>install-node-and-npm</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>turing-js-sdk/js-sdk-sample</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <!-- Build js-sdk-sample -->
-                            <execution>
-                                <id>npm-install-js-sdk-sample</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>install</arguments>
-                                    <workingDirectory>turing-js-sdk/js-sdk-sample</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>npm-compile-js-sdk-sample</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>run compile</arguments>
-                                    <workingDirectory>turing-js-sdk/js-sdk-sample</workingDirectory>
+                                    <workingDirectory>turing-react-sdk</workingDirectory>
                                 </configuration>
                             </execution>
                         </executions>
                         <configuration>
-                            <nodeVersion>v22.18.0</nodeVersion>
+                            <nodeVersion>v24.12.0</nodeVersion>
                             <npmVersion>11.5.2</npmVersion>
                         </configuration>
                     </plugin>

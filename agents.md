@@ -5,7 +5,7 @@
 ### Project Structure
 - **turing-app**: Spring Boot 4 backend (Java 21), main module
 - **turing-react**: React + TypeScript frontend (Vite, Tailwind CSS v4, shadcn/ui)
-- **turing-js-sdk**: JavaScript SDK for Turing API
+- **turing-react-sdk**: React SDK with hooks and UI components for Turing API
 - **turing-commons**: Shared library
 - Root Maven POM is multi-module
 
@@ -549,7 +549,7 @@ QueryTurSNResponse response = turSNServer.query(query);
 ### JavaScript SDK for Web-based Agents
 ```typescript
 // Example: Web-based AI Agent
-import { TurSNSiteSearchService } from '@openviglet/turing-js-sdk';
+import { TurSNSiteSearchService } from '@viglet/turing-react-sdk';
 
 class AISearchAgent {
   private searchService: TurSNSiteSearchService;

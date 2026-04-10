@@ -29,7 +29,7 @@ jobs:
 
       # ── Storybook ──
       - name: Build Storybook
-        working-directory: turing-js-sdk/turing-react-sdk
+        working-directory: turing-react-sdk
         run: npm install --no-audit --no-fund && npx storybook build --output-dir storybook-static
         env:
           STORYBOOK_BASE: /react-sdk/
@@ -48,7 +48,7 @@ jobs:
       - name: Prepare Pages artifact
         run: |
           mkdir -p _site/react-sdk
-          cp -r turing-js-sdk/turing-react-sdk/storybook-static/* _site/react-sdk/
+          cp -r turing-react-sdk/storybook-static/* _site/react-sdk/
 
           mkdir -p _site/marketplace
           cp turing-marketplace/marketplace.json _site/marketplace/
@@ -104,8 +104,7 @@ jobs:
 
           ## SDKs
 
-          - **JavaScript/TypeScript**: `@viglet/turing-js-sdk` ([npm](https://www.npmjs.com/package/@viglet/turing-js-sdk))
-          - **React**: `@viglet/turing-react-sdk` ([npm](https://www.npmjs.com/package/@viglet/turing-react-sdk))
+          - **React SDK**: `@viglet/turing-react-sdk` ([npm](https://www.npmjs.com/package/@viglet/turing-react-sdk))
 
           ## Key Features
 

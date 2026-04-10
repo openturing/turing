@@ -50,7 +50,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/openviglet/turing.git",
-    "directory": "turing-js-sdk/turing-react-sdk"
+    "directory": "turing-react-sdk"
   },
   "files": [
     "dist/**/*"

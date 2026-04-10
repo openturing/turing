@@ -53,9 +53,6 @@ jobs:
       - name: Increment Version
         run: |
           mvn build-helper:parse-version versions:set -Dgpg.skip=true -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
-          cd turing-js-sdk/js-sdk-lib
-          npm version patch
-          npm run build
           git config user.name alexandre.oliveira
           git config user.email alexandre.oliveira@gmail.com
           git commit -m "Updated version in pom.xml" -a
@@ -72,8 +69,6 @@ jobs:
       - name: Publish package
         run: |
           mvn --batch-mode -pl turing-commons,turing-java-sdk -P release -am deploy -DskipTests -Dturing.open-browser=false
-        # cd turing-js-sdk/js-sdk-lib
-        # npm publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

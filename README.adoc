@@ -81,7 +81,7 @@ response.getResults().getDocument().forEach(doc ->
 
 [source,typescript]
 ----
-import { TurSNSiteSearchService } from '@openviglet/turing-js-sdk';
+import { TurSNSiteSearchService } from '@viglet/turing-react-sdk';
 
 const search = new TurSNSiteSearchService('http://localhost:2700');
 const results = await search.search('sample-site', {
@@ -138,7 +138,7 @@ turing/
 ├── turing-react/         # React + TypeScript frontend (Vite, shadcn/ui)
 ├── turing-commons/       # Shared library
 ├── turing-java-sdk/      # Java SDK
-├── turing-js-sdk/        # JavaScript/TypeScript SDK
+├── turing-react-sdk/     # React SDK (hooks + UI components)
 ├── k8s/                  # Kubernetes manifests
 └── docker-compose.yaml   # Docker Compose stack
 ----
@@ -155,7 +155,7 @@ For architecture details, configuration, connectors, API reference, deployment g
 | https://turing.viglet.org/latest/javadoc/[Javadoc] | API reference for Java classes
 | https://viglet.org/turing/download/[Downloads] | Release packages
 | link:turing-java-sdk/README.md[Java SDK Guide] | SDK usage and examples
-| link:turing-js-sdk/js-sdk-lib/README.md[JS SDK Guide] | SDK usage and examples
+| link:turing-react-sdk/README.md[React SDK Guide] | SDK usage and examples
 |===
 
 == Contributing

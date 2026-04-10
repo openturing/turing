@@ -9,7 +9,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@viglet/turing-react-sdk": [
-        "../turing-js-sdk/turing-react-sdk/dist/index.d.ts"
+        "../turing-react-sdk/dist/index.d.ts"
       ]
     },
     "strict": true,

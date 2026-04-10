@@ -56,9 +56,8 @@ turing-app/src/main/resources/public/favicon.ico
 # ── Turing React ────────────────────────────────────────────
 /turing-react/.__mf__temp
 
-# ── Turing JS SDK ───────────────────────────────────────────
-turing-js-sdk/dist/
-turing-js-sdk/turing-react-sdk/dist
+# ── Turing React SDK ────────────────────────────────────────
+turing-react-sdk/dist
 
 # ── Turing Marketplace (generated manifests, builds, exports) ──
 turing-marketplace/*/app/public/turing-manifest.json
@@ -72,4 +71,4 @@ turing-marketplace/*/export/*.zip
 # ── Python cache ────────────────────────────────────────────
 __pycache__/
 /turing-react/.mf
-turing-js-sdk/turing-react-sdk/debug-storybook.log
+turing-react-sdk/debug-storybook.log

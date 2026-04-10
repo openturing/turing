@@ -112,8 +112,8 @@ docker-compose -f docker-compose.dev.yml up -d
 # Run tests
 ./mvnw test
 
-# Build JavaScript SDK
-cd turing-js-sdk/js-sdk-lib
+# Build React SDK
+cd turing-react-sdk
 npm install
 npm run build
 ```

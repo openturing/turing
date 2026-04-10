@@ -152,15 +152,15 @@ Client library for Java applications:
 - Authentication helpers
 - Type-safe API wrappers
 
-### 5. Turing JavaScript SDK
+### 5. Turing React SDK
 
-**Module**: `turing-js-sdk`
+**Module**: `turing-react-sdk`
 
-TypeScript/JavaScript client library:
-- NPM package for web applications
+React SDK with hooks and UI components:
+- NPM package `@viglet/turing-react-sdk`
 - TypeScript type definitions
-- Promise-based API
-- React/Angular integration examples
+- Headless hooks for search, facets, pagination
+- Pre-built UI components (SearchBar, ResultList, Pagination)
 
 ### 6. Turing UI
 

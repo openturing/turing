@@ -31,11 +31,11 @@ jobs:
 
       # ── Build, Bump & Publish turing-react-sdk ──
       - name: Build turing-react-sdk
-        working-directory: turing-js-sdk/turing-react-sdk
+        working-directory: turing-react-sdk
         run: npm run build
 
       - name: Bump & Publish turing-react-sdk
-        working-directory: turing-js-sdk/turing-react-sdk
+        working-directory: turing-react-sdk
         run: |
           npm version patch --no-git-tag-version
           npm publish --access public
@@ -45,6 +45,6 @@ jobs:
       # ── Commit version bump back to branch ──
       - name: Commit version bump
         run: |
-          git add turing-js-sdk/turing-react-sdk/package.json
+          git add turing-react-sdk/package.json
           git commit -m "chore: bump turing-react-sdk version [skip ci]" || echo "No changes to commit"
           git push
