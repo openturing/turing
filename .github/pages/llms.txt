@@ -1,0 +1,41 @@
+# Viglet Turing ES
+
+> Enterprise Search Intelligence Platform combining semantic navigation, generative AI, and advanced search technologies.
+
+## Documentation
+
+- [Turing Docs](https://docs.viglet.org/turing/): Official documentation
+- [GitHub Repository](https://github.com/openviglet/turing): Source code (Apache 2.0)
+
+## React SDK
+
+- [React SDK Storybook](https://turing.viglet.org/react-sdk/): Interactive component documentation with hooks and UI components for enterprise search
+
+## Marketplace
+
+- [Marketplace Index](https://turing.viglet.org/marketplace/marketplace.json): JSON catalog of available example sites and templates
+
+### Available Packages
+
+- [Mythical Creatures](https://turing.viglet.org/marketplace/mythical-creatures/): A fantasy bestiary search site featuring dragons, griffins, phoenixes and more
+- [Space Missions](https://turing.viglet.org/marketplace/space-missions/): Explore historic and fictional space missions with semantic search
+- [Vinyl Records](https://turing.viglet.org/marketplace/vinyl-records/): A music catalog search site for vinyl records
+
+## APIs
+
+- REST API: `POST /api/sn/{siteName}/search` - Semantic search endpoint
+- Chat API: `POST /api/v2/llm/{id}/semantic-chat` - LLM-powered conversational search (SSE streaming)
+- GraphQL: `/api/graphql` - Complex query interface
+
+## SDKs
+
+- **React SDK**: `@viglet/turing-react-sdk` ([npm](https://www.npmjs.com/package/@viglet/turing-react-sdk))
+
+## Key Features
+
+- Semantic Navigation with faceted search
+- Generative AI integration (OpenAI, Anthropic Claude, Google Gemini, Ollama)
+- RAG (Retrieval-Augmented Generation) pipeline
+- MCP Server for AI model integration
+- Connectors: Adobe AEM, WordPress, databases, file systems
+- Pluggable storage: MinIO, filesystem, or disabled
