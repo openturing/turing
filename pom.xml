@@ -42,7 +42,7 @@
         <gpg.keyname>30AA85DC937DA16691466FE2A0CCF43371503F2D</gpg.keyname>
         <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
         <!-- Versions not managed by Spring Boot BOM -->
-        <elasticsearch.version>9.3.2</elasticsearch.version>
+        <elasticsearch.version>9.3.3</elasticsearch.version>
         <imageio.version>1.4.0</imageio.version>
         <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -353,12 +353,12 @@
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>bson</artifactId>
-                <version>5.6.4</version>
+                <version>5.6.5</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
-                <version>5.6.4</version>
+                <version>5.6.5</version>
             </dependency>
             <!-- Not in Spring Boot BOM -->
             <dependency>
