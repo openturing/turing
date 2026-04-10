@@ -146,6 +146,7 @@ export default defineConfig({
     outDir: "../turing-app/src/main/resources/public/",
   },
   resolve: {
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@viglet/turing-react-sdk": path.resolve(

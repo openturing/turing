@@ -55,3 +55,49 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+  - package-ecosystem: "npm"
+    directory: "/turing-js-sdk/turing-react-sdk"
+    schedule:
+      interval: "weekly"
+    target-branch: "2026.2"
+    open-pull-requests-limit: 15
+    ignore:
+      - dependency-name: "typescript"
+    groups:
+      react-sdk:
+        applies-to: version-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/turing-marketplace/mythical-creatures/app"
+    schedule:
+      interval: "weekly"
+    target-branch: "2026.2"
+    open-pull-requests-limit: 15
+    groups:
+      marketplace-mythical-creatures:
+        applies-to: version-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/turing-marketplace/space-missions/app"
+    schedule:
+      interval: "weekly"
+    target-branch: "2026.2"
+    open-pull-requests-limit: 15
+    groups:
+      marketplace-space-missions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/turing-marketplace/vinyl-records/app"
+    schedule:
+      interval: "weekly"
+    target-branch: "2026.2"
+    open-pull-requests-limit: 15
+    groups:
+      marketplace-vinyl-records:
+        applies-to: version-updates
+        patterns:
+          - "*"
