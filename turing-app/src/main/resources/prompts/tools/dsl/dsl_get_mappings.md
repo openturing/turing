@@ -1,0 +1,1 @@
+Get field mappings for a specific Semantic Navigation site (index). Returns all enabled fields with their types (text, string, int, date, etc.), whether they are facet-enabled, multi-valued, and their descriptions. Use this tool to understand the schema before building search queries. The mappings follow the Elasticsearch format with a properties object.

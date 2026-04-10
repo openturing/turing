@@ -1,0 +1,1 @@
+Get search suggestions and spell-check corrections for a text query. Returns both search results matching the text and term suggestions for potential typos. Use this tool when the user's query may contain spelling errors or when providing autocomplete-style suggestions. Combines Elasticsearch suggest API with a match query for best results.

@@ -10,68 +10,69 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.viglet.turing.genai.tool.TurSemanticNavToolService;
+import com.viglet.turing.genai.tool.TurDslToolService;
 
 @ExtendWith(MockitoExtension.class)
 class TurSemanticNavToolAPITest {
 
     @Mock
-    private TurSemanticNavToolService semanticNavToolService;
+    private TurDslToolService dslToolService;
 
     private TurSemanticNavToolAPI api;
 
     @BeforeEach
     void setUp() {
-        api = new TurSemanticNavToolAPI(semanticNavToolService);
+        api = new TurSemanticNavToolAPI(dslToolService);
     }
 
     @Test
-    void shouldDelegateSearchSite() {
-        when(semanticNavToolService.searchSite("MySite", "en", "query", 10, 1, null))
-                .thenReturn("results");
+    void shouldDelegateSearch() {
+        String body = "{\"query\":{\"match_all\":{}}}";
+        when(dslToolService.search("MySite", "en", body)).thenReturn("results");
 
-        String result = api.searchSite("MySite", "en", "query", 10, 1, null);
+        String result = api.searchSite("MySite", "en", body);
 
         assertThat(result).isEqualTo("results");
-        verify(semanticNavToolService).searchSite("MySite", "en", "query", 10, 1, null);
+        verify(dslToolService).search("MySite", "en", body);
     }
 
     @Test
-    void shouldDelegateSearchSiteWithFilterQueries() {
-        when(semanticNavToolService.searchSite("MySite", "pt", "*", 5, 2, "type:news"))
-                .thenReturn("filtered results");
+    void shouldDelegateListIndices() {
+        when(dslToolService.listIndices("*")).thenReturn("indices");
 
-        String result = api.searchSite("MySite", "pt", "*", 5, 2, "type:news");
+        String result = api.listSites("*");
 
-        assertThat(result).isEqualTo("filtered results");
+        assertThat(result).isEqualTo("indices");
+        verify(dslToolService).listIndices("*");
     }
 
     @Test
-    void shouldDelegateListSites() {
-        when(semanticNavToolService.listSites("")).thenReturn("site1;desc;en\n");
-
-        String result = api.listSites("");
-
-        assertThat(result).isEqualTo("site1;desc;en\n");
-        verify(semanticNavToolService).listSites("");
-    }
-
-    @Test
-    void shouldDelegateListSitesWithFilter() {
-        when(semanticNavToolService.listSites("enterprise")).thenReturn("enterprise-site;desc;en\n");
-
-        String result = api.listSites("enterprise");
-
-        assertThat(result).isEqualTo("enterprise-site;desc;en\n");
-    }
-
-    @Test
-    void shouldDelegateGetSiteFields() {
-        when(semanticNavToolService.getSiteFields("MySite")).thenReturn("field_name;type;facet\n");
+    void shouldDelegateGetMappings() {
+        when(dslToolService.getMappings("MySite")).thenReturn("mappings");
 
         String result = api.getSiteFields("MySite");
 
-        assertThat(result).isEqualTo("field_name;type;facet\n");
-        verify(semanticNavToolService).getSiteFields("MySite");
+        assertThat(result).isEqualTo("mappings");
+        verify(dslToolService).getMappings("MySite");
+    }
+
+    @Test
+    void shouldDelegateGetDocument() {
+        when(dslToolService.getDocument("MySite", "en", "doc1")).thenReturn("doc");
+
+        String result = api.getDocument("MySite", "en", "doc1");
+
+        assertThat(result).isEqualTo("doc");
+        verify(dslToolService).getDocument("MySite", "en", "doc1");
+    }
+
+    @Test
+    void shouldDelegateSuggest() {
+        when(dslToolService.suggest("MySite", "en", "test")).thenReturn("suggestions");
+
+        String result = api.suggest("MySite", "en", "test");
+
+        assertThat(result).isEqualTo("suggestions");
+        verify(dslToolService).suggest("MySite", "en", "test");
     }
 }

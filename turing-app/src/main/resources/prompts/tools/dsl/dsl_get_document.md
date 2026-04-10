@@ -1,0 +1,1 @@
+Retrieve a single document by its ID from a Semantic Navigation site. Returns the complete document with all stored fields. Use this tool when you need the full content of a specific document found via dsl_search. Equivalent to Elasticsearch GET /index/_doc/id.

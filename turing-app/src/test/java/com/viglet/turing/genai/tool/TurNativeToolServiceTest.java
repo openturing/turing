@@ -16,7 +16,7 @@ class TurNativeToolServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "TurSemanticNavToolService, semantic-nav",
+            "TurDslToolService, dsl",
             "TurDateTimeToolService, date-time",
             "TurFinanceToolService, finance",
             "TurCodeInterpreterToolService, code-interpreter",

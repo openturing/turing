@@ -27,7 +27,7 @@ import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurLoggingToolCallback;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
-import com.viglet.turing.genai.tool.TurSemanticNavToolService;
+import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
@@ -73,20 +73,20 @@ public class TurLLMSemanticChatAPI {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
-    private final TurSemanticNavToolService semanticNavToolService;
+    private final TurDslToolService dslToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurLLMTokenUsageService tokenUsageService;
 
     public TurLLMSemanticChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurSemanticNavToolService semanticNavToolService,
+            TurDslToolService dslToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
             TurLLMTokenUsageService tokenUsageService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
-        this.semanticNavToolService = semanticNavToolService;
+        this.dslToolService = dslToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.tokenUsageService = tokenUsageService;
     }
@@ -118,7 +118,7 @@ public class TurLLMSemanticChatAPI {
         ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
 
         ToolCallback[] semanticCallbacks = MethodToolCallbackProvider.builder()
-                .toolObjects(semanticNavToolService)
+                .toolObjects(dslToolService)
                 .build()
                 .getToolCallbacks();
 

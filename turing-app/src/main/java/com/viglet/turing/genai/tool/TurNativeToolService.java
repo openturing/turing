@@ -35,7 +35,7 @@ public class TurNativeToolService {
     private final Map<String, NativeToolGroup> toolGroups;
 
     public TurNativeToolService(
-            TurSemanticNavToolService semanticNavToolService,
+            TurDslToolService dslToolService,
             TurDateTimeToolService dateTimeToolService,
             TurFinanceToolService financeToolService,
             TurWeatherToolService weatherToolService,
@@ -47,7 +47,7 @@ public class TurNativeToolService {
             TurSystemInfoToolService systemInfoToolService) {
 
         this.toolServiceInstances = List.of(
-                semanticNavToolService,
+                dslToolService,
                 dateTimeToolService,
                 financeToolService,
                 weatherToolService,

@@ -1,0 +1,1 @@
+List all available Semantic Navigation sites (indices). Each site represents a searchable index with its own fields, locales, and search engine backend. Supports wildcard patterns to filter by name. Returns index name, status, engine type, available locales, and description. Use this tool first to discover which sites are available before searching.
