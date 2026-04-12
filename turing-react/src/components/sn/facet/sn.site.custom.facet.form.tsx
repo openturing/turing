@@ -73,7 +73,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../../ui/form-actions"
+import { StickySaveBar } from "../../ui/sticky-save-bar"
 import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteCustomFacetService = new TurSNSiteCustomFacetService();
@@ -563,6 +563,10 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
       </Dialog>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+          <StickySaveBar
+            title={form.watch("name") || (isNew ? t("sn.facets.newCustomFacet") : t("sn.facets.title"))}
+            onCancel={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)}
+          />
           {/* Basic Information Section */}
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title={t("forms.snCustomFacet.basicInfo")} description={t("forms.snCustomFacet.basicInfoDesc")} />
@@ -796,10 +800,6 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
             </SectionCard.Content>
           </SectionCard>
 
-          <FormActions>
-            <FormActions.Cancel onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)} />
-            <FormActions.Submit>{isNew ? t("forms.snCustomFacet.createFacet") : t("forms.formActions.saveChanges")}</FormActions.Submit>
-          </FormActions>
         </form>
       </Form>
     </>

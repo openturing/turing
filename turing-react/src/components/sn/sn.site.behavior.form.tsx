@@ -37,8 +37,8 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../ui/form-actions"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
@@ -76,12 +76,19 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
     }
   }
 
+  const watchedName = form.watch("name")
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 py-6 px-6"
       >
+        <StickySaveBar
+          title={watchedName || t("sn.behavior.title")}
+          onCancel={() => navigate(urlBase)}
+        />
+
         {/* General */}
         <SectionCard variant="blue">
           <SectionCard.Header icon={IconSettings} title={t("forms.snBehavior.general")} description={t("forms.snBehavior.generalDesc")} />
@@ -625,11 +632,6 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
           </SectionCard.Content>
         </SectionCard>
 
-        {/* Footer */}
-        <FormActions>
-          <FormActions.Cancel onClick={() => navigate(urlBase)} />
-          <FormActions.Submit />
-        </FormActions>
       </form>
     </Form>
   )

@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { FormActions } from "@/components/ui/form-actions"
+import { StickySaveBar } from "@/components/ui/sticky-save-bar"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -96,6 +96,10 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+        <StickySaveBar
+          title={form.watch("language") || (isNew ? t("sn.multiLanguage.newLanguage") : t("sn.multiLanguage.title"))}
+          onCancel={() => navigate(urlBase)}
+        />
         {/* Language Section */}
         <SectionCard variant="blue">
           <SectionCard.Header icon={IconLanguage} title={t("forms.snLocale.languageSettings")} description={t("forms.snLocale.languageSettingsDesc")} />
@@ -206,10 +210,6 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
         </SectionCard>
 
         {/* Action Footer */}
-        <FormActions>
-          <FormActions.Cancel onClick={() => navigate(urlBase)} />
-          <FormActions.Submit />
-        </FormActions>
       </form>
     </Form>
   )

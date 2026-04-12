@@ -34,7 +34,7 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
@@ -311,6 +311,10 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
+        <StickySaveBar
+          title={form.watch("title") || (isNew ? t("store.newStore") : t("store.title"))}
+          onCancel={() => navigate(urlBase)}
+        />
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.store.generalDesc")} />
@@ -629,10 +633,6 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   />
                 </SectionCard.Content>
               </SectionCard>
-        <FormActions>
-          <FormActions.Cancel onClick={() => navigate(urlBase)} />
-          <FormActions.Submit />
-        </FormActions>
       </form>
     </Form>
   )

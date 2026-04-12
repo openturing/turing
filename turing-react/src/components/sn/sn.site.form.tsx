@@ -32,7 +32,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
@@ -138,6 +138,10 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+              <StickySaveBar
+                title={form.watch("name") || (isNew ? t("sn.newSite") : t("sn.title"))}
+                onCancel={() => navigate(urlBase)}
+              />
                 {/* General Information Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.snSiteForm.generalInfo")} description={t("forms.snSiteForm.generalInfoDesc")} />
@@ -323,10 +327,6 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                   </SectionCard.Content>
                 </SectionCard>
 
-              <FormActions>
-                <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                <FormActions.Submit />
-              </FormActions>
             </form>
           </Form>
         )}

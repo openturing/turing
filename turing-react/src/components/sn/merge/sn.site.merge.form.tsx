@@ -18,7 +18,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { FormActions } from "@/components/ui/form-actions"
+import { StickySaveBar } from "@/components/ui/sticky-save-bar"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { SmartDescription } from "@/components/ui/smart-description"
@@ -111,6 +111,10 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+                <StickySaveBar
+                    title={form.watch("providerFrom") || (isNew ? t("sn.mergeProviders.newMergeProvider") : t("sn.mergeProviders.title"))}
+                    onCancel={() => navigate(urlBase)}
+                />
                 {/* Providers Section */}
                 <SectionCard variant="blue">
                     <SectionCard.Header icon={IconGitMerge} title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")} />
@@ -299,10 +303,6 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
                 </SectionCard>
 
                 {/* Action Footer */}
-                <FormActions>
-                    <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                    <FormActions.Submit />
-                </FormActions>
             </form>
         </Form>
     );

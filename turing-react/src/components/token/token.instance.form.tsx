@@ -23,7 +23,7 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 const turTokenInstanceService = new TurTokenInstanceService();
@@ -83,6 +83,11 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 py-6 px-6"
       >
+        <StickySaveBar
+          title={form.watch("title") || (isNew ? t("apiToken.newInstance") : t("apiToken.title"))}
+          onCancel={() => navigate(ROUTES.ADMIN_TOKENS)}
+        />
+
         {/* General */}
         <SectionCard variant="blue">
           <SectionCard.Header icon={IconNotes} title={t("forms.token.general")} description={t("forms.token.generalDesc")} />
@@ -159,10 +164,6 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         </SectionCard>}
 
         {/* Footer */}
-        <FormActions>
-          <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_TOKENS)} />
-          <FormActions.Submit />
-        </FormActions>
       </form>
     </Form>
   )

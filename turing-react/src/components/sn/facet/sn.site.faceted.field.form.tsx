@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { FormActions } from "@/components/ui/form-actions"
+import { StickySaveBar } from "@/components/ui/sticky-save-bar"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -214,6 +214,10 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
+            <StickySaveBar
+              title={form.watch("name") || (isNew ? t("sn.facets.newCustomFacet") : t("sn.facets.title"))}
+              onCancel={() => navigate(urlBase)}
+            />
             {/* Basic Information */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconId} title={t("forms.snFacetedField.basicInfo")} description={t("forms.snFacetedField.basicInfoDesc")} />
@@ -464,10 +468,6 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
             </SectionCard>
 
             {/* Action Footer */}
-            <FormActions>
-              <FormActions.Cancel onClick={() => navigate(urlBase)} />
-              <FormActions.Submit disabled={isLoading} />
-            </FormActions>
           </form>
         </Form>
       )}

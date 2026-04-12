@@ -44,7 +44,7 @@ import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { FormActions } from "../../ui/form-actions"
+import { StickySaveBar } from "../../ui/sticky-save-bar"
 import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -213,6 +213,10 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
 
         <Form {...form}>
             <form onSubmit={handleFormSubmit} className="space-y-4 py-8 px-6">
+                <StickySaveBar
+                    title={form.watch("name") || (isNew ? t("sn.spotlight.newSpotlight") : t("sn.spotlight.title"))}
+                    onCancel={() => navigate(urlBase)}
+                />
                 {/* General Section */}
                 <SectionCard variant="blue">
                     <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")} />
@@ -478,10 +482,6 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
                         </div>
                     </SectionCard.Content>
                 </SectionCard>
-                <FormActions>
-                    <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                    <FormActions.Submit>{isNew ? t("forms.common.createButton", { feature: t("forms.snSpotlight.details") }) : t("forms.formActions.saveChanges")}</FormActions.Submit>
-                </FormActions>
             </form>
         </Form>
     );

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
 import { Input } from "@/components/ui/input";
-import { FormActions } from "@/components/ui/form-actions";
+import { StickySaveBar } from "@/components/ui/sticky-save-bar";
 import {
     Select,
     SelectContent,
@@ -142,6 +142,11 @@ export default function GlobalSettingsPage() {
             />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
+                    <StickySaveBar
+                        title={t("globalSettings.title")}
+                        loading={isSaving}
+                        disabled={isLoading}
+                    />
                     <SectionCard variant="amber">
                         <SectionCard.Header icon={IconSettings} title={t("globalSettings.sectionTitle")} description={t("globalSettings.sectionDescription")} />
                         <SectionCard.Content>
@@ -567,11 +572,6 @@ export default function GlobalSettingsPage() {
                         </SectionCard.Content>
                     </SectionCard>
 
-                    <FormActions>
-                        <FormActions.Submit loading={isSaving} disabled={isLoading}>
-                            {t("globalSettings.saveSettings")}
-                        </FormActions.Submit>
-                    </FormActions>
                 </form>
             </Form>
         </>

@@ -29,7 +29,7 @@ import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
@@ -136,6 +136,10 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-3xl mx-auto py-2 md:py-8">
+              <StickySaveBar
+                title={form.watch("modelName") || (isNew ? t("embeddingModel.newEmbeddingModel") : t("embeddingModel.title"))}
+                onCancel={() => navigate(urlBase)}
+              />
               {/* General Information */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.embedding.generalDesc")} />
@@ -429,11 +433,6 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                 </SectionCard.Content>
               </SectionCard>
 
-              <FormActions>
-                {!isNew && <FormActions.Delete onClick={() => setOpen(true)} />}
-                <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                <FormActions.Submit />
-              </FormActions>
             </form>
           </Form>
         </CardContent>

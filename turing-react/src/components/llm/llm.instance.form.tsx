@@ -1,7 +1,6 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { SectionCard } from "../ui/section-card"
-import { FormActions } from "../ui/form-actions"
 import { IconSettings, IconBrain, IconSparkles, IconAdjustments, IconToggleLeft } from "@tabler/icons-react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -39,6 +38,7 @@ import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 const turLLMInstanceService = new TurLLMInstanceService();
@@ -369,25 +369,35 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     }
     setOpen(false);
   }
+  const watchedTitle = form.watch("title")
+  const vendorLabel = vendors.find((v) => v.id === selectedVendorId)?.title
+
   return (
     <div className="w-full px-0 md:px-4 py-4">
-      <Card className="mx-auto border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
-        <CardHeader className="hidden md:grid">
-          <CardTitle className="text-2xl">{isNew ? t("llm.newLanguageModel") : t("llm.title")}</CardTitle>
-          <CardAction>
-            {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
-          </CardAction>
-          <CardDescription>
-            {t("forms.llm.settings")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="w-full max-w-2xl mx-auto py-2 md:py-8 flex flex-col gap-4"
-              autoComplete="off"
-            >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-4 md:space-y-6"
+          autoComplete="off"
+        >
+          <StickySaveBar
+            title={watchedTitle || (isNew ? t("llm.newLanguageModel") : t("llm.title"))}
+            badges={vendorLabel && <StickySaveBar.Badge>{vendorLabel}</StickySaveBar.Badge>}
+            onCancel={() => navigate(urlBase)}
+          />
+
+          <Card className="mx-auto border-0 shadow-none md:border md:shadow-sm rounded-none md:rounded-xl max-md:**:data-[slot=card-header]:px-2 max-md:**:data-[slot=card-content]:px-2 max-md:**:data-[slot=card-content]:pt-0">
+            <CardHeader className="hidden md:grid">
+              <CardTitle className="text-2xl">{isNew ? t("llm.newLanguageModel") : t("llm.title")}</CardTitle>
+              <CardAction>
+                {!isNew && <DialogDelete feature="Language Model" name={value.title} onDelete={onDelete} open={open} setOpen={setOpen} />}
+              </CardAction>
+              <CardDescription>
+                {t("forms.llm.settings")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full max-w-2xl mx-auto py-2 md:py-8 flex flex-col gap-4">
                 {/* General Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.llm.titleAndVendor")} />
@@ -850,16 +860,11 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   </SectionCard.Content>
                 </SectionCard>
 
-              {/* Action Footer */}
-              <FormActions>
-                {!isNew && <FormActions.Delete onClick={() => setOpen(true)} />}
-                <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                <FormActions.Submit />
-              </FormActions>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </form>
+      </Form>
     </div>
   )
 }

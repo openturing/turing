@@ -42,7 +42,7 @@ import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { Button } from "../../ui/button"
-import { FormActions } from "../../ui/form-actions"
+import { StickySaveBar } from "../../ui/sticky-save-bar"
 import { GradientButton } from "../../ui/gradient-button"
 import { SectionCard } from "../../ui/section-card"
 import { Textarea } from "../../ui/textarea"
@@ -238,6 +238,11 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         <div className="px-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+                    <StickySaveBar
+                        title={snSite.name || t("sn.genai.title")}
+                        onCancel={() => form.reset(snSite.turSNSiteGenAi)}
+                        disabled={enabled && !hasAllVariables}
+                    />
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
                         <SectionCard variant="amber">
@@ -482,10 +487,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         )}
                     </div>
 
-                    <FormActions>
-                        <FormActions.Cancel onClick={() => form.reset(snSite.turSNSiteGenAi)} />
-                        <FormActions.Submit disabled={enabled && !hasAllVariables} />
-                    </FormActions>
                 </form>
             </Form>
 

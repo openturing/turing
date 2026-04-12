@@ -23,7 +23,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../../ui/form-actions"
+import { StickySaveBar } from "../../ui/sticky-save-bar"
 import { SectionCard } from "../../ui/section-card"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
@@ -82,6 +82,10 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
     <div className="px-6 py-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <StickySaveBar
+            title={form.watch("name") || (isNew ? t("sn.resultRanking.newResultRanking") : t("sn.resultRanking.title"))}
+            onCancel={() => navigate(urlBase)}
+          />
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header
@@ -211,10 +215,6 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
             </SectionCard>
 
           {/* Action Footer */}
-          <FormActions>
-            <FormActions.Cancel onClick={() => navigate(urlBase)} />
-            <FormActions.Submit />
-          </FormActions>
         </form>
       </Form>
     </div>

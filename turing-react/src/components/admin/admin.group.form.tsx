@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { FormActions } from "@/components/ui/form-actions";
+import { StickySaveBar } from "@/components/ui/sticky-save-bar";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TurGroup } from "@/models/auth/group";
@@ -131,6 +131,10 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
         <div className="px-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+                    <StickySaveBar
+                        title={form.watch("name") || (isNew ? t("admin.groups.newGroup") : t("admin.groups.title"))}
+                        onCancel={() => navigate(ROUTES.ADMIN_GROUPS)}
+                    />
                     {/* Group Details */}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />
@@ -348,10 +352,6 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                         </SectionCard.Content>
                     </SectionCard>
 
-                    <FormActions>
-                        <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_GROUPS)} />
-                        <FormActions.Submit>{isNew ? t("forms.adminGroup.createGroup") : t("forms.common.saveChanges")}</FormActions.Submit>
-                    </FormActions>
                 </form>
             </Form>
         </div>

@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { FormActions } from "@/components/ui/form-actions"
+import { StickySaveBar } from "@/components/ui/sticky-save-bar"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -181,6 +181,10 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
+            <StickySaveBar
+              title={form.watch("name") || (isNew ? t("sn.fields.newField") : t("sn.fields.title"))}
+              onCancel={() => navigate(urlBase)}
+            />
             {/* General Configuration */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")} />
@@ -440,10 +444,6 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
               </SectionCard.Content>
             </SectionCard>
             {/* Action Footer */}
-            <FormActions>
-              <FormActions.Cancel onClick={() => navigate(urlBase)} />
-              <FormActions.Submit />
-            </FormActions>
           </form>
         </Form>
       )}

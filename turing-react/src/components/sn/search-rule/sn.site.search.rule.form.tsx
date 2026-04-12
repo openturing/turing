@@ -1,7 +1,7 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { Form } from "@/components/ui/form"
-import { FormActions } from "@/components/ui/form-actions"
+import { StickySaveBar } from "@/components/ui/sticky-save-bar"
 import type {
     TurSNSiteSearchRule,
     TurSNSiteSearchRuleFieldOption,
@@ -81,6 +81,10 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew }
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+                <StickySaveBar
+                    title={form.watch("name") || (isNew ? t("sn.searchRule.newSearchRule") : t("sn.searchRule.title"))}
+                    onCancel={() => navigate(urlBase)}
+                />
                 <SNSiteSearchRuleDetails form={form} />
                 <SNSiteSearchRuleConditions
                     form={form}
@@ -94,10 +98,6 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew }
                     customSorts={customSorts}
                     facets={facets}
                 />
-                <FormActions>
-                    <FormActions.Cancel onClick={() => navigate(urlBase)} />
-                    <FormActions.Submit />
-                </FormActions>
             </form>
         </Form>
     );

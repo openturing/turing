@@ -26,7 +26,7 @@ import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
@@ -124,6 +124,10 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="px-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+          <StickySaveBar
+            title={form.watch("title") || (isNew ? t("intent.newInstance") : t("intent.title"))}
+            onCancel={() => navigate(urlBase)}
+          />
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
@@ -324,10 +328,6 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
             </SectionCard.Content>
           </SectionCard>
 
-          <FormActions>
-            <FormActions.Cancel onClick={() => navigate(urlBase)} />
-            <FormActions.Submit />
-          </FormActions>
         </form>
       </Form>
     </div>

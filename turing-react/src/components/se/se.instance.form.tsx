@@ -30,7 +30,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { IconPlug, IconSettings } from "@tabler/icons-react"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
@@ -101,6 +101,11 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="px-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+            <StickySaveBar
+              title={form.watch("title") || (isNew ? t("se.newSearchEngine") : t("se.title"))}
+              badges={vendors.find((v) => v.id === selectedVendorId)?.title && <StickySaveBar.Badge>{vendors.find((v) => v.id === selectedVendorId)?.title}</StickySaveBar.Badge>}
+              onCancel={() => navigate(ROUTES.SE_INSTANCE)}
+            />
                 {/* General Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.se.generalDesc")} />
@@ -230,10 +235,6 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   </SectionCard.Content>
                 </SectionCard>
 
-              <FormActions>
-                <FormActions.Cancel onClick={() => navigate(ROUTES.SE_INSTANCE)} />
-                <FormActions.Submit />
-              </FormActions>
         </form>
       </Form>
     </div>

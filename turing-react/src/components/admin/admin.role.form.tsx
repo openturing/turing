@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { FormActions } from "@/components/ui/form-actions";
+import { StickySaveBar } from "@/components/ui/sticky-save-bar";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
 import type { TurPrivilege, TurRole } from "@/models/auth/role";
@@ -140,6 +140,10 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
         <div className="px-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
+                    <StickySaveBar
+                        title={form.watch("name") || (isNew ? t("admin.roles.newRole") : t("admin.roles.title"))}
+                        onCancel={() => navigate(ROUTES.ADMIN_ROLES)}
+                    />
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>
@@ -246,10 +250,6 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                         </SectionCard>
                     )}
 
-                    <FormActions>
-                        <FormActions.Cancel onClick={() => navigate(ROUTES.ADMIN_ROLES)} />
-                        <FormActions.Submit>{isNew ? t("forms.adminRole.createRole") : t("forms.common.saveChanges")}</FormActions.Submit>
-                    </FormActions>
                 </form>
             </Form>
         </div>

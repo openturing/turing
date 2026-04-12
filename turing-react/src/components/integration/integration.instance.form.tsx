@@ -26,7 +26,7 @@ import { toast } from "@viglet/viglet-design-system"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
-import { FormActions } from "../ui/form-actions"
+import { StickySaveBar } from "../ui/sticky-save-bar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { IconSettings, IconPlug } from "@tabler/icons-react"
 
@@ -77,6 +77,10 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     <div className="px-6 py-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <StickySaveBar
+            title={form.watch("title") || (isNew ? t("integration.newInstance") : t("integration.title"))}
+            onCancel={() => navigate(ROUTES.INTEGRATION_INSTANCE)}
+          />
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.integration.generalDesc")} />
@@ -218,14 +222,6 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
               </SectionCard.Content>
             </SectionCard>
 
-          <FormActions>
-            <FormActions.Cancel onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)}>
-              {t("forms.formActions.cancel")}
-            </FormActions.Cancel>
-            <FormActions.Submit>
-              {t("forms.formActions.saveChanges")}
-            </FormActions.Submit>
-          </FormActions>
         </form>
       </Form >
     </div>

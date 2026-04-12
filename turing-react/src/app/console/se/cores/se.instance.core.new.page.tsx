@@ -1,7 +1,7 @@
 import { ROUTES } from "@/app/routes.const";
 import { LanguageSelect } from "@/components/language-select";
 import { SubPageHeader } from "@/components/sub.page.header";
-import { FormActions } from "@/components/ui/form-actions";
+import { StickySaveBar } from "@/components/ui/sticky-save-bar";
 import {
   Form,
   FormControl,
@@ -93,6 +93,10 @@ export default function SEInstanceCoreNewPage() {
       />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
+          <StickySaveBar
+            title={form.watch("name") || t("se.newCore.title")}
+            onCancel={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}
+          />
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
@@ -173,10 +177,6 @@ export default function SEInstanceCoreNewPage() {
             </SectionCard.Content>
           </SectionCard>
 
-          <FormActions>
-            <FormActions.Cancel onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)} />
-            <FormActions.Submit>{t("se.newCore.createCore")}</FormActions.Submit>
-          </FormActions>
         </form>
       </Form>
     </>
