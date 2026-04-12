@@ -83,13 +83,13 @@ export function LoginForm({
                                     <FormItem>
                                         <FormLabel className="text-sm font-medium">{t('login.username')}</FormLabel>
                                         <FormControl>
-                                            <div className="flex items-center gap-2 border border-input rounded-md h-11 px-3 bg-transparent shadow-xs focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-                                                <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            <div className="relative">
+                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('login.enterUsername')}
                                                     type="text"
-                                                    className="border-0 shadow-none h-auto p-0 focus-visible:ring-0 focus-visible:border-transparent"
+                                                    className="pl-9 h-11"
                                                     disabled={isLoading}
                                                 />
                                             </div>
@@ -105,13 +105,13 @@ export function LoginForm({
                                     <FormItem>
                                         <FormLabel className="text-sm font-medium">{t('login.password')}</FormLabel>
                                         <FormControl>
-                                            <div className="flex items-center gap-2 border border-input rounded-md h-11 px-3 bg-transparent shadow-xs focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-                                                <KeyRound className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            <div className="relative">
+                                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('login.enterPassword')}
                                                     type="password"
-                                                    className="border-0 shadow-none h-auto p-0 focus-visible:ring-0 focus-visible:border-transparent"
+                                                    className="pl-9 h-11"
                                                     disabled={isLoading}
                                                 />
                                             </div>

@@ -55,6 +55,14 @@ export default defineConfig({
         target: "http://localhost:2700",
         changeOrigin: true,
       },
+      "/api": {
+        target: "http://localhost:2700",
+        changeOrigin: true,
+      },
+      "/csrf": {
+        target: "http://localhost:2700",
+        changeOrigin: true,
+      },
       "/sn": {
         target: "http://localhost:2700",
         changeOrigin: true,
@@ -104,6 +112,7 @@ export default defineConfig({
         i18next: { singleton: true, requiredVersion: "*" },
         axios: { singleton: true, requiredVersion: "*" },
         sonner: { singleton: true, requiredVersion: "*" },
+        "next-themes": { singleton: true, requiredVersion: "*" },
       },
     }),
   ],

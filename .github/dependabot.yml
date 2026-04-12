@@ -24,6 +24,10 @@ updates:
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
     groups:
       react:
         applies-to: version-updates
@@ -37,6 +41,10 @@ updates:
     open-pull-requests-limit: 15
     ignore:
       - dependency-name: "typescript"
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
     groups:
       react-sdk:
         applies-to: version-updates
@@ -48,6 +56,11 @@ updates:
       interval: "weekly"
     target-branch: "2026.2"
     open-pull-requests-limit: 15
+    ignore:
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
     groups:
       marketplace-mythical-creatures:
         applies-to: version-updates
@@ -59,6 +72,11 @@ updates:
       interval: "weekly"
     target-branch: "2026.2"
     open-pull-requests-limit: 15
+    ignore:
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
     groups:
       marketplace-space-missions:
         applies-to: version-updates
@@ -70,8 +88,28 @@ updates:
       interval: "weekly"
     target-branch: "2026.2"
     open-pull-requests-limit: 15
+    ignore:
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10.0.0"]
     groups:
       marketplace-vinyl-records:
         applies-to: version-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "2026.2"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      actions:
         patterns:
           - "*"

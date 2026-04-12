@@ -91,7 +91,7 @@ export function SetupForm({
                                                     {...field}
                                                     placeholder={t('setup.enterPassword')}
                                                     type="password"
-                                                    className="pl-10 h-11"
+                                                    className="pl-9 h-11"
                                                     disabled={isLoading}
                                                 />
                                             </div>
@@ -113,7 +113,7 @@ export function SetupForm({
                                                     {...field}
                                                     placeholder={t('setup.repeatPassword')}
                                                     type="password"
-                                                    className="pl-10 h-11"
+                                                    className="pl-9 h-11"
                                                     disabled={isLoading}
                                                 />
                                             </div>
