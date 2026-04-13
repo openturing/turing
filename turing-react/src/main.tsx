@@ -22,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <ErrorBoundary>
-        <BackendStatusProvider healthEndpoint="/v2/ping">
+        <BackendStatusProvider healthEndpoint="/api/v2/ping">
           <App />
         </BackendStatusProvider>
       </ErrorBoundary>
