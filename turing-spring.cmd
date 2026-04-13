@@ -31,7 +31,7 @@ echo   Log level ^(com.viglet^): %LOG_LEVEL%
 echo   Storage: %STORAGE_TYPE%
 echo.
 
-call mvn spring-boot:run -pl turing-app -Dskip.npm ^
+call mvn spring-boot:run -pl turing-app -Dskip.npm -DskipTests -Dmaven.test.skip=true ^
 "^
 -Dspring-boot.run.arguments=--spring.h2.console.enabled=true ^
 --turing.storage.type=%STORAGE_TYPE% ^
