@@ -35,7 +35,8 @@ import type {
     TurSNSiteCustomSortOrder,
 } from "@/models/sn/sn-site-custom-sort.model"
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
-import { IconArrowsSort, IconFileText } from "@tabler/icons-react"
+import { IconArrowsSort, IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
+import { DialogDelete } from "@/components/dialog.delete"
 import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -136,17 +137,24 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconArrowsSort}
-                    feature={t("sn.customSort.title")}
-                    description={t("sn.customSort.description")}
-                    showSave
-                    onCancel={() => navigate(urlBase)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={value?.name || t("sn.customSort.newCustomSort")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconArrowsSort}
+                        feature={t("sn.customSort.title")}
+                        description={t("sn.customSort.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.customSort.title")} name={value?.name || t("sn.customSort.newCustomSort")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                 {/* Details Section */}
                 <SectionCard variant="blue">
                     <SectionCard.Header icon={IconArrowsSort} title={t("sn.customSort.details")} description={t("sn.customSort.detailsDesc")} />

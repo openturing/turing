@@ -14,8 +14,10 @@ import { TurGroupService } from "@/services/auth/group.service";
 import { TurRoleService } from "@/services/auth/role.service";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import {
-    IconCheck, IconNotes, IconPlus, IconSearch, IconUserShield, IconUsers, IconUsersGroup, IconX,
+    IconCheck, IconDeviceFloppy, IconNotes, IconPlus, IconSearch, IconUserShield, IconUsers, IconUsersGroup, IconX,
 } from "@tabler/icons-react";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { DialogDelete } from "@/components/dialog.delete";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -133,17 +135,24 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconUsersGroup}
-                    feature="Group"
-                    description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
-                    showSave
-                    onCancel={() => navigate(ROUTES.ADMIN_GROUPS)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconUsersGroup}
+                        feature="Group"
+                        description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="Group" name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_GROUPS)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                     {/* Group Details */}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />

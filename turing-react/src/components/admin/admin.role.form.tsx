@@ -10,7 +10,8 @@ import { SectionCard } from "@/components/ui/section-card";
 import type { TurPrivilege, TurRole } from "@/models/auth/role";
 import { TurRoleService } from "@/services/auth/role.service";
 import { TurPrivilegeService } from "@/services/auth/privilege.service";
-import { IconLock, IconNotes, IconUserShield } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconLock, IconNotes, IconUserShield, IconX } from "@tabler/icons-react";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -139,13 +140,23 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconUserShield}
-                    feature={isNew ? t("admin.roles.newRole") : "Role"}
-                    description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
-                    showSave
-                    onCancel={() => navigate(ROUTES.ADMIN_ROLES)}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconUserShield}
+                        feature={isNew ? t("admin.roles.newRole") : "Role"}
+                        description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
+                    />
+                    <StickyPageHeader.Actions>
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_ROLES)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>

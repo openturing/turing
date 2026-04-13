@@ -38,7 +38,8 @@ import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
 import { toast } from "@viglet/viglet-design-system"
-import { IconFileText, IconSpeakerphone, IconTags } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconFileText, IconSpeakerphone, IconTags, IconX } from "@tabler/icons-react"
+import { DialogDelete } from "@/components/dialog.delete"
 import { PlusCircle, Search, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -216,17 +217,24 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
 
         <Form {...form}>
             <form onSubmit={handleFormSubmit} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconSpeakerphone}
-                    feature={t("sn.spotlight.title")}
-                    description={t("sn.spotlight.description")}
-                    showSave
-                    onCancel={() => navigate(urlBase)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={value?.name || t("sn.spotlight.newSpotlight")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconSpeakerphone}
+                        feature={t("sn.spotlight.title")}
+                        description={t("sn.spotlight.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.spotlight.title")} name={value?.name || t("sn.spotlight.newSpotlight")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                 {/* General Section */}
                 <SectionCard variant="blue">
                     <SectionCard.Header icon={IconSpeakerphone} title={t("forms.snSpotlight.details")} description={t("forms.snSpotlight.detailsDesc")} />

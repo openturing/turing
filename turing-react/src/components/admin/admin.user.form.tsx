@@ -14,9 +14,11 @@ import { TurAdminUserService } from "@/services/auth/admin-user.service";
 import { TurGroupService } from "@/services/auth/group.service";
 import { TurUserService } from "@/services/auth/user.service";
 import {
-    IconCheck, IconLock, IconMail, IconPlus, IconSearch,
+    IconCheck, IconDeviceFloppy, IconLock, IconMail, IconPlus, IconSearch,
     IconUser, IconUserShield, IconUsersGroup, IconX,
 } from "@tabler/icons-react";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { DialogDelete } from "@/components/dialog.delete";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -169,17 +171,24 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, s
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconUser}
-                    feature="User"
-                    description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
-                    showSave
-                    onCancel={() => navigate(ROUTES.ADMIN_USERS)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={isNew ? t("admin.users.newUser") : (value?.username ?? "")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconUser}
+                        feature="User"
+                        description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature="User" name={isNew ? t("admin.users.newUser") : (value?.username ?? "")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_USERS)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                     {/* Avatar Section */}
                     <SectionCard variant="slate">
                         <SectionCard.Header icon={IconUser} title={t("forms.adminUser.avatar")} description={t("forms.adminUser.avatarDesc")} />

@@ -30,7 +30,8 @@ import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconAdjustmentsHorizontal, IconFilter, IconId, IconLanguage } from "@tabler/icons-react"
+import { IconAdjustmentsHorizontal, IconDeviceFloppy, IconFilter, IconId, IconLanguage, IconX } from "@tabler/icons-react"
+import { GradientButton } from "@/components/ui/gradient-button"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -51,7 +52,7 @@ interface Props {
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, open, setOpen }) => {
+export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -216,17 +217,23 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-            <StickyPageHeader
-              icon={IconFilter}
-              feature={t("sn.facets.facetedField")}
-              description={snField.description}
-              showSave
-              loading={isLoading}
-              onCancel={() => navigate(urlBase)}
-              open={open}
-              setOpen={setOpen}
-              name={snField.name}
-            />
+            <StickyPageHeader>
+              <StickyPageHeader.Title
+                icon={IconFilter}
+                feature={t("sn.facets.facetedField")}
+                description={snField.description}
+              />
+              <StickyPageHeader.Actions>
+                <GradientButton type="submit" size="sm" loading={isLoading}>
+                  <IconDeviceFloppy className="size-4" />
+                  {t("forms.formActions.saveChanges")}
+                </GradientButton>
+                <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                  <IconX className="size-4" />
+                  {t("forms.formActions.cancel")}
+                </GradientButton>
+              </StickyPageHeader.Actions>
+            </StickyPageHeader>
             {/* Basic Information */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconId} title={t("forms.snFacetedField.basicInfo")} description={t("forms.snFacetedField.basicInfoDesc")} />

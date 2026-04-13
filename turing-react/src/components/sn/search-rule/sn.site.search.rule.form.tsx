@@ -14,7 +14,9 @@ import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.se
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service"
 import React, { useEffect, useState } from "react"
-import { IconGavel } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconGavel, IconX } from "@tabler/icons-react"
+import { GradientButton } from "@/components/ui/gradient-button"
+import { DialogDelete } from "@/components/dialog.delete"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -85,17 +87,24 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconGavel}
-                    feature={t("sn.searchRule.title")}
-                    description={t("sn.searchRule.description")}
-                    showSave
-                    onCancel={() => navigate(urlBase)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={value?.name || t("sn.searchRule.newSearchRule")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconGavel}
+                        feature={t("sn.searchRule.title")}
+                        description={t("sn.searchRule.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.searchRule.title")} name={value?.name || t("sn.searchRule.newSearchRule")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                 <SNSiteSearchRuleDetails form={form} />
                 <SNSiteSearchRuleConditions
                     form={form}

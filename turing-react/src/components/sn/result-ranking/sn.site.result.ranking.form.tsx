@@ -15,7 +15,9 @@ import {
 import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model"
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service"
-import { IconFilter, IconInfoCircle, IconNumber123, IconScale } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconFilter, IconInfoCircle, IconNumber123, IconScale, IconX } from "@tabler/icons-react"
+import { GradientButton } from "@/components/ui/gradient-button"
+import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect } from "react"
 import {
   useForm
@@ -84,17 +86,24 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconNumber123}
-          feature={t("sn.resultRanking.title")}
-          description={t("sn.resultRanking.description")}
-          showSave
-          onCancel={() => navigate(urlBase)}
-          onDelete={onDelete}
-          open={open}
-          setOpen={setOpen}
-          name={value.name}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconNumber123}
+            feature={t("sn.resultRanking.title")}
+            description={t("sn.resultRanking.description")}
+          />
+          <StickyPageHeader.Actions>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.resultRanking.title")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header

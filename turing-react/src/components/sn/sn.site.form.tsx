@@ -38,7 +38,8 @@ import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { Skeleton } from "../ui/skeleton"
-import { IconSettings, IconSearch, IconCloudOff } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconSettings, IconSearch, IconCloudOff, IconX } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 const turSNSiteService = new TurSNSiteService();
 const turSEInstanceService = new TurSEInstanceService();
 const turPageService = new TurPageService();
@@ -138,14 +139,23 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-              <StickyPageHeader
-                icon={IconSettings}
-                feature={t("sn.settings.title")}
-                description={t("sn.settings.description")}
-                showSave
-                loading={isLoading}
-                onCancel={() => navigate(urlBase)}
-              />
+              <StickyPageHeader>
+                <StickyPageHeader.Title
+                  icon={IconSettings}
+                  feature={t("sn.settings.title")}
+                  description={t("sn.settings.description")}
+                />
+                <StickyPageHeader.Actions>
+                  <GradientButton type="submit" size="sm" loading={isLoading}>
+                    <IconDeviceFloppy className="size-4" />
+                    {t("forms.formActions.saveChanges")}
+                  </GradientButton>
+                  <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                    <IconX className="size-4" />
+                    {t("forms.formActions.cancel")}
+                  </GradientButton>
+                </StickyPageHeader.Actions>
+              </StickyPageHeader>
                 {/* General Information Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.snSiteForm.generalInfo")} description={t("forms.snSiteForm.generalInfoDesc")} />

@@ -64,7 +64,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { IconFilter, IconInfoCircle, IconLanguage, IconListDetails } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconFilter, IconInfoCircle, IconLanguage, IconListDetails, IconX } from '@tabler/icons-react'
+import { GradientButton } from "@/components/ui/gradient-button"
+import { DialogDelete } from "@/components/dialog.delete"
 import { GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect, useState } from "react"
 import {
@@ -566,17 +568,24 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
       </Dialog>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-          <StickyPageHeader
-            icon={IconFilter}
-            feature={t("sn.facets.customField")}
-            description={value.defaultLabel ?? ""}
-            showSave
-            onCancel={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)}
-            onDelete={onDelete}
-            open={open}
-            setOpen={setOpen}
-            name={value.name}
-          />
+          <StickyPageHeader>
+            <StickyPageHeader.Title
+              icon={IconFilter}
+              feature={t("sn.facets.customField")}
+              description={value.defaultLabel ?? ""}
+            />
+            <StickyPageHeader.Actions>
+              {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.facets.customField")} name={value.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+              <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)}>
+                <IconX className="size-4" />
+                {t("forms.formActions.cancel")}
+              </GradientButton>
+            </StickyPageHeader.Actions>
+          </StickyPageHeader>
           {/* Basic Information Section */}
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title={t("forms.snCustomFacet.basicInfo")} description={t("forms.snCustomFacet.basicInfoDesc")} />

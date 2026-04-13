@@ -26,7 +26,8 @@ import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import type { TurStoreVendor } from "@/models/store/store-vendor.model.ts"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurStoreVendorService } from "@/services/store/store-vendor.service"
-import { IconAdjustments, IconBuildingStore, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
+import { IconAdjustments, IconBuildingStore, IconDeviceFloppy, IconPlug, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -311,13 +312,23 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconSettings}
-          feature={t("store.title")}
-          description={t("store.detail.description")}
-          showSave
-          onCancel={() => navigate(urlBase)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconSettings}
+            feature={t("store.title")}
+            description={t("store.detail.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
               {/* General Information Section */}
               <SectionCard variant="blue">
                 <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.store.generalDesc")} />

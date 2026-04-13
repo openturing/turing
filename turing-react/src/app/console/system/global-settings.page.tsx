@@ -20,7 +20,7 @@ import { StickyPageHeader } from "@/components/sticky-page-header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconBrain, IconDatabase, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
+import { IconBrain, IconDatabase, IconDeviceFloppy, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
 import type { TurStoreInstance } from "@/models/store/store-instance.model";
@@ -134,14 +134,19 @@ export default function GlobalSettingsPage() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconSettings}
-                    feature={t("globalSettings.breadcrumb")}
-                    description={t("globalSettings.description")}
-                    showSave
-                    loading={isSaving}
-                    disabled={isLoading}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconSettings}
+                        feature={t("globalSettings.breadcrumb")}
+                        description={t("globalSettings.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        <GradientButton type="submit" size="sm" loading={isSaving} disabled={isLoading}>
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                     <SectionCard variant="amber">
                         <SectionCard.Header icon={IconSettings} title={t("globalSettings.sectionTitle")} description={t("globalSettings.sectionDescription")} />
                         <SectionCard.Content>

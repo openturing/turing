@@ -29,7 +29,8 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { IconPlug, IconSettings } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconPlug, IconSettings, IconX } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
@@ -100,13 +101,23 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconSettings}
-          feature={t("se.detail.title")}
-          description={t("se.detail.description")}
-          showSave
-          onCancel={() => navigate(ROUTES.SE_INSTANCE)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconSettings}
+            feature={t("se.detail.title")}
+            description={t("se.detail.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.SE_INSTANCE)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
                 {/* General Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.se.generalDesc")} />

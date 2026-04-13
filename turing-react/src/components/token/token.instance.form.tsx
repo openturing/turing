@@ -15,7 +15,8 @@ import {
 import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
 import { TurTokenInstanceService } from "@/services/token/token.service"
-import { IconCode, IconKey, IconNotes } from "@tabler/icons-react"
+import { IconCode, IconDeviceFloppy, IconKey, IconNotes, IconX } from "@tabler/icons-react"
+import { DialogDelete } from "@/components/dialog.delete"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -86,17 +87,24 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, ope
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 px-4 lg:px-6 pb-8"
       >
-        <StickyPageHeader
-          icon={IconCode}
-          feature="API Token"
-          description={isNew ? "Create a new API token." : "Manage API token details and credentials."}
-          showSave
-          onCancel={() => navigate(ROUTES.ADMIN_TOKENS)}
-          onDelete={onDelete}
-          open={open}
-          setOpen={setOpen}
-          name={value.title ?? "API Token"}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconCode}
+            feature="API Token"
+            description={isNew ? "Create a new API token." : "Manage API token details and credentials."}
+          />
+          <StickyPageHeader.Actions>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature="API Token" name={value.title ?? "API Token"} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.ADMIN_TOKENS)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
 
         {/* General */}
         <SectionCard variant="blue">

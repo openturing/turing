@@ -35,7 +35,8 @@ import {
 import type { TurSNSiteMergeField } from "@/models/sn/sn-site-merge-field.model"
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model"
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service"
-import { IconFileText, IconGitMerge, IconLink, IconReplace } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconFileText, IconGitMerge, IconLink, IconReplace, IconX } from "@tabler/icons-react"
+import { DialogDelete } from "@/components/dialog.delete"
 import { PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -114,17 +115,24 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconGitMerge}
-                    feature={t("sn.mergeProviders.feature")}
-                    description={t("sn.mergeProviders.description")}
-                    showSave
-                    onCancel={() => navigate(urlBase)}
-                    onDelete={onDelete}
-                    open={open}
-                    setOpen={setOpen}
-                    name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconGitMerge}
+                        feature={t("sn.mergeProviders.feature")}
+                        description={t("sn.mergeProviders.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.mergeProviders.feature")} name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                        <GradientButton type="submit" size="sm">
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                 {/* Providers Section */}
                 <SectionCard variant="blue">
                     <SectionCard.Header icon={IconGitMerge} title={t("forms.snMerge.providerDetails")} description={t("forms.snMerge.providerDetailsDesc")} />

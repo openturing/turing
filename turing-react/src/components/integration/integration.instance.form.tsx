@@ -28,7 +28,8 @@ import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 import { StickyPageHeader } from "../sticky-page-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { IconSettings, IconPlug } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconSettings, IconPlug, IconX } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 
 const turIntegrationInstanceService = new TurIntegrationInstanceService();
 const turTokenInstanceService = new TurTokenInstanceService();
@@ -76,13 +77,23 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconSettings}
-          feature={t("integration.detail.title")}
-          description={t("integration.detail.description")}
-          showSave
-          onCancel={() => navigate(ROUTES.INTEGRATION_INSTANCE)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconSettings}
+            feature={t("integration.detail.title")}
+            description={t("integration.detail.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.INTEGRATION_INSTANCE)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.integration.generalDesc")} />

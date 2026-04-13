@@ -23,6 +23,7 @@ import { TurSNSiteService } from "@/services/sn/sn.service"
 import {
   IconCodeAsterisk,
   IconCopy,
+  IconDeviceFloppy,
   IconHighlight,
   IconLayoutListFilled,
   IconListDetails,
@@ -30,7 +31,9 @@ import {
   IconScale,
   IconSettings,
   IconSpeakerphone,
+  IconX,
 } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 import { useEffect } from "react"
 import {
   useForm
@@ -83,13 +86,23 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 px-4 lg:px-6 pb-8"
       >
-        <StickyPageHeader
-          icon={IconScale}
-          feature={t("sn.behavior.title")}
-          description={t("sn.behavior.description")}
-          showSave
-          onCancel={() => navigate(urlBase)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconScale}
+            feature={t("sn.behavior.title")}
+            description={t("sn.behavior.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
 
         {/* General */}
         <SectionCard variant="blue">

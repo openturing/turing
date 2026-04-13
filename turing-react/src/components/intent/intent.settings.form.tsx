@@ -14,6 +14,7 @@ import { TurIntentService } from "@/services/intent/intent.service"
 import { IconPicker } from "@/components/ui/icon-picker"
 import { SmartDescription } from "@/components/ui/smart-description"
 import {
+  IconDeviceFloppy,
   IconGripVertical,
   IconInfoCircle,
   IconList,
@@ -21,6 +22,7 @@ import {
   IconSettings,
   IconToggleLeft,
   IconTrash,
+  IconX,
 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -124,13 +126,23 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconSettings}
-          feature={t("intent.settings.title")}
-          description={t("intent.settings.description")}
-          showSave
-          onCancel={() => navigate(urlBase)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconSettings}
+            feature={t("intent.settings.title")}
+            description={t("intent.settings.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}

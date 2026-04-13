@@ -36,7 +36,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconCpu2, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles } from "@tabler/icons-react"
+import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -238,14 +238,23 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         <>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-                <StickyPageHeader
-                    icon={IconCpu2}
-                    feature={t("sn.genai.title")}
-                    description={t("sn.genai.description")}
-                    showSave
-                    onCancel={() => form.reset(snSite.turSNSiteGenAi)}
-                    disabled={enabled && !hasAllVariables}
-                />
+                <StickyPageHeader>
+                    <StickyPageHeader.Title
+                        icon={IconCpu2}
+                        feature={t("sn.genai.title")}
+                        description={t("sn.genai.description")}
+                    />
+                    <StickyPageHeader.Actions>
+                        <GradientButton type="submit" size="sm" disabled={enabled && !hasAllVariables}>
+                            <IconDeviceFloppy className="size-4" />
+                            {t("forms.formActions.saveChanges")}
+                        </GradientButton>
+                        <GradientButton type="button" variant="outline" size="sm" onClick={() => form.reset(snSite.turSNSiteGenAi)}>
+                            <IconX className="size-4" />
+                            {t("forms.formActions.cancel")}
+                        </GradientButton>
+                    </StickyPageHeader.Actions>
+                </StickyPageHeader>
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
                         <SectionCard variant="amber">

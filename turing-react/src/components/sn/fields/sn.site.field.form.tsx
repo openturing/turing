@@ -31,7 +31,9 @@ import type { TurSNFieldType } from "@/models/sn/sn-field-type.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconAlignBoxCenterStretch, IconSettings } from "@tabler/icons-react"
+import { IconAlignBoxCenterStretch, IconDeviceFloppy, IconSettings, IconX } from "@tabler/icons-react"
+import { GradientButton } from "@/components/ui/gradient-button"
+import { DialogDelete } from "@/components/dialog.delete"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -184,18 +186,24 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-            <StickyPageHeader
-              icon={IconAlignBoxCenterStretch}
-              feature={t("sn.fields.feature")}
-              description={snField.description}
-              showSave
-              loading={isLoading}
-              onCancel={() => navigate(urlBase)}
-              onDelete={onDelete}
-              open={open}
-              setOpen={setOpen}
-              name={snField.name}
-            />
+            <StickyPageHeader>
+              <StickyPageHeader.Title
+                icon={IconAlignBoxCenterStretch}
+                feature={t("sn.fields.feature")}
+                description={snField.description}
+              />
+              <StickyPageHeader.Actions>
+                {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
+                <GradientButton type="submit" size="sm" loading={isLoading}>
+                  <IconDeviceFloppy className="size-4" />
+                  {t("forms.formActions.saveChanges")}
+                </GradientButton>
+                <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                  <IconX className="size-4" />
+                  {t("forms.formActions.cancel")}
+                </GradientButton>
+              </StickyPageHeader.Actions>
+            </StickyPageHeader>
             {/* General Configuration */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.snField.generalConfig")} description={t("forms.snField.generalConfigDesc")} />

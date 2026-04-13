@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input"
 import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { IconFileText, IconInfoCircle, IconSettings, IconToggleLeft } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconFileText, IconInfoCircle, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { GradientButton } from "../ui/gradient-button"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -80,13 +81,23 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconSettings}
-          feature={t("aiAgent.settings.title")}
-          description={t("aiAgent.settings.description")}
-          showSave
-          onCancel={() => navigate(urlBase)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconSettings}
+            feature={t("aiAgent.settings.title")}
+            description={t("aiAgent.settings.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")} />
             <SectionCard.Content>

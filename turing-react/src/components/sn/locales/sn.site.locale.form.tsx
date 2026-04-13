@@ -22,7 +22,9 @@ import type { TurLocale } from "@/models/locale/locale.model"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
 import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
-import { IconDatabase, IconExternalLink, IconLanguage } from "@tabler/icons-react"
+import { IconDatabase, IconDeviceFloppy, IconExternalLink, IconLanguage, IconX } from "@tabler/icons-react"
+import { GradientButton } from "@/components/ui/gradient-button"
+import { DialogDelete } from "@/components/dialog.delete"
 import { useEffect, useState } from "react"
 import {
   useForm
@@ -99,17 +101,24 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, o
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconLanguage}
-          feature={t("sn.multiLanguage.feature")}
-          description={isNew ? t("sn.multiLanguage.description") : snLocale.core}
-          showSave
-          onCancel={() => navigate(urlBase)}
-          onDelete={onDelete}
-          open={open}
-          setOpen={setOpen}
-          name={isNew ? t("sn.multiLanguage.feature") : snLocale.language}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconLanguage}
+            feature={t("sn.multiLanguage.feature")}
+            description={isNew ? t("sn.multiLanguage.description") : snLocale.core}
+          />
+          <StickyPageHeader.Actions>
+            {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.multiLanguage.feature")} name={isNew ? t("sn.multiLanguage.feature") : snLocale.language} onDelete={onDelete} open={open} setOpen={setOpen} />}
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
         {/* Language Section */}
         <SectionCard variant="blue">
           <SectionCard.Header icon={IconLanguage} title={t("forms.snLocale.languageSettings")} description={t("forms.snLocale.languageSettingsDesc")} />

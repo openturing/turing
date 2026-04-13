@@ -18,7 +18,8 @@ import type { TurLocale } from "@/models/locale/locale.model";
 import { TurLocaleService } from "@/services/locale/locale.service";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconDatabase, IconInfoCircle } from "@tabler/icons-react";
+import { IconDatabase, IconDeviceFloppy, IconInfoCircle, IconX } from "@tabler/icons-react";
+import { GradientButton } from "@/components/ui/gradient-button";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -86,13 +87,23 @@ export default function SEInstanceCoreNewPage() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
-        <StickyPageHeader
-          icon={IconDatabase}
-          feature={t("se.cores.title")}
-          description={t("se.newCore.description")}
-          showSave
-          onCancel={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}
-        />
+        <StickyPageHeader>
+          <StickyPageHeader.Title
+            icon={IconDatabase}
+            feature={t("se.cores.title")}
+            description={t("se.newCore.description")}
+          />
+          <StickyPageHeader.Actions>
+            <GradientButton type="submit" size="sm">
+              <IconDeviceFloppy className="size-4" />
+              {t("forms.formActions.saveChanges")}
+            </GradientButton>
+            <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}>
+              <IconX className="size-4" />
+              {t("forms.formActions.cancel")}
+            </GradientButton>
+          </StickyPageHeader.Actions>
+        </StickyPageHeader>
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
