@@ -37,5 +37,57 @@
     "downloadUrl": "https://turing.viglet.org/marketplace/vinyl-records/vinyl-records.zip",
     "hasContent": true,
     "hasTemplate": true
+  },
+  {
+    "id": "wknd",
+    "title": "WKND (AEM)",
+    "description": "Adobe Experience Manager connector sample based on the WKND reference site. Ingests pages, assets and metadata from AEM into a complete SN site with a React SPA template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "connector",
+    "tags": ["aem", "adobe", "connector", "dumont", "spa"],
+    "icon": "aem",
+    "downloadUrl": "https://dumont.viglet.org/marketplace/wknd/wknd.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "celestial-gallery",
+    "title": "Celestial Gallery (Assets)",
+    "description": "Assets connector sample showing astrophotography indexing. Demonstrates file ingestion, metadata extraction and thumbnail generation, with a React SPA template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "connector",
+    "tags": ["assets", "files", "astrophotography", "connector", "dumont", "spa"],
+    "icon": "assets",
+    "downloadUrl": "https://dumont.viglet.org/marketplace/celestial-gallery/celestial-gallery.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "retro-arcade",
+    "title": "Retro Arcade (Database)",
+    "description": "JDBC connector sample indexing a retro arcade game catalog. Shows SQL mapping, incremental delta and custom attributes, with a React SPA template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "connector",
+    "tags": ["database", "jdbc", "arcade", "games", "connector", "dumont", "spa"],
+    "icon": "database",
+    "downloadUrl": "https://dumont.viglet.org/marketplace/retro-arcade/retro-arcade.zip",
+    "hasContent": true,
+    "hasTemplate": true
+  },
+  {
+    "id": "wikipedia",
+    "title": "Wikipedia (Web Crawler)",
+    "description": "Web crawler connector sample ingesting Wikipedia articles. Demonstrates URL filtering, content extraction and link following, with a React SPA template.",
+    "version": "1.0.0",
+    "author": "Viglet",
+    "category": "connector",
+    "tags": ["web-crawler", "wikipedia", "articles", "connector", "dumont", "spa"],
+    "icon": "web",
+    "downloadUrl": "https://dumont.viglet.org/marketplace/wikipedia/wikipedia.zip",
+    "hasContent": true,
+    "hasTemplate": true
   }
 ]
