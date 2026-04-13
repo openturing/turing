@@ -27,6 +27,7 @@ import {
   IconLayoutListFilled,
   IconListDetails,
   IconProgressHelp,
+  IconScale,
   IconSettings,
   IconSpeakerphone,
 } from "@tabler/icons-react"
@@ -38,7 +39,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
-import { StickySaveBar } from "../ui/sticky-save-bar"
+import { StickyPageHeader } from "../sticky-page-header"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
@@ -76,16 +77,17 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
     }
   }
 
-  const watchedName = form.watch("name")
-
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 py-6 px-6"
+        className="space-y-4 px-4 lg:px-6 pb-8"
       >
-        <StickySaveBar
-          title={watchedName || t("sn.behavior.title")}
+        <StickyPageHeader
+          icon={IconScale}
+          feature={t("sn.behavior.title")}
+          description={t("sn.behavior.description")}
+          showSave
           onCancel={() => navigate(urlBase)}
         />
 

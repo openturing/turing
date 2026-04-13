@@ -1,11 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SEInstanceForm } from "@/components/se/se.instance.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -33,8 +31,6 @@ export default function SEInstanceDetailPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={seInstance} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}/detail`}>
-      <SubPageHeader icon={IconSettings} name={t("se.detail.title")} feature={t("se.detail.title")}
-        description={t("se.detail.description")} />
       {seInstance && <SEInstanceForm value={seInstance} isNew={isNew} />}
     </LoadProvider>
   );

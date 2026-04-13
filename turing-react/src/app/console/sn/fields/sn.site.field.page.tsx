@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteFieldForm } from "@/components/sn/fields/sn.site.field.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model";
 import { TurSNFieldService } from "@/services/sn/sn.field.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconAlignBoxCenterStretch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -56,16 +54,7 @@ export default function SNSiteFieldPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={snField} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/field`}>
-      {snField && (<> <SubPageHeader
-        icon={IconAlignBoxCenterStretch}
-        name={snField.name}
-        feature={t("sn.fields.feature")}
-        description={snField.description}
-        onDelete={isNew ? undefined : onDelete}
-        open={open}
-        setOpen={setOpen} />
-        <SNSiteFieldForm snSiteId={id} snField={snField} isNew={isNew} />
-      </>)}
+      {snField && <SNSiteFieldForm snSiteId={id} snField={snField} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
     </LoadProvider>
   )
 }

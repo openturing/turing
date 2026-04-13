@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -30,7 +30,7 @@ import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurLocaleService } from "@/services/locale/locale.service"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconAdjustmentsHorizontal, IconId, IconLanguage } from "@tabler/icons-react"
+import { IconAdjustmentsHorizontal, IconFilter, IconId, IconLanguage } from "@tabler/icons-react"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -47,9 +47,11 @@ interface Props {
   snSiteId: string;
   snField: TurSNSiteField;
   isNew: boolean;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
+export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, open, setOpen }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -213,10 +215,17 @@ export const SNSiteFacetedFieldForm: React.FC<Props> = ({ snSiteId, snField, isN
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
-            <StickySaveBar
-              title={form.watch("name") || (isNew ? t("sn.facets.newCustomFacet") : t("sn.facets.title"))}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+            <StickyPageHeader
+              icon={IconFilter}
+              feature={t("sn.facets.facetedField")}
+              description={snField.description}
+              showSave
+              loading={isLoading}
               onCancel={() => navigate(urlBase)}
+              open={open}
+              setOpen={setOpen}
+              name={snField.name}
             />
             {/* Basic Information */}
             <SectionCard variant="blue">

@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { TokenInstanceForm } from "@/components/token/token.instance.form";
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
 import { TurTokenInstanceService } from "@/services/token/token.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconCode } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
@@ -53,14 +51,7 @@ export default function TokenInstancePage() {
 
   return (
     <LoadProvider checkIsNotUndefined={tokenInstance} error={error} tryAgainUrl={`${ROUTES.ADMIN_TOKENS}/${id}`}>
-      <SubPageHeader
-        icon={IconCode}
-        name={tokenInstance.title ?? "API Token"}
-        feature="API Token"
-        description={isNew ? "Create a new API token." : "Manage API token details and credentials."}
-        {...(isNew ? {} : { onDelete, open, setOpen })}
-      />
-      {tokenInstance && <TokenInstanceForm value={tokenInstance} isNew={isNew} />}
+      {tokenInstance && <TokenInstanceForm value={tokenInstance} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
     </LoadProvider>
   )
 }

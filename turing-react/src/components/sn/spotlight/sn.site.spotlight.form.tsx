@@ -44,7 +44,7 @@ import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { StickySaveBar } from "../../ui/sticky-save-bar"
+import { StickyPageHeader } from "../../sticky-page-header"
 import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteSpotlightService = new TurSNSiteSpotlightService();
@@ -54,9 +54,12 @@ interface Props {
     snSiteId: string;
     value: TurSNSiteSpotlight;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSpotlight>({
         defaultValues: value,
@@ -212,10 +215,17 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew })
     return (
 
         <Form {...form}>
-            <form onSubmit={handleFormSubmit} className="space-y-4 py-8 px-6">
-                <StickySaveBar
-                    title={form.watch("name") || (isNew ? t("sn.spotlight.newSpotlight") : t("sn.spotlight.title"))}
+            <form onSubmit={handleFormSubmit} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconSpeakerphone}
+                    feature={t("sn.spotlight.title")}
+                    description={t("sn.spotlight.description")}
+                    showSave
                     onCancel={() => navigate(urlBase)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={value?.name || t("sn.spotlight.newSpotlight")}
                 />
                 {/* General Section */}
                 <SectionCard variant="blue">

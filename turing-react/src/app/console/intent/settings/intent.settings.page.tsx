@@ -1,10 +1,8 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { IntentSettingsForm } from "@/components/intent/intent.settings.form";
 import type { TurIntent } from "@/models/intent/intent.model";
 import { TurIntentService } from "@/services/intent/intent.service";
-import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -31,8 +29,6 @@ export default function IntentSettingsPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={intent} error={error} tryAgainUrl={`${ROUTES.INTENT_INSTANCE}/${id}/settings`}>
-      <SubPageHeader icon={IconSettings} name={t("intent.settings.title")} feature={t("intent.settings.title")}
-        description={t("intent.settings.description")} />
       {intent && <IntentSettingsForm value={intent} isNew={isNew} />}
     </LoadProvider>
   );

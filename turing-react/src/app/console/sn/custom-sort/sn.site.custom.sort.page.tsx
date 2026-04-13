@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteCustomSortForm } from "@/components/sn/custom-sort/sn.site.custom.sort.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model";
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconArrowsSort } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -61,20 +59,9 @@ export default function SNSiteCustomSortPage() {
         setOpen(false);
     }
 
-    const name = customSort?.name || t("sn.customSort.newCustomSort");
-
     return (
         <LoadProvider checkIsNotUndefined={customSort} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/custom-sort`}>
-            <SubPageHeader
-                icon={IconArrowsSort}
-                name={name}
-                feature={t("sn.customSort.title")}
-                description={t("sn.customSort.description")}
-                onDelete={isNew ? undefined : onDelete}
-                open={open}
-                setOpen={setOpen}
-            />
-            {customSort && <SNSiteCustomSortForm snSiteId={id} value={customSort} isNew={isNew} />}
+            {customSort && <SNSiteCustomSortForm snSiteId={id} value={customSort} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -36,10 +36,13 @@ interface Props {
   snSiteId: string;
   snLocale: TurSNSiteLocale;
   isNew: boolean;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
 
-export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew }) => {
+export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew, onDelete, open, setOpen }) => {
   const { t } = useTranslation();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [useCustomCore, setUseCustomCore] = useState(isNew && !!snLocale.core);
@@ -95,10 +98,17 @@ export const SNSiteLocaleForm: React.FC<Props> = ({ snSiteId, snLocale, isNew })
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-        <StickySaveBar
-          title={form.watch("language") || (isNew ? t("sn.multiLanguage.newLanguage") : t("sn.multiLanguage.title"))}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+        <StickyPageHeader
+          icon={IconLanguage}
+          feature={t("sn.multiLanguage.feature")}
+          description={isNew ? t("sn.multiLanguage.description") : snLocale.core}
+          showSave
           onCancel={() => navigate(urlBase)}
+          onDelete={onDelete}
+          open={open}
+          setOpen={setOpen}
+          name={isNew ? t("sn.multiLanguage.feature") : snLocale.language}
         />
         {/* Language Section */}
         <SectionCard variant="blue">

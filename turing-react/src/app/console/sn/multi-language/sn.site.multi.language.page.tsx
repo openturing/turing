@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteLocaleForm } from "@/components/sn/locales/sn.site.locale.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model";
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconLanguage } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -56,19 +54,13 @@ export default function SNSiteMultiLanguagePage() {
   }
   return (
     <LoadProvider checkIsNotUndefined={snLocale} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/locale`}>
-      {isNew && <SubPageHeader icon={IconLanguage} name={t("sn.multiLanguage.feature")} feature={t("sn.multiLanguage.feature")} description={t("sn.multiLanguage.description")} />}
-      {!isNew && snLocale && <SubPageHeader
-        icon={IconLanguage}
-        name={snLocale.language}
-        feature={t("sn.multiLanguage.feature")}
-        description={snLocale.core}
-        onDelete={onDelete}
-        open={open}
-        setOpen={setOpen} />}
       {snLocale && <SNSiteLocaleForm
         snSiteId={id}
         snLocale={snLocale}
         isNew={isNew}
+        onDelete={isNew ? undefined : onDelete}
+        open={open}
+        setOpen={setOpen}
       />}
     </LoadProvider>
   )

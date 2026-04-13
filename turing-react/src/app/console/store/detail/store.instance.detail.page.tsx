@@ -1,11 +1,9 @@
 import { ROUTES } from "@/app/routes.const"
 import { LoadProvider } from "@/components/loading-provider"
 import { StoreInstanceForm } from "@/components/store/store.instance.form"
-import { SubPageHeader } from "@/components/sub.page.header"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
-import { IconSettings } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
@@ -33,8 +31,6 @@ export default function StoreInstanceDetailPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={storeInstance} error={error} tryAgainUrl={`${ROUTES.STORE_INSTANCE}/${id}`}>
-      <SubPageHeader icon={IconSettings} feature={t("store.title")} name={t("store.detail.title")}
-        description={t("store.detail.description")} />
       {storeInstance && <StoreInstanceForm value={storeInstance} isNew={isNew} />}
     </LoadProvider>
   )

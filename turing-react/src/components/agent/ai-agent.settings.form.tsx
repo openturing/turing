@@ -13,13 +13,13 @@ import { Input } from "@/components/ui/input"
 import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { IconFileText, IconInfoCircle, IconToggleLeft } from "@tabler/icons-react"
+import { IconFileText, IconInfoCircle, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickySaveBar } from "../ui/sticky-save-bar"
+import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
@@ -78,13 +78,15 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   }
 
   return (
-    <div className="px-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
-          <StickySaveBar
-            title={form.watch("title") || (isNew ? t("aiAgent.newInstance") : t("aiAgent.title"))}
-            onCancel={() => navigate(urlBase)}
-          />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+        <StickyPageHeader
+          icon={IconSettings}
+          feature={t("aiAgent.settings.title")}
+          description={t("aiAgent.settings.description")}
+          showSave
+          onCancel={() => navigate(urlBase)}
+        />
           <SectionCard variant="blue">
             <SectionCard.Header icon={IconInfoCircle} title={t("forms.common.generalInfo")} description={t("forms.agentSettings.generalDesc")} />
             <SectionCard.Content>
@@ -214,7 +216,6 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           </SectionCard>
 
         </form>
-      </Form>
-    </div>
+    </Form>
   )
 }

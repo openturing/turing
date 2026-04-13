@@ -1,7 +1,6 @@
 import { ROUTES } from "@/app/routes.const";
 import { LanguageSelect } from "@/components/language-select";
-import { SubPageHeader } from "@/components/sub.page.header";
-import { StickySaveBar } from "@/components/ui/sticky-save-bar";
+import { StickyPageHeader } from "@/components/sticky-page-header";
 import {
   Form,
   FormControl,
@@ -20,6 +19,7 @@ import { TurLocaleService } from "@/services/locale/locale.service";
 import { TurSEInstanceService } from "@/services/se/se.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconInfoCircle } from "@tabler/icons-react";
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -84,19 +84,15 @@ export default function SEInstanceCoreNewPage() {
   }
 
   return (
-    <>
-      <SubPageHeader
-        icon={IconDatabase}
-        name={t("se.newCore.title")}
-        feature={t("se.cores.title")}
-        description={t("se.newCore.description")}
-      />
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-          <StickySaveBar
-            title={form.watch("name") || t("se.newCore.title")}
-            onCancel={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}
-          />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+        <StickyPageHeader
+          icon={IconDatabase}
+          feature={t("se.cores.title")}
+          description={t("se.newCore.description")}
+          showSave
+          onCancel={() => navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`)}
+        />
           <SectionCard variant="blue">
             <SectionCard.Header
               icon={IconInfoCircle}
@@ -177,8 +173,7 @@ export default function SEInstanceCoreNewPage() {
             </SectionCard.Content>
           </SectionCard>
 
-        </form>
-      </Form>
-    </>
+      </form>
+    </Form>
   );
 }

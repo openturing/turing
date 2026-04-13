@@ -15,7 +15,7 @@ import {
 import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
 import { TurTokenInstanceService } from "@/services/token/token.service"
-import { IconKey, IconNotes } from "@tabler/icons-react"
+import { IconCode, IconKey, IconNotes } from "@tabler/icons-react"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -23,16 +23,19 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickySaveBar } from "../ui/sticky-save-bar"
+import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 const turTokenInstanceService = new TurTokenInstanceService();
 interface Props {
   value: TurTokenInstance;
   isNew: boolean;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
+export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen }) => {
   const { t } = useTranslation();
   const form = useForm<TurTokenInstance>({
     defaultValues: value
@@ -81,11 +84,18 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 py-6 px-6"
+        className="space-y-4 px-4 lg:px-6 pb-8"
       >
-        <StickySaveBar
-          title={form.watch("title") || (isNew ? t("apiToken.newInstance") : t("apiToken.title"))}
+        <StickyPageHeader
+          icon={IconCode}
+          feature="API Token"
+          description={isNew ? "Create a new API token." : "Manage API token details and credentials."}
+          showSave
           onCancel={() => navigate(ROUTES.ADMIN_TOKENS)}
+          onDelete={onDelete}
+          open={open}
+          setOpen={setOpen}
+          name={value.title ?? "API Token"}
         />
 
         {/* General */}

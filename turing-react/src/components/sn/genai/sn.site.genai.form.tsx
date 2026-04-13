@@ -36,13 +36,13 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles } from "@tabler/icons-react"
+import { IconBrain, IconCpu2, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
 import { Button } from "../../ui/button"
-import { StickySaveBar } from "../../ui/sticky-save-bar"
+import { StickyPageHeader } from "../../sticky-page-header"
 import { GradientButton } from "../../ui/gradient-button"
 import { SectionCard } from "../../ui/section-card"
 import { Textarea } from "../../ui/textarea"
@@ -235,14 +235,17 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const canGenerate = !!defaultLlmId && !!snSite.description && !isGenerating;
 
     return (
-        <div className="px-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
-                    <StickySaveBar
-                        title={snSite.name || t("sn.genai.title")}
-                        onCancel={() => form.reset(snSite.turSNSiteGenAi)}
-                        disabled={enabled && !hasAllVariables}
-                    />
+        <>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconCpu2}
+                    feature={t("sn.genai.title")}
+                    description={t("sn.genai.description")}
+                    showSave
+                    onCancel={() => form.reset(snSite.turSNSiteGenAi)}
+                    disabled={enabled && !hasAllVariables}
+                />
                     <div className="space-y-4">
                         {/* Section 1: Site Prompt */}
                         <SectionCard variant="amber">
@@ -488,7 +491,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     </div>
 
                 </form>
-            </Form>
+        </Form>
 
             <Dialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
                 <DialogContent className="sm:max-w-md">
@@ -509,6 +512,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 };

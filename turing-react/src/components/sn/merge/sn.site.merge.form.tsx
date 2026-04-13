@@ -18,7 +18,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import { SmartDescription } from "@/components/ui/smart-description"
@@ -49,9 +49,12 @@ interface Props {
     snSiteId: string;
     value: TurSNSiteMerge;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteMerge>({
         defaultValues: value,
@@ -110,10 +113,17 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew }) => 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-                <StickySaveBar
-                    title={form.watch("providerFrom") || (isNew ? t("sn.mergeProviders.newMergeProvider") : t("sn.mergeProviders.title"))}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconGitMerge}
+                    feature={t("sn.mergeProviders.feature")}
+                    description={t("sn.mergeProviders.description")}
+                    showSave
                     onCancel={() => navigate(urlBase)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={value?.providerFrom && value?.providerTo ? `${value.providerFrom} → ${value.providerTo}` : t("sn.mergeProviders.newMergeProvider")}
                 />
                 {/* Providers Section */}
                 <SectionCard variant="blue">

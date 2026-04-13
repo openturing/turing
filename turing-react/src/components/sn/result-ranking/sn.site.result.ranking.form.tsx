@@ -15,7 +15,7 @@ import {
 import { SmartDescription } from "@/components/ui/smart-description"
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model"
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service"
-import { IconFilter, IconInfoCircle, IconScale } from "@tabler/icons-react"
+import { IconFilter, IconInfoCircle, IconNumber123, IconScale } from "@tabler/icons-react"
 import React, { useEffect } from "react"
 import {
   useForm
@@ -23,7 +23,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickySaveBar } from "../../ui/sticky-save-bar"
+import { StickyPageHeader } from "../../sticky-page-header"
 import { SectionCard } from "../../ui/section-card"
 import { Slider } from "../../ui/slider"
 import { DynamicResultRankingFields } from "./dynamic-result-ranking-field"
@@ -32,9 +32,12 @@ interface Props {
   snSiteId: string
   value: TurSNRankingExpression;
   isNew: boolean;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNRankingExpression>({
     defaultValues: value
@@ -79,13 +82,19 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
   }
 
   return (
-    <div className="px-6 py-8">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <StickySaveBar
-            title={form.watch("name") || (isNew ? t("sn.resultRanking.newResultRanking") : t("sn.resultRanking.title"))}
-            onCancel={() => navigate(urlBase)}
-          />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+        <StickyPageHeader
+          icon={IconNumber123}
+          feature={t("sn.resultRanking.title")}
+          description={t("sn.resultRanking.description")}
+          showSave
+          onCancel={() => navigate(urlBase)}
+          onDelete={onDelete}
+          open={open}
+          setOpen={setOpen}
+          name={value.name}
+        />
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header
@@ -216,7 +225,6 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
 
           {/* Action Footer */}
         </form>
-      </Form>
-    </div>
+    </Form>
   )
 }

@@ -1,11 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import { IntegrationInstanceForm } from "@/components/integration/integration.instance.form";
 import { LoadProvider } from "@/components/loading-provider";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model";
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
-import { IconSettings } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -33,7 +31,6 @@ export default function IntegrationInstanceDetailPage() {
   }, [id])
   return (
     <LoadProvider checkIsNotUndefined={integrationInstance} error={error} tryAgainUrl={`${ROUTES.INTEGRATION_INSTANCE}/${id}/detail`}>
-      <SubPageHeader icon={IconSettings} name={t("integration.detail.title")} feature={t("integration.detail.title")} description={t("integration.detail.description")} />
       {integrationInstance && <IntegrationInstanceForm value={integrationInstance} isNew={isNew} />}
     </LoadProvider>
   )

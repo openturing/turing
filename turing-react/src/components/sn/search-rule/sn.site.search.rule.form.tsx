@@ -1,7 +1,7 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { Form } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import type {
     TurSNSiteSearchRule,
     TurSNSiteSearchRuleFieldOption,
@@ -14,6 +14,7 @@ import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.se
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNFacetedFieldService } from "@/services/sn/sn.faceted.field.service"
 import React, { useEffect, useState } from "react"
+import { IconGavel } from "@tabler/icons-react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -31,9 +32,12 @@ interface Props {
     snSiteId: string;
     value: TurSNSiteSearchRule;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteSearchRule>({ defaultValues: value });
     const navigate = useNavigate();
@@ -80,10 +84,17 @@ export const SNSiteSearchRuleForm: React.FC<Props> = ({ snSiteId, value, isNew }
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-                <StickySaveBar
-                    title={form.watch("name") || (isNew ? t("sn.searchRule.newSearchRule") : t("sn.searchRule.title"))}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconGavel}
+                    feature={t("sn.searchRule.title")}
+                    description={t("sn.searchRule.description")}
+                    showSave
                     onCancel={() => navigate(urlBase)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={value?.name || t("sn.searchRule.newSearchRule")}
                 />
                 <SNSiteSearchRuleDetails form={form} />
                 <SNSiteSearchRuleConditions

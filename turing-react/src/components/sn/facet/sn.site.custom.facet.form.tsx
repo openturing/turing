@@ -73,7 +73,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickySaveBar } from "../../ui/sticky-save-bar"
+import { StickyPageHeader } from "../../sticky-page-header"
 import { SectionCard } from "../../ui/section-card"
 
 const turSNSiteCustomFacetService = new TurSNSiteCustomFacetService();
@@ -83,6 +83,9 @@ interface Props {
   snSiteId: string;
   value: TurSNSiteCustomFacet;
   isNew: boolean;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const FACET_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -231,7 +234,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onEdit, onR
   );
 };
 
-export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
   const { t } = useTranslation();
   const form = useForm<TurSNSiteCustomFacet>({
     defaultValues: {
@@ -562,10 +565,17 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew 
         </DialogContent>
       </Dialog>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-          <StickySaveBar
-            title={form.watch("name") || (isNew ? t("sn.facets.newCustomFacet") : t("sn.facets.title"))}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+          <StickyPageHeader
+            icon={IconFilter}
+            feature={t("sn.facets.customField")}
+            description={value.defaultLabel ?? ""}
+            showSave
             onCancel={() => navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet`)}
+            onDelete={onDelete}
+            open={open}
+            setOpen={setOpen}
+            name={value.name}
           />
           {/* Basic Information Section */}
           <SectionCard variant="blue">

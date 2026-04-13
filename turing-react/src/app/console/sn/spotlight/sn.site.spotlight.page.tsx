@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteSpotlightForm } from "@/components/sn/spotlight/sn.site.spotlight.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteSpotlight } from "@/models/sn/sn-site-spotlight.model";
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconSpeakerphone } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -55,20 +53,9 @@ export default function SNSiteSpotlightPage() {
         setOpen(false);
     }
 
-    const name = spotlight?.name || t("sn.spotlight.newSpotlight");
-
     return (
         <LoadProvider checkIsNotUndefined={spotlight} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/spotlight`}>
-            <SubPageHeader
-                icon={IconSpeakerphone}
-                name={name}
-                feature={t("sn.spotlight.title")}
-                description={t("sn.spotlight.description")}
-                onDelete={isNew ? undefined : onDelete}
-                open={open}
-                setOpen={setOpen}
-            />
-            {spotlight && <SNSiteSpotlightForm snSiteId={id} value={spotlight} isNew={isNew} />}
+            {spotlight && <SNSiteSpotlightForm snSiteId={id} value={spotlight} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

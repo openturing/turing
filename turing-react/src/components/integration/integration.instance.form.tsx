@@ -26,7 +26,7 @@ import { toast } from "@viglet/viglet-design-system"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
-import { StickySaveBar } from "../ui/sticky-save-bar"
+import { StickyPageHeader } from "../sticky-page-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { IconSettings, IconPlug } from "@tabler/icons-react"
 
@@ -74,13 +74,15 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   }
 
   return (
-    <div className="px-6 py-8">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <StickySaveBar
-            title={form.watch("title") || (isNew ? t("integration.newInstance") : t("integration.title"))}
-            onCancel={() => navigate(ROUTES.INTEGRATION_INSTANCE)}
-          />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+        <StickyPageHeader
+          icon={IconSettings}
+          feature={t("integration.detail.title")}
+          description={t("integration.detail.description")}
+          showSave
+          onCancel={() => navigate(ROUTES.INTEGRATION_INSTANCE)}
+        />
             {/* General Information Section */}
             <SectionCard variant="blue">
               <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.integration.generalDesc")} />
@@ -222,9 +224,8 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
               </SectionCard.Content>
             </SectionCard>
 
-        </form>
-      </Form >
-    </div>
+      </form>
+    </Form>
   )
 }
 

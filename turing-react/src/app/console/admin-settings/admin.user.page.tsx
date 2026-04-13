@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { AdminUserForm } from "@/components/admin/admin.user.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurUser } from "@/models/auth/user";
 import { TurAdminUserService } from "@/services/auth/admin-user.service";
-import { IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -56,14 +54,7 @@ export default function AdminUserPage() {
 
     return (
         <LoadProvider checkIsNotUndefined={user} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/users/${username}`}>
-            <SubPageHeader
-                icon={IconUser}
-                feature="User"
-                name={isNew ? t("admin.users.newUser") : (user?.username ?? "")}
-                description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
-                {...(isNew ? {} : { onDelete, open, setOpen })}
-            />
-            {user && <AdminUserForm value={user} isNew={isNew} />}
+            {user && <AdminUserForm value={user} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

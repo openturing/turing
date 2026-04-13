@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteFacetedFieldForm } from "@/components/sn/facet/sn.site.faceted.field.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model";
 import { TurSNFieldService } from "@/services/sn/sn.field.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconFilter } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -38,15 +36,7 @@ export default function SNSiteFacetedFieldPage() {
   useSubPageBreadcrumb(breadcrumb);
   return (
     <LoadProvider checkIsNotUndefined={snField} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/field/${facetedFieldId}`}>
-      {snField && (<> <SubPageHeader
-        icon={IconFilter}
-        name={snField.name}
-        feature={t("sn.facets.facetedField")}
-        description={snField.description}
-        open={open}
-        setOpen={setOpen} />
-        <SNSiteFacetedFieldForm snSiteId={id} snField={snField} isNew={isNew} />
-      </>)}
+      {snField && <SNSiteFacetedFieldForm snSiteId={id} snField={snField} isNew={isNew} open={open} setOpen={setOpen} />}
     </LoadProvider>
   )
 }

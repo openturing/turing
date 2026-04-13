@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteMergeForm } from "@/components/sn/merge/sn.site.merge.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model";
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconGitMerge } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -58,22 +56,9 @@ export default function SNSiteMergeProvidersPage() {
         setOpen(false);
     }
 
-    const name = mergeProvider?.providerFrom && mergeProvider?.providerTo
-        ? `${mergeProvider.providerFrom} → ${mergeProvider.providerTo}`
-        : t("sn.mergeProviders.newMergeProvider");
-
     return (
         <LoadProvider checkIsNotUndefined={mergeProvider} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/merge-providers`}>
-            <SubPageHeader
-                icon={IconGitMerge}
-                name={name}
-                feature={t("sn.mergeProviders.feature")}
-                description={t("sn.mergeProviders.description")}
-                onDelete={isNew ? undefined : onDelete}
-                open={open}
-                setOpen={setOpen}
-            />
-            {mergeProvider && <SNSiteMergeForm snSiteId={id} value={mergeProvider} isNew={isNew} />}
+            {mergeProvider && <SNSiteMergeForm snSiteId={id} value={mergeProvider} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

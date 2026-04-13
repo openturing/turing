@@ -32,7 +32,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { StickySaveBar } from "../ui/sticky-save-bar"
+import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
@@ -137,9 +137,13 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-              <StickySaveBar
-                title={form.watch("name") || (isNew ? t("sn.newSite") : t("sn.title"))}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+              <StickyPageHeader
+                icon={IconSettings}
+                feature={t("sn.settings.title")}
+                description={t("sn.settings.description")}
+                showSave
+                loading={isLoading}
                 onCancel={() => navigate(urlBase)}
               />
                 {/* General Information Section */}

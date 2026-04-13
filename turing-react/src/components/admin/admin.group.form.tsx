@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { StickySaveBar } from "@/components/ui/sticky-save-bar";
+import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TurGroup } from "@/models/auth/group";
@@ -29,9 +29,12 @@ const turAdminUserService = new TurAdminUserService();
 interface Props {
     value: TurGroup;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
+export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurGroup>({ defaultValues: value });
     const navigate = useNavigate();
@@ -128,13 +131,19 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
     }
 
     return (
-        <div className="px-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
-                    <StickySaveBar
-                        title={form.watch("name") || (isNew ? t("admin.groups.newGroup") : t("admin.groups.title"))}
-                        onCancel={() => navigate(ROUTES.ADMIN_GROUPS)}
-                    />
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconUsersGroup}
+                    feature="Group"
+                    description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
+                    showSave
+                    onCancel={() => navigate(ROUTES.ADMIN_GROUPS)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={isNew ? t("admin.groups.newGroup") : (value?.name ?? "")}
+                />
                     {/* Group Details */}
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUsersGroup} title={t("forms.adminGroup.groupDetails")} description={t("forms.adminGroup.groupDetailsDesc")} />
@@ -353,7 +362,6 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew }) => {
                     </SectionCard>
 
                 </form>
-            </Form>
-        </div>
+        </Form>
     );
 };

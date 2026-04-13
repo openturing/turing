@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
@@ -31,7 +31,7 @@ import type { TurSNFieldType } from "@/models/sn/sn-field-type.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
 import { TurSNFieldTypeService } from "@/services/sn/sn.field.type.service"
-import { IconSettings } from "@tabler/icons-react"
+import { IconAlignBoxCenterStretch, IconSettings } from "@tabler/icons-react"
 import axios from "axios"
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -46,9 +46,12 @@ interface Props {
   snSiteId: string;
   snField: TurSNSiteField;
   isNew: boolean;
+  onDelete?: () => void;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) => {
+export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onDelete, open, setOpen }) => {
   const { t } = useTranslation();
   const normalizedField = useMemo(() => ({
     ...snField,
@@ -180,10 +183,18 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew }) =
         </div>
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-10 px-8">
-            <StickySaveBar
-              title={form.watch("name") || (isNew ? t("sn.fields.newField") : t("sn.fields.title"))}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+            <StickyPageHeader
+              icon={IconAlignBoxCenterStretch}
+              feature={t("sn.fields.feature")}
+              description={snField.description}
+              showSave
+              loading={isLoading}
               onCancel={() => navigate(urlBase)}
+              onDelete={onDelete}
+              open={open}
+              setOpen={setOpen}
+              name={snField.name}
             />
             {/* General Configuration */}
             <SectionCard variant="blue">

@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteCustomFacetForm } from "@/components/sn/facet/sn.site.custom.facet.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteCustomFacet } from "@/models/sn/sn-site-custom-facet.model";
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconFilter } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -67,15 +65,7 @@ export default function SNSiteCustomFacetPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={customFacet} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/facet/custom/${customFacetId}`}>
-      {customFacet && (<> <SubPageHeader
-        icon={IconFilter}
-        name={customFacet.name}
-        feature={t("sn.facets.customField")}
-        description={customFacet.defaultLabel ?? ""}
-        onDelete={isNew ? undefined : onDelete}
-        open={open}
-        setOpen={setOpen} />
-        <SNSiteCustomFacetForm snSiteId={id} value={customFacet} isNew={isNew} /></>)}
+      {customFacet && <SNSiteCustomFacetForm snSiteId={id} value={customFacet} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
     </LoadProvider>
   )
 }

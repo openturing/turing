@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteResultRankingForm } from "@/components/sn/result-ranking/sn.site.result.ranking.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNRankingExpression } from "@/models/sn/sn-ranking-expression.model";
 import { TurSNRankingExpressionService } from "@/services/sn/sn.site.result.ranking.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconNumber123 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -56,16 +54,7 @@ export default function SNSiteResultRankingPage() {
     }
     return (
         <LoadProvider checkIsNotUndefined={resultRanking} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/result-ranking`}>
-            {resultRanking && (
-                <>
-                    <SubPageHeader icon={IconNumber123} name={resultRanking.name} feature={t("sn.resultRanking.title")}
-                        description={t("sn.resultRanking.description")}
-                        onDelete={onDelete}
-                        open={open}
-                        setOpen={setOpen} />
-                    <SNSiteResultRankingForm snSiteId={id} value={resultRanking} isNew={isNew} />
-                </>
-            )}
+            {resultRanking && <SNSiteResultRankingForm snSiteId={id} value={resultRanking} isNew={isNew} onDelete={onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     )
 }

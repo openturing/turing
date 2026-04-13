@@ -4,7 +4,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SmartDescription } from "@/components/ui/smart-description";
-import { StickySaveBar } from "@/components/ui/sticky-save-bar";
+import { StickyPageHeader } from "@/components/sticky-page-header";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { SectionCard } from "@/components/ui/section-card";
 import type { TurPrivilege, TurRole } from "@/models/auth/role";
@@ -137,13 +137,15 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
     }
 
     return (
-        <div className="px-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
-                    <StickySaveBar
-                        title={form.watch("name") || (isNew ? t("admin.roles.newRole") : t("admin.roles.title"))}
-                        onCancel={() => navigate(ROUTES.ADMIN_ROLES)}
-                    />
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconUserShield}
+                    feature={isNew ? t("admin.roles.newRole") : "Role"}
+                    description={isNew ? t("admin.roles.createDescription") : t("admin.roles.editDescription")}
+                    showSave
+                    onCancel={() => navigate(ROUTES.ADMIN_ROLES)}
+                />
                     <SectionCard variant="blue">
                         <SectionCard.Header icon={IconUserShield} title={t("forms.adminRole.roleDetails")} description={t("forms.adminRole.roleDetailsDesc")} />
                         <SectionCard.Content>
@@ -251,7 +253,6 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                     )}
 
                 </form>
-            </Form>
-        </div>
+        </Form>
     );
 };

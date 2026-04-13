@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SNSiteSearchRuleForm } from "@/components/sn/search-rule/sn.site.search.rule.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteSearchRule } from "@/models/sn/sn-site-search-rule.model";
 import { TurSNSiteSearchRuleService } from "@/services/sn/sn.site.search.rule.service";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { IconGavel } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -61,20 +59,9 @@ export default function SNSiteSearchRulePage() {
         setOpen(false);
     }
 
-    const name = searchRule?.name || t("sn.searchRule.newSearchRule");
-
     return (
         <LoadProvider checkIsNotUndefined={searchRule} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/search-rule`}>
-            <SubPageHeader
-                icon={IconGavel}
-                name={name}
-                feature={t("sn.searchRule.title")}
-                description={t("sn.searchRule.description")}
-                onDelete={isNew ? undefined : onDelete}
-                open={open}
-                setOpen={setOpen}
-            />
-            {searchRule && <SNSiteSearchRuleForm snSiteId={id} value={searchRule} isNew={isNew} />}
+            {searchRule && <SNSiteSearchRuleForm snSiteId={id} value={searchRule} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

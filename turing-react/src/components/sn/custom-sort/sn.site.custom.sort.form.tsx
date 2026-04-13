@@ -9,7 +9,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { StickySaveBar } from "@/components/ui/sticky-save-bar"
+import { StickyPageHeader } from "@/components/sticky-page-header"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,9 +49,12 @@ interface Props {
     snSiteId: string;
     value: TurSNSiteCustomSort;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }) => {
+export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurSNSiteCustomSort>({
         defaultValues: value,
@@ -132,10 +135,17 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew }
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8 px-6">
-                <StickySaveBar
-                    title={form.watch("name") || (isNew ? t("sn.customSort.newCustomSort") : t("sn.customSort.title"))}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconArrowsSort}
+                    feature={t("sn.customSort.title")}
+                    description={t("sn.customSort.description")}
+                    showSave
                     onCancel={() => navigate(urlBase)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={value?.name || t("sn.customSort.newCustomSort")}
                 />
                 {/* Details Section */}
                 <SectionCard variant="blue">

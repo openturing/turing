@@ -1,12 +1,10 @@
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { AdminGroupForm } from "@/components/admin/admin.group.form";
-import { SubPageHeader } from "@/components/sub.page.header";
 import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurGroup } from "@/models/auth/group";
 import { TurGroupService } from "@/services/auth/group.service";
-import { IconUsersGroup } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -56,14 +54,7 @@ export default function AdminGroupPage() {
 
     return (
         <LoadProvider checkIsNotUndefined={group} error={error} tryAgainUrl={`${ROUTES.ADMIN_ROOT}/groups/${groupId}`}>
-            <SubPageHeader
-                icon={IconUsersGroup}
-                feature="Group"
-                name={isNew ? t("admin.groups.newGroup") : (group?.name ?? "")}
-                description={isNew ? t("admin.groups.createDescription") : t("admin.groups.editDescription")}
-                {...(isNew ? {} : { onDelete, open, setOpen })}
-            />
-            {group && <AdminGroupForm value={group} isNew={isNew} />}
+            {group && <AdminGroupForm value={group} isNew={isNew} onDelete={isNew ? undefined : onDelete} open={open} setOpen={setOpen} />}
         </LoadProvider>
     );
 }

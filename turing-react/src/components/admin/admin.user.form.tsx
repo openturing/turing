@@ -4,7 +4,7 @@ import {
     Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { StickySaveBar } from "@/components/ui/sticky-save-bar";
+import { StickyPageHeader } from "@/components/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TurGroup } from "@/models/auth/group";
@@ -30,9 +30,12 @@ const turUserService = new TurUserService();
 interface Props {
     value: TurUser;
     isNew: boolean;
+    onDelete?: () => void;
+    open?: boolean;
+    setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
+export const AdminUserForm: React.FC<Props> = ({ value, isNew, onDelete, open, setOpen }) => {
     const { t } = useTranslation();
     const form = useForm<TurUser>({ defaultValues: value });
     const navigate = useNavigate();
@@ -164,13 +167,19 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
     }
 
     return (
-        <div className="px-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-8">
-                    <StickySaveBar
-                        title={username || (isNew ? t("admin.users.newUser") : t("admin.users.title"))}
-                        onCancel={() => navigate(ROUTES.ADMIN_USERS)}
-                    />
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconUser}
+                    feature="User"
+                    description={isNew ? t("admin.users.createDescription") : t("admin.users.editDescription")}
+                    showSave
+                    onCancel={() => navigate(ROUTES.ADMIN_USERS)}
+                    onDelete={onDelete}
+                    open={open}
+                    setOpen={setOpen}
+                    name={isNew ? t("admin.users.newUser") : (value?.username ?? "")}
+                />
                     {/* Avatar Section */}
                     <SectionCard variant="slate">
                         <SectionCard.Header icon={IconUser} title={t("forms.adminUser.avatar")} description={t("forms.adminUser.avatarDesc")} />
@@ -405,8 +414,6 @@ export const AdminUserForm: React.FC<Props> = ({ value, isNew }) => {
                     </SectionCard>
 
                 </form>
-            </Form>
-
-        </div>
+        </Form>
     );
 };

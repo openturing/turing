@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/form";
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
 import { Input } from "@/components/ui/input";
-import { StickySaveBar } from "@/components/ui/sticky-save-bar";
 import {
     Select,
     SelectContent,
@@ -17,7 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { SubPageHeader } from "@/components/sub.page.header";
+import { StickyPageHeader } from "@/components/sticky-page-header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
@@ -133,20 +132,16 @@ export default function GlobalSettingsPage() {
     const ragEnabled = form.watch("ragEnabled") ?? false;
 
     return (
-        <>
-            <SubPageHeader
-                icon={IconSettings}
-                feature={t("globalSettings.breadcrumb")}
-                name={t("globalSettings.title")}
-                description={t("globalSettings.description")}
-            />
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-6 px-6">
-                    <StickySaveBar
-                        title={t("globalSettings.title")}
-                        loading={isSaving}
-                        disabled={isLoading}
-                    />
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">
+                <StickyPageHeader
+                    icon={IconSettings}
+                    feature={t("globalSettings.breadcrumb")}
+                    description={t("globalSettings.description")}
+                    showSave
+                    loading={isSaving}
+                    disabled={isLoading}
+                />
                     <SectionCard variant="amber">
                         <SectionCard.Header icon={IconSettings} title={t("globalSettings.sectionTitle")} description={t("globalSettings.sectionDescription")} />
                         <SectionCard.Content>
@@ -572,8 +567,7 @@ export default function GlobalSettingsPage() {
                         </SectionCard.Content>
                     </SectionCard>
 
-                </form>
-            </Form>
-        </>
+            </form>
+        </Form>
     );
 }
