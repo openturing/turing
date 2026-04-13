@@ -14,7 +14,7 @@ import java.util.Optional;
  * Uses the <b>Template Method</b> pattern — {@link #execute(String, Locale, TurDslQueryRequest)}
  * provides the public contract, while subclasses implement the engine-specific
  * translation ({@link #translateQuery}, {@link #translateSort}),
- * highlighting ({@link #buildHighlighting}), and aggregation ({@link #buildAggregations})
+ * response building ({@link #buildResponse}), and aggregation ({@link #buildAggregations})
  * methods.
  *
  * @param <Q> the native query type (e.g. {@code SolrQuery}, {@code org.apache.lucene.search.Query})

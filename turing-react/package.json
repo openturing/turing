@@ -42,7 +42,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-table": "^8.21.3",
     "@viglet/turing-react-sdk": "2026.2.7",
-    "@viglet/viglet-design-system": "^2026.2.26",
+    "@viglet/viglet-design-system": "^2026.2.27",
     "axios": "^1.15.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
