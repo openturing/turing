@@ -1,5 +1,6 @@
 import '@/i18n';
-import '@/lib/axios'; // Configure axios interceptors for CSRF
+import '@/lib/axios'; // Configure axios interceptors for CSRF + backend status
+import { BackendStatusProvider, ErrorBoundary } from '@viglet/viglet-design-system';
 import axios from 'axios';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -20,7 +21,11 @@ axios.interceptors.request.use(async (config) => {
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ErrorBoundary>
+        <BackendStatusProvider healthEndpoint="/v2/ping">
+          <App />
+        </BackendStatusProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   </React.StrictMode>
 )
