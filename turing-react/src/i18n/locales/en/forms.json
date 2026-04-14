@@ -944,7 +944,11 @@
       "core": "Core",
       "action": "Action",
       "openSearch": "Open Search",
-      "searchDefault": "Default Search"
+      "searchDefault": "Default Search",
+      "dragToReorder": "Drag to reorder",
+      "orderSaved": "Language ordering saved.",
+      "orderFailed": "Failed to save language ordering.",
+      "defaultLanguage": "Default"
     },
     "loggingGrid": {
       "date": "Date",

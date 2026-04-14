@@ -84,6 +84,9 @@ public class TurSNSiteSearchAPI {
                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_ITEM_OPERATOR, defaultValue = NONE) TurSNFilterQueryOperator fqItemOperator,
                         @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale,
                         HttpServletRequest request) {
+                if (locale == null) {
+                        locale = turSNSiteSearchService.resolveDefaultLocale(siteName);
+                }
                 turSNSiteSearchService.setSearchParams(turSNSearchParams, filterQueriesDefault, filterQueriesAnd,
                                 filterQueriesOr,
                                 fqOperator, fqItemOperator, locale);
@@ -110,6 +113,9 @@ public class TurSNSiteSearchAPI {
                         @RequestParam(required = false, name = TurSNParamType.FILTER_QUERY_ITEM_OPERATOR, defaultValue = NONE) TurSNFilterQueryOperator fqItemOperator,
                         @RequestParam(required = false, name = TurSNParamType.LOCALE) Locale locale,
                         HttpServletRequest request) {
+                if (locale == null) {
+                        locale = turSNSiteSearchService.resolveDefaultLocale(siteName);
+                }
                 turSNSiteSearchService.setSearchParams(turSNSearchParams, filterQueriesDefault, filterQueriesAnd,
                                 filterQueriesOr, fqOperator, fqItemOperator, locale);
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
@@ -137,9 +143,12 @@ public class TurSNSiteSearchAPI {
                 if (principal == null) {
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
                 }
+                Locale resolvedLocale = turSNSiteSearchService.determineLocale(turSNSitePostParamsBean, locale);
+                if (resolvedLocale == null) {
+                        resolvedLocale = turSNSiteSearchService.resolveDefaultLocale(siteName);
+                }
                 turSNSiteSearchService.setSearchParams(turSNSearchParams, filterQueriesDefault, filterQueriesAnd,
-                                filterQueriesOr, fqOperator, fqItemOperator,
-                                turSNSiteSearchService.determineLocale(turSNSitePostParamsBean, locale));
+                                filterQueriesOr, fqOperator, fqItemOperator, resolvedLocale);
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }

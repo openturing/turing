@@ -23,7 +23,10 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 
@@ -37,13 +40,19 @@ public class TurSNSiteSearchService {
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
     public TurSNSiteSearchService(TurSNSearchProcess turSNSearchProcess,
             TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteRepository turSNSiteRepository,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
     }
 
     public Locale convertToLocale(String localeRequest) {
@@ -156,6 +165,13 @@ public class TurSNSiteSearchService {
             turSNSearchParams.setFqiOp(fqItemOperator);
         if (locale != null)
             turSNSearchParams.setLocale(locale);
+    }
+
+    public Locale resolveDefaultLocale(String siteName) {
+        return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                .map(turSNSiteLocaleRepository::findFirstByTurSNSiteOrderByPositionAsc)
+                .map(TurSNSiteLocale::getLanguage)
+                .orElse(null);
     }
 
 }

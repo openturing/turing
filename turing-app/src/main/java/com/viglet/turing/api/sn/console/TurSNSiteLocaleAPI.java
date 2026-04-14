@@ -24,8 +24,10 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -77,7 +79,7 @@ public class TurSNSiteLocaleAPI {
 	public List<TurSNSiteLocaleDto> turSNSiteLocaleList(@PathVariable String snSiteId) {
 		return turSNSiteRepository.findById(snSiteId)
 				.map(site -> turSNSiteLocaleMapper.toDtoList(this.turSNSiteLocaleRepository
-						.findByTurSNSite(Sort.by(Sort.Order.asc("language").ignoreCase()), site)))
+						.findByTurSNSiteOrderByPositionAsc(site)))
 				.orElse(Collections.emptyList());
 	}
 
@@ -119,6 +121,9 @@ public class TurSNSiteLocaleAPI {
 		TurSNSiteLocale turSNSiteLocale = turSNSiteLocaleMapper.toEntity(turSNSiteLocaleDto);
 		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
 			turSNSiteLocale.setTurSNSite(turSNSite);
+			int nextPosition = turSNSiteLocaleRepository
+					.findByTurSNSiteOrderByPositionAsc(turSNSite).size() + 1;
+			turSNSiteLocale.setPosition(nextPosition);
 			if (!StringUtils.hasText(turSNSiteLocale.getCore())) {
 				turSNSiteLocale.setCore(turSNTemplate.createSolrCore(turSNSiteLocale, principal.getName()));
 			} else {
@@ -127,6 +132,26 @@ public class TurSNSiteLocaleAPI {
 			turSNSiteLocaleRepository.save(turSNSiteLocale);
 			return turSNSiteLocaleMapper.toDto(turSNSiteLocale);
 		}).orElse(new TurSNSiteLocaleDto());
+	}
+
+	@Operation(summary = "Update Semantic Navigation Site Locale Ordering")
+	@PutMapping("/ordering")
+	public List<TurSNSiteLocaleDto> turSNSiteLocaleOrdering(@PathVariable String snSiteId,
+			@RequestBody List<TurSNSiteLocaleDto> turSNSiteLocaleDtos) {
+		return turSNSiteRepository.findById(snSiteId).map(turSNSite -> {
+			Map<String, TurSNSiteLocale> localeById = turSNSiteLocaleRepository
+					.findByTurSNSiteOrderByPositionAsc(turSNSite).stream()
+					.collect(Collectors.toMap(TurSNSiteLocale::getId, Function.identity()));
+			turSNSiteLocaleDtos.stream()
+					.filter(dto -> dto.getPosition() > 0 && localeById.containsKey(dto.getId()))
+					.forEach(dto -> {
+						TurSNSiteLocale locale = localeById.get(dto.getId());
+						locale.setPosition(dto.getPosition());
+						turSNSiteLocaleRepository.save(locale);
+					});
+			return turSNSiteLocaleMapper.toDtoList(
+					turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(turSNSite));
+		}).orElse(Collections.emptyList());
 	}
 
 	@Operation(summary = "Semantic Navigation Site Locale structure")

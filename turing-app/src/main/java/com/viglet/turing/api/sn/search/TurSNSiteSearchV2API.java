@@ -71,6 +71,9 @@ public class TurSNSiteSearchV2API {
                         @PathVariable String siteName,
                         @ModelAttribute TurSNSearchParams turSNSearchParams,
                         HttpServletRequest request) {
+                if (turSNSearchParams.getLocale() == null) {
+                        turSNSearchParams.setLocale(turSNSiteSearchService.resolveDefaultLocale(siteName));
+                }
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
@@ -88,6 +91,9 @@ public class TurSNSiteSearchV2API {
                         @PathVariable String siteName,
                         @ModelAttribute TurSNSearchParams turSNSearchParams,
                         HttpServletRequest request) {
+                if (turSNSearchParams.getLocale() == null) {
+                        turSNSearchParams.setLocale(turSNSiteSearchService.resolveDefaultLocale(siteName));
+                }
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
@@ -106,6 +112,9 @@ public class TurSNSiteSearchV2API {
                         HttpServletRequest request) {
                 if (principal == null) {
                         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
+                if (turSNSearchParams.getLocale() == null) {
+                        turSNSearchParams.setLocale(turSNSiteSearchService.resolveDefaultLocale(siteName));
                 }
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
