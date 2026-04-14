@@ -53,6 +53,9 @@ import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.spring.security.auth.TurAuthTokenHeaderFilter;
 import com.viglet.turing.spring.security.auth.TurLogoutHandler;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+
 @Configuration
 @EnableWebSecurity
 @Profile("production")
@@ -89,7 +92,8 @@ public class TurSecurityConfigProduction {
                         TurConfigProperties turConfigProperties,
                         TurAuthenticationEntryPoint turAuthenticationEntryPoint,
                         TurOAuth2UserService turOAuth2UserService,
-                        TurOidcUserService turOidcUserService) {
+                        TurOidcUserService turOidcUserService,
+                        ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository) {
 
                 http.headers(header -> header.frameOptions(
                                 frameOptions -> frameOptions.disable()
@@ -124,14 +128,17 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/login/oauth2/**"),
                                                 mvc.matcher("/oauth2/**")))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
+                boolean oauth2Available = clientRegistrationRepository.getIfAvailable() != null;
                 if (turConfigProperties.isKeycloak()) {
                         String keycloakUrlFormat = String.format(
                                         "%s/protocol/openid-connect/logout?client_id=%s&post_logout_redirect_uri=%s",
                                         issuerUri, clientId, turingUrl);
-                        http.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(
-                                        userInfo -> userInfo
-                                                .userService(turOAuth2UserService)
-                                                .oidcUserService(turOidcUserService)));
+                        if (oauth2Available) {
+                                http.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(
+                                                userInfo -> userInfo
+                                                        .userService(turOAuth2UserService)
+                                                        .oidcUserService(turOidcUserService)));
+                        }
                         http.authorizeHttpRequests(authorizeRequests -> {
                                 authorizeRequests.requestMatchers(
                                                 mvc.matcher(ERROR_PATH),
@@ -162,8 +169,9 @@ public class TurSecurityConfigProduction {
                         http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
                                         .logoutSuccessUrl(keycloakUrlFormat));
                 } else {
-                        if (turConfigProperties.getAuthentication() == null
-                                        || turConfigProperties.getAuthentication().isThirdparty()) {
+                        if (oauth2Available
+                                        && (turConfigProperties.getAuthentication() == null
+                                        || turConfigProperties.getAuthentication().isThirdparty())) {
                                 http.oauth2Login(oauth2 -> oauth2
                                                 .loginPage("/login")
                                                 .defaultSuccessUrl("/console", true)
