@@ -14,6 +14,10 @@
     "heroTagline": "Plataforma de Inteligência em Busca Empresarial com IA",
     "featureSearch": "Busca Semântica e Navegação",
     "featureAi": "IA Generativa com RAG",
-    "featureKnowledge": "Descoberta de Conhecimento Multi-fonte"
+    "featureKnowledge": "Descoberta de Conhecimento Multi-fonte",
+    "orContinueWith": "ou continue com",
+    "continueWithGoogle": "Continuar com Google",
+    "continueWithMicrosoft": "Continuar com Microsoft",
+    "continueWithGithub": "Continuar com GitHub"
   }
 }

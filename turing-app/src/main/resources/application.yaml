@@ -106,6 +106,8 @@ turing:
   multi-tenant: false
   keycloak: false
   keycloak-admin-id:
+  authentication:
+    thirdparty: true
   url: http://localhost:2700
   open-browser: true
   jms.concurrency: 1-1
@@ -191,11 +193,25 @@ logging:
       #                         scope: openid
       #                         authorization-grant-type: authorization_code
       #                         redirect-uri: http://localhost:2700/login/oauth2/code/demo-app
+      #                     google:
+      #                         client-id: YOUR_GOOGLE_CLIENT_ID
+      #                         client-secret: YOUR_GOOGLE_CLIENT_SECRET
+      #                     github:
+      #                         client-id: YOUR_GITHUB_CLIENT_ID
+      #                         client-secret: YOUR_GITHUB_CLIENT_SECRET
+      #                     microsoft:
+      #                         client-id: YOUR_MICROSOFT_CLIENT_ID
+      #                         client-secret: YOUR_MICROSOFT_CLIENT_SECRET
+      #                         scope: openid,profile,email
+      #                         authorization-grant-type: authorization_code
+      #                         redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
       #                 provider:
       #                     keycloak:
       #                         issuer-uri: http://localhost:8080/realms/demo
       #                         jwk-set-uri: http://localhost:8080/realms/demo/protocol/openid-connect/certs
       #                         user-info-uri: http://localhost:8080/realms/demo/protocol/openid-connect/userinfo
+      #                     microsoft:
+      #                         issuer-uri: https://login.microsoftonline.com/common/v2.0
       #             resourceserver:
       #                 jwt:
       #                     issuer-uri: http://localhost:8080/realms/demo

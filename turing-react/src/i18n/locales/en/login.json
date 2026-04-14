@@ -14,6 +14,10 @@
     "heroTagline": "Enterprise Search Intelligence Platform powered by AI",
     "featureSearch": "Semantic Search & Navigation",
     "featureAi": "Generative AI with RAG",
-    "featureKnowledge": "Multi-source Knowledge Discovery"
+    "featureKnowledge": "Multi-source Knowledge Discovery",
+    "orContinueWith": "or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithMicrosoft": "Continue with Microsoft",
+    "continueWithGithub": "Continue with GitHub"
   }
 }

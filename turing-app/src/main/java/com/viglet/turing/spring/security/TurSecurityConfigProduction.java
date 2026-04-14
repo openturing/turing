@@ -120,7 +120,9 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/h2/**"),
                                                 mvc.matcher("/git/**"),
                                                 mvc.matcher(LOGIN_PATH),
-                                                mvc.matcher(SETUP_PATH)))
+                                                mvc.matcher(SETUP_PATH),
+                                                mvc.matcher("/login/oauth2/**"),
+                                                mvc.matcher("/oauth2/**")))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
                 if (turConfigProperties.isKeycloak()) {
                         String keycloakUrlFormat = String.format(
@@ -160,6 +162,15 @@ public class TurSecurityConfigProduction {
                         http.logout(logout -> logout.addLogoutHandler(turLogoutHandler)
                                         .logoutSuccessUrl(keycloakUrlFormat));
                 } else {
+                        if (turConfigProperties.getAuthentication() == null
+                                        || turConfigProperties.getAuthentication().isThirdparty()) {
+                                http.oauth2Login(oauth2 -> oauth2
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/console", true)
+                                                .userInfoEndpoint(userInfo -> userInfo
+                                                                .userService(turOAuth2UserService)
+                                                                .oidcUserService(turOidcUserService)));
+                        }
                         http.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(turAuthenticationEntryPoint))
                                         .authorizeHttpRequests(authorizeRequests -> {
                                                 authorizeRequests.requestMatchers(

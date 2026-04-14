@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils.ts";
 import type { TurRestInfo } from '@/models/auth/rest-info';
 import { TurAuthorizationService } from '@/services/auth/authorization.service';
 import { TurSetupService } from '@/services/auth/setup.service';
+import { Icon } from '@iconify/react';
 import { AlertCircle, KeyRound, Loader2, LogIn, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -24,6 +25,7 @@ export function LoginForm({
     const form = useForm<TurRestInfo>();
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [authThirdparty, setAuthThirdparty] = useState(false);
     const authorization = new TurAuthorizationService()
 
     useEffect(() => {
@@ -32,6 +34,10 @@ export function LoginForm({
                 globalThis.location.href = ROUTES.SETUP;
             }
         }).catch(() => { /* ignore — login page is still usable */ });
+
+        authorization.discovery().then((discovery) => {
+            setAuthThirdparty(discovery.authThirdparty);
+        }).catch(() => { /* ignore */ });
     }, []);
 
     function onSubmit(turRestInfo: TurRestInfo) {
@@ -55,7 +61,10 @@ export function LoginForm({
                 setError(t('login.loginFailed'));
             }
         }
-    };
+    }
+
+    const apiBaseUrl = (import.meta.env.VITE_API_URL as string) || '';
+
     return (
         <Card className="border-0 shadow-none bg-transparent">
             <CardHeader className="text-center pb-2">
@@ -133,6 +142,77 @@ export function LoginForm({
                             )}
                             {isLoading ? t('login.signingIn') : t('login.signIn')}
                         </GradientButton>
+
+                        {authThirdparty && (
+                            <>
+                                {/* Divider */}
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <span className="w-full border-t border-slate-200 dark:border-slate-700" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-white/75 dark:bg-slate-900/70 px-2 text-muted-foreground backdrop-blur-sm">
+                                            {t('login.orContinueWith')}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Social login buttons */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    <a
+                                        href={`${apiBaseUrl}/oauth2/authorization/google`}
+                                        className={cn(
+                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
+                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
+                                            "px-3 py-2.5 text-sm font-medium",
+                                            "text-slate-700 dark:text-slate-300",
+                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
+                                            "hover:border-slate-300 dark:hover:border-slate-600",
+                                            "hover:shadow-sm",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                                        )}
+                                    >
+                                        <Icon icon="flat-color-icons:google" className="h-5 w-5" />
+                                        <span className="sr-only">{t('login.continueWithGoogle')}</span>
+                                        <span className="hidden sm:inline">Google</span>
+                                    </a>
+                                    <a
+                                        href={`${apiBaseUrl}/oauth2/authorization/microsoft`}
+                                        className={cn(
+                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
+                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
+                                            "px-3 py-2.5 text-sm font-medium",
+                                            "text-slate-700 dark:text-slate-300",
+                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
+                                            "hover:border-slate-300 dark:hover:border-slate-600",
+                                            "hover:shadow-sm",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                                        )}
+                                    >
+                                        <Icon icon="devicon:microsoft" className="h-5 w-5" />
+                                        <span className="sr-only">{t('login.continueWithMicrosoft')}</span>
+                                        <span className="hidden sm:inline">Microsoft</span>
+                                    </a>
+                                    <a
+                                        href={`${apiBaseUrl}/oauth2/authorization/github`}
+                                        className={cn(
+                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
+                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
+                                            "px-3 py-2.5 text-sm font-medium",
+                                            "text-slate-700 dark:text-slate-300",
+                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
+                                            "hover:border-slate-300 dark:hover:border-slate-600",
+                                            "hover:shadow-sm",
+                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                                        )}
+                                    >
+                                        <Icon icon="mdi:github" className="h-5 w-5" />
+                                        <span className="sr-only">{t('login.continueWithGithub')}</span>
+                                        <span className="hidden sm:inline">GitHub</span>
+                                    </a>
+                                </div>
+                            </>
+                        )}
                     </form>
                 </Form>
             </CardContent>

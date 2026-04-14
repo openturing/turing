@@ -19,5 +19,6 @@ public class TurConfigProperties {
 	private TurStorageProperty storage;
 	private TurGitProperty git;
 	private TurMarketplaceProperty marketplace;
+	private TurAuthenticationProperty authentication;
 
 }
