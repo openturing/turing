@@ -49,6 +49,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 /**
@@ -65,8 +66,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site1 = new TurSNSite();
         site1.setName("insper-stage-publish");
@@ -88,8 +90,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(false);
 
@@ -103,8 +106,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
         when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.empty());
@@ -119,8 +123,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -166,8 +171,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -195,8 +201,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -228,8 +235,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -263,8 +271,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -336,8 +345,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
@@ -383,8 +393,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("insper-stage-publish");
@@ -410,8 +421,9 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
         TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
+        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository);
+                searchProcess, siteRepository, fieldExtRepository, localeRepository);
 
         TurSNSite site = new TurSNSite();
         site.setName("demo");
