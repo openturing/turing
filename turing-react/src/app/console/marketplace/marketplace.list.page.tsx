@@ -17,7 +17,7 @@ import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
 import * as TablerIcons from "@tabler/icons-react";
 import {
-    IconBookOpen,
+    IconBook,
     IconBrowserCheck,
     IconDatabase,
     IconLoader2,
@@ -201,7 +201,7 @@ export default function MarketplaceListPage() {
                                             onClick={() => openReadmeDialog(item)}
                                             className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                                         >
-                                            <IconBookOpen className="size-3.5" />
+                                            <IconBook className="size-3.5" />
                                             {t("marketplace.readDocumentation")}
                                         </button>
                                     )}
@@ -365,7 +365,7 @@ export default function MarketplaceListPage() {
                         <>
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
-                                    <IconBookOpen className="size-5" />
+                                    <IconBook className="size-5" />
                                     {readmeItem.title}
                                 </DialogTitle>
                                 <DialogDescription>
