@@ -8,6 +8,7 @@ export interface TurMarketplaceItem {
   tags: string[]
   icon: string
   downloadUrl: string
+  readmeUrl?: string
   hasContent: boolean
   hasTemplate: boolean
 }

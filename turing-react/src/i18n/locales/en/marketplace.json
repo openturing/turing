@@ -23,6 +23,10 @@
     "resultTemplate": "Template",
     "resultDocuments": "{{count}} document(s)",
     "resultFiles": "{{count}} file(s)",
-    "resultNotIncluded": "Not included"
+    "resultNotIncluded": "Not included",
+    "readDocumentation": "Read documentation",
+    "readmeDialogDescription": "Project README rendered from Markdown.",
+    "readmeLoadError": "Could not load the README. Check your connection and try again.",
+    "readmeOpenSource": "Open raw README"
   }
 }

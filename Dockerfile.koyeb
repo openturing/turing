@@ -1,0 +1,107 @@
+# syntax=docker/dockerfile:1.7
+#
+# Multi-stage Dockerfile for deploying `turing-app` as a Web Service on Koyeb
+# (https://www.koyeb.com/docs/build-and-deploy/build-from-git).
+#
+# Koyeb builds this image directly from the Git repository, so everything
+# — Maven deps, the React SPA, and the Spring Boot jar — is produced inside
+# the image. The final runtime stage only contains a JRE and the fat jar.
+#
+# Build locally for testing:
+#   docker build -f Dockerfile.koyeb -t turing-koyeb .
+#   docker run --rm -p 8080:8080 -e PORT=8080 turing-koyeb
+#
+
+# ──────────────────────────────────────────────────────────────────────────
+# Stage 1 — Build the Spring Boot fat jar (backend + React SPA bundled in)
+# ──────────────────────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-21 AS builder
+
+WORKDIR /build
+
+# 1) Copy only the POMs first so Maven can cache dependencies between builds.
+COPY pom.xml ./
+COPY turing-commons/pom.xml  turing-commons/
+COPY turing-spring/pom.xml   turing-spring/
+COPY turing-java-sdk/pom.xml turing-java-sdk/
+COPY turing-utils/pom.xml    turing-utils/
+COPY turing-app/pom.xml      turing-app/
+
+# Warm the local Maven repo. `go-offline` is not perfect with multi-module
+# builds (it misses reactor deps), but it still caches 90%+ of the artifacts.
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -pl turing-app -am dependency:go-offline -DskipTests || true
+
+# 2) Now copy the sources. turing-app's build also invokes
+#    `frontend-maven-plugin` which downloads Node/npm and runs
+#    `npm run compile` in ../turing-react, producing the SPA into
+#    turing-app/src/main/resources/public/.
+COPY turing-commons  turing-commons
+COPY turing-spring   turing-spring
+COPY turing-java-sdk turing-java-sdk
+COPY turing-utils    turing-utils
+COPY turing-app      turing-app
+COPY turing-react    turing-react
+
+# 3) Build. `-am` builds upstream modules (turing-commons, turing-spring,
+#    turing-java-sdk, turing-utils) required by turing-app.
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -pl turing-app -am package -DskipTests
+
+# Flatten the jar name so it is predictable in the runtime stage.
+RUN cp turing-app/target/viglet-turing.jar /build/app.jar
+
+# ──────────────────────────────────────────────────────────────────────────
+# Stage 2 — Minimal runtime
+# ──────────────────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre
+
+# curl is handy for Koyeb health-check configurations that hit the app from
+# inside the container; it is tiny and worth keeping.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user.
+RUN useradd --system --create-home --uid 1001 --gid 0 java \
+    && mkdir -p /app /app/store /app/models \
+    && chown -R java:0 /app
+
+WORKDIR /app
+
+COPY --from=builder --chown=java:0 /build/app.jar /app/app.jar
+
+# Koyeb-friendly defaults. Every one of these can be overridden from the
+# Koyeb dashboard (Service → Environment variables).
+#
+#  - PORT: Koyeb injects the port the platform expects the service to listen
+#    on. application.yaml already maps server.port to ${PORT:2700}.
+#  - JAVA_OPTS: tuned for a ~1 GB instance. Raise for larger instances.
+#  - turing_allowedOrigins: wide-open by default so the SPA served by this
+#    same app always works. Tighten this for production.
+#  - Default DB: H2 file-based under /app/store. Koyeb filesystems are
+#    ephemeral for standard web services; attach a Koyeb Volume at /app/store
+#    if persistence is required, or point SPRING_DATASOURCE_URL at a managed
+#    MariaDB/MySQL/PostgreSQL.
+ENV PORT=8080 \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom" \
+    SPRING_PROFILES_ACTIVE=production \
+    SPRING_DATASOURCE_URL="jdbc:h2:file:/app/store/db/turingDB;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=true" \
+    SPRING_DATASOURCE_USERNAME=sa \
+    SPRING_DATASOURCE_PASSWORD="" \
+    SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
+    SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.H2Dialect \
+    TURING_ALLOWEDORIGINS="*" \
+    TURING_OPEN_BROWSER=false
+
+VOLUME ["/app/store", "/app/models"]
+
+USER java
+
+EXPOSE 8080
+
+# Health check hits Spring Boot Actuator (already exposed in application.yaml).
+# Koyeb will also probe the HTTP port; this is just a useful local default.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD curl -fsS "http://localhost:${PORT}/actuator/health" || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dlogging.config=classpath:logback-spring-console.xml -jar /app/app.jar"]

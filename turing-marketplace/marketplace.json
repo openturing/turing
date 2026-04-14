@@ -9,6 +9,7 @@
     "tags": ["fantasy", "bestiary", "search", "spa"],
     "icon": "dragon",
     "downloadUrl": "https://turing.viglet.org/marketplace/mythical-creatures/mythical-creatures.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/mythical-creatures/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -22,6 +23,7 @@
     "tags": ["space", "science", "missions", "spa"],
     "icon": "rocket",
     "downloadUrl": "https://turing.viglet.org/marketplace/space-missions/space-missions.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/space-missions/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -35,6 +37,7 @@
     "tags": ["music", "vinyl", "catalog", "spa"],
     "icon": "vinyl",
     "downloadUrl": "https://turing.viglet.org/marketplace/vinyl-records/vinyl-records.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/vinyl-records/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -48,6 +51,7 @@
     "tags": ["aem", "adobe", "connector", "dumont", "spa"],
     "icon": "aem",
     "downloadUrl": "https://dumont.viglet.org/marketplace/wknd/wknd.zip",
+    "readmeUrl": "https://dumont.viglet.org/marketplace/wknd/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -61,6 +65,7 @@
     "tags": ["assets", "files", "astrophotography", "connector", "dumont", "spa"],
     "icon": "assets",
     "downloadUrl": "https://dumont.viglet.org/marketplace/celestial-gallery/celestial-gallery.zip",
+    "readmeUrl": "https://dumont.viglet.org/marketplace/celestial-gallery/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -74,6 +79,7 @@
     "tags": ["database", "jdbc", "arcade", "games", "connector", "dumont", "spa"],
     "icon": "database",
     "downloadUrl": "https://dumont.viglet.org/marketplace/retro-arcade/retro-arcade.zip",
+    "readmeUrl": "https://dumont.viglet.org/marketplace/retro-arcade/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -87,6 +93,7 @@
     "tags": ["web-crawler", "wikipedia", "articles", "connector", "dumont", "spa"],
     "icon": "web",
     "downloadUrl": "https://dumont.viglet.org/marketplace/wikipedia/wikipedia.zip",
+    "readmeUrl": "https://dumont.viglet.org/marketplace/wikipedia/README.md",
     "hasContent": true,
     "hasTemplate": true
   }

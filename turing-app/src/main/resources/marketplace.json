@@ -9,6 +9,7 @@
     "tags": ["fantasy", "bestiary", "search", "spa"],
     "icon": "dragon",
     "downloadUrl": "https://turing.viglet.org/marketplace/mythical-creatures/mythical-creatures.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/mythical-creatures/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -22,6 +23,7 @@
     "tags": ["space", "science", "missions", "spa"],
     "icon": "rocket",
     "downloadUrl": "https://turing.viglet.org/marketplace/space-missions/space-missions.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/space-missions/README.md",
     "hasContent": true,
     "hasTemplate": true
   },
@@ -35,6 +37,7 @@
     "tags": ["music", "vinyl", "catalog", "spa"],
     "icon": "vinyl",
     "downloadUrl": "https://turing.viglet.org/marketplace/vinyl-records/vinyl-records.zip",
+    "readmeUrl": "https://turing.viglet.org/marketplace/vinyl-records/README.md",
     "hasContent": true,
     "hasTemplate": true
   }

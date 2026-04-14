@@ -23,6 +23,10 @@
     "resultTemplate": "Template",
     "resultDocuments": "{{count}} documento(s)",
     "resultFiles": "{{count}} arquivo(s)",
-    "resultNotIncluded": "Não incluído"
+    "resultNotIncluded": "Não incluído",
+    "readDocumentation": "Ler documentação",
+    "readmeDialogDescription": "README do projeto renderizado a partir do Markdown.",
+    "readmeLoadError": "Não foi possível carregar o README. Verifique sua conexão e tente novamente.",
+    "readmeOpenSource": "Abrir README original"
   }
 }
