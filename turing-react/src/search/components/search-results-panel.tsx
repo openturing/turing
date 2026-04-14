@@ -97,6 +97,8 @@ export function SearchResultsPanel({
               key={doc.url || index}
               document={doc}
               raw={doc.raw}
+              siteName={data.queryContext.index}
+              defaultImageField={data.queryContext.defaultFields.image}
               onNavigate={store.navigate}
               onViewJson={onViewJson}
             />

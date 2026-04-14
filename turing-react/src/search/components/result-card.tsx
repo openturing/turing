@@ -1,23 +1,32 @@
 import { BadgeColorful } from "@/components/badge-colorful";
 import { Button } from "@/components/ui/button";
 import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
-import { IconBraces, IconCalendar, IconExternalLink } from "@tabler/icons-react";
+import { IconBraces, IconCalendar, IconExternalLink, IconPhoto } from "@tabler/icons-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
 interface ResultCardProps {
   document: ResolvedDocument;
   raw: TurDocument;
+  siteName: string;
+  defaultImageField?: string;
   onNavigate: (href: string) => void;
   onViewJson: (doc: Record<string, unknown>) => void;
 }
 
-export function ResultCard({ document: doc, raw, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
+export function ResultCard({ document: doc, raw, siteName, defaultImageField, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
   const { t, i18n } = useTranslation();
+  const [imgError, setImgError] = useState(false);
 
   if (!doc.url) return null;
 
   const isInternal = doc.url.startsWith("/") && !doc.url.startsWith("//");
+  const rawImage = doc.image || (defaultImageField && raw.fields?.[defaultImageField] as string) || "";
+  const imageSrc = rawImage && !rawImage.startsWith("http")
+    ? `/sn/${siteName}/${rawImage}`
+    : rawImage;
+  const hasImage = !!imageSrc && !imgError;
 
   return (
     <article className="group relative rounded-xl border border-border/60 bg-card p-5 transition-all duration-200 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5">
@@ -25,6 +34,27 @@ export function ResultCard({ document: doc, raw, onNavigate, onViewJson }: Reado
       <div className="absolute left-0 top-4 bottom-4 w-0.5 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="flex gap-4">
+        {/* Thumbnail */}
+        {imageSrc && (
+          <div className="shrink-0">
+            {hasImage ? (
+              <div className="w-28 h-20 rounded-lg overflow-hidden ring-1 ring-border/50 group-hover:ring-blue-500/30 transition-all">
+                <img
+                  src={imageSrc}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                  onError={() => setImgError(true)}
+                />
+              </div>
+            ) : (
+              <div className="w-28 h-20 rounded-lg bg-muted/50 ring-1 ring-border/50 flex items-center justify-center">
+                <IconPhoto className="size-6 text-muted-foreground/30" />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex-1 min-w-0">
           {/* Title */}
           <h4 className="text-base font-semibold leading-snug mb-1.5">

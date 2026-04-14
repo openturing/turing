@@ -1,5 +1,6 @@
 import { BadgeLocale } from "@/components/badge-locale";
 import { TurLogo } from "@/components/logo/tur-logo";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -94,6 +95,9 @@ export function SearchHeader({
               </div>
             )}
           </div>
+
+          {/* Theme Toggle */}
+          <ModeToggle />
 
           {/* Locale Selector */}
           {locales.length > 1 && (
