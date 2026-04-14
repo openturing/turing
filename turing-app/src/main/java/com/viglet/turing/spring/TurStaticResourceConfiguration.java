@@ -46,12 +46,17 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins.split(","))
+        var mapping = registry.addMapping("/api/**")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
+        String[] origins = allowedOrigins.split(",");
+        if (origins.length == 1 && "*".equals(origins[0].trim())) {
+            mapping.allowedOriginPatterns("*");
+        } else {
+            mapping.allowedOrigins(origins);
+        }
     }
 
     @Override
