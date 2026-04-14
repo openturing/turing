@@ -31,6 +31,7 @@ import {
   IconUsers,
   IconX,
 } from "@tabler/icons-react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 /* ── Outcome color map ── */
@@ -298,7 +299,7 @@ function Pagination() {
   };
 
   return (
-    <nav className="flex items-center justify-center gap-1 py-8">
+    <nav className="flex flex-wrap items-center justify-center gap-1 py-8">
       {pages.map((page, i) => {
         const isPage = page.type === "PAGE";
 
@@ -330,6 +331,7 @@ function SearchContent() {
   const query = store.params.q ?? "*";
   const isLanding = query === "*" && store.status !== "loading";
   const hasResults = store.documents.length > 0;
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   function goToDetail(doc: ResolvedDocument) {
     navigate("/detail", { state: { document: doc } });
@@ -464,7 +466,7 @@ function SearchContent() {
       </section>
 
       {/* ── Content area ── */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 gap-8 px-4 sm:px-6 pb-12">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 gap-4 lg:gap-8 px-4 sm:px-6 pb-12">
         {/* Loading state */}
         {store.status === "loading" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24">
@@ -496,11 +498,49 @@ function SearchContent() {
         {/* Results */}
         {store.status === "success" && (
           <>
-            {/* Facets sidebar */}
-            <FacetSidebar />
+            {/* Facets sidebar — desktop */}
+            <div className="hidden lg:block w-64 shrink-0">
+              <FacetSidebar />
+            </div>
+
+            {/* Mobile filter drawer */}
+            {mobileFiltersOpen && (
+              <div className="fixed inset-0 z-50 lg:hidden">
+                <div
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={() => setMobileFiltersOpen(false)}
+                />
+                <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-background border-r border-border shadow-2xl overflow-y-auto">
+                  <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border/50 bg-background">
+                    <span className="font-semibold text-sm flex items-center gap-2 font-mono">
+                      <IconFilter className="size-4" />
+                      Mission Filters
+                    </span>
+                    <button
+                      onClick={() => setMobileFiltersOpen(false)}
+                      className="p-1 rounded-md hover:bg-accent transition-colors"
+                    >
+                      <IconX className="size-5" />
+                    </button>
+                  </div>
+                  <div className="p-4 [&>aside]:w-full">
+                    <FacetSidebar />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Results area */}
             <div className="flex-1 min-w-0">
+              {/* Mobile filter toggle */}
+              <button
+                onClick={() => setMobileFiltersOpen(true)}
+                className="lg:hidden flex items-center gap-2 mb-4 px-3 py-2 rounded-lg border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors font-mono"
+              >
+                <IconFilter className="size-4" />
+                Filters
+              </button>
+
               {/* Results header */}
               {query !== "*" && (
                 <div className="mb-6 flex items-center justify-between">
@@ -578,7 +618,7 @@ function SearchContent() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-border/20 bg-card/20 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex items-center justify-between text-xs text-muted-foreground font-mono">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground font-mono">
           <span>Powered by Viglet Turing ES</span>
           <span className="flex items-center gap-1.5">
             <IconSatellite className="size-3" />
