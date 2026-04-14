@@ -3,9 +3,10 @@
 # Multi-stage Dockerfile for deploying `turing-app` as a Web Service on Koyeb
 # (https://www.koyeb.com/docs/build-and-deploy/build-from-git).
 #
-# Koyeb builds this image directly from the Git repository, so everything
-# — Maven deps, the React SPA, and the Spring Boot jar — is produced inside
-# the image. The final runtime stage only contains a JRE and the fat jar.
+# Three stages:
+#   1. node-builder  — installs npm deps, compiles the React SPA
+#   2. java-builder  — Maven build (backend), skipping npm (SPA copied in)
+#   3. runtime       — JRE-only image with the fat jar
 #
 # Build locally for testing:
 #   docker build -f Dockerfile.koyeb -t turing-koyeb .
@@ -13,13 +14,42 @@
 #
 
 # ──────────────────────────────────────────────────────────────────────────
-# Stage 1 — Build the Spring Boot fat jar (backend + React SPA bundled in)
+# Stage 1 — Build the React SPA
 # ──────────────────────────────────────────────────────────────────────────
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM node:24-slim AS node-builder
 
 WORKDIR /build
 
-# 1) Copy only the POMs first so Maven can cache dependencies between builds.
+# turing-react-sdk is referenced by vite.config.ts resolve.alias
+# (../turing-react-sdk/src/index.ts) — only sources are needed.
+COPY turing-react-sdk/src          turing-react-sdk/src
+COPY turing-react-sdk/package.json turing-react-sdk/
+COPY turing-react-sdk/tsconfig.json turing-react-sdk/
+
+# Copy frontend sources (without node_modules — npm ci will install them)
+COPY turing-react/package.json      turing-react/
+COPY turing-react/package-lock.json turing-react/
+
+WORKDIR /build/turing-react
+
+RUN npm ci --no-audit --no-fund
+
+COPY turing-react/ /build/turing-react/
+
+# tsc + vite build → output lands in ../turing-app/src/main/resources/public/
+# (per vite.config.ts outDir). Create the target dir so Vite doesn't fail.
+RUN mkdir -p /build/turing-app/src/main/resources/public \
+    && npx tsc -b \
+    && npx vite build
+
+# ──────────────────────────────────────────────────────────────────────────
+# Stage 2 — Build the Spring Boot fat jar (backend only)
+# ──────────────────────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-21 AS java-builder
+
+WORKDIR /build
+
+# 1) Copy only the POMs first so Maven can cache dependencies.
 COPY pom.xml ./
 COPY turing-commons/pom.xml  turing-commons/
 COPY turing-spring/pom.xml   turing-spring/
@@ -27,63 +57,51 @@ COPY turing-java-sdk/pom.xml turing-java-sdk/
 COPY turing-utils/pom.xml    turing-utils/
 COPY turing-app/pom.xml      turing-app/
 
-# Warm the local Maven repo. `go-offline` is not perfect with multi-module
-# builds (it misses reactor deps), but it still caches 90%+ of the artifacts.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -pl turing-app -am dependency:go-offline -DskipTests || true
+    mvn -B -pl turing-app -am dependency:go-offline -DskipTests -Dskip.installnodenpm=true -Dskip.npm=true || true
 
-# 2) Now copy the sources. turing-app's build also invokes
-#    `frontend-maven-plugin` which downloads Node/npm and runs
-#    `npm run compile` in ../turing-react, producing the SPA into
-#    turing-app/src/main/resources/public/.
-# .git is needed by git-commit-id-plugin (Implementation-Version in MANIFEST.MF)
+# 2) Copy Java sources + .git (for git-commit-id-plugin manifest version).
 COPY .git            .git
 COPY turing-commons  turing-commons
 COPY turing-spring   turing-spring
 COPY turing-java-sdk turing-java-sdk
 COPY turing-utils    turing-utils
 COPY turing-app      turing-app
-COPY turing-react    turing-react
 
-# 3) Build. `-am` builds upstream modules (turing-commons, turing-spring,
-#    turing-java-sdk, turing-utils) required by turing-app.
+# 3) Copy the compiled SPA from the node-builder stage into the Spring Boot
+#    resources directory so it gets packaged into the fat jar.
+COPY --from=node-builder /build/turing-app/src/main/resources/public/ \
+     turing-app/src/main/resources/public/
+
+# 4) Build. -Dskip.npm=true skips the frontend-maven-plugin entirely.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -pl turing-app -am package -DskipTests
+    mvn -B -pl turing-app -am package -DskipTests -Dskip.installnodenpm=true -Dskip.npm=true
 
-# Flatten the jar name so it is predictable in the runtime stage.
 RUN cp turing-app/target/viglet-turing.jar /build/app.jar
 
 # ──────────────────────────────────────────────────────────────────────────
-# Stage 2 — Minimal runtime
+# Stage 3 — Minimal runtime
 # ──────────────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre
 
-# curl is handy for Koyeb health-check configurations that hit the app from
-# inside the container; it is tiny and worth keeping.
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user.
 RUN useradd --system --create-home --uid 1001 --gid 0 java \
     && mkdir -p /app /app/store /app/models \
     && chown -R java:0 /app
 
 WORKDIR /app
 
-COPY --from=builder --chown=java:0 /build/app.jar /app/app.jar
+COPY --from=java-builder --chown=java:0 /build/app.jar /app/app.jar
 
-# Koyeb-friendly defaults. Every one of these can be overridden from the
-# Koyeb dashboard (Service → Environment variables).
+# Koyeb-friendly defaults. Override from the Koyeb dashboard as needed.
 #
-#  - PORT: Koyeb injects the port the platform expects the service to listen
-#    on. application.yaml already maps server.port to ${PORT:2700}.
-#  - JAVA_OPTS: tuned for a ~1 GB instance. Raise for larger instances.
-#  - turing_allowedOrigins: wide-open by default so the SPA served by this
-#    same app always works. Tighten this for production.
-#  - Default DB: H2 file-based under /app/store. Koyeb filesystems are
-#    ephemeral for standard web services; attach a Koyeb Volume at /app/store
-#    if persistence is required, or point SPRING_DATASOURCE_URL at a managed
-#    MariaDB/MySQL/PostgreSQL.
+#  PORT        — Koyeb injects the port; application.yaml uses ${PORT:2700}
+#  JAVA_OPTS   — sized for a ~1 GB instance; raise for larger
+#  DB          — H2 file-based under /app/store (ephemeral unless a Koyeb
+#                Volume is mounted). Point SPRING_DATASOURCE_URL at a
+#                managed database for persistence.
 ENV PORT=8080 \
     JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom" \
     SPRING_PROFILES_ACTIVE=production \
@@ -101,8 +119,6 @@ USER java
 
 EXPOSE 8080
 
-# Health check hits Spring Boot Actuator (already exposed in application.yaml).
-# Koyeb will also probe the HTTP port; this is just a useful local default.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
     CMD curl -fsS "http://localhost:${PORT}/actuator/health" || exit 1
 
