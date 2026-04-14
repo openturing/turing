@@ -12,7 +12,7 @@ import { AlertCircle, KeyRound, Loader2, LogIn, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 
 const providerMeta: Record<string, { icon: string; label: string }> = {
@@ -32,6 +32,7 @@ export function LoginForm({
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [oauth2Providers, setOauth2Providers] = useState<string[]>([]);
+    const [selfRegistration, setSelfRegistration] = useState(false);
     const authorization = new TurAuthorizationService()
 
     useEffect(() => {
@@ -45,6 +46,7 @@ export function LoginForm({
             if (discovery.authThirdparty && discovery.oauth2Providers?.length > 0) {
                 setOauth2Providers(discovery.oauth2Providers);
             }
+            setSelfRegistration(discovery.selfRegistration ?? false);
         }).catch(() => { /* ignore */ });
     }, []);
 
@@ -193,6 +195,14 @@ export function LoginForm({
                                     })}
                                 </div>
                             </>
+                        )}
+                        {selfRegistration && (
+                            <div className="text-center text-sm text-muted-foreground">
+                                {t('login.noAccount')}{' '}
+                                <Link to={ROUTES.REGISTER} className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                                    {t('login.createAccount')}
+                                </Link>
+                            </div>
                         )}
                     </form>
                 </Form>

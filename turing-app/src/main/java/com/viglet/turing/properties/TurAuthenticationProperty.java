@@ -13,4 +13,5 @@ import lombok.Setter;
 @Setter
 public class TurAuthenticationProperty {
     private boolean thirdparty = true;
+    private boolean newUser = false;
 }

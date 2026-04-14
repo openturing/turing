@@ -3,6 +3,7 @@ import ConsoleRootPage from "./app/console/console.root.page"
 import DashboardPage from "./app/console/dashboard/dashboard.page"
 import HomePage from "./app/console/home/home.page"
 import LoginPage from "./app/login/login.page"
+import RegisterPage from "./app/register/register.page"
 import SetupPage from "./app/setup/setup.page"
 import {
   AdminRoutes,
@@ -43,6 +44,7 @@ function App() {
             <Routes>
               <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.CONSOLE} replace />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>

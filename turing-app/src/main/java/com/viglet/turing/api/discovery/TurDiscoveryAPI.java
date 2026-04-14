@@ -55,6 +55,8 @@ public class TurDiscoveryAPI {
         turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
         turAPIBean.setAuthThirdparty(turConfigProperties.getAuthentication() == null
                 || turConfigProperties.getAuthentication().isThirdparty());
+        turAPIBean.setSelfRegistration(turConfigProperties.getAuthentication() != null
+                && turConfigProperties.getAuthentication().isNewUser());
         turAPIBean.setOauth2Providers(resolveOAuth2Providers());
         return turAPIBean;
     }

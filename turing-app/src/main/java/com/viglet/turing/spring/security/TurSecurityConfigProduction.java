@@ -125,6 +125,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/git/**"),
                                                 mvc.matcher(LOGIN_PATH),
                                                 mvc.matcher(SETUP_PATH),
+                                                mvc.matcher("/api/v2/user/register"),
                                                 mvc.matcher("/login/oauth2/**"),
                                                 mvc.matcher("/oauth2/**")))
                                 .addFilterAfter(new TurCsrfCookieFilter(), BasicAuthenticationFilter.class);
@@ -214,6 +215,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/browserconfig.xml"),
                                                                 mvc.matcher("/console/**"),
                                                                 mvc.matcher("/api/v2/guest/**"),
+                                                                mvc.matcher("/api/v2/user/register"),
                                                                 mvc.matcher(LOGIN_PATH),
                                                                 mvc.matcher(SETUP_PATH)).permitAll();
                                                 authorizeRequests.anyRequest().authenticated();

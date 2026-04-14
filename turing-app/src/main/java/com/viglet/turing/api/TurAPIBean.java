@@ -36,5 +36,6 @@ public class TurAPIBean {
 	private boolean multiTenant;
 	private boolean keycloak;
 	private boolean authThirdparty;
+	private boolean selfRegistration;
 	private List<String> oauth2Providers = new ArrayList<>();
 }

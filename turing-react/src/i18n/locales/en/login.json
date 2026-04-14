@@ -18,6 +18,24 @@
     "orContinueWith": "or continue with",
     "continueWithGoogle": "Continue with Google",
     "continueWithMicrosoft": "Continue with Microsoft",
-    "continueWithGithub": "Continue with GitHub"
+    "continueWithGithub": "Continue with GitHub",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create account"
+  },
+  "register": {
+    "title": "Create Account",
+    "description": "Fill in your details to create a new account.",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "createAccount": "Create Account",
+    "creating": "Creating...",
+    "backToLogin": "Back to login",
+    "requiredFields": "Username and password are required.",
+    "passwordMismatch": "Passwords do not match.",
+    "failed": "Registration failed. Please try again."
   }
 }

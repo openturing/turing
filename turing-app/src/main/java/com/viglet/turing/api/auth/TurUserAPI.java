@@ -313,6 +313,36 @@ public class TurUserAPI {
         return turUserMapper.toDto(turUser);
     }
 
+    public record RegisterRequest(String username, String password, String firstName, String lastName, String email) {}
+
+    @PostMapping("/register")
+    public ResponseEntity<?> turUserRegister(@RequestBody RegisterRequest request) {
+        if (turConfigProperties.getAuthentication() == null
+                || !turConfigProperties.getAuthentication().isNewUser()) {
+            return ResponseEntity.status(403).body(java.util.Map.of("error", "Self-registration is disabled"));
+        }
+        if (!StringUtils.hasText(request.username()) || !StringUtils.hasText(request.password())) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username and password are required"));
+        }
+        if (turUserRepository.findByUsername(request.username()) != null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Username already exists"));
+        }
+        TurUser turUser = TurUser.builder()
+                .username(request.username())
+                .password(passwordEncoder.encode(request.password()))
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .enabled(1)
+                .build();
+        TurGroup userGroup = turGroupRepository.findByName("User");
+        if (userGroup != null) {
+            turUser.setTurGroups(java.util.Collections.singletonList(userGroup));
+        }
+        turUserRepository.save(turUser);
+        return ResponseEntity.ok(turUserMapper.toDto(turUser));
+    }
+
     @Secured("ROLE_ADMIN")
     @GetMapping("/model")
     public TurUserDto turUserStructure() {

@@ -22,5 +22,16 @@ export class TurAuthorizationService {
     return response.data;
   }
 
-
+  async register(data: { username: string; password: string; firstName: string; lastName: string; email: string }): Promise<void> {
+    const baseURL = axios.defaults.baseURL ?? "";
+    const response = await fetch(`${baseURL}/v2/user/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Registration failed");
+    }
+  }
 }
