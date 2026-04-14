@@ -582,6 +582,7 @@ public class TurSNSearchProcess {
                                 .setSpellCheck(turSEResults.getSpellCheck() != null
                                                 ? new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck())
                                                 : new TurSNSiteSpellCheckBean())
+                                .setIcon(turSNSite.getIcon())
                                 .setLocales(responseLocales(turSNSite, context.getUri()))
                                 .setSpotlights(responseSpotlights(context, turSNSite))
                                 .setCleanUpFacets(responseCleanUpFacet(context, turSNSite))

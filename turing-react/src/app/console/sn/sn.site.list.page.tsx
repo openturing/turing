@@ -34,27 +34,40 @@ export default function SNSiteListPage() {
     const searchUrl = `/sn/${site.name}`;
     const defaultUrl = `/sn/${site.name}?_embedded=true`;
     const hasTemplate = storageEnabled && !!site.searchTemplate?.trim();
+    const locales = site.turSNSiteLocales ?? [];
+    const hasMultipleLocales = locales.length > 1;
 
-    const searchAction: TurGridItemAction = hasTemplate
+    const buildLocaleItems = (baseUrl: string, iconifyIcon: string, labelSuffix?: string): TurGridItemDropdownItem[] =>
+      locales.map((locale) => ({
+        iconifyIcon,
+        label: `${locale.language}${labelSuffix ? ` (${labelSuffix})` : ""}`,
+        url: `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}_setlocale=${locale.language}`,
+        external: true,
+      }));
+
+    const dropdownItems: TurGridItemDropdownItem[] = [];
+
+    if (hasTemplate && hasMultipleLocales) {
+      dropdownItems.push(
+        ...buildLocaleItems(searchUrl, "mdi:card-search"),
+        ...buildLocaleItems(defaultUrl, "mdi:card-search-outline", t("forms.localeTable.searchDefault")),
+      );
+    } else if (hasTemplate) {
+      dropdownItems.push(
+        { iconifyIcon: "mdi:card-search", label: `${t("forms.localeTable.openSearch")} (${site.searchTemplate})`, url: searchUrl, external: true },
+        { iconifyIcon: "mdi:card-search-outline", label: t("forms.localeTable.searchDefault"), url: defaultUrl, external: true },
+      );
+    } else if (hasMultipleLocales) {
+      dropdownItems.push(...buildLocaleItems(searchUrl, "mdi:card-search"));
+    }
+
+    const searchAction: TurGridItemAction = dropdownItems.length > 0
       ? {
           icon: IconSearch,
           label: t("forms.localeTable.openSearch"),
           url: searchUrl,
           external: true,
-          dropdownItems: [
-            {
-              iconifyIcon: "mdi:card-search",
-              label: `${t("forms.localeTable.openSearch")} (${site.searchTemplate})`,
-              url: searchUrl,
-              external: true,
-            },
-            {
-              iconifyIcon: "mdi:card-search-outline",
-              label: t("forms.localeTable.searchDefault"),
-              url: defaultUrl,
-              external: true,
-            },
-          ] as TurGridItemDropdownItem[],
+          dropdownItems,
         }
       : {
           icon: IconSearch,

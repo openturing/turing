@@ -89,6 +89,7 @@ export interface TurPaginationItem {
 // ── Widget (Facets, SpellCheck, Locales) ──
 
 export interface TurWidget {
+  icon?: string | null;
   facet: TurFacetGroup[];
   facetToRemove: TurFacetGroup;
   similar: string;

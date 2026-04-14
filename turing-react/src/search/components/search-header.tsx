@@ -8,11 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SearchStoreValue, TurLocaleItem } from "@viglet/turing-react-sdk";
+import { Icon } from "@iconify/react";
 import { IconSearch } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 interface SearchHeaderProps {
   siteName: string;
+  siteIcon?: string | null;
   store: SearchStoreValue;
   locale: string;
   locales: TurLocaleItem[];
@@ -24,6 +26,7 @@ interface SearchHeaderProps {
 
 export function SearchHeader({
   siteName,
+  siteIcon,
   store,
   locale,
   locales,
@@ -44,7 +47,11 @@ export function SearchHeader({
             onClick={store.showAll}
             className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
           >
-            <TurLogo size={28} className="transition-transform group-hover:scale-110" />
+            {siteIcon ? (
+              <Icon icon={siteIcon} className="size-7 text-blue-600 dark:text-blue-400 transition-transform group-hover:scale-110" />
+            ) : (
+              <TurLogo size={28} className="transition-transform group-hover:scale-110" />
+            )}
             <span className="text-base font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
               {siteName}
             </span>

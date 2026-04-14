@@ -38,6 +38,7 @@ import lombok.experimental.Accessors;
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteSearchWidgetBean implements Serializable {
+	private String icon;
 	private String cleanUpFacets;
 	private List<String> selectedFilterQueries;
 	private List<TurSNSiteSearchFacetBean> facet;
