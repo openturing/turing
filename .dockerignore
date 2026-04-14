@@ -1,6 +1,6 @@
 turing-installer
 .bloop
-.git
+# .git is NOT excluded — git-commit-id-plugin needs it for MANIFEST.MF versioning
 .github
 .gradle
 .metals

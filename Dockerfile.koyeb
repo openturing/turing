@@ -36,6 +36,8 @@ RUN --mount=type=cache,target=/root/.m2 \
 #    `frontend-maven-plugin` which downloads Node/npm and runs
 #    `npm run compile` in ../turing-react, producing the SPA into
 #    turing-app/src/main/resources/public/.
+# .git is needed by git-commit-id-plugin (Implementation-Version in MANIFEST.MF)
+COPY .git            .git
 COPY turing-commons  turing-commons
 COPY turing-spring   turing-spring
 COPY turing-java-sdk turing-java-sdk
