@@ -238,7 +238,7 @@ export default function DetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* ── Main content ── */}
           <div className="lg:col-span-2 space-y-8">
             {/* Danger bar */}
@@ -393,7 +393,7 @@ export default function DetailPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-border/30 bg-card/30 mt-12">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>Powered by Viglet Turing ES</span>
           <span>Mythical Creatures Bestiary</span>
         </div>
