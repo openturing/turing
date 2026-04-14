@@ -58,7 +58,16 @@ jobs:
             mkdir -p "_site/marketplace/$project"
             cp "$dir"app/*.zip "_site/marketplace/$project/"
             cp "$dir"app/dist/turing-manifest.json "_site/marketplace/$project/" 2>/dev/null || true
-            cp "$dir"app/README.md "_site/marketplace/$project/" 2>/dev/null || true
+            # Prefer the project-root README / landing page (creative description).
+            # Fall back to the technical app/README.md if project-root versions are absent.
+            if [ -f "$dir"index.html ]; then
+              cp "$dir"index.html "_site/marketplace/$project/"
+            fi
+            if [ -f "$dir"README.md ]; then
+              cp "$dir"README.md "_site/marketplace/$project/"
+            else
+              cp "$dir"app/README.md "_site/marketplace/$project/" 2>/dev/null || true
+            fi
           done
 
       - name: Copy static pages assets

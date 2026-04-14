@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Missions — Flight Manifest of the Cosmos · Viglet Turing ES Marketplace</title>
+  <meta name="description" content="A searchable archive of humanity's greatest space exploration missions, delivered as a ready-to-import Viglet Turing ES marketplace bundle." />
+  <meta name="theme-color" content="#06b6d4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #020617;
+      --bg-muted: #0b1220;
+      --fg: #e0f2fe;
+      --fg-muted: #7dd3fc;
+      --card-bg: #0f172a;
+      --card-border: #1e3a5f;
+      --accent: #06b6d4;
+      --accent-dark: #0369a1;
+      --accent-light: #22d3ee;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --failure: #ef4444;
+      --glow: rgba(6, 182, 212, 0.25);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-display: 'Orbitron', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { color: #fff; }
+
+    /* ── Starfield Hero ── */
+    .hero {
+      position: relative;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at top, rgba(3, 105, 161, 0.35), transparent 60%),
+        var(--bg);
+    }
+    .starfield {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 15% 25%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 35% 75%, #22d3ee, transparent),
+        radial-gradient(1px 1px at 55% 40%, #fff, transparent),
+        radial-gradient(2px 2px at 75% 15%, #7dd3fc, transparent),
+        radial-gradient(1px 1px at 85% 65%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 25% 50%, #06b6d4, transparent),
+        radial-gradient(1px 1px at 65% 85%, #fff, transparent);
+      animation: starfield-drift 20s linear infinite;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    @keyframes starfield-drift {
+      from { transform: translateY(0); }
+      to { transform: translateY(-40px); }
+    }
+    .hero-content { position: relative; max-width: 780px; margin: 0 auto; }
+
+    .mission-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-light);
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+    }
+    .mission-badge::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .hero-rocket {
+      font-size: 4.5rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+      animation: launch 5s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px var(--glow));
+    }
+    @keyframes launch {
+      0%, 100% { transform: translateY(0) rotate(-12deg); }
+      50% { transform: translateY(-10px) rotate(-8deg); }
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5.5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff, var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero .tagline {
+      font-style: italic;
+      color: var(--fg-muted);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .hero p.lead {
+      color: var(--fg-muted);
+      font-size: 1.1rem;
+      max-width: 620px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #fff;
+      box-shadow: 0 4px 20px var(--glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px var(--glow);
+      color: #fff;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--card-border);
+    }
+    .btn-ghost:hover {
+      background: var(--card-bg);
+      border-color: var(--accent);
+      color: var(--fg);
+    }
+
+    /* ── Sections ── */
+    section { padding: 4rem 1.5rem; position: relative; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-muted { background: var(--bg-muted); }
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .section-header p { color: var(--fg-muted); max-width: 520px; margin: 0 auto; }
+
+    /* ── HUD Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    /* HUD corner brackets */
+    .card::before, .card::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: var(--accent);
+      transition: border-color 0.25s ease;
+    }
+    .card::before {
+      top: 8px; left: 8px;
+      border-top: 2px solid;
+      border-left: 2px solid;
+    }
+    .card::after {
+      bottom: 8px; right: 8px;
+      border-bottom: 2px solid;
+      border-right: 2px solid;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+    .card:hover::before, .card:hover::after {
+      border-color: var(--accent-light);
+    }
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .card p { color: var(--fg-muted); font-size: 0.92rem; }
+
+    /* ── Telemetry preview ── */
+    .telemetry {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+    }
+    .telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--card-border);
+      color: var(--accent-light);
+      letter-spacing: 0.1em;
+      font-size: 0.78rem;
+    }
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      color: var(--fg-muted);
+    }
+    .telemetry-row strong { color: var(--fg); font-weight: 500; }
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--success);
+      font-size: 0.78rem;
+    }
+
+    /* ── Data table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    .data-table th, .data-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .data-table th {
+      background: rgba(6, 182, 212, 0.08);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent-light);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-light);
+    }
+
+    /* ── Code ── */
+    pre {
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--accent-light);
+      line-height: 1.7;
+    }
+    code.inline {
+      font-family: var(--font-mono);
+      background: var(--card-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: var(--accent-light);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 2rem 1.5rem 3rem;
+      text-align: center;
+      color: var(--fg-muted);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer p + p { margin-top: 0.5rem; }
+    .quote {
+      font-style: italic;
+      color: var(--accent-light);
+      max-width: 520px;
+      margin: 2rem auto 0;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="starfield"></div>
+    <div class="hero-content">
+      <div class="mission-badge">MISSION STATUS · ONLINE</div>
+      <div class="hero-rocket">🚀</div>
+      <h1>SPACE MISSIONS</h1>
+      <p class="tagline">— A Flight Manifest of the Cosmos —</p>
+      <p class="lead">
+        Apollo 11. Voyager 1. ISS Expedition 1. The triumphs, the losses, the ongoing.
+        A ready-to-import <strong>Viglet Turing ES</strong> marketplace bundle that turns the search bar into <strong>Mission Control</strong>.
+      </p>
+      <div class="hero-actions">
+        <a href="space-missions.zip" class="btn btn-primary">⬇ DOWNLOAD BUNDLE</a>
+        <a href="https://github.com/openviglet/turing/tree/main/turing-marketplace/space-missions" class="btn btn-ghost">📂 VIEW SOURCE</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>🎯 Mission Systems</h2>
+        <p>Telemetry-grade features, wrapped in an HUD that feels like Houston at 03:00.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <h3>Semantic Search</h3>
+          <p>Suggestions that understand "first spacewalk" vs "first woman in space" — not just keywords.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛰️</div>
+          <h3>Facet the Void</h3>
+          <p>Filter by Agency (NASA, ESA, Roscosmos, SpaceX, JAXA, ISRO, CNSA), Program, Outcome, and Decade.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📡</div>
+          <h3>Mission Telemetry</h3>
+          <p>Launch date, duration, destination, crew size, spacecraft, and EVA flag — all in a single sidebar.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">👨‍🚀</div>
+          <h3>Crew Manifest</h3>
+          <p>Astronaut names rendered as initials in colored circles. Every crew deserves a roll call.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌌</div>
+          <h3>HUD-Dark by Default</h3>
+          <p>Command centers are never lit like offices. Light mode is here if you need it.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">✨</div>
+          <h3>Animated Starfield</h3>
+          <p>Twinkle rate optimized for late-night spelunking through orbital history.</p>
+        </div>
+      </div>
+
+      <div class="telemetry">
+        <div class="telemetry-header">
+          <span>▸ MISSION TELEMETRY · APOLLO 11</span>
+          <span class="badge-success">● SUCCESS</span>
+        </div>
+        <div class="telemetry-row"><span>LAUNCH DATE</span><strong>1969-07-16 · 13:32 UTC</strong></div>
+        <div class="telemetry-row"><span>AGENCY</span><strong>NASA</strong></div>
+        <div class="telemetry-row"><span>SPACECRAFT</span><strong>Saturn V / Columbia / Eagle</strong></div>
+        <div class="telemetry-row"><span>CREW SIZE</span><strong>3</strong></div>
+        <div class="telemetry-row"><span>DESTINATION</span><strong>Moon</strong></div>
+        <div class="telemetry-row"><span>DURATION</span><strong>8.14 days</strong></div>
+        <div class="telemetry-row"><span>EVA PERFORMED</span><strong>TRUE</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>📡 The Data Model</h2>
+        <p>Every mission is a full flight record. Here is the payload schema.</p>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>title</code></td><td>Mission name (e.g. <em>Apollo 11 — First Steps on the Moon</em>)</td></tr>
+          <tr><td><code>description</code> / <code>text</code></td><td>Short tagline and full mission briefing</td></tr>
+          <tr><td><code>launch_date</code> / <code>duration_days</code></td><td>Launch timestamp and mission duration</td></tr>
+          <tr><td><code>decade</code></td><td>1960s · 1970s · … · 2020s</td></tr>
+          <tr><td><code>agency[]</code></td><td>NASA, ESA, Roscosmos, JAXA, ISRO, CNSA, SpaceX…</td></tr>
+          <tr><td><code>program</code></td><td>Apollo, Voyager, ISS, Artemis, Shuttle…</td></tr>
+          <tr><td><code>crew[]</code> / <code>crew_size</code></td><td>Astronaut roster + headcount</td></tr>
+          <tr><td><code>spacecraft</code></td><td>Vehicle name (e.g. Saturn V / Columbia / Eagle)</td></tr>
+          <tr><td><code>destination[]</code></td><td>Moon, Mars, Jupiter, LEO, interstellar space…</td></tr>
+          <tr><td><code>outcome</code></td><td>Success · Failure · Partial · Ongoing · Planned</td></tr>
+          <tr><td><code>has_eva</code></td><td>Boolean — did someone step outside?</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>🚀 Launch Sequence</h2>
+        <p>Three commands. T-minus zero.</p>
+      </div>
+<pre># From turing-marketplace/space-missions/app/
+npm install
+npm run dev        # local preview
+npm run compile    # production build
+npm run package    # build + zip ready for Marketplace import</pre>
+      <p style="margin-top: 1rem; color: var(--fg-muted);">
+        The generated <code class="inline">space-missions.zip</code> contains the SN site export, content index,
+        and compiled SPA template. Import via <strong>Turing → Marketplace → Install from file</strong> and you are go for launch.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>🔧 <strong>Tech Stack:</strong> React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · Tabler Icons · @viglet/turing-react-sdk</p>
+    <p>Licensed under Apache 2.0 — fork it, remix it, launch your own.</p>
+    <p class="quote">"T-minus zero. Ignition. The index is go."</p>
+    <p style="margin-top: 2rem;"><a href="../">← Back to Marketplace</a> · <a href="https://github.com/openviglet/turing">GitHub</a> · <a href="https://docs.viglet.org/turing/">Docs</a></p>
+  </footer>
+</body>
+</html>

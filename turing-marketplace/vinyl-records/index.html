@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vinyl Records — The Crate · Viglet Turing ES Marketplace</title>
+  <meta name="description" content="A marketplace-style browser for vintage vinyl records, delivered as a ready-to-import Viglet Turing ES marketplace bundle." />
+  <meta name="theme-color" content="#d97706" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #1a0f07;
+      --bg-muted: #241608;
+      --fg: #fef3c7;
+      --fg-muted: #fcd34d;
+      --card-bg: #2a1a0c;
+      --card-border: #4a2e14;
+      --accent: #f59e0b;
+      --accent-dark: #b45309;
+      --accent-light: #fbbf24;
+      --gold: #fcd34d;
+      --mint: #10b981;
+      --fair: #ef4444;
+      --glow: rgba(245, 158, 11, 0.25);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-display: 'Playfair Display', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { color: var(--gold); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at top, rgba(180, 83, 9, 0.3), transparent 60%),
+        var(--bg);
+    }
+    .hero-content { position: relative; max-width: 780px; margin: 0 auto; }
+
+    /* Spinning Vinyl */
+    .vinyl {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 2rem;
+      position: relative;
+      animation: spin 8s linear infinite;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,0.6));
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .vinyl svg { width: 100%; height: 100%; }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--gold), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero .tagline {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--accent-light);
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+    }
+    .hero p.lead {
+      color: var(--fg-muted);
+      font-size: 1.1rem;
+      max-width: 620px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #1a0f07;
+      box-shadow: 0 4px 20px var(--glow);
+      font-weight: 700;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px var(--glow);
+      color: #1a0f07;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--card-border);
+    }
+    .btn-ghost:hover {
+      background: var(--card-bg);
+      border-color: var(--accent);
+      color: var(--fg);
+    }
+
+    /* ── Sections ── */
+    section { padding: 4rem 1.5rem; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-muted { background: var(--bg-muted); }
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .section-header p { color: var(--fg-muted); max-width: 520px; margin: 0 auto; }
+
+    /* ── Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: all 0.25s ease;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #1a0f07;
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .card p { color: var(--fg-muted); font-size: 0.92rem; }
+
+    /* ── Record preview ── */
+    .record-preview {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      align-items: center;
+    }
+    .record-sleeve {
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(135deg, #1e3a8a, #312e81);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg);
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-align: center;
+      padding: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      font-size: 0.95rem;
+    }
+    .record-meta { font-size: 0.9rem; }
+    .record-meta h4 {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      margin-bottom: 0.25rem;
+    }
+    .record-meta .artist { color: var(--accent-light); margin-bottom: 0.75rem; }
+    .record-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.2rem 0;
+      color: var(--fg-muted);
+      font-size: 0.85rem;
+    }
+    .record-row strong { color: var(--fg); font-weight: 500; }
+    .stars { color: var(--gold); }
+    .condition-badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--mint);
+      border: 1px solid var(--mint);
+      font-family: var(--font-mono);
+    }
+    .price-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #1a0f07;
+      padding: 0.2rem 0.7rem;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 540px) {
+      .record-preview { grid-template-columns: 1fr; text-align: center; }
+      .record-sleeve { margin: 0 auto; }
+    }
+
+    /* ── Data table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    .data-table th, .data-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .data-table th {
+      background: rgba(245, 158, 11, 0.08);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-light);
+      font-weight: 500;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-light);
+    }
+
+    /* ── Code ── */
+    pre {
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--accent-light);
+      line-height: 1.7;
+    }
+    code.inline {
+      font-family: var(--font-mono);
+      background: var(--card-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: var(--accent-light);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 2rem 1.5rem 3rem;
+      text-align: center;
+      color: var(--fg-muted);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer p + p { margin-top: 0.5rem; }
+    .quote {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--gold);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 2rem auto 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="vinyl" aria-hidden="true">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="vinylGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#2a1a0c" />
+              <stop offset="100%" stop-color="#0a0503" />
+            </radialGradient>
+            <radialGradient id="labelGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fbbf24" />
+              <stop offset="100%" stop-color="#b45309" />
+            </radialGradient>
+          </defs>
+          <!-- Vinyl body -->
+          <circle cx="100" cy="100" r="98" fill="url(#vinylGrad)" />
+          <!-- Grooves -->
+          <circle cx="100" cy="100" r="90" fill="none" stroke="#3a2414" stroke-width="0.5" opacity="0.6" />
+          <circle cx="100" cy="100" r="82" fill="none" stroke="#3a2414" stroke-width="0.5" opacity="0.6" />
+          <circle cx="100" cy="100" r="74" fill="none" stroke="#3a2414" stroke-width="0.5" opacity="0.6" />
+          <circle cx="100" cy="100" r="66" fill="none" stroke="#3a2414" stroke-width="0.5" opacity="0.6" />
+          <circle cx="100" cy="100" r="58" fill="none" stroke="#3a2414" stroke-width="0.5" opacity="0.6" />
+          <!-- Gold label -->
+          <circle cx="100" cy="100" r="38" fill="url(#labelGrad)" />
+          <circle cx="100" cy="100" r="38" fill="none" stroke="#d97706" stroke-width="1" />
+          <!-- Label text -->
+          <text x="100" y="95" text-anchor="middle" fill="#1a0f07" font-family="Playfair Display, serif" font-weight="700" font-size="10">THE CRATE</text>
+          <text x="100" y="110" text-anchor="middle" fill="#1a0f07" font-family="JetBrains Mono, monospace" font-size="7">33⅓ RPM</text>
+          <!-- Center hole -->
+          <circle cx="100" cy="100" r="4" fill="#0a0503" />
+        </svg>
+      </div>
+      <h1>Vinyl Records</h1>
+      <p class="tagline">— The Crate —</p>
+      <p class="lead">
+        <em>"The needle drops. The room changes."</em><br/>
+        A <strong>Viglet Turing ES</strong> marketplace sample that treats search the way a real record shop treats its customers:
+        warm lighting, amber wood tones, and a stubborn belief that <em>how</em> you find music matters.
+      </p>
+      <div class="hero-actions">
+        <a href="vinyl-records.zip" class="btn btn-primary">⬇ Download Bundle</a>
+        <a href="https://github.com/openviglet/turing/tree/main/turing-marketplace/vinyl-records" class="btn btn-ghost">📂 View Source</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>🎚 Signature Features</h2>
+        <p>Because browsing matters as much as finding.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">🔎</div>
+          <h3>Semantic Search</h3>
+          <p>Suggestions that know the difference between "Miles Davis" and "modal jazz" — and treat both well.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💿</div>
+          <h3>Crate-Dig Facets</h3>
+          <p>Filter by Genre, Decade (1950s → 2000s), Condition, Format (LP, 2xLP…), and Label.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏷️</div>
+          <h3>Condition Grading</h3>
+          <p>Color-coded badges: green Mint → yellow Very Good → red Fair. Honesty, basically.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⭐</div>
+          <h3>First Pressing Flag</h3>
+          <p>Because collectors care, and the data should too. Plus star ratings from 0–5.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🎶</div>
+          <h3>Spinning Vinyl Hero</h3>
+          <p>Concentric grooves, gold label, 33⅓ rpm of pure visual comfort. Yes, that one above.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌃</div>
+          <h3>Warm Dark Mode</h3>
+          <p>Record shops are dimly lit on purpose. Your eyes will thank you.</p>
+        </div>
+      </div>
+
+      <div class="record-preview">
+        <div class="record-sleeve">Kind<br/>of<br/>Blue</div>
+        <div class="record-meta">
+          <h4>Kind of Blue</h4>
+          <div class="artist">Miles Davis · Columbia Records · 1959</div>
+          <div class="record-row"><span>Genre</span><strong>Jazz · Modal Jazz · Cool Jazz</strong></div>
+          <div class="record-row"><span>Format</span><strong>LP · First Pressing</strong></div>
+          <div class="record-row"><span>Rating</span><span class="stars">★★★★★ 5.0</span></div>
+          <div class="record-row"><span>Condition</span><span class="condition-badge">NEAR MINT</span></div>
+          <div class="record-row"><span>Price</span><span class="price-tag">$89.99</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>📝 The Data Model</h2>
+        <p>Every record on the shelf carries its full story.</p>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>title</code> / <code>artist</code></td><td>Album name and artist</td></tr>
+          <tr><td><code>description</code> / <code>text</code></td><td>Sleeve-note summary and full album story</td></tr>
+          <tr><td><code>cover_art</code></td><td>The sleeve</td></tr>
+          <tr><td><code>release_date</code> / <code>decade</code></td><td>When the record met the world</td></tr>
+          <tr><td><code>label</code></td><td>Columbia, Parlophone, ECM, Virgin, Blue Note…</td></tr>
+          <tr><td><code>genre[]</code></td><td>Jazz, Rock, Electronic, Folk, Soul, Disco…</td></tr>
+          <tr><td><code>format</code></td><td>LP · 2xLP · and everything in between</td></tr>
+          <tr><td><code>condition</code></td><td>Mint · Near Mint · Very Good Plus · Very Good · Good · Fair</td></tr>
+          <tr><td><code>price</code></td><td>In USD</td></tr>
+          <tr><td><code>rating</code></td><td>0–5 stars</td></tr>
+          <tr><td><code>num_tracks</code></td><td>Track count</td></tr>
+          <tr><td><code>is_first_pressing</code></td><td>Boolean — for the purists</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>🛠 Open the Shop</h2>
+        <p>Three commands. One crate.</p>
+      </div>
+<pre># From turing-marketplace/vinyl-records/app/
+npm install
+npm run dev        # local preview
+npm run compile    # production build
+npm run package    # build + zip ready for Marketplace import</pre>
+      <p style="margin-top: 1rem; color: var(--fg-muted);">
+        The generated <code class="inline">vinyl-records.zip</code> packs the SN site export, content index,
+        and compiled SPA template. Import via <strong>Turing → Marketplace → Install from file</strong> and you are behind the counter.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>🎛 <strong>Tech Stack:</strong> React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · Tabler Icons · @viglet/turing-react-sdk</p>
+    <p>Licensed under Apache 2.0 — copy, remix, burn a mixtape.</p>
+    <p class="quote">"Side A ends. You flip the record. The index keeps playing."</p>
+    <p style="margin-top: 2rem;"><a href="../">← Back to Marketplace</a> · <a href="https://github.com/openviglet/turing">GitHub</a> · <a href="https://docs.viglet.org/turing/">Docs</a></p>
+  </footer>
+</body>
+</html>
