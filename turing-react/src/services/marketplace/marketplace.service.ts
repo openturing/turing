@@ -8,6 +8,15 @@ export class TurMarketplaceService {
     return response.data
   }
 
+  async getReadme(readmeUrl: string): Promise<string> {
+    const response = await axios.get<string>("/marketplace/readme", {
+      params: { url: readmeUrl },
+      responseType: "text",
+      transformResponse: [(data) => data],
+    })
+    return response.data
+  }
+
   async importPackage(
     downloadUrl: string,
     includeContent: boolean,

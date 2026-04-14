@@ -53,6 +53,7 @@ public class TurMarketplaceAPI {
             List<String> tags,
             String icon,
             String downloadUrl,
+            String readmeUrl,
             boolean hasContent,
             boolean hasTemplate
     ) {}
@@ -65,6 +66,41 @@ public class TurMarketplaceAPI {
         }
         List<TurMarketplaceItem> items = fetchCatalog();
         return ResponseEntity.ok(items);
+    }
+
+    @Operation(summary = "Fetch the README content of a marketplace package (proxied to avoid CORS)")
+    @GetMapping("/readme")
+    public ResponseEntity<String> readme(@RequestParam String url) {
+        if (!isEnabled()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (!isSafeReadmeUrl(url)) {
+            return ResponseEntity.badRequest().body("Invalid README URL");
+        }
+        try {
+            byte[] body = downloadUrl(url);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "text/markdown; charset=UTF-8")
+                    .body(new String(body, java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            log.warn("Could not fetch README from '{}': {}", url, e.getMessage());
+            return ResponseEntity.status(502).body("Could not load README: " + e.getMessage());
+        }
+    }
+
+    private boolean isSafeReadmeUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (scheme == null || (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))) {
+                return false;
+            }
+            String host = uri.getHost();
+            return host != null && !host.isBlank();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     @Operation(summary = "Import a package from the marketplace by downloading its ZIP")

@@ -17,6 +17,7 @@ import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
 import * as TablerIcons from "@tabler/icons-react";
 import {
+    IconBookOpen,
     IconBrowserCheck,
     IconDatabase,
     IconLoader2,
@@ -27,6 +28,10 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const marketplaceService = new TurMarketplaceService();
 
@@ -57,6 +62,11 @@ export default function MarketplaceListPage() {
     const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
     const [importResult, setImportResult] = useState<TurImportResult | null>(null);
 
+    const [readmeItem, setReadmeItem] = useState<TurMarketplaceItem | null>(null);
+    const [readmeContent, setReadmeContent] = useState<string | null>(null);
+    const [readmeLoading, setReadmeLoading] = useState(false);
+    const [readmeError, setReadmeError] = useState<string | null>(null);
+
     useEffect(() => {
         marketplaceService
             .list()
@@ -77,6 +87,28 @@ export default function MarketplaceListPage() {
         setSelectedItem(null);
         setImportStatus("idle");
     }, [importStatus]);
+
+    const openReadmeDialog = useCallback(async (item: TurMarketplaceItem) => {
+        if (!item.readmeUrl) return;
+        setReadmeItem(item);
+        setReadmeContent(null);
+        setReadmeError(null);
+        setReadmeLoading(true);
+        try {
+            const md = await marketplaceService.getReadme(item.readmeUrl);
+            setReadmeContent(md);
+        } catch {
+            setReadmeError(t("marketplace.readmeLoadError"));
+        } finally {
+            setReadmeLoading(false);
+        }
+    }, [t]);
+
+    const closeReadmeDialog = useCallback(() => {
+        setReadmeItem(null);
+        setReadmeContent(null);
+        setReadmeError(null);
+    }, []);
 
     const doImport = useCallback(async () => {
         if (!selectedItem) return;
@@ -154,7 +186,7 @@ export default function MarketplaceListPage() {
                                     </div>
                                 </CardContent>
 
-                                <CardFooter className="pt-0">
+                                <CardFooter className="pt-0 flex-col gap-2 items-stretch">
                                     <GradientButton
                                         className="w-full"
                                         size="sm"
@@ -163,6 +195,16 @@ export default function MarketplaceListPage() {
                                         <IconPackageImport className="size-4" />
                                         {t("marketplace.install")}
                                     </GradientButton>
+                                    {item.readmeUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openReadmeDialog(item)}
+                                            className="inline-flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                                        >
+                                            <IconBookOpen className="size-3.5" />
+                                            {t("marketplace.readDocumentation")}
+                                        </button>
+                                    )}
                                 </CardFooter>
                             </Card>
                         ))}
@@ -312,6 +354,80 @@ export default function MarketplaceListPage() {
                                 )}
                             </DialogFooter>
                         </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* README dialog */}
+            <Dialog open={readmeItem !== null} onOpenChange={(open) => { if (!open) closeReadmeDialog(); }}>
+                <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col">
+                    {readmeItem && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <IconBookOpen className="size-5" />
+                                    {readmeItem.title}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {t("marketplace.readmeDialogDescription")}
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="overflow-y-auto flex-1 -mx-1 px-1 py-2">
+                                {readmeLoading && (
+                                    <div className="space-y-3">
+                                        <Skeleton className="h-6 w-2/3" />
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-5/6" />
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-4/5" />
+                                    </div>
+                                )}
+                                {readmeError && !readmeLoading && (
+                                    <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2.5 text-red-600 dark:text-red-400">
+                                        <IconX className="size-4" />
+                                        <span className="text-sm font-medium">{readmeError}</span>
+                                    </div>
+                                )}
+                                {readmeContent && !readmeLoading && (
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            rehypePlugins={[rehypeHighlight]}
+                                        >
+                                            {readmeContent}
+                                        </ReactMarkdown>
+                                    </div>
+                                )}
+                            </div>
+
+                            <DialogFooter>
+                                {readmeItem.readmeUrl && (
+                                    <a
+                                        href={readmeItem.readmeUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-muted-foreground hover:text-primary transition-colors mr-auto self-center"
+                                    >
+                                        {t("marketplace.readmeOpenSource")}
+                                    </a>
+                                )}
+                                <Button variant="outline" onClick={closeReadmeDialog}>
+                                    {t("common.close")}
+                                </Button>
+                                <GradientButton
+                                    onClick={() => {
+                                        const item = readmeItem;
+                                        closeReadmeDialog();
+                                        openImportDialog(item);
+                                    }}
+                                >
+                                    <IconPackageImport className="size-4" />
+                                    {t("marketplace.install")}
+                                </GradientButton>
+                            </DialogFooter>
+                        </>
                     )}
                 </DialogContent>
             </Dialog>
