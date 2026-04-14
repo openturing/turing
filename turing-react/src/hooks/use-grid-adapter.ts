@@ -1,4 +1,4 @@
-import type { TurGridItem } from "@/models/ui/grid-item";
+import type { TurGridItem, TurGridItemAction } from "@/models/ui/grid-item";
 import { useMemo } from "react";
 type FieldExtractor<T> = keyof T | ((item: T) => string);
 
@@ -8,6 +8,7 @@ interface GridAdapterConfig<T> {
   description: FieldExtractor<T>;
   url: (item: T) => string;
   icon?: FieldExtractor<T>;
+  actions?: (item: T) => TurGridItemAction[];
 }
 
 export function useGridAdapter<T>(
@@ -41,6 +42,7 @@ export function useGridAdapter<T>(
       description: resolveField(item, config.description),
       url: config.url(item),
       icon: config.icon ? resolveField(item, config.icon) || null : null,
+      actions: config.actions ? config.actions(item) : undefined,
     }));
   }, [data]);
 }

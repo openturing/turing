@@ -29,6 +29,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { GradientButton } from "./ui/gradient-button";
 import { Input } from "./ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { IconChevronRight, IconDotsVertical, IconPlus, IconSearch } from "@tabler/icons-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -182,6 +183,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         const description: string = row.getValue("description");
                         const url: string = row.getValue("url");
                         const icon: string | undefined = row.original.icon ?? undefined;
+                        const itemActions = row.original.actions;
                         const gradient = getGradient(name);
                         const initials = getInitials(name);
 
@@ -209,6 +211,75 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                         </div>
                                         <IconChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-blue-500 transition-all group-hover:translate-x-0.5 mt-0.5 shrink-0" />
                                     </div>
+                                    {itemActions && itemActions.length > 0 && (
+                                        <div
+                                            className="px-4 pb-3 pt-0 flex justify-end gap-1.5"
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                        >
+                                            <TooltipProvider delayDuration={300}>
+                                                {itemActions.map((action) => {
+                                                    const ActionIcon = action.icon;
+                                                    if (action.dropdownItems && action.dropdownItems.length > 0) {
+                                                        return (
+                                                            <DropdownMenu key={action.label}>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="rounded-md p-1.5 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/50 transition-colors cursor-pointer"
+                                                                            >
+                                                                                <ActionIcon className="size-4" />
+                                                                            </button>
+                                                                        </DropdownMenuTrigger>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>{action.label}</TooltipContent>
+                                                                </Tooltip>
+                                                                <DropdownMenuContent align="end">
+                                                                    {action.dropdownItems.map((dropdownItem) => (
+                                                                        <DropdownMenuItem key={dropdownItem.label} asChild>
+                                                                            <a
+                                                                                href={dropdownItem.url}
+                                                                                target={dropdownItem.external ? "_blank" : undefined}
+                                                                                rel={dropdownItem.external ? "noopener noreferrer" : undefined}
+                                                                            >
+                                                                                {dropdownItem.iconifyIcon && (
+                                                                                    <Icon icon={dropdownItem.iconifyIcon} className="size-4" />
+                                                                                )}
+                                                                                {dropdownItem.label}
+                                                                            </a>
+                                                                        </DropdownMenuItem>
+                                                                    ))}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <Tooltip key={action.label}>
+                                                            <TooltipTrigger asChild>
+                                                                <button
+                                                                    type="button"
+                                                                    className="rounded-md p-1.5 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/50 transition-colors cursor-pointer"
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        if (action.external) {
+                                                                            window.open(action.url, "_blank", "noopener,noreferrer");
+                                                                        } else {
+                                                                            navigate(action.url);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <ActionIcon className="size-4" />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>{action.label}</TooltipContent>
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </TooltipProvider>
+                                        </div>
+                                    )}
                                 </Card>
                             </NavLink>
                         );
