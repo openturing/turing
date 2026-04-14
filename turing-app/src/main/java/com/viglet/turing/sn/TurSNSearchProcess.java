@@ -611,8 +611,7 @@ public class TurSNSearchProcess {
         public List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
                 List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
                 turSNSiteLocaleRepository
-                                .findByTurSNSite(Sort.by(Sort.Order.asc(LANGUAGE).ignoreCase()),
-                                                turSNSite)
+                                .findByTurSNSiteOrderByPositionAsc(turSNSite)
                                 .forEach(turSNSiteLocale -> turSNSiteLocaleBeans
                                                 .add(new TurSNSiteLocaleBean()
                                                                 .setLocale(turSNSiteLocale

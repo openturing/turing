@@ -47,8 +47,10 @@ import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 
@@ -68,13 +70,16 @@ public class TurSNSiteSearchGraphQLController {
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
     public TurSNSiteSearchGraphQLController(TurSNSearchProcess turSNSearchProcess,
             TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
     }
 
     @QueryMapping
@@ -91,7 +96,7 @@ public class TurSNSiteSearchGraphQLController {
         TurSNSearchParams turSNSearchParams = convertToTurSNSearchParams(searchParams, locale);
 
         // Get locale, prioritizing the direct locale parameter over searchParams locale
-        String localeToUse = getLocale(locale, turSNSearchParams);
+        String localeToUse = getLocale(locale, turSNSearchParams, resolvedSiteName);
 
         Locale localeObj = LocaleUtils.toLocale(localeToUse);
 
@@ -284,7 +289,8 @@ public class TurSNSiteSearchGraphQLController {
         return TurSNSiteGraphQLNameUtils.toGraphQLFieldName(rawKey);
     }
 
-    private static @NonNull String getLocale(String locale, TurSNSearchParams turSNSearchParams) {
+    private @NonNull String getLocale(String locale, TurSNSearchParams turSNSearchParams,
+            String siteName) {
         String localeToUse = null;
         if (StringUtils.isNotBlank(locale)) {
             localeToUse = locale;
@@ -292,7 +298,10 @@ public class TurSNSiteSearchGraphQLController {
             localeToUse = turSNSearchParams.getLocale().toString();
         }
         if (StringUtils.isBlank(localeToUse)) {
-            localeToUse = "en"; // Default locale
+            localeToUse = turSNSiteRepository.findByNameIgnoreCase(siteName)
+                    .map(turSNSiteLocaleRepository::findFirstByTurSNSiteOrderByPositionAsc)
+                    .map(siteLocale -> siteLocale.getLanguage().toString())
+                    .orElse("en");
         }
         return localeToUse;
     }

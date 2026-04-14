@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-position-to-sn-site-locale
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_locale
+                columnName: position
+      changes:
+        - addColumn:
+            tableName: sn_site_locale
+            columns:
+              - column:
+                  name: position
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

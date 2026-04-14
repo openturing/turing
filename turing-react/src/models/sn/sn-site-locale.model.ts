@@ -4,5 +4,6 @@ export type TurSNSiteLocale = {
   id: string;
   language: string;
   core: string;
+  position: number;
   turSNSite: TurSNSite;
 }

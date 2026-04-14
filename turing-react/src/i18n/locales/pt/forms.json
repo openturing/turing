@@ -944,7 +944,11 @@
       "core": "Core",
       "action": "Ação",
       "openSearch": "Abrir Busca",
-      "searchDefault": "Busca Padrão"
+      "searchDefault": "Busca Padrão",
+      "dragToReorder": "Arraste para reordenar",
+      "orderSaved": "Ordenação de idiomas salva.",
+      "orderFailed": "Falha ao salvar ordenação de idiomas.",
+      "defaultLanguage": "Padrão"
     },
     "loggingGrid": {
       "date": "Data",

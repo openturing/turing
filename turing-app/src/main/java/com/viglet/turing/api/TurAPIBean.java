@@ -32,4 +32,5 @@ public class TurAPIBean {
 	private String product;
 	private boolean multiTenant;
 	private boolean keycloak;
+	private boolean authThirdparty;
 }

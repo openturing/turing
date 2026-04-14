@@ -62,6 +62,9 @@ public class TurSNSiteLocale implements Serializable {
 	@Column(nullable = false, length = 50)
 	private String core;
 
+	@Column(nullable = false)
+	private int position;
+
 	// bi-directional many-to-one association to TurSNSite
 	@ManyToOne
 	@JoinColumn(name = "sn_site_id", nullable = false)

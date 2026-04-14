@@ -44,6 +44,8 @@ public class TurDiscoveryAPI {
         turAPIBean.setProduct("Viglet Turing");
         turAPIBean.setKeycloak(turConfigProperties.isKeycloak());
         turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
+        turAPIBean.setAuthThirdparty(turConfigProperties.getAuthentication() == null
+                || turConfigProperties.getAuthentication().isThirdparty());
         return turAPIBean;
     }
 

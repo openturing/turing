@@ -39,4 +39,14 @@ export class TurSNSiteLocaleService {
     );
     return response.status == 200;
   }
+  async saveOrdering(
+    siteId: string,
+    locales: TurSNSiteLocale[],
+  ): Promise<TurSNSiteLocale[]> {
+    const response = await axios.put<TurSNSiteLocale[]>(
+      `/sn/${siteId}/locale/ordering`,
+      locales,
+    );
+    return response.data;
+  }
 }

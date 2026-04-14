@@ -43,6 +43,8 @@ public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale
 	String EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE = "turSNSiteLocaleExistsByTurSNSiteAndLanguage";
 	String FIND_BY_TUR_SN_SITE_SORT = "turSNSiteLocaleFindByTurSNSiteSort";
 	String FIND_BY_TUR_SN_SITE = "turSNSiteLocaleFindByTurSNSite";
+	String FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION = "turSNSiteLocaleFindByTurSNSiteOrderByPosition";
+	String FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION = "turSNSiteLocaleFindFirstByTurSNSiteOrderByPosition";
 
 	@Cacheable(FIND_BY_TUR_SN_SITE_AND_LANGUAGE)
 	TurSNSiteLocale findByTurSNSiteAndLanguage(TurSNSite turSNSite, Locale language);
@@ -56,17 +58,25 @@ public interface TurSNSiteLocaleRepository extends JpaRepository<TurSNSiteLocale
 	@Cacheable(FIND_BY_TUR_SN_SITE)
 	List<TurSNSiteLocale> findByTurSNSite(TurSNSite turSNSite);
 
+	@Cacheable(FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION)
+	List<TurSNSiteLocale> findByTurSNSiteOrderByPositionAsc(TurSNSite turSNSite);
+
+	@Cacheable(FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION)
+	TurSNSiteLocale findFirstByTurSNSiteOrderByPositionAsc(TurSNSite turSNSite);
+
 	List<TurSNSiteLocale> findByCore(String core);
 
 	@CacheEvict(value = { FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE }, allEntries = true)
+			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE,
+			FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION, FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION }, allEntries = true)
 	@NotNull
 	@Override
 	<S extends TurSNSiteLocale> S save(@NotNull S entity);
 
 	@Override
 	@CacheEvict(value = { FIND_BY_TUR_SN_SITE_AND_LANGUAGE, EXISTS_BY_TUR_SN_SITE_AND_LANGUAGE,
-			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE }, allEntries = true)
+			FIND_BY_TUR_SN_SITE_SORT, FIND_BY_TUR_SN_SITE,
+			FIND_BY_TUR_SN_SITE_ORDER_BY_POSITION, FIND_FIRST_BY_TUR_SN_SITE_ORDER_BY_POSITION }, allEntries = true)
 	void delete(@NotNull TurSNSiteLocale turSNSiteLocale);
 
 }
