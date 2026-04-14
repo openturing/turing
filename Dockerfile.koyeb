@@ -43,7 +43,7 @@ COPY turing-react/ /build/turing-react/
 
 # Build the SDK types so tsc can resolve @viglet/turing-react-sdk from local source
 WORKDIR /build/turing-react-sdk
-RUN npx tsc
+RUN node /build/turing-react/node_modules/typescript/lib/tsc.js
 
 # tsc + vite build → output lands in ../turing-app/src/main/resources/public/
 # (per vite.config.ts outDir). Create the target dir so Vite doesn't fail.
