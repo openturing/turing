@@ -9,7 +9,8 @@
 #     --ports 8080:http \
 #     --routes /:8080 \
 #     --instance-type small \
-#     --regions fra
+#     --regions fra \
+#     --volume turing-vol:/app/store
 #
 # Or via Dashboard → Create Service → GitHub → pick this repo, then in
 # "Builder" choose "Dockerfile" and set the path to `Dockerfile.koyeb`.
@@ -52,6 +53,12 @@ services:
         grace_period: 90s
         interval: 30s
         timeout: 5s
+    # Persistent volume — H2 database, Artemis queue, logs and assets
+    # survive deploys and restarts. Create the volume first:
+    #   koyeb volume create turing-vol --region fra --size 10
+    volumes:
+      - id: turing-vol
+        path: /app/store
     # Safe defaults. Override from the dashboard for:
     #   - external databases (SPRING_DATASOURCE_URL / USERNAME / PASSWORD /
     #     DRIVER_CLASS_NAME / SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT)

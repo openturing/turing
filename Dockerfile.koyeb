@@ -92,8 +92,10 @@ FROM eclipse-temurin:21-jre
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
+# /app/store is mounted as a Koyeb Persistent Volume (turing-vol).
+# The mkdir + chown ensures the dirs exist even without the volume.
 RUN useradd --system --create-home --uid 1001 --gid 0 java \
-    && mkdir -p /app /app/store /app/models \
+    && mkdir -p /app /app/store/db /app/store/logs /app/store/queue /app/store/assets /app/models \
     && chown -R java:0 /app
 
 WORKDIR /app
@@ -117,8 +119,6 @@ ENV PORT=8080 \
     SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.H2Dialect \
     TURING_ALLOWEDORIGINS="*" \
     TURING_OPEN_BROWSER=false
-
-VOLUME ["/app/store", "/app/models"]
 
 USER java
 
