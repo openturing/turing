@@ -11,6 +11,7 @@
     "leaveBlank": "Leave blank to keep current",
     "confirmPassword": "Confirm Password",
     "repeatPassword": "Repeat new password",
+    "provider": "Provider",
     "saveChanges": "Save Changes",
     "loadFailed": "Failed to load user data.",
     "unableToLoad": "Unable to load user data.",
@@ -36,7 +37,9 @@
     },
     "profile": {
       "title": "Profile",
-      "description": "Your personal information and password."
+      "description": "Your personal information and password.",
+      "descriptionOAuth2": "Your profile information is managed by your identity provider.",
+      "managedBy": "Managed by {{provider}}"
     }
   }
 }

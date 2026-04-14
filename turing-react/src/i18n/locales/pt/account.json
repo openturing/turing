@@ -11,6 +11,7 @@
     "leaveBlank": "Deixe em branco para manter a atual",
     "confirmPassword": "Confirmar Senha",
     "repeatPassword": "Repita a nova senha",
+    "provider": "Provedor",
     "saveChanges": "Salvar Alterações",
     "loadFailed": "Falha ao carregar dados do usuário.",
     "unableToLoad": "Não foi possível carregar dados do usuário.",
@@ -36,7 +37,9 @@
     },
     "profile": {
       "title": "Perfil",
-      "description": "Suas informações pessoais e senha."
+      "description": "Suas informações pessoais e senha.",
+      "descriptionOAuth2": "Suas informações de perfil são gerenciadas pelo seu provedor de identidade.",
+      "managedBy": "Gerenciado por {{provider}}"
     }
   }
 }

@@ -1,6 +1,7 @@
 package com.viglet.turing.api.auth;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,6 +35,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -133,8 +135,6 @@ class TurUserAPITest {
         when(context.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(context);
 
-        when(turConfigProperties.isKeycloak()).thenReturn(false);
-
         TurUser turUser = new TurUser();
         turUser.setUsername("testuser");
         turUser.setFirstName("Test");
@@ -158,18 +158,21 @@ class TurUserAPITest {
     @Test
     void testTurUserCurrentWithKeycloakUser() throws Exception {
         OAuth2User oauth2User = mock(OAuth2User.class);
-        when(oauth2User.getAttribute("preferred_username")).thenReturn("kcuser");
-        when(oauth2User.getAttribute("given_name")).thenReturn("KC");
-        when(oauth2User.getAttribute("family_name")).thenReturn("User");
-        when(oauth2User.getAttribute("email")).thenReturn("kc@example.com");
+        lenient().when(oauth2User.getAttribute("preferred_username")).thenReturn("kcuser");
+        lenient().when(oauth2User.getAttribute("login")).thenReturn(null);
+        lenient().when(oauth2User.getAttribute("given_name")).thenReturn("KC");
+        lenient().when(oauth2User.getAttribute("family_name")).thenReturn("User");
+        lenient().when(oauth2User.getAttribute("email")).thenReturn("kc@example.com");
+        lenient().when(oauth2User.getAttribute("picture")).thenReturn(null);
+        lenient().when(oauth2User.getAttribute("avatar_url")).thenReturn(null);
+        lenient().when(oauth2User.getAttribute("name")).thenReturn(null);
 
-        Authentication auth = mock(Authentication.class);
+        OAuth2AuthenticationToken auth = mock(OAuth2AuthenticationToken.class);
         when(auth.getPrincipal()).thenReturn(oauth2User);
+        when(auth.getAuthorizedClientRegistrationId()).thenReturn("keycloak");
         SecurityContext context = mock(SecurityContext.class);
         when(context.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(context);
-
-        when(turConfigProperties.isKeycloak()).thenReturn(true);
 
         TurUser kcUser = new TurUser();
         kcUser.setUsername("kcuser");
@@ -422,7 +425,6 @@ class TurUserAPITest {
         when(context.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(context);
 
-        when(turConfigProperties.isKeycloak()).thenReturn(false);
         when(turConfigProperties.isPermissions()).thenReturn(true);
 
         TurUser turUser = new TurUser();

@@ -9,6 +9,7 @@ export type TurUser = {
   password?: string;
   hasAvatar?: boolean;
   avatarUrl?: string;
+  realm?: string;
   turGroups?: TurGroup[];
   privileges?: string[];
 };

@@ -30,6 +30,7 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -96,6 +97,14 @@ public class TurUserAPI {
         this.turPrivilegeRepository = turPrivilegeRepository;
     }
 
+    private String firstNonNull(OAuth2User user, String... keys) {
+        for (String key : keys) {
+            String value = user.getAttribute(key);
+            if (value != null) return value;
+        }
+        return null;
+    }
+
     private List<String> resolvePrivileges(TurUser turUser) {
         if (!turConfigProperties.isPermissions()) {
             return turPrivilegeRepository.findAll().stream()
@@ -138,8 +147,8 @@ public class TurUserAPI {
     public TurCurrentUser turUserCurrent() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
-            if (turConfigProperties.isKeycloak()) {
-                return keycloakUser();
+            if (authentication.getPrincipal() instanceof OAuth2User) {
+                return oauth2User();
             } else {
                 return regularUser(authentication.getName());
             }
@@ -168,16 +177,31 @@ public class TurUserAPI {
         turCurrentUser.setEmail(turUser.getEmail());
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
+        turCurrentUser.setRealm(turUser.getRealm());
         turCurrentUser.setPrivileges(resolvePrivileges(turUser));
         return turCurrentUser;
     }
 
-    private TurCurrentUser keycloakUser() {
-        OAuth2User user = ((OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        String username = user.getAttribute(PREFERRED_USERNAME);
+    private TurCurrentUser oauth2User() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        OAuth2User user = ((OAuth2User) authentication.getPrincipal());
+        String realm = (authentication instanceof OAuth2AuthenticationToken oauthToken)
+                ? oauthToken.getAuthorizedClientRegistrationId()
+                : "oauth2";
+        String username = firstNonNull(user, PREFERRED_USERNAME, "login", EMAIL);
+        String email = firstNonNull(user, EMAIL);
+        String picture = firstNonNull(user, "picture", "avatar_url");
+
         String firstName = user.getAttribute(GIVEN_NAME);
         String lastName = user.getAttribute(FAMILY_NAME);
-        String email = user.getAttribute(EMAIL);
+        if (firstName == null && lastName == null) {
+            String fullName = firstNonNull(user, "name");
+            if (fullName != null) {
+                int space = fullName.indexOf(' ');
+                firstName = space > 0 ? fullName.substring(0, space) : fullName;
+                lastName = space > 0 ? fullName.substring(space + 1) : null;
+            }
+        }
 
         TurUser turUser = turUserRepository.findByUsername(username);
         if (turUser == null) {
@@ -186,7 +210,8 @@ public class TurUserAPI {
                     .firstName(firstName)
                     .lastName(lastName)
                     .email(email)
-                    .realm("keycloak")
+                    .avatarUrl(picture)
+                    .realm(realm)
                     .enabled(1)
                     .build();
             turUserRepository.save(turUser);
@@ -194,16 +219,20 @@ public class TurUserAPI {
             turUser.setFirstName(firstName);
             turUser.setLastName(lastName);
             turUser.setEmail(email);
+            turUser.setRealm(realm);
+            if (picture != null && turUser.getAvatarUrl() == null) {
+                turUser.setAvatarUrl(picture);
+            }
             turUserRepository.save(turUser);
         }
 
-        boolean isKeycloakAdmin = !turConfigProperties.isPermissions();
-        if (!isKeycloakAdmin) {
+        boolean isAdmin = !turConfigProperties.isPermissions();
+        if (!isAdmin) {
             var groups = turGroupRepository.findByTurUsersContaining(turUser);
             if (groups != null) {
                 for (TurGroup turGroup : groups) {
                     if (ADMINISTRATOR.equals(turGroup.getName())) {
-                        isKeycloakAdmin = true;
+                        isAdmin = true;
                         break;
                     }
                 }
@@ -215,9 +244,10 @@ public class TurUserAPI {
         turCurrentUser.setFirstName(firstName);
         turCurrentUser.setLastName(lastName);
         turCurrentUser.setEmail(email);
-        turCurrentUser.setAdmin(isKeycloakAdmin);
+        turCurrentUser.setAdmin(isAdmin);
         turCurrentUser.setAvatarUrl(turUser.getAvatarUrl());
         turCurrentUser.setHasAvatar(turUser.getAvatarUrl() != null);
+        turCurrentUser.setRealm(turUser.getRealm());
         turCurrentUser.setPrivileges(resolvePrivileges(turUser));
         return turCurrentUser;
     }

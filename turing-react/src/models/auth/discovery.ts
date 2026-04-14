@@ -3,4 +3,5 @@ export type TurDiscoveryAPI = {
   keycloak: boolean;
   multiTenant: boolean;
   authThirdparty: boolean;
+  oauth2Providers: string[];
 };

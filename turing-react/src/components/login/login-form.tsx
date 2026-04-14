@@ -15,6 +15,12 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 
+const providerMeta: Record<string, { icon: string; label: string }> = {
+    google: { icon: "flat-color-icons:google", label: "Google" },
+    microsoft: { icon: "devicon:microsoft", label: "Microsoft" },
+    github: { icon: "mdi:github", label: "GitHub" },
+};
+
 export function LoginForm({
     className,
     ...props
@@ -25,7 +31,7 @@ export function LoginForm({
     const form = useForm<TurRestInfo>();
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [authThirdparty, setAuthThirdparty] = useState(false);
+    const [oauth2Providers, setOauth2Providers] = useState<string[]>([]);
     const authorization = new TurAuthorizationService()
 
     useEffect(() => {
@@ -36,7 +42,9 @@ export function LoginForm({
         }).catch(() => { /* ignore — login page is still usable */ });
 
         authorization.discovery().then((discovery) => {
-            setAuthThirdparty(discovery.authThirdparty);
+            if (discovery.authThirdparty && discovery.oauth2Providers?.length > 0) {
+                setOauth2Providers(discovery.oauth2Providers);
+            }
         }).catch(() => { /* ignore */ });
     }, []);
 
@@ -143,7 +151,7 @@ export function LoginForm({
                             {isLoading ? t('login.signingIn') : t('login.signIn')}
                         </GradientButton>
 
-                        {authThirdparty && (
+                        {oauth2Providers.length > 0 && (
                             <>
                                 {/* Divider */}
                                 <div className="relative">
@@ -157,59 +165,32 @@ export function LoginForm({
                                     </div>
                                 </div>
 
-                                {/* Social login buttons */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    <a
-                                        href={`${apiBaseUrl}/oauth2/authorization/google`}
-                                        className={cn(
-                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
-                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
-                                            "px-3 py-2.5 text-sm font-medium",
-                                            "text-slate-700 dark:text-slate-300",
-                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
-                                            "hover:border-slate-300 dark:hover:border-slate-600",
-                                            "hover:shadow-sm",
-                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                                        )}
-                                    >
-                                        <Icon icon="flat-color-icons:google" className="h-5 w-5" />
-                                        <span className="sr-only">{t('login.continueWithGoogle')}</span>
-                                        <span className="hidden sm:inline">Google</span>
-                                    </a>
-                                    <a
-                                        href={`${apiBaseUrl}/oauth2/authorization/microsoft`}
-                                        className={cn(
-                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
-                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
-                                            "px-3 py-2.5 text-sm font-medium",
-                                            "text-slate-700 dark:text-slate-300",
-                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
-                                            "hover:border-slate-300 dark:hover:border-slate-600",
-                                            "hover:shadow-sm",
-                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                                        )}
-                                    >
-                                        <Icon icon="devicon:microsoft" className="h-5 w-5" />
-                                        <span className="sr-only">{t('login.continueWithMicrosoft')}</span>
-                                        <span className="hidden sm:inline">Microsoft</span>
-                                    </a>
-                                    <a
-                                        href={`${apiBaseUrl}/oauth2/authorization/github`}
-                                        className={cn(
-                                            "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
-                                            "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
-                                            "px-3 py-2.5 text-sm font-medium",
-                                            "text-slate-700 dark:text-slate-300",
-                                            "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
-                                            "hover:border-slate-300 dark:hover:border-slate-600",
-                                            "hover:shadow-sm",
-                                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                                        )}
-                                    >
-                                        <Icon icon="mdi:github" className="h-5 w-5" />
-                                        <span className="sr-only">{t('login.continueWithGithub')}</span>
-                                        <span className="hidden sm:inline">GitHub</span>
-                                    </a>
+                                {/* Social login buttons — only configured providers */}
+                                <div className={cn("grid gap-3", oauth2Providers.length === 1 ? "grid-cols-1" : oauth2Providers.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+                                    {oauth2Providers.map((provider) => {
+                                        const meta = providerMeta[provider];
+                                        if (!meta) return null;
+                                        return (
+                                            <a
+                                                key={provider}
+                                                href={`${apiBaseUrl}/oauth2/authorization/${provider}`}
+                                                className={cn(
+                                                    "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700",
+                                                    "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm",
+                                                    "px-3 py-2.5 text-sm font-medium",
+                                                    "text-slate-700 dark:text-slate-300",
+                                                    "transition-all hover:bg-white/90 dark:hover:bg-slate-800/90",
+                                                    "hover:border-slate-300 dark:hover:border-slate-600",
+                                                    "hover:shadow-sm",
+                                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
+                                                )}
+                                            >
+                                                <Icon icon={meta.icon} className="h-5 w-5" />
+                                                <span className="sr-only">{meta.label}</span>
+                                                <span className="hidden sm:inline">{meta.label}</span>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </>
                         )}

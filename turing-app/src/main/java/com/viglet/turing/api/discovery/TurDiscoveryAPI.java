@@ -21,6 +21,8 @@
 package com.viglet.turing.api.discovery;
 
 import org.json.JSONException;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,15 +30,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.api.TurAPIBean;
 import com.viglet.turing.properties.TurConfigProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/discovery")
 public class TurDiscoveryAPI {
     private final TurAPIBean turAPIBean;
     private final TurConfigProperties turConfigProperties;
+    private final Optional<ClientRegistrationRepository> clientRegistrationRepository;
 
-    public TurDiscoveryAPI(TurAPIBean turAPIBean, TurConfigProperties turConfigProperties) {
+    public TurDiscoveryAPI(TurAPIBean turAPIBean, TurConfigProperties turConfigProperties,
+                           Optional<ClientRegistrationRepository> clientRegistrationRepository) {
         this.turAPIBean = turAPIBean;
         this.turConfigProperties = turConfigProperties;
+        this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
     @GetMapping
@@ -46,7 +55,24 @@ public class TurDiscoveryAPI {
         turAPIBean.setMultiTenant(turConfigProperties.isMultiTenant());
         turAPIBean.setAuthThirdparty(turConfigProperties.getAuthentication() == null
                 || turConfigProperties.getAuthentication().isThirdparty());
+        turAPIBean.setOauth2Providers(resolveOAuth2Providers());
         return turAPIBean;
     }
 
+    private List<String> resolveOAuth2Providers() {
+        if (clientRegistrationRepository.isEmpty()) {
+            return List.of();
+        }
+        var repo = clientRegistrationRepository.get();
+        if (repo instanceof Iterable<?> iterable) {
+            List<String> providers = new ArrayList<>();
+            for (Object obj : iterable) {
+                if (obj instanceof ClientRegistration registration) {
+                    providers.add(registration.getRegistrationId());
+                }
+            }
+            return providers;
+        }
+        return List.of();
+    }
 }

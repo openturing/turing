@@ -182,13 +182,22 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                         const name: string = row.getValue("name");
                         const description: string = row.getValue("description");
                         const url: string = row.getValue("url");
+                        const isExternal = row.original.external;
                         const icon: string | undefined = row.original.icon ?? undefined;
                         const itemActions = row.original.actions;
                         const gradient = getGradient(name);
                         const initials = getInitials(name);
 
+                        const CardWrapper = isExternal
+                            ? ({ children }: { children: React.ReactNode }) => (
+                                <a key={row.id} href={url} target="_blank" rel="noopener noreferrer" className="group">{children}</a>
+                            )
+                            : ({ children }: { children: React.ReactNode }) => (
+                                <NavLink key={row.id} to={url} className="group">{children}</NavLink>
+                            );
+
                         return (
-                            <NavLink key={row.id} to={url} className="group">
+                            <CardWrapper key={row.id}>
                                 <Card className="relative overflow-hidden p-0 h-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5 border-border/60 hover:border-blue-500/30 dark:hover:border-blue-400/30">
                                     <div className={`h-1.5 bg-linear-to-r ${gradient} opacity-70 group-hover:opacity-100 transition-opacity`} />
                                     <div className="p-4 flex items-start gap-3">
@@ -237,17 +246,22 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                                                 </Tooltip>
                                                                 <DropdownMenuContent align="end">
                                                                     {action.dropdownItems.map((dropdownItem) => (
-                                                                        <DropdownMenuItem key={dropdownItem.label} asChild>
-                                                                            <a
-                                                                                href={dropdownItem.url}
-                                                                                target={dropdownItem.external ? "_blank" : undefined}
-                                                                                rel={dropdownItem.external ? "noopener noreferrer" : undefined}
-                                                                            >
-                                                                                {dropdownItem.iconifyIcon && (
-                                                                                    <Icon icon={dropdownItem.iconifyIcon} className="size-4" />
-                                                                                )}
-                                                                                {dropdownItem.label}
-                                                                            </a>
+                                                                        <DropdownMenuItem
+                                                                            key={dropdownItem.label}
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                if (dropdownItem.external) {
+                                                                                    window.open(dropdownItem.url, "_blank", "noopener,noreferrer");
+                                                                                } else {
+                                                                                    navigate(dropdownItem.url);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {dropdownItem.iconifyIcon && (
+                                                                                <Icon icon={dropdownItem.iconifyIcon} className="size-4" />
+                                                                            )}
+                                                                            {dropdownItem.label}
                                                                         </DropdownMenuItem>
                                                                     ))}
                                                                 </DropdownMenuContent>
@@ -281,7 +295,7 @@ const GridListComponent: React.FC<Props> = ({ gridItemList, children }) => {
                                         </div>
                                     )}
                                 </Card>
-                            </NavLink>
+                            </CardWrapper>
                         );
                     })}
                 </div>

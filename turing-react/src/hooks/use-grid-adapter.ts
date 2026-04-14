@@ -7,6 +7,7 @@ interface GridAdapterConfig<T> {
   name: FieldExtractor<T>;
   description: FieldExtractor<T>;
   url: (item: T) => string;
+  external?: boolean | ((item: T) => boolean);
   icon?: FieldExtractor<T>;
   actions?: (item: T) => TurGridItemAction[];
 }
@@ -41,6 +42,7 @@ export function useGridAdapter<T>(
       name: resolveField(item, config.name),
       description: resolveField(item, config.description),
       url: config.url(item),
+      external: typeof config.external === "function" ? config.external(item) : config.external,
       icon: config.icon ? resolveField(item, config.icon) || null : null,
       actions: config.actions ? config.actions(item) : undefined,
     }));

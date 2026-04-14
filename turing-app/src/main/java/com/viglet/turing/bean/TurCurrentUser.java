@@ -33,5 +33,6 @@ public class TurCurrentUser {
 	private String email;
 	private boolean hasAvatar;
 	private String avatarUrl;
+	private String realm;
 	private List<String> privileges = new ArrayList<>();
 }

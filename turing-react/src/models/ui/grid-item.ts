@@ -20,6 +20,7 @@ export type TurGridItem = {
   name: string;
   description: string;
   url: string;
+  external?: boolean;
   icon?: string | null;
   actions?: TurGridItemAction[];
 };

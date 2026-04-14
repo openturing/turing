@@ -23,6 +23,7 @@ import java.util.Set;
 public class TurOidcUserService extends OidcUserService {
 
     private static final String PREFERRED_USERNAME = "preferred_username";
+    private static final String EMAIL = "email";
 
     private final TurAuthorityResolver turAuthorityResolver;
 
@@ -34,8 +35,13 @@ public class TurOidcUserService extends OidcUserService {
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
         OidcUser oidcUser = super.loadUser(userRequest);
 
+        String username = oidcUser.getAttribute(PREFERRED_USERNAME);
+        if (username == null) {
+            username = oidcUser.getAttribute(EMAIL);
+        }
+
         Set<GrantedAuthority> authorities = new HashSet<>(oidcUser.getAuthorities());
-        turAuthorityResolver.resolve(oidcUser.getAttribute(PREFERRED_USERNAME), authorities);
+        turAuthorityResolver.resolve(username, authorities);
 
         return new DefaultOidcUser(authorities, oidcUser.getIdToken(), oidcUser.getUserInfo());
     }

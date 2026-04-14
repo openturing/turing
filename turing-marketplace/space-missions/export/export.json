@@ -14,7 +14,7 @@
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "name": "space-missions",
       "description": "A comprehensive catalog of human space exploration — from Mercury to Artemis. Search missions by agency, decade, crew, spacecraft, and mission outcome. Demonstrates facets, date ranges, highlighting, spell check, and multi-valued fields.",
-      "icon": null,
+      "icon": "tabler:rocket",
       "rowsPerPage": 10,
       "wildcardNoResults": 1,
       "wildcardAlways": 0,

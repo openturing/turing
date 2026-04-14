@@ -174,7 +174,7 @@ public class TurSecurityConfigProduction {
                                         || turConfigProperties.getAuthentication().isThirdparty())) {
                                 http.oauth2Login(oauth2 -> oauth2
                                                 .loginPage("/login")
-                                                .defaultSuccessUrl("/console", true)
+                                                .defaultSuccessUrl("/admin", true)
                                                 .userInfoEndpoint(userInfo -> userInfo
                                                                 .userService(turOAuth2UserService)
                                                                 .oidcUserService(turOidcUserService)));

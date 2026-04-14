@@ -257,7 +257,7 @@ class TurSNSearchProcessTest {
                 TurSNSiteLocale localePt = new TurSNSiteLocale();
                 localePt.setLanguage(Locale.of("pt", "BR"));
 
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site)))
+                when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(site))
                                 .thenReturn(List.of(localeEn, localePt));
 
                 var locales = process(true).responseLocales(site, URI.create("http://localhost/search?q=test"));

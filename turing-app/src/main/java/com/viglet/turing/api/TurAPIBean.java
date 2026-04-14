@@ -25,6 +25,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Setter
 @Getter
 @Component
@@ -33,4 +36,5 @@ public class TurAPIBean {
 	private boolean multiTenant;
 	private boolean keycloak;
 	private boolean authThirdparty;
+	private List<String> oauth2Providers = new ArrayList<>();
 }

@@ -37,6 +37,8 @@ export default function UserProfilePage() {
 
     useSubPageBreadcrumb(t("account.profile.title"));
 
+    const isOAuth2 = !!user?.realm;
+
     useEffect(() => {
         turUserService.get().then((currentUser) => {
             setUser(currentUser);
@@ -131,7 +133,12 @@ export default function UserProfilePage() {
 
     return (
         <>
-            <SubPageHeader icon={IconUser} name={t("account.profile.title")} feature={t("account.profile.title")} description={t("account.profile.description")} />
+            <SubPageHeader
+                icon={IconUser}
+                name={t("account.profile.title")}
+                feature={t("account.profile.title")}
+                description={isOAuth2 ? t("account.profile.descriptionOAuth2") : t("account.profile.description")}
+            />
             <div className="max-w-2xl mx-auto py-8 px-6">
                 {/* Avatar + username */}
                 <AvatarField
@@ -148,50 +155,64 @@ export default function UserProfilePage() {
 
                 {/* Profile fields */}
                 <div className="space-y-4">
+                    {isOAuth2 && user.realm && (
+                        <div className="space-y-2">
+                            <Label>{t("account.provider")}</Label>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground capitalize">
+                                {user.realm}
+                            </div>
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="firstName">{t("account.firstName")}</Label>
-                            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                            <Input id="firstName" value={firstName} readOnly={isOAuth2} disabled={isOAuth2} className={isOAuth2 ? "bg-muted" : ""} onChange={(e) => setFirstName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="lastName">{t("account.lastName")}</Label>
-                            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            <Input id="lastName" value={lastName} readOnly={isOAuth2} disabled={isOAuth2} className={isOAuth2 ? "bg-muted" : ""} onChange={(e) => setLastName(e.target.value)} />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="email">{t("account.email")}</Label>
-                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                    </div>
+                    {email && (
+                        <div className="space-y-2">
+                            <Label htmlFor="email">{t("account.email")}</Label>
+                            <Input id="email" type="email" value={email} readOnly={isOAuth2} disabled={isOAuth2} className={isOAuth2 ? "bg-muted" : ""} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="username">{t("account.username")}</Label>
                         <Input id="username" value={user.username} disabled className="bg-muted" />
                     </div>
                 </div>
 
-                <Separator className="my-8" />
+                {!isOAuth2 && (
+                    <>
+                        <Separator className="my-8" />
 
-                {/* Change password */}
-                <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-                    <IconLock className="size-5" />
-                    {t("account.changePassword")}
-                </h2>
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="newPassword">{t("account.newPassword")}</Label>
-                        <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("account.leaveBlank")} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">{t("account.confirmPassword")}</Label>
-                        <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t("account.repeatPassword")} />
-                    </div>
-                </div>
+                        {/* Change password */}
+                        <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
+                            <IconLock className="size-5" />
+                            {t("account.changePassword")}
+                        </h2>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="newPassword">{t("account.newPassword")}</Label>
+                                <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("account.leaveBlank")} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">{t("account.confirmPassword")}</Label>
+                                <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t("account.repeatPassword")} />
+                            </div>
+                        </div>
 
-                <div className="mt-8">
-                    <Button onClick={handleSave} disabled={saving}>
-                        {saving ? <IconLoader2 className="size-4 animate-spin mr-2" /> : <IconDeviceFloppy className="size-4 mr-2" />}
-                        {t("account.saveChanges")}
-                    </Button>
-                </div>
+                        <div className="mt-8">
+                            <Button onClick={handleSave} disabled={saving}>
+                                {saving ? <IconLoader2 className="size-4 animate-spin mr-2" /> : <IconDeviceFloppy className="size-4 mr-2" />}
+                                {t("account.saveChanges")}
+                            </Button>
+                        </div>
+                    </>
+                )}
             </div>
         </>
     );

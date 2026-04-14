@@ -14,7 +14,7 @@
       "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
       "name": "vinyl-records",
       "description": "A curated vinyl record collection spanning jazz, rock, electronic, and classical. Demonstrates currency fields, float ratings, multi-valued genres, date facets by decade, boolean fields, and OR-facet selection for genre filtering.",
-      "icon": null,
+      "icon": "tabler:vinyl",
       "rowsPerPage": 12,
       "wildcardNoResults": 1,
       "wildcardAlways": 0,

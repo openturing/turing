@@ -1,3 +1,65 @@
+# =============================================================================
+# Turing ES — Application Configuration
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Turing
+# ---------------------------------------------------------------------------
+turing:
+  ai.crypto.key: sample-key-for-crypto
+  allowedOrigins: http://localhost:4200,http://localhost:5173
+  permissions: false
+  multi-tenant: false
+  keycloak: false
+  keycloak-admin-id:
+  authentication:
+    thirdparty: true
+  url: http://localhost:2700
+  open-browser: true
+  jms.concurrency: 1-1
+  solr:
+    timeout: 30000
+    cloud: false
+    commit:
+      within: 10000
+      enabled: false
+  elasticsearch:
+    timeout: 30000
+  search:
+    metrics.enabled: true
+    cache:
+      ttl:
+        seconds: 86400000
+      enabled: false
+  storage:
+    type: FILESYSTEM
+    filesystem:
+      path: ./store/assets
+    minio:
+      endpoint: http://localhost:9000
+      access-key: admin
+      secret-key: minha_senha_forte
+      bucket: turing-assets
+  git:
+    server: false
+  marketplace:
+    enabled: true
+    url: https://turing.viglet.org/marketplace/marketplace.json
+  mongodb:
+    enabled: false
+    uri: mongodb://localhost:27017
+    logging:
+      database: turingLog
+      collection:
+        server: server
+        aem: aem
+        indexing: indexing
+      purge:
+        days: 30
+
+# ---------------------------------------------------------------------------
+# Spring
+# ---------------------------------------------------------------------------
 spring:
   datasource.hikari:
     maximum-pool-size: 20
@@ -75,6 +137,43 @@ spring:
       allowed-methods: GET,POST
       allowed-headers: "*"
 
+  # -------------------------------------------------------------------------
+  # OAuth2 Social Login (uncomment to enable)
+  # -------------------------------------------------------------------------
+  # Redirect URI pattern: {baseUrl}/login/oauth2/code/{registrationId}
+  # Example: http://localhost:2700/login/oauth2/code/google
+  #
+  # security:
+  #   oauth2:
+  #     client:
+  #       registration:
+  #         google:
+  #           client-id: ${GOOGLE_CLIENT_ID}
+  #           client-secret: ${GOOGLE_CLIENT_SECRET}
+  #         github:
+  #           client-id: ${GITHUB_CLIENT_ID}
+  #           client-secret: ${GITHUB_CLIENT_SECRET}
+  #         microsoft:
+  #           client-id: ${MICROSOFT_CLIENT_ID}
+  #           client-secret: ${MICROSOFT_CLIENT_SECRET}
+  #           scope: openid,profile,email
+  #           authorization-grant-type: authorization_code
+  #           redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  #         keycloak:
+  #           client-id: ${KEYCLOAK_CLIENT_ID}
+  #           client-secret: ${KEYCLOAK_CLIENT_SECRET}
+  #           scope: openid
+  #           authorization-grant-type: authorization_code
+  #           redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  #       provider:
+  #         microsoft:
+  #           issuer-uri: https://login.microsoftonline.com/common/v2.0
+  #         keycloak:
+  #           issuer-uri: http://localhost:8080/realms/demo
+
+# ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
 server:
   port: ${PORT:2700}
   servlet:
@@ -99,69 +198,26 @@ server:
     max-http-form-post-size: 200MB
     maxHttpResponseHeaderSize: 800KB
 
-turing:
-  ai.crypto.key: sample-key-for-crypto
-  allowedOrigins: http://localhost:4200,http://localhost:5173
-  permissions: false
-  multi-tenant: false
-  keycloak: false
-  keycloak-admin-id:
-  authentication:
-    thirdparty: true
-  url: http://localhost:2700
-  open-browser: true
-  jms.concurrency: 1-1
-  solr:
-    timeout: 30000
-    cloud: false
-    commit:
-      within: 10000
-      enabled: false
-  elasticsearch:
-    timeout: 30000
-  search:
-    metrics.enabled: true
-    cache:
-      ttl:
-        seconds: 86400000
-      enabled: false
-  storage:
-    type: FILESYSTEM
-    filesystem:
-      path: ./store/assets
-    minio:
-      endpoint: http://localhost:9000
-      access-key: admin
-      secret-key: minha_senha_forte
-      bucket: turing-assets
-  git:
-    server: false
-  marketplace:
-    enabled: true
-    url: https://turing.viglet.org/marketplace/marketplace.json
-  mongodb:
-    enabled: false
-    uri: mongodb://localhost:27017
-    logging:
-      database: turingLog
-      collection:
-        server: server
-        aem: aem
-        indexing: indexing
-      purge:
-        days: 30
-
+# ---------------------------------------------------------------------------
+# API Documentation
+# ---------------------------------------------------------------------------
 springdoc:
   pathsToMatch: /api/**
   swagger-ui:
     path: /swagger-ui.html
 
+# ---------------------------------------------------------------------------
+# Management
+# ---------------------------------------------------------------------------
 management:
   endpoints:
     web:
       exposure:
         include: "*"
 
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
 logging:
   config: classpath:logback-spring.xml
   level:
@@ -181,37 +237,3 @@ logging:
     rollingpolicy:
       max-file-size: 25MB
       max-history: 10
-
-      # spring:
-      #     security:
-      #         oauth2:
-      #             client:
-      #                 registration:
-      #                     keycloak:
-      #                         client-id: demo-app
-      #                         client-secret: jdeTitPc7onHamcFHjTVec6ySV4ZEG54
-      #                         scope: openid
-      #                         authorization-grant-type: authorization_code
-      #                         redirect-uri: http://localhost:2700/login/oauth2/code/demo-app
-      #                     google:
-      #                         client-id: YOUR_GOOGLE_CLIENT_ID
-      #                         client-secret: YOUR_GOOGLE_CLIENT_SECRET
-      #                     github:
-      #                         client-id: YOUR_GITHUB_CLIENT_ID
-      #                         client-secret: YOUR_GITHUB_CLIENT_SECRET
-      #                     microsoft:
-      #                         client-id: YOUR_MICROSOFT_CLIENT_ID
-      #                         client-secret: YOUR_MICROSOFT_CLIENT_SECRET
-      #                         scope: openid,profile,email
-      #                         authorization-grant-type: authorization_code
-      #                         redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-      #                 provider:
-      #                     keycloak:
-      #                         issuer-uri: http://localhost:8080/realms/demo
-      #                         jwk-set-uri: http://localhost:8080/realms/demo/protocol/openid-connect/certs
-      #                         user-info-uri: http://localhost:8080/realms/demo/protocol/openid-connect/userinfo
-      #                     microsoft:
-      #                         issuer-uri: https://login.microsoftonline.com/common/v2.0
-      #             resourceserver:
-      #                 jwt:
-      #                     issuer-uri: http://localhost:8080/realms/demo

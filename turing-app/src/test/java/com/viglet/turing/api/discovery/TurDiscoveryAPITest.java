@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.viglet.turing.api.TurAPIBean;
 import com.viglet.turing.properties.TurConfigProperties;
 
+import java.util.Optional;
+
 @ExtendWith(MockitoExtension.class)
 class TurDiscoveryAPITest {
 
@@ -36,7 +38,7 @@ class TurDiscoveryAPITest {
         when(turConfigProperties.isMultiTenant()).thenReturn(false);
 
         TurAPIBean realApiBean = new TurAPIBean();
-        TurDiscoveryAPI realController = new TurDiscoveryAPI(realApiBean, turConfigProperties);
+        TurDiscoveryAPI realController = new TurDiscoveryAPI(realApiBean, turConfigProperties, Optional.empty());
         MockMvc realMockMvc = MockMvcBuilders.standaloneSetup(realController).build();
 
         realMockMvc.perform(get("/api/discovery"))

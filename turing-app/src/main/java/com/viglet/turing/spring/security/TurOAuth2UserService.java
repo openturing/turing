@@ -21,6 +21,8 @@ import java.util.Set;
 public class TurOAuth2UserService extends DefaultOAuth2UserService {
 
     private static final String PREFERRED_USERNAME = "preferred_username";
+    private static final String LOGIN = "login";
+    private static final String EMAIL = "email";
 
     private final TurAuthorityResolver turAuthorityResolver;
 
@@ -32,8 +34,16 @@ public class TurOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
+        String username = oAuth2User.getAttribute(PREFERRED_USERNAME);
+        if (username == null) {
+            username = oAuth2User.getAttribute(LOGIN);
+        }
+        if (username == null) {
+            username = oAuth2User.getAttribute(EMAIL);
+        }
+
         Set<GrantedAuthority> authorities = new HashSet<>(oAuth2User.getAuthorities());
-        turAuthorityResolver.resolve(oAuth2User.getAttribute(PREFERRED_USERNAME), authorities);
+        turAuthorityResolver.resolve(username, authorities);
 
         return new DefaultOAuth2User(authorities, oAuth2User.getAttributes(),
                 userRequest.getClientRegistration().getProviderDetails()

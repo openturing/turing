@@ -413,10 +413,12 @@ export default function MarketplaceListPage() {
                                         {t("marketplace.readmeOpenSource")}
                                     </a>
                                 )}
-                                <Button variant="outline" onClick={closeReadmeDialog}>
+                                <Button variant="outline" size="default" className="h-10 px-6" onClick={closeReadmeDialog}>
                                     {t("common.close")}
                                 </Button>
                                 <GradientButton
+                                    size="default"
+                                    className="h-10 px-6"
                                     onClick={() => {
                                         const item = readmeItem;
                                         closeReadmeDialog();
