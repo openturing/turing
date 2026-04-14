@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mythical Creatures — The Bestiary · Viglet Turing ES Marketplace</title>
+  <meta name="description" content="An encyclopedic catalog of mythical creatures from world folklore, delivered as a ready-to-import Viglet Turing ES marketplace bundle." />
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700&family=Cinzel:wght@600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b0612;
+      --bg-muted: #140a1f;
+      --fg: #f3e8ff;
+      --fg-muted: #c4b5fd;
+      --card-bg: #1a0f2b;
+      --card-border: #3b1f6b;
+      --accent: #a855f7;
+      --accent-dark: #6d28d9;
+      --accent-light: #c084fc;
+      --danger: #ef4444;
+      --amber: #f59e0b;
+      --emerald: #10b981;
+      --glow: rgba(168, 85, 247, 0.22);
+      --radius: 18px;
+      --radius-sm: 10px;
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-display: 'Cinzel', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { color: #fff; }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      overflow: hidden;
+      background: radial-gradient(ellipse at top, rgba(109, 40, 217, 0.25), transparent 60%), var(--bg);
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 10% 20%, #c084fc, transparent),
+        radial-gradient(1px 1px at 30% 80%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 70% 30%, #a855f7, transparent),
+        radial-gradient(1px 1px at 90% 70%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 50%, #c084fc, transparent);
+      opacity: 0.4;
+      animation: twinkle 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+    .hero-content { position: relative; max-width: 780px; margin: 0 auto; }
+    .hero-crest {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent) 0%, var(--accent-dark) 100%);
+      box-shadow: 0 0 40px var(--glow), inset 0 0 20px rgba(255,255,255,0.1);
+      margin-bottom: 1.5rem;
+      font-size: 3rem;
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff, var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero .tagline {
+      font-style: italic;
+      color: var(--fg-muted);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .hero p.lead {
+      color: var(--fg-muted);
+      font-size: 1.1rem;
+      max-width: 620px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      color: #fff;
+      box-shadow: 0 4px 20px var(--glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px var(--glow);
+      color: #fff;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--card-border);
+    }
+    .btn-ghost:hover {
+      background: var(--card-bg);
+      border-color: var(--accent);
+      color: var(--fg);
+    }
+
+    /* ── Sections ── */
+    section { padding: 4rem 1.5rem; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-muted { background: var(--bg-muted); }
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .section-header p { color: var(--fg-muted); max-width: 520px; margin: 0 auto; }
+
+    /* ── Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: all 0.25s ease;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .card p { color: var(--fg-muted); font-size: 0.92rem; }
+
+    /* ── Data table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    .data-table th, .data-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .data-table th {
+      background: rgba(168, 85, 247, 0.08);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-light);
+      font-weight: 500;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-light);
+    }
+
+    /* ── Danger bar demo ── */
+    .danger-demo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-top: 1.5rem;
+    }
+    .danger-label { font-size: 0.8rem; color: var(--fg-muted); white-space: nowrap; font-family: var(--font-mono); }
+    .danger-bar {
+      flex: 1;
+      height: 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .danger-fill {
+      height: 100%;
+      width: 95%;
+      background: linear-gradient(90deg, var(--emerald) 0%, var(--amber) 50%, var(--danger) 100%);
+      border-radius: 6px;
+      animation: danger-pulse 3s ease-in-out infinite;
+    }
+    @keyframes danger-pulse {
+      0%, 100% { width: 95%; }
+      50% { width: 98%; }
+    }
+    .danger-score { font-family: var(--font-mono); color: var(--danger); font-weight: 700; }
+
+    /* ── Code ── */
+    pre {
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--accent-light);
+      line-height: 1.7;
+    }
+    code.inline {
+      font-family: var(--font-mono);
+      background: var(--card-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: var(--accent-light);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 2rem 1.5rem 3rem;
+      text-align: center;
+      color: var(--fg-muted);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer p + p { margin-top: 0.5rem; }
+    .quote {
+      font-style: italic;
+      color: var(--accent-light);
+      max-width: 520px;
+      margin: 2rem auto 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="hero-crest">🐉</div>
+      <h1>Mythical Creatures</h1>
+      <p class="tagline">— The Bestiary of Impossible Beasts —</p>
+      <p class="lead">
+        An arcane codex for the strange, the winged, the scaled, and the sleepless.
+        A ready-to-import <strong>Viglet Turing ES</strong> marketplace bundle that turns enterprise
+        search into a grimoire you can actually query.
+      </p>
+      <div class="hero-actions">
+        <a href="mythical-creatures.zip" class="btn btn-primary">⬇️ Download Bundle</a>
+        <a href="https://github.com/openviglet/turing/tree/main/turing-marketplace/mythical-creatures" class="btn btn-ghost">📂 View Source</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>✨ Signature Features</h2>
+        <p>Full-text search, faceted navigation, and a threat meter that knows when to glow red.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">🔮</div>
+          <h3>Semantic Search</h3>
+          <p>Autocomplete, recent-search memory, and a query box that rewards the curious wanderer.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🏷️</div>
+          <h3>Facet the Fantastic</h3>
+          <p>Filter by Element (Fire, Water, Ice, Shadow…), Origin (Greek, Norse, Chinese…), and Creature Type.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚠️</div>
+          <h3>Danger Level Bar</h3>
+          <p>An animated threat meter, 0–10. Some beasts deserve a warning printed in bold.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📖</div>
+          <h3>Full Lore Pages</h3>
+          <p>Abilities (amber badges), weaknesses (red badges), habitat, era, and shapeshifter/immortal flags.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌙</div>
+          <h3>Dark by Default</h3>
+          <p>Because midnight is when the index truly speaks. Light mode is available, if you insist.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">✨</div>
+          <h3>Floating Particles</h3>
+          <p>A quiet, animated hint that the page is alive, and possibly watching.</p>
+        </div>
+      </div>
+
+      <div class="danger-demo">
+        <span class="danger-label">DANGER LEVEL</span>
+        <div class="danger-bar"><div class="danger-fill"></div></div>
+        <span class="danger-score">9.5 / 10</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>📖 The Data Model</h2>
+        <p>Every creature is a dossier. Here is what rides inside each record.</p>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>title</code></td><td>Creature name (e.g. <em>Kraken — The Abyssal Leviathan</em>)</td></tr>
+          <tr><td><code>description</code> / <code>text</code></td><td>Short tagline and full mythological lore</td></tr>
+          <tr><td><code>image</code></td><td>Public-domain artwork URL</td></tr>
+          <tr><td><code>first_recorded</code> / <code>era</code></td><td>Earliest written record + historical era</td></tr>
+          <tr><td><code>origin[]</code></td><td>Cultural lineage — Greek, Norse, Celtic, Chinese…</td></tr>
+          <tr><td><code>creature_type[]</code></td><td>Dragon, Sea Monster, Spirit, Leviathan…</td></tr>
+          <tr><td><code>element[]</code></td><td>Elemental affinity — Fire, Water, Shadow, Spirit…</td></tr>
+          <tr><td><code>habitat</code></td><td>Mountains, Deep Ocean, Forest, Sky, Underworld…</td></tr>
+          <tr><td><code>danger_level</code></td><td>Threat scale 0–10 (the bar above is a 9.5)</td></tr>
+          <tr><td><code>abilities[]</code> / <code>weakness[]</code></td><td>Known powers and vulnerabilities</td></tr>
+          <tr><td><code>is_shapeshifter</code> / <code>is_immortal</code></td><td>Booleans for the truly unsettling</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-muted">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2>🚀 Getting Started</h2>
+        <p>Three commands. One bestiary.</p>
+      </div>
+<pre># From turing-marketplace/mythical-creatures/app/
+npm install
+npm run dev        # local preview
+npm run compile    # production build
+npm run package    # build + zip ready for Marketplace import</pre>
+      <p style="margin-top: 1rem; color: var(--fg-muted);">
+        The generated <code class="inline">mythical-creatures.zip</code> bundles the SN site export, indexed content,
+        and compiled SPA template. Import it via <strong>Turing → Marketplace → Install from file</strong>, and the bestiary springs to life.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>🧪 <strong>Tech Stack:</strong> React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · Tabler Icons · @viglet/turing-react-sdk</p>
+    <p>Licensed under Apache 2.0 — copy, remix, ride a dragon.</p>
+    <p class="quote">"Somewhere in the index, a phoenix is waking up. Query carefully."</p>
+    <p style="margin-top: 2rem;"><a href="../">← Back to Marketplace</a> · <a href="https://github.com/openviglet/turing">GitHub</a> · <a href="https://docs.viglet.org/turing/">Docs</a></p>
+  </footer>
+</body>
+</html>
