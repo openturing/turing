@@ -35,7 +35,7 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SearchHeader
         siteName={siteName}
-        siteIcon={(data.widget as Record<string, unknown>).icon as string | undefined}
+        siteIcon={data.widget.icon}
         store={store}
         locale={params._setlocale || "en_US"}
         locales={data.widget.locales}
