@@ -57,6 +57,17 @@ public class TurSetupAPI {
             return ResponseEntity.badRequest().build();
         }
         TurUser admin = turUserRepository.findByUsername(ADMIN);
+        if (admin == null) {
+            admin = TurUser.builder()
+                    .username(ADMIN)
+                    .firstName("Admin")
+                    .lastName("Administrator")
+                    .email("admin@localhost.local")
+                    .realm("default")
+                    .enabled(1)
+                    .lastLogin(java.time.Instant.now())
+                    .build();
+        }
         admin.setPassword(passwordEncoder.encode(request.password().trim()));
         turUserRepository.save(admin);
         return ResponseEntity.ok().build();
@@ -64,6 +75,6 @@ public class TurSetupAPI {
 
     private boolean isSetupRequired() {
         TurUser admin = turUserRepository.findByUsername(ADMIN);
-        return admin != null && !StringUtils.hasText(admin.getPassword());
+        return admin == null || !StringUtils.hasText(admin.getPassword());
     }
 }
