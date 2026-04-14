@@ -1,0 +1,70 @@
+# Koyeb service manifest for the Turing backend (turing-app).
+#
+# Deploying with the Koyeb CLI:
+#
+#   koyeb service create --app turing turing-web \
+#     --git github.com/openviglet/turing \
+#     --git-branch main \
+#     --git-docker-dockerfile Dockerfile.koyeb \
+#     --ports 8080:http \
+#     --routes /:8080 \
+#     --instance-type small \
+#     --regions fra
+#
+# Or via Dashboard → Create Service → GitHub → pick this repo, then in
+# "Builder" choose "Dockerfile" and set the path to `Dockerfile.koyeb`.
+#
+# Reference: https://www.koyeb.com/docs/reference/app-configuration
+#
+name: turing
+services:
+  - name: turing-web
+    type: web
+    # Build from this Git branch using the multi-stage Dockerfile.
+    git:
+      branch: main
+      build_command: ""
+      run_command: ""
+      docker:
+        dockerfile: Dockerfile.koyeb
+    # Koyeb routes HTTP traffic on this port; the container listens on ${PORT}
+    # (application.yaml → server.port: ${PORT:2700}).
+    ports:
+      - port: 8080
+        protocol: http
+    routes:
+      - path: /
+        port: 8080
+    # Smallest instance that can actually boot Spring Boot + build indexes.
+    # Bump to `small` (1 GB) or above for real workloads.
+    instance_types:
+      - type: small
+    regions:
+      - fra
+    scalings:
+      - min: 1
+        max: 1
+    # Health check hits Spring Boot Actuator.
+    health_checks:
+      - http:
+          port: 8080
+          path: /actuator/health
+        grace_period: 90s
+        interval: 30s
+        timeout: 5s
+    # Safe defaults. Override from the dashboard for:
+    #   - external databases (SPRING_DATASOURCE_URL / USERNAME / PASSWORD /
+    #     DRIVER_CLASS_NAME / SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT)
+    #   - external Solr (TURING_SOLR_CLOUD, etc.)
+    #   - encryption key (TURING_AI_CRYPTO_KEY) — set a unique secret
+    env:
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport"
+      - key: TURING_ALLOWEDORIGINS
+        value: "*"
+      - key: TURING_OPEN_BROWSER
+        value: "false"
+      - key: TURING_AI_CRYPTO_KEY
+        # Replace with a Koyeb Secret in production:
+        #   secret: turing-ai-crypto-key
+        value: "change-me-in-koyeb-secrets"
