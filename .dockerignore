@@ -28,6 +28,5 @@ models
 logs
 *.log
 
-# Marketplace examples and SDKs are not part of turing-app runtime
+# Marketplace examples are not part of turing-app runtime
 turing-marketplace
-turing-react-sdk
