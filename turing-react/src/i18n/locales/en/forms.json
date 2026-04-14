@@ -42,6 +42,7 @@
       "totalRecords": "{{count}} total records",
       "pageOfPages": "Page {{page}} of {{totalPages}}",
       "edit": "Edit",
+      "configure": "Configure",
       "remove": "Remove",
       "add": "Add",
       "reset": "Reset",

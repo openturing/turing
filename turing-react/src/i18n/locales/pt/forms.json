@@ -42,6 +42,7 @@
       "totalRecords": "{{count}} registros no total",
       "pageOfPages": "Página {{page}} de {{totalPages}}",
       "edit": "Editar",
+      "configure": "Configurar",
       "remove": "Remover",
       "add": "Adicionar",
       "reset": "Redefinir",
