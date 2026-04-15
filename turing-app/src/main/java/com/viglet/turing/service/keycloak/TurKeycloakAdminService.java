@@ -89,7 +89,8 @@ public class TurKeycloakAdminService {
                 .path("/users")
                 .queryParam("max", 200)
                 .queryParam("briefRepresentation", true)
-                .build(true)
+                .build()
+                .encode()
                 .toUri();
         TurKeycloakUserDto[] users = exchange(uri, HttpMethod.GET, TurKeycloakUserDto[].class);
         return users == null ? Collections.emptyList() : Arrays.asList(users);
@@ -100,7 +101,8 @@ public class TurKeycloakAdminService {
                 .path("/users")
                 .queryParam("username", username)
                 .queryParam("exact", true)
-                .build(true)
+                .build()
+                .encode()
                 .toUri();
         TurKeycloakUserDto[] users = exchange(uri, HttpMethod.GET, TurKeycloakUserDto[].class);
         if (users == null || users.length == 0) {
@@ -118,7 +120,8 @@ public class TurKeycloakAdminService {
         URI uri = UriComponentsBuilder.fromUriString(adminBaseUrl())
                 .path("/groups")
                 .queryParam("max", 200)
-                .build(true)
+                .build()
+                .encode()
                 .toUri();
         TurKeycloakGroupDto[] groups = exchange(uri, HttpMethod.GET, TurKeycloakGroupDto[].class);
         return groups == null ? Collections.emptyList() : Arrays.asList(groups);
@@ -127,8 +130,9 @@ public class TurKeycloakAdminService {
     public Optional<TurKeycloakGroupDto> findGroupById(String id) {
         URI uri = UriComponentsBuilder.fromUriString(adminBaseUrl())
                 .path("/groups/{id}")
-                .build(true)
+                .build()
                 .expand(id)
+                .encode()
                 .toUri();
         try {
             TurKeycloakGroupDto group = exchange(uri, HttpMethod.GET, TurKeycloakGroupDto.class);
@@ -148,8 +152,9 @@ public class TurKeycloakAdminService {
         URI uri = UriComponentsBuilder.fromUriString(adminBaseUrl())
                 .path("/groups/{id}/members")
                 .queryParam("max", 200)
-                .build(true)
+                .build()
                 .expand(groupId)
+                .encode()
                 .toUri();
         TurKeycloakUserDto[] members = exchange(uri, HttpMethod.GET, TurKeycloakUserDto[].class);
         return members == null ? Collections.emptyList() : Arrays.asList(members);
@@ -158,8 +163,9 @@ public class TurKeycloakAdminService {
     private List<String> listUserGroupNames(String userId) {
         URI uri = UriComponentsBuilder.fromUriString(adminBaseUrl())
                 .path("/users/{id}/groups")
-                .build(true)
+                .build()
                 .expand(userId)
+                .encode()
                 .toUri();
         TurKeycloakGroupDto[] groups = exchange(uri, HttpMethod.GET, TurKeycloakGroupDto[].class);
         if (groups == null) {
@@ -194,8 +200,14 @@ public class TurKeycloakAdminService {
 
     /**
      * Derives the Keycloak Admin REST base URL from the configured
-     * {@code issuer-uri}. Example: {@code http://host:8080/realms/demo}
-     * becomes {@code http://host:8080/admin/realms/demo}.
+     * {@code issuer-uri}. Preserves any context path that precedes the
+     * {@code /realms/} segment so Keycloak deployments behind a reverse
+     * proxy with a relative path (e.g. {@code KC_HTTP_RELATIVE_PATH=/kc})
+     * resolve correctly. Examples:
+     * <ul>
+     *   <li>{@code http://host:8080/realms/demo} → {@code http://host:8080/admin/realms/demo}</li>
+     *   <li>{@code http://host/kc/realms/viglet} → {@code http://host/kc/admin/realms/viglet}</li>
+     * </ul>
      */
     private String adminBaseUrl() {
         if (!StringUtils.hasText(issuerUri)) {
@@ -207,10 +219,11 @@ public class TurKeycloakAdminService {
         if (realmsIdx < 0) {
             throw new IllegalStateException("issuer-uri does not contain '/realms/<name>': " + issuerUri);
         }
+        String basePath = path.substring(0, realmsIdx);
         String realm = path.substring(realmsIdx + "/realms/".length());
         if (realm.endsWith("/")) {
             realm = realm.substring(0, realm.length() - 1);
         }
-        return uri.getScheme() + "://" + uri.getAuthority() + "/admin/realms/" + realm;
+        return uri.getScheme() + "://" + uri.getAuthority() + basePath + "/admin/realms/" + realm;
     }
 }
