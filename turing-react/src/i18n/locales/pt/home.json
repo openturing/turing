@@ -7,35 +7,6 @@
       "evening": "Boa noite"
     },
     "welcome": "Bem-vindo ao Viglet Turing ES — sua plataforma de inteligência em busca empresarial.",
-    "weather": {
-      "feelsLike": "Sensação",
-      "humidity": "Umidade",
-      "wind": "Vento",
-      "condition": {
-        "0": "Céu limpo",
-        "1": "Predominantemente limpo",
-        "2": "Parcialmente nublado",
-        "3": "Nublado",
-        "45": "Neblina",
-        "48": "Neblina",
-        "51": "Garoa leve",
-        "53": "Garoa",
-        "55": "Garoa forte",
-        "61": "Chuva leve",
-        "63": "Chuva",
-        "65": "Chuva forte",
-        "71": "Neve leve",
-        "73": "Neve",
-        "75": "Neve forte",
-        "80": "Pancadas leves",
-        "81": "Pancadas",
-        "82": "Pancadas fortes",
-        "95": "Trovoada",
-        "96": "Trovoada com granizo",
-        "99": "Trovoada severa",
-        "unknown": "Desconhecido"
-      }
-    },
     "docs": "Docs",
     "open": "Abrir",
     "sections": {

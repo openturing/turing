@@ -17,7 +17,6 @@ const WIDGET_LABEL_KEYS: Record<WidgetId, string> = {
   topTerms: "dashboard.widgets.topTerms.title",
   llmStatus: "dashboard.widgets.llmStatus.title",
   quickLinks: "dashboard.widgets.quickLinks.title",
-  weather: "dashboard.widgets.weather.title",
 };
 
 export function DashboardCustomize({ widgets, onToggle, onSetColSpan, onReset }: DashboardCustomizeProps) {

@@ -50,10 +50,6 @@
       },
       "quickLinks": {
         "title": "Quick Links"
-      },
-      "weather": {
-        "title": "Weather",
-        "unavailable": "Location permission denied or unavailable."
       }
     }
   }

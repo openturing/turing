@@ -7,35 +7,6 @@
       "evening": "Good evening"
     },
     "welcome": "Welcome to Viglet Turing ES — your enterprise search intelligence platform.",
-    "weather": {
-      "feelsLike": "Feels like",
-      "humidity": "Humidity",
-      "wind": "Wind",
-      "condition": {
-        "0": "Clear sky",
-        "1": "Mainly clear",
-        "2": "Partly cloudy",
-        "3": "Overcast",
-        "45": "Fog",
-        "48": "Fog",
-        "51": "Light drizzle",
-        "53": "Drizzle",
-        "55": "Dense drizzle",
-        "61": "Light rain",
-        "63": "Rain",
-        "65": "Heavy rain",
-        "71": "Light snow",
-        "73": "Snow",
-        "75": "Heavy snow",
-        "80": "Light showers",
-        "81": "Showers",
-        "82": "Heavy showers",
-        "95": "Thunderstorm",
-        "96": "Thunderstorm with hail",
-        "99": "Severe thunderstorm",
-        "unknown": "Unknown"
-      }
-    },
     "docs": "Docs",
     "open": "Open",
     "sections": {

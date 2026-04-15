@@ -10,7 +10,6 @@ import { QuickLinksWidget } from "./widgets/quick-links.widget";
 import { SNSitesWidget } from "./widgets/sn-sites.widget";
 import { SystemHealthWidget } from "./widgets/system-health.widget";
 import { TopTermsWidget } from "./widgets/top-terms.widget";
-import { WeatherWidget } from "./widgets/weather.widget";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -30,8 +29,6 @@ export default function DashboardPage() {
         return <LLMStatusWidget key={id} onHide={toggleWidget} colSpan={colSpan} />;
       case "quickLinks":
         return <QuickLinksWidget key={id} onHide={toggleWidget} colSpan={colSpan} />;
-      case "weather":
-        return <WeatherWidget key={id} onHide={toggleWidget} colSpan={colSpan} />;
       default:
         return null;
     }

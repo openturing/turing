@@ -7,8 +7,7 @@ export type WidgetId =
   | "snSites"
   | "topTerms"
   | "llmStatus"
-  | "quickLinks"
-  | "weather";
+  | "quickLinks";
 
 export interface WidgetConfig {
   id: WidgetId;
@@ -23,7 +22,6 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "topTerms", visible: true, colSpan: 1 },
   { id: "llmStatus", visible: true, colSpan: 1 },
   { id: "quickLinks", visible: true, colSpan: 1 },
-  { id: "weather", visible: true, colSpan: 1 },
 ];
 
 const STORAGE_KEY = "turing-dashboard-widgets-v1";

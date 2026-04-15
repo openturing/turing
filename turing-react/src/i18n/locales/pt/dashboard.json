@@ -50,10 +50,6 @@
       },
       "quickLinks": {
         "title": "Acesso Rápido"
-      },
-      "weather": {
-        "title": "Clima",
-        "unavailable": "Permissão de localização negada ou indisponível."
       }
     }
   }
