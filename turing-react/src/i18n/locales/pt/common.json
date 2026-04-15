@@ -11,6 +11,8 @@
     "tryAgain": "Tentar novamente",
     "errorLoading": "Erro ao carregar dados",
     "openNavigation": "Abrir navegação",
-    "connectionError": "Erro de conexão ou tempo esgotado ao buscar {{resource}}."
+    "connectionError": "Erro de conexão ou tempo esgotado ao buscar {{resource}}.",
+    "yes": "Sim",
+    "no": "Não"
   }
 }

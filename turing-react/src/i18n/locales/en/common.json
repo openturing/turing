@@ -11,6 +11,8 @@
     "tryAgain": "Try again",
     "errorLoading": "Error while loading data",
     "openNavigation": "Open navigation",
-    "connectionError": "Connection error or timeout while fetching {{resource}}."
+    "connectionError": "Connection error or timeout while fetching {{resource}}.",
+    "yes": "Yes",
+    "no": "No"
   }
 }
