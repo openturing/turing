@@ -258,7 +258,8 @@
     "formActions": {
       "cancel": "Cancel",
       "saveChanges": "Save Changes",
-      "delete": "Delete"
+      "delete": "Delete",
+      "back": "Back"
     },
     "duration": {
       "milliseconds": "Milliseconds",
