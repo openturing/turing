@@ -27,7 +27,6 @@ import { useTranslation } from "react-i18next"
 
 import { ROUTES } from "@/app/routes.const"
 import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -189,7 +188,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <ModeToggleSidebar />
-        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )
