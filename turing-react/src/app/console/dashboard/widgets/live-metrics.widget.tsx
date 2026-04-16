@@ -1,6 +1,6 @@
 import { TurSNSiteMetricsService } from "@/services/sn/sn.site.metrics.service";
 import { TurSNSiteService } from "@/services/sn/sn.service";
-import type { TurSNSite } from "@/models/sn/sn-site.model";
+import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model";
 import { IconChartLine } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ interface LiveMetricsWidgetProps {
 export function LiveMetricsWidget({ onHide, colSpan }: LiveMetricsWidgetProps) {
   const { t } = useTranslation();
   const [data, setData] = useState<LivePoint[]>([]);
-  const [sites, setSites] = useState<TurSNSite[]>([]);
+  const [sites, setSites] = useState<TurSNSiteListItem[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const selectedRef = useRef(selectedSiteId);
   selectedRef.current = selectedSiteId;

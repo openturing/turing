@@ -1,6 +1,6 @@
 import { TurSNSiteMetricsService } from "@/services/sn/sn.site.metrics.service";
 import { TurSNSiteService } from "@/services/sn/sn.service";
-import type { TurSNSite } from "@/models/sn/sn-site.model";
+import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model";
 import type { TurSNSiteMetricsTopTerm } from "@/models/sn/sn-site-metrics-top-term.model";
 import { IconTrendingUp, IconRefresh } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
@@ -21,7 +21,7 @@ interface TopTermsWidgetProps {
 
 export function TopTermsWidget({ onHide, colSpan }: TopTermsWidgetProps) {
   const { t } = useTranslation();
-  const [sites, setSites] = useState<TurSNSite[]>([]);
+  const [sites, setSites] = useState<TurSNSiteListItem[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>("");
   const [period, setPeriod] = useState<Period>("today");
   const [terms, setTerms] = useState<TurSNSiteMetricsTopTerm[]>([]);

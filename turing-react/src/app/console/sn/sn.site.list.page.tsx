@@ -4,7 +4,7 @@ import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
+import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurGridItemAction, TurGridItemDropdownItem } from "@/models/ui/grid-item";
 import { TurSNSiteService } from "@/services/sn/sn.service";
 import { TurFeaturesService } from "@/services/system/features.service";
@@ -18,7 +18,7 @@ const turFeaturesService = new TurFeaturesService();
 
 export default function SNSiteListPage() {
   const { t } = useTranslation();
-  const [snInstances, setSnInstances] = useState<TurSNSite[]>();
+  const [snInstances, setSnInstances] = useState<TurSNSiteListItem[]>();
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [storageEnabled, setStorageEnabled] = useState(false);
@@ -30,7 +30,7 @@ export default function SNSiteListPage() {
     }).catch(() => setStorageEnabled(false));
   }, []);
 
-  const buildActions = useCallback((site: TurSNSite): TurGridItemAction[] => {
+  const buildActions = useCallback((site: TurSNSiteListItem): TurGridItemAction[] => {
     const searchUrl = `/sn/${site.name}`;
     const defaultUrl = `/sn/${site.name}?_embedded=true`;
     const hasTemplate = storageEnabled && !!site.searchTemplate?.trim();

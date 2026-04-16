@@ -1,10 +1,11 @@
+import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model.ts";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
 import axios from "axios";
 
 export class TurSNSiteService {
-  async query(): Promise<TurSNSite[]> {
-    const response = await axios.get<TurSNSite[]>("/sn");
+  async query(): Promise<TurSNSiteListItem[]> {
+    const response = await axios.get<TurSNSiteListItem[]>("/sn");
     return response.data;
   }
   async get(id: string): Promise<TurSNSite> {

@@ -49,6 +49,7 @@ import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
+import com.viglet.turing.persistence.dto.sn.TurSNSiteListDto;
 import com.viglet.turing.persistence.mapper.sn.TurSNSiteMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -91,16 +92,13 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
+    @Transactional(readOnly = true)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
-    public List<TurSNSiteDto> turSNSiteList(Principal principal) {
-        if (turConfigProperties.isMultiTenant()) {
-            return turSNSiteMapper.toDtoList(this.turSNSiteRepository
-                    .findByCreatedBy(TurPersistenceUtils.orderByNameIgnoreCase(),
-                            principal.getName().toLowerCase()));
-        } else {
-            return turSNSiteMapper
-                    .toDtoList(this.turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase()));
-        }
+    public List<TurSNSiteListDto> turSNSiteList(Principal principal) {
+        List<TurSNSite> sites = turConfigProperties.isMultiTenant()
+                ? turSNSiteRepository.findAllForListingByCreatedBy(principal.getName().toLowerCase())
+                : turSNSiteRepository.findAllForListing();
+        return turSNSiteMapper.toListDtoList(sites);
     }
 
     @Operation(summary = "Semantic Navigation Site structure")

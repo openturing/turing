@@ -56,14 +56,36 @@ public interface TurSNSiteRepository extends JpaRepository<TurSNSite, String> {
 	@Query("SELECT s FROM TurSNSite s WHERE s.id = :id")
 	Optional<TurSNSite> findByIdNoCache(@Param("id") String id);
 
+	/**
+	 * Returns every site eagerly loaded with its locales, intended for the
+	 * listing endpoint. Uses {@code LEFT JOIN FETCH} to avoid the N+1 pattern
+	 * that occurs when {@code TurSNSite.turSNSiteLocales} is mapped after the
+	 * Hibernate session closes. Only the locale association is fetched — all
+	 * other {@code @OneToMany} collections remain lazy and untouched.
+	 */
+	@Cacheable("turSNSitefindAllForListing")
+	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales ORDER BY LOWER(s.name)")
+	List<TurSNSite> findAllForListing();
+
+	/**
+	 * Multi-tenant variant of {@link #findAllForListing()} that filters by the
+	 * {@code createdBy} audit column.
+	 */
+	@Cacheable("turSNSitefindAllForListingByCreatedBy")
+	@Query("SELECT DISTINCT s FROM TurSNSite s LEFT JOIN FETCH s.turSNSiteLocales "
+			+ "WHERE LOWER(s.createdBy) = LOWER(:createdBy) ORDER BY LOWER(s.name)")
+	List<TurSNSite> findAllForListingByCreatedBy(@Param("createdBy") String createdBy);
+
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase" }, allEntries = true)
+			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
+			"turSNSitefindAllForListing", "turSNSitefindAllForListingByCreatedBy" }, allEntries = true)
 	@NotNull
 	@Override
 	<S extends TurSNSite> S save(@NotNull S entity);
 
 	@Override
 	@CacheEvict(value = { "turSNSitefindAll", "turSNSitefindAByCreatedBy", "turSNSitefindById",
-			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase" }, allEntries = true)
+			"turSNSitefindByName", "turSNSitefindByNameIgnoreCase",
+			"turSNSitefindAllForListing", "turSNSitefindAllForListingByCreatedBy" }, allEntries = true)
 	void delete(@NotNull TurSNSite turSNSite);
 }

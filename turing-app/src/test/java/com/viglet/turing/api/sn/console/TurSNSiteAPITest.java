@@ -46,6 +46,7 @@ import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
+import com.viglet.turing.persistence.dto.sn.TurSNSiteListDto;
 import com.viglet.turing.persistence.mapper.sn.TurSNSiteMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -105,11 +106,10 @@ class TurSNSiteAPITest {
                 TurSNSite site = new TurSNSite();
 
                 when(configProperties.isMultiTenant()).thenReturn(true);
-                when(siteRepository.findByCreatedBy(org.mockito.ArgumentMatchers.any(),
-                                org.mockito.ArgumentMatchers.eq("admin")))
+                when(siteRepository.findAllForListingByCreatedBy("admin"))
                                 .thenReturn(List.of(site));
 
-                List<TurSNSiteDto> result = api.turSNSiteList(principal);
+                List<TurSNSiteListDto> result = api.turSNSiteList(principal);
 
                 assertThat(result).hasSize(1);
         }
