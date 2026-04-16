@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "gen-manifest": "node ../../../turing-marketplace/gen-manifest.mjs",
-    "compile:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
+    "compile:deps": "npm install --no-audit --no-fund",
     "compile:build": "npm run gen-manifest && tsc -b && vite build",
     "compile": "npm run compile:deps && npm run compile:build",
     "zip": "node ../../../turing-marketplace/zip-dist.mjs",

@@ -8,7 +8,7 @@
     "predev": "npm run check-node",
     "prebuild": "npm run check-node",
     "dev": "vite",
-    "compile:deps": "npm ci --no-audit --no-fund || npm install --no-audit --no-fund",
+    "compile:deps": "npm install --no-audit --no-fund",
     "compile:build": "tsc -b && vite build",
     "compile": "npm run compile:deps && npm run compile:build",
     "lint": "eslint .",
