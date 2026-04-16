@@ -1,6 +1,13 @@
 import type { TurSNSiteFacetFieldTypes } from "./sn-site-facet.field.type";
 
-export type TurSNSiteCustomFacetOperator = "BETWEEN" | "EQUAL" | "GREATER_THAN" | "LESS_THAN";
+export type TurSNSiteCustomFacetOperator =
+  | "EQUAL"
+  | "GREATER_THAN"
+  | "GREATER_THAN_OR_EQUAL"
+  | "LESS_THAN"
+  | "LESS_THAN_OR_EQUAL"
+  | "BETWEEN_INCLUSIVE"
+  | "BETWEEN_EXCLUSIVE";
 
 export interface TurSNSiteCustomFacetItem {
   id?: string;

@@ -245,7 +245,7 @@ public class TurSNSiteCustomFacetAPI {
         item.setLabel(dto.getLabel());
         item.setPosition(safeItemPositionDto(dto));
         item.setOperator(Optional.ofNullable(dto.getOperator())
-                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN));
+                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
 
         if (TurSEFieldType.DATE.equals(fieldType)) {
             item.setRangeStart(null);
@@ -275,7 +275,7 @@ public class TurSNSiteCustomFacetAPI {
                     dto.setLabel(item.getLabel());
                     dto.setPosition(item.getPosition());
                     dto.setOperator(Optional.ofNullable(item.getOperator())
-                            .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN));
+                            .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
                     dto.setRangeStart(item.getRangeStart());
                     dto.setRangeEnd(item.getRangeEnd());
                     dto.setRangeStartDate(formatIsoDate(item.getRangeStartDate()));

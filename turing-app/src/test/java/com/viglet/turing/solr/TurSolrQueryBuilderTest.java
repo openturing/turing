@@ -1213,144 +1213,103 @@ class TurSolrQueryBuilderTest {
 
         // --- buildFilterQueryByOperator (via reflection) ---
 
-        @Test
-        void testBuildFilterQueryByOperatorBetween() throws Exception {
+        private static String invokeBuildFilterQueryByOperator(
+                        com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum op,
+                        String field, String start, String end) throws Exception {
                 Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
                                 "buildFilterQueryByOperator", String.class,
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
                                 String.class, String.class);
                 method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
-                                "10", "100");
-                assertThat(result).isEqualTo("price:[10 TO 100]");
+                return (String) method.invoke(null, field, op, start, end);
         }
 
         @Test
-        void testBuildFilterQueryByOperatorBetweenWithNullStart() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
-                                null, "100");
-                assertThat(result).isEqualTo("price:[* TO 100]");
+        void testBuildFilterQueryBetweenInclusive() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE,
+                                "price", "10", "100"))
+                                .isEqualTo("price:[10 TO 100]");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorBetweenWithNullEnd() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN,
-                                "10", null);
-                assertThat(result).isEqualTo("price:[10 TO *]");
+        void testBuildFilterQueryBetweenInclusiveWithNullStart() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE,
+                                "price", null, "100"))
+                                .isEqualTo("price:[* TO 100]");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorEqual() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
+        void testBuildFilterQueryBetweenInclusiveWithNullEnd() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE,
+                                "price", "10", null))
+                                .isEqualTo("price:[10 TO *]");
+        }
 
-                String result = (String) method.invoke(null, "status",
+        @Test
+        void testBuildFilterQueryBetweenExclusive() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.BETWEEN_EXCLUSIVE,
+                                "price", "10", "100"))
+                                .isEqualTo("price:{10 TO 100}");
+        }
+
+        @Test
+        void testBuildFilterQueryEqual() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
-                                "active", null);
-                assertThat(result).isEqualTo("status:active");
+                                "status", "active", null))
+                                .isEqualTo("status:active");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorEqualUsesEndWhenStartNull() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "status",
+        void testBuildFilterQueryEqualUsesEndWhenStartNull() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
-                                null, "inactive");
-                assertThat(result).isEqualTo("status:inactive");
+                                "status", null, "inactive"))
+                                .isEqualTo("status:inactive");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorEqualBothNullUsesWildcard() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "status",
+        void testBuildFilterQueryEqualBothNullUsesWildcard() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.EQUAL,
-                                null, null);
-                assertThat(result).isEqualTo("status:*");
+                                "status", null, null))
+                                .isEqualTo("status:*");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorGreaterThan() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
+        void testBuildFilterQueryGreaterThanStrict() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN,
-                                "50", null);
-                assertThat(result).isEqualTo("price:[50 TO *]");
+                                "price", "50", null))
+                                .isEqualTo("price:{50 TO *]");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorGreaterThanWithNullStart() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN,
-                                null, null);
-                assertThat(result).isEqualTo("price:[* TO *]");
+        void testBuildFilterQueryGreaterThanOrEqual() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.GREATER_THAN_OR_EQUAL,
+                                "price", "50", null))
+                                .isEqualTo("price:[50 TO *]");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorLessThan() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
+        void testBuildFilterQueryLessThanStrict() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
                                 com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.LESS_THAN,
-                                null, "100");
-                assertThat(result).isEqualTo("price:[* TO 100]");
+                                "price", null, "100"))
+                                .isEqualTo("price:[* TO 100}");
         }
 
         @Test
-        void testBuildFilterQueryByOperatorLessThanWithNullEnd() throws Exception {
-                Method method = TurSolrQueryBuilder.class.getDeclaredMethod(
-                                "buildFilterQueryByOperator", String.class,
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.class,
-                                String.class, String.class);
-                method.setAccessible(true);
-
-                String result = (String) method.invoke(null, "price",
-                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.LESS_THAN,
-                                null, null);
-                assertThat(result).isEqualTo("price:[* TO *]");
+        void testBuildFilterQueryLessThanOrEqual() throws Exception {
+                assertThat(invokeBuildFilterQueryByOperator(
+                                com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum.LESS_THAN_OR_EQUAL,
+                                "price", null, "100"))
+                                .isEqualTo("price:[* TO 100]");
         }
 
         // --- escapeLocalParamValue (via reflection) ---

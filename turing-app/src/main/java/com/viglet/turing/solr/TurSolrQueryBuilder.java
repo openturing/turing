@@ -854,7 +854,7 @@ public class TurSolrQueryBuilder {
     private static String setRangeFilterQuery(String fieldName, TurSEFieldType fieldType,
             TurSNSiteCustomFacetItem item) {
         var operator = Optional.ofNullable(item.getOperator())
-                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN);
+                .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE);
 
         if (TurSEFieldType.DATE.equals(fieldType)) {
             return buildFilterQueryByOperator(fieldName, operator,
@@ -875,18 +875,31 @@ public class TurSolrQueryBuilder {
                 String value = startValue != null ? startValue : fallback;
                 yield String.format("%s:%s", fieldName, value);
             }
-            case GREATER_THAN -> {
+            case GREATER_THAN_OR_EQUAL -> {
                 String start = startValue != null ? startValue : "*";
                 yield String.format("%s:[%s TO *]", fieldName, start);
             }
-            case LESS_THAN -> {
+            case GREATER_THAN -> {
+                String start = startValue != null ? startValue : "*";
+                yield String.format("%s:{%s TO *]", fieldName, start);
+            }
+            case LESS_THAN_OR_EQUAL -> {
                 String end = endValue != null ? endValue : "*";
                 yield String.format("%s:[* TO %s]", fieldName, end);
             }
-            case BETWEEN -> {
+            case LESS_THAN -> {
+                String end = endValue != null ? endValue : "*";
+                yield String.format("%s:[* TO %s}", fieldName, end);
+            }
+            case BETWEEN_INCLUSIVE -> {
                 String start = startValue != null ? startValue : "*";
                 String end = endValue != null ? endValue : "*";
                 yield String.format("%s:[%s TO %s]", fieldName, start, end);
+            }
+            case BETWEEN_EXCLUSIVE -> {
+                String start = startValue != null ? startValue : "*";
+                String end = endValue != null ? endValue : "*";
+                yield String.format("%s:{%s TO %s}", fieldName, start, end);
             }
         };
     }

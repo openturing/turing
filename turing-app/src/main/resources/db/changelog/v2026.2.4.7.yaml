@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: expand-custom-facet-operator-length
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_custom_facet_item
+            columnName: operator
+      changes:
+        - modifyDataType:
+            tableName: sn_site_custom_facet_item
+            columnName: operator
+            newDataType: varchar(30)
+  - changeSet:
+      id: migrate-custom-facet-operator-between-inclusive
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_custom_facet_item
+            columnName: operator
+      changes:
+        - update:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: operator
+                  value: BETWEEN_INCLUSIVE
+            where: operator = 'BETWEEN'
+  - changeSet:
+      id: migrate-custom-facet-operator-greater-than-or-equal
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_custom_facet_item
+            columnName: operator
+      changes:
+        - update:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: operator
+                  value: GREATER_THAN_OR_EQUAL
+            where: operator = 'GREATER_THAN'
+  - changeSet:
+      id: migrate-custom-facet-operator-less-than-or-equal
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_custom_facet_item
+            columnName: operator
+      changes:
+        - update:
+            tableName: sn_site_custom_facet_item
+            columns:
+              - column:
+                  name: operator
+                  value: LESS_THAN_OR_EQUAL
+            where: operator = 'LESS_THAN'

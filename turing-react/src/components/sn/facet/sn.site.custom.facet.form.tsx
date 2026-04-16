@@ -67,7 +67,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { IconDeviceFloppy, IconFilter, IconInfoCircle, IconLanguage, IconListDetails, IconX } from '@tabler/icons-react'
 import { GradientButton } from "@/components/ui/gradient-button"
 import { DialogDelete } from "@/components/dialog.delete"
-import { GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react'
+import { AlertTriangle, GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect, useState } from "react"
 import {
   useForm
@@ -100,12 +100,41 @@ const facetTypes: { name: string; value: TurSNSiteFacetFieldTypes }[] = [
   { name: "Or", value: "OR" },
 ];
 
-const operatorOptions: { name: string; value: TurSNSiteCustomFacetOperator; description: string }[] = [
-  { name: "Between", value: "BETWEEN", description: "Value is within a range (start to end)" },
-  { name: "Equal", value: "EQUAL", description: "Value is exactly equal to" },
-  { name: "Greater than", value: "GREATER_THAN", description: "Value is greater than" },
-  { name: "Less than", value: "LESS_THAN", description: "Value is less than" },
+const OPERATOR_VALUES: TurSNSiteCustomFacetOperator[] = [
+  "EQUAL",
+  "GREATER_THAN",
+  "GREATER_THAN_OR_EQUAL",
+  "LESS_THAN",
+  "LESS_THAN_OR_EQUAL",
+  "BETWEEN_INCLUSIVE",
+  "BETWEEN_EXCLUSIVE",
 ];
+
+const OPERATOR_TRANSLATION_KEYS: Record<TurSNSiteCustomFacetOperator, { label: string; description: string }> = {
+  EQUAL: { label: "forms.snCustomFacet.equal", description: "forms.snCustomFacet.equalDesc" },
+  GREATER_THAN: { label: "forms.snCustomFacet.greaterThan", description: "forms.snCustomFacet.greaterThanDesc" },
+  GREATER_THAN_OR_EQUAL: { label: "forms.snCustomFacet.greaterThanOrEqual", description: "forms.snCustomFacet.greaterThanOrEqualDesc" },
+  LESS_THAN: { label: "forms.snCustomFacet.lessThan", description: "forms.snCustomFacet.lessThanDesc" },
+  LESS_THAN_OR_EQUAL: { label: "forms.snCustomFacet.lessThanOrEqual", description: "forms.snCustomFacet.lessThanOrEqualDesc" },
+  BETWEEN_INCLUSIVE: { label: "forms.snCustomFacet.betweenInclusive", description: "forms.snCustomFacet.betweenInclusiveDesc" },
+  BETWEEN_EXCLUSIVE: { label: "forms.snCustomFacet.betweenExclusive", description: "forms.snCustomFacet.betweenExclusiveDesc" },
+};
+
+const DEFAULT_OPERATOR: TurSNSiteCustomFacetOperator = "BETWEEN_INCLUSIVE";
+
+function isBetweenOperator(operator?: TurSNSiteCustomFacetOperator): boolean {
+  return operator === "BETWEEN_INCLUSIVE" || operator === "BETWEEN_EXCLUSIVE";
+}
+
+function usesOnlyStartValue(operator?: TurSNSiteCustomFacetOperator): boolean {
+  return operator === "EQUAL"
+    || operator === "GREATER_THAN"
+    || operator === "GREATER_THAN_OR_EQUAL";
+}
+
+function usesOnlyEndValue(operator?: TurSNSiteCustomFacetOperator): boolean {
+  return operator === "LESS_THAN" || operator === "LESS_THAN_OR_EQUAL";
+}
 
 function isDateFieldType(fieldType?: string): boolean {
   return (fieldType ?? "").toUpperCase() === DATE_FIELD_TYPE;
@@ -134,16 +163,16 @@ function toDateTimeLocalValue(value: string | null | undefined): string {
 function normalizeItems(itemsToNormalize: TurSNSiteCustomFacetItem[], fieldType?: string): TurSNSiteCustomFacetItem[] {
   const isDate = isDateFieldType(fieldType);
   return itemsToNormalize.map((item, index) => {
-    const op = item.operator ?? "BETWEEN";
+    const op = item.operator ?? DEFAULT_OPERATOR;
     let rangeStart = isDate ? null : parseRangeValue(item.rangeStart);
     let rangeEnd = isDate ? null : parseRangeValue(item.rangeEnd);
     let rangeStartDate = isDate ? parseIsoDateValue(item.rangeStartDate) : null;
     let rangeEndDate = isDate ? parseIsoDateValue(item.rangeEndDate) : null;
 
-    if (op === "LESS_THAN") {
+    if (usesOnlyEndValue(op)) {
       rangeStart = null;
       rangeStartDate = null;
-    } else if (op === "EQUAL" || op === "GREATER_THAN") {
+    } else if (usesOnlyStartValue(op)) {
       rangeEnd = null;
       rangeEndDate = null;
     }
@@ -161,12 +190,13 @@ function hasFilledRangeValues(itemsToCheck: TurSNSiteCustomFacetItem[]): boolean
   });
 }
 
-function operatorLabel(operator?: TurSNSiteCustomFacetOperator): string {
-  return operatorOptions.find((o) => o.value === operator)?.name ?? "Between";
+function operatorLabel(t: (key: string) => string, operator?: TurSNSiteCustomFacetOperator): string {
+  const op = operator ?? DEFAULT_OPERATOR;
+  return t(OPERATOR_TRANSLATION_KEYS[op].label);
 }
 
-function formatItemSummary(item: TurSNSiteCustomFacetItem, isDateField: boolean): string {
-  const op = item.operator ?? "BETWEEN";
+function formatItemSummary(item: TurSNSiteCustomFacetItem, isDateField: boolean, variable: string): string {
+  const op = item.operator ?? DEFAULT_OPERATOR;
   const startVal = isDateField
     ? (item.rangeStartDate ? new Date(item.rangeStartDate).toLocaleString() : "—")
     : (item.rangeStart ?? "—");
@@ -175,23 +205,103 @@ function formatItemSummary(item: TurSNSiteCustomFacetItem, isDateField: boolean)
     : (item.rangeEnd ?? "—");
 
   switch (op) {
-    case "EQUAL": return `= ${startVal}`;
-    case "GREATER_THAN": return `> ${startVal}`;
-    case "LESS_THAN": return `< ${endVal}`;
-    case "BETWEEN":
-    default: return `${startVal} — ${endVal}`;
+    case "EQUAL": return `${variable} = ${startVal}`;
+    case "GREATER_THAN": return `${variable} > ${startVal}`;
+    case "GREATER_THAN_OR_EQUAL": return `${variable} \u2265 ${startVal}`;
+    case "LESS_THAN": return `${variable} < ${endVal}`;
+    case "LESS_THAN_OR_EQUAL": return `${variable} \u2264 ${endVal}`;
+    case "BETWEEN_EXCLUSIVE": return `${startVal} < ${variable} < ${endVal}`;
+    case "BETWEEN_INCLUSIVE":
+    default: return `${startVal} \u2264 ${variable} \u2264 ${endVal}`;
   }
+}
+
+type Interval = {
+  min: number | null;
+  max: number | null;
+  minInclusive: boolean;
+  maxInclusive: boolean;
+};
+
+function dateIsoToNumber(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+}
+
+function itemToInterval(item: TurSNSiteCustomFacetItem, isDateField: boolean): Interval | null {
+  const op = item.operator ?? DEFAULT_OPERATOR;
+  const start = isDateField ? dateIsoToNumber(item.rangeStartDate) : parseRangeValue(item.rangeStart);
+  const end = isDateField ? dateIsoToNumber(item.rangeEndDate) : parseRangeValue(item.rangeEnd);
+
+  switch (op) {
+    case "EQUAL":
+      if (start === null) return null;
+      return { min: start, max: start, minInclusive: true, maxInclusive: true };
+    case "GREATER_THAN":
+      if (start === null) return null;
+      return { min: start, max: null, minInclusive: false, maxInclusive: false };
+    case "GREATER_THAN_OR_EQUAL":
+      if (start === null) return null;
+      return { min: start, max: null, minInclusive: true, maxInclusive: false };
+    case "LESS_THAN":
+      if (end === null) return null;
+      return { min: null, max: end, minInclusive: false, maxInclusive: false };
+    case "LESS_THAN_OR_EQUAL":
+      if (end === null) return null;
+      return { min: null, max: end, minInclusive: false, maxInclusive: true };
+    case "BETWEEN_INCLUSIVE":
+      if (start === null || end === null) return null;
+      return { min: start, max: end, minInclusive: true, maxInclusive: true };
+    case "BETWEEN_EXCLUSIVE":
+      if (start === null || end === null) return null;
+      return { min: start, max: end, minInclusive: false, maxInclusive: false };
+  }
+}
+
+function intervalsOverlap(a: Interval, b: Interval): boolean {
+  if (a.max !== null && b.min !== null) {
+    if (a.max < b.min) return false;
+    if (a.max === b.min && (!a.maxInclusive || !b.minInclusive)) return false;
+  }
+  if (b.max !== null && a.min !== null) {
+    if (b.max < a.min) return false;
+    if (b.max === a.min && (!b.maxInclusive || !a.minInclusive)) return false;
+  }
+  return true;
+}
+
+type OverlapPair = { indexA: number; indexB: number };
+
+function detectOverlaps(items: TurSNSiteCustomFacetItem[], isDateField: boolean): OverlapPair[] {
+  const intervals = items.map((item) => itemToInterval(item, isDateField));
+  const pairs: OverlapPair[] = [];
+  for (let i = 0; i < intervals.length; i += 1) {
+    const a = intervals[i];
+    if (!a) continue;
+    for (let j = i + 1; j < intervals.length; j += 1) {
+      const b = intervals[j];
+      if (!b) continue;
+      if (intervalsOverlap(a, b)) {
+        pairs.push({ indexA: i, indexB: j });
+      }
+    }
+  }
+  return pairs;
 }
 
 type ItemRowProps = {
   item: TurSNSiteCustomFacetItem;
   index: number;
   isDateField: boolean;
+  fieldName: string;
+  hasOverlap: boolean;
+  t: (key: string) => string;
   onEdit: (index: number) => void;
   onRemove: (index: number) => void;
 };
 
-const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onEdit, onRemove }) => {
+const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, fieldName, hasOverlap, t, onEdit, onRemove }) => {
   const {
     attributes,
     listeners,
@@ -207,21 +317,35 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, onEdit, onR
     opacity: isDragging ? 0.8 : 1,
   };
 
+  const overlapClass = hasOverlap
+    ? "bg-amber-50 dark:bg-amber-950/30 border-l-4 border-l-amber-500"
+    : "";
+
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow ref={setNodeRef} style={style} className={overlapClass}>
       <TableCell className="w-10">
         <button {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing">
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
       </TableCell>
-      <TableCell className="w-16">{index + 1}</TableCell>
-      <TableCell className="font-medium">{item.label || <span className="text-muted-foreground italic">No label</span>}</TableCell>
+      <TableCell className="w-16">
+        <div className="flex items-center gap-2">
+          <span>{index + 1}</span>
+          {hasOverlap && (
+            <AlertTriangle
+              className="h-4 w-4 text-amber-600 dark:text-amber-400"
+              aria-label={t("forms.snCustomFacet.overlapIconLabel")}
+            />
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">{item.label || <span className="text-muted-foreground italic">{t("forms.snCustomFacet.noLabel")}</span>}</TableCell>
       <TableCell>
         <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
-          {operatorLabel(item.operator)}
+          {operatorLabel(t, item.operator)}
         </span>
       </TableCell>
-      <TableCell className="text-muted-foreground text-sm">{formatItemSummary(item, isDateField)}</TableCell>
+      <TableCell className="text-muted-foreground text-sm font-mono">{formatItemSummary(item, isDateField, fieldName || "x")}</TableCell>
       <TableCell className="w-24 text-right">
         <div className="flex justify-end gap-1">
           <Button type="button" variant="ghost" size="icon" onClick={() => onEdit(index)} title="Edit">
@@ -254,13 +378,19 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<TurSNSiteCustomFacetItem>({
-    label: "", operator: "BETWEEN", rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+    label: "", operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
   });
   const navigate = useNavigate()
   const items = watch("items") ?? [];
   const selectedFieldExtId = watch("fieldExtId") ?? value.fieldExtId;
-  const selectedFieldType = fieldOptions.find((field) => field.id === selectedFieldExtId)?.type ?? value.fieldExtType;
+  const selectedFieldOption = fieldOptions.find((field) => field.id === selectedFieldExtId);
+  const selectedFieldType = selectedFieldOption?.type ?? value.fieldExtType;
+  const selectedFieldName = selectedFieldOption?.name ?? value.fieldExtName ?? "";
   const dateField = isDateFieldType(selectedFieldType);
+  const overlapPairs = detectOverlaps(items, dateField);
+  const overlappingIndices = new Set<number>(
+    overlapPairs.flatMap((pair) => [pair.indexA, pair.indexB])
+  );
   const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
@@ -287,7 +417,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
   function onOpenAddItem() {
     setEditingItemIndex(null);
     setEditingItem({
-      label: "", operator: "BETWEEN", rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+      label: "", operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
     });
     setItemModalOpen(true);
   }
@@ -395,7 +525,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
     }
 
     const invalidRange = (customFacet.items ?? []).find((item) => {
-      if ((item.operator ?? "BETWEEN") !== "BETWEEN") return false;
+      if (!isBetweenOperator(item.operator ?? DEFAULT_OPERATOR)) return false;
       if (dateField) {
         const start = parseIsoDateValue(item.rangeStartDate);
         const end = parseIsoDateValue(item.rangeEndDate);
@@ -489,25 +619,28 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("forms.snCustomFacet.operator")}</label>
               <Select
-                value={editingItem.operator ?? "BETWEEN"}
+                value={editingItem.operator ?? DEFAULT_OPERATOR}
                 onValueChange={(v) => onUpdateEditingItem("operator", v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {operatorOptions.map((op) => (
-                    <SelectItem key={op.value} value={op.value}>
+                  {OPERATOR_VALUES.map((op) => (
+                    <SelectItem key={op} value={op}>
                       <div>
-                        <span className="font-medium">{op.name}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">{op.description}</span>
+                        <span className="font-medium">{t(OPERATOR_TRANSLATION_KEYS[op].label)}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{t(OPERATOR_TRANSLATION_KEYS[op].description)}</span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground font-mono">
+                {formatItemSummary(editingItem, dateField, selectedFieldName || "x")}
+              </p>
             </div>
-            {(editingItem.operator ?? "BETWEEN") === "BETWEEN" && (
+            {isBetweenOperator(editingItem.operator ?? DEFAULT_OPERATOR) && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{t("forms.snCustomFacet.start")}</label>
@@ -516,7 +649,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                     step={dateField ? undefined : "any"}
                     value={dateField ? toDateTimeLocalValue(editingItem.rangeStartDate) : (editingItem.rangeStart ?? "")}
                     onChange={(e) => onUpdateEditingItem(dateField ? "rangeStartDate" : "rangeStart", e.target.value)}
-                    placeholder="Start value"
+                    placeholder={t("forms.snCustomFacet.startPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -526,12 +659,12 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                     step={dateField ? undefined : "any"}
                     value={dateField ? toDateTimeLocalValue(editingItem.rangeEndDate) : (editingItem.rangeEnd ?? "")}
                     onChange={(e) => onUpdateEditingItem(dateField ? "rangeEndDate" : "rangeEnd", e.target.value)}
-                    placeholder="End value"
+                    placeholder={t("forms.snCustomFacet.endPlaceholder")}
                   />
                 </div>
               </div>
             )}
-            {(editingItem.operator === "EQUAL" || editingItem.operator === "GREATER_THAN") && (
+            {usesOnlyStartValue(editingItem.operator) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t("forms.common.value")}</label>
                 <Input
@@ -539,11 +672,13 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   step={dateField ? undefined : "any"}
                   value={dateField ? toDateTimeLocalValue(editingItem.rangeStartDate) : (editingItem.rangeStart ?? "")}
                   onChange={(e) => onUpdateEditingItem(dateField ? "rangeStartDate" : "rangeStart", e.target.value)}
-                  placeholder={editingItem.operator === "EQUAL" ? "Exact value" : "Minimum value"}
+                  placeholder={editingItem.operator === "EQUAL"
+                    ? t("forms.snCustomFacet.exactValuePlaceholder")
+                    : t("forms.snCustomFacet.minimumValuePlaceholder")}
                 />
               </div>
             )}
-            {editingItem.operator === "LESS_THAN" && (
+            {usesOnlyEndValue(editingItem.operator) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t("forms.common.value")}</label>
                 <Input
@@ -551,7 +686,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                   step={dateField ? undefined : "any"}
                   value={dateField ? toDateTimeLocalValue(editingItem.rangeEndDate) : (editingItem.rangeEnd ?? "")}
                   onChange={(e) => onUpdateEditingItem(dateField ? "rangeEndDate" : "rangeEnd", e.target.value)}
-                  placeholder="Maximum value"
+                  placeholder={t("forms.snCustomFacet.maximumValuePlaceholder")}
                 />
               </div>
             )}
@@ -782,6 +917,43 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                     {t("forms.snCustomFacet.addItem")}
                   </Button>
                 </div>
+                {overlapPairs.length > 0 && (
+                  <div
+                    role="alert"
+                    className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+                  >
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-medium">
+                          {t("forms.snCustomFacet.overlapDetectedTitle", { count: overlapPairs.length })}
+                        </p>
+                        <p className="text-xs opacity-90">
+                          {t("forms.snCustomFacet.overlapDetectedDesc")}
+                        </p>
+                        <ul className="mt-2 space-y-1 text-xs">
+                          {overlapPairs.map((pair) => {
+                            const a = items[pair.indexA];
+                            const b = items[pair.indexB];
+                            const labelA = a?.label || t("forms.snCustomFacet.noLabel");
+                            const labelB = b?.label || t("forms.snCustomFacet.noLabel");
+                            const summaryA = formatItemSummary(a, dateField, selectedFieldName || "x");
+                            const summaryB = formatItemSummary(b, dateField, selectedFieldName || "x");
+                            return (
+                              <li key={`${pair.indexA}-${pair.indexB}`} className="font-mono">
+                                <span className="font-semibold">#{pair.indexA + 1} {labelA}</span>
+                                <span className="mx-1 opacity-70">({summaryA})</span>
+                                <span className="opacity-70">{t("forms.snCustomFacet.overlapsWith")}</span>
+                                <span className="font-semibold"> #{pair.indexB + 1} {labelB}</span>
+                                <span className="mx-1 opacity-70">({summaryB})</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                   <div className="rounded-md border overflow-hidden">
                     <Table>
@@ -806,6 +978,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                               item={item}
                               index={index}
                               isDateField={dateField}
+                              fieldName={selectedFieldName}
+                              hasOverlap={overlappingIndices.has(index)}
+                              t={t}
                               onEdit={onOpenEditItem}
                               onRemove={onRemoveItem}
                             />
