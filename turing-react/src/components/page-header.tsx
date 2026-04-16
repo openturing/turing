@@ -25,7 +25,7 @@ export const PageHeader: React.FC<MyComponentProps> = ({ turIcon: TurIcon, title
   const navigate = useNavigate();
   const { t } = useTranslation();
   const discovery = useDiscovery();
-  const user = useCurrentUser();
+  const { user } = useCurrentUser();
   const [appSwitcherOpen, setAppSwitcherOpen] = useState(false);
 
   const lastItem = items.length > 0 ? items[items.length - 1] : null;
