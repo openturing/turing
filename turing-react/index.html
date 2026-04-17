@@ -55,27 +55,32 @@
       .turing-boot-ring.delay-1 { animation-delay: 0.6s; }
       .turing-boot-ring.delay-2 { animation-delay: 1.2s; }
       .turing-boot-ring.delay-3 { animation-delay: 1.8s; }
-
-      .turing-boot-logo-wrap {
+      .turing-boot-logo-mark {
         position: relative;
         width: 88px;
         height: 88px;
-        border-radius: 24px;
-        background: linear-gradient(135deg, #2563eb, #4f46e5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        box-sizing: border-box;
+        background-color: #4169E1;
+        color: #FFDEAD;
+        padding: 8px;
+        border-radius: 12px;
+        border: 3px solid #FFDEAD;
         box-shadow:
-          0 0 0 1px rgba(255, 255, 255, 0.06),
-          0 20px 40px -10px rgba(37, 99, 235, 0.45),
-          0 8px 20px -6px rgba(79, 70, 229, 0.35);
+          0 1px 3px rgba(0, 0, 0, 0.22),
+          0 2px 6px rgba(0, 0, 0, 0.19),
+          0 20px 40px -10px rgba(65, 105, 225, 0.45);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        user-select: none;
         animation: turing-boot-breathe 2.2s ease-in-out infinite;
       }
-      .turing-boot-logo-wrap::before {
+      .turing-boot-logo-mark::before {
         content: "";
         position: absolute;
-        inset: -2px;
-        border-radius: 26px;
+        inset: -6px;
+        border-radius: 16px;
         background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6, #3b82f6);
         background-size: 300% 300%;
         z-index: -1;
@@ -83,10 +88,28 @@
         opacity: 0.55;
         animation: turing-boot-glow 6s linear infinite;
       }
-      .turing-boot-logo-wrap img {
-        width: 60px;
-        height: 60px;
-        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+      .turing-boot-logo-section {
+        font-size: 11px;
+        font-weight: 300;
+        line-height: 1;
+        opacity: 0.85;
+        letter-spacing: 0.04em;
+        align-self: flex-end;
+      }
+      .turing-boot-logo-acronym {
+        font-size: 40px;
+        font-weight: 900;
+        line-height: 1;
+        align-self: flex-start;
+      }
+      .turing-boot-logo-acronym span {
+        display: inline-block;
+        animation: turing-boot-acronym-glow 2s ease-in-out both infinite;
+      }
+      @keyframes turing-boot-acronym-glow {
+        0%, 100% { text-shadow: 0 0 8px snow, 0 -25px 50px tomato, -25px 25px 50px yellow, 25px 25px 50px tomato; }
+        33%      { text-shadow: 0 0 8px snow, 0 -25px 50px cyan, -25px 25px 50px tomato, 25px 25px 50px cyan; }
+        66%      { text-shadow: 0 0 8px snow, 0 -25px 50px yellow, -25px 25px 50px cyan, 25px 25px 50px yellow; }
       }
 
       .turing-boot-text {
@@ -163,8 +186,9 @@
 
       @media (prefers-reduced-motion: reduce) {
         .turing-boot-ring,
-        .turing-boot-logo-wrap,
-        .turing-boot-logo-wrap::before,
+        .turing-boot-logo-mark,
+        .turing-boot-logo-mark::before,
+        .turing-boot-logo-acronym span,
         .turing-boot-text .turing-boot-title,
         .turing-boot-progress::after {
           animation: none !important;
@@ -197,8 +221,12 @@
           <div class="turing-boot-ring delay-1"></div>
           <div class="turing-boot-ring delay-2"></div>
           <div class="turing-boot-ring delay-3"></div>
-          <div class="turing-boot-logo-wrap">
-            <img src="/turing-logo.png" alt="" />
+          <div class="turing-boot-logo-mark" aria-label="Tu ES">
+            <div class="turing-boot-logo-section">ES</div>
+            <div class="turing-boot-logo-acronym">
+            <span style="animation-delay: -1.0000s">T</span>
+            <span style="animation-delay: -2.0000s">u</span>
+            </div>
           </div>
         </div>
         <div class="turing-boot-text">
