@@ -5,9 +5,209 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Turing ES Administration Console</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body {
+        background:
+          radial-gradient(1200px 600px at 20% 10%, rgba(37, 99, 235, 0.18), transparent 60%),
+          radial-gradient(900px 500px at 80% 90%, rgba(79, 70, 229, 0.18), transparent 60%),
+          #0a0a0f;
+        color: #e5e7eb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        overflow: hidden;
+      }
+      body.turing-light-boot {
+        background:
+          radial-gradient(1200px 600px at 20% 10%, rgba(37, 99, 235, 0.10), transparent 60%),
+          radial-gradient(900px 500px at 80% 90%, rgba(79, 70, 229, 0.10), transparent 60%),
+          #fafafa;
+        color: #0f172a;
+      }
+
+      #turing-boot-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 9999;
+        animation: turing-boot-fade-in 0.4s ease-out;
+      }
+
+      .turing-boot-stage {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .turing-boot-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid rgba(99, 102, 241, 0.55);
+        opacity: 0;
+        animation: turing-boot-ring-pulse 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+      }
+      .turing-boot-ring.delay-1 { animation-delay: 0.6s; }
+      .turing-boot-ring.delay-2 { animation-delay: 1.2s; }
+      .turing-boot-ring.delay-3 { animation-delay: 1.8s; }
+
+      .turing-boot-logo-wrap {
+        position: relative;
+        width: 88px;
+        height: 88px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.06),
+          0 20px 40px -10px rgba(37, 99, 235, 0.45),
+          0 8px 20px -6px rgba(79, 70, 229, 0.35);
+        animation: turing-boot-breathe 2.2s ease-in-out infinite;
+      }
+      .turing-boot-logo-wrap::before {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        border-radius: 26px;
+        background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6, #3b82f6);
+        background-size: 300% 300%;
+        z-index: -1;
+        filter: blur(14px);
+        opacity: 0.55;
+        animation: turing-boot-glow 6s linear infinite;
+      }
+      .turing-boot-logo-wrap img {
+        width: 60px;
+        height: 60px;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+      }
+
+      .turing-boot-text {
+        margin-top: 2rem;
+        text-align: center;
+      }
+      .turing-boot-text .turing-boot-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        background: linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+                background-clip: text;
+        color: transparent;
+        animation: turing-boot-shimmer 3s linear infinite;
+      }
+      .turing-boot-text .turing-boot-subtitle {
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+        opacity: 0.55;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .turing-boot-progress {
+        margin-top: 1.5rem;
+        width: 180px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.15);
+        overflow: hidden;
+        position: relative;
+      }
+      .turing-boot-progress::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 40%;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, #3b82f6 30%, #6366f1 70%, transparent);
+        transform: translateX(-100%);
+        will-change: transform;
+        animation: turing-boot-slide 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes turing-boot-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes turing-boot-breathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+      }
+      @keyframes turing-boot-glow {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+      }
+      @keyframes turing-boot-ring-pulse {
+        0% { transform: scale(0.55); opacity: 0.7; border-width: 2px; }
+        70% { opacity: 0.05; }
+        100% { transform: scale(1.25); opacity: 0; border-width: 1px; }
+      }
+      @keyframes turing-boot-shimmer {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+      @keyframes turing-boot-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(450%); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .turing-boot-ring,
+        .turing-boot-logo-wrap,
+        .turing-boot-logo-wrap::before,
+        .turing-boot-text .turing-boot-title,
+        .turing-boot-progress::after {
+          animation: none !important;
+        }
+        .turing-boot-ring { opacity: 0.2; transform: scale(1); }
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("vite-ui-theme");
+          var prefersLight = stored === "light"
+            || (stored === "system" && window.matchMedia("(prefers-color-scheme: light)").matches)
+            || (!stored && window.matchMedia("(prefers-color-scheme: light)").matches);
+          if (prefersLight) {
+            document.documentElement.classList.remove("dark");
+            document.addEventListener("DOMContentLoaded", function () {
+              document.body.classList.add("turing-light-boot");
+            });
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="turing-boot-loader" role="status" aria-live="polite" aria-label="Loading Viglet Turing ES">
+        <div class="turing-boot-stage">
+          <div class="turing-boot-ring"></div>
+          <div class="turing-boot-ring delay-1"></div>
+          <div class="turing-boot-ring delay-2"></div>
+          <div class="turing-boot-ring delay-3"></div>
+          <div class="turing-boot-logo-wrap">
+            <img src="/turing-logo.png" alt="" />
+          </div>
+        </div>
+        <div class="turing-boot-text">
+          <div class="turing-boot-title">Viglet Turing ES</div>
+          <div class="turing-boot-subtitle">Enterprise Search Intelligence</div>
+        </div>
+        <div class="turing-boot-progress" aria-hidden="true"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
