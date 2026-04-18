@@ -29,7 +29,7 @@ function registerDumontRemote(integrationId: string) {
             {
                 name: "dumont_react",
                 type: "module",
-                entry: `/api/v2/integration/${integrationId}/federation/dumont/remoteEntry.js`,
+                entry: `/api/v2/integration/${integrationId}/federation/remoteEntry.js`,
             },
         ],
         { force: true }
