@@ -16,7 +16,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@tabler/icons-react": "^3.40.0",
-    "@viglet/turing-react-sdk": "*",
+    "@viglet/turing-react-sdk": "workspace:*",
     "axios": "^1.15.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

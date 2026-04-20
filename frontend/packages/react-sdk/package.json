@@ -5,9 +5,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "build:deps": "npm install --no-audit --no-fund",
-    "build:run": "npx tsc",
-    "build": "npm run build:deps && npm run build:run",
+    "build": "tsc",
     "dev": "tsc --watch",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

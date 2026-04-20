@@ -2,26 +2,18 @@
   "name": "@viglet/turing-frontend",
   "private": true,
   "version": "2026.2.10",
-  "packageManager": "npm@11.6.2",
-  "description": "Viglet Turing ES \u2014 unified JavaScript monorepo (dashboard, SDK, marketplace apps)",
-  "workspaces": [
-    "apps/turing-app",
-    "apps/marketplace/mythical-creatures",
-    "apps/marketplace/space-missions",
-    "apps/marketplace/vinyl-records",
-    "packages/react-sdk",
-    "packages/shared-types"
-  ],
+  "packageManager": "pnpm@10.15.0",
+  "description": "Viglet Turing ES — unified JavaScript monorepo (dashboard, SDK, marketplace apps)",
   "scripts": {
     "postinstall": "node scripts/workspace-status.mjs",
-    "bump:patch": "npm version patch --workspaces --include-workspace-root",
-    "bump:minor": "npm version minor --workspaces --include-workspace-root",
-    "build": "npm install --no-audit --no-fund && turbo run build && node scripts/build-status.mjs",
+    "bump:patch": "pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version",
+    "bump:minor": "pnpm -r --include-workspace-root exec -- npm version minor --no-git-tag-version",
+    "build": "pnpm install && turbo run build && node scripts/build-status.mjs",
     "build:sdk": "turbo run build --filter=@viglet/turing-react-sdk && node scripts/build-status.mjs",
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
     "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
-    "package:marketplace": "npm run package --workspaces --if-present",
+    "package:marketplace": "pnpm --filter=\"./apps/marketplace/*\" run package",
     "dev:app": "turbo run dev --filter=turing-app",
     "dev:mythical-creatures": "turbo run dev --filter=turing-example-mythical-creatures",
     "dev:space-missions": "turbo run dev --filter=turing-example-space-missions",
@@ -33,7 +25,15 @@
   "devDependencies": {
     "turbo": "^2.5.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@swc/core",
+      "@tailwindcss/oxide"
+    ]
+  },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "pnpm": ">=10"
   }
 }

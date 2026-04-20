@@ -476,21 +476,34 @@
                         <!-- optional: default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                     </execution>
+                    <!-- Install pnpm globally into the embedded Node, so the
+                         next executions can call pnpm via the plugin's pnpm goal. -->
                     <execution>
-                        <id>npm install</id>
+                        <id>install pnpm</id>
                         <goals>
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --no-audit --no-fund</arguments>
+                            <arguments>install -g pnpm@10.15.0</arguments>
                             <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                         <phase>generate-resources</phase>
                     </execution>
                     <execution>
-                        <id>react build</id>
+                        <id>pnpm install</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --frozen-lockfile=false</arguments>
+                            <workingDirectory>../frontend</workingDirectory>
+                        </configuration>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>pnpm build:app</id>
+                        <goals>
+                            <goal>pnpm</goal>
                         </goals>
                         <configuration>
                             <arguments>run build:app</arguments>

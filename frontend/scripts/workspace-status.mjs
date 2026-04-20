@@ -14,7 +14,30 @@ import url from "node:url";
 
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
 const rootPkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
-const globs = rootPkg.workspaces ?? [];
+
+/** Resolve workspace globs from `package.json` (npm/yarn) or `pnpm-workspace.yaml` (pnpm). */
+function resolveWorkspaceGlobs() {
+  if (Array.isArray(rootPkg.workspaces)) return rootPkg.workspaces;
+  const yamlPath = path.join(ROOT, "pnpm-workspace.yaml");
+  if (fs.existsSync(yamlPath)) {
+    const yaml = fs.readFileSync(yamlPath, "utf8");
+    const inPackages = yaml.split(/\r?\n/);
+    const globs = [];
+    let capture = false;
+    for (const line of inPackages) {
+      if (/^packages\s*:/.test(line)) { capture = true; continue; }
+      if (capture) {
+        if (/^\S/.test(line)) break; // next top-level key
+        const m = line.match(/^\s*-\s*["']?([^"'\s#]+)["']?/);
+        if (m) globs.push(m[1]);
+      }
+    }
+    return globs;
+  }
+  return [];
+}
+
+const globs = resolveWorkspaceGlobs();
 
 /** Minimal glob → paths resolver. Supports trailing `/*` only (enough here). */
 function expand(glob) {

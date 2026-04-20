@@ -17,12 +17,19 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
           scope: "@viglet"
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Configure Git
         run: |
@@ -30,24 +37,19 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # ── Install workspace deps ──
-      # Regenerate package-lock on the runner to resolve platform-specific
-      # native optional deps (e.g. @tailwindcss/oxide-linux-x64-gnu) — avoids
-      # npm/cli#4828 with workspaces + committed Windows lockfile.
       - name: Install workspace deps
         working-directory: frontend
-        run: |
-          rm -f package-lock.json
-          npm install --no-audit --no-fund
+        run: pnpm install --frozen-lockfile=false
 
       # ── Bump every workspace (root + apps + packages) by a patch ──
       - name: Bump all workspaces (patch)
         working-directory: frontend
-        run: npm version patch --workspaces --include-workspace-root --no-git-tag-version
+        run: pnpm -r --include-workspace-root exec -- npm version patch --no-git-tag-version
 
       # ── Build & publish the SDK (which now carries the bumped version) ──
       - name: Build @viglet/turing-react-sdk
-        working-directory: frontend/packages/react-sdk
-        run: npm run build
+        working-directory: frontend
+        run: pnpm run build:sdk
 
       - name: Publish @viglet/turing-react-sdk
         working-directory: frontend/packages/react-sdk
@@ -58,9 +60,6 @@ jobs:
       # ── Commit every package.json touched by the workspace-wide bump ──
       - name: Commit version bump
         run: |
-          git add frontend/package.json \
-                  frontend/packages/*/package.json \
-                  frontend/apps/turing-app/package.json \
-                  frontend/apps/marketplace/*/package.json
+          git add frontend/package.json                   frontend/packages/*/package.json                   frontend/apps/turing-app/package.json                   frontend/apps/marketplace/*/package.json
           git commit -m "chore: bump frontend workspaces to match @viglet/turing-react-sdk [skip ci]" || echo "No changes to commit"
           git push

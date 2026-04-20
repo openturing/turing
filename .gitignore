@@ -25,12 +25,14 @@ hs_err_pid*
 *.war
 *.ear
 
-# ── Node / npm ───────────────────────────────────────────────
+# ── Node / pnpm ──────────────────────────────────────────────
 node
 node_modules/
-# Lockfile is regenerated on every npm install / CI run to resolve
-# platform-specific optional deps (avoids npm/cli#4828).
+# Workspace uses pnpm — npm's package-lock is not authoritative and
+# would drift from pnpm-lock.yaml if accidentally generated. Keep it ignored.
 package-lock.json
+# yarn, just in case
+yarn.lock
 
 # ── Maven flatten / shade ───────────────────────────────────
 .flattened-pom.xml

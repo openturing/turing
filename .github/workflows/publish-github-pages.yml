@@ -22,29 +22,31 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
-      # Regenerate package-lock on the runner to resolve platform-specific
-      # native optional deps (e.g. @tailwindcss/oxide-linux-x64-gnu) — avoids
-      # npm/cli#4828 with workspaces + committed Windows lockfile.
       - name: Install workspace deps
         working-directory: frontend
-        run: |
-          rm -f package-lock.json
-          npm install --no-audit --no-fund
+        run: pnpm install --frozen-lockfile=false
 
       - name: Build Storybook
         working-directory: frontend
-        run: npm run build-storybook:react-sdk
+        run: pnpm run build-storybook:react-sdk
         env:
           STORYBOOK_BASE: /react-sdk/
 
       - name: Package Marketplace examples
         working-directory: frontend
-        run: npm run package:marketplace
+        run: pnpm run package:marketplace
 
       - name: Assemble site
         run: |

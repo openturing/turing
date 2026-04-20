@@ -14,7 +14,28 @@ import url from "node:url";
 
 const ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
 const rootPkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
-const globs = rootPkg.workspaces ?? [];
+
+function resolveWorkspaceGlobs() {
+  if (Array.isArray(rootPkg.workspaces)) return rootPkg.workspaces;
+  const yamlPath = path.join(ROOT, "pnpm-workspace.yaml");
+  if (fs.existsSync(yamlPath)) {
+    const lines = fs.readFileSync(yamlPath, "utf8").split(/\r?\n/);
+    const globs = [];
+    let capture = false;
+    for (const line of lines) {
+      if (/^packages\s*:/.test(line)) { capture = true; continue; }
+      if (capture) {
+        if (/^\S/.test(line)) break;
+        const m = line.match(/^\s*-\s*["']?([^"'\s#]+)["']?/);
+        if (m) globs.push(m[1]);
+      }
+    }
+    return globs;
+  }
+  return [];
+}
+
+const globs = resolveWorkspaceGlobs();
 
 function expand(glob) {
   if (glob.endsWith("/*")) {
