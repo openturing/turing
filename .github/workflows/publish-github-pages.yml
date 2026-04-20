@@ -29,7 +29,7 @@ jobs:
 
       # ── Storybook ──
       - name: Build Storybook
-        working-directory: turing-react-sdk
+        working-directory: frontend/packages/react-sdk
         run: npm install --no-audit --no-fund && npx storybook build --output-dir storybook-static
         env:
           STORYBOOK_BASE: /react-sdk/
@@ -37,7 +37,7 @@ jobs:
       # ── Marketplace ──
       - name: Build Marketplace examples
         run: |
-          for dir in turing-marketplace/*/app; do
+          for dir in frontend/apps/marketplace/*; do
             project=$(basename "$(dirname "$dir")")
             echo "::group::Building $project"
             (cd "$dir" && npm run package)
@@ -48,12 +48,12 @@ jobs:
       - name: Prepare Pages artifact
         run: |
           mkdir -p _site/react-sdk
-          cp -r turing-react-sdk/storybook-static/* _site/react-sdk/
+          cp -r frontend/packages/react-sdk/storybook-static/* _site/react-sdk/
 
           mkdir -p _site/marketplace
-          cp turing-marketplace/marketplace.json _site/marketplace/
+          cp frontend/apps/marketplace/marketplace.json _site/marketplace/
 
-          for dir in turing-marketplace/*/; do
+          for dir in frontend/apps/marketplace/*/; do
             project=$(basename "$dir")
             mkdir -p "_site/marketplace/$project"
             cp "$dir"app/*.zip "_site/marketplace/$project/"

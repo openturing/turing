@@ -471,7 +471,7 @@
                             <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>../turing-react</workingDirectory>
+                            <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                         <!-- optional: default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
@@ -483,7 +483,7 @@
                         </goals>
                         <configuration>
                             <arguments>run compile</arguments>
-                            <workingDirectory>../turing-react</workingDirectory>
+                            <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                     </execution>
                 </executions>

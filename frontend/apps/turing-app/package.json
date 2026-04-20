@@ -1,16 +1,15 @@
 {
   "name": "turing-react",
   "private": true,
-  "version": "2026.2",
+  "version": "2026.2.10",
   "type": "module",
   "scripts": {
     "check-node": "node check-node.cjs",
     "predev": "npm run check-node",
     "prebuild": "npm run check-node",
     "dev": "vite",
-    "compile:deps": "npm install --no-audit --no-fund",
     "compile:build": "tsc -b && vite build",
-    "compile": "npm run compile:deps && npm run compile:build",
+    "compile": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -41,7 +40,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-table": "^8.21.3",
-    "@viglet/turing-react-sdk": "2026.2.8",
+    "@viglet/turing-react-sdk": "*",
     "@viglet/viglet-design-system": "^2026.2.36",
     "axios": "^1.15.1",
     "class-variance-authority": "^0.7.1",

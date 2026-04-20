@@ -1,4 +1,4 @@
-name: Publish turing-react-sdk
+name: Publish frontend/packages/react-sdk
 
 on:
   workflow_dispatch:
@@ -29,22 +29,33 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # ── Build, Bump & Publish turing-react-sdk ──
-      - name: Build turing-react-sdk
-        working-directory: turing-react-sdk
+      # ── Install workspace deps ──
+      - name: Install workspace deps
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
+      # ── Bump every workspace (root + apps + packages) by a patch ──
+      - name: Bump all workspaces (patch)
+        working-directory: frontend
+        run: npm version patch --workspaces --include-workspace-root --no-git-tag-version
+
+      # ── Build & publish the SDK (which now carries the bumped version) ──
+      - name: Build @viglet/turing-react-sdk
+        working-directory: frontend/packages/react-sdk
         run: npm run build
 
-      - name: Bump & Publish turing-react-sdk
-        working-directory: turing-react-sdk
-        run: |
-          npm version patch --no-git-tag-version
-          npm publish --access public
+      - name: Publish @viglet/turing-react-sdk
+        working-directory: frontend/packages/react-sdk
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # ── Commit version bump back to branch ──
+      # ── Commit every package.json touched by the workspace-wide bump ──
       - name: Commit version bump
         run: |
-          git add turing-react-sdk/package.json
-          git commit -m "chore: bump turing-react-sdk version [skip ci]" || echo "No changes to commit"
+          git add frontend/package.json \
+                  frontend/packages/*/package.json \
+                  frontend/apps/turing-app/package.json \
+                  frontend/apps/marketplace/*/package.json
+          git commit -m "chore: bump frontend workspaces to match @viglet/turing-react-sdk [skip ci]" || echo "No changes to commit"
           git push

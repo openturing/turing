@@ -73,3 +73,14 @@ __pycache__/
 /turing-react/.mf
 turing-react-sdk/debug-storybook.log
 /.github/modernize
+/frontend/.turbo
+/frontend/apps/marketplace/space-missions/dist
+frontend/apps/marketplace/space-missions/space-missions.zip
+/frontend/apps/marketplace/vinyl-records/dist
+/frontend/apps/turing-app/.__mf__temp
+/frontend/packages/react-sdk/.turbo
+frontend/packages/react-sdk/debug-storybook.log
+/frontend/packages/shared-types/.turbo
+/frontend/packages/shared-types/dist
+/frontend/apps/marketplace/mythical-creatures/dist
+frontend/apps/marketplace/mythical-creatures/mythical-creatures.zip

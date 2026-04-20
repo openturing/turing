@@ -7,10 +7,7 @@
   "compilerOptions": {
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["./src/*"],
-      "@viglet/turing-react-sdk": [
-        "../turing-react-sdk/src/index.ts"
-      ]
+      "@/*": ["./src/*"]
     },
     "strict": true,
     "forceConsistentCasingInFileNames": true

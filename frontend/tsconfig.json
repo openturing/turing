@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@viglet/turing-react-sdk": ["packages/react-sdk/src/index.ts"],
+      "@viglet/turing-react-sdk/*": ["packages/react-sdk/src/*"],
+      "@viglet/turing-shared-types": ["packages/shared-types/src/index.ts"],
+      "@viglet/turing-shared-types/*": ["packages/shared-types/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "**/node_modules", "**/dist", "**/build"]
+}

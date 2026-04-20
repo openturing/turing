@@ -13,17 +13,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: turing-react-sdk
-            directory: turing-react-sdk
+          - name: frontend/packages/react-sdk
+            directory: frontend/packages/react-sdk
             script: build
           - name: mythical-creatures
-            directory: turing-marketplace/mythical-creatures/app
+            directory: frontend/apps/marketplace/mythical-creatures
             script: compile
           - name: space-missions
-            directory: turing-marketplace/space-missions/app
+            directory: frontend/apps/marketplace/space-missions
             script: compile
           - name: vinyl-records
-            directory: turing-marketplace/vinyl-records/app
+            directory: frontend/apps/marketplace/vinyl-records
             script: compile
 
     name: ${{ matrix.name }}
