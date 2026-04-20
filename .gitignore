@@ -84,3 +84,6 @@ frontend/packages/react-sdk/debug-storybook.log
 /frontend/packages/shared-types/dist
 /frontend/apps/marketplace/mythical-creatures/dist
 frontend/apps/marketplace/mythical-creatures/mythical-creatures.zip
+/frontend/apps/marketplace/space-missions/.turbo
+/frontend/apps/marketplace/vinyl-records/.turbo
+/frontend/apps/marketplace/mythical-creatures/.turbo

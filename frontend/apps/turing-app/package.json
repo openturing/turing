@@ -1,5 +1,5 @@
 {
-  "name": "turing-react",
+  "name": "turing-app",
   "private": true,
   "version": "2026.2.10",
   "type": "module",
@@ -8,8 +8,7 @@
     "predev": "npm run check-node",
     "prebuild": "npm run check-node",
     "dev": "vite",
-    "compile:build": "tsc -b && vite build",
-    "compile": "tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

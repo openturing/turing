@@ -9,12 +9,9 @@
         "build/**"
       ]
     },
-    "compile": {
+    "turing-app#build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        "dist/**",
-        "build/**"
-      ]
+      "cache": false
     },
     "dev": {
       "cache": false,

@@ -4,7 +4,7 @@
  *
  * Walks each workspace's build output directory (dist/, build/) and reports
  * file count, total size, and freshness (mtime vs now). Also detects the
- * Spring Boot public assets written by the turing-react app.
+ * Spring Boot public assets written by the turing-app.
  *
  * No dependencies — Node stdlib only.
  */

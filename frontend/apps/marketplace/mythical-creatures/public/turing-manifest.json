@@ -1,10 +1,10 @@
 {
   "name": "mythical-creatures",
-  "version": "2026.2",
+  "version": "2026.2.10",
   "author": "Alexandre Oliveira",
   "repository": "https://github.com/openviglet/turing",
   "description": "mythical-creatures — Turing ES example application",
-  "buildDate": "2026-04-08T18:43:04.524Z",
+  "buildDate": "2026-04-20T15:43:07.576Z",
   "snSite": "mythical-creatures",
   "locale": "en_US",
   "framework": "react",

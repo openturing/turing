@@ -1,12 +1,15 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# Package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot configuration for the unified monorepo.
+# Frontend uses npm workspaces under `/frontend` — Dependabot discovers every
+# workspace (apps, packages) from the root `package.json` + `package-lock.json`,
+# so a single `npm` block covers turing-app, react-sdk, shared-types, and the
+# marketplace apps.
+#
 # https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
 updates:
-  - package-ecosystem: "maven" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "maven"
+    directory: "/"
     schedule:
       interval: "weekly"
     target-branch: "2026.2"
@@ -16,66 +19,23 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/frontend/apps/turing-app" # Location of package manifests
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
     schedule:
       interval: "weekly"
     target-branch: "2026.2"
     open-pull-requests-limit: 15
     ignore:
+      # Pinned across the whole workspace — each bump here affected multiple apps
+      # (Vite 8.0.9 + MF 1.14.5 + Rolldown produced REQUIRE_TLA on react-dom CJS);
+      # typescript is held back so tsc output stays stable for the SDK consumers.
+      # Unpin once upstream fixes land.
       - dependency-name: "typescript"
-      # Pinned — MF 1.14.5 + Rolldown in Vite 8.0.9 break the build with REQUIRE_TLA
-      # (react-dom CJS → MF TLA virtual). Unpin once upstream fixes land.
       - dependency-name: "vite"
       - dependency-name: "@module-federation/vite"
     groups:
-      react:
-        applies-to: version-updates
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/frontend/packages/react-sdk"
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    ignore:
-      - dependency-name: "typescript"
-    groups:
-      react-sdk:
-        applies-to: version-updates
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/frontend/apps/marketplace/mythical-creatures"
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    groups:
-      marketplace-mythical-creatures:
-        applies-to: version-updates
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/frontend/apps/marketplace/space-missions"
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    groups:
-      marketplace-space-missions:
-        applies-to: version-updates
-        patterns:
-          - "*"
-  - package-ecosystem: "npm"
-    directory: "/frontend/apps/marketplace/vinyl-records"
-    schedule:
-      interval: "weekly"
-    target-branch: "2026.2"
-    open-pull-requests-limit: 15
-    groups:
-      marketplace-vinyl-records:
+      frontend:
         applies-to: version-updates
         patterns:
           - "*"

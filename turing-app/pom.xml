@@ -477,12 +477,23 @@
                         <phase>generate-resources</phase>
                     </execution>
                     <execution>
-                        <id>react compile</id>
+                        <id>npm install</id>
                         <goals>
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run compile</arguments>
+                            <arguments>install --no-audit --no-fund</arguments>
+                            <workingDirectory>../frontend</workingDirectory>
+                        </configuration>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>react build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build:app</arguments>
                             <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                     </execution>
