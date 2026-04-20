@@ -28,6 +28,9 @@ hs_err_pid*
 # ── Node / npm ───────────────────────────────────────────────
 node
 node_modules/
+# Lockfile is regenerated on every npm install / CI run to resolve
+# platform-specific optional deps (avoids npm/cli#4828).
+package-lock.json
 
 # ── Maven flatten / shade ───────────────────────────────────
 .flattened-pom.xml

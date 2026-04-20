@@ -27,9 +27,14 @@ jobs:
         with:
           node-version: 22
 
+      # Regenerate package-lock on the runner to resolve platform-specific
+      # native optional deps (e.g. @tailwindcss/oxide-linux-x64-gnu) — avoids
+      # npm/cli#4828 with workspaces + committed Windows lockfile.
       - name: Install workspace deps
         working-directory: frontend
-        run: npm install --no-audit --no-fund
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
 
       - name: Build Storybook
         working-directory: frontend

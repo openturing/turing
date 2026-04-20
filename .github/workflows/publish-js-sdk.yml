@@ -30,9 +30,14 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # ── Install workspace deps ──
+      # Regenerate package-lock on the runner to resolve platform-specific
+      # native optional deps (e.g. @tailwindcss/oxide-linux-x64-gnu) — avoids
+      # npm/cli#4828 with workspaces + committed Windows lockfile.
       - name: Install workspace deps
         working-directory: frontend
-        run: npm install --no-audit --no-fund
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
 
       # ── Bump every workspace (root + apps + packages) by a patch ──
       - name: Bump all workspaces (patch)
