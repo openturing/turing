@@ -23,8 +23,8 @@ class TurLoggingAPITest {
 
     @BeforeEach
     void setUp() {
-        // Set enabled=false so it does not connect to Mongo
-        turLoggingAPI = new TurLoggingAPI(false, "mongodb://localhost:27017", "turingLog", "server",
+        // engine=none so it does not connect to Mongo
+        turLoggingAPI = new TurLoggingAPI("none", false, "mongodb://localhost:27017", "turingLog", "server",
                 "indexing", "aem");
         mockMvc = MockMvcBuilders.standaloneSetup(turLoggingAPI).build();
     }
@@ -314,7 +314,7 @@ class TurLoggingAPITest {
 
     @Test
     void serverLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
@@ -325,7 +325,7 @@ class TurLoggingAPITest {
 
     @Test
     void indexingLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
@@ -336,7 +336,7 @@ class TurLoggingAPITest {
 
     @Test
     void aemLoggingEnabledShouldReturnDefaultOnConnectionFailure() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
@@ -347,7 +347,7 @@ class TurLoggingAPITest {
 
     @Test
     void serverLoggingEnabledWithDescSortShouldReturnDefault() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
@@ -358,7 +358,7 @@ class TurLoggingAPITest {
 
     @Test
     void serverLoggingEnabledWithAllParamsShouldReturnDefault() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 
@@ -376,7 +376,7 @@ class TurLoggingAPITest {
 
     @Test
     void indexingLoggingEnabledWithAllParamsShouldReturnDefault() throws Exception {
-        TurLoggingAPI enabledApi = new TurLoggingAPI(true, "mongodb://invalid-host:99999",
+        TurLoggingAPI enabledApi = new TurLoggingAPI("mongodb", true, "mongodb://invalid-host:99999",
                 "turingLog", "server", "indexing", "aem");
         MockMvc enabledMockMvc = MockMvcBuilders.standaloneSetup(enabledApi).build();
 

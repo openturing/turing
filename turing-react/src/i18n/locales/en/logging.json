@@ -5,6 +5,11 @@
     "indexing": "Indexing",
     "indexingDesc": "Indexing service instance",
     "aem": "AEM",
-    "aemDesc": "AEM service instance"
+    "aemDesc": "AEM service instance",
+    "engine": {
+      "none": "Not configured",
+      "notConfiguredTitle": "Logging engine not configured",
+      "notConfiguredDesc": "Set turing.logging.engine to mongodb or redis in application.yaml to enable log persistence and browsing."
+    }
   }
 }

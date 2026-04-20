@@ -5,6 +5,11 @@
     "indexing": "Indexação",
     "indexingDesc": "Instância do serviço de indexação",
     "aem": "AEM",
-    "aemDesc": "Instância do serviço AEM"
+    "aemDesc": "Instância do serviço AEM",
+    "engine": {
+      "none": "Não configurado",
+      "notConfiguredTitle": "Mecanismo de logs não configurado",
+      "notConfiguredDesc": "Defina turing.logging.engine como mongodb ou redis em application.yaml para ativar persistência e navegação de logs."
+    }
   }
 }

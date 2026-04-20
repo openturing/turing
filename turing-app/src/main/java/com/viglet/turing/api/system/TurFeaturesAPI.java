@@ -5,6 +5,7 @@ import com.viglet.turing.service.git.TurGitServerService;
 import com.viglet.turing.service.storage.TurStorageService;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,17 +25,20 @@ public class TurFeaturesAPI {
     private final TurGlobalSettingsService globalSettingsService;
     private final TurGitServerService gitServerService;
     private final TurConfigProperties configProperties;
+    private final String loggingEngine;
 
     public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService,
-                          TurGitServerService gitServerService, TurConfigProperties configProperties) {
+                          TurGitServerService gitServerService, TurConfigProperties configProperties,
+                          @Value("${turing.logging.engine:none}") String loggingEngine) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.gitServerService = gitServerService;
         this.configProperties = configProperties;
+        this.loggingEngine = loggingEngine;
     }
 
     public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled,
-                                   boolean marketplaceEnabled) {}
+                                   boolean marketplaceEnabled, String loggingEngine) {}
 
     @GetMapping
     public FeaturesResponse getFeatures() {
@@ -44,6 +48,7 @@ public class TurFeaturesAPI {
                 storageService.isEnabled(),
                 globalSettingsService.isRagEnabled(),
                 gitServerService.isEnabled(),
-                marketplaceEnabled);
+                marketplaceEnabled,
+                loggingEngine);
     }
 }

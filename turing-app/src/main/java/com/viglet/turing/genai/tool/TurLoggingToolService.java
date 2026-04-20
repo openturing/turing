@@ -52,10 +52,10 @@ public class TurLoggingToolService {
     public TurLoggingToolService(
             @Value("${turing.mongodb.enabled:false}") boolean enabled,
             @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String connectionString,
-            @Value("${turing.mongodb.logging.database:'turingLog'}") String databaseName,
-            @Value("${turing.mongodb.logging.collection.server:'server'}") String serverCollectionName,
-            @Value("${turing.mongodb.logging.collection.indexing:'indexing'}") String indexingCollectionName,
-            @Value("${turing.mongodb.logging.collection.aem:'aem'}") String aemCollectionName) {
+            @Value("${turing.logging.database:'turingLog'}") String databaseName,
+            @Value("${turing.logging.collection.server:'server'}") String serverCollectionName,
+            @Value("${turing.logging.collection.indexing:'indexing'}") String indexingCollectionName,
+            @Value("${turing.logging.collection.aem:'aem'}") String aemCollectionName) {
         this.enabled = enabled;
         this.connectionString = connectionString;
         this.databaseName = databaseName;

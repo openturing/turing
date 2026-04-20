@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="REDIS_GENERAL_SYNC" class="com.viglet.turing.commons.logging.TurRedisAppender">
+        <enabled>true</enabled>
+        <connectionString>redis://localhost:6379/0</connectionString>
+        <key>turingLog:server</key>
+        <maxEntries>10000</maxEntries>
+    </appender>
+
+    <appender name="REDIS_STATUS_SYNC" class="com.viglet.turing.commons.logging.TurRedisIndexingAppender">
+        <enabled>true</enabled>
+        <connectionString>redis://localhost:6379/0</connectionString>
+        <key>turingLog:indexing</key>
+        <maxEntries>50000</maxEntries>
+    </appender>
+
+    <appender name="ASYNC_REDIS_GENERAL" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="REDIS_GENERAL_SYNC" />
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_REDIS_STATUS" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="REDIS_STATUS_SYNC" />
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%msg%n</Pattern>
+        </encoder>
+    </appender>
+
+    <logger name="redis.clients.jedis" level="OFF" />
+    <logger name="com.hazelcast.internal.diagnostics.HealthMonitor" level="OFF" />
+
+    <logger name="com.viglet.turing.commons.logging.TurLoggingIndexingLog" level="info" additivity="false">
+        <appender-ref ref="ASYNC_REDIS_STATUS" />
+    </logger>
+
+    <logger name="com.viglet.turing.TuringES" level="info" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <logger name="com.viglet.turing.onstartup" level="info" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}/}spring.log}"/>
+    <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC_REDIS_GENERAL"/>
+    </root>
+</configuration>

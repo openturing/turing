@@ -42,25 +42,35 @@ public class TurLoggingAPI {
     public static final String TOTAL_PAGES = "totalPages";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pageSize";
-    private final boolean enabled;
-    private final String connectionString;
+    public static final String ENGINE_MONGODB = "mongodb";
+    public static final String ENGINE_REDIS = "redis";
+
+    private final String loggingEngine;
+    private final boolean mongoEnabled;
+    private final String mongoUri;
     private final String databaseName;
     private final String serverCollectionName;
     private final String indexingCollectionName;
     private final String aemCollectionName;
 
-    public TurLoggingAPI(@Value("${turing.mongodb.enabled:false}") boolean enabled,
-            @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String connectionString,
-            @Value("${turing.mongodb.logging.database:'turingLog'}") String databaseName,
-            @Value("${turing.mongodb.logging.collection.server:'server'}") String serverCollectionName,
-            @Value("${turing.mongodb.logging.collection.indexing:'indexing'}") String indexingCollectionName,
-            @Value("${turing.mongodb.logging.collection.aem:'aem'}") String aemCollectionName) {
-        this.enabled = enabled;
-        this.connectionString = connectionString;
+    public TurLoggingAPI(@Value("${turing.logging.engine:none}") String loggingEngine,
+            @Value("${turing.mongodb.enabled:false}") boolean mongoEnabled,
+            @Value("${turing.mongodb.uri:'mongodb://localhost:27017'}") String mongoUri,
+            @Value("${turing.logging.database:'turingLog'}") String databaseName,
+            @Value("${turing.logging.collection.server:'server'}") String serverCollectionName,
+            @Value("${turing.logging.collection.indexing:'indexing'}") String indexingCollectionName,
+            @Value("${turing.logging.collection.aem:'aem'}") String aemCollectionName) {
+        this.loggingEngine = loggingEngine;
+        this.mongoEnabled = mongoEnabled;
+        this.mongoUri = mongoUri;
         this.databaseName = databaseName;
         this.serverCollectionName = serverCollectionName;
         this.indexingCollectionName = indexingCollectionName;
         this.aemCollectionName = aemCollectionName;
+    }
+
+    private boolean isMongoActive() {
+        return ENGINE_MONGODB.equalsIgnoreCase(loggingEngine) && mongoEnabled;
     }
 
     @Operation(summary = "Server Logging")
@@ -115,11 +125,11 @@ public class TurLoggingAPI {
         result.put(TOTAL_ELEMENTS, 0L);
         result.put(TOTAL_PAGES, 0);
 
-        if (!enabled) {
+        if (!isMongoActive()) {
             return result;
         }
 
-        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+        try (MongoClient mongoClient = MongoClients.create(mongoUri)) {
             MongoDatabase database = mongoClient.getDatabase(databaseName);
             MongoCollection<Document> collection = database.getCollection(collectionName);
 
@@ -162,11 +172,11 @@ public class TurLoggingAPI {
         result.put(TOTAL_ELEMENTS, 0L);
         result.put(TOTAL_PAGES, 0);
 
-        if (!enabled) {
+        if (!isMongoActive()) {
             return result;
         }
 
-        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+        try (MongoClient mongoClient = MongoClients.create(mongoUri)) {
             MongoDatabase database = mongoClient.getDatabase(databaseName);
             MongoCollection<Document> collection = database.getCollection(collectionName);
 

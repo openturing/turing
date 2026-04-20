@@ -46,17 +46,21 @@ turing:
   marketplace:
     enabled: true
     url: https://turing.viglet.org/marketplace/marketplace.json
+  logging:
+    engine: none        # none | mongodb | redis
+    database: turingLog
+    collection:
+      server: server
+      aem: aem
+      indexing: indexing
+    purge:
+      days: 30
   mongodb:
     enabled: false
     uri: mongodb://localhost:27017
-    logging:
-      database: turingLog
-      collection:
-        server: server
-        aem: aem
-        indexing: indexing
-      purge:
-        days: 30
+  redis:
+    enabled: false
+    uri: redis://localhost:6379/0
 
 # ---------------------------------------------------------------------------
 # Spring

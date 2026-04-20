@@ -328,6 +328,11 @@
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>5.6.5</version>
             </dependency>
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>5.2.0</version>
+            </dependency>
             <!-- Not in Spring Boot BOM -->
             <dependency>
                 <groupId>org.json</groupId>
