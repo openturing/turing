@@ -20,6 +20,8 @@
     "build:sdk": "turbo run build --filter=@viglet/turing-react-sdk && node scripts/build-status.mjs",
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
+    "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
+    "package:marketplace": "npm run package --workspaces --if-present",
     "dev:app": "turbo run dev --filter=turing-app",
     "dev:mythical-creatures": "turbo run dev --filter=turing-example-mythical-creatures",
     "dev:space-missions": "turbo run dev --filter=turing-example-space-missions",

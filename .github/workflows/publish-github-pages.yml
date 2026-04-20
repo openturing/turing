@@ -27,46 +27,44 @@ jobs:
         with:
           node-version: 22
 
-      # ── Storybook ──
+      - name: Install workspace deps
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
       - name: Build Storybook
-        working-directory: frontend/packages/react-sdk
-        run: npm install --no-audit --no-fund && npx storybook build --output-dir storybook-static
+        working-directory: frontend
+        run: npm run build-storybook:react-sdk
         env:
           STORYBOOK_BASE: /react-sdk/
 
-      # ── Marketplace ──
-      - name: Build Marketplace examples
-        run: |
-          for dir in frontend/apps/marketplace/*; do
-            project=$(basename "$(dirname "$dir")")
-            echo "::group::Building $project"
-            (cd "$dir" && npm run package)
-            echo "::endgroup::"
-          done
+      - name: Package Marketplace examples
+        working-directory: frontend
+        run: npm run package:marketplace
 
-      # ── Assemble site ──
-      - name: Prepare Pages artifact
+      - name: Assemble site
         run: |
+          # Storybook
           mkdir -p _site/react-sdk
           cp -r frontend/packages/react-sdk/storybook-static/* _site/react-sdk/
 
+          # Marketplace manifest
           mkdir -p _site/marketplace
           cp frontend/apps/marketplace/marketplace.json _site/marketplace/
 
-          for dir in frontend/apps/marketplace/*/; do
-            project=$(basename "$dir")
+          # Per-project artifacts + marketing docs
+          for app_dir in frontend/apps/marketplace/*/; do
+            project=$(basename "$app_dir")
             mkdir -p "_site/marketplace/$project"
-            cp "$dir"app/*.zip "_site/marketplace/$project/"
-            cp "$dir"app/dist/turing-manifest.json "_site/marketplace/$project/" 2>/dev/null || true
-            # Prefer the project-root README / landing page (creative description).
-            # Fall back to the technical app/README.md if project-root versions are absent.
-            if [ -f "$dir"index.html ]; then
-              cp "$dir"index.html "_site/marketplace/$project/"
-            fi
-            if [ -f "$dir"README.md ]; then
-              cp "$dir"README.md "_site/marketplace/$project/"
+            cp "$app_dir"*.zip                     "_site/marketplace/$project/" 2>/dev/null || true
+            cp "$app_dir"dist/turing-manifest.json "_site/marketplace/$project/" 2>/dev/null || true
+
+            # Marketing README + landing page live outside the workspace, in turing-marketplace/
+            legacy="turing-marketplace/$project"
+            [ -f "$legacy/index.html" ] && cp "$legacy/index.html" "_site/marketplace/$project/"
+            if [ -f "$legacy/README.md" ]; then
+              cp "$legacy/README.md" "_site/marketplace/$project/"
             else
-              cp "$dir"app/README.md "_site/marketplace/$project/" 2>/dev/null || true
+              cp "$app_dir/README.md" "_site/marketplace/$project/" 2>/dev/null || true
             fi
           done
 

@@ -12,21 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: frontend/packages/react-sdk
-            directory: frontend/packages/react-sdk
-            script: build
-          - name: mythical-creatures
-            directory: frontend/apps/marketplace/mythical-creatures
-            script: compile
-          - name: space-missions
-            directory: frontend/apps/marketplace/space-missions
-            script: compile
-          - name: vinyl-records
-            directory: frontend/apps/marketplace/vinyl-records
-            script: compile
+        workspace:
+          - "@viglet/turing-react-sdk"
+          - turing-example-mythical-creatures
+          - turing-example-space-missions
+          - turing-example-vinyl-records
 
-    name: ${{ matrix.name }}
+    name: ${{ matrix.workspace }}
     steps:
       - uses: actions/checkout@v6
 
@@ -35,6 +27,10 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install workspace deps
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
       - name: Build
-        working-directory: ${{ matrix.directory }}
-        run: npm run ${{ matrix.script }}
+        working-directory: frontend
+        run: npm run build --workspace ${{ matrix.workspace }}

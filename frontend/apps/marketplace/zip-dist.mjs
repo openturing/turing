@@ -18,7 +18,7 @@ import { createDeflateRaw } from "node:zlib";
 
 const APP_DIR = process.cwd();
 const DIST_DIR = join(APP_DIR, "dist");
-const EXPORT_DIR = join(APP_DIR, "..", "export");
+const EXPORT_DIR = join(APP_DIR, "export");
 const pkg = JSON.parse(readFileSync(join(APP_DIR, "package.json"), "utf-8"));
 const siteName = pkg.name.replace(/^turing-example-/, "");
 const zipPath = join(APP_DIR, `${siteName}.zip`);
