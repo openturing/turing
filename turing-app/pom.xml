@@ -484,7 +484,7 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install -g pnpm@10.15.0</arguments>
+                            <arguments>install -g pnpm@10.33.0</arguments>
                             <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                         <phase>generate-resources</phase>
