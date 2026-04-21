@@ -30,7 +30,7 @@ import type { TurSNSiteFacetOrdering } from '@/models/sn/sn-site-facet-ordering.
 import { TurSNFacetedFieldService } from '@/services/sn/sn.faceted.field.service';
 import { toast } from 'sonner';
 import { BadgeColorful } from '../../badge-colorful';
-import { GradientButton } from '../../ui/gradient-button';
+import { GradientButtonLink } from '@viglet/viglet-design-system/router';
 
 interface SNSiteFacetDraggableListRowProps {
     row: TurSNSiteFacetOrdering;
@@ -78,15 +78,14 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
             </TableCell>
             <TableCell className="hidden md:table-cell">{row.facetName}</TableCell>
             <TableCell className="text-muted-foreground">
-                <GradientButton
-                    asChild
+                <GradientButtonLink
                     variant="outline"
                     size="sm"
                     to={`${ROUTES.SN_INSTANCE}/${siteId}/${row.customFacet ? 'facet/custom' : 'facet/field'
                         }/${row.customFacet ? row.id : row.fieldExtId}`}
                 >
                     {t("forms.common.edit")}
-                </GradientButton>
+                </GradientButtonLink>
             </TableCell>
         </TableRow>
     );

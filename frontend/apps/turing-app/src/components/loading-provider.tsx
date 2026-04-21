@@ -1,1 +1,1 @@
-export { LoadProvider } from "@viglet/viglet-design-system";
+export { LoadProvider } from "@viglet/viglet-design-system/router";

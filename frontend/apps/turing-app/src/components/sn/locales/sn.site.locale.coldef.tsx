@@ -8,6 +8,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { GradientButtonLink } from "@viglet/viglet-design-system/router";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
 import { Icon } from "@iconify/react";
 import { Checkbox } from "@radix-ui/react-checkbox";
@@ -77,9 +78,9 @@ export const buildColumns = (t: (key: string) => string, storageEnabled = false)
             const defaultUrl = `/sn/${site.name}?_setlocale=${locale.language}&_embedded=true`;
             return (
                 <div className="flex justify-end gap-2">
-                    <GradientButton asChild variant="outline" size={"sm"} to={`${ROUTES.SN_INSTANCE}/${site.id}/locale/${locale.id}`}>
+                    <GradientButtonLink variant="outline" size={"sm"} to={`${ROUTES.SN_INSTANCE}/${site.id}/locale/${locale.id}`}>
                         {t("forms.common.edit")}
-                    </GradientButton>
+                    </GradientButtonLink>
                     {hasTemplate ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -21,7 +21,7 @@ import { ROUTES } from '@/app/routes.const';
 import { BadgeColorful } from '@/components/badge-colorful';
 import { BadgeLocale } from '@/components/badge-locale';
 import { Badge } from '@/components/ui/badge';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { GradientButtonLink } from '@viglet/viglet-design-system/router';
 import {
     Table,
     TableBody,
@@ -84,14 +84,13 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
                 <BadgeColorful text={row.core} />
             </TableCell>
             <TableCell>
-                <GradientButton
-                    asChild
+                <GradientButtonLink
                     variant="outline"
                     size="sm"
                     to={`${ROUTES.SN_INSTANCE}/${row.turSNSite.id}/locale/${row.id}`}
                 >
                     {t("forms.common.edit")}
-                </GradientButton>
+                </GradientButtonLink>
             </TableCell>
         </TableRow>
     );

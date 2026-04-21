@@ -1,1 +1,1 @@
-export { PageContent } from "@viglet/viglet-design-system";
+export { PageContent } from "@viglet/viglet-design-system/router";

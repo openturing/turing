@@ -1,1 +1,1 @@
-export { StickyPageHeader } from "@viglet/viglet-design-system";
+export { StickyPageHeader } from "@viglet/viglet-design-system/router";

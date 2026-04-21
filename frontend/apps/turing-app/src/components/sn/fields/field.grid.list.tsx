@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { GradientButton } from "@/components/ui/gradient-button"
+import { GradientButtonLink } from "@viglet/viglet-design-system/router"
 import { GradientSwitch } from "@/components/ui/gradient-switch"
 import { Input } from "@/components/ui/input"
 import {
@@ -311,9 +312,9 @@ const buildColumns = (
             cell: ({ row }) => {
                 return (
                     <div className="text-center">
-                        <GradientButton asChild variant="outline" size={"sm"} to={row.original.id}>
+                        <GradientButtonLink variant="outline" size={"sm"} to={row.original.id}>
                             {t("forms.common.edit")}
-                        </GradientButton>
+                        </GradientButtonLink>
                     </div>
                 )
             },

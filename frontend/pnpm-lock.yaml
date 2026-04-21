@@ -315,8 +315,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/react-sdk
       '@viglet/viglet-design-system':
-        specifier: ^2026.2.45
-        version: 2026.2.45(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
+        specifier: ^2026.2.48
+        version: 2026.2.48(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
       axios:
         specifier: ^1.15.1
         version: 1.15.1
@@ -818,6 +818,9 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource-variable/inter@5.2.8':
+    resolution: {integrity: sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==}
 
   '@fontsource-variable/plus-jakarta-sans@5.2.8':
     resolution: {integrity: sha512-iQecBizIdZxezODNHzOn4SvvRMrZL/S8k4MEXGDynCmUrImVW0VmX+tIAMqnADwH4haXlHSXqMgU6+kcfBQJdw==}
@@ -2402,8 +2405,8 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@viglet/viglet-design-system@2026.2.45':
-    resolution: {integrity: sha512-Zt9wI0EULvxKMNRCeziLzkh0qOb3p4Yl01v7vO+ZGKqN6wvHq96Hb+gJDB7XuuoF/CHLvAlqk1j8A2PzL+G97w==}
+  '@viglet/viglet-design-system@2026.2.48':
+    resolution: {integrity: sha512-obcjlVvac7klEjUyBfeHDEtHhv3bssyP0Gb5MHiY05LftkpwLVfWNljNNSvrLBDjiITiULeg1HFGIxZJyS8pXw==}
     engines: {node: ^24.0.0, npm: ^11.0.0}
     peerDependencies:
       i18next: '>=25.0.0'
@@ -4420,6 +4423,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
+  '@fontsource-variable/inter@5.2.8': {}
+
   '@fontsource-variable/plus-jakarta-sans@5.2.8': {}
 
   '@humanfs/core@0.19.2':
@@ -6098,8 +6103,9 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@viglet/viglet-design-system@2026.2.45(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
+  '@viglet/viglet-design-system@2026.2.48(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
     dependencies:
+      '@fontsource-variable/inter': 5.2.8
       '@fontsource-variable/plus-jakarta-sans': 5.2.8
       '@iconify/react': 6.0.2(react@19.2.5)
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
