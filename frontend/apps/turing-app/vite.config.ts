@@ -1,6 +1,7 @@
 import { federation } from "@module-federation/vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { vigletBootLoader } from "@viglet/viglet-design-system/vite";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
@@ -99,6 +100,14 @@ export default defineConfig({
   plugins: [
     captureServerPlugin(),
     syncExternalStoreShimPlugin(),
+    vigletBootLoader({
+      title: "Viglet Turing ES",
+      subtitle: "Enterprise Search Intelligence",
+      color: "#4169E1",
+      colorDark: "#2c4a99",
+      prefix: "turing",
+      testFlag: "__TURING_LOADING_TEST__",
+    }),
     react(),
     tailwindcss(),
     federation({
