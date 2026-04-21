@@ -56,59 +56,81 @@
       .turing-boot-ring.delay-3 { animation-delay: 1.8s; }
       .turing-boot-logo-mark {
         position: relative;
-        width: 88px;
-        height: 88px;
-        box-sizing: border-box;
-        background-color: #4169E1;
+        width: 110px;
+        height: 110px;
         color: #FFDEAD;
-        padding: 8px;
-        border-radius: 12px;
-        border: 3px solid #FFDEAD;
-        box-shadow:
-          0 1px 3px rgba(0, 0, 0, 0.22),
-          0 2px 6px rgba(0, 0, 0, 0.19),
-          0 20px 40px -10px rgba(65, 105, 225, 0.45);
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        -webkit-user-select: none;
         user-select: none;
         animation: turing-boot-breathe 2.2s ease-in-out infinite;
       }
+      /* Outer aura — blurred gradient halo (kept from before). */
       .turing-boot-logo-mark::before {
         content: "";
         position: absolute;
-        inset: -6px;
-        border-radius: 16px;
+        inset: 0;
+        border-radius: 50%;
         background: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6, #3b82f6);
         background-size: 300% 300%;
-        z-index: -1;
-        filter: blur(14px);
-        opacity: 0.55;
+        z-index: -2;
+        filter: blur(18px);
+        opacity: 0.5;
         animation: turing-boot-glow 6s linear infinite;
       }
-      .turing-boot-logo-section {
-        font-size: 11px;
-        font-weight: 300;
-        line-height: 1;
-        opacity: 0.85;
-        letter-spacing: 0.04em;
-        align-self: flex-end;
+      /* Gas cloud — the colored disc, heavily blurred and softly masked so
+         the edge is almost imperceptible, like a plume of gas. Molecules
+         render crisp on top of this layer. */
+      .turing-boot-logo-mark::after {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background: radial-gradient(circle at center, #4169E1 0%, rgba(65,105,225,0.6) 55%, rgba(65,105,225,0) 100%);
+        filter: blur(5px);
+        z-index: -1;
+        animation: turing-boot-gas 4s ease-in-out infinite;
       }
-      .turing-boot-logo-acronym {
-        font-size: 40px;
-        font-weight: 900;
-        line-height: 1;
-        align-self: flex-start;
+      @keyframes turing-boot-gas {
+        0%, 100% { transform: scale(1); opacity: 0.85; }
+        50%      { transform: scale(1.08); opacity: 1; }
       }
-      .turing-boot-logo-acronym span {
-        display: inline-block;
-        animation: turing-boot-acronym-glow 2s ease-in-out both infinite;
+
+      /* Chemical-bond animation inside the circle — 6 molecules that fade
+         through each other in a 10s loop. Pure SVG + CSS so no font load is
+         required before the loader looks right. */
+      .turing-boot-molecules {
+        width: 62px;
+        height: 62px;
+        overflow: visible;
       }
-      @keyframes turing-boot-acronym-glow {
-        0%, 100% { text-shadow: 0 0 8px snow, 0 -25px 50px tomato, -25px 25px 50px yellow, 25px 25px 50px tomato; }
-        33%      { text-shadow: 0 0 8px snow, 0 -25px 50px cyan, -25px 25px 50px tomato, 25px 25px 50px cyan; }
-        66%      { text-shadow: 0 0 8px snow, 0 -25px 50px yellow, -25px 25px 50px cyan, 25px 25px 50px yellow; }
+      .turing-boot-molecules line,
+      .turing-boot-molecules path {
+        stroke: #FFDEAD;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+      .turing-boot-molecules circle { fill: #FFDEAD; }
+      .turing-boot-molecule {
+        opacity: 0;
+        transform-origin: center;
+        animation: turing-boot-molecule-cycle 10s ease-in-out infinite both;
+      }
+      .turing-boot-molecule.m-2 { animation-delay: -1.667s; }
+      .turing-boot-molecule.m-3 { animation-delay: -3.333s; }
+      .turing-boot-molecule.m-4 { animation-delay: -5.000s; }
+      .turing-boot-molecule.m-5 { animation-delay: -6.667s; }
+      .turing-boot-molecule.m-6 { animation-delay: -8.333s; }
+
+      @keyframes turing-boot-molecule-cycle {
+        0%   { opacity: 0; transform: scale(0.7); }
+        3%   { opacity: 1; transform: scale(1); }
+        14%  { opacity: 1; transform: scale(1); }
+        17%  { opacity: 0; transform: scale(0.7); }
+        100% { opacity: 0; transform: scale(0.7); }
       }
 
       .turing-boot-text {
@@ -187,12 +209,33 @@
         .turing-boot-ring,
         .turing-boot-logo-mark,
         .turing-boot-logo-mark::before,
-        .turing-boot-logo-acronym span,
+        .turing-boot-molecule,
         .turing-boot-text .turing-boot-title,
         .turing-boot-progress::after {
           animation: none !important;
         }
         .turing-boot-ring { opacity: 0.2; transform: scale(1); }
+        /* Show only the first molecule when motion is reduced. */
+        .turing-boot-molecule { opacity: 0; }
+        .turing-boot-molecule.m-1 { opacity: 1; transform: scale(1); }
+      }
+
+      /* Visible badge shown only when the loader is held via ?loading=1. */
+      .turing-boot-test-badge {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #fff;
+        background: linear-gradient(135deg, #dc2626, #ea580c);
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+        z-index: 10000;
       }
     </style>
     <script>
@@ -209,6 +252,22 @@
             });
           }
         } catch (e) { /* ignore */ }
+
+        // ?loading=1 → hold the boot loader indefinitely so the design can be
+        // eye-balled and regression-tested without racing React's hydration.
+        // The main.tsx module is skipped (it has a matching guard) and a red
+        // "TEST MODE" badge is injected once the DOM is ready.
+        try {
+          if (new URLSearchParams(globalThis.location.search).has("loading")) {
+            globalThis.__TURING_LOADING_TEST__ = true;
+            document.addEventListener("DOMContentLoaded", function () {
+              var badge = document.createElement("div");
+              badge.className = "turing-boot-test-badge";
+              badge.textContent = "Loading · Test Mode · ?loading=1";
+              document.body.appendChild(badge);
+            });
+          }
+        } catch (e) { /* ignore */ }
       })();
     </script>
   </head>
@@ -220,12 +279,59 @@
           <div class="turing-boot-ring delay-1"></div>
           <div class="turing-boot-ring delay-2"></div>
           <div class="turing-boot-ring delay-3"></div>
-          <div class="turing-boot-logo-mark" aria-label="Tu ES">
-            <div class="turing-boot-logo-section">ES</div>
-            <div class="turing-boot-logo-acronym">
-            <span style="animation-delay: -1.0000s">T</span>
-            <span style="animation-delay: -2.0000s">u</span>
-            </div>
+          <div class="turing-boot-logo-mark" aria-label="Viglet Turing ES">
+            <svg class="turing-boot-molecules" viewBox="0 0 100 100" aria-hidden="true">
+              <!-- 1. Diatomic H-H / O=O -->
+              <g class="turing-boot-molecule m-1">
+                <line x1="28" y1="50" x2="72" y2="50" />
+                <circle cx="28" cy="50" r="7" />
+                <circle cx="72" cy="50" r="7" />
+              </g>
+              <!-- 2. Water V-shape H-O-H -->
+              <g class="turing-boot-molecule m-2">
+                <path d="M28,68 L50,38 L72,68" />
+                <circle cx="28" cy="68" r="5" />
+                <circle cx="50" cy="38" r="8" />
+                <circle cx="72" cy="68" r="5" />
+              </g>
+              <!-- 3. Methane tetrahedral 2D (CH4) -->
+              <g class="turing-boot-molecule m-3">
+                <line x1="50" y1="50" x2="25" y2="28" />
+                <line x1="50" y1="50" x2="75" y2="28" />
+                <line x1="50" y1="50" x2="25" y2="72" />
+                <line x1="50" y1="50" x2="75" y2="72" />
+                <circle cx="50" cy="50" r="7" />
+                <circle cx="25" cy="28" r="4.5" />
+                <circle cx="75" cy="28" r="4.5" />
+                <circle cx="25" cy="72" r="4.5" />
+                <circle cx="75" cy="72" r="4.5" />
+              </g>
+              <!-- 4. Ammonia triangle (NH3) -->
+              <g class="turing-boot-molecule m-4">
+                <path d="M50,28 L28,68 L72,68 Z" />
+                <circle cx="50" cy="28" r="7" />
+                <circle cx="28" cy="68" r="5" />
+                <circle cx="72" cy="68" r="5" />
+              </g>
+              <!-- 5. Linear chain (C-C-C-C) -->
+              <g class="turing-boot-molecule m-5">
+                <line x1="18" y1="50" x2="82" y2="50" />
+                <circle cx="18" cy="50" r="5.5" />
+                <circle cx="39.3" cy="50" r="5.5" />
+                <circle cx="60.6" cy="50" r="5.5" />
+                <circle cx="82" cy="50" r="5.5" />
+              </g>
+              <!-- 6. Benzene hexagon (C6H6) -->
+              <g class="turing-boot-molecule m-6">
+                <path d="M50,22 L74,36 L74,64 L50,78 L26,64 L26,36 Z" />
+                <circle cx="50" cy="22" r="4.5" />
+                <circle cx="74" cy="36" r="4.5" />
+                <circle cx="74" cy="64" r="4.5" />
+                <circle cx="50" cy="78" r="4.5" />
+                <circle cx="26" cy="64" r="4.5" />
+                <circle cx="26" cy="36" r="4.5" />
+              </g>
+            </svg>
           </div>
         </div>
         <div class="turing-boot-text">
