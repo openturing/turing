@@ -22,6 +22,7 @@ import {
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts"
 import type { TurSEVendor } from "@/models/se/se-vendor.model.ts"
 import { TurSEInstanceService, TurSEVendorService } from "@/services/se/se.service"
+import { TurFeaturesService } from "@/services/system/features.service"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -29,7 +30,7 @@ import {
 } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-import { IconDeviceFloppy, IconPlug, IconSettings, IconX } from "@tabler/icons-react"
+import { IconDeviceFloppy, IconLock, IconPlug, IconSettings, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
@@ -38,6 +39,7 @@ import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
 const turSEInstanceService = new TurSEInstanceService();
 const turSEVendorService = new TurSEVendorService();
+const turFeaturesService = new TurFeaturesService();
 
 const VENDOR_DEFAULT_URLS: Record<string, string> = {
   SOLR: "http://localhost:8983/solr",
@@ -56,6 +58,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const { control } = form;
   const [vendors, setVendors] = useState<TurSEVendor[]>([]);
+  const [readOnly, setReadOnly] = useState<boolean>(false);
   const navigate = useNavigate()
   const selectedVendorId = useWatch({ control, name: "turSEVendor.id" });
 
@@ -65,6 +68,9 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
   useEffect(() => {
     turSEVendorService.query().then(setVendors);
+    turFeaturesService.getFeatures()
+      .then((f) => setReadOnly(f.seInstanceReadOnly))
+      .catch(() => setReadOnly(false));
   }, [])
 
   useEffect(() => {
@@ -108,16 +114,29 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
             description={t("se.detail.description")}
           />
           <StickyPageHeader.Actions>
-            <GradientButton type="submit" size="sm">
-              <IconDeviceFloppy className="size-4" />
-              {t("forms.formActions.saveChanges")}
-            </GradientButton>
+            {!readOnly && (
+              <GradientButton type="submit" size="sm">
+                <IconDeviceFloppy className="size-4" />
+                {t("forms.formActions.saveChanges")}
+              </GradientButton>
+            )}
             <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(ROUTES.SE_INSTANCE)}>
               <IconX className="size-4" />
-              {t("forms.formActions.cancel")}
+              {readOnly ? t("forms.formActions.back", { defaultValue: "Back" }) : t("forms.formActions.cancel")}
             </GradientButton>
           </StickyPageHeader.Actions>
         </StickyPageHeader>
+        {readOnly && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600/40 dark:bg-amber-950/30 dark:text-amber-200">
+            <IconLock className="size-4 shrink-0" />
+            <span>
+              {t("se.readOnlyNotice", {
+                defaultValue:
+                  "Solr is configured via turing.solr.endpoint. The search engine catalog is read-only.",
+              })}
+            </span>
+          </div>
+        )}
                 {/* General Section */}
                 <SectionCard variant="blue">
                   <SectionCard.Header icon={IconSettings} title={t("forms.common.generalInfo")} description={t("forms.se.generalDesc")} />
@@ -137,6 +156,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               {...field}
                               placeholder={t("forms.se.titlePlaceholder")}
                               type="text"
+                              readOnly={readOnly}
                             />
                           </FormControl>
                           <FormMessage />
@@ -207,7 +227,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           </FormItemTwoColumns.Left>
                           <FormItemTwoColumns.Right>
                             <FormControl>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={readOnly}>
                                 <SelectTrigger className="w-full">
                                   <SelectValue placeholder={t("forms.common.selectVendor")} />
                                 </SelectTrigger>
@@ -238,6 +258,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               placeholder={t("forms.se.endpointPlaceholder")}
                               type="url"
                               {...field}
+                              readOnly={readOnly}
                             />
                           </FormControl>
                           <FormMessage />

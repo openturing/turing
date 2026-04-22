@@ -43,6 +43,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurSolrProperty;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 
 /**
  * Unit tests for TurSolrInstanceProcess.
@@ -68,16 +69,21 @@ class TurSolrInstanceProcessTest {
     @Mock
     private TurSolrProperty solrProperties;
 
+    @Mock
+    private TurSolrInstanceSource solrInstanceSource;
+
     private TurSolrInstanceProcess turSolrInstanceProcess;
 
     @BeforeEach
     void setUp() {
         lenient().when(turConfigProperties.getSolr()).thenReturn(solrProperties);
         lenient().when(solrProperties.getTimeout()).thenReturn(5000);
+        lenient().when(solrInstanceSource.isReadOnly()).thenReturn(false);
 
         turSolrInstanceProcess = new TurSolrInstanceProcess(
                 turSNSiteLocaleRepository,
-                turSNSiteRepository);
+                turSNSiteRepository,
+                solrInstanceSource);
     }
 
     @Test

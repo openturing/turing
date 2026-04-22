@@ -35,6 +35,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -49,18 +50,21 @@ public class TurSolrInstanceProcess {
     private final ConcurrentHashMap<String, HttpJdkSolrClient> clientCache = new ConcurrentHashMap<>();
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSolrInstanceSource solrInstanceSource;
 
     public TurSolrInstanceProcess(
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNSiteRepository turSNSiteRepository) {
+            TurSNSiteRepository turSNSiteRepository,
+            TurSolrInstanceSource solrInstanceSource) {
         System.setProperty("jdk.httpclient.allowRestrictedHeaders", "connection");
         System.setProperty("jdk.httpclient.HttpClient.version", "HTTP_1_1");
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNSiteRepository = turSNSiteRepository;
+        this.solrInstanceSource = solrInstanceSource;
     }
 
     private Optional<TurSolrInstance> getSolrClient(TurSEInstance turSEInstance, String core) {
-        String baseUrl = turSEInstance.getEndpointUrl();
+        String baseUrl = resolveEndpoint(turSEInstance);
         if (baseUrl == null || (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://"))) {
             log.debug("Skipping Solr client init for non-HTTP endpoint: {}", baseUrl);
             return Optional.empty();
@@ -110,6 +114,16 @@ public class TurSolrInstanceProcess {
 
     private Optional<TurSolrInstance> getSolrClient(TurSNSite turSNSite, TurSNSiteLocale turSNSiteLocale) {
         return getSolrClient(turSNSite.getTurSEInstance(), turSNSiteLocale.getCore());
+    }
+
+    private String resolveEndpoint(TurSEInstance turSEInstance) {
+        if (solrInstanceSource != null && solrInstanceSource.isReadOnly()) {
+            String configured = solrInstanceSource.getConfiguredEndpoint();
+            if (configured != null && !configured.isBlank()) {
+                return configured;
+            }
+        }
+        return turSEInstance != null ? turSEInstance.getEndpointUrl() : null;
     }
 
     @PreDestroy

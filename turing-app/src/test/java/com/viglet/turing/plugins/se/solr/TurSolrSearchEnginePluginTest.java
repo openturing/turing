@@ -45,6 +45,7 @@ import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 
 /**
  * Tests for TurSolrSearchEnginePlugin.
@@ -63,6 +64,8 @@ class TurSolrSearchEnginePluginTest {
     private TurConfigProperties turConfigProperties;
     @Mock
     private ResourceLoader resourceLoader;
+    @Mock
+    private TurSolrInstanceSource solrInstanceSource;
 
     @InjectMocks
     private TurSolrSearchEnginePlugin plugin;

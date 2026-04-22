@@ -21,6 +21,11 @@ turing:
   solr:
     timeout: 30000
     cloud: false
+    # When enabled=true and endpoint is set, Turing uses this endpoint directly
+    # and the SE instance catalog becomes read-only (no new Solr instances can be
+    # created from the UI/API). Leave enabled=false to keep the default JPA mode.
+    enabled: false
+    endpoint:
     commit:
       within: 10000
       enabled: false
