@@ -49,6 +49,7 @@ export default function SEInstanceListPage() {
           icon={IconZoomCode}
           title={t("se.blankTitle")}
           description={t("se.blankDescription")}
+          buttonText=""
         />
       ) : (
         <BlankSlate

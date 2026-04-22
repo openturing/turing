@@ -22,6 +22,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.cpd.exclusions>**/persistence/dto/**,**/persistence/model/**
         </sonar.cpd.exclusions>
+        <skip.npm>false</skip.npm>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -512,8 +513,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v24.12.0</nodeVersion>
-                    <npmVersion>11.6.2</npmVersion>
+                    <nodeVersion>v24.15.0</nodeVersion>
+                    <npmVersion>11.12.1</npmVersion>
+                    <skip>${skip.npm}</skip>
                 </configuration>
             </plugin>
             <plugin>
