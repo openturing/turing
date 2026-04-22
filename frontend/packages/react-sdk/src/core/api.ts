@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TurChatResponse, TurSearchResponse, TurSortOption } from "./types";
+import type { TurChatConversationMessage, TurChatResponse, TurSearchResponse, TurSortOption } from "./types";
 
 /**
  * Low-level Turing API client. All hooks delegate to this module.
@@ -55,6 +55,35 @@ export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlo
   qs.append("q", params.q);
   if (params._setlocale) qs.append("_setlocale", params._setlocale);
   return get<TurChatResponse>(`/sn/${site}/chat?${qs}`);
+}
+
+/**
+ * Lightweight check whether the site has RAG (Generative AI) enabled.
+ * Used by the search UI to conditionally expose the "AI Mode" toggle.
+ *
+ * @since 2026.2.4
+ */
+export function fetchChatEnabled(site: string): Promise<{ enabled: boolean }> {
+  return get<{ enabled: boolean }>(`/sn/${site}/chat/enabled`);
+}
+
+/**
+ * Conversational RAG: sends the full message history to the site's GenAI chat.
+ * The server uses the latest user message for document retrieval and preserves
+ * prior turns as conversation context.
+ *
+ * @since 2026.2.4
+ */
+export async function postChatConversation(
+  site: string,
+  messages: TurChatConversationMessage[],
+  locale?: string,
+): Promise<TurChatResponse> {
+  const { data } = await axios.post<TurChatResponse>(
+    `/sn/${site}/chat/conversation`,
+    { messages, locale },
+  );
+  return data;
 }
 
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {

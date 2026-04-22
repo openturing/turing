@@ -141,6 +141,11 @@ export interface TurChatResponse {
   enabled: boolean;
 }
 
+export interface TurChatConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 // ── Search State ──
 
 export type SearchStatus = "idle" | "loading" | "success" | "error";

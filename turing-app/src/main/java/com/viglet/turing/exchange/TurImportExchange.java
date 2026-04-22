@@ -60,11 +60,25 @@ public class TurImportExchange {
 	public record ImportResult(boolean siteImported, String siteName,
 							   int contentDocuments, int contentFiles,
 							   boolean templateImported, String templateName, int templateFiles,
-							   String error) {
+							   String error,
+							   List<SiteConflict> conflicts) {
 
 		public static ImportResult error(String error) {
-			return new ImportResult(false, null, 0, 0, false, null, 0, error);
+			return new ImportResult(false, null, 0, 0, false, null, 0, error, List.of());
 		}
+
+		public static ImportResult conflict(List<SiteConflict> conflicts) {
+			return new ImportResult(false, null, 0, 0, false, null, 0, null, conflicts);
+		}
+	}
+
+	/**
+	 * A site present in the import bundle that already exists in the database
+	 * (matched by ID). The frontend uses this to prompt the user before overwriting.
+	 *
+	 * @since 2026.2.4
+	 */
+	public record SiteConflict(String id, String name) {
 	}
 
 	public TurImportExchange(TurSNSiteImport turSNSiteImport,
@@ -78,11 +92,16 @@ public class TurImportExchange {
 	}
 
 	public ImportResult importFromMultipartFile(MultipartFile multipartFile) {
-		return importFromMultipartFile(multipartFile, false, false, null);
+		return importFromMultipartFile(multipartFile, false, false, null, true);
 	}
 
 	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
 			boolean includeContent, boolean includeTemplate, String taskId) {
+		return importFromMultipartFile(multipartFile, includeContent, includeTemplate, taskId, true);
+	}
+
+	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
+			boolean includeContent, boolean includeTemplate, String taskId, boolean overwrite) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		if (extractFolder == null) {
 			return ImportResult.error("Failed to extract ZIP file");
@@ -106,11 +125,26 @@ public class TurImportExchange {
 			return ImportResult.error("Missing required export.json in ZIP");
 		}
 
-		String siteName = importSNSiteFromExportFile(extractFolder);
-		boolean siteImported = siteName != null;
-		if (!siteImported) {
-			cleanupSafely(extractFolder, parentExtractFolder);
-			return ImportResult.error("Failed to import SN Site from export.json");
+		// When overwrite=false and the bundle would replace an existing site by ID,
+		// skip the structural import but still process content/template so the user
+		// can re-index content or re-deploy the template against the existing site.
+		List<SiteConflict> conflicts = detectConflicts(extractFolder);
+		boolean skipStructure = !overwrite && !conflicts.isEmpty();
+
+		String siteName;
+		boolean siteImported;
+		if (skipStructure) {
+			siteName = conflicts.getFirst().name();
+			siteImported = false;
+			log.info("Skipping structural import for {} existing site(s); overwrite=false.",
+					conflicts.size());
+		} else {
+			siteName = importSNSiteFromExportFile(extractFolder);
+			siteImported = siteName != null;
+			if (!siteImported) {
+				cleanupSafely(extractFolder, parentExtractFolder);
+				return ImportResult.error("Failed to import SN Site from export.json");
+			}
 		}
 
 		// content is optional
@@ -140,10 +174,38 @@ public class TurImportExchange {
 				siteName, contentDocuments, contentFiles,
 				templateName != null ? templateName : "none", templateFileCount);
 
-		return new ImportResult(true, siteName,
+		return new ImportResult(siteImported, siteName,
 				contentDocuments, contentFiles,
 				templateImported, templateName, templateFileCount,
-				null);
+				null, conflicts);
+	}
+
+	/**
+	 * Parses the export.json inside {@code extractFolder} and returns the subset of
+	 * sites that already exist in the database (matched by ID). Empty means no conflict.
+	 *
+	 * @since 2026.2.4
+	 */
+	private List<SiteConflict> detectConflicts(File extractFolder) {
+		File exportFile = new File(extractFolder, EXPORT_FILE);
+		if (!exportFile.isFile()) {
+			return List.of();
+		}
+		ObjectMapper mapper = JsonMapper.builder().build();
+		try (FileInputStream fis = new FileInputStream(exportFile)) {
+			TurExchange exchange = mapper.readValue(fis, TurExchange.class);
+			if (exchange.getSnSites() == null) {
+				return List.of();
+			}
+			return exchange.getSnSites().stream()
+					.filter(site -> site.getId() != null
+							&& turSNSiteRepository.findById(site.getId()).isPresent())
+					.map(site -> new SiteConflict(site.getId(), site.getName()))
+					.toList();
+		} catch (Exception e) {
+			log.warn("Failed to inspect export.json for conflicts: {}", e.getMessage());
+			return List.of();
+		}
 	}
 
 	public ImportResult importFromMultipartFile(MultipartFile multipartFile,
@@ -152,12 +214,13 @@ public class TurImportExchange {
 	}
 
 	/**
-	 * Checks the ZIP for available import options: content files and valid SPA template.
+	 * Checks the ZIP for available import options: content files, valid SPA template,
+	 * and any existing SN sites that would be overwritten (matched by ID).
 	 */
 	public Map<String, Object> checkZip(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		if (extractFolder == null) {
-			return Map.of("hasContent", false, "hasTemplate", false);
+			return Map.of("hasContent", false, "hasTemplate", false, "conflicts", List.of());
 		}
 		File workFolder = resolveExportFolder(extractFolder);
 		boolean hasContent = findContentFiles(workFolder).length > 0;
@@ -166,6 +229,7 @@ public class TurImportExchange {
 		if (hasTemplate) {
 			templateName = readTemplateName(workFolder);
 		}
+		List<SiteConflict> conflicts = detectConflicts(workFolder);
 		try {
 			cleanupDirectories(extractFolder, null);
 		} catch (IOException e) {
@@ -175,6 +239,7 @@ public class TurImportExchange {
 		result.put("hasContent", hasContent);
 		result.put("hasTemplate", hasTemplate);
 		result.put("templateName", templateName);
+		result.put("conflicts", conflicts);
 		return result;
 	}
 

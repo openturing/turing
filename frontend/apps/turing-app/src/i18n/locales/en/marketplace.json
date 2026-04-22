@@ -27,6 +27,12 @@
     "readDocumentation": "Read documentation",
     "readmeDialogDescription": "Project README rendered from Markdown.",
     "readmeLoadError": "Could not load the README. Check your connection and try again.",
-    "readmeOpenSource": "Open raw README"
+    "readmeOpenSource": "Open raw README",
+    "checkingConflicts": "Checking existing sites…",
+    "conflictWarningTitle": "{{count}} site already exists with the same ID",
+    "conflictWarningTitle_other": "{{count}} sites already exist with the same ID",
+    "overwriteConfig": "Overwrite site configuration",
+    "overwriteConfigOn": "Replace fields, locales, spotlights and rankings with the ones from this package.",
+    "overwriteConfigOff": "Keep existing site configuration. Only content / template will be processed."
   }
 }

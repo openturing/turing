@@ -12,11 +12,12 @@ import {
 import { LoadProvider } from "@/components/loading-provider";
 import { Badge } from "@/components/ui/badge";
 import type { TurMarketplaceItem } from "@/models/marketplace/marketplace-item.model";
-import type { TurImportResult } from "@/models/marketplace/import-result.model";
+import type { TurImportResult, TurSiteConflict } from "@/models/marketplace/import-result.model";
 import { ImportResultPanel } from "@/components/ui/import-result-panel";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
 import * as TablerIcons from "@tabler/icons-react";
 import {
+    IconAlertTriangle,
     IconBook,
     IconBrowserCheck,
     IconDatabase,
@@ -59,6 +60,9 @@ export default function MarketplaceListPage() {
     const [selectedItem, setSelectedItem] = useState<TurMarketplaceItem | null>(null);
     const [includeContent, setIncludeContent] = useState(true);
     const [includeTemplate, setIncludeTemplate] = useState(true);
+    const [overwrite, setOverwrite] = useState(false);
+    const [conflicts, setConflicts] = useState<TurSiteConflict[]>([]);
+    const [conflictsLoading, setConflictsLoading] = useState(false);
     const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
     const [importResult, setImportResult] = useState<TurImportResult | null>(null);
 
@@ -78,8 +82,15 @@ export default function MarketplaceListPage() {
         setSelectedItem(item);
         setIncludeContent(item.hasContent);
         setIncludeTemplate(item.hasTemplate);
+        setOverwrite(false);
+        setConflicts([]);
         setImportStatus("idle");
         setImportResult(null);
+        setConflictsLoading(true);
+        marketplaceService.inspect(item.downloadUrl)
+            .then((inspect) => setConflicts(inspect.conflicts ?? []))
+            .catch(() => setConflicts([]))
+            .finally(() => setConflictsLoading(false));
     }, []);
 
     const closeDialog = useCallback(() => {
@@ -118,7 +129,8 @@ export default function MarketplaceListPage() {
             const result = await marketplaceService.importPackage(
                 selectedItem.downloadUrl,
                 includeContent,
-                includeTemplate
+                includeTemplate,
+                overwrite,
             );
             setImportResult(result);
             if (result.error) {
@@ -132,7 +144,7 @@ export default function MarketplaceListPage() {
             setImportStatus("error");
             toast.error(t("marketplace.importFailed", { name: selectedItem.title }));
         }
-    }, [selectedItem, includeContent, includeTemplate, t]);
+    }, [selectedItem, includeContent, includeTemplate, overwrite, t]);
 
     return (
         <div className="px-4 md:px-6 lg:px-8 py-2">
@@ -246,11 +258,64 @@ export default function MarketplaceListPage() {
                                 </div>
                             </div>
 
-                            {/* Always included */}
-                            <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
-                                <IconSettings2 className="size-4 text-primary shrink-0" />
-                                <span className="text-sm text-foreground/80">{t("marketplace.configAlwaysIncluded")}</span>
-                            </div>
+                            {/* Site configuration: always on fresh install, toggle on conflict */}
+                            {conflicts.length === 0 ? (
+                                <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
+                                    <IconSettings2 className="size-4 text-primary shrink-0" />
+                                    <span className="text-sm text-foreground/80">
+                                        {conflictsLoading
+                                            ? t("marketplace.checkingConflicts")
+                                            : t("marketplace.configAlwaysIncluded")}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    <div className="flex items-start gap-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2.5">
+                                        <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                        <div className="flex-1 min-w-0 text-xs text-foreground/80">
+                                            <div className="font-medium">
+                                                {t("marketplace.conflictWarningTitle", { count: conflicts.length })}
+                                            </div>
+                                            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                                                {conflicts.map((c) => (
+                                                    <li key={c.id} className="truncate">• {c.name}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setOverwrite(!overwrite)}
+                                        disabled={importStatus === "importing"}
+                                        className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${
+                                            overwrite
+                                                ? "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20"
+                                                : "border-border hover:border-amber-500/30 hover:bg-accent/50 cursor-pointer"
+                                        }`}
+                                    >
+                                        <div className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${
+                                            overwrite ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-muted text-muted-foreground"
+                                        }`}>
+                                            <IconSettings2 className="size-4" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                    {t("marketplace.overwriteConfig")}
+                                                </span>
+                                                {overwrite && (
+                                                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">ON</span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                                {overwrite
+                                                    ? t("marketplace.overwriteConfigOn")
+                                                    : t("marketplace.overwriteConfigOff")}
+                                            </p>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Options */}
                             <div className="space-y-2.5">

@@ -61,8 +61,10 @@ public class TurImportAPI {
 	public TurImportExchange.ImportResult turImport(@RequestParam("file") MultipartFile multipartFile,
 			@RequestParam(defaultValue = "false") boolean includeContent,
 			@RequestParam(defaultValue = "false") boolean includeTemplate,
-			@RequestParam(required = false) String taskId) {
-		return turImportExchange.importFromMultipartFile(multipartFile, includeContent, includeTemplate, taskId);
+			@RequestParam(required = false) String taskId,
+			@RequestParam(defaultValue = "false") boolean overwrite) {
+		return turImportExchange.importFromMultipartFile(
+				multipartFile, includeContent, includeTemplate, taskId, overwrite);
 	}
 
 	@PostMapping("/check-content")

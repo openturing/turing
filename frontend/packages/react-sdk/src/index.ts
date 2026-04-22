@@ -5,7 +5,7 @@ export { useSearchStore } from "./core/use-search-store";
 export type { TuringContextValue, SearchStoreValue } from "./core/context";
 
 // ── API ──
-export { fetchSearch, fetchChat, fetchAutoComplete, fetchSortOptions, parseHrefToParams } from "./core/api";
+export { fetchSearch, fetchChat, fetchChatEnabled, postChatConversation, fetchAutoComplete, fetchSortOptions, parseHrefToParams } from "./core/api";
 export type { SearchParams } from "./core/api";
 
 // ── Resolve utilities ──
@@ -57,6 +57,7 @@ export type {
   TurLocaleItem,
   TurSortOption,
   TurChatResponse,
+  TurChatConversationMessage,
   SearchStatus,
   SearchState,
   ResolvedDocument,

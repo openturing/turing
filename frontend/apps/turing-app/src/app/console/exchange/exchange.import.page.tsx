@@ -17,6 +17,7 @@ import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurExchangeImportService, type ZipCheckResult } from "@/services/exchange/exchange.import.service";
 import { TurFeaturesService } from "@/services/system/features.service";
 import {
+    IconAlertTriangle,
     IconBrowserCheck,
     IconCheck,
     IconCloudUpload,
@@ -107,6 +108,7 @@ export default function ExchangeImportPage() {
     const [storageEnabled, setStorageEnabled] = useState(false);
     const [includeContent, setIncludeContent] = useState(false);
     const [includeTemplate, setIncludeTemplate] = useState(false);
+    const [overwrite, setOverwrite] = useState(false);
     const [importResult, setImportResult] = useState<TurImportResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useTranslation();
@@ -120,7 +122,7 @@ export default function ExchangeImportPage() {
         return validTypes.includes(f.type) || f.name.endsWith(".zip");
     };
 
-    const doImport = useCallback(async (selectedFile: File, withContent: boolean, withTemplate: boolean) => {
+    const doImport = useCallback(async (selectedFile: File, withContent: boolean, withTemplate: boolean, overwrite = false) => {
         setStatus("uploading");
         setProgress(0);
         setErrorMessage("");
@@ -144,6 +146,7 @@ export default function ExchangeImportPage() {
                 withContent,
                 withTemplate,
                 withContent ? taskId : undefined,
+                overwrite,
             );
             setImportResult(result);
             setContentProgress(null);
@@ -183,6 +186,7 @@ export default function ExchangeImportPage() {
             setErrorMessage("");
             setIncludeContent(false);
             setIncludeTemplate(false);
+            setOverwrite(false);
 
             try {
                 const [check, features] = await Promise.all([
@@ -192,7 +196,8 @@ export default function ExchangeImportPage() {
                 setZipCheck(check);
                 setStorageEnabled(features.storageEnabled);
 
-                if (check.hasContent || check.hasTemplate) {
+                const hasConflicts = (check.conflicts?.length ?? 0) > 0;
+                if (check.hasContent || check.hasTemplate || hasConflicts) {
                     setStatus("import-prompt");
                     return;
                 }
@@ -271,6 +276,7 @@ export default function ExchangeImportPage() {
         setZipCheck(null);
         setIncludeContent(false);
         setIncludeTemplate(false);
+        setOverwrite(false);
         setImportResult(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
@@ -509,11 +515,40 @@ export default function ExchangeImportPage() {
                                 </div>
                             )}
 
-                            {/* Always included */}
-                            <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
-                                <IconSettings2 className="size-4 text-primary shrink-0" />
-                                <span className="text-sm text-foreground/80">{t("exchange.importOptions.configAlwaysIncluded")}</span>
-                            </div>
+                            {/* Site configuration: always on fresh import, toggle on conflict */}
+                            {(zipCheck?.conflicts?.length ?? 0) === 0 ? (
+                                <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
+                                    <IconSettings2 className="size-4 text-primary shrink-0" />
+                                    <span className="text-sm text-foreground/80">{t("exchange.importOptions.configAlwaysIncluded")}</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    <div className="flex items-start gap-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2.5">
+                                        <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                        <div className="flex-1 min-w-0 text-xs text-foreground/80">
+                                            <div className="font-medium">
+                                                {t("exchange.importOptions.conflictWarningTitle", { count: zipCheck?.conflicts?.length ?? 0 })}
+                                            </div>
+                                            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                                                {(zipCheck?.conflicts ?? []).map((c) => (
+                                                    <li key={c.id} className="truncate">• {c.name}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <OptionCard
+                                        icon={<IconSettings2 className="size-4" />}
+                                        title={t("exchange.importOptions.overwriteConfig")}
+                                        description={
+                                            overwrite
+                                                ? t("exchange.importOptions.overwriteConfigOn")
+                                                : t("exchange.importOptions.overwriteConfigOff")
+                                        }
+                                        checked={overwrite}
+                                        onChange={setOverwrite}
+                                    />
+                                </div>
+                            )}
 
                             {/* Option cards */}
                             <div className="space-y-2.5">
@@ -550,7 +585,7 @@ export default function ExchangeImportPage() {
                                 <Button className="flex-1 h-11" variant="outline" onClick={handleReset}>
                                     {t("exchange.importOptions.cancel")}
                                 </Button>
-                                <GradientButton className="flex-1" onClick={() => file && doImport(file, includeContent, includeTemplate && canIncludeTemplate)}>
+                                <GradientButton className="flex-1" onClick={() => file && doImport(file, includeContent, includeTemplate && canIncludeTemplate, overwrite)}>
                                     <IconPackageImport className="size-4" />
                                     {t("exchange.importOptions.importButton")}
                                 </GradientButton>

@@ -123,6 +123,7 @@ public class TurSNSiteAPI {
 
     @Operation(summary = "Update a Semantic Navigation Site")
     @PutMapping("/{id}")
+    @Transactional
     @Secured({"ROLE_ADMIN", "SN_EDIT"})
     public ResponseEntity<Object> turSNSiteUpdate(@PathVariable String id, @RequestBody TurSNSiteDto turSNSiteDto) {
         Optional<TurSNSite> duplicate = turSNSiteRepository.findByNameIgnoreCase(turSNSiteDto.getName())
@@ -169,13 +170,17 @@ public class TurSNSiteAPI {
                 turSNSiteGenAi.setEnabled(genAi.isEnabled());
                 turSNSiteGenAi.setTurLLMInstance(genAi.getTurLLMInstance());
                 turSNSiteGenAi.setTurStoreInstance(genAi.getTurStoreInstance());
+                turSNSiteGenAi.setTurEmbeddingModelInstance(genAi.getTurEmbeddingModelInstance());
                 turSNSiteGenAi.setSystemPrompt(genAi.getSystemPrompt());
                 turSNSiteGenAi.setSitePrompt(genAi.getSitePrompt());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });
             turSNSiteRepository.save(turSNSiteEdit);
-            return turSNSiteMapper.toDto(turSNSiteEdit);
+            TurSNSiteDto response = new TurSNSiteDto();
+            response.setId(turSNSiteEdit.getId());
+            response.setName(turSNSiteEdit.getName());
+            return response;
         }).orElse(new TurSNSiteDto()));
     }
 

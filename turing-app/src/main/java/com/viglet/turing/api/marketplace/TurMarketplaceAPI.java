@@ -108,7 +108,8 @@ public class TurMarketplaceAPI {
     public ResponseEntity<TurImportExchange.ImportResult> importPackage(
             @RequestParam String downloadUrl,
             @RequestParam(defaultValue = "false") boolean includeContent,
-            @RequestParam(defaultValue = "false") boolean includeTemplate) {
+            @RequestParam(defaultValue = "false") boolean includeTemplate,
+            @RequestParam(defaultValue = "false") boolean overwrite) {
         if (!isEnabled()) {
             return ResponseEntity.notFound().build();
         }
@@ -116,7 +117,8 @@ public class TurMarketplaceAPI {
             byte[] zipBytes = downloadZip(downloadUrl);
             var multipartFile = new MockMultipartFile("file", "marketplace.zip",
                     "application/zip", zipBytes);
-            var result = turImportExchange.importFromMultipartFile(multipartFile, includeContent, includeTemplate, null);
+            var result = turImportExchange.importFromMultipartFile(
+                    multipartFile, includeContent, includeTemplate, null, overwrite);
             if (result.error() != null) {
                 return ResponseEntity.badRequest().body(result);
             }
@@ -125,6 +127,31 @@ public class TurMarketplaceAPI {
             log.error("Marketplace import failed for URL '{}': {}", downloadUrl, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(TurImportExchange.ImportResult.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Downloads the package ZIP and returns any existing SN sites that would be
+     * overwritten (matched by ID), plus whether it contains content and/or a template.
+     * The frontend uses this to prompt the user before actually installing.
+     *
+     * @since 2026.2.4
+     */
+    @Operation(summary = "Inspect a marketplace package before installing")
+    @GetMapping("/inspect")
+    public ResponseEntity<java.util.Map<String, Object>> inspectPackage(@RequestParam String downloadUrl) {
+        if (!isEnabled()) {
+            return ResponseEntity.notFound().build();
+        }
+        try {
+            byte[] zipBytes = downloadZip(downloadUrl);
+            var multipartFile = new MockMultipartFile("file", "marketplace.zip",
+                    "application/zip", zipBytes);
+            return ResponseEntity.ok(turImportExchange.checkZip(multipartFile));
+        } catch (Exception e) {
+            log.error("Marketplace inspect failed for URL '{}': {}", downloadUrl, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", e.getMessage()));
         }
     }
 

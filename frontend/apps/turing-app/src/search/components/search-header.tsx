@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { SearchStoreValue, TurLocaleItem } from "@viglet/turing-react-sdk";
 import { Icon } from "@iconify/react";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconSparkles, IconX } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 interface SearchHeaderProps {
@@ -23,6 +23,9 @@ interface SearchHeaderProps {
   onInputChange: (value: string) => void;
   onSuggestionPick: (term: string) => void;
   onSuggestionsClose: () => void;
+  aiModeAvailable?: boolean;
+  aiModeActive?: boolean;
+  onToggleAiMode?: () => void;
 }
 
 export function SearchHeader({
@@ -35,6 +38,9 @@ export function SearchHeader({
   onInputChange,
   onSuggestionPick,
   onSuggestionsClose,
+  aiModeAvailable,
+  aiModeActive,
+  onToggleAiMode,
 }: Readonly<SearchHeaderProps>) {
   const { t } = useTranslation();
 
@@ -95,6 +101,34 @@ export function SearchHeader({
               </div>
             )}
           </div>
+
+          {/* AI Mode Toggle */}
+          {aiModeAvailable && (
+            <button
+              type="button"
+              onClick={onToggleAiMode}
+              title={aiModeActive ? t("search.aiModeExit") : t("search.aiMode")}
+              className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-medium cursor-pointer transition-all border ${
+                aiModeActive
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-sm hover:shadow-md"
+                  : "bg-background text-foreground border-border hover:border-blue-500/50 hover:bg-blue-500/5"
+              }`}
+            >
+              {aiModeActive ? (
+                <>
+                  <IconX className="size-3.5" />
+                  <span className="hidden sm:inline">{t("search.aiModeExit")}</span>
+                </>
+              ) : (
+                <>
+                  <IconSparkles className="size-3.5 text-blue-600 dark:text-blue-400" />
+                  <span className="hidden sm:inline bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
+                    {t("search.aiMode")}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Theme Toggle */}
           <ModeToggle />

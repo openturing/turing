@@ -26,6 +26,7 @@ import static com.viglet.turing.commons.sn.field.TurSNFieldName.TEXT;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.TITLE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.URL;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,10 @@ import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
@@ -94,6 +99,79 @@ public class TurSNGenAi {
         } else {
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
         }
+    }
+
+    /**
+     * Conversational RAG: retrieves documents for the latest user message and
+     * calls the ChatModel with the full conversation history so follow-up
+     * questions preserve context.
+     *
+     * @author Alexandre Oliveira
+     * @since 2026.2.4
+     */
+    public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history) {
+        if (!context.isEnabled()) {
+            return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
+        }
+        if (history == null || history.isEmpty()) {
+            return TurChatMessage.builder().text(null).enabled(true).build();
+        }
+
+        String latestUserQuery = history.stream()
+                .filter(m -> "user".equals(m.role()))
+                .map(ConversationMessage::content)
+                .reduce((first, second) -> second)
+                .orElse("");
+        if (latestUserQuery.isBlank()) {
+            return TurChatMessage.builder().text(null).enabled(true).build();
+        }
+
+        SearchRequest embeddingSearchRequest = SearchRequest.builder()
+                .query(latestUserQuery)
+                .topK(10)
+                .similarityThreshold(0.7)
+                .build();
+        List<Document> relevantDocuments = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        String information = relevantDocuments == null ? "" : relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+
+        String systemContent = buildConversationSystemPrompt(context.getSystemPrompt(), information);
+
+        List<Message> messages = new ArrayList<>();
+        messages.add(new SystemMessage(systemContent));
+        for (ConversationMessage m : history) {
+            if ("assistant".equals(m.role())) {
+                messages.add(new AssistantMessage(m.content() == null ? "" : m.content()));
+            } else {
+                messages.add(new UserMessage(m.content() == null ? "" : m.content()));
+            }
+        }
+
+        Prompt prompt = new Prompt(messages);
+        String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
+        return TurChatMessage.builder().text(answer).enabled(true).build();
+    }
+
+    private String buildConversationSystemPrompt(String configuredPrompt, String information) {
+        String base;
+        if (configuredPrompt == null || configuredPrompt.isBlank()) {
+            base = "Use the provided information to answer the user's questions. "
+                    + "If the information is not enough, say so. "
+                    + "Keep the conversation coherent with previous turns.";
+        } else {
+            // Strip {question} placeholder; substitute {information} if present.
+            base = configuredPrompt
+                    .replace("{question}", "")
+                    .replace("{information}", information);
+        }
+        if (!base.contains(information) && !information.isBlank()) {
+            base = base + "\n\nInformation:\n" + information;
+        }
+        return base;
+    }
+
+    public record ConversationMessage(String role, String content) {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {

@@ -27,6 +27,12 @@
     "readDocumentation": "Ler documentação",
     "readmeDialogDescription": "README do projeto renderizado a partir do Markdown.",
     "readmeLoadError": "Não foi possível carregar o README. Verifique sua conexão e tente novamente.",
-    "readmeOpenSource": "Abrir README original"
+    "readmeOpenSource": "Abrir README original",
+    "checkingConflicts": "Verificando sites existentes…",
+    "conflictWarningTitle": "{{count}} site já existe com o mesmo ID",
+    "conflictWarningTitle_other": "{{count}} sites já existem com o mesmo ID",
+    "overwriteConfig": "Sobrescrever configuração do site",
+    "overwriteConfigOn": "Substituir campos, idiomas, spotlights e rankings pelos deste pacote.",
+    "overwriteConfigOff": "Manter configuração do site existente. Apenas conteúdo / template serão processados."
   }
 }

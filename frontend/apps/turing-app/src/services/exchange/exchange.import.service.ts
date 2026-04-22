@@ -2,10 +2,16 @@ import type { TurImportResult } from "@/models/marketplace/import-result.model";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import axios from "axios";
 
+export interface SiteConflict {
+  id: string;
+  name: string;
+}
+
 export interface ZipCheckResult {
   hasContent: boolean;
   hasTemplate: boolean;
   templateName: string | null;
+  conflicts: SiteConflict[];
 }
 
 export class TurExchangeImportService {
@@ -15,11 +21,12 @@ export class TurExchangeImportService {
     includeContent = false,
     includeTemplate = false,
     taskId?: string,
+    overwrite = false,
   ): Promise<TurImportResult> {
     const formData = new FormData();
     formData.append("file", file);
 
-    const params: Record<string, string | boolean> = { includeContent, includeTemplate };
+    const params: Record<string, string | boolean> = { includeContent, includeTemplate, overwrite };
     if (taskId) params.taskId = taskId;
 
     const response = await axios.post<TurImportResult>("/import", formData, {
