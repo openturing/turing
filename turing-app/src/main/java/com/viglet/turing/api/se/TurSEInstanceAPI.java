@@ -39,7 +39,6 @@ import com.viglet.turing.persistence.dto.se.TurSEInstanceDto;
 import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
-import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -47,7 +46,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 import com.viglet.turing.solr.bean.TurSECoreSiteUsage;
-import com.viglet.turing.spring.utils.TurPersistenceUtils;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,19 +55,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/se")
 @Tag(name = "Search Engine", description = "Search Engine API")
 public class TurSEInstanceAPI {
-        private final TurSEInstanceRepository turSEInstanceRepository;
+        private final TurSolrInstanceSource seInstanceSource;
         private final TurSEInstanceMapper turSEInstanceMapper;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSolr turSolr;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
         private final TurSearchEnginePluginFactory pluginFactory;
 
-        public TurSEInstanceAPI(TurSEInstanceRepository turSEInstanceRepository,
+        public TurSEInstanceAPI(TurSolrInstanceSource seInstanceSource,
                         TurSEInstanceMapper turSEInstanceMapper,
                         TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                         TurSearchEnginePluginFactory pluginFactory) {
-                this.turSEInstanceRepository = turSEInstanceRepository;
+                this.seInstanceSource = seInstanceSource;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
@@ -76,13 +75,20 @@ public class TurSEInstanceAPI {
                 this.pluginFactory = pluginFactory;
         }
 
+        private ResponseEntity<TurSEInstanceDto> readOnlyResponse() {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         @Operation(summary = "Search Engine List")
         @GetMapping
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public List<TurSEInstanceDto> turSEInstanceList() {
-                return turSEInstanceMapper
-                                .toDtoList(this.turSEInstanceRepository
-                                                .findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+                return turSEInstanceMapper.toDtoList(
+                                this.seInstanceSource.findAll().stream()
+                                                .sorted(java.util.Comparator.comparing(
+                                                                TurSEInstance::getTitle,
+                                                                String.CASE_INSENSITIVE_ORDER))
+                                                .toList());
         }
 
         @Operation(summary = "Search Engine structure")
@@ -100,47 +106,54 @@ public class TurSEInstanceAPI {
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public TurSEInstanceDto turSEInstanceGet(@PathVariable String id) {
                 return turSEInstanceMapper
-                                .toDto(this.turSEInstanceRepository.findById(id).orElse(new TurSEInstance()));
+                                .toDto(this.seInstanceSource.findById(id).orElse(new TurSEInstance()));
         }
 
         @Operation(summary = "Update a Search Engine")
         @PutMapping("/{id}")
         @Secured({"ROLE_ADMIN", "SE_EDIT"})
-        public TurSEInstanceDto turSEInstanceUpdate(@PathVariable String id,
+        public ResponseEntity<TurSEInstanceDto> turSEInstanceUpdate(@PathVariable String id,
                         @RequestBody TurSEInstanceDto turSEInstanceDto) {
+                if (seInstanceSource.isReadOnly()) {
+                        return readOnlyResponse();
+                }
                 TurSEInstance source = turSEInstanceMapper.toEntity(turSEInstanceDto);
-                return turSEInstanceRepository.findById(id).map(existing -> {
+                return ResponseEntity.ok(seInstanceSource.findById(id).map(existing -> {
                         turSEInstanceMapper.updateEntity(source, existing);
-                        turSEInstanceRepository.save(existing);
+                        seInstanceSource.save(existing);
                         return turSEInstanceMapper.toDto(existing);
-                }).orElse(new TurSEInstanceDto());
-
+                }).orElse(new TurSEInstanceDto()));
         }
 
         @Transactional
         @Operation(summary = "Delete a Search Engine")
         @DeleteMapping("/{id}")
         @Secured({"ROLE_ADMIN", "SE_DELETE"})
-        public boolean turSEInstanceDelete(@PathVariable String id) {
-                this.turSEInstanceRepository.delete(id);
-                return true;
+        public ResponseEntity<Boolean> turSEInstanceDelete(@PathVariable String id) {
+                if (seInstanceSource.isReadOnly()) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(false);
+                }
+                this.seInstanceSource.delete(id);
+                return ResponseEntity.ok(true);
         }
 
         @Operation(summary = "Create a Search Engine")
         @PostMapping
         @Secured({"ROLE_ADMIN", "SE_CREATE"})
-        public TurSEInstanceDto turSEInstanceAdd(@RequestBody TurSEInstanceDto turSEInstanceDto) {
+        public ResponseEntity<TurSEInstanceDto> turSEInstanceAdd(@RequestBody TurSEInstanceDto turSEInstanceDto) {
+                if (seInstanceSource.isReadOnly()) {
+                        return readOnlyResponse();
+                }
                 TurSEInstance turSEInstance = turSEInstanceMapper.toEntity(turSEInstanceDto);
-                this.turSEInstanceRepository.save(turSEInstance);
-                return turSEInstanceMapper.toDto(turSEInstance);
-
+                this.seInstanceSource.save(turSEInstance);
+                return ResponseEntity.ok(turSEInstanceMapper.toDto(turSEInstance));
         }
 
         @Operation(summary = "List Solr cores/collections for a Search Engine")
         @GetMapping("/{id}/cores")
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<List<TurSECoreInfo>> turSEInstanceCores(@PathVariable String id) {
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
                         List<TurSECoreInfo> cores = pluginFactory.getPluginForInstance(turSEInstance).listIndexes(turSEInstance).stream()
                                         .map(core -> new TurSECoreInfo(core.name(), core.numDocs(),
                                                         turSNSiteLocaleRepository.findByCore(core.name()).stream()
@@ -166,7 +179,7 @@ public class TurSEInstanceAPI {
                 if (request.locale == null || request.locale.isBlank()) {
                         return ResponseEntity.badRequest().build();
                 }
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
                         Locale language = Locale.forLanguageTag(request.locale.replace("_", "-"));
                         pluginFactory.getPluginForInstance(turSEInstance)
                                         .createStandaloneIndex(turSEInstance, language, request.name.trim());
@@ -180,7 +193,7 @@ public class TurSEInstanceAPI {
         @DeleteMapping("/{id}/cores/{core}")
         @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
                         if (!turSNSiteLocaleRepository.findByCore(core).isEmpty()) {
                                 return ResponseEntity.status(HttpStatus.CONFLICT).<Void>build();
                         }
@@ -193,7 +206,7 @@ public class TurSEInstanceAPI {
         @DeleteMapping("/{id}/cores/{core}/documents")
         @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public ResponseEntity<Void> turSEInstanceClearCore(@PathVariable String id, @PathVariable String core) {
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
                         pluginFactory.getPluginForInstance(turSEInstance).clearIndex(turSEInstance, core);
                         return ResponseEntity.noContent().<Void>build();
                 }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).<Void>build());
@@ -203,7 +216,7 @@ public class TurSEInstanceAPI {
         @GetMapping("/{id}/system-info")
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<java.util.Map<String, String>> turSEInstanceSystemInfo(@PathVariable String id) {
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
                         java.util.Map<String, String> info = pluginFactory
                                         .getPluginForInstance(turSEInstance)
                                         .getSystemInfo(turSEInstance);
@@ -215,7 +228,7 @@ public class TurSEInstanceAPI {
         @Secured({"ROLE_ADMIN", "SE_VIEW"})
         public ResponseEntity<TurSEResults> turSEInstanceSelect(@PathVariable String id, @PathVariable String core,
                         @ModelAttribute TurSNSearchParams turSNSearchParams) {
-                return turSEInstanceRepository.findById(id).map(turSEInstance -> {
+                return seInstanceSource.findById(id).map(turSEInstance -> {
 
                         int page = (turSNSearchParams.getP() != null && turSNSearchParams.getP() > 0)
                                         ? turSNSearchParams.getP()

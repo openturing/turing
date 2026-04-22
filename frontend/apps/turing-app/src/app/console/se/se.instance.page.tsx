@@ -5,6 +5,7 @@ import { type BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
 import { TurSEInstanceService } from "@/services/se/se.service";
+import { TurFeaturesService } from "@/services/system/features.service";
 import { IconDatabase, IconInfoCircle, IconSettings, IconZoomCode } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
 const turSEInstanceService = new TurSEInstanceService();
+const turFeaturesService = new TurFeaturesService();
 
 export default function SEInstancePage() {
   const { t } = useTranslation();
@@ -20,6 +22,7 @@ export default function SEInstancePage() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readOnly, setReadOnly] = useState<boolean>(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
     id === "new" ? [{ label: t("se.newSearchEngine") }] : [{ label: "…" }]
   );
@@ -54,6 +57,9 @@ export default function SEInstancePage() {
       }).catch(() => setError(t("common.connectionError", { resource: "SE instance" })));
       setIsNew(false);
     }
+    turFeaturesService.getFeatures()
+      .then((f) => setReadOnly(f.seInstanceReadOnly))
+      .catch(() => setReadOnly(false));
   }, [id]);
 
   useSubPageBreadcrumb(breadcrumb);
@@ -76,7 +82,7 @@ export default function SEInstancePage() {
   return (
     <LoadProvider checkIsNotUndefined={seInstance} error={error} tryAgainUrl={`${ROUTES.SE_INSTANCE}/${id}`}>
       <SubPage icon={IconZoomCode} feature={t("se.title")} name={seInstance.title}
-        onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
+        onDelete={readOnly ? undefined : onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
     </LoadProvider>
   );
 }

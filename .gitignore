@@ -28,6 +28,7 @@ hs_err_pid*
 # ── Node / pnpm ──────────────────────────────────────────────
 node
 node_modules/
+/frontend/bin/
 # Workspace uses pnpm — npm's package-lock is not authoritative and
 # would drift from pnpm-lock.yaml if accidentally generated. Keep it ignored.
 package-lock.json

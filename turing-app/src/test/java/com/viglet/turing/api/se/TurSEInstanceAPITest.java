@@ -28,7 +28,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -37,7 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
@@ -46,6 +44,7 @@ import com.viglet.turing.solr.TurSolr;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 
 /**
  * Tests for TurSEInstanceAPI.
@@ -59,7 +58,7 @@ class TurSEInstanceAPITest {
     private MockMvc mockMvc;
 
     @Mock
-    private TurSEInstanceRepository turSEInstanceRepository;
+    private TurSolrInstanceSource seInstanceSource;
 
     @Mock
     private TurSolrInstanceProcess turSolrInstanceProcess;
@@ -97,7 +96,7 @@ class TurSEInstanceAPITest {
         instance2.setTitle("Instance 2");
 
         List<TurSEInstance> instances = Arrays.asList(instance1, instance2);
-        when(turSEInstanceRepository.findAll(any(Sort.class))).thenReturn(instances);
+        when(seInstanceSource.findAll()).thenReturn(instances);
 
         mockMvc.perform(get("/api/se"))
                 .andExpect(status().isOk())
@@ -106,7 +105,7 @@ class TurSEInstanceAPITest {
                 .andExpect(jsonPath("$[1].id").value("2"))
                 .andExpect(jsonPath("$[1].title").value("Instance 2"));
 
-        verify(turSEInstanceRepository, times(1)).findAll(any(Sort.class));
+        verify(seInstanceSource, times(1)).findAll();
     }
 
     @Test
@@ -123,25 +122,25 @@ class TurSEInstanceAPITest {
         instance.setId("1");
         instance.setTitle("Instance 1");
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
 
         mockMvc.perform(get("/api/se/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("1"))
                 .andExpect(jsonPath("$.title").value("Instance 1"));
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).findById("1");
     }
 
     @Test
     void testTurSEInstanceGet_NotFound() throws Exception {
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("1")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/se/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").doesNotExist());
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).findById("1");
     }
 
     @Test
@@ -155,7 +154,7 @@ class TurSEInstanceAPITest {
         updatedInstance.setEndpointUrl("http://localhost:8983/solr");
         updatedInstance.setEnabled(1);
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(existingInstance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(existingInstance));
 
         mockMvc.perform(put("/api/se/1")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -165,8 +164,8 @@ class TurSEInstanceAPITest {
                 .andExpect(jsonPath("$.endpointUrl").value("http://localhost:8983/solr"))
                 .andExpect(jsonPath("$.enabled").value(1));
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
-        verify(turSEInstanceRepository, times(1)).save(any(TurSEInstance.class));
+        verify(seInstanceSource, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).save(any(TurSEInstance.class));
     }
 
     @Test
@@ -174,7 +173,7 @@ class TurSEInstanceAPITest {
         TurSEInstance updatedInstance = new TurSEInstance();
         updatedInstance.setTitle("New Title");
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("1")).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/api/se/1")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -182,8 +181,8 @@ class TurSEInstanceAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").doesNotExist());
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
-        verify(turSEInstanceRepository, never()).save(any());
+        verify(seInstanceSource, times(1)).findById("1");
+        verify(seInstanceSource, never()).save(any());
     }
 
     @Test
@@ -192,7 +191,7 @@ class TurSEInstanceAPITest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(turSEInstanceRepository, times(1)).delete("1");
+        verify(seInstanceSource, times(1)).delete("1");
     }
 
     @Test
@@ -206,7 +205,7 @@ class TurSEInstanceAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("New Instance"));
 
-        verify(turSEInstanceRepository, times(1)).save(any(TurSEInstance.class));
+        verify(seInstanceSource, times(1)).save(any(TurSEInstance.class));
     }
 
     @Test
@@ -217,7 +216,7 @@ class TurSEInstanceAPITest {
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
         TurSEResults results = mock(TurSEResults.class);
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(turSolrInstanceProcess.initSolrInstance(instance, "core1")).thenReturn(Optional.of(solrInstance));
         when(turSolr.retrieveSolr(eq(solrInstance), any(TurSEParameters.class), eq("text"))).thenReturn(results);
 
@@ -228,7 +227,7 @@ class TurSEInstanceAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").exists());
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).findById("1");
         verify(turSolrInstanceProcess, times(1)).initSolrInstance(instance, "core1");
         verify(turSolr, times(1)).retrieveSolr(eq(solrInstance), any(TurSEParameters.class), eq("text"));
     }
@@ -238,25 +237,25 @@ class TurSEInstanceAPITest {
         TurSEInstance instance = new TurSEInstance();
         instance.setId("1");
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(turSolrInstanceProcess.initSolrInstance(instance, "core1")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/se/1/core1/select"))
                 .andExpect(status().isNotFound());
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).findById("1");
         verify(turSolrInstanceProcess, times(1)).initSolrInstance(instance, "core1");
         verify(turSolr, never()).retrieveSolr(any(), any(), any());
     }
 
     @Test
     void testTurSEInstanceSelect_InstanceNotFound() throws Exception {
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("1")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/se/1/core1/select"))
                 .andExpect(status().isNotFound());
 
-        verify(turSEInstanceRepository, times(1)).findById("1");
+        verify(seInstanceSource, times(1)).findById("1");
         verify(turSolrInstanceProcess, never()).initSolrInstance(any(TurSEInstance.class), anyString());
     }
 
@@ -268,7 +267,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
         when(plugin.listIndexes(instance)).thenReturn(
                 List.of(new TurSECoreInfo("core1", 100, List.of())));
@@ -282,7 +281,7 @@ class TurSEInstanceAPITest {
 
     @Test
     void testTurSEInstanceCores_NotFound() throws Exception {
-        when(turSEInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("missing")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/se/missing/cores"))
                 .andExpect(status().isNotFound());
@@ -296,7 +295,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
 
         mockMvc.perform(post("/api/se/1/cores")
@@ -323,7 +322,7 @@ class TurSEInstanceAPITest {
 
     @Test
     void testCreateCore_InstanceNotFound() throws Exception {
-        when(turSEInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("missing")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/se/missing/cores")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -339,7 +338,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
         when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of());
 
@@ -352,7 +351,7 @@ class TurSEInstanceAPITest {
         TurSEInstance instance = new TurSEInstance();
         instance.setId("1");
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         var locale = mock(com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
         when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of(locale));
 
@@ -362,7 +361,7 @@ class TurSEInstanceAPITest {
 
     @Test
     void testDeleteCore_InstanceNotFound() throws Exception {
-        when(turSEInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("missing")).thenReturn(Optional.empty());
 
         mockMvc.perform(delete("/api/se/missing/cores/core1"))
                 .andExpect(status().isNotFound());
@@ -376,7 +375,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
 
         mockMvc.perform(delete("/api/se/1/cores/core1/documents"))
@@ -385,7 +384,7 @@ class TurSEInstanceAPITest {
 
     @Test
     void testClearCore_InstanceNotFound() throws Exception {
-        when(turSEInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("missing")).thenReturn(Optional.empty());
 
         mockMvc.perform(delete("/api/se/missing/cores/core1/documents"))
                 .andExpect(status().isNotFound());
@@ -399,7 +398,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
         when(plugin.getSystemInfo(instance)).thenReturn(java.util.Map.of("version", "9.0"));
 
@@ -410,7 +409,7 @@ class TurSEInstanceAPITest {
 
     @Test
     void testSystemInfo_InstanceNotFound() throws Exception {
-        when(turSEInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(seInstanceSource.findById("missing")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/se/missing/system-info"))
                 .andExpect(status().isNotFound());
@@ -426,7 +425,7 @@ class TurSEInstanceAPITest {
         TurSolrInstance solrInstance = mock(TurSolrInstance.class);
         TurSEResults results = mock(TurSEResults.class);
 
-        when(turSEInstanceRepository.findById("1")).thenReturn(Optional.of(instance));
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(turSolrInstanceProcess.initSolrInstance(instance, "core1")).thenReturn(Optional.of(solrInstance));
         when(turSolr.retrieveSolr(eq(solrInstance), any(TurSEParameters.class), eq("text"))).thenReturn(results);
 

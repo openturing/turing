@@ -29,6 +29,7 @@ import com.viglet.turing.solr.TurSolrFieldAction;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrUtils;
 import com.viglet.turing.solr.bean.TurSECoreInfo;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
@@ -61,15 +62,42 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     private final TurSolrInstanceProcess turSolrInstanceProcess;
     private final TurConfigProperties turConfigProperties;
     private final ResourceLoader resourceLoader;
+    private final TurSolrInstanceSource solrInstanceSource;
 
     public TurSolrSearchEnginePlugin(TurSolr turSolr,
             TurSolrInstanceProcess turSolrInstanceProcess,
             TurConfigProperties turConfigProperties,
-            ResourceLoader resourceLoader) {
+            ResourceLoader resourceLoader,
+            TurSolrInstanceSource solrInstanceSource) {
         this.turSolr = turSolr;
         this.turSolrInstanceProcess = turSolrInstanceProcess;
         this.turConfigProperties = turConfigProperties;
         this.resourceLoader = resourceLoader;
+        this.solrInstanceSource = solrInstanceSource;
+    }
+
+    private TurSEInstance effective(TurSEInstance original) {
+        if (solrInstanceSource == null || !solrInstanceSource.isReadOnly()) {
+            return original;
+        }
+        String endpoint = solrInstanceSource.getConfiguredEndpoint();
+        if (endpoint == null || endpoint.isBlank()) {
+            return original;
+        }
+        if (original != null && endpoint.equals(original.getEndpointUrl())) {
+            return original;
+        }
+        TurSEInstance override = new TurSEInstance();
+        if (original != null) {
+            override.setId(original.getId());
+            override.setTitle(original.getTitle());
+            override.setDescription(original.getDescription());
+            override.setIcon(original.getIcon());
+            override.setEnabled(original.getEnabled());
+            override.setTurSEVendor(original.getTurSEVendor());
+        }
+        override.setEndpointUrl(endpoint);
+        return override;
     }
 
     @Override
@@ -96,6 +124,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     @Override
     public void createIndex(TurSEInstance seInstance, TurSNSiteLocale siteLocale, String indexName,
             Map<String, TurSEFieldType> fieldTypes) {
+        seInstance = effective(seInstance);
         String configSet = siteLocale.getLanguage().getLanguage();
         String[] locales = {"en", "es", "pt"};
         if (!Arrays.asList(locales).contains(configSet)) {
@@ -120,6 +149,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public void deleteIndex(TurSEInstance seInstance, String indexName) {
+        seInstance = effective(seInstance);
         String solrUrl = getSolrUrl(seInstance);
         if (turConfigProperties.getSolr().isCloud()) {
             TurSolrUtils.deleteCollection(solrUrl, indexName);
@@ -130,11 +160,12 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public void clearIndex(TurSEInstance seInstance, String indexName) {
-        TurSolrUtils.clearCore(seInstance, indexName);
+        TurSolrUtils.clearCore(effective(seInstance), indexName);
     }
 
     @Override
     public boolean indexExists(TurSEInstance seInstance, String indexName) {
+        seInstance = effective(seInstance);
         if (turConfigProperties.getSolr().isCloud()) {
             return TurSolrUtils.collectionExists(seInstance, indexName);
         }
@@ -143,6 +174,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public List<TurSECoreInfo> listIndexes(TurSEInstance seInstance) {
+        seInstance = effective(seInstance);
         if (turConfigProperties.getSolr().isCloud()) {
             return TurSolrUtils.listCollections(seInstance);
         }
@@ -155,18 +187,19 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     public void addOrUpdateField(TurSEInstance seInstance, String indexName, String fieldName,
             TurSEFieldType fieldType, boolean stored, boolean multiValued, boolean isNew) {
         TurSolrFieldAction action = isNew ? TurSolrFieldAction.ADD : TurSolrFieldAction.REPLACE;
-        TurSolrUtils.addOrUpdateField(action, seInstance, indexName, fieldName, fieldType, stored, multiValued);
+        TurSolrUtils.addOrUpdateField(action, effective(seInstance), indexName, fieldName, fieldType,
+                stored, multiValued);
     }
 
     @Override
     public void deleteField(TurSEInstance seInstance, String indexName, String fieldName,
             TurSEFieldType fieldType) {
-        TurSolrUtils.deleteField(seInstance, indexName, fieldName, fieldType);
+        TurSolrUtils.deleteField(effective(seInstance), indexName, fieldName, fieldType);
     }
 
     @Override
     public boolean fieldExists(TurSEInstance seInstance, String indexName, String fieldName) {
-        return TurSolrUtils.existsField(seInstance, indexName, fieldName);
+        return TurSolrUtils.existsField(effective(seInstance), indexName, fieldName);
     }
 
     // ---- Document operations ---------------------------------------------
@@ -271,6 +304,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     @Override
     public void createCopyField(TurSEInstance seInstance, String indexName, String fieldName,
             TurSEFieldType fieldType, boolean multiValued) {
+        seInstance = effective(seInstance);
         if (TurSolrUtils.isCreateCopyFieldByCore(seInstance, indexName, fieldName, fieldType)) {
             TurSolrUtils.createCopyFieldByCore(seInstance, indexName, fieldName, multiValued);
         }
@@ -280,6 +314,7 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
 
     @Override
     public Map<String, String> getSystemInfo(TurSEInstance seInstance) {
+        seInstance = effective(seInstance);
         var info = new java.util.LinkedHashMap<String, String>();
         info.put("engine", "Apache Solr");
         try {

@@ -3,6 +3,7 @@ package com.viglet.turing.api.system;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.git.TurGitServerService;
 import com.viglet.turing.service.storage.TurStorageService;
+import com.viglet.turing.solr.source.TurSolrInstanceSource;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,20 +26,24 @@ public class TurFeaturesAPI {
     private final TurGlobalSettingsService globalSettingsService;
     private final TurGitServerService gitServerService;
     private final TurConfigProperties configProperties;
+    private final TurSolrInstanceSource solrInstanceSource;
     private final String loggingEngine;
 
     public TurFeaturesAPI(TurStorageService storageService, TurGlobalSettingsService globalSettingsService,
                           TurGitServerService gitServerService, TurConfigProperties configProperties,
+                          TurSolrInstanceSource solrInstanceSource,
                           @Value("${turing.logging.engine:none}") String loggingEngine) {
         this.storageService = storageService;
         this.globalSettingsService = globalSettingsService;
         this.gitServerService = gitServerService;
         this.configProperties = configProperties;
+        this.solrInstanceSource = solrInstanceSource;
         this.loggingEngine = loggingEngine;
     }
 
     public record FeaturesResponse(boolean storageEnabled, boolean ragEnabled, boolean gitServerEnabled,
-                                   boolean marketplaceEnabled, String loggingEngine) {}
+                                   boolean marketplaceEnabled, boolean seInstanceReadOnly,
+                                   String loggingEngine) {}
 
     @GetMapping
     public FeaturesResponse getFeatures() {
@@ -49,6 +54,7 @@ public class TurFeaturesAPI {
                 globalSettingsService.isRagEnabled(),
                 gitServerService.isEnabled(),
                 marketplaceEnabled,
+                solrInstanceSource != null && solrInstanceSource.isReadOnly(),
                 loggingEngine);
     }
 }

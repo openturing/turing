@@ -7,6 +7,7 @@ export interface FeaturesResponse {
   ragEnabled: boolean
   gitServerEnabled: boolean
   marketplaceEnabled: boolean
+  seInstanceReadOnly: boolean
   loggingEngine: LoggingEngine
 }
 
