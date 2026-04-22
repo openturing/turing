@@ -80,6 +80,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
   });
   const [snFieldTypes, setSnFieldTypes] = useState<TurSNFieldType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const {
     decimalSymbol,
     normalizeCurrencyString,
@@ -113,6 +114,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
 
 
   async function onSubmit(snField: TurSNSiteField) {
+    setIsSubmitting(true);
     try {
       // Normalize all fields: ensure strings are empty strings instead of null/undefined
       const normalizedData: TurSNSiteField = {
@@ -155,6 +157,8 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
         return;
       }
       toast.error(t("forms.common.formSubmitFailed"));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -194,11 +198,11 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
               />
               <StickyPageHeader.Actions>
                 {onDelete && open !== undefined && setOpen && <DialogDelete feature={t("sn.fields.feature")} name={snField.name} onDelete={onDelete} open={open} setOpen={setOpen} />}
-                <GradientButton type="submit" size="sm" loading={isLoading}>
+                <GradientButton type="submit" size="sm" loading={isSubmitting} disabled={isSubmitting}>
                   <IconDeviceFloppy className="size-4" />
                   {t("forms.formActions.saveChanges")}
                 </GradientButton>
-                <GradientButton type="button" variant="outline" size="sm" onClick={() => navigate(urlBase)}>
+                <GradientButton type="button" variant="outline" size="sm" disabled={isSubmitting} onClick={() => navigate(urlBase)}>
                   <IconX className="size-4" />
                   {t("forms.formActions.cancel")}
                 </GradientButton>

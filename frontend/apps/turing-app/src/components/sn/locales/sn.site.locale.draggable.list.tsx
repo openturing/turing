@@ -13,7 +13,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { ChevronDown, GripVertical } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +21,13 @@ import { ROUTES } from '@/app/routes.const';
 import { BadgeColorful } from '@/components/badge-colorful';
 import { BadgeLocale } from '@/components/badge-locale';
 import { Badge } from '@/components/ui/badge';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { GradientButton } from '@/components/ui/gradient-button';
 import { GradientButtonLink } from '@viglet/viglet-design-system/router';
 import {
     Table,
@@ -32,14 +39,16 @@ import {
 } from '@/components/ui/table';
 import type { TurSNSiteLocale } from '@/models/sn/sn-site-locale.model';
 import { TurSNSiteLocaleService } from '@/services/sn/sn.site.locale.service';
+import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
 
 interface SNSiteLocaleDraggableListRowProps {
     row: TurSNSiteLocale;
     index: number;
+    storageEnabled: boolean;
 }
 
-const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> = ({ row, index }) => {
+const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> = ({ row, index, storageEnabled }) => {
     const { t } = useTranslation();
     const {
         attributes,
@@ -57,6 +66,11 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
         zIndex: isDragging ? 1 : 0,
         position: 'relative',
     };
+
+    const site = row.turSNSite;
+    const hasTemplate = storageEnabled && !!site.searchTemplate?.trim();
+    const searchUrl = `/sn/${site.name}?_setlocale=${row.language}`;
+    const defaultUrl = `/sn/${site.name}?_setlocale=${row.language}&_embedded=true`;
 
     return (
         <TableRow ref={setNodeRef} style={style}>
@@ -80,17 +94,49 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
                     )}
                 </div>
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell>
                 <BadgeColorful text={row.core} />
             </TableCell>
             <TableCell>
-                <GradientButtonLink
-                    variant="outline"
-                    size="sm"
-                    to={`${ROUTES.SN_INSTANCE}/${row.turSNSite.id}/locale/${row.id}`}
-                >
-                    {t("forms.common.edit")}
-                </GradientButtonLink>
+                <div className="flex justify-end gap-2">
+                    <GradientButtonLink
+                        variant="outline"
+                        size="sm"
+                        to={`${ROUTES.SN_INSTANCE}/${site.id}/locale/${row.id}`}
+                    >
+                        {t("forms.common.edit")}
+                    </GradientButtonLink>
+                    {hasTemplate ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <GradientButton size="sm">
+                                    {t("forms.localeTable.openSearch")}
+                                    <ChevronDown className="size-3.5" />
+                                </GradientButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <a href={searchUrl} target="_blank" rel="noreferrer">
+                                        <Icon icon="mdi:card-search" className="size-4" />
+                                        {t("forms.localeTable.openSearch")} ({site.searchTemplate})
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <a href={defaultUrl} target="_blank" rel="noreferrer">
+                                        <Icon icon="mdi:card-search-outline" className="size-4" />
+                                        {t("forms.localeTable.searchDefault")}
+                                    </a>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <GradientButton asChild size="sm">
+                            <a href={searchUrl} target="_blank" rel="noreferrer">
+                                {t("forms.localeTable.openSearch")}
+                            </a>
+                        </GradientButton>
+                    )}
+                </div>
             </TableCell>
         </TableRow>
     );
@@ -100,6 +146,7 @@ interface SNSiteLocaleDraggableListProps {
     siteId: string;
     tableData: TurSNSiteLocale[];
     setTableData: React.Dispatch<React.SetStateAction<TurSNSiteLocale[]>>;
+    storageEnabled?: boolean;
     children?: React.ReactNode;
 }
 
@@ -109,6 +156,7 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
     siteId,
     tableData,
     setTableData,
+    storageEnabled = false,
     children,
 }) => {
     const { t } = useTranslation();
@@ -155,8 +203,8 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
                             <TableRow>
                                 <TableHead className="w-12"></TableHead>
                                 <TableHead>{t("forms.localeTable.language")}</TableHead>
-                                <TableHead className="hidden md:table-cell">{t("forms.localeTable.core")}</TableHead>
-                                <TableHead>{t("forms.localeTable.action")}</TableHead>
+                                <TableHead>{t("forms.localeTable.core")}</TableHead>
+                                <TableHead className="text-right">{t("forms.localeTable.action")}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -165,7 +213,7 @@ export const SNSiteLocaleDraggableList: React.FC<SNSiteLocaleDraggableListProps>
                                 strategy={verticalListSortingStrategy}
                             >
                                 {tableData.map((row, index) => (
-                                    <SNSiteLocaleDraggableListRow key={row.id} row={row} index={index} />
+                                    <SNSiteLocaleDraggableListRow key={row.id} row={row} index={index} storageEnabled={storageEnabled} />
                                 ))}
                             </SortableContext>
                         </TableBody>

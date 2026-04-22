@@ -5,6 +5,7 @@ import { SNSiteLocaleDraggableList } from "@/components/sn/locales/sn.site.local
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
 import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service";
+import { TurFeaturesService } from "@/services/system/features.service";
 import { IconLanguage } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import * as React from "react";
@@ -12,15 +13,18 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
 const turSNSiteLocaleService = new TurSNSiteLocaleService();
+const turFeaturesService = new TurFeaturesService();
 export default function SNSiteMultiLanguageListPage() {
     const { id } = useParams() as { id: string };
     const [data, setData] = React.useState<TurSNSiteLocale[]>();
     const [error, setError] = React.useState<string | null>(null);
+    const [storageEnabled, setStorageEnabled] = React.useState(false);
     const { t } = useTranslation();
     useSubPageBreadcrumb(t("sn.multiLanguage.title"));
 
     React.useEffect(() => {
         turSNSiteLocaleService.query(id).then(setData).catch(() => setError("Connection error or timeout while fetching Multi Language data."));
+        turFeaturesService.getFeatures().then((features) => setStorageEnabled(features.storageEnabled)).catch(() => setStorageEnabled(false));
     }, [id]);
 
     return (
@@ -31,6 +35,7 @@ export default function SNSiteMultiLanguageListPage() {
             </SubPageHeader>
             {data && data.length > 0 ? (
                 <SNSiteLocaleDraggableList siteId={id} tableData={data}
+                    storageEnabled={storageEnabled}
                     setTableData={setData as React.Dispatch<React.SetStateAction<TurSNSiteLocale[]>>} />
             ) : (
                 <BlankSlate

@@ -30,6 +30,8 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   if (!store.data) return null;
 
   const { data, chat, documents, params } = store;
+  const defaultLocale = data.widget.locales[0]?.locale ?? "";
+  const currentLocale = params._setlocale || defaultLocale;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -37,7 +39,7 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
         siteName={siteName}
         siteIcon={data.widget.icon}
         store={store}
-        locale={params._setlocale || "en_US"}
+        locale={currentLocale}
         locales={data.widget.locales}
         suggestions={suggestions}
         onInputChange={(v) => { store.setInputValue(v); fetchSuggestions(v, { _setlocale: params._setlocale }); }}

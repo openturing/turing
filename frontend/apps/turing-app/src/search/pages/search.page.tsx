@@ -9,7 +9,7 @@ export default function SearchPage() {
 
   return (
     <TuringProvider
-      config={{ site, locale: "en_US", sort: "relevance" }}
+      config={{ site, sort: "relevance" }}
       urlSync={{ searchParams, setSearchParams: (s) => setSearchParams(s) }}
     >
       <SearchContent siteName={site} />

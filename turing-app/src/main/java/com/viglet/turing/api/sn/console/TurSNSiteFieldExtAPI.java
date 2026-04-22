@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.mapper.sn.field.TurSNSiteFieldExtMapper;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -116,10 +118,19 @@ public class TurSNSiteFieldExtAPI {
         return turSNSiteRepository.findById(snSiteId)
                 .map(turSNSite -> {
                     updateFieldExtFromSNSite(turSNSite);
-                    return turSNSiteFieldExtMapper.toDtoList(turSNSiteFieldExtRepository
-                            .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite));
+                    return turSNSiteFieldExtRepository
+                            .findByTurSNSite(TurPersistenceUtils.orderByNameIgnoreCase(), turSNSite)
+                            .stream()
+                            .map(this::toDtoWithFacetLocales)
+                            .toList();
                 })
                 .orElse(Collections.emptyList());
+    }
+
+    private TurSNSiteFieldExtDto toDtoWithFacetLocales(TurSNSiteFieldExt fieldExt) {
+        TurSNSiteFieldExtDto dto = new TurSNSiteFieldExtDto(fieldExt);
+        dto.setFacetLocales(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExt(fieldExt));
+        return dto;
     }
 
     @Operation(summary = "Show a Semantic Navigation Site Field Ext")
@@ -146,6 +157,7 @@ public class TurSNSiteFieldExtAPI {
 
     @Operation(summary = "Create a Semantic Navigation Site Field Ext")
     @PostMapping
+    @Transactional
     public TurSNSiteFieldExtDto turSNSiteFieldExtAdd(@PathVariable String snSiteId,
             @RequestBody TurSNSiteFieldExtDto turSNSiteFieldExtDto) {
         TurSNSiteFieldExt turSNSiteFieldExt = turSNSiteFieldExtMapper.toEntity(turSNSiteFieldExtDto);
@@ -161,7 +173,7 @@ public class TurSNSiteFieldExtAPI {
         return this.turSNSiteFieldExtRepository.findById(id).map(existing -> {
             updateFieldExtProperties(existing, payload);
 
-            turSNSiteRepository.findById(snSiteId).ifPresent(turSNSite -> {
+            turSNSiteRepository.findByIdNoCache(snSiteId).ifPresent(turSNSite -> {
                 existing.setFacetPosition(calculateFacetPositionForUpdate(payload, turSNSite));
                 this.turSNSiteFieldExtRepository.save(existing);
                 this.updateExternalField(payload, turSNSite);
@@ -175,7 +187,7 @@ public class TurSNSiteFieldExtAPI {
     @DeleteMapping("/{id}")
     public boolean turSNSiteFieldExtDelete(@PathVariable String snSiteId, @PathVariable String id) {
         return this.turSNSiteFieldExtRepository.findById(id).map(turSNSiteFieldExt -> {
-            turSNSiteRepository.findById(snSiteId)
+            turSNSiteRepository.findByIdNoCache(snSiteId)
                     .ifPresent(turSNSite -> turSNSiteFieldRepository.findById(turSNSiteFieldExt.getExternalId())
                             .ifPresent(turSNSiteField -> this.deleteSolrSchema(turSNSite, turSNSiteField)));
             if (TurSNFieldType.SE.equals(turSNSiteFieldExt.getSnType())) {
@@ -322,7 +334,7 @@ public class TurSNSiteFieldExtAPI {
     }
 
     private TurSNSiteFieldExt createSEField(String snSiteId, TurSNSiteFieldExt fieldExt) {
-        return turSNSiteRepository.findById(snSiteId)
+        return turSNSiteRepository.findByIdNoCache(snSiteId)
                 .map(turSNSite -> createSEFieldForSite(turSNSite, fieldExt))
                 .orElse(TurSNSiteFieldExt.builder().build());
     }
@@ -408,12 +420,18 @@ public class TurSNSiteFieldExtAPI {
     private void updateExternalField(TurSNSiteFieldExt fieldExt, TurSNSite turSNSite) {
         if (TurSNFieldType.SE.equals(fieldExt.getSnType())) {
             turSNSiteFieldRepository.findById(fieldExt.getExternalId()).ifPresent(field -> {
+                TurSEFieldType previousType = field.getType();
+                int previousMultiValued = field.getMultiValued();
                 field.setDescription(fieldExt.getDescription());
                 field.setMultiValued(fieldExt.getMultiValued());
                 field.setName(fieldExt.getName());
                 field.setType(fieldExt.getType());
                 this.turSNSiteFieldRepository.save(field);
-                updateSolrSchema(turSNSite, field);
+                boolean typeChanged = !Objects.equals(previousType, field.getType());
+                boolean multiValuedChanged = previousMultiValued != field.getMultiValued();
+                if (typeChanged || multiValuedChanged) {
+                    updateSolrSchema(turSNSite, field);
+                }
             });
         }
     }
