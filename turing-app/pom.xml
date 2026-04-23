@@ -477,15 +477,18 @@
                         <!-- optional: default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                     </execution>
-                    <!-- Install pnpm globally into the embedded Node, so the
-                         next executions can call pnpm via the plugin's pnpm goal. -->
+                    <!-- Install pnpm into the plugin's embedded Node directory so the
+                         `pnpm` goal finds it at <workingDirectory>/node/node_modules/pnpm.
+                         `-g` lands in a platform-dependent path (<node>/node_modules on
+                         Windows vs. <node>/lib/node_modules on Linux), which breaks CI.
+                         `--prefix=./node` forces a consistent layout on every OS. -->
                     <execution>
                         <id>install pnpm</id>
                         <goals>
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>install -g pnpm@10.33.0</arguments>
+                            <arguments>install pnpm@10.33.0 --prefix=./node</arguments>
                             <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                         <phase>generate-resources</phase>
