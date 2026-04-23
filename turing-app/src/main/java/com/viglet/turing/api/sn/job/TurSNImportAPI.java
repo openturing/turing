@@ -150,10 +150,22 @@ public class TurSNImportAPI {
     private void sendToGenAi(TurSNJobItems turSNJobItems) {
         turSNJobItems.forEach(turJobItem -> {
             if (isValidJobItem(turJobItem)) {
+                Object objectId = turJobItem.getAttributes().get(TurSNFieldName.ID);
                 turJobItem.getSiteNames().forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName)
-                        .filter(turSNSite -> turSNSite.getTurSNSiteGenAi() != null
-                                && turSNSite.getTurSNSiteGenAi().isEnabled())
-                        .ifPresent(turSNSite -> turGenAi.addDocuments(turSNJobItems)));
+                        .ifPresentOrElse(turSNSite -> {
+                            if (turSNSite.getTurSNSiteGenAi() == null) {
+                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': TurSNSiteGenAi is null",
+                                        objectId, siteName);
+                            } else if (!turSNSite.getTurSNSiteGenAi().isEnabled()) {
+                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI is disabled",
+                                        objectId, siteName);
+                            } else {
+                                log.info("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
+                                        objectId, siteName);
+                                turGenAi.addDocuments(turSNJobItems);
+                            }
+                        }, () -> log.info("RAG skipped for Object ID '{}': SN Site '{}' not found",
+                                objectId, siteName)));
             }
         });
     }

@@ -156,6 +156,10 @@ public class TurRagContextBuilder {
                     ? collectionNameOverride
                     : defaultCollection;
 
+            log.info("RAG building vector store: provider='{}', storeInstanceId='{}', embeddingModelId='{}', defaultCollection='{}', collectionOverride='{}', effectiveCollection='{}'",
+                    storeProvider.getClass().getSimpleName(), storeInstance.getId(),
+                    embModel == null ? null : embModel.getId(),
+                    defaultCollection, collectionNameOverride, collectionName);
             VectorStore vectorStore;
             if (StringUtils.hasText(collectionNameOverride)) {
                 vectorStore = storeProvider.createVectorStore(storeInstance, embeddingModel,

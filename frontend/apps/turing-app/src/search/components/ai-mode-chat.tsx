@@ -7,7 +7,7 @@ import {
   IconSparkles,
   IconUser,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -18,6 +18,13 @@ interface AiModeChatProps {
   locale?: string;
   /** When present, auto-sends this query as the first question (e.g. from the search input). */
   initialQuery?: string;
+  /** Called once after the auto-sent initial query is dispatched, so the parent can clear its own input. */
+  onInitialQueryConsumed?: () => void;
+}
+
+export interface AiModeChatHandle {
+  /** Imperatively submit a question to the chat (e.g. from the top search bar). */
+  ask: (query: string) => void;
 }
 
 interface AiMessage {
@@ -38,7 +45,10 @@ function encodeMarkdownLinkUrls(text: string): string {
   );
 }
 
-export function AiModeChat({ siteName, locale, initialQuery }: Readonly<AiModeChatProps>) {
+export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function AiModeChat(
+  { siteName, locale, initialQuery, onInitialQueryConsumed }: Readonly<AiModeChatProps>,
+  ref,
+) {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<AiMessage[]>([]);
   const messagesRef = useRef<AiMessage[]>([]);
@@ -51,9 +61,11 @@ export function AiModeChat({ siteName, locale, initialQuery }: Readonly<AiModeCh
   const autoSentRef = useRef(false);
   const initialQueryRef = useRef(initialQuery);
   initialQueryRef.current = initialQuery;
+  const onInitialQueryConsumedRef = useRef(onInitialQueryConsumed);
+  onInitialQueryConsumedRef.current = onInitialQueryConsumed;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
   const askAi = useCallback(async (query: string) => {
@@ -89,9 +101,11 @@ export function AiModeChat({ siteName, locale, initialQuery }: Readonly<AiModeCh
     const q = initialQueryRef.current?.trim();
     if (!q || q === "*") return;
     autoSentRef.current = true;
-    setInput(q);
     askAi(q);
+    onInitialQueryConsumedRef.current?.();
   }, [askAi, initialQuery]);
+
+  useImperativeHandle(ref, () => ({ ask: askAi }), [askAi]);
 
   const handleSubmit = () => {
     if (!input.trim() || loading) return;
@@ -167,7 +181,7 @@ export function AiModeChat({ siteName, locale, initialQuery }: Readonly<AiModeCh
               </div>
             </div>
           ))}
-          <div ref={endRef} />
+          <div ref={endRef} className="scroll-mb-24" />
         </div>
       )}
 
@@ -209,4 +223,4 @@ export function AiModeChat({ siteName, locale, initialQuery }: Readonly<AiModeCh
       </div>
     </div>
   );
-}
+});

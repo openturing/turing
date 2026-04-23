@@ -19,6 +19,7 @@
 package com.viglet.turing.genai;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ABSTRACT;
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.MODIFICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.PUBLICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
@@ -42,7 +43,6 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.stereotype.Component;
@@ -69,9 +69,16 @@ public class TurSNGenAi {
     public static final String SOURCE_ID = "source_id";
     public static final String SITES = "sites";
     public static final String LOCALE = "locale";
-    public static final String QUESTION = "question";
-    public static final String INFORMATION = "information";
-    public static final String DEFAULT_PROMPT = "Use the provided information to answer the question.\nQuestion: {question}\nInformation: {information}";
+    private static final String DEFAULT_BEHAVIOR_PROMPT = """
+            You are an assistant that answers questions about this website using only the context provided below.
+
+            How to respond:
+            - Use the context as the single source of truth. You may paraphrase, summarize, or combine information from different snippets when they relate to the same topic.
+            - If the topic appears in the context only as a passing mention (e.g., a name or word with no explanatory detail), do NOT expand with external knowledge. Instead, answer what the context says — even if it is just "The context mentions X only as <role>, but does not provide further details."
+            - If the topic is not present in the context at all, respond exactly with: "I'm sorry, but that information is not available in the website's database."
+            - Never use prior knowledge, training data, or outside facts. Even if you know the answer, stay within the context.
+
+            Language: Always respond in English.""";
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurGenAiContextFactory turGenAiContextFactory;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
@@ -85,19 +92,21 @@ public class TurSNGenAi {
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
-        if (context.isEnabled()) {
-            int tokenCounter = new StringTokenizer(q).countTokens();
-            if (tokenCounter > 1) {
-                return getTurChatMessage(context, q);
-            } else {
-                if (tokenCounter == 1 && !q.contains("*")) {
-                    return getTurChatMessage(context, "what is %s?".formatted(q));
-                } else {
-                    return TurChatMessage.builder().text(null).enabled(true).build();
-                }
-            }
-        } else {
+        if (!context.isEnabled()) {
+            log.warn("RAG chat (single-turn) context disabled — check LLM, embedding model and store configuration");
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
+        }
+        int tokenCounter = new StringTokenizer(q).countTokens();
+        log.info("RAG chat (single-turn) assistant query='{}' tokenCount={}", q, tokenCounter);
+        if (tokenCounter > 1) {
+            return getTurChatMessage(context, q);
+        } else if (tokenCounter == 1 && !q.contains("*")) {
+            String rewritten = "what is %s?".formatted(q);
+            log.info("RAG chat (single-turn) rewriting single-token query to '{}'", rewritten);
+            return getTurChatMessage(context, rewritten);
+        } else {
+            log.info("RAG chat (single-turn) skipping (wildcard or empty) — no retrieval performed");
+            return TurChatMessage.builder().text(null).enabled(true).build();
         }
     }
 
@@ -110,9 +119,11 @@ public class TurSNGenAi {
      */
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history) {
         if (!context.isEnabled()) {
+            log.warn("RAG chat context disabled — check LLM, embedding model and store configuration");
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
         }
         if (history == null || history.isEmpty()) {
+            log.info("RAG chat called with empty history — nothing to answer");
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
@@ -122,20 +133,40 @@ public class TurSNGenAi {
                 .reduce((first, second) -> second)
                 .orElse("");
         if (latestUserQuery.isBlank()) {
+            log.info("RAG chat latest user message is blank — nothing to retrieve");
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
+        int topK = 10;
+        double similarityThreshold = 0.4;
         SearchRequest embeddingSearchRequest = SearchRequest.builder()
                 .query(latestUserQuery)
-                .topK(10)
-                .similarityThreshold(0.7)
+                .topK(topK)
+                .similarityThreshold(similarityThreshold)
                 .build();
-        List<Document> relevantDocuments = context.getVectorStore().similaritySearch(embeddingSearchRequest);
-        String information = relevantDocuments == null ? "" : relevantDocuments.stream()
+        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
+        log.info("RAG chat similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
+                vectorStoreType, topK, similarityThreshold, latestUserQuery);
+        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
+        log.info("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
+        if (relevantDocuments.isEmpty()) {
+            log.warn("RAG chat retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
+                    vectorStoreType);
+        } else if (log.isInfoEnabled()) {
+            for (int i = 0; i < relevantDocuments.size(); i++) {
+                Document d = relevantDocuments.get(i);
+                String text = d.getText() == null ? "" : d.getText();
+                log.info("  RAG chat doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
+            }
+        }
+        String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
 
-        String systemContent = buildConversationSystemPrompt(context.getSystemPrompt(), information);
+        log.info("RAG chat raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
+        String systemContent = buildSystemPrompt(context.getSystemPrompt(), information);
+        log.info("RAG chat final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(systemContent));
@@ -148,89 +179,212 @@ public class TurSNGenAi {
         }
 
         Prompt prompt = new Prompt(messages);
+        if (log.isInfoEnabled()) {
+            StringBuilder dump = new StringBuilder();
+            for (Message m : messages) {
+                dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
+                        .append(m.getText() == null ? "" : m.getText());
+            }
+            log.info("RAG chat full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
+        }
         String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
+        log.info("RAG chat LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder().text(answer).enabled(true).build();
     }
 
-    private String buildConversationSystemPrompt(String configuredPrompt, String information) {
-        String base;
-        if (configuredPrompt == null || configuredPrompt.isBlank()) {
-            base = "Use the provided information to answer the user's questions. "
-                    + "If the information is not enough, say so. "
-                    + "Keep the conversation coherent with previous turns.";
-        } else {
-            // Strip {question} placeholder; substitute {information} if present.
-            base = configuredPrompt
-                    .replace("{question}", "")
-                    .replace("{information}", information);
+    /**
+     * Composes the system message for RAG chat.
+     * <p>
+     * The custom prompt is treated as pure behavior guidance. The retrieved RAG
+     * context is appended automatically; the user question is carried by the
+     * {@code UserMessage} turn, not injected into the system prompt.
+     */
+    private String buildSystemPrompt(String configuredPrompt, String information) {
+        String behavior = (configuredPrompt == null || configuredPrompt.isBlank())
+                ? DEFAULT_BEHAVIOR_PROMPT
+                : configuredPrompt;
+        if (!information.isBlank()) {
+            behavior = behavior + "\n\n---\nContext from the website:\n" + information + "\n---";
         }
-        if (!base.contains(information) && !information.isBlank()) {
-            base = base + "\n\nInformation:\n" + information;
-        }
-        return base;
+        return behavior;
     }
 
     public record ConversationMessage(String role, String content) {
     }
 
     private TurChatMessage getTurChatMessage(TurGenAiContext context, String q) {
+        int topK = 10;
+        double similarityThreshold = 0.4;
         SearchRequest embeddingSearchRequest = SearchRequest.builder()
                 .query(q)
-                .topK(10)
-                .similarityThreshold(0.7)
+                .topK(topK)
+                .similarityThreshold(similarityThreshold)
                 .build();
-        List<Document> relevantDocuments = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
+        log.info("RAG chat (single-turn) similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
+                vectorStoreType, topK, similarityThreshold, q);
+        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
+        log.info("RAG chat (single-turn) similaritySearch returned {} document(s)", relevantDocuments.size());
         if (relevantDocuments.isEmpty()) {
-            relevantDocuments = Collections.emptyList();
+            log.warn("RAG chat (single-turn) retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
+                    vectorStoreType);
+        } else if (log.isInfoEnabled()) {
+            for (int i = 0; i < relevantDocuments.size(); i++) {
+                Document d = relevantDocuments.get(i);
+                String text = d.getText() == null ? "" : d.getText();
+                log.info("  RAG chat (single-turn) doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
+            }
         }
 
-        PromptTemplate promptTemplate = new PromptTemplate(resolvePromptTemplate(context.getSystemPrompt()));
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
+        log.info("RAG chat (single-turn) raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
+        String systemContent = buildSystemPrompt(context.getSystemPrompt(), information);
+        log.info("RAG chat (single-turn) final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
 
-        Map<String, Object> variables = new HashMap<>();
-        variables.put(QUESTION, q);
-        variables.put(INFORMATION, information);
-        Prompt prompt = promptTemplate.create(variables);
+        List<Message> messages = new ArrayList<>();
+        messages.add(new SystemMessage(systemContent));
+        messages.add(new UserMessage(q));
+        Prompt prompt = new Prompt(messages);
+        if (log.isInfoEnabled()) {
+            StringBuilder dump = new StringBuilder();
+            for (Message m : messages) {
+                dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
+                        .append(m.getText() == null ? "" : m.getText());
+            }
+            log.info("RAG chat (single-turn) full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
+        }
+        String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
+        log.info("RAG chat (single-turn) LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder()
-                .text(context.getChatModel().call(prompt).getResult().getOutput().getText())
+                .text(answer)
                 .enabled(true)
                 .build();
     }
 
-    public void addDocuments(TurSNJobItems turSNJobItems) {
-        turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
-                .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresent(turSNSite -> {
-                    if (turSNSite.getTurSNSiteGenAi() != null && turSNSite.getTurSNSiteGenAi().isEnabled()) {
-                        String collectionName = resolveCollectionName(turSNSite, jobItem);
-                        TurGenAiContext context = turGenAiContextFactory.build(
-                                turSNSite.getTurSNSiteGenAi(), collectionName);
-                        if (context.isEnabled()) {
-                            StringBuilder sb = new StringBuilder();
-                            addAttributes(context, jobItem, sb);
-                            addDocument(context, sb.toString(), setMetadata(jobItem));
-                        }
-                    }
-                })));
+    /**
+     * Index a single document coming from the content import/exchange flow, where the
+     * document is a raw map of attributes (instead of a {@link TurSNJobItem}).
+     *
+     * @since 2026.2.4
+     */
+    public void addDocument(TurSNSite turSNSite, Locale locale, Map<String, Object> doc) {
+        if (turSNSite == null || doc == null) {
+            return;
+        }
+        Object sourceId = doc.get(ID);
+        if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
+            log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+                    sourceId, turSNSite.getName());
+            return;
+        }
+        String collectionName = resolveCollectionName(turSNSite, locale);
+        log.info("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
+                sourceId, turSNSite.getName(), collectionName);
+        TurGenAiContext context = turGenAiContextFactory.build(
+                turSNSite.getTurSNSiteGenAi(), collectionName);
+        if (!context.isEnabled()) {
+            log.warn("RAG context disabled for Object ID '{}' of SN Site '{}': check LLM, embedding model and store configuration",
+                    sourceId, turSNSite.getName());
+            return;
+        }
+        String text = extractIndexableText(doc);
+        if (text.isEmpty()) {
+            log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+                    sourceId, turSNSite.getName());
+        }
+        addDocument(context, text, buildMetadata(turSNSite, locale, doc));
     }
 
-    private String resolveCollectionName(TurSNSite turSNSite, TurSNJobItem jobItem) {
-        if (jobItem.getLocale() != null) {
-            Locale locale = jobItem.getLocale();
-            TurSNSiteLocale siteLocale = turSNSiteLocaleRepository
-                    .findByTurSNSiteAndLanguage(turSNSite, locale);
-            if (siteLocale != null && siteLocale.getCore() != null) {
-                return siteLocale.getCore();
+    private String extractIndexableText(Map<String, Object> doc) {
+        StringBuilder sb = new StringBuilder();
+        String[] allowedAttributes = { TITLE, ABSTRACT, TEXT };
+        for (String attr : allowedAttributes) {
+            Object value = doc.get(attr);
+            if (value != null) {
+                sb.append(value).append(System.lineSeparator());
             }
         }
-        return null;
+        return sb.toString();
+    }
+
+    private Map<String, Object> buildMetadata(TurSNSite turSNSite, Locale locale, Map<String, Object> doc) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put(SOURCE_ID, doc.get(ID));
+        if (locale != null) {
+            metadata.put(LOCALE, locale.toString());
+        }
+        if (doc.containsKey(SOURCE_APPS)) {
+            metadata.put(SOURCE_APPS, doc.get(SOURCE_APPS));
+        }
+        metadata.put(SITES, turSNSite.getName());
+        if (doc.containsKey(MODIFICATION_DATE)) {
+            metadata.put(MODIFICATION_DATE, doc.get(MODIFICATION_DATE));
+        }
+        if (doc.containsKey(PUBLICATION_DATE)) {
+            metadata.put(PUBLICATION_DATE, doc.get(PUBLICATION_DATE));
+        }
+        if (doc.containsKey(URL)) {
+            metadata.put(URL, doc.get(URL));
+        }
+        return metadata;
+    }
+
+    private String resolveCollectionName(TurSNSite turSNSite, Locale locale) {
+        if (locale == null) {
+            return null;
+        }
+        TurSNSiteLocale siteLocale = turSNSiteLocaleRepository
+                .findByTurSNSiteAndLanguage(turSNSite, locale);
+        return siteLocale != null ? siteLocale.getCore() : null;
+    }
+
+    public void addDocuments(TurSNJobItems turSNJobItems) {
+        log.info("RAG addDocuments called with {} document(s)", turSNJobItems.getTuringDocuments().size());
+        turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
+                .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
+                    if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
+                        log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+                                jobItem.getId(), siteName);
+                        return;
+                    }
+                    String collectionName = resolveCollectionName(turSNSite, jobItem.getLocale());
+                    log.info("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
+                            jobItem.getId(), siteName, collectionName);
+                    TurGenAiContext context = turGenAiContextFactory.build(
+                            turSNSite.getTurSNSiteGenAi(), collectionName);
+                    if (!context.isEnabled()) {
+                        log.warn("RAG context disabled for Object ID '{}' of SN Site '{}': check LLM, embedding model and store configuration",
+                                jobItem.getId(), siteName);
+                        return;
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    addAttributes(context, jobItem, sb);
+                    if (sb.length() == 0) {
+                        log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+                                jobItem.getId(), siteName);
+                    }
+                    addDocument(context, sb.toString(), setMetadata(jobItem));
+                }, () -> log.warn("RAG skipped for Object ID '{}': SN Site '{}' not resolved by search process",
+                        jobItem.getId(), siteName))));
     }
 
     private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
         List<Document> documents = TurRagUtils.createDocuments(text, metadata);
+        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
+        log.info("RAG indexing {} chunk(s) for Object ID '{}' into vector store '{}' — metadata={}",
+                documents.size(), metadata.get(SOURCE_ID), vectorStoreType, metadata);
+        for (int i = 0; i < documents.size(); i++) {
+            Document chunk = documents.get(i);
+            log.info("  RAG indexing chunk[{}/{}] Object ID '{}' text=<<<\n{}\n>>>",
+                    i + 1, documents.size(), metadata.get(SOURCE_ID),
+                    chunk.getText() == null ? "" : chunk.getText());
+        }
         context.getVectorStore().add(documents);
-        log.info("added document to embedding store: {}", metadata.get(SOURCE_ID));
+        log.info("RAG indexed Object ID '{}' into vector store '{}'",
+                metadata.get(SOURCE_ID), vectorStoreType);
     }
 
     private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {
@@ -264,7 +418,4 @@ public class TurSNGenAi {
         return metadata;
     }
 
-    private String resolvePromptTemplate(String configuredPrompt) {
-        return (configuredPrompt == null || configuredPrompt.isBlank()) ? DEFAULT_PROMPT : configuredPrompt;
-    }
 }

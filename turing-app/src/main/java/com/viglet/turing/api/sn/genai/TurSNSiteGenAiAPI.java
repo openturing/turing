@@ -45,7 +45,9 @@ import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/sn/{siteName}/chat")
 @Tag(name = "Semantic Navigation with Generative AI", description = "Semantic Navigation with Generative AI API")
@@ -103,11 +105,14 @@ public class TurSNSiteGenAiAPI {
 	public TurChatMessage chatMessage(@PathVariable String siteName,
 			@RequestParam(name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest) {
+		log.info("RAG chat (single-turn) received for SN Site '{}': locale='{}', query='{}'",
+				siteName, localeRequest, q);
 		Locale locale = resolveLocale(localeRequest, siteName);
 		if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			return turSNSearchProcess.getSNSite(siteName).map(site -> {
 				var turSNSiteGenAI = site.getTurSNSiteGenAi();
 				if (turSNSiteGenAI == null || !turSNSiteGenAI.isEnabled()) {
+					log.info("RAG chat (single-turn) skipped for SN Site '{}': GenAI not enabled on site", siteName);
 					return TurChatMessage.builder()
 							.text(NOT_ENABLED_MESSAGE)
 							.build();
@@ -118,11 +123,17 @@ public class TurSNSiteGenAiAPI {
 				if (siteLocale != null) {
 					collectionName = siteLocale.getCore();
 				}
+				log.info("RAG chat (single-turn) building context for SN Site '{}': locale='{}', collection='{}'",
+						siteName, locale, collectionName);
 				TurGenAiContext turGenAiContext = turGenAiContextFactory
 						.build(turSNSiteGenAI, collectionName);
 				return turGenAi.assistant(turGenAiContext, q);
-			}).orElse(TurChatMessage.builder().text("Couldn't find site name.").build());
+			}).orElseGet(() -> {
+				log.warn("RAG chat (single-turn) skipped: SN Site '{}' not found", siteName);
+				return TurChatMessage.builder().text("Couldn't find site name.").build();
+			});
 		}
+		log.info("RAG chat (single-turn) skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 		return TurChatMessage.builder().build();
 	}
 
@@ -161,8 +172,12 @@ public class TurSNSiteGenAiAPI {
 	@PostMapping("/conversation")
 	public TurChatMessage conversation(@PathVariable String siteName,
 			@RequestBody ConversationRequest request) {
+		int historySize = request.messages() == null ? 0 : request.messages().size();
+		log.info("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
+				siteName, request.locale(), historySize);
 		Locale locale = resolveLocale(request.locale(), siteName);
 		if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
+			log.info("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 			return TurChatMessage.builder()
 					.text(NOT_ENABLED_MESSAGE)
 					.enabled(false)
@@ -171,6 +186,7 @@ public class TurSNSiteGenAiAPI {
 		return turSNSearchProcess.getSNSite(siteName).map(site -> {
 			var turSNSiteGenAI = site.getTurSNSiteGenAi();
 			if (turSNSiteGenAI == null || !turSNSiteGenAI.isEnabled()) {
+				log.info("RAG chat skipped for SN Site '{}': GenAI not enabled on site", siteName);
 				return TurChatMessage.builder()
 						.text(NOT_ENABLED_MESSAGE)
 						.enabled(false)
@@ -181,9 +197,14 @@ public class TurSNSiteGenAiAPI {
 			if (siteLocale != null) {
 				collectionName = siteLocale.getCore();
 			}
+			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}'",
+					siteName, locale, collectionName);
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			return turGenAi.assistantConversation(context, request.messages());
-		}).orElse(TurChatMessage.builder().text("Couldn't find site name.").enabled(false).build());
+		}).orElseGet(() -> {
+			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
+			return TurChatMessage.builder().text("Couldn't find site name.").enabled(false).build();
+		});
 	}
 
 	public record ChatEnabledResponse(boolean enabled) {

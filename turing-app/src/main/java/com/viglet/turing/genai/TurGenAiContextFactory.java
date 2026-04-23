@@ -57,11 +57,13 @@ public class TurGenAiContextFactory {
         // Resolve Embedding Model and Store via shared TurRagContextBuilder
         String embeddingModelId = resolveEmbeddingModelId(turSNSiteGenAi.getTurEmbeddingModelInstance());
         String storeInstanceId = resolveStoreInstanceId(turSNSiteGenAi.getTurStoreInstance());
+        log.info("RAG resolved settings for siteGenAiId={}: llmInstanceId={}, embeddingModelId={}, storeInstanceId={}, collection={}",
+                turSNSiteGenAi.getId(), llmInstance.getId(), embeddingModelId, storeInstanceId, collectionNameOverride);
 
         var ragInfra = turRagContextBuilder.build(embeddingModelId, storeInstanceId, collectionNameOverride);
         if (ragInfra.isEmpty()) {
-            log.warn("GenAI enabled without complete embedding/store settings. siteGenAiId={}",
-                    turSNSiteGenAi.getId());
+            log.warn("GenAI enabled without complete embedding/store settings. siteGenAiId={}, embeddingModelId={}, storeInstanceId={}",
+                    turSNSiteGenAi.getId(), embeddingModelId, storeInstanceId);
             return TurGenAiContext.disabled();
         }
 

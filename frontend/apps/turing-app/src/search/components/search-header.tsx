@@ -26,6 +26,8 @@ interface SearchHeaderProps {
   aiModeAvailable?: boolean;
   aiModeActive?: boolean;
   onToggleAiMode?: () => void;
+  /** Overrides the default Enter behavior on the top search input (e.g. to route to AI chat). */
+  onSubmit?: () => void;
 }
 
 export function SearchHeader({
@@ -41,6 +43,7 @@ export function SearchHeader({
   aiModeAvailable,
   aiModeActive,
   onToggleAiMode,
+  onSubmit,
 }: Readonly<SearchHeaderProps>) {
   const { t } = useTranslation();
 
@@ -73,7 +76,14 @@ export function SearchHeader({
                 <input
                   value={store.inputValue}
                   onChange={(e) => onInputChange(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && store.submitSearch()}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    if (onSubmit) {
+                      onSubmit();
+                    } else {
+                      store.submitSearch();
+                    }
+                  }}
                   onBlur={() => globalThis.setTimeout(() => onSuggestionsClose(), 150)}
                   type="search"
                   className="w-full h-9 pl-9 pr-4 rounded-lg border border-border bg-muted/50 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"

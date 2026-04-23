@@ -492,10 +492,5 @@ class TurSNGenAiTest {
         assertEquals("source_id", TurSNGenAi.SOURCE_ID);
         assertEquals("sites", TurSNGenAi.SITES);
         assertEquals("locale", TurSNGenAi.LOCALE);
-        assertEquals("question", TurSNGenAi.QUESTION);
-        assertEquals("information", TurSNGenAi.INFORMATION);
-        assertNotNull(TurSNGenAi.DEFAULT_PROMPT);
-        assertTrue(TurSNGenAi.DEFAULT_PROMPT.contains("{question}"));
-        assertTrue(TurSNGenAi.DEFAULT_PROMPT.contains("{information}"));
     }
 }

@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -59,6 +60,7 @@ public class TurSNSiteContentExchangeService {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurSNSiteFieldService turSNSiteFieldService;
+    private final TurSNGenAi turSNGenAi;
 
     private final ConcurrentHashMap<String, ContentExchangeProgress> progressMap = new ConcurrentHashMap<>();
 
@@ -84,11 +86,13 @@ public class TurSNSiteContentExchangeService {
     public TurSNSiteContentExchangeService(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSearchEnginePluginFactory pluginFactory,
-            TurSNSiteFieldService turSNSiteFieldService) {
+            TurSNSiteFieldService turSNSiteFieldService,
+            TurSNGenAi turSNGenAi) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.pluginFactory = pluginFactory;
         this.turSNSiteFieldService = turSNSiteFieldService;
+        this.turSNGenAi = turSNGenAi;
     }
 
     public Optional<ContentExchangeProgress> getProgress(String taskId) {
@@ -203,6 +207,12 @@ public class TurSNSiteContentExchangeService {
                             }
                         } catch (Exception e) {
                             log.warn("Failed to index document '{}': {}",
+                                    doc.getOrDefault("id", "unknown"), e.getMessage());
+                        }
+                        try {
+                            turSNGenAi.addDocument(turSNSite, locale, doc);
+                        } catch (Exception e) {
+                            log.warn("Failed to index document '{}' into vector store: {}",
                                     doc.getOrDefault("id", "unknown"), e.getMessage());
                         }
                         processedSoFar++;

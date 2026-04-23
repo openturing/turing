@@ -162,7 +162,7 @@ class TurSNSiteAPITest {
                 payload.setHl(1);
                 payload.setTurSNSiteGenAi(new TurSNSiteGenAi());
 
-                when(siteRepository.findById("site")).thenReturn(Optional.of(existing));
+                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(existing));
                 when(siteRepository.findByNameIgnoreCase("New")).thenReturn(Optional.empty());
 
                 TurSNSiteDto result = (TurSNSiteDto) api.turSNSiteUpdate("site", payload).getBody();

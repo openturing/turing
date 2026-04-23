@@ -133,7 +133,7 @@ public class TurSNSiteAPI {
                     .body(Map.of("error", "A site with this name already exists."));
         }
         TurSNSite turSNSite = turSNSiteMapper.toEntity(turSNSiteDto);
-        return ResponseEntity.ok(this.turSNSiteRepository.findById(id).map(turSNSiteEdit -> {
+        return ResponseEntity.ok(this.turSNSiteRepository.findByIdNoCache(id).map(turSNSiteEdit -> {
             turSNSiteEdit.setName(turSNSite.getName());
             turSNSiteEdit.setDescription(turSNSite.getDescription());
             turSNSiteEdit.setIcon(turSNSite.getIcon());

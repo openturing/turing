@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { allVariablesPresent, SystemPromptEditor, type PromptVariable } from "@/components/ui/system-prompt-editor"
+import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
@@ -54,14 +54,15 @@ const turEmbeddingModelService = new TurEmbeddingModelService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turChatService = new TurChatService();
 
-const DEFAULT_SYSTEM_PROMPT =
-    "Using only this rag data. Answer in Portuguese. You are a helpful assistant that can answer questions about the web site:\n" +
-    "\n" +
-    "Question:\n" +
-    "{{question}}\n" +
-    "\n" +
-    "Base your answer on the following information:\n" +
-    "{{information}}";
+const DEFAULT_SYSTEM_PROMPT = `You are an assistant that answers questions about this website using only the context provided below.
+
+How to respond:
+- Use the context as the single source of truth. You may paraphrase, summarize, or combine information from different snippets when they relate to the same topic.
+- If the topic appears in the context only as a passing mention (e.g., a name or word with no explanatory detail), do NOT expand with external knowledge. Instead, answer what the context says — even if it is just "The context mentions X only as <role>, but does not provide further details."
+- If the topic is not present in the context at all, respond exactly with: "I'm sorry, but that information is not available in the website's database."
+- Never use prior knowledge, training data, or outside facts. Even if you know the answer, stay within the context.
+
+Language: Always respond in English.`;
 
 const DEFAULT_VALUE = "__default__";
 const NONE_VALUE = "__none__";
@@ -103,14 +104,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     }, [snSite]);
 
     const enabled = form.watch("enabled");
-    const systemPrompt = form.watch("systemPrompt") || "";
-
-    const PROMPT_VARIABLES: PromptVariable[] = [
-        { token: "{{question}}", label: "question" },
-        { token: "{{information}}", label: "information" },
-    ];
-
-    const hasAllVariables = allVariablesPresent(systemPrompt, PROMPT_VARIABLES);
 
     function handleEnabledChange(checked: boolean) {
         form.setValue("enabled", checked);
@@ -207,11 +200,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     }
 
     async function onSubmit(data: TurSNSiteGenAi) {
-        if (data.enabled && !hasAllVariables) {
-            toast.error(t("forms.snGenai.systemPromptValidation"));
-            return;
-        }
-
         try {
             const updatedSite = {
                 ...snSite,
@@ -245,7 +233,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                         description={t("sn.genai.description")}
                     />
                     <StickyPageHeader.Actions>
-                        <GradientButton type="submit" size="sm" disabled={enabled && !hasAllVariables}>
+                        <GradientButton type="submit" size="sm">
                             <IconDeviceFloppy className="size-4" />
                             {t("forms.formActions.saveChanges")}
                         </GradientButton>
@@ -485,9 +473,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                         onChange={field.onChange}
                                                         fieldRef={field.ref}
                                                         placeholder={t("forms.snGenai.promptTemplatePlaceholder")}
-                                                        variables={PROMPT_VARIABLES}
-                                                        requireVariables
-                                                        hint={t("forms.snGenai.ragHint")}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />

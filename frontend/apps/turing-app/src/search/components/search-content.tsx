@@ -4,10 +4,10 @@ import {
   useTuringAutoComplete,
   useTuringSortOptions,
 } from "@viglet/turing-react-sdk";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AiChatCard } from "./ai-chat-card";
-import { AiModeChat } from "./ai-mode-chat";
+import { AiModeChat, type AiModeChatHandle } from "./ai-mode-chat";
 import { JsonSheet } from "./json-sheet";
 import { SearchEmpty } from "./search-empty";
 import { SearchFooter } from "./search-footer";
@@ -28,6 +28,15 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
   const store = useSearchStore();
   const { suggestions, fetch: fetchSuggestions, clear: clearSuggestions } = useTuringAutoComplete(300);
   const { sortOptions } = useTuringSortOptions();
+  const aiModeChatRef = useRef<AiModeChatHandle>(null);
+
+  const handleAiModeSubmit = useCallback(() => {
+    const query = store.inputValue?.trim();
+    if (!query || query === "*") return;
+    aiModeChatRef.current?.ask(query);
+    store.setInputValue("");
+    clearSuggestions();
+  }, [store, clearSuggestions]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,11 +88,13 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
         aiModeAvailable={aiModeAvailable}
         aiModeActive={aiModeActive}
         onToggleAiMode={toggleAiMode}
+        onSubmit={showAiMode ? handleAiModeSubmit : undefined}
       />
 
       <main className="flex-1 container mx-auto px-4 lg:px-8 py-6">
         {showAiMode ? (
           <AiModeChat
+            ref={aiModeChatRef}
             siteName={siteName}
             locale={currentLocale}
             initialQuery={
@@ -91,6 +102,7 @@ export function SearchContent({ siteName }: Readonly<SearchContentProps>) {
                 ? store.inputValue
                 : params.q && params.q !== "*" ? params.q : undefined
             }
+            onInitialQueryConsumed={() => store.setInputValue("")}
           />
         ) : (
           <>
