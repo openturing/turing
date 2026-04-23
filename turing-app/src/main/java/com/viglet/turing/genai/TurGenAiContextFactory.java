@@ -79,6 +79,7 @@ public class TurGenAiContextFactory {
                 .chatModel(chatModel)
                 .enabled(true)
                 .systemPrompt(turSNSiteGenAi.getSystemPrompt())
+                .ragInfrastructure(infra)
                 .build();
     }
 

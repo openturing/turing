@@ -169,14 +169,12 @@ public class TurAssetTrainingService {
 
         log.info("[AssetTraining] Processing file: {} (type={}, size={})", objectName, file.contentType(), file.size());
 
-        // Delete old embeddings for this file before re-indexing
-        infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
-                infra.collectionName(), OBJECT_NAME_FIELD, objectName);
-
         try (InputStream is = storageService.downloadObject(objectName)) {
             String text = TurFileUtils.parseDocument(is).orElse("");
             if (text.isBlank()) {
                 log.info("[AssetTraining] Skipped (no text extracted): {}", objectName);
+                infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
+                        infra.collectionName(), OBJECT_NAME_FIELD, objectName);
                 trainingRecordRepository.deleteById(objectName);
                 return;
             }
@@ -195,8 +193,9 @@ public class TurAssetTrainingService {
 
             List<Document> documents = TurRagUtils.createDocuments(text, metadata);
 
-            log.info("[AssetTraining] Adding {} chunks to embedding store: {}", documents.size(), objectName);
-            infra.vectorStore().add(documents);
+            log.info("[AssetTraining] Reindexing {} chunks for: {} (replaces previous embeddings)",
+                    documents.size(), objectName);
+            ragContextBuilder.reindexByMetadata(infra, documents, OBJECT_NAME_FIELD, objectName);
             log.info("[AssetTraining] Successfully stored {} chunks for: {}", documents.size(), objectName);
 
             // Upsert training record

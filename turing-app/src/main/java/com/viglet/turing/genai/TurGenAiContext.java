@@ -22,6 +22,8 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 
+import com.viglet.turing.genai.TurRagContextBuilder.RagInfrastructure;
+
 import lombok.Builder;
 import lombok.Getter;
 
@@ -33,6 +35,7 @@ public class TurGenAiContext {
     private final ChatModel chatModel;
     private final boolean enabled;
     private final String systemPrompt;
+    private final RagInfrastructure ragInfrastructure;
     public static final String COLLECTION_NAME = "turing";
 
     public static TurGenAiContext disabled() {

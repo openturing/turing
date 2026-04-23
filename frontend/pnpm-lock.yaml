@@ -315,8 +315,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/react-sdk
       '@viglet/viglet-design-system':
-        specifier: ^2026.2.52
-        version: 2026.2.52(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
+        specifier: ^2026.2.53
+        version: 2026.2.53(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
       '@xyflow/react':
         specifier: ^12.10.2
         version: 12.10.2(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -2420,8 +2420,8 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@viglet/viglet-design-system@2026.2.52':
-    resolution: {integrity: sha512-N5T7pngTFPyNSKiYgUzbfxBudn39fPaAfzX6Jjnrb/68T6E5axTHSkiIHvF+xZwyXqEmwH8N07e5Zafj4clpSQ==}
+  '@viglet/viglet-design-system@2026.2.53':
+    resolution: {integrity: sha512-xVzCUEyONyLmhCoZyZUNFF4+uhqhfqsQoXDhInXZvgE55VIRMPNOdcfEj2LVc3Jn738WRkeuqMylI00csJCrxw==}
     engines: {node: ^24.0.0, npm: ^11.0.0}
     peerDependencies:
       i18next: '>=25.0.0'
@@ -6182,7 +6182,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@viglet/viglet-design-system@2026.2.52(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
+  '@viglet/viglet-design-system@2026.2.53(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(i18next-browser-languagedetector@8.2.1)(i18next@26.0.6(typescript@5.8.3))(next-themes@0.4.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react-i18next@17.0.4(i18next@26.0.6(typescript@5.8.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.8.3))(react-router-dom@7.14.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)(sonner@2.0.7(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
     dependencies:
       '@fontsource-variable/inter': 5.2.8
       '@fontsource-variable/plus-jakarta-sans': 5.2.8

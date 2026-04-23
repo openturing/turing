@@ -2,6 +2,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImportResultPanel } from "@/components/ui/import-result-panel";
+import { ImportOptionsPanel } from "@/components/ui/import-options-panel";
 import {
     Dialog,
     DialogContent,
@@ -17,15 +18,11 @@ import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurExchangeImportService, type ZipCheckResult } from "@/services/exchange/exchange.import.service";
 import { TurFeaturesService } from "@/services/system/features.service";
 import {
-    IconAlertTriangle,
-    IconBrowserCheck,
     IconCheck,
     IconCloudUpload,
-    IconDatabase,
     IconFileZip,
     IconLoader2,
     IconPackageImport,
-    IconSettings2,
     IconX,
 } from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
@@ -36,66 +33,6 @@ const importService = new TurExchangeImportService();
 const featuresService = new TurFeaturesService();
 
 type ImportStatus = "idle" | "uploading" | "success" | "error" | "import-prompt" | "indexing";
-
-/* ── Toggle card ── */
-function OptionCard({
-    icon,
-    title,
-    description,
-    checked,
-    onChange,
-    disabled,
-    hint,
-}: Readonly<{
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    disabled?: boolean;
-    hint?: string;
-}>) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={() => !disabled && onChange(!checked)}
-            className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${disabled
-                ? "opacity-50 cursor-not-allowed border-border bg-muted/30"
-                : checked
-                    ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                    : "border-border hover:border-primary/30 hover:bg-accent/50 cursor-pointer"
-                }`}
-        >
-            <div
-                className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${checked && !disabled
-                    ? "bg-primary/15 text-primary"
-                    : "bg-muted text-muted-foreground"
-                    }`}
-            >
-                {icon}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{title}</span>
-                    {checked && !disabled && (
-                        <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                            ON
-                        </span>
-                    )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    {description}
-                </p>
-                {hint && (
-                    <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                        {hint}
-                    </p>
-                )}
-            </div>
-        </button>
-    );
-}
 
 export default function ExchangeImportPage() {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -515,71 +452,30 @@ export default function ExchangeImportPage() {
                                 </div>
                             )}
 
-                            {/* Site configuration: always on fresh import, toggle on conflict */}
-                            {(zipCheck?.conflicts?.length ?? 0) === 0 ? (
-                                <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
-                                    <IconSettings2 className="size-4 text-primary shrink-0" />
-                                    <span className="text-sm text-foreground/80">{t("exchange.importOptions.configAlwaysIncluded")}</span>
-                                </div>
-                            ) : (
-                                <div className="space-y-2.5">
-                                    <div className="flex items-start gap-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2.5">
-                                        <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                                        <div className="flex-1 min-w-0 text-xs text-foreground/80">
-                                            <div className="font-medium">
-                                                {t("exchange.importOptions.conflictWarningTitle", { count: zipCheck?.conflicts?.length ?? 0 })}
-                                            </div>
-                                            <ul className="mt-1 space-y-0.5 text-muted-foreground">
-                                                {(zipCheck?.conflicts ?? []).map((c) => (
-                                                    <li key={c.id} className="truncate">• {c.name}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <OptionCard
-                                        icon={<IconSettings2 className="size-4" />}
-                                        title={t("exchange.importOptions.overwriteConfig")}
-                                        description={
-                                            overwrite
-                                                ? t("exchange.importOptions.overwriteConfigOn")
-                                                : t("exchange.importOptions.overwriteConfigOff")
-                                        }
-                                        checked={overwrite}
-                                        onChange={setOverwrite}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Option cards */}
-                            <div className="space-y-2.5">
-                                {zipCheck?.hasContent && (
-                                    <OptionCard
-                                        icon={<IconDatabase className="size-4" />}
-                                        title={t("exchange.importOptions.includeContent")}
-                                        description={t("exchange.importOptions.includeContentDescription")}
-                                        checked={includeContent}
-                                        onChange={setIncludeContent}
-                                    />
-                                )}
-
-                                {zipCheck?.hasTemplate && (
-                                    <OptionCard
-                                        icon={<IconBrowserCheck className="size-4" />}
-                                        title={t("exchange.importOptions.includeTemplate")}
-                                        description={
-                                            t("exchange.importOptions.includeTemplateDescription", { name: zipCheck.templateName ?? "SPA" })
-                                        }
-                                        checked={includeTemplate}
-                                        onChange={setIncludeTemplate}
-                                        disabled={!canIncludeTemplate}
-                                        hint={
-                                            !storageEnabled
-                                                ? t("exchange.importOptions.templateRequiresStorage")
-                                                : undefined
-                                        }
-                                    />
-                                )}
-                            </div>
+                            <ImportOptionsPanel
+                                conflicts={zipCheck?.conflicts ?? []}
+                                hasContent={zipCheck?.hasContent ?? false}
+                                hasTemplate={zipCheck?.hasTemplate ?? false}
+                                storageEnabled={storageEnabled}
+                                values={{ includeContent, includeTemplate, overwrite }}
+                                onChange={{
+                                    setIncludeContent,
+                                    setIncludeTemplate,
+                                    setOverwrite,
+                                }}
+                                labels={{
+                                    configAlwaysIncluded: t("exchange.importOptions.configAlwaysIncluded"),
+                                    conflictWarningTitle: t("exchange.importOptions.conflictWarningTitle", { count: zipCheck?.conflicts?.length ?? 0 }),
+                                    overwriteConfig: t("exchange.importOptions.overwriteConfig"),
+                                    overwriteConfigOn: t("exchange.importOptions.overwriteConfigOn"),
+                                    overwriteConfigOff: t("exchange.importOptions.overwriteConfigOff"),
+                                    includeContent: t("exchange.importOptions.includeContent"),
+                                    includeContentDescription: t("exchange.importOptions.includeContentDescription"),
+                                    includeTemplate: t("exchange.importOptions.includeTemplate"),
+                                    includeTemplateDescription: t("exchange.importOptions.includeTemplateDescription", { name: zipCheck?.templateName ?? "SPA" }),
+                                    templateRequiresStorage: t("exchange.importOptions.templateRequiresStorage"),
+                                }}
+                            />
 
                             <DialogFooter>
                                 <Button className="flex-1 h-11" variant="outline" onClick={handleReset}>

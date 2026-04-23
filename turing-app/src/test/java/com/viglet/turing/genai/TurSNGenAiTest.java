@@ -56,12 +56,14 @@ class TurSNGenAiTest {
     private TurGenAiContextFactory contextFactory;
     @Mock
     private TurSNSiteLocaleRepository localeRepository;
+    @Mock
+    private TurRagContextBuilder ragContextBuilder;
 
     private TurSNGenAi turSNGenAi;
 
     @BeforeEach
     void setUp() {
-        turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository);
+        turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder);
     }
 
     @Test
@@ -368,7 +370,9 @@ class TurSNGenAiTest {
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
+        verify(ragContextBuilder).reindexByMetadata(any(),
+                org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList(),
+                eq("source_id"), any());
     }
 
     @Test
@@ -401,7 +405,9 @@ class TurSNGenAiTest {
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
+        verify(ragContextBuilder).reindexByMetadata(any(),
+                org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList(),
+                eq("source_id"), any());
     }
 
     @Test
@@ -435,7 +441,9 @@ class TurSNGenAiTest {
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
+        verify(ragContextBuilder).reindexByMetadata(any(),
+                org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList(),
+                eq("source_id"), any());
     }
 
     @Test
@@ -473,7 +481,9 @@ class TurSNGenAiTest {
 
         turSNGenAi.addDocuments(jobItems);
 
-        verify(vectorStore).add(org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList());
+        verify(ragContextBuilder).reindexByMetadata(any(),
+                org.mockito.ArgumentMatchers.<org.springframework.ai.document.Document>anyList(),
+                eq("source_id"), any());
     }
 
     @Test

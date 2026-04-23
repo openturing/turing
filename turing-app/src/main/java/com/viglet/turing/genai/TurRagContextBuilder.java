@@ -29,12 +29,14 @@ import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository
 import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -196,5 +198,29 @@ public class TurRagContextBuilder {
                 globalSettingsService.getDefaultEmbeddingModelId(),
                 globalSettingsService.getDefaultEmbeddingStoreId(),
                 collectionNameOverride);
+    }
+
+    /**
+     * Re-indexes a document into the vector store: first deletes any existing embeddings whose
+     * metadata matches {@code metadataKey=metadataValue}, then adds the new chunks. Avoids
+     * duplicates when the same logical document is indexed again.
+     *
+     * @since 2026.2.4
+     */
+    public void reindexByMetadata(RagInfrastructure infra, List<Document> documents,
+            String metadataKey, String metadataValue) {
+        if (infra == null || documents == null || documents.isEmpty()) {
+            return;
+        }
+        if (StringUtils.hasText(metadataKey) && StringUtils.hasText(metadataValue)) {
+            try {
+                infra.storeProvider().deleteByMetadata(infra.storeInstance(), infra.storeCredential(),
+                        infra.collectionName(), metadataKey, metadataValue);
+            } catch (Exception e) {
+                log.warn("Failed to delete previous embeddings for {}={} (collection='{}'): {}",
+                        metadataKey, metadataValue, infra.collectionName(), e.getMessage());
+            }
+        }
+        infra.vectorStore().add(documents);
     }
 }

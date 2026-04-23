@@ -82,13 +82,16 @@ public class TurSNGenAi {
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurGenAiContextFactory turGenAiContextFactory;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurRagContextBuilder turRagContextBuilder;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
-            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurRagContextBuilder turRagContextBuilder) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turRagContextBuilder = turRagContextBuilder;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -374,17 +377,19 @@ public class TurSNGenAi {
     private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
         List<Document> documents = TurRagUtils.createDocuments(text, metadata);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
+        Object sourceId = metadata.get(SOURCE_ID);
         log.info("RAG indexing {} chunk(s) for Object ID '{}' into vector store '{}' — metadata={}",
-                documents.size(), metadata.get(SOURCE_ID), vectorStoreType, metadata);
+                documents.size(), sourceId, vectorStoreType, metadata);
         for (int i = 0; i < documents.size(); i++) {
             Document chunk = documents.get(i);
             log.info("  RAG indexing chunk[{}/{}] Object ID '{}' text=<<<\n{}\n>>>",
-                    i + 1, documents.size(), metadata.get(SOURCE_ID),
+                    i + 1, documents.size(), sourceId,
                     chunk.getText() == null ? "" : chunk.getText());
         }
-        context.getVectorStore().add(documents);
-        log.info("RAG indexed Object ID '{}' into vector store '{}'",
-                metadata.get(SOURCE_ID), vectorStoreType);
+        turRagContextBuilder.reindexByMetadata(context.getRagInfrastructure(), documents,
+                SOURCE_ID, sourceId == null ? null : sourceId.toString());
+        log.info("RAG indexed Object ID '{}' into vector store '{}' (previous embeddings for same source_id removed)",
+                sourceId, vectorStoreType);
     }
 
     private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {

@@ -1,14 +1,17 @@
 package com.viglet.turing.api.marketplace;
 
 import com.viglet.turing.exchange.TurImportExchange;
+import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.properties.TurConfigProperties;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -19,6 +22,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Marketplace API — lists available packages and imports them from a remote URL.
@@ -36,11 +40,14 @@ public class TurMarketplaceAPI {
 
     private final TurConfigProperties configProperties;
     private final TurImportExchange turImportExchange;
+    private final TurSNSiteContentExchangeService contentExchangeService;
 
     public TurMarketplaceAPI(TurConfigProperties configProperties,
-                             TurImportExchange turImportExchange) {
+                             TurImportExchange turImportExchange,
+                             TurSNSiteContentExchangeService contentExchangeService) {
         this.configProperties = configProperties;
         this.turImportExchange = turImportExchange;
+        this.contentExchangeService = contentExchangeService;
     }
 
     public record TurMarketplaceItem(
@@ -109,6 +116,7 @@ public class TurMarketplaceAPI {
             @RequestParam String downloadUrl,
             @RequestParam(defaultValue = "false") boolean includeContent,
             @RequestParam(defaultValue = "false") boolean includeTemplate,
+            @RequestParam(required = false) String taskId,
             @RequestParam(defaultValue = "false") boolean overwrite) {
         if (!isEnabled()) {
             return ResponseEntity.notFound().build();
@@ -118,7 +126,7 @@ public class TurMarketplaceAPI {
             var multipartFile = new MockMultipartFile("file", "marketplace.zip",
                     "application/zip", zipBytes);
             var result = turImportExchange.importFromMultipartFile(
-                    multipartFile, includeContent, includeTemplate, null, overwrite);
+                    multipartFile, includeContent, includeTemplate, taskId, overwrite);
             if (result.error() != null) {
                 return ResponseEntity.badRequest().body(result);
             }
@@ -128,6 +136,44 @@ public class TurMarketplaceAPI {
             return ResponseEntity.internalServerError()
                     .body(TurImportExchange.ImportResult.error(e.getMessage()));
         }
+    }
+
+    @Operation(summary = "Stream marketplace install progress (content indexing phase) via SSE")
+    @GetMapping(value = "/import/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter importProgress(@PathVariable String taskId) {
+        SseEmitter emitter = new SseEmitter(600_000L);
+        Thread.ofVirtual().start(() -> {
+            try {
+                boolean completed = false;
+                while (!completed) {
+                    var progress = contentExchangeService.getProgress(taskId);
+                    if (progress.isPresent()) {
+                        var p = progress.get();
+                        emitter.send(SseEmitter.event()
+                                .name("progress")
+                                .data(Map.of(
+                                        "totalDocuments", p.totalDocuments(),
+                                        "processedDocuments", p.processedDocuments(),
+                                        "percentage", p.percentage(),
+                                        "currentLocale", p.currentLocale(),
+                                        "phase", p.phase(),
+                                        "estimatedRemainingMillis", p.estimatedRemainingMillis()
+                                )));
+                        if ("completed".equals(p.phase())) {
+                            completed = true;
+                            contentExchangeService.removeProgress(taskId);
+                        }
+                    }
+                    if (!completed) {
+                        Thread.sleep(500);
+                    }
+                }
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        });
+        return emitter;
     }
 
     /**

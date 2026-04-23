@@ -14,16 +14,18 @@ import { Badge } from "@/components/ui/badge";
 import type { TurMarketplaceItem } from "@/models/marketplace/marketplace-item.model";
 import type { TurImportResult, TurSiteConflict } from "@/models/marketplace/import-result.model";
 import { ImportResultPanel } from "@/components/ui/import-result-panel";
+import { ImportOptionsPanel } from "@/components/ui/import-options-panel";
+import { ContentExchangeProgressBar } from "@/components/ui/content-exchange-progress";
+import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
+import { TurFeaturesService } from "@/services/system/features.service";
 import * as TablerIcons from "@tabler/icons-react";
 import {
-    IconAlertTriangle,
     IconBook,
     IconBrowserCheck,
     IconDatabase,
     IconLoader2,
     IconPackageImport,
-    IconSettings2,
     IconX,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
@@ -35,8 +37,9 @@ import rehypeHighlight from "rehype-highlight";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const marketplaceService = new TurMarketplaceService();
+const featuresService = new TurFeaturesService();
 
-type ImportStatus = "idle" | "importing" | "success" | "error";
+type ImportStatus = "idle" | "importing" | "indexing" | "success" | "error";
 
 /**
  * Resolves a kebab-case icon key (e.g. "chef-hat") to a Tabler Icon component.
@@ -63,8 +66,10 @@ export default function MarketplaceListPage() {
     const [overwrite, setOverwrite] = useState(false);
     const [conflicts, setConflicts] = useState<TurSiteConflict[]>([]);
     const [conflictsLoading, setConflictsLoading] = useState(false);
+    const [storageEnabled, setStorageEnabled] = useState(false);
     const [importStatus, setImportStatus] = useState<ImportStatus>("idle");
     const [importResult, setImportResult] = useState<TurImportResult | null>(null);
+    const [contentProgress, setContentProgress] = useState<ContentExchangeProgress | null>(null);
 
     const [readmeItem, setReadmeItem] = useState<TurMarketplaceItem | null>(null);
     const [readmeContent, setReadmeContent] = useState<string | null>(null);
@@ -86,18 +91,27 @@ export default function MarketplaceListPage() {
         setConflicts([]);
         setImportStatus("idle");
         setImportResult(null);
+        setContentProgress(null);
         setConflictsLoading(true);
-        marketplaceService.inspect(item.downloadUrl)
-            .then((inspect) => setConflicts(inspect.conflicts ?? []))
-            .catch(() => setConflicts([]))
+        Promise.all([
+            marketplaceService.inspect(item.downloadUrl).catch(() => ({ conflicts: [] as TurSiteConflict[] })),
+            featuresService.getFeatures().catch(() => ({ storageEnabled: false, ragEnabled: false })),
+        ])
+            .then(([inspect, features]) => {
+                setConflicts(inspect.conflicts ?? []);
+                setStorageEnabled(features.storageEnabled);
+            })
             .finally(() => setConflictsLoading(false));
     }, []);
 
+    const isBusy = importStatus === "importing" || importStatus === "indexing";
+
     const closeDialog = useCallback(() => {
-        if (importStatus === "importing") return;
+        if (isBusy) return;
         setSelectedItem(null);
         setImportStatus("idle");
-    }, [importStatus]);
+        setContentProgress(null);
+    }, [isBusy]);
 
     const openReadmeDialog = useCallback(async (item: TurMarketplaceItem) => {
         if (!item.readmeUrl) return;
@@ -123,16 +137,31 @@ export default function MarketplaceListPage() {
 
     const doImport = useCallback(async () => {
         if (!selectedItem) return;
-        setImportStatus("importing");
         setImportResult(null);
+        setContentProgress(null);
+        const effectiveIncludeTemplate = includeTemplate && storageEnabled;
+        const taskId = `marketplace-${Date.now()}`;
         try {
+            if (includeContent) {
+                setImportStatus("indexing");
+                marketplaceService.subscribeImportProgress(
+                    taskId,
+                    (data) => setContentProgress(data),
+                    () => { },
+                    () => { },
+                );
+            } else {
+                setImportStatus("importing");
+            }
             const result = await marketplaceService.importPackage(
                 selectedItem.downloadUrl,
                 includeContent,
-                includeTemplate,
+                effectiveIncludeTemplate,
                 overwrite,
+                includeContent ? taskId : undefined,
             );
             setImportResult(result);
+            setContentProgress(null);
             if (result.error) {
                 setImportStatus("error");
                 toast.error(t("marketplace.importFailed", { name: selectedItem.title }));
@@ -142,9 +171,10 @@ export default function MarketplaceListPage() {
             }
         } catch {
             setImportStatus("error");
+            setContentProgress(null);
             toast.error(t("marketplace.importFailed", { name: selectedItem.title }));
         }
-    }, [selectedItem, includeContent, includeTemplate, overwrite, t]);
+    }, [selectedItem, includeContent, includeTemplate, overwrite, storageEnabled, t]);
 
     return (
         <div className="px-4 md:px-6 lg:px-8 py-2">
@@ -258,129 +288,42 @@ export default function MarketplaceListPage() {
                                 </div>
                             </div>
 
-                            {/* Site configuration: always on fresh install, toggle on conflict */}
-                            {conflicts.length === 0 ? (
-                                <div className="flex items-center gap-2.5 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2.5">
-                                    <IconSettings2 className="size-4 text-primary shrink-0" />
-                                    <span className="text-sm text-foreground/80">
-                                        {conflictsLoading
-                                            ? t("marketplace.checkingConflicts")
-                                            : t("marketplace.configAlwaysIncluded")}
-                                    </span>
-                                </div>
-                            ) : (
-                                <div className="space-y-2.5">
-                                    <div className="flex items-start gap-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2.5">
-                                        <IconAlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                                        <div className="flex-1 min-w-0 text-xs text-foreground/80">
-                                            <div className="font-medium">
-                                                {t("marketplace.conflictWarningTitle", { count: conflicts.length })}
-                                            </div>
-                                            <ul className="mt-1 space-y-0.5 text-muted-foreground">
-                                                {conflicts.map((c) => (
-                                                    <li key={c.id} className="truncate">• {c.name}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setOverwrite(!overwrite)}
-                                        disabled={importStatus === "importing"}
-                                        className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${
-                                            overwrite
-                                                ? "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20"
-                                                : "border-border hover:border-amber-500/30 hover:bg-accent/50 cursor-pointer"
-                                        }`}
-                                    >
-                                        <div className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${
-                                            overwrite ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-muted text-muted-foreground"
-                                        }`}>
-                                            <IconSettings2 className="size-4" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium">
-                                                    {t("marketplace.overwriteConfig")}
-                                                </span>
-                                                {overwrite && (
-                                                    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">ON</span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                                {overwrite
-                                                    ? t("marketplace.overwriteConfigOn")
-                                                    : t("marketplace.overwriteConfigOff")}
-                                            </p>
-                                        </div>
-                                    </button>
-                                </div>
+                            <ImportOptionsPanel
+                                conflicts={conflicts}
+                                conflictsLoading={conflictsLoading}
+                                hasContent={selectedItem.hasContent}
+                                hasTemplate={selectedItem.hasTemplate}
+                                storageEnabled={storageEnabled}
+                                values={{ includeContent, includeTemplate, overwrite }}
+                                onChange={{
+                                    setIncludeContent,
+                                    setIncludeTemplate,
+                                    setOverwrite,
+                                }}
+                                disabled={isBusy}
+                                labels={{
+                                    configAlwaysIncluded: t("marketplace.configAlwaysIncluded"),
+                                    checkingConflicts: t("marketplace.checkingConflicts"),
+                                    conflictWarningTitle: t("marketplace.conflictWarningTitle", { count: conflicts.length }),
+                                    overwriteConfig: t("marketplace.overwriteConfig"),
+                                    overwriteConfigOn: t("marketplace.overwriteConfigOn"),
+                                    overwriteConfigOff: t("marketplace.overwriteConfigOff"),
+                                    includeContent: t("marketplace.includeContent"),
+                                    includeContentDescription: t("marketplace.includeContentDescription"),
+                                    includeTemplate: t("marketplace.includeTemplate"),
+                                    includeTemplateDescription: t("marketplace.includeTemplateDescription"),
+                                    templateRequiresStorage: t("exchange.importOptions.templateRequiresStorage"),
+                                }}
+                            />
+
+                            {importStatus === "indexing" && (
+                                <ContentExchangeProgressBar
+                                    progress={contentProgress}
+                                    label={t("exchange.indexingContent")}
+                                    preparingLabel={t("exchange.indexingContent")}
+                                />
                             )}
 
-                            {/* Options */}
-                            <div className="space-y-2.5">
-                                {selectedItem.hasContent && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIncludeContent(!includeContent)}
-                                        disabled={importStatus === "importing"}
-                                        className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${
-                                            includeContent
-                                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                                                : "border-border hover:border-primary/30 hover:bg-accent/50 cursor-pointer"
-                                        }`}
-                                    >
-                                        <div className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${
-                                            includeContent ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                                        }`}>
-                                            <IconDatabase className="size-4" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium">{t("marketplace.includeContent")}</span>
-                                                {includeContent && (
-                                                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">ON</span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                                {t("marketplace.includeContentDescription")}
-                                            </p>
-                                        </div>
-                                    </button>
-                                )}
-
-                                {selectedItem.hasTemplate && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIncludeTemplate(!includeTemplate)}
-                                        disabled={importStatus === "importing"}
-                                        className={`flex items-start gap-3 w-full rounded-lg border p-3.5 text-left transition-all ${
-                                            includeTemplate
-                                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                                                : "border-border hover:border-primary/30 hover:bg-accent/50 cursor-pointer"
-                                        }`}
-                                    >
-                                        <div className={`mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-md ${
-                                            includeTemplate ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                                        }`}>
-                                            <IconBrowserCheck className="size-4" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium">{t("marketplace.includeTemplate")}</span>
-                                                {includeTemplate && (
-                                                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">ON</span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                                {t("marketplace.includeTemplateDescription")}
-                                            </p>
-                                        </div>
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Status feedback */}
                             {importResult && (importStatus === "success" || importStatus === "error") && (
                                 <ImportResultPanel result={importResult} />
                             )}
@@ -397,7 +340,7 @@ export default function MarketplaceListPage() {
                                     className="flex-1 h-11"
                                     variant="outline"
                                     onClick={closeDialog}
-                                    disabled={importStatus === "importing"}
+                                    disabled={isBusy}
                                 >
                                     {importStatus === "success" ? t("common.close") : t("common.cancel")}
                                 </Button>
@@ -405,14 +348,14 @@ export default function MarketplaceListPage() {
                                     <GradientButton
                                         className="flex-1"
                                         onClick={doImport}
-                                        disabled={importStatus === "importing"}
+                                        disabled={isBusy}
                                     >
-                                        {importStatus === "importing" ? (
+                                        {isBusy ? (
                                             <IconLoader2 className="size-4 animate-spin" />
                                         ) : (
                                             <IconPackageImport className="size-4" />
                                         )}
-                                        {importStatus === "importing"
+                                        {isBusy
                                             ? t("marketplace.installing")
                                             : t("marketplace.install")}
                                     </GradientButton>
