@@ -13,7 +13,6 @@ import {
   GitRoutes,
   PageRoutes,
   ChatRoutes,
-  ChatFlowRoutes,
   EmbeddingModelRoutes,
   ExchangeRoutes,
   GraphqlRoutes,
@@ -69,7 +68,6 @@ function App() {
                 {GitRoutes}
                 {PageRoutes}
                 {ChatRoutes}
-                {ChatFlowRoutes}
                 {TokenUsageRoutes}
                 {UserRoutes}
                 {AdminRoutes}

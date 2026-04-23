@@ -18,11 +18,11 @@ import {
   type NodeMouseHandler,
 } from "@xyflow/react";
 import { IconDownload, IconEye, IconSitemap } from "@tabler/icons-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { GradientButton } from "@/components/ui/gradient-button";
-import { PageHeader } from "@/components/page-header";
+import { SubPageHeader } from "@/components/sub.page.header";
+import { useSidebar } from "@/components/ui/sidebar";
 
 import { ChatPreview } from "./components/chat-preview";
 import { FlowProperties } from "./components/flow-properties";
@@ -70,6 +70,18 @@ function ChatFlowInner() {
   const { screenToFlowPosition } = useReactFlow();
   const { zoom } = useViewport();
   const zoomPercent = Math.round((zoom / INITIAL_ZOOM) * 100);
+  const { setOpen } = useSidebar();
+  const autoCollapsedRef = useRef(false);
+
+  /* Auto-collapse the AI Agent's internal sidebar on first render only: the canvas needs the
+     extra horizontal space. The ref guard prevents re-collapsing after the user reopens the
+     sidebar — shadcn's `setOpen` identity changes whenever `open` flips, which would otherwise
+     make a naive dependency-array effect undo the user's expand click. */
+  useEffect(() => {
+    if (autoCollapsedRef.current) return;
+    autoCollapsedRef.current = true;
+    setOpen(false);
+  }, [setOpen]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES);
@@ -153,28 +165,24 @@ function ChatFlowInner() {
   }, [nodes, edges]);
 
   return (
-    <>
-      <PageHeader turIcon={IconSitemap} title={t("chatFlow.title")}>
-        <div className="flex items-center gap-2">
-          <GradientButton
-            variant="secondary"
-            size="icon-sm"
-            onClick={exportJson}
-            aria-label={t("chatFlow.actions.exportJson")}
-            title={t("chatFlow.actions.exportJson")}
-          >
-            <IconDownload className="size-4" />
-          </GradientButton>
-          <GradientButton
-            size="icon-sm"
-            onClick={() => setPreviewOpen((open) => !open)}
-            aria-label={t("chatFlow.actions.preview")}
-            title={t("chatFlow.actions.preview")}
-          >
-            <IconEye className="size-4" />
-          </GradientButton>
-        </div>
-      </PageHeader>
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <SubPageHeader
+        icon={IconSitemap}
+        feature={t("aiAgent.chatFlow.title")}
+        name={t("aiAgent.chatFlow.title")}
+        description={t("aiAgent.chatFlow.description")}
+      >
+        <SubPageHeader.Action
+          label={t("chatFlow.actions.exportJson")}
+          icon={IconDownload}
+          onClick={exportJson}
+        />
+        <SubPageHeader.Action
+          label={t("chatFlow.actions.preview")}
+          icon={IconEye}
+          onClick={() => setPreviewOpen((open) => !open)}
+        />
+      </SubPageHeader>
 
       <div className="flex flex-1 overflow-hidden">
         <FlowSidebar />
@@ -218,7 +226,7 @@ function ChatFlowInner() {
 
         {previewOpen && <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />}
       </div>
-    </>
+    </div>
   );
 }
 

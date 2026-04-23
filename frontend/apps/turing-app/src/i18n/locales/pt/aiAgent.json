@@ -10,7 +10,12 @@
       "settings": "Configurações",
       "languageModels": "Modelos de Linguagem",
       "nativeTools": "Ferramentas Nativas",
-      "mcpServers": "Servidores MCP"
+      "mcpServers": "Servidores MCP",
+      "chatFlow": "Chat Flow"
+    },
+    "chatFlow": {
+      "title": "Chat Flow",
+      "description": "Desenhe fluxos de conversa visualmente — arraste nós, conecte passos e exporte o JSON para o advisor do Spring AI."
     },
     "settings": {
       "title": "Configurações",
