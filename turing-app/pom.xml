@@ -465,30 +465,17 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>2.0.0</version>
                 <executions>
+                    <!-- Install Node and pnpm together via the plugin's dedicated goal.
+                         This sets up pnpm with proper bin symlinks so subprocesses
+                         (like Turbo) can resolve it on PATH — unlike a manual
+                         `npm install pnpm`, which only drops the package into
+                         node_modules without a PATH entry. -->
                     <execution>
-                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
-                        <id>react install node and npm</id>
+                        <id>install node and pnpm</id>
                         <goals>
-                            <goal>install-node-and-npm</goal>
+                            <goal>install-node-and-pnpm</goal>
                         </goals>
                         <configuration>
-                            <workingDirectory>../frontend</workingDirectory>
-                        </configuration>
-                        <!-- optional: default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
-                    </execution>
-                    <!-- Install pnpm into the plugin's embedded Node directory so the
-                         pnpm goal finds it at {workingDirectory}/node/node_modules/pnpm.
-                         Using -g lands in a platform-dependent path (node/node_modules
-                         on Windows vs. node/lib/node_modules on Linux), which breaks CI.
-                         The prefix=./node flag forces a consistent layout on every OS. -->
-                    <execution>
-                        <id>install pnpm</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>install pnpm@10.33.0 --prefix=./node</arguments>
                             <workingDirectory>../frontend</workingDirectory>
                         </configuration>
                         <phase>generate-resources</phase>
@@ -517,7 +504,7 @@
                 </executions>
                 <configuration>
                     <nodeVersion>v24.15.0</nodeVersion>
-                    <npmVersion>11.12.1</npmVersion>
+                    <pnpmVersion>10.33.0</pnpmVersion>
                     <skip>${skip.npm}</skip>
                 </configuration>
             </plugin>
