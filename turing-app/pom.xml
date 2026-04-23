@@ -478,10 +478,10 @@
                         <phase>generate-resources</phase>
                     </execution>
                     <!-- Install pnpm into the plugin's embedded Node directory so the
-                         `pnpm` goal finds it at <workingDirectory>/node/node_modules/pnpm.
-                         `-g` lands in a platform-dependent path (<node>/node_modules on
-                         Windows vs. <node>/lib/node_modules on Linux), which breaks CI.
-                         `--prefix=./node` forces a consistent layout on every OS. -->
+                         pnpm goal finds it at {workingDirectory}/node/node_modules/pnpm.
+                         Using -g lands in a platform-dependent path (node/node_modules
+                         on Windows vs. node/lib/node_modules on Linux), which breaks CI.
+                         The prefix=./node flag forces a consistent layout on every OS. -->
                     <execution>
                         <id>install pnpm</id>
                         <goals>
