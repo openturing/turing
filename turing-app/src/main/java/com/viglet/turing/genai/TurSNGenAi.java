@@ -106,7 +106,6 @@ public class TurSNGenAi {
      * calls the ChatModel with the full conversation history so follow-up
      * questions preserve context.
      *
-     * @author Alexandre Oliveira
      * @since 2026.2.4
      */
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history) {
