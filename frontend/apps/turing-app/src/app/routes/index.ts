@@ -6,6 +6,7 @@ export { AssetRoutes } from "./asset.routes";
 export { GitRoutes } from "./git.routes";
 export { PageRoutes } from "./page.routes";
 export { ChatRoutes } from "./chat.routes";
+export { ChatFlowRoutes } from "./chat-flow.routes";
 export { ExchangeRoutes } from "./exchange.routes";
 export { GraphqlRoutes } from "./graphql.routes";
 export { IntegrationRoutes } from "./integration.routes";

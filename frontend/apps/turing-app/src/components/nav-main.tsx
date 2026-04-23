@@ -37,16 +37,19 @@ export function NavMain({
           {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
-              {group.items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton tooltip={item.title} isActive={pathname.startsWith(item.url)} asChild>
-                    <NavLink to={item.url} onClick={() => isMobile && setOpenMobile(false)}>
-                      {item.icon && <item.icon className="size-6!" />}
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {group.items.map((item) => {
+                const isActive = pathname === item.url || pathname.startsWith(item.url + "/");
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton tooltip={item.title} isActive={isActive} asChild>
+                      <NavLink to={item.url} onClick={() => isMobile && setOpenMobile(false)}>
+                        {item.icon && <item.icon className="size-6!" />}
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

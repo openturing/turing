@@ -26,6 +26,7 @@ export const ROUTES = {
   EXCHANGE_ROOT: `${consolePath}/exchange`,
   EXCHANGE_IMPORT: `${consolePath}/exchange/import`,
   CHAT_ROOT: `${consolePath}/chat`,
+  CHAT_FLOW_ROOT: `${consolePath}/chat-flow`,
   GRAPHQL_ROOT: `${consolePath}/graphql`,
   USER_ACCOUNT: `${consolePath}/user/account`,
   TOKEN_USAGE: `${consolePath}/token-usage`,

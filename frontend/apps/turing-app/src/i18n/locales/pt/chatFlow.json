@@ -1,0 +1,51 @@
+{
+  "chatFlow": {
+    "title": "Chat Flow Builder",
+    "subtitle": "Desenhe a conversa com a IA passo a passo. O JSON exportado é consumido pelo advisor do Spring AI no backend.",
+    "actions": {
+      "preview": "Pré-visualizar",
+      "exportJson": "Exportar JSON"
+    },
+    "zoom": "Zoom",
+    "palette": {
+      "title": "Componentes",
+      "hint": "Arraste um componente para o canvas e conecte os handles para ligar o fluxo.",
+      "start": "Início",
+      "end": "Fim",
+      "aiQuestion": "Pergunta (IA)",
+      "condition": "Condição",
+      "functionCall": "Chamada de Função"
+    },
+    "properties": {
+      "header": "Propriedades do Nó",
+      "empty": "Selecione um nó para editar suas propriedades.",
+      "close": "Fechar",
+      "stepName": "Nome do Passo",
+      "stepNamePlaceholder": "ex.: PERGUNTAR AO USUÁRIO",
+      "aiInstruction": "Instrução para a IA",
+      "aiInstructionPlaceholder": "Pergunte algo ao usuário e capture a resposta. Saída esperada: o valor que deseja armazenar.",
+      "aiInstructionHint": "Prompt enviado ao Spring AI quando este passo for executado.",
+      "outputVariable": "Variável de Saída",
+      "functionName": "Função",
+      "condition": "Expressão da Condição",
+      "validationRule": "Regras de Validação",
+      "validationNone": "Nenhuma",
+      "validation": {
+        "none": "Nenhuma",
+        "email": "E-mail",
+        "phone": "Telefone",
+        "url": "URL",
+        "number": "Número",
+        "date": "Data"
+      }
+    },
+    "preview": {
+      "title": "Pré-visualização",
+      "close": "Fechar pré-visualização",
+      "empty": "Adicione um nó Início e pelo menos um passo para ver a pré-visualização.",
+      "bot": "Assistente",
+      "user": "Usuário",
+      "footer": "A pré-visualização percorre o fluxo seguindo a primeira aresta de saída de cada nó. Ferramentas e LLMs não são executados."
+    }
+  }
+}

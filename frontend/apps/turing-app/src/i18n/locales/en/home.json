@@ -56,6 +56,10 @@
         "title": "Chat",
         "description": "Start conversations with your configured LLMs, agents, and semantic search."
       },
+      "chatFlow": {
+        "title": "Chat Flow",
+        "description": "Design conversational flows visually — drag nodes, wire steps, and export JSON for the Spring AI advisor."
+      },
       "searchEngine": {
         "title": "Search Engine",
         "description": "Manage Solr, Elasticsearch, or Lucene instances that power your search."

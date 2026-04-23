@@ -1,0 +1,51 @@
+{
+  "chatFlow": {
+    "title": "Chat Flow Builder",
+    "subtitle": "Design the AI conversation step by step. The exported JSON is consumed by the Spring AI advisor on the backend.",
+    "actions": {
+      "preview": "Preview",
+      "exportJson": "Export JSON"
+    },
+    "zoom": "Zoom",
+    "palette": {
+      "title": "Components",
+      "hint": "Drag a component onto the canvas, then connect the handles to wire the flow.",
+      "start": "Start",
+      "end": "End",
+      "aiQuestion": "AI Question",
+      "condition": "Condition",
+      "functionCall": "Function Call"
+    },
+    "properties": {
+      "header": "Node Properties",
+      "empty": "Select a node to edit its properties.",
+      "close": "Close",
+      "stepName": "Step Name",
+      "stepNamePlaceholder": "e.g. ASK USER",
+      "aiInstruction": "AI System Instruction",
+      "aiInstructionPlaceholder": "Ask the user a question and capture the answer. Expected Output: the value you want to store.",
+      "aiInstructionHint": "Prompt forwarded to Spring AI when this step runs.",
+      "outputVariable": "Output Variable",
+      "functionName": "Function Call",
+      "condition": "Condition Expression",
+      "validationRule": "Validation Rules",
+      "validationNone": "None",
+      "validation": {
+        "none": "None",
+        "email": "Email",
+        "phone": "Phone number",
+        "url": "URL",
+        "number": "Number",
+        "date": "Date"
+      }
+    },
+    "preview": {
+      "title": "Chat Preview",
+      "close": "Close preview",
+      "empty": "Add a Start node and at least one step to see the preview.",
+      "bot": "Assistant",
+      "user": "User",
+      "footer": "Preview walks the flow following the first outgoing edge of each node. It does not execute tools or LLMs."
+    }
+  }
+}

@@ -9,6 +9,7 @@ import enAdmin from "./locales/en/admin.json";
 import enAiAgent from "./locales/en/aiAgent.json";
 import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
+import enChatFlow from "./locales/en/chatFlow.json";
 import enCommon from "./locales/en/common.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enDialog from "./locales/en/dialog.json";
@@ -44,6 +45,7 @@ import ptAdmin from "./locales/pt/admin.json";
 import ptAiAgent from "./locales/pt/aiAgent.json";
 import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
+import ptChatFlow from "./locales/pt/chatFlow.json";
 import ptCommon from "./locales/pt/common.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptDialog from "./locales/pt/dialog.json";
@@ -74,7 +76,7 @@ import ptTheme from "./locales/pt/theme.json";
 import ptTokenUsage from "./locales/pt/tokenUsage.json";
 
 const en = {
-  ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat,
+  ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enEmbeddingModel,
   ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
@@ -84,7 +86,7 @@ const en = {
 };
 
 const pt = {
-  ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat,
+  ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat, ...ptChatFlow,
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,

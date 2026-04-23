@@ -51,9 +51,9 @@ import lombok.extern.slf4j.Slf4j;
  * Configuration (all optional, inside {@code providerOptionsJson}):
  * <ul>
  *   <li>{@code basePath} — root directory for all Lucene vector indexes (default:
- *       {@code ./store/lucene-vector}). May also be supplied via {@link TurStoreInstance#getUrl()}.</li>
+ *       {@code ./store/lucene-vector}). May also be supplied via {@link TurStoreInstance#url}.</li>
  *   <li>{@code collectionName} — default collection name when none is passed (falls back to
- *       {@link TurStoreInstance#getCollectionName()} then to {@code turing}).</li>
+ *       {@link TurStoreInstance#collectionName} then to {@code turing}).</li>
  * </ul>
  * <p>
  * This provider owns the Lucene {@link TurLuceneVectorIndex} cache keyed by ({@code basePath},
