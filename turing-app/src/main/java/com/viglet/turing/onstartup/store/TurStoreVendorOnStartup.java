@@ -62,6 +62,14 @@ public class TurStoreVendorOnStartup {
 			pgvector.setTitle("PGVector");
 			pgvector.setWebsite("https://github.com/pgvector/pgvector");
 			turStoreVendorRepository.save(pgvector);
+
+			TurStoreVendor lucene = new TurStoreVendor();
+			lucene.setId("LUCENE");
+			lucene.setDescription("Apache Lucene (embedded vector store)");
+			lucene.setPlugin("lucene");
+			lucene.setTitle("Lucene");
+			lucene.setWebsite("https://lucene.apache.org/");
+			turStoreVendorRepository.save(lucene);
 		}
 	}
 }

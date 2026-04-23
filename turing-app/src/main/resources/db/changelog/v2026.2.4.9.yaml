@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-store-vendor-lucene
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - tableExists:
+                tableName: store_vendor
+            - sqlCheck:
+                expectedResult: 0
+                sql: SELECT COUNT(*) FROM store_vendor WHERE id = 'LUCENE'
+      changes:
+        - insert:
+            tableName: store_vendor
+            columns:
+              - column:
+                  name: id
+                  value: LUCENE
+              - column:
+                  name: title
+                  value: Lucene
+              - column:
+                  name: description
+                  value: Apache Lucene (embedded vector store)
+              - column:
+                  name: plugin
+                  value: lucene
+              - column:
+                  name: website
+                  value: https://lucene.apache.org/

@@ -33,11 +33,13 @@ class TurStoreVendorOnStartupTest {
         turStoreVendorOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurStoreVendor> captor = ArgumentCaptor.forClass(TurStoreVendor.class);
-        verify(turStoreVendorRepository, org.mockito.Mockito.times(3)).save(captor.capture());
+        verify(turStoreVendorRepository, org.mockito.Mockito.times(4)).save(captor.capture());
         List<TurStoreVendor> vendors = captor.getAllValues();
         assertEquals("CHROMA", vendors.get(0).getId());
         assertEquals("MILVUS", vendors.get(1).getId());
         assertEquals("PGVECTOR", vendors.get(2).getId());
+        assertEquals("LUCENE", vendors.get(3).getId());
+        assertEquals("lucene", vendors.get(3).getPlugin());
     }
 
     @Test

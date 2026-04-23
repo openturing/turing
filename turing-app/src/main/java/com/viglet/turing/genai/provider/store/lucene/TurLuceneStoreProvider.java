@@ -1,0 +1,340 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.viglet.turing.genai.provider.store.lucene;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import com.viglet.turing.commons.exception.TurRuntimeException;
+import com.viglet.turing.genai.provider.TurProviderOptionsParser;
+import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
+import com.viglet.turing.genai.provider.store.TurStoreCollectionInfo;
+import com.viglet.turing.persistence.model.store.TurStoreInstance;
+
+import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Embedded vector store provider backed by Apache Lucene 10 KNN. Each collection maps to a single
+ * directory under the configured base path, and is persisted on the local filesystem.
+ * <p>
+ * Configuration (all optional, inside {@code providerOptionsJson}):
+ * <ul>
+ *   <li>{@code basePath} — root directory for all Lucene vector indexes (default:
+ *       {@code ./store/lucene-vector}). May also be supplied via {@link TurStoreInstance#getUrl()}.</li>
+ *   <li>{@code collectionName} — default collection name when none is passed (falls back to
+ *       {@link TurStoreInstance#getCollectionName()} then to {@code turing}).</li>
+ * </ul>
+ * <p>
+ * This provider owns the Lucene {@link TurLuceneVectorIndex} cache keyed by ({@code basePath},
+ * {@code collectionName}); {@link VectorStore} instances returned from {@code createVectorStore}
+ * are lightweight wrappers pointing at the shared index.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.4
+ */
+@Slf4j
+@Component
+public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
+
+    private static final String DEFAULT_BASE_PATH = "./store/lucene-vector";
+    private static final String DEFAULT_COLLECTION = "turing";
+    private static final String BASE_PATH_OPTION = "basePath";
+    private static final String COLLECTION_NAME_OPTION = "collectionName";
+
+    /**
+     * Metadata keys used to identify a logical document across its chunks, checked in order.
+     * Mirrors the COALESCE chain used by {@code TurPgVectorStoreProvider}.
+     */
+    private static final List<String> DOCUMENT_IDENTIFIER_KEYS = List.of("source_id", "objectName", "fileName");
+
+    private final TurProviderOptionsParser optionsParser;
+    private final ConcurrentHashMap<String, TurLuceneVectorIndex> indexCache = new ConcurrentHashMap<>();
+
+    public TurLuceneStoreProvider(TurProviderOptionsParser optionsParser) {
+        this.optionsParser = optionsParser;
+    }
+
+    @Override
+    public String getPluginType() {
+        return "lucene";
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        indexCache.values().forEach(TurLuceneVectorIndex::close);
+        indexCache.clear();
+    }
+
+    @Override
+    public VectorStore createVectorStore(TurStoreInstance turStoreInstance,
+            EmbeddingModel embeddingModel,
+            String decryptedCredential) {
+        return createVectorStore(turStoreInstance, embeddingModel, decryptedCredential, null);
+    }
+
+    @Override
+    public VectorStore createVectorStore(TurStoreInstance turStoreInstance,
+            EmbeddingModel embeddingModel,
+            String decryptedCredential,
+            String collectionNameOverride) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        String collectionName = resolveCollectionName(turStoreInstance, options, collectionNameOverride);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        return new TurLuceneVectorStore(index, embeddingModel, collectionName);
+    }
+
+    @Override
+    public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
+            String decryptedCredential) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        if (!Files.isDirectory(basePath)) {
+            return List.of();
+        }
+        try (Stream<Path> dirs = Files.list(basePath)) {
+            List<TurStoreCollectionInfo> result = new ArrayList<>();
+            dirs.filter(Files::isDirectory)
+                    .sorted()
+                    .forEach(dir -> {
+                        String name = dir.getFileName().toString();
+                        TurLuceneVectorIndex index = openIndex(basePath, name);
+                        long chunkCount = safeNumDocs(index);
+                        long documentCount = safeDistinctDocumentCount(index);
+                        if (documentCount == 0) {
+                            documentCount = chunkCount;
+                        }
+                        result.add(new TurStoreCollectionInfo(name, name, documentCount, chunkCount));
+                    });
+            return result;
+        } catch (IOException e) {
+            log.warn("[Lucene] Failed to list collections at {}: {}", basePath, e.getMessage());
+            return List.of();
+        }
+    }
+
+    @Override
+    public void createCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        openIndex(basePath, collectionName);
+        log.info("[Lucene] Created collection '{}' at {}", collectionName, basePath);
+    }
+
+    @Override
+    public void clearCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        try {
+            index.clear();
+            log.info("[Lucene] Cleared collection '{}'", collectionName);
+        } catch (IOException e) {
+            throw new TurRuntimeException("Failed to clear Lucene collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteCollection(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        String cacheKey = cacheKey(basePath, collectionName);
+        TurLuceneVectorIndex cached = indexCache.remove(cacheKey);
+        if (cached != null) {
+            cached.close();
+        }
+        Path collectionPath = basePath.resolve(collectionName);
+        if (!Files.exists(collectionPath)) {
+            return;
+        }
+        try (Stream<Path> walk = Files.walk(collectionPath)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            log.warn("[Lucene] Failed to delete {}: {}", path, e.getMessage());
+                        }
+                    });
+            log.info("[Lucene] Deleted collection '{}' at {}", collectionName, collectionPath);
+        } catch (IOException e) {
+            throw new TurRuntimeException("Failed to delete Lucene collection: " + collectionName, e);
+        }
+    }
+
+    @Override
+    public void deleteByMetadata(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            String metadataKey,
+            String metadataValue) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+        try {
+            org.apache.lucene.index.Term term = new org.apache.lucene.index.Term(
+                    TurLuceneVectorStore.METADATA_FIELD_PREFIX + metadataKey,
+                    metadataValue);
+            index.getWriter().deleteDocuments(term);
+            index.getWriter().commit();
+            log.info("[Lucene] Deleted embeddings where {}={} from collection '{}'",
+                    metadataKey, metadataValue, collectionName);
+        } catch (IOException e) {
+            log.warn("[Lucene] Failed to delete by metadata {}={} in '{}': {}",
+                    metadataKey, metadataValue, collectionName, e.getMessage());
+        }
+    }
+
+    @Override
+    public Map<String, String> getSystemInfo(TurStoreInstance turStoreInstance,
+            String decryptedCredential) {
+        Map<String, String> info = new LinkedHashMap<>();
+        info.put("store", "Lucene");
+        info.put("version", org.apache.lucene.util.Version.LATEST.toString());
+        try {
+            Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+            Path basePath = resolveBasePath(turStoreInstance, options);
+            info.put("basePath", basePath.toAbsolutePath().toString());
+            info.put("status", Files.isDirectory(basePath) || !Files.exists(basePath) ? "UP" : "DOWN");
+        } catch (Exception e) {
+            info.put("status", "DOWN");
+            info.put("error", e.getMessage());
+        }
+        return info;
+    }
+
+    private TurLuceneVectorIndex openIndex(Path basePath, String collectionName) {
+        String key = cacheKey(basePath, collectionName);
+        return indexCache.computeIfAbsent(key, k -> {
+            Path indexPath = basePath.resolve(collectionName);
+            try {
+                Files.createDirectories(indexPath);
+                log.info("[Lucene] Opening vector index at {}", indexPath);
+                return new TurLuceneVectorIndex(indexPath);
+            } catch (IOException e) {
+                throw new TurRuntimeException("Failed to open Lucene vector index at " + indexPath, e);
+            }
+        });
+    }
+
+    private long safeNumDocs(TurLuceneVectorIndex index) {
+        try {
+            return index.numDocs();
+        } catch (Exception e) {
+            log.debug("[Lucene] Could not read numDocs: {}", e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * Counts distinct logical documents by applying {@link #DOCUMENT_IDENTIFIER_KEYS} as a COALESCE
+     * chain over the stored metadata_json of every live chunk — mirrors the semantics used by the
+     * PGVector provider so the React collections UI shows comparable numbers.
+     */
+    private long safeDistinctDocumentCount(TurLuceneVectorIndex index) {
+        Set<String> identifiers = new HashSet<>();
+        try {
+            index.visitStoredField(TurLuceneVectorStore.FIELD_METADATA_JSON, json -> {
+                Map<String, Object> metadata = TurLuceneVectorStore.parseMetadata(json);
+                if (metadata.isEmpty()) {
+                    return;
+                }
+                for (String key : DOCUMENT_IDENTIFIER_KEYS) {
+                    Object value = metadata.get(key);
+                    if (value != null) {
+                        String asString = String.valueOf(value);
+                        if (!asString.isBlank()) {
+                            identifiers.add(asString);
+                            return;
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            log.debug("[Lucene] Could not compute distinct document count: {}", e.getMessage());
+        }
+        return identifiers.size();
+    }
+
+    private Path resolveBasePath(TurStoreInstance turStoreInstance, Map<String, Object> options) {
+        String raw = firstNonBlank(
+                optionsParser.stringValue(options, BASE_PATH_OPTION),
+                turStoreInstance.getUrl(),
+                DEFAULT_BASE_PATH);
+        return Path.of(raw).toAbsolutePath().normalize();
+    }
+
+    private String resolveCollectionName(TurStoreInstance turStoreInstance,
+            Map<String, Object> options,
+            String collectionNameOverride) {
+        if (StringUtils.hasText(collectionNameOverride)) {
+            return sanitize(collectionNameOverride);
+        }
+        return sanitize(firstNonBlank(
+                optionsParser.stringValue(options, COLLECTION_NAME_OPTION),
+                turStoreInstance.getCollectionName(),
+                DEFAULT_COLLECTION));
+    }
+
+    private String cacheKey(Path basePath, String collectionName) {
+        return basePath.toString().toLowerCase(Locale.ROOT) + "|" + collectionName;
+    }
+
+    /**
+     * Replaces characters invalid on common filesystems. Keeps ASCII letters, digits, dash,
+     * underscore and dot; everything else becomes {@code _}.
+     */
+    private String sanitize(String name) {
+        if (name == null) {
+            return DEFAULT_COLLECTION;
+        }
+        String sanitized = name.replaceAll("[^A-Za-z0-9._-]", "_");
+        return sanitized.isBlank() ? DEFAULT_COLLECTION : sanitized;
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
+        return DEFAULT_BASE_PATH;
+    }
+}
