@@ -17,11 +17,12 @@ import {
   type Node,
   type NodeMouseHandler,
 } from "@xyflow/react";
-import { IconDownload, IconEye } from "@tabler/icons-react";
+import { IconDownload, IconEye, IconSitemap } from "@tabler/icons-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GradientButton } from "@/components/ui/gradient-button";
+import { PageHeader } from "@/components/page-header";
 
 import { ChatPreview } from "./components/chat-preview";
 import { FlowProperties } from "./components/flow-properties";
@@ -152,23 +153,28 @@ function ChatFlowInner() {
   }, [nodes, edges]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] w-full flex-col">
-      <header className="flex items-center justify-between border-b bg-background px-6 py-3">
-        <div>
-          <h1 className="text-lg font-semibold">{t("chatFlow.title")}</h1>
-          <p className="text-xs text-muted-foreground">{t("chatFlow.subtitle")}</p>
-        </div>
+    <>
+      <PageHeader turIcon={IconSitemap} title={t("chatFlow.title")}>
         <div className="flex items-center gap-2">
-          <GradientButton variant="secondary" size="sm" onClick={exportJson}>
+          <GradientButton
+            variant="secondary"
+            size="icon-sm"
+            onClick={exportJson}
+            aria-label={t("chatFlow.actions.exportJson")}
+            title={t("chatFlow.actions.exportJson")}
+          >
             <IconDownload className="size-4" />
-            {t("chatFlow.actions.exportJson")}
           </GradientButton>
-          <GradientButton size="sm" onClick={() => setPreviewOpen((open) => !open)}>
+          <GradientButton
+            size="icon-sm"
+            onClick={() => setPreviewOpen((open) => !open)}
+            aria-label={t("chatFlow.actions.preview")}
+            title={t("chatFlow.actions.preview")}
+          >
             <IconEye className="size-4" />
-            {t("chatFlow.actions.preview")}
           </GradientButton>
         </div>
-      </header>
+      </PageHeader>
 
       <div className="flex flex-1 overflow-hidden">
         <FlowSidebar />
@@ -212,7 +218,7 @@ function ChatFlowInner() {
 
         {previewOpen && <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />}
       </div>
-    </div>
+    </>
   );
 }
 

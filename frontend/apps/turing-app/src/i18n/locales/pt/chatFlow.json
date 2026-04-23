@@ -1,7 +1,6 @@
 {
   "chatFlow": {
     "title": "Chat Flow Builder",
-    "subtitle": "Desenhe a conversa com a IA passo a passo. O JSON exportado é consumido pelo advisor do Spring AI no backend.",
     "actions": {
       "preview": "Pré-visualizar",
       "exportJson": "Exportar JSON"
