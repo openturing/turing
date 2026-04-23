@@ -8,7 +8,6 @@ export interface TurEmbeddingModel {
   turLLMInstance?: TurLLMInstance;
   modelReference: string;
   batchSize?: number;
-  enableGpu: boolean;
   modelPath?: string;
   tokenizerPath?: string;
   enabled: number;

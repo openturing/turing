@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-embedding-model-enable-gpu
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: embedding_model
+            columnName: enableGpu
+      changes:
+        - dropColumn:
+            tableName: embedding_model
+            columnName: enableGpu

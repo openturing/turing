@@ -19,9 +19,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import type { TurStoreVendor } from "@/models/store/store-vendor.model.ts"
 import { TurStoreInstanceService } from "@/services/store/store.service"
@@ -50,14 +47,8 @@ interface Props {
 }
 
 type StoreProviderOptionsDraft = {
-  baseUrl: string;
-  collectionName: string;
   tenantName: string;
   databaseName: string;
-  keyToken: string;
-  basicUsername: string;
-  basicPassword: string;
-  token: string;
   initializeSchema: boolean;
   embeddingDimension: string;
   metricType: string;
@@ -70,14 +61,8 @@ type StoreProviderOptionsDraft = {
 }
 
 const emptyStoreProviderOptionsDraft = (): StoreProviderOptionsDraft => ({
-  baseUrl: "",
-  collectionName: "",
   tenantName: "",
   databaseName: "",
-  keyToken: "",
-  basicUsername: "",
-  basicPassword: "",
-  token: "",
   initializeSchema: true,
   embeddingDimension: "",
   metricType: "",
@@ -87,6 +72,50 @@ const emptyStoreProviderOptionsDraft = (): StoreProviderOptionsDraft => ({
   pgUsername: "",
   pgPassword: "",
 })
+
+// Keys the visual draft owns. Everything else in an existing providerOptionsJson is
+// preserved as-is on save so legacy/custom options aren't lost.
+const KNOWN_STORE_OPTION_KEYS = new Set<string>([
+  "tenantName", "databaseName", "initializeSchema",
+  "embeddingDimension", "dimensions",
+  "metricType", "distanceType",
+  "indexType", "indexParameters",
+  "schemaName", "username", "password",
+])
+
+type StoreTextFieldKey = Exclude<keyof StoreProviderOptionsDraft, "initializeSchema">
+
+type StoreVendorFieldSpec = {
+  key: StoreTextFieldKey;
+  labelKey: string;
+  descriptionKey: string;
+  type: "number" | "text" | "password";
+  fullWidth?: boolean;
+}
+
+// PGVector does not use databaseName (the DB is encoded in the JDBC URL), so the
+// field only appears for Chroma and Milvus, which scope collections by database.
+const STORE_VENDOR_FIELDS: Record<string, StoreVendorFieldSpec[]> = {
+  CHROMA: [
+    { key: "tenantName", labelKey: "forms.store.tenantName", descriptionKey: "forms.store.tenantNameDesc", type: "text" },
+    { key: "databaseName", labelKey: "forms.store.databaseName", descriptionKey: "forms.store.databaseNameDesc", type: "text" },
+  ],
+  MILVUS: [
+    { key: "databaseName", labelKey: "forms.store.databaseName", descriptionKey: "forms.store.databaseNameDesc", type: "text" },
+    { key: "embeddingDimension", labelKey: "forms.store.embeddingDimension", descriptionKey: "forms.store.embeddingDimensionDesc", type: "number" },
+    { key: "metricType", labelKey: "forms.store.metricType", descriptionKey: "forms.store.metricTypeDesc", type: "text" },
+    { key: "indexType", labelKey: "forms.store.indexType", descriptionKey: "forms.store.indexTypeDesc", type: "text" },
+    { key: "indexParameters", labelKey: "forms.store.indexParameters", descriptionKey: "forms.store.indexParametersDesc", type: "text", fullWidth: true },
+  ],
+  PGVECTOR: [
+    { key: "pgUsername", labelKey: "forms.store.pgUsername", descriptionKey: "forms.store.pgUsernameDesc", type: "text" },
+    { key: "pgPassword", labelKey: "forms.store.pgPassword", descriptionKey: "forms.store.pgPasswordDesc", type: "password" },
+    { key: "schemaName", labelKey: "forms.store.schemaName", descriptionKey: "forms.store.schemaNameDesc", type: "text" },
+    { key: "embeddingDimension", labelKey: "forms.store.embeddingDimension", descriptionKey: "forms.store.embeddingDimensionDesc", type: "number" },
+    { key: "metricType", labelKey: "forms.store.metricType", descriptionKey: "forms.store.metricTypeDesc", type: "text" },
+    { key: "indexType", labelKey: "forms.store.indexType", descriptionKey: "forms.store.indexTypeDesc", type: "text" },
+  ],
+}
 
 const toText = (value: unknown) => value == null ? "" : String(value)
 
@@ -105,29 +134,29 @@ const parseJsonObject = (jsonValue?: string) => {
   return undefined
 }
 
-const parseStoreProviderOptionsDraft = (jsonValue?: string): StoreProviderOptionsDraft => {
+const parseStoreProviderOptions = (jsonValue?: string): { draft: StoreProviderOptionsDraft; unknown: Record<string, unknown> } => {
   const parsed = parseJsonObject(jsonValue)
+  const draft = emptyStoreProviderOptionsDraft()
+  const unknown: Record<string, unknown> = {}
   if (!parsed) {
-    return emptyStoreProviderOptionsDraft()
+    return { draft, unknown }
   }
-  return {
-    baseUrl: toText(parsed.baseUrl),
-    collectionName: toText(parsed.collectionName),
-    tenantName: toText(parsed.tenantName),
-    databaseName: toText(parsed.databaseName),
-    keyToken: toText(parsed.keyToken),
-    basicUsername: toText(parsed.basicUsername),
-    basicPassword: toText(parsed.basicPassword),
-    token: toText(parsed.token),
-    initializeSchema: typeof parsed.initializeSchema === "boolean" ? parsed.initializeSchema : true,
-    embeddingDimension: toText(parsed.embeddingDimension ?? parsed.dimensions),
-    metricType: toText(parsed.metricType ?? parsed.distanceType),
-    indexType: toText(parsed.indexType),
-    indexParameters: toText(parsed.indexParameters),
-    schemaName: toText(parsed.schemaName),
-    pgUsername: toText(parsed.username),
-    pgPassword: "",
+  draft.tenantName = toText(parsed.tenantName)
+  draft.databaseName = toText(parsed.databaseName)
+  draft.initializeSchema = typeof parsed.initializeSchema === "boolean" ? parsed.initializeSchema : true
+  draft.embeddingDimension = toText(parsed.embeddingDimension ?? parsed.dimensions)
+  draft.metricType = toText(parsed.metricType ?? parsed.distanceType)
+  draft.indexType = toText(parsed.indexType)
+  draft.indexParameters = toText(parsed.indexParameters)
+  draft.schemaName = toText(parsed.schemaName)
+  draft.pgUsername = toText(parsed.username)
+  draft.pgPassword = ""
+  for (const [key, value] of Object.entries(parsed)) {
+    if (!KNOWN_STORE_OPTION_KEYS.has(key)) {
+      unknown[key] = value
+    }
   }
+  return { draft, unknown }
 }
 
 const parseNumber = (value: string) => {
@@ -157,20 +186,12 @@ const buildStoreProviderOptionsFromDraft = (vendorId: string | undefined, draft:
   options.initializeSchema = draft.initializeSchema
 
   if (vendorId === "CHROMA") {
-    putText("baseUrl", draft.baseUrl)
-    putText("collectionName", draft.collectionName)
     putText("databaseName", draft.databaseName)
     putText("tenantName", draft.tenantName)
-    putText("keyToken", draft.keyToken)
-    putText("basicUsername", draft.basicUsername)
-    putText("basicPassword", draft.basicPassword)
   }
 
   if (vendorId === "MILVUS") {
-    putText("baseUrl", draft.baseUrl)
-    putText("collectionName", draft.collectionName)
     putText("databaseName", draft.databaseName)
-    putText("token", draft.token)
     putNumber("embeddingDimension", draft.embeddingDimension)
     putText("metricType", draft.metricType)
     putText("indexType", draft.indexType)
@@ -178,8 +199,6 @@ const buildStoreProviderOptionsFromDraft = (vendorId: string | undefined, draft:
   }
 
   if (vendorId === "PGVECTOR") {
-    putText("jdbcUrl", draft.baseUrl)
-    putText("tableName", draft.collectionName)
     putText("schemaName", draft.schemaName)
     putText("username", draft.pgUsername)
     putText("password", draft.pgPassword)
@@ -199,6 +218,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [storeProviderOptionsDraft, setStoreProviderOptionsDraft] = useState<StoreProviderOptionsDraft>(
     emptyStoreProviderOptionsDraft()
   )
+  const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const [vendors, setVendors] = useState<TurStoreVendor[]>([]);
   const selectedVendorId = form.watch("turStoreVendor.id");
   const navigate = useNavigate()
@@ -214,21 +234,36 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       credential: "",
       providerOptionsJson: value.providerOptionsJson ?? ""
     });
-    setStoreProviderOptionsDraft(parseStoreProviderOptionsDraft(value.providerOptionsJson))
+    const { draft, unknown } = parseStoreProviderOptions(value.providerOptionsJson)
+    setStoreProviderOptionsDraft(draft)
+    setPreservedOptions(unknown)
   }, [value])
   const applyVendorDefaults = (vendorId: string) => {
+    const draft = emptyStoreProviderOptionsDraft()
     if (vendorId === "CHROMA") {
       form.setValue("url", "http://localhost:8000", { shouldDirty: true });
       form.setValue("collectionName", "turing", { shouldDirty: true });
+      draft.tenantName = "default_tenant"
+      draft.databaseName = "default_database"
     }
     if (vendorId === "MILVUS") {
       form.setValue("url", "http://localhost:19530", { shouldDirty: true });
       form.setValue("collectionName", "turing", { shouldDirty: true });
+      draft.databaseName = "default"
+      draft.embeddingDimension = "1024"
+      draft.metricType = "COSINE"
+      draft.indexType = "HNSW"
     }
     if (vendorId === "PGVECTOR") {
       form.setValue("url", "jdbc:postgresql://localhost:5432/turing", { shouldDirty: true });
       form.setValue("collectionName", "vector_store", { shouldDirty: true });
+      draft.schemaName = "public"
+      draft.pgUsername = "postgres"
+      draft.embeddingDimension = "1536"
+      draft.metricType = "COSINE_DISTANCE"
+      draft.indexType = "HNSW"
     }
+    setStoreProviderOptionsDraft(draft)
   }
 
   const setStoreDraftValue = (key: keyof StoreProviderOptionsDraft, fieldValue: string | boolean) => {
@@ -238,42 +273,13 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     }))
   }
 
-  const getProviderOptionsPlaceholder = (vendorId?: string) => {
-    if (vendorId === "MILVUS") {
-      return '{\n  "baseUrl": "http://localhost:19530",\n  "token": "username:password",\n  "databaseName": "default",\n  "collectionName": "turing",\n  "initializeSchema": true,\n  "embeddingDimension": 1024,\n  "metricType": "COSINE",\n  "indexType": "HNSW",\n  "indexParameters": "{\\"M\\":16,\\"efConstruction\\":200}"\n}'
-    }
-    if (vendorId === "PGVECTOR") {
-      return '{\n  "jdbcUrl": "jdbc:postgresql://localhost:5432/turing",\n  "username": "postgres",\n  "password": "password",\n  "tableName": "vector_store",\n  "schemaName": "public",\n  "dimensions": 1536,\n  "distanceType": "COSINE_DISTANCE",\n  "indexType": "HNSW",\n  "initializeSchema": true\n}'
-    }
-    return '{\n  "baseUrl": "http://localhost:8000",\n  "collectionName": "turing",\n  "tenantName": "default_tenant",\n  "databaseName": "default_database",\n  "initializeSchema": true,\n  "keyToken": "token-value"\n}'
-  }
-
-  const normalizeJson = (jsonValue?: string) => {
-    const normalized = jsonValue?.trim();
-    if (!normalized) {
-      return undefined;
-    }
-    try {
-      JSON.parse(normalized);
-      return normalized;
-    } catch {
-      toast.error(t("forms.common.invalidJson"));
-      return null;
-    }
-  }
+  const hasStoreVisualOptions = (vendorId?: string) =>
+    vendorId === "CHROMA" || vendorId === "MILVUS" || vendorId === "PGVECTOR"
 
   async function onSubmit(storeInstance: TurStoreInstance) {
-    const rawProviderOptionsJson = normalizeJson(storeInstance.providerOptionsJson)
-    if (rawProviderOptionsJson === null) {
-      return;
-    }
-
     const visualProviderOptions = buildStoreProviderOptionsFromDraft(selectedVendorId, storeProviderOptionsDraft)
-    const rawProviderOptions = parseJsonObject(rawProviderOptionsJson)
-    const mergedProviderOptions = {
-      ...visualProviderOptions,
-      ...(rawProviderOptions ?? {})
-    }
+    // Merge with any unknown keys from the original JSON so legacy/custom values are preserved.
+    const mergedProviderOptions = { ...preservedOptions, ...visualProviderOptions }
     const providerOptionsJson = Object.keys(mergedProviderOptions).length > 0
       ? JSON.stringify(mergedProviderOptions, null, 2)
       : undefined
@@ -534,86 +540,43 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
               <SectionCard variant="amber">
                 <SectionCard.Header icon={IconAdjustments} title={t("forms.common.advancedOptions")} description={t("forms.store.advancedDesc")} />
                 <SectionCard.Content>
-                  <div className="w-full rounded-md border p-4 space-y-4">
-                    <div className="text-sm font-medium">{t("forms.store.visualOptions")}</div>
-                    <div className="text-muted-foreground text-sm">
-                      {t("forms.store.visualOptionsDesc")}
+                  {hasStoreVisualOptions(selectedVendorId) && (
+                    <div className="w-full rounded-md border p-4 space-y-4">
+                      <div>
+                        <div className="text-sm font-medium">{t("forms.store.vendorOptions")}</div>
+                        <div className="text-muted-foreground text-sm mt-1">
+                          {t("forms.store.vendorOptionsDesc")}
+                        </div>
+                      </div>
+                      {(STORE_VENDOR_FIELDS[selectedVendorId ?? ""] ?? []).map((spec) => (
+                        <div key={spec.key} className="w-full">
+                          <FormLabel>{t(spec.labelKey)}</FormLabel>
+                          <FormDescription>{t(spec.descriptionKey)}</FormDescription>
+                          <Input
+                            className="w-full mt-2"
+                            type={spec.type}
+                            autoComplete={spec.type === "password" ? "new-password" : undefined}
+                            value={storeProviderOptionsDraft[spec.key]}
+                            onChange={(event) => setStoreDraftValue(spec.key, event.target.value)}
+                          />
+                        </div>
+                      ))}
+                      <FormItemTwoColumns>
+                        <FormItemTwoColumns.Left>
+                          <FormItemTwoColumns.Label>{t("forms.store.initializeSchema")}</FormItemTwoColumns.Label>
+                          <FormItemTwoColumns.Description>
+                            {t("forms.store.initializeSchemaDesc")}
+                          </FormItemTwoColumns.Description>
+                        </FormItemTwoColumns.Left>
+                        <FormItemTwoColumns.Right>
+                          <GradientSwitch
+                            checked={storeProviderOptionsDraft.initializeSchema}
+                            onCheckedChange={(checked) => setStoreDraftValue("initializeSchema", checked)}
+                          />
+                        </FormItemTwoColumns.Right>
+                      </FormItemTwoColumns>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input placeholder="Base URL" value={storeProviderOptionsDraft.baseUrl} onChange={(event) => setStoreDraftValue("baseUrl", event.target.value)} />
-                      <Input placeholder="Collection Name" value={storeProviderOptionsDraft.collectionName} onChange={(event) => setStoreDraftValue("collectionName", event.target.value)} />
-                      <Input placeholder="Database Name" value={storeProviderOptionsDraft.databaseName} onChange={(event) => setStoreDraftValue("databaseName", event.target.value)} />
-                    </div>
-                    <FormItemTwoColumns>
-                      <FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Label>{t("forms.store.initializeSchema")}</FormItemTwoColumns.Label>
-                        <FormItemTwoColumns.Description>
-                          {t("forms.store.initializeSchemaDesc")}
-                        </FormItemTwoColumns.Description>
-                      </FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Right>
-                        <GradientSwitch
-                          checked={storeProviderOptionsDraft.initializeSchema}
-                          onCheckedChange={(checked) => setStoreDraftValue("initializeSchema", checked)}
-                        />
-                      </FormItemTwoColumns.Right>
-                    </FormItemTwoColumns>
-
-                    {selectedVendorId === "CHROMA" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input placeholder="Tenant Name" value={storeProviderOptionsDraft.tenantName} onChange={(event) => setStoreDraftValue("tenantName", event.target.value)} />
-                        <Input placeholder="Key Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.keyToken} onChange={(event) => setStoreDraftValue("keyToken", event.target.value)} />
-                        <Input placeholder="Basic Username" value={storeProviderOptionsDraft.basicUsername} onChange={(event) => setStoreDraftValue("basicUsername", event.target.value)} />
-                        <Input placeholder="Basic Password" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.basicPassword} onChange={(event) => setStoreDraftValue("basicPassword", event.target.value)} />
-                      </div>
-                    )}
-
-                    {selectedVendorId === "MILVUS" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input placeholder="Token" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.token} onChange={(event) => setStoreDraftValue("token", event.target.value)} />
-                        <Input placeholder="Embedding Dimension" type="number" value={storeProviderOptionsDraft.embeddingDimension} onChange={(event) => setStoreDraftValue("embeddingDimension", event.target.value)} />
-                        <Input placeholder="Metric Type (e.g. COSINE)" value={storeProviderOptionsDraft.metricType} onChange={(event) => setStoreDraftValue("metricType", event.target.value)} />
-                        <Input placeholder="Index Type (e.g. HNSW)" value={storeProviderOptionsDraft.indexType} onChange={(event) => setStoreDraftValue("indexType", event.target.value)} />
-                        <Input placeholder="Index Parameters (JSON string)" value={storeProviderOptionsDraft.indexParameters} onChange={(event) => setStoreDraftValue("indexParameters", event.target.value)} className="md:col-span-2" />
-                      </div>
-                    )}
-
-                    {selectedVendorId === "PGVECTOR" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input placeholder="Username" value={storeProviderOptionsDraft.pgUsername} onChange={(event) => setStoreDraftValue("pgUsername", event.target.value)} />
-                        <Input placeholder="Password" type="password" autoComplete="new-password" value={storeProviderOptionsDraft.pgPassword} onChange={(event) => setStoreDraftValue("pgPassword", event.target.value)} />
-                        <Input placeholder="Schema Name (e.g. public)" value={storeProviderOptionsDraft.schemaName} onChange={(event) => setStoreDraftValue("schemaName", event.target.value)} />
-                        <Input placeholder="Dimensions (e.g. 1536)" type="number" value={storeProviderOptionsDraft.embeddingDimension} onChange={(event) => setStoreDraftValue("embeddingDimension", event.target.value)} />
-                        <Input placeholder="Distance Type (e.g. COSINE_DISTANCE)" value={storeProviderOptionsDraft.metricType} onChange={(event) => setStoreDraftValue("metricType", event.target.value)} />
-                        <Input placeholder="Index Type (e.g. HNSW)" value={storeProviderOptionsDraft.indexType} onChange={(event) => setStoreDraftValue("indexType", event.target.value)} />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="w-full">
-                    <FormField
-                      control={form.control}
-                      name="providerOptionsJson"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("forms.store.providerOptionsJson")}</FormLabel>
-                          <FormDescription>
-                            {t("forms.store.providerOptionsJsonDesc")}
-                          </FormDescription>
-                          <FormControl>
-                            <Textarea
-                              placeholder={getProviderOptionsPlaceholder(selectedVendorId)}
-                              className="resize-y min-h-40"
-                              rows={10}
-                              {...field}
-                              value={field.value ?? ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  )}
                 </SectionCard.Content>
               </SectionCard>
 

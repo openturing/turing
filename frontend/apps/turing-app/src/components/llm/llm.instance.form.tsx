@@ -21,9 +21,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import {
-  Textarea
-} from "@/components/ui/textarea"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
@@ -49,27 +46,11 @@ interface Props {
   isNew: boolean;
 }
 
-type LlmProviderOptionsDraft = {
-  embeddingModel: string;
-  topK: string;
-  repeatPenalty: string;
-  numPredict: string;
-  maxTokens: string;
-  stop: string;
-  deploymentName: string;
-  embeddingDeploymentName: string;
-}
-
-const emptyLlmProviderOptionsDraft = (): LlmProviderOptionsDraft => ({
-  embeddingModel: "",
-  topK: "",
-  repeatPenalty: "",
-  numPredict: "",
-  maxTokens: "",
-  stop: "",
-  deploymentName: "",
-  embeddingDeploymentName: ""
-})
+// `maxTokens` is rendered as a top-level UI field and routed per vendor:
+//   - Ollama stores it on the `numPredict` entity column (Ollama's native "num_predict" param).
+//   - All other vendors store it inside providerOptionsJson.maxTokens.
+// Any other keys in providerOptionsJson are preserved as-is on save so
+// legacy / custom options are never silently dropped.
 
 const toText = (value: unknown) => value == null ? "" : String(value)
 
@@ -88,22 +69,19 @@ const parseJsonObject = (jsonValue?: string) => {
   return undefined
 }
 
-const parseLlmProviderOptionsDraft = (_vendorId: string | undefined, jsonValue?: string): LlmProviderOptionsDraft => {
+const parseLlmProviderOptions = (jsonValue?: string): { maxTokens: string; unknown: Record<string, unknown> } => {
   const parsed = parseJsonObject(jsonValue)
+  const unknown: Record<string, unknown> = {}
   if (!parsed) {
-    return emptyLlmProviderOptionsDraft()
+    return { maxTokens: "", unknown }
   }
-
-  return {
-    embeddingModel: toText(parsed.embeddingModel),
-    topK: toText(parsed.topK),
-    repeatPenalty: toText(parsed.repeatPenalty),
-    numPredict: toText(parsed.numPredict),
-    maxTokens: toText(parsed.maxTokens),
-    stop: Array.isArray(parsed.stop) ? parsed.stop.map((item) => String(item)).join(",") : toText(parsed.stop),
-    deploymentName: toText(parsed.deploymentName),
-    embeddingDeploymentName: toText(parsed.embeddingDeploymentName)
+  const maxTokens = toText(parsed.maxTokens)
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key !== "maxTokens") {
+      unknown[key] = value
+    }
   }
+  return { maxTokens, unknown }
 }
 
 const parseNumber = (value: string) => {
@@ -115,62 +93,7 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
-const buildLlmProviderOptionsFromDraft = (vendorId: string | undefined, draft: LlmProviderOptionsDraft) => {
-  const options: Record<string, unknown> = {}
-  const putText = (key: string, value: string) => {
-    const normalized = value.trim()
-    if (normalized) {
-      options[key] = normalized
-    }
-  }
-  const putNumber = (key: string, value: string) => {
-    const parsed = parseNumber(value)
-    if (parsed !== undefined) {
-      options[key] = parsed
-    }
-  }
-
-  if (vendorId === "OLLAMA") {
-    putText("embeddingModel", draft.embeddingModel)
-    putNumber("topK", draft.topK)
-    putNumber("repeatPenalty", draft.repeatPenalty)
-    putNumber("numPredict", draft.numPredict)
-    const stopItems = draft.stop
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0)
-    if (stopItems.length > 0) {
-      options.stop = stopItems
-    }
-  }
-
-  if (vendorId === "OPENAI") {
-    putText("embeddingModel", draft.embeddingModel)
-    putNumber("maxTokens", draft.maxTokens)
-  }
-
-  if (vendorId === "ANTHROPIC") {
-    putNumber("topK", draft.topK)
-    putNumber("maxTokens", draft.maxTokens)
-  }
-
-  if (vendorId === "GEMINI") {
-    putNumber("topK", draft.topK)
-    putNumber("maxTokens", draft.maxTokens)
-  }
-
-  if (vendorId === "GEMINI_OPENAI") {
-    putNumber("maxTokens", draft.maxTokens)
-  }
-
-  if (vendorId === "AZURE_OPENAI") {
-    putText("deploymentName", draft.deploymentName)
-    putText("embeddingDeploymentName", draft.embeddingDeploymentName)
-    putNumber("maxTokens", draft.maxTokens)
-  }
-
-  return options
-}
+const USES_NUM_PREDICT = (vendorId?: string) => vendorId === "OLLAMA"
 
 export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
@@ -180,9 +103,8 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
   const [open, setOpen] = useState(false);
   const [vendors, setVendors] = useState<TurLLMVendor[]>([]);
-  const [llmProviderOptionsDraft, setLlmProviderOptionsDraft] = useState<LlmProviderOptionsDraft>(
-    emptyLlmProviderOptionsDraft()
-  )
+  const [maxTokensInput, setMaxTokensInput] = useState<string>("")
+  const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const selectedVendorId = form.watch("turLLMVendor.id");
   const navigate = useNavigate()
 
@@ -196,25 +118,33 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       apiKey: "",
       providerOptionsJson: value.providerOptionsJson ?? ""
     });
-    setLlmProviderOptionsDraft(
-      parseLlmProviderOptionsDraft(value.turLLMVendor?.id, value.providerOptionsJson)
-    )
+    const { maxTokens: optionMaxTokens, unknown } = parseLlmProviderOptions(value.providerOptionsJson)
+    // Ollama stores its "max tokens" as numPredict on the entity; others as providerOptions.maxTokens.
+    if (USES_NUM_PREDICT(value.turLLMVendor?.id)) {
+      setMaxTokensInput(value.numPredict != null ? String(value.numPredict) : "")
+    } else {
+      setMaxTokensInput(optionMaxTokens)
+    }
+    setPreservedOptions(unknown)
   }, [value])
 
   const applyVendorDefaults = (vendorId: string) => {
-    const draft = emptyLlmProviderOptionsDraft()
+    // Defaults shared across every vendor — only applied on vendor change.
+    form.setValue("timeout", "PT60S", { shouldDirty: true });
+    form.setValue("maxRetries", 3, { shouldDirty: true });
+    form.setValue("responseFormat", "", { shouldDirty: true });
+
     if (vendorId === "OLLAMA") {
       form.setValue("url", "http://localhost:11434", { shouldDirty: true });
       form.setValue("modelName", "mistral", { shouldDirty: true });
       form.setValue("temperature", 0.8, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
+      form.setValue("topK", 6, { shouldDirty: true });
+      form.setValue("repeatPenalty", 1.1, { shouldDirty: true });
       form.setValue("seed", 42, { shouldDirty: true });
+      form.setValue("stop", "", { shouldDirty: true });
       form.setValue("supportedCapabilities", "RESPONSE_FORMAT_JSON_SCHEMA", { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.embeddingModel = "nomic-embed-text"
-      draft.topK = "6"
-      draft.repeatPenalty = "1.1"
-      draft.numPredict = "256"
+      setMaxTokensInput("256")
     }
     if (vendorId === "OPENAI") {
       form.setValue("url", "https://api.openai.com", { shouldDirty: true });
@@ -222,35 +152,34 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
       form.setValue("seed", 42, { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.embeddingModel = "text-embedding-3-small"
-      draft.maxTokens = "1024"
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
     }
     if (vendorId === "ANTHROPIC") {
       form.setValue("url", "https://api.anthropic.com", { shouldDirty: true });
       form.setValue("modelName", "claude-sonnet-4-20250514", { shouldDirty: true });
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.topK = "40"
-      draft.maxTokens = "1024"
+      form.setValue("topK", 40, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
     }
     if (vendorId === "GEMINI") {
       form.setValue("url", "", { shouldDirty: true });
       form.setValue("modelName", "gemini-2.0-flash", { shouldDirty: true });
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.topK = "40"
-      draft.maxTokens = "8192"
+      form.setValue("topK", 40, { shouldDirty: true });
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("8192")
     }
     if (vendorId === "GEMINI_OPENAI") {
       form.setValue("url", "https://generativelanguage.googleapis.com/v1beta/openai", { shouldDirty: true });
       form.setValue("modelName", "gemini-2.0-flash", { shouldDirty: true });
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.maxTokens = "8192"
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("8192")
     }
     if (vendorId === "AZURE_OPENAI") {
       form.setValue("url", "", { shouldDirty: true });
@@ -258,66 +187,20 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
       form.setValue("seed", 42, { shouldDirty: true });
-      form.setValue("timeout", "PT60S", { shouldDirty: true });
-      draft.deploymentName = "gpt-4o"
-      draft.embeddingDeploymentName = "text-embedding-ada-002"
-      draft.maxTokens = "1024"
-    }
-    setLlmProviderOptionsDraft(draft)
-  }
-
-  const setLlmDraftValue = (key: keyof LlmProviderOptionsDraft, fieldValue: string) => {
-    setLlmProviderOptionsDraft((prev) => ({ ...prev, [key]: fieldValue }))
-  }
-
-  const getProviderOptionsPlaceholder = (vendorId?: string) => {
-    if (vendorId === "OLLAMA") {
-      return '{\n  "embeddingModel": "nomic-embed-text",\n  "topK": 6,\n  "repeatPenalty": 1.1,\n  "numPredict": 256,\n  "stop": ["END", "STOP"]\n}'
-    }
-    if (vendorId === "OPENAI") {
-      return '{\n  "embeddingModel": "text-embedding-3-small",\n  "maxTokens": 1024\n}'
-    }
-    if (vendorId === "ANTHROPIC") {
-      return '{\n  "topK": 40,\n  "maxTokens": 1024\n}'
-    }
-    if (vendorId === "GEMINI") {
-      return '{\n  "topK": 40,\n  "maxTokens": 8192\n}'
-    }
-    if (vendorId === "GEMINI_OPENAI") {
-      return '{\n  "maxTokens": 8192\n}'
-    }
-    if (vendorId === "AZURE_OPENAI") {
-      return '{\n  "deploymentName": "gpt-4o",\n  "embeddingDeploymentName": "text-embedding-ada-002",\n  "maxTokens": 1024\n}'
-    }
-    return '{}'
-  }
-
-  const normalizeJson = (jsonValue?: string) => {
-    const normalized = jsonValue?.trim();
-    if (!normalized) {
-      return undefined;
-    }
-    try {
-      JSON.parse(normalized);
-      return normalized;
-    } catch {
-      toast.error(t("forms.common.invalidJson"));
-      return null;
+      form.setValue("supportedCapabilities", "", { shouldDirty: true });
+      setMaxTokensInput("1024")
     }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {
-    const rawProviderOptionsJson = normalizeJson(llmInstance.providerOptionsJson)
-    if (rawProviderOptionsJson === null) {
-      return;
-    }
+    const maxTokensParsed = parseNumber(maxTokensInput)
+    const usesNumPredict = USES_NUM_PREDICT(selectedVendorId)
 
-    const visualProviderOptions = buildLlmProviderOptionsFromDraft(selectedVendorId, llmProviderOptionsDraft)
-    const rawProviderOptions = parseJsonObject(rawProviderOptionsJson)
-    const mergedProviderOptions = {
-      ...visualProviderOptions,
-      ...(rawProviderOptions)
+    const visualProviderOptions: Record<string, unknown> = {}
+    if (!usesNumPredict && maxTokensParsed !== undefined) {
+      visualProviderOptions.maxTokens = maxTokensParsed
     }
+    const mergedProviderOptions = { ...preservedOptions, ...visualProviderOptions }
     const providerOptionsJson = Object.keys(mergedProviderOptions).length > 0
       ? JSON.stringify(mergedProviderOptions, null, 2)
       : undefined
@@ -325,6 +208,8 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
     const payload: TurLLMInstance = {
       ...llmInstance,
       apiKey: llmInstance.apiKey?.trim() || undefined,
+      // Ollama's "max tokens" lives on numPredict; everyone else uses providerOptions.maxTokens.
+      numPredict: usesNumPredict ? (maxTokensParsed ?? null) as unknown as number : llmInstance.numPredict,
       providerOptionsJson
     }
 
@@ -650,6 +535,84 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         />
                       </div>
                     )}
+                    {/* Top K — OLLAMA, ANTHROPIC, GEMINI */}
+                    {(selectedVendorId === "OLLAMA" || selectedVendorId === "ANTHROPIC" || selectedVendorId === "GEMINI") && (
+                      <div className="w-full">
+                        <FormField
+                          control={form.control}
+                          name="topK"
+                          render={({ field }) => (
+                            <FormItem className="w-full">
+                              <FormLabel>{t("forms.llm.topK")}</FormLabel>
+                              <div className="text-muted-foreground text-sm font-normal mt-1">
+                                {t("forms.llm.topKDesc")}
+                              </div>
+                              <FormControl>
+                                <Input placeholder="e.g., 40" type="number" className="w-full" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {/* Max Tokens — all vendors. Routed to numPredict for Ollama, providerOptions.maxTokens otherwise. */}
+                    {selectedVendorId && (
+                      <div className="w-full">
+                        <FormLabel>{t("forms.llm.maxTokens")}</FormLabel>
+                        <div className="text-muted-foreground text-sm font-normal mt-1">
+                          {t("forms.llm.maxTokensDesc")}
+                        </div>
+                        <Input
+                          placeholder="e.g., 1024"
+                          type="number"
+                          className="w-full mt-2"
+                          value={maxTokensInput}
+                          onChange={(event) => setMaxTokensInput(event.target.value)}
+                        />
+                      </div>
+                    )}
+                    {/* Repeat Penalty, Stop — OLLAMA only */}
+                    {selectedVendorId === "OLLAMA" && (
+                      <>
+                        <div className="w-full">
+                          <FormField
+                            control={form.control}
+                            name="repeatPenalty"
+                            render={({ field }) => (
+                              <FormItem className="w-full">
+                                <FormLabel>{t("forms.llm.repeatPenalty")}</FormLabel>
+                                <div className="text-muted-foreground text-sm font-normal mt-1">
+                                  {t("forms.llm.repeatPenaltyDesc")}
+                                </div>
+                                <FormControl>
+                                  <Input placeholder="e.g., 1.1" type="number" step="0.01" className="w-full" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="w-full">
+                          <FormField
+                            control={form.control}
+                            name="stop"
+                            render={({ field }) => (
+                              <FormItem className="w-full">
+                                <FormLabel>{t("forms.llm.stop")}</FormLabel>
+                                <div className="text-muted-foreground text-sm font-normal mt-1">
+                                  {t("forms.llm.stopDesc")}
+                                </div>
+                                <FormControl>
+                                  <Input placeholder="e.g., END,STOP" type="text" className="w-full" {...field} value={field.value ?? ""} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </>
+                    )}
                   </SectionCard.Content>
                 </SectionCard>
 
@@ -727,77 +690,6 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                             </div>
                             <FormControl>
                               <Input placeholder="e.g., 3" type="number" className="w-full" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    {/* Provider Options JSON */}
-                    <div className="w-full rounded-md border p-4 space-y-4">
-                      <div className="text-sm font-medium">{t("forms.llm.visualOptions")}</div>
-                      <div className="text-muted-foreground text-sm">
-                        {t("forms.llm.visualOptionsDesc")}
-                      </div>
-                      {selectedVendorId === "OLLAMA" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Embedding Model (e.g., nomic-embed-text)" value={llmProviderOptionsDraft.embeddingModel} onChange={(event) => setLlmDraftValue("embeddingModel", event.target.value)} />
-                          <Input placeholder="Top K (e.g., 6)" type="number" value={llmProviderOptionsDraft.topK} onChange={(event) => setLlmDraftValue("topK", event.target.value)} />
-                          <Input placeholder="Repeat Penalty (e.g., 1.1)" type="number" step="0.01" value={llmProviderOptionsDraft.repeatPenalty} onChange={(event) => setLlmDraftValue("repeatPenalty", event.target.value)} />
-                          <Input placeholder="Num Predict (e.g., 256)" type="number" value={llmProviderOptionsDraft.numPredict} onChange={(event) => setLlmDraftValue("numPredict", event.target.value)} />
-                          <Input placeholder="Stop (comma-separated, e.g., END,STOP)" value={llmProviderOptionsDraft.stop} onChange={(event) => setLlmDraftValue("stop", event.target.value)} />
-                        </div>
-                      )}
-                      {selectedVendorId === "OPENAI" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Embedding Model (e.g., text-embedding-3-small)" value={llmProviderOptionsDraft.embeddingModel} onChange={(event) => setLlmDraftValue("embeddingModel", event.target.value)} />
-                          <Input placeholder="Max Tokens (e.g., 1024)" type="number" value={llmProviderOptionsDraft.maxTokens} onChange={(event) => setLlmDraftValue("maxTokens", event.target.value)} />
-                        </div>
-                      )}
-                      {selectedVendorId === "ANTHROPIC" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Top K (e.g., 40)" type="number" value={llmProviderOptionsDraft.topK} onChange={(event) => setLlmDraftValue("topK", event.target.value)} />
-                          <Input placeholder="Max Tokens (e.g., 1024)" type="number" value={llmProviderOptionsDraft.maxTokens} onChange={(event) => setLlmDraftValue("maxTokens", event.target.value)} />
-                        </div>
-                      )}
-                      {selectedVendorId === "GEMINI" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Top K (e.g., 40)" type="number" value={llmProviderOptionsDraft.topK} onChange={(event) => setLlmDraftValue("topK", event.target.value)} />
-                          <Input placeholder="Max Tokens (e.g., 8192)" type="number" value={llmProviderOptionsDraft.maxTokens} onChange={(event) => setLlmDraftValue("maxTokens", event.target.value)} />
-                        </div>
-                      )}
-                      {selectedVendorId === "GEMINI_OPENAI" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Max Tokens (e.g., 8192)" type="number" value={llmProviderOptionsDraft.maxTokens} onChange={(event) => setLlmDraftValue("maxTokens", event.target.value)} />
-                        </div>
-                      )}
-                      {selectedVendorId === "AZURE_OPENAI" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input placeholder="Chat Deployment Name (e.g., gpt-4o)" value={llmProviderOptionsDraft.deploymentName} onChange={(event) => setLlmDraftValue("deploymentName", event.target.value)} />
-                          <Input placeholder="Embedding Deployment Name (e.g., text-embedding-ada-002)" value={llmProviderOptionsDraft.embeddingDeploymentName} onChange={(event) => setLlmDraftValue("embeddingDeploymentName", event.target.value)} />
-                          <Input placeholder="Max Tokens (e.g., 1024)" type="number" value={llmProviderOptionsDraft.maxTokens} onChange={(event) => setLlmDraftValue("maxTokens", event.target.value)} />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full">
-                      <FormField
-                        control={form.control}
-                        name="providerOptionsJson"
-                        render={({ field }) => (
-                          <FormItem className="w-full">
-                            <FormLabel>{t("forms.llm.providerOptionsJson")}</FormLabel>
-                            <div className="text-muted-foreground text-sm font-normal mt-1">
-                              {t("forms.llm.providerOptionsJsonDesc")}
-                            </div>
-                            <FormControl>
-                              <Textarea
-                                placeholder={getProviderOptionsPlaceholder(selectedVendorId)}
-                                className="resize-y w-full min-h-40"
-                                rows={10}
-                                {...field}
-                                value={field.value ?? ""}
-                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

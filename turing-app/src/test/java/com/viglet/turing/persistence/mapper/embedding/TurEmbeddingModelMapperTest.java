@@ -36,7 +36,6 @@ class TurEmbeddingModelMapperTest {
         entity.setProviderType("openai");
         entity.setModelReference("text-embedding-ada-002");
         entity.setBatchSize(256);
-        entity.setEnableGpu(true);
         entity.setModelPath("/models/ada");
         entity.setTokenizerPath("/tokenizers/ada");
         entity.setEnabled(1);
@@ -52,7 +51,6 @@ class TurEmbeddingModelMapperTest {
         dto.setProviderType("ollama");
         dto.setModelReference("nomic-embed-text:latest");
         dto.setBatchSize(128);
-        dto.setEnableGpu(false);
         dto.setModelPath("/models/nomic");
         dto.setTokenizerPath("/tokenizers/nomic");
         dto.setEnabled(0);
@@ -73,7 +71,6 @@ class TurEmbeddingModelMapperTest {
         assertEquals("openai", dto.getProviderType());
         assertEquals("text-embedding-ada-002", dto.getModelReference());
         assertEquals(256, dto.getBatchSize());
-        assertEquals(true, dto.isEnableGpu());
         assertEquals("/models/ada", dto.getModelPath());
         assertEquals("/tokenizers/ada", dto.getTokenizerPath());
         assertEquals(1, dto.getEnabled());
@@ -96,7 +93,6 @@ class TurEmbeddingModelMapperTest {
         assertEquals("Nomic embedding model", entity.getDescription());
         assertEquals("ollama", entity.getProviderType());
         assertEquals(128, entity.getBatchSize());
-        assertEquals(false, entity.isEnableGpu());
     }
 
     @Test
@@ -133,7 +129,6 @@ class TurEmbeddingModelMapperTest {
         assertEquals("OpenAI embedding model", target.getDescription());
         assertEquals("openai", target.getProviderType());
         assertEquals(256, target.getBatchSize());
-        assertEquals(true, target.isEnableGpu());
     }
 
     @Test

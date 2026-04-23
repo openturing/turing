@@ -56,9 +56,6 @@ public class TurEmbeddingModel implements Serializable {
 	@Column
 	private Integer batchSize;
 
-	@Column(nullable = false)
-	private boolean enableGpu;
-
 	@Column(length = 500)
 	private String modelPath;
 

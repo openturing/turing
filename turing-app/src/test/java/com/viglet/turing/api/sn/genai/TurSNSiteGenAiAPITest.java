@@ -24,11 +24,14 @@ import org.mockito.quality.Strictness;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.system.TurGlobalSettingsService;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -44,6 +47,15 @@ class TurSNSiteGenAiAPITest {
 
     @Mock
     private TurGenAiContextFactory turGenAiContextFactory;
+
+    @Mock
+    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+
+    @Mock
+    private TurSNSiteSearchService turSNSiteSearchService;
+
+    @Mock
+    private TurGlobalSettingsService turGlobalSettingsService;
 
     @InjectMocks
     private TurSNSiteGenAiAPI api;

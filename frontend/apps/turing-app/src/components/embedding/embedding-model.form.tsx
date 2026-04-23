@@ -68,7 +68,6 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
       modelPath: value.modelPath ?? "",
       tokenizerPath: value.tokenizerPath ?? "",
       description: value.description ?? "",
-      enableGpu: value.enableGpu ?? false,
       enabled: value.enabled ?? 0,
     })
   }, [value])
@@ -379,28 +378,6 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="enableGpu"
-                    render={({ field }) => (
-                      <FormItemTwoColumns>
-                        <FormItemTwoColumns.Left>
-                          <FormItemTwoColumns.Label>{t("forms.embedding.enableGpu")}</FormItemTwoColumns.Label>
-                          <FormItemTwoColumns.Description>
-                            {t("forms.embedding.enableGpuDesc")}
-                          </FormItemTwoColumns.Description>
-                        </FormItemTwoColumns.Left>
-                        <FormItemTwoColumns.Right>
-                          <FormControl>
-                            <GradientSwitch
-                              checked={field.value === true}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItemTwoColumns.Right>
-                      </FormItemTwoColumns>
-                    )}
-                  />
                 </SectionCard.Content>
               </SectionCard>
 

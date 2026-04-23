@@ -177,10 +177,7 @@ public class TurSNSiteAPI {
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });
             turSNSiteRepository.save(turSNSiteEdit);
-            TurSNSiteDto response = new TurSNSiteDto();
-            response.setId(turSNSiteEdit.getId());
-            response.setName(turSNSiteEdit.getName());
-            return response;
+            return turSNSiteMapper.toDto(turSNSiteEdit);
         }).orElse(new TurSNSiteDto()));
     }
 
