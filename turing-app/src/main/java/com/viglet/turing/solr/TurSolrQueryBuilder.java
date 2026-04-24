@@ -286,7 +286,15 @@ public class TurSolrQueryBuilder {
     @NotNull
     private static List<String> getFilterQueryValue(List<String> value) {
         return value.stream()
-                .map(fq -> queryWithoutExpression(fq) ? addDoubleQuotesToValue(fq) : fq).toList();
+                .map(fq -> queryWithoutExpression(fq) ? addDoubleQuotesToValue(fq) : fq)
+                .map(TurSolrQueryBuilder::wrapNegationWithMatchAll).toList();
+    }
+
+    // Solr cannot evaluate a purely negative boolean clause like `-field:"value"`
+    // when it stands alone inside parentheses (e.g. `(A AND (-id:"x"))`). Prefix
+    // such items with `*:*` so they become well-formed: `*:* -field:"value"`.
+    private static String wrapNegationWithMatchAll(String fq) {
+        return fq != null && fq.startsWith(HYPHEN) ? "*:* " + fq : fq;
     }
 
     private TurSNFacetMapForFilterQuery getFilterQueryMap(TurSNFilterParams turSNFilterParams,

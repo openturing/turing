@@ -1211,6 +1211,48 @@ class TurSolrQueryBuilderTest {
                 assertThat(query.getFilterQueries()[0]).contains("category:\"books\"");
         }
 
+        @Test
+        void testPrepareSolrQueryWrapsNegationFilterQueryWithMatchAll() {
+                TurSNSite site = new TurSNSite();
+                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
+                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
+                site.setRowsPerPage(10);
+                site.setSpellCheck(0);
+                site.setSpellCheckFixes(0);
+
+                TurSNSiteFieldExt topicField = TurSNSiteFieldExt.builder()
+                                .name("temas-secundarios")
+                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
+                                .build();
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
+                                .thenReturn(List.of(topicField));
+                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabledAndType(site, 1, 1,
+                                com.viglet.turing.commons.se.field.TurSEFieldType.DATE))
+                                .thenReturn(Collections.emptyList());
+                when(turSNSiteFieldExtRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptyList());
+                when(turSNRankingExpressionRepository.findByTurSNSite(any(), eq(site)))
+                                .thenReturn(Collections.emptySet());
+
+                TurSNSearchParams params = new TurSNSearchParams();
+                params.setQ("query");
+                params.setRows(10);
+                params.setFq(List.of("temas-secundarios:Políticas Públicas",
+                                "-id:/content/excluded-page"));
+                TurSEParameters seParameters = new TurSEParameters(params, new TurSNSitePostParamsBean());
+
+                SolrQuery query = builder().prepareSolrQuery(
+                                contextFrom(seParameters, new TurSNSitePostParamsBean()), site,
+                                seParameters, new TurSESpellCheckResult(false, ""));
+
+                assertThat(query.getFilterQueries()).hasSize(1);
+                String fq = query.getFilterQueries()[0];
+                assertThat(fq)
+                                .contains("temas-secundarios:\"Políticas Públicas\"")
+                                .contains("*:* -id:\"/content/excluded-page\"")
+                                .doesNotContain("(-id:");
+        }
+
         // --- buildFilterQueryByOperator (via reflection) ---
 
         private static String invokeBuildFilterQueryByOperator(
