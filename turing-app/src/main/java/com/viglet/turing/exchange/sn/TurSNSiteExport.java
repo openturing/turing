@@ -33,11 +33,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.merge.TurSNSiteMergeProvidersRepository;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
@@ -56,6 +60,7 @@ public class TurSNSiteExport {
 	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurSNSiteExportFileService exportFileService;
 	private final TurSNSiteContentExchangeService contentExchangeService;
+	private final TransactionTemplate readOnlyTransactionTemplate;
 	private final ConcurrentHashMap<String, Path> asyncExportFiles = new ConcurrentHashMap<>();
 
 	public TurSNSiteExport(TurSNSiteRepository turSNSiteRepository,
@@ -63,13 +68,16 @@ public class TurSNSiteExport {
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
 			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
 			TurSNSiteExportFileService exportFileService,
-			TurSNSiteContentExchangeService contentExchangeService) {
+			TurSNSiteContentExchangeService contentExchangeService,
+			PlatformTransactionManager transactionManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.turSNSiteSpotlightRepository = turSNSiteSpotlightRepository;
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
 		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
 		this.exportFileService = exportFileService;
 		this.contentExchangeService = contentExchangeService;
+		this.readOnlyTransactionTemplate = new TransactionTemplate(transactionManager);
+		this.readOnlyTransactionTemplate.setReadOnly(true);
 	}
 
 	public StreamingResponseBody exportAll(HttpServletResponse response) {
@@ -113,6 +121,29 @@ public class TurSNSiteExport {
 		turSNSite.setTurSNSiteCustomSorts(new HashSet<>(customSorts));
 	}
 
+	private void initializeLazyAssociations(TurSNSite site) {
+		Hibernate.initialize(site.getTurSNSiteFields());
+		Hibernate.initialize(site.getTurSNSiteFieldExts());
+		Hibernate.initialize(site.getTurSNSiteLocales());
+		Hibernate.initialize(site.getTurSNRankingExpressions());
+		if (site.getTurSEInstance() != null) {
+			Hibernate.initialize(site.getTurSEInstance());
+		}
+		TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+		if (genAi != null) {
+			Hibernate.initialize(genAi);
+			if (genAi.getTurEmbeddingModelInstance() != null) {
+				Hibernate.initialize(genAi.getTurEmbeddingModelInstance());
+			}
+			if (genAi.getTurLLMInstance() != null) {
+				Hibernate.initialize(genAi.getTurLLMInstance());
+			}
+			if (genAi.getTurStoreInstance() != null) {
+				Hibernate.initialize(genAi.getTurStoreInstance());
+			}
+		}
+	}
+
 	private StreamingResponseBody createSNSiteZipResponse(HttpServletResponse response, List<TurSNSite> turSNSites,
 			String prefixZipFileName, Map<String, Map<String, List<Map<String, Object>>>> contentMap,
 			boolean includeTemplate) {
@@ -146,11 +177,17 @@ public class TurSNSiteExport {
 	}
 
 	public void exportBySiteIdAsync(String siteId, boolean includeContent, boolean includeTemplate, String taskId) {
-		List<TurSNSite> turSNSites = turSNSiteRepository.findById(siteId).map(List::of).orElse(List.of());
-		if (turSNSites.isEmpty()) {
+		List<TurSNSite> turSNSites = readOnlyTransactionTemplate.execute(status -> {
+			List<TurSNSite> sites = turSNSiteRepository.findByIdNoCache(siteId).map(List::of).orElse(List.of());
+			sites.forEach(site -> {
+				hydrateExportCollections(site);
+				initializeLazyAssociations(site);
+			});
+			return sites;
+		});
+		if (turSNSites == null || turSNSites.isEmpty()) {
 			return;
 		}
-		turSNSites.forEach(this::hydrateExportCollections);
 
 		Map<String, Map<String, List<Map<String, Object>>>> contentMap = null;
 		if (includeContent) {

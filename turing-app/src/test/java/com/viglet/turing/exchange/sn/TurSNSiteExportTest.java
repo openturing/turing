@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -43,8 +44,10 @@ class TurSNSiteExportTest {
         TurSNSiteExportFileService exportFileService = mock(TurSNSiteExportFileService.class);
 
         TurSNSiteContentExchangeService contentExchangeService = mock(TurSNSiteContentExchangeService.class);
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
         TurSNSiteExport turSNSiteExport = new TurSNSiteExport(siteRepository, spotlightRepository,
-                mergeProvidersRepository, customSortRepository, exportFileService, contentExchangeService);
+                mergeProvidersRepository, customSortRepository, exportFileService, contentExchangeService,
+                transactionManager);
 
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
