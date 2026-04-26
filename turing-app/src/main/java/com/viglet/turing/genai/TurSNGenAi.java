@@ -518,9 +518,10 @@ public class TurSNGenAi {
     }
 
     private void addDocument(TurGenAiContext context, String header, String body, Map<String, Object> metadata) {
-        List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata);
-        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
         Object sourceId = metadata.get(SOURCE_ID);
+        String idPrefix = sourceId == null ? null : sourceId.toString();
+        List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata, idPrefix);
+        String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
         log.info("RAG indexing {} chunk(s) for Object ID '{}' into vector store '{}' — metadata={}",
                 documents.size(), sourceId, vectorStoreType, metadata);
         for (int i = 0; i < documents.size(); i++) {

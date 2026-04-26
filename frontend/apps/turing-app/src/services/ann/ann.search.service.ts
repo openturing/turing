@@ -16,7 +16,10 @@ export interface TurAnnSearchResponse {
   query: string;
   locale: string;
   topK: number;
+  page: number;
+  pageSize: number;
   totalHits: number;
+  hasMore: boolean;
   results: TurAnnResultItem[];
   facets: Record<string, TurAnnFacetItem[]>;
 }
@@ -25,6 +28,8 @@ export interface TurAnnSearchRequest {
   query: string;
   locale?: string;
   topK?: number;
+  page?: number;
+  pageSize?: number;
   filters?: Record<string, string[]>;
 }
 

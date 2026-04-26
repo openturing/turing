@@ -213,9 +213,12 @@ export default function StoreInstanceCollectionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {collections?.map((col) => (
-                  <CollectionRow key={col.id} col={col} storeId={id} onRefresh={loadCollections} />
-                ))}
+                {collections
+                  ?.slice()
+                  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+                  .map((col) => (
+                    <CollectionRow key={col.id} col={col} storeId={id} onRefresh={loadCollections} />
+                  ))}
               </TableBody>
             </Table>
           </div>

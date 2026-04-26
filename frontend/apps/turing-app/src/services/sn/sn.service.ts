@@ -93,6 +93,34 @@ export class TurSNSiteService {
     return response;
   }
 
+  async reindexGenAi(siteId: string, taskId: string): Promise<string | null> {
+    return axios
+      .post<{ taskId: string }>(`/sn/${siteId}/genai/reindex`, null, {
+        params: { taskId },
+      })
+      .then((res) => res.data.taskId)
+      .catch((error) => {
+        console.error("Failed to start RAG reindex", error);
+        return null;
+      });
+  }
+
+  async getActiveReindex(siteId: string): Promise<ActiveReindexStatus | null> {
+    try {
+      const response = await axios.get<ActiveReindexStatus>(
+        `/sn/${siteId}/genai/reindex/status`,
+      );
+      // 204 No Content → axios returns response with empty data
+      if (response.status === 204 || !response.data) {
+        return null;
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Failed to fetch active reindex status", error);
+      return null;
+    }
+  }
+
   async subscribeExportProgress(
     taskId: string,
     onProgress: (data: ContentExchangeProgress) => void,
@@ -146,4 +174,8 @@ export interface ContentExchangeProgress {
   currentLocale: string;
   phase: string;
   estimatedRemainingMillis: number;
+}
+
+export interface ActiveReindexStatus extends ContentExchangeProgress {
+  taskId: string;
 }

@@ -11,6 +11,7 @@ import {
   IconAtom,
   IconBraces,
   IconChevronDown,
+  IconChevronLeft,
   IconChevronRight,
   IconFilterX,
   IconLoader2,
@@ -24,6 +25,9 @@ import { JsonSheet } from "../components/json-sheet";
 const annSearchService = new TurAnnSearchService();
 
 const DEFAULT_TOP_K = 20;
+const DEFAULT_PAGE_SIZE = 20;
+
+const RESERVED_PARAMS = new Set(["q", "_setlocale", "topK", "page", "pageSize"]);
 
 type SelectedFilters = Record<string, string[]>;
 
@@ -35,6 +39,7 @@ export default function AnnSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const initialLocale = searchParams.get("_setlocale") || "";
+  const currentPage = Math.max(0, Number(searchParams.get("page") ?? 0) || 0);
 
   const [inputValue, setInputValue] = useState(initialQuery);
   const [response, setResponse] = useState<TurAnnSearchResponse | null>(null);
@@ -46,7 +51,7 @@ export default function AnnSearchPage() {
   const selectedFilters = useMemo<SelectedFilters>(() => {
     const result: SelectedFilters = {};
     for (const [key, value] of searchParams.entries()) {
-      if (key === "q" || key === "_setlocale" || key === "topK") continue;
+      if (RESERVED_PARAMS.has(key)) continue;
       if (!result[key]) result[key] = [];
       result[key].push(value);
     }
@@ -54,18 +59,17 @@ export default function AnnSearchPage() {
   }, [searchParams]);
 
   const runSearch = useCallback(
-    async (query: string, filters: SelectedFilters, locale: string) => {
-      if (!query.trim()) {
-        setResponse(null);
-        return;
-      }
+    async (query: string, filters: SelectedFilters, locale: string, page: number) => {
+      const isBrowseAll = !query.trim() || query.trim() === "*";
       setLoading(true);
       setError(null);
       try {
         const data = await annSearchService.search(site, {
-          query,
+          query: isBrowseAll ? "*" : query,
           locale: locale || undefined,
           topK: DEFAULT_TOP_K,
+          page,
+          pageSize: DEFAULT_PAGE_SIZE,
           filters: Object.keys(filters).length > 0 ? filters : undefined,
         });
         setResponse(data);
@@ -88,9 +92,7 @@ export default function AnnSearchPage() {
   );
 
   useEffect(() => {
-    if (initialQuery.trim()) {
-      runSearch(initialQuery, selectedFilters, initialLocale);
-    }
+    runSearch(initialQuery, selectedFilters, initialLocale, currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -102,6 +104,7 @@ export default function AnnSearchPage() {
     } else {
       next.delete("q");
     }
+    next.delete("page");
     setSearchParams(next);
   };
 
@@ -113,6 +116,17 @@ export default function AnnSearchPage() {
       current.filter((v) => v !== value).forEach((v) => next.append(key, v));
     } else {
       [...current, value].forEach((v) => next.append(key, v));
+    }
+    next.delete("page");
+    setSearchParams(next);
+  };
+
+  const goToPage = (page: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (page <= 0) {
+      next.delete("page");
+    } else {
+      next.set("page", String(page));
     }
     setSearchParams(next);
   };
@@ -166,13 +180,6 @@ export default function AnnSearchPage() {
           </div>
         )}
 
-        {!response && !loading && !error && (
-          <div className="text-center py-20 text-muted-foreground">
-            <IconAtom className="size-12 mx-auto mb-3 opacity-30" />
-            <p>{t("ann.empty")}</p>
-          </div>
-        )}
-
         {response && (
           <div className="flex gap-8">
             <aside className="w-64 shrink-0 space-y-3">
@@ -200,20 +207,11 @@ export default function AnnSearchPage() {
             </aside>
 
             <section className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
-                <span>
-                  {t("ann.resultsCount", { count: response.totalHits, topK: response.topK })}
-                </span>
-                {hasFilters && (
-                  <button
-                    type="button"
-                    className="text-blue-600 hover:underline"
-                    onClick={clearFilters}
-                  >
-                    {t("ann.clearFilters")}
-                  </button>
-                )}
-              </div>
+              <ResultsToolbar
+                response={response}
+                hasFilters={hasFilters}
+                onClearFilters={clearFilters}
+              />
 
               {response.results.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
@@ -232,6 +230,8 @@ export default function AnnSearchPage() {
                   ))}
                 </div>
               )}
+
+              <Pagination response={response} onGoToPage={goToPage} />
             </section>
           </div>
         )}
@@ -361,4 +361,87 @@ function expandMetaValues(value: unknown): string[] {
   }
   if (typeof value === "object") return [JSON.stringify(value)];
   return [String(value)];
+}
+
+interface ResultsToolbarProps {
+  response: TurAnnSearchResponse;
+  hasFilters: boolean;
+  onClearFilters: () => void;
+}
+
+function ResultsToolbar({ response, hasFilters, onClearFilters }: Readonly<ResultsToolbarProps>) {
+  const { t } = useTranslation();
+  const isBrowseAll = response.pageSize > 0 && response.topK === 0;
+  const start = response.page * response.pageSize + 1;
+  const shownEnd = response.page * response.pageSize + response.results.length;
+
+  return (
+    <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
+      <span>
+        {isBrowseAll
+          ? response.totalHits > 0
+            ? t("ann.browseRange", {
+                start: response.results.length === 0 ? 0 : start,
+                end: shownEnd,
+                total: response.totalHits,
+              })
+            : t("ann.browsePage", { page: response.page + 1, count: response.results.length })
+          : t("ann.resultsCount", { count: response.totalHits, topK: response.topK })}
+      </span>
+      {hasFilters && (
+        <button type="button" className="text-blue-600 hover:underline" onClick={onClearFilters}>
+          {t("ann.clearFilters")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+interface PaginationProps {
+  response: TurAnnSearchResponse;
+  onGoToPage: (page: number) => void;
+}
+
+function Pagination({ response, onGoToPage }: Readonly<PaginationProps>) {
+  const { t } = useTranslation();
+  const isBrowseAll = response.pageSize > 0 && response.topK === 0;
+  if (!isBrowseAll) return null;
+
+  const hasPrev = response.page > 0;
+  const hasNext = response.hasMore;
+  const totalPages = response.totalHits > 0 && response.pageSize > 0
+    ? Math.ceil(response.totalHits / response.pageSize)
+    : 0;
+
+  if (!hasPrev && !hasNext) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 pt-6 mt-2 border-t border-border/40">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={!hasPrev}
+        onClick={() => onGoToPage(response.page - 1)}
+      >
+        <IconChevronLeft className="size-4" />
+        {t("ann.prev")}
+      </Button>
+      <span className="text-xs text-muted-foreground tabular-nums px-3">
+        {totalPages > 0
+          ? t("ann.pageOf", { current: response.page + 1, total: totalPages })
+          : t("ann.pageNumber", { page: response.page + 1 })}
+      </span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={!hasNext}
+        onClick={() => onGoToPage(response.page + 1)}
+      >
+        {t("ann.next")}
+        <IconChevronRight className="size-4" />
+      </Button>
+    </div>
+  );
 }

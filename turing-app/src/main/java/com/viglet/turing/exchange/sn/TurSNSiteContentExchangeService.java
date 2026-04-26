@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -101,6 +102,32 @@ public class TurSNSiteContentExchangeService {
 
     public void removeProgress(String taskId) {
         progressMap.remove(taskId);
+    }
+
+    /**
+     * Returns the in-flight RAG reindex task id for the given site, or
+     * {@link Optional#empty()} when none is running. Used by the GenAI form
+     * to resume the progress UI after the admin navigates away and back —
+     * the task itself keeps running on a virtual thread, the frontend just
+     * re-subscribes to its SSE channel.
+     * <p>
+     * Tasks are matched by the {@code rag-reindex-{siteId}-{timestamp}}
+     * naming convention used by {@code TurSNSiteAPI.turSNSiteGenAiReindex};
+     * only entries whose phase is not {@code completed} are considered
+     * active.
+     *
+     * @since 2026.2.4
+     */
+    public Optional<String> findActiveReindexTask(String siteId) {
+        if (siteId == null || siteId.isBlank()) {
+            return Optional.empty();
+        }
+        String prefix = "rag-reindex-" + siteId + "-";
+        return progressMap.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(prefix))
+                .filter(e -> !"completed".equals(e.getValue().phase()))
+                .map(Map.Entry::getKey)
+                .max(java.util.Comparator.naturalOrder());
     }
 
     public void updatePhase(String taskId, String phase) {
@@ -228,5 +255,94 @@ public class TurSNSiteContentExchangeService {
                     totalDocs, processedSoFar, "", "completed", startTime));
         }
         return totalIndexed;
+    }
+
+    /**
+     * Re-feeds every document already indexed in the search engine into the
+     * RAG vector store, locale by locale. Used by the "Reindex All" admin
+     * action — useful after RAG settings change (chunker, embedding model,
+     * field partitioning) so existing content is re-embedded without
+     * re-importing from sources.
+     * <p>
+     * Loads the site by id <i>inside</i> the transaction (with
+     * {@code findByIdNoCache} to bypass the {@link com.viglet.turing.persistence.repository.sn.TurSNSiteRepository}
+     * cache that returns entities attached to closed sessions) so lazy
+     * associations like {@code turSNSiteLocales} and {@code turSNSiteFields}
+     * resolve correctly when this runs on a virtual thread without OSIV.
+     * <p>
+     * Progress is stored under {@code taskId} via the same
+     * {@link ContentExchangeProgress} channel used by export/import, so the
+     * existing SSE progress endpoint streams it transparently.
+     *
+     * @return total documents successfully re-fed into the vector store.
+     * @since 2026.2.4
+     */
+    @Transactional(readOnly = true)
+    public int reindexVectorStore(String siteId, String taskId) {
+        TurSNSite turSNSite = turSNSiteRepository.findByIdNoCache(siteId).orElse(null);
+        if (turSNSite == null) {
+            log.warn("RAG reindex skipped: site '{}' not found", siteId);
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    0, 0, "", "completed", System.currentTimeMillis()));
+            return 0;
+        }
+        var genAi = turSNSite.getTurSNSiteGenAi();
+        if (genAi == null || !genAi.isEnabled()) {
+            log.warn("RAG reindex skipped for site '{}': GenAI not enabled", turSNSite.getName());
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    0, 0, "", "completed", System.currentTimeMillis()));
+            return 0;
+        }
+
+        List<TurSNSiteLocale> locales = turSNSiteLocaleRepository.findByTurSNSite(turSNSite);
+        TurSearchEnginePlugin plugin = pluginFactory.getPluginForSite(turSNSite);
+        Map<String, TurSNSiteField> siteFieldMap = turSNSiteFieldService.toMap(turSNSite);
+
+        long totalDocs = 0;
+        for (TurSNSiteLocale locale : locales) {
+            totalDocs += plugin.getDocumentTotal(locale);
+        }
+        log.info("RAG reindex starting for site '{}': locales={}, totalDocuments={}",
+                turSNSite.getName(), locales.size(), totalDocs);
+
+        long startTime = System.currentTimeMillis();
+        progressMap.put(taskId, new ContentExchangeProgress(
+                (int) totalDocs, 0, "", "counting", startTime));
+
+        int processedSoFar = 0;
+        int reindexed = 0;
+        for (TurSNSiteLocale siteLocale : locales) {
+            String localeKey = siteLocale.getLanguage().toString();
+            Locale locale = siteLocale.getLanguage();
+            progressMap.put(taskId, new ContentExchangeProgress(
+                    (int) totalDocs, processedSoFar, localeKey, "reindexing", startTime));
+
+            int start = 0;
+            boolean hasMore = true;
+            while (hasMore) {
+                List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
+                        start, EXPORT_PAGE_SIZE);
+                for (Map<String, Object> doc : page) {
+                    try {
+                        turSNGenAi.addDocument(turSNSite, locale, doc);
+                        reindexed++;
+                    } catch (Exception e) {
+                        log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
+                                doc.getOrDefault("id", "unknown"), localeKey, e.getMessage());
+                    }
+                    processedSoFar++;
+                }
+                progressMap.put(taskId, new ContentExchangeProgress(
+                        (int) totalDocs, processedSoFar, localeKey, "reindexing", startTime));
+                start += EXPORT_PAGE_SIZE;
+                hasMore = page.size() == EXPORT_PAGE_SIZE;
+            }
+        }
+
+        progressMap.put(taskId, new ContentExchangeProgress(
+                (int) totalDocs, processedSoFar, "", "completed", startTime));
+        log.info("RAG reindex finished for site '{}': {}/{} documents re-embedded",
+                turSNSite.getName(), reindexed, totalDocs);
+        return reindexed;
     }
 }

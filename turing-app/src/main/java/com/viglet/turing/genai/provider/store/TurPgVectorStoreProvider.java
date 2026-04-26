@@ -1,5 +1,7 @@
 package com.viglet.turing.genai.provider.store;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -13,6 +15,9 @@ import org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
@@ -37,6 +42,10 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
     private static final String DEFAULT_TABLE_NAME = "vector_store";
     private static final String DEFAULT_SCHEMA_NAME = "public";
     private static final String SCHEMA_NAME_OPTION = "schemaName";
+
+    private static final ObjectMapper METADATA_MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> METADATA_TYPE = new TypeReference<>() {
+    };
 
     private final TurProviderOptionsParser optionsParser;
     private final ConcurrentHashMap<String, HikariDataSource> dataSourceCache = new ConcurrentHashMap<>();
@@ -241,6 +250,109 @@ public class TurPgVectorStoreProvider implements TurGenAiStoreProvider {
         } catch (Exception e) {
             log.debug("Failed to count documents for {}: {}", tableName, e.getMessage());
             return 0;
+        }
+    }
+
+    @Override
+    public TurStoreChunkPage listChunks(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            int page,
+            int pageSize,
+            Map<String, List<String>> filters) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        JdbcTemplate jdbcTemplate = buildJdbcTemplate(turStoreInstance, decryptedCredential, options);
+        String schemaName = firstNonBlank(
+                optionsParser.stringValue(options, SCHEMA_NAME_OPTION), DEFAULT_SCHEMA_NAME);
+        String quotedTable = quoteIdentifier(schemaName) + "." + quoteIdentifier(collectionName);
+
+        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePage = Math.max(0, page);
+        int offset = safePage * safePageSize;
+
+        // Build a parameterized WHERE clause from the filter map. Each key/list
+        // becomes a `metadata ->> 'key' IN (?, ?, ...)` clause; multiple keys
+        // are joined with AND. Keys are sanitized to identifier-safe characters
+        // because they're interpolated into the SQL (the values are bound).
+        List<Object> bindings = new ArrayList<>();
+        StringBuilder whereClause = new StringBuilder();
+        if (filters != null && !filters.isEmpty()) {
+            for (Map.Entry<String, List<String>> e : filters.entrySet()) {
+                String key = sanitizeMetadataKey(e.getKey());
+                List<String> values = e.getValue();
+                if (key == null || values == null || values.isEmpty()) {
+                    continue;
+                }
+                List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
+                if (nonBlank.isEmpty()) {
+                    continue;
+                }
+                if (whereClause.length() > 0) {
+                    whereClause.append(" AND ");
+                }
+                String placeholders = String.join(",", nonBlank.stream().map(v -> "?").toList());
+                whereClause.append("metadata ->> '").append(key).append("' IN (").append(placeholders).append(")");
+                bindings.addAll(nonBlank);
+            }
+        }
+        String whereSql = whereClause.length() > 0 ? " WHERE " + whereClause : "";
+
+        long total;
+        try {
+            String countSql = "SELECT COUNT(*) FROM " + quotedTable + whereSql;
+            Long c = jdbcTemplate.queryForObject(countSql, Long.class, bindings.toArray());
+            total = c != null ? c : 0L;
+        } catch (Exception e) {
+            log.warn("[PGVector] Failed to count chunks for '{}': {}", collectionName, e.getMessage());
+            total = -1L;
+        }
+
+        // Order by id for stable pagination across calls. Bind values are
+        // appended after limit/offset, so the bindings list is rebuilt.
+        String selectSql = "SELECT id::text AS id, content, metadata FROM " + quotedTable
+                + whereSql + " ORDER BY id LIMIT ? OFFSET ?";
+        List<Object> selectBindings = new ArrayList<>(bindings);
+        selectBindings.add(safePageSize);
+        selectBindings.add(offset);
+
+        List<TurStoreChunkPage.Chunk> chunks;
+        try {
+            chunks = jdbcTemplate.query(selectSql, (rs, i) -> {
+                String id = rs.getString("id");
+                String content = rs.getString("content");
+                String metadataJson = rs.getString("metadata");
+                Map<String, Object> metadata = parseMetadata(metadataJson);
+                return new TurStoreChunkPage.Chunk(id, content == null ? "" : content, metadata);
+            }, selectBindings.toArray());
+        } catch (Exception e) {
+            log.warn("[PGVector] Failed to list chunks for '{}' (page={}, pageSize={}): {}",
+                    collectionName, page, pageSize, e.getMessage());
+            return new TurStoreChunkPage(List.of(), total);
+        }
+        return new TurStoreChunkPage(chunks, total);
+    }
+
+    /**
+     * Allows letters, digits, and underscores in metadata keys interpolated
+     * into the SQL — anything else is rejected (returns {@code null}) so a
+     * malicious filter key cannot break out of the {@code ->>} expression.
+     */
+    private static String sanitizeMetadataKey(String key) {
+        if (key == null || key.isBlank() || !key.matches("[A-Za-z0-9_]+")) {
+            return null;
+        }
+        return key;
+    }
+
+    private static Map<String, Object> parseMetadata(String json) {
+        if (json == null || json.isBlank()) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> metadata = METADATA_MAPPER.readValue(json, METADATA_TYPE);
+            return metadata != null ? metadata : new LinkedHashMap<>();
+        } catch (Exception e) {
+            return new LinkedHashMap<>();
         }
     }
 

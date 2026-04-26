@@ -30,6 +30,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
@@ -38,6 +43,7 @@ import org.springframework.util.StringUtils;
 import com.viglet.turing.commons.exception.TurRuntimeException;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
+import com.viglet.turing.genai.provider.store.TurStoreChunkPage;
 import com.viglet.turing.genai.provider.store.TurStoreCollectionInfo;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
@@ -240,6 +246,79 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
         return info;
     }
 
+    @Override
+    public TurStoreChunkPage listChunks(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            int page,
+            int pageSize,
+            Map<String, List<String>> filters) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        Path basePath = resolveBasePath(turStoreInstance, options);
+        TurLuceneVectorIndex index = openIndex(basePath, collectionName);
+
+        int safePageSize = Math.max(1, Math.min(pageSize, 200));
+        int safePage = Math.max(0, page);
+        int offset = safePage * safePageSize;
+        Query filter = buildFilterQuery(filters);
+
+        try {
+            TurLuceneVectorIndex.ChunkPage indexPage = index.listChunks(filter, offset, safePageSize);
+            List<TurStoreChunkPage.Chunk> chunks = new ArrayList<>(indexPage.chunks().size());
+            for (var stored : indexPage.chunks()) {
+                Map<String, Object> metadata = TurLuceneVectorStore.parseMetadata(stored.metadataJson());
+                chunks.add(new TurStoreChunkPage.Chunk(
+                        stored.id(),
+                        stored.content() == null ? "" : stored.content(),
+                        metadata));
+            }
+            return new TurStoreChunkPage(chunks, indexPage.total());
+        } catch (Exception e) {
+            log.warn("[Lucene] Failed to list chunks for collection '{}' (page={}, pageSize={}): {}",
+                    collectionName, page, pageSize, e.getMessage());
+            return new TurStoreChunkPage(List.of(), -1L);
+        }
+    }
+
+    /**
+     * Translates the {@code Map<String, List<String>>} convention used by the
+     * ANN search endpoint into a Lucene {@link BooleanQuery}: keys joined
+     * with {@code AND}, multi-value lists with {@code SHOULD} (≥1 must
+     * match). Returns {@code null} when no filter applies — caller passes
+     * {@code null} so the index does a {@code MatchAllDocsQuery}.
+     */
+    private Query buildFilterQuery(Map<String, List<String>> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return null;
+        }
+        BooleanQuery.Builder andBuilder = new BooleanQuery.Builder();
+        boolean anyClause = false;
+        for (Map.Entry<String, List<String>> e : filters.entrySet()) {
+            String key = e.getKey();
+            List<String> values = e.getValue();
+            if (key == null || key.isBlank() || values == null || values.isEmpty()) {
+                continue;
+            }
+            List<String> nonBlank = values.stream().filter(v -> v != null && !v.isBlank()).toList();
+            if (nonBlank.isEmpty()) {
+                continue;
+            }
+            String field = TurLuceneVectorStore.METADATA_FIELD_PREFIX + key;
+            if (nonBlank.size() == 1) {
+                andBuilder.add(new TermQuery(new Term(field, nonBlank.get(0))), BooleanClause.Occur.MUST);
+            } else {
+                BooleanQuery.Builder orBuilder = new BooleanQuery.Builder();
+                for (String v : nonBlank) {
+                    orBuilder.add(new TermQuery(new Term(field, v)), BooleanClause.Occur.SHOULD);
+                }
+                orBuilder.setMinimumNumberShouldMatch(1);
+                andBuilder.add(orBuilder.build(), BooleanClause.Occur.MUST);
+            }
+            anyClause = true;
+        }
+        return anyClause ? andBuilder.build() : null;
+    }
+
     private TurLuceneVectorIndex openIndex(Path basePath, String collectionName) {
         String key = cacheKey(basePath, collectionName);
         return indexCache.computeIfAbsent(key, k -> {
@@ -264,11 +343,33 @@ public class TurLuceneStoreProvider implements TurGenAiStoreProvider {
     }
 
     /**
-     * Counts distinct logical documents by applying {@link #DOCUMENT_IDENTIFIER_KEYS} as a COALESCE
-     * chain over the stored metadata_json of every live chunk — mirrors the semantics used by the
-     * PGVector provider so the React collections UI shows comparable numbers.
+     * Counts distinct logical documents using {@link #DOCUMENT_IDENTIFIER_KEYS}
+     * as a COALESCE chain — mirrors the semantics used by the PGVector
+     * provider so the React collections UI shows comparable numbers.
+     * <p>
+     * Strategy:
+     * <ol>
+     *   <li>For each candidate key, try Lucene's terms dictionary on the
+     *       indexed {@code meta_<key>} field — this is exact and O(n) over
+     *       distinct values, and works even when {@code metadata_json} is
+     *       absent or malformed (the case that previously made the
+     *       collections page fall back to {@code chunkCount}).</li>
+     *   <li>If no candidate key has any indexed terms (e.g., legacy chunks
+     *       indexed before the meta-field columns existed), fall back to
+     *       parsing the stored {@code metadata_json} of every chunk.</li>
+     * </ol>
      */
     private long safeDistinctDocumentCount(TurLuceneVectorIndex index) {
+        for (String key : DOCUMENT_IDENTIFIER_KEYS) {
+            try {
+                long count = index.distinctTermCount(TurLuceneVectorStore.METADATA_FIELD_PREFIX + key);
+                if (count > 0) {
+                    return count;
+                }
+            } catch (Exception e) {
+                log.debug("[Lucene] distinctTermCount failed for meta_{}: {}", key, e.getMessage());
+            }
+        }
         Set<String> identifiers = new HashSet<>();
         try {
             index.visitStoredField(TurLuceneVectorStore.FIELD_METADATA_JSON, json -> {

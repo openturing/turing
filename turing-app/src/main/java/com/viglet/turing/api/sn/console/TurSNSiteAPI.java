@@ -281,6 +281,65 @@ public class TurSNSiteAPI {
         return turSNSiteExport.downloadAsyncExport(taskId, response);
     }
 
+    /**
+     * Re-feeds every document already indexed in the search engine into the
+     * RAG vector store (async, virtual thread). Returns the {@code taskId}
+     * the client polls via {@code GET /api/sn/export/progress/{taskId}} —
+     * progress reuses the export channel because the
+     * {@link TurSNSiteContentExchangeService} progress map is shared.
+     *
+     * @since 2026.2.4
+     */
+    /**
+     * Returns the in-flight reindex task id (and progress snapshot) for this
+     * site so the admin UI can resume the progress display after navigating
+     * away and back. {@code 204 No Content} when no task is running.
+     *
+     * @since 2026.2.4
+     */
+    @GetMapping(value = "/{id}/genai/reindex/status")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public ResponseEntity<Map<String, Object>> turSNSiteGenAiReindexStatus(@PathVariable String id) {
+        return contentExchangeService.findActiveReindexTask(id)
+                .flatMap(taskId -> contentExchangeService.getProgress(taskId)
+                        .map(p -> ResponseEntity.ok(Map.of(
+                                "taskId", (Object) taskId,
+                                "totalDocuments", p.totalDocuments(),
+                                "processedDocuments", p.processedDocuments(),
+                                "percentage", p.percentage(),
+                                "currentLocale", p.currentLocale(),
+                                "phase", p.phase(),
+                                "estimatedRemainingMillis", p.estimatedRemainingMillis()))))
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @PostMapping(value = "/{id}/genai/reindex")
+    @Secured({"ROLE_ADMIN", "SN_VIEW"})
+    public ResponseEntity<Map<String, String>> turSNSiteGenAiReindex(@PathVariable String id,
+            @RequestParam(required = false) String taskId) {
+        return turSNSiteRepository.findById(id)
+                .map(site -> {
+                    var genAi = site.getTurSNSiteGenAi();
+                    if (genAi == null || !genAi.isEnabled()) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .<Map<String, String>>body(Map.of("error", "RAG is not enabled on this site"));
+                    }
+                    String effectiveTaskId = taskId != null
+                            ? taskId
+                            : "rag-reindex-" + id + "-" + System.currentTimeMillis();
+                    String siteId = site.getId();
+                    Thread.ofVirtual().start(() -> {
+                        try {
+                            contentExchangeService.reindexVectorStore(siteId, effectiveTaskId);
+                        } catch (Exception e) {
+                            log.error("Async RAG reindex failed for site {}: {}", siteId, e.getMessage(), e);
+                        }
+                    });
+                    return ResponseEntity.ok(Map.of("taskId", effectiveTaskId));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping(value = "/export/progress/{taskId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Secured({"ROLE_ADMIN", "SN_VIEW"})
     public SseEmitter exportProgress(@PathVariable String taskId) {

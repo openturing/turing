@@ -198,6 +198,27 @@ public final class TurRagUtils {
      */
     public static List<org.springframework.ai.document.Document> createDocumentsWithHeader(
             String header, String body, int chunkSize, Map<String, Object> metadata) {
+        return createDocumentsWithHeader(header, body, chunkSize, metadata, null);
+    }
+
+    /**
+     * Same as {@link #createDocumentsWithHeader(String, String, int, Map)} but
+     * assigns deterministic {@code Document.id} values of the form
+     * {@code {idPrefix}-{chunkIndex}} (e.g. {@code "doc-1-0"},
+     * {@code "doc-1-1"}). This lets the underlying vector store dedupe by id
+     * on re-index — the Lucene store, for example, calls
+     * {@code IndexWriter.updateDocument(new Term("id", chunkId), ...)} which
+     * atomically replaces the prior chunk with the same id, so reindexing the
+     * same source content does not duplicate embeddings.
+     * <p>
+     * Pass {@code null} or blank to fall back to Spring AI's default
+     * UUID-based ids (the prior behavior).
+     *
+     * @since 2026.2.4
+     */
+    public static List<org.springframework.ai.document.Document> createDocumentsWithHeader(
+            String header, String body, int chunkSize, Map<String, Object> metadata,
+            String idPrefix) {
         String normalizedHeader = normalizeWhitespace(header == null ? "" : header);
         String normalizedBody = normalizeWhitespace(body == null ? "" : body);
 
@@ -205,10 +226,10 @@ public final class TurRagUtils {
             return List.of();
         }
         if (normalizedHeader.isBlank()) {
-            return createDocuments(normalizedBody, chunkSize, metadata);
+            return createDocuments(normalizedBody, chunkSize, metadata, idPrefix);
         }
         if (normalizedBody.isBlank()) {
-            return List.of(buildDoc(normalizedHeader, metadata));
+            return List.of(buildDoc(chunkId(idPrefix, 0), normalizedHeader, metadata));
         }
 
         // Reserve space for header + separator on every chunk; never go below a
@@ -220,16 +241,38 @@ public final class TurRagUtils {
 
         List<String> bodyChunks = splitText(normalizedBody, bodyChunkSize);
         List<org.springframework.ai.document.Document> docs = new ArrayList<>(bodyChunks.size());
-        for (String bodyChunk : bodyChunks) {
-            String fullChunk = normalizedHeader + separator + bodyChunk;
-            docs.add(buildDoc(fullChunk, metadata));
+        for (int i = 0; i < bodyChunks.size(); i++) {
+            String fullChunk = normalizedHeader + separator + bodyChunks.get(i);
+            docs.add(buildDoc(chunkId(idPrefix, i), fullChunk, metadata));
         }
         return docs;
     }
 
     public static List<org.springframework.ai.document.Document> createDocumentsWithHeader(
             String header, String body, Map<String, Object> metadata) {
-        return createDocumentsWithHeader(header, body, DEFAULT_CHUNK_SIZE, metadata);
+        return createDocumentsWithHeader(header, body, DEFAULT_CHUNK_SIZE, metadata, null);
+    }
+
+    public static List<org.springframework.ai.document.Document> createDocumentsWithHeader(
+            String header, String body, Map<String, Object> metadata, String idPrefix) {
+        return createDocumentsWithHeader(header, body, DEFAULT_CHUNK_SIZE, metadata, idPrefix);
+    }
+
+    private static List<org.springframework.ai.document.Document> createDocuments(
+            String text, int chunkSize, Map<String, Object> metadata, String idPrefix) {
+        List<String> chunks = splitText(text, chunkSize);
+        List<org.springframework.ai.document.Document> docs = new ArrayList<>(chunks.size());
+        for (int i = 0; i < chunks.size(); i++) {
+            docs.add(buildDoc(chunkId(idPrefix, i), chunks.get(i), metadata));
+        }
+        return docs;
+    }
+
+    private static String chunkId(String idPrefix, int index) {
+        if (idPrefix == null || idPrefix.isBlank()) {
+            return null;
+        }
+        return idPrefix + "-" + index;
     }
 
     public static String truncateText(String text, int maxLength) {
@@ -241,7 +284,20 @@ public final class TurRagUtils {
 
     private static org.springframework.ai.document.Document buildDoc(
             String chunk, Map<String, Object> metadata) {
+        return buildDoc(null, chunk, metadata);
+    }
+
+    /**
+     * @param id deterministic id (e.g. {@code "doc-1-0"}) for dedup-on-add via
+     *           Lucene's {@code updateDocument}. Pass {@code null} to fall
+     *           back to the Spring AI default UUID id.
+     */
+    private static org.springframework.ai.document.Document buildDoc(
+            String id, String chunk, Map<String, Object> metadata) {
         Builder builder = org.springframework.ai.document.Document.builder().text(chunk);
+        if (id != null && !id.isBlank()) {
+            builder.id(id);
+        }
         if (metadata != null) {
             builder.metadata(metadata);
         }

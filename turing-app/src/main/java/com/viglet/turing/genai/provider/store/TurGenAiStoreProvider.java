@@ -83,4 +83,26 @@ public interface TurGenAiStoreProvider {
                                                String decryptedCredential) {
         return Map.of("store", getPluginType(), "status", "UP");
     }
+
+    /**
+     * Paginates over the chunks stored in {@code collectionName} without
+     * computing similarity — used by the ANN admin UI when the search field
+     * is empty (or {@code *}) to browse all indexed content. Filters mirror
+     * the {@code search} endpoint: an AND-of-IN over scalar metadata.
+     * <p>
+     * Default implementation throws {@link UnsupportedOperationException}
+     * since not every backend exposes a native list-with-pagination API.
+     * Implement on a per-store basis using its native cursor/limit/offset.
+     *
+     * @since 2026.2.4
+     */
+    default TurStoreChunkPage listChunks(TurStoreInstance turStoreInstance,
+                                          String decryptedCredential,
+                                          String collectionName,
+                                          int page,
+                                          int pageSize,
+                                          Map<String, List<String>> filters) {
+        throw new UnsupportedOperationException(
+                "listChunks not supported by store provider '" + getPluginType() + "'");
+    }
 }

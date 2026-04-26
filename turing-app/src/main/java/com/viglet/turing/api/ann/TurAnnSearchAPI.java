@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.genai.provider.store.TurStoreChunkPage;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -90,6 +91,8 @@ public class TurAnnSearchAPI {
             String query,
             String locale,
             Integer topK,
+            Integer page,
+            Integer pageSize,
             Map<String, List<String>> filters) {
     }
 
@@ -107,7 +110,10 @@ public class TurAnnSearchAPI {
             String query,
             String locale,
             int topK,
+            int page,
+            int pageSize,
             int totalHits,
+            boolean hasMore,
             List<TurAnnResultItem> results,
             Map<String, List<TurAnnFacetItem>> facets) {
     }
@@ -115,7 +121,7 @@ public class TurAnnSearchAPI {
     @PostMapping("/search")
     public ResponseEntity<TurAnnSearchResponse> search(@PathVariable String siteName,
             @RequestBody TurAnnSearchRequest body) {
-        if (body == null || !StringUtils.hasText(body.query())) {
+        if (body == null) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -139,6 +145,15 @@ public class TurAnnSearchAPI {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
 
+        boolean isBrowseAll = !StringUtils.hasText(body.query()) || "*".equals(body.query().trim());
+        if (isBrowseAll) {
+            return ResponseEntity.ok(browseAll(siteName, locale, body, context, collectionName));
+        }
+        return ResponseEntity.ok(similaritySearch(siteName, locale, body, context));
+    }
+
+    private TurAnnSearchResponse similaritySearch(String siteName, Locale locale,
+            TurAnnSearchRequest body, TurGenAiContext context) {
         int topK = clampTopK(body.topK());
         Filter.Expression filterExpr = buildFilterExpression(body.filters());
 
@@ -157,7 +172,8 @@ public class TurAnnSearchAPI {
             hits = context.getVectorStore().similaritySearch(reqBuilder.build());
         } catch (Exception e) {
             log.error("ANN search failed for site '{}': {}", siteName, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return new TurAnnSearchResponse(body.query(), locale.toString(), topK,
+                    0, topK, 0, false, List.of(), Map.of());
         }
         if (hits == null) {
             hits = List.of();
@@ -173,14 +189,68 @@ public class TurAnnSearchAPI {
         }
 
         Map<String, List<TurAnnFacetItem>> facets = aggregateFacets(items);
+        // Similarity search returns a single page of size topK (no pagination).
+        return new TurAnnSearchResponse(
+                body.query(), locale.toString(), topK,
+                0, topK, items.size(), false,
+                items, facets);
+    }
 
-        return ResponseEntity.ok(new TurAnnSearchResponse(
-                body.query(),
-                locale.toString(),
-                topK,
-                items.size(),
-                items,
-                facets));
+    /**
+     * Browse-all path triggered when the query is empty or {@code "*"}: the
+     * underlying store provider's {@code listChunks} paginates without
+     * similarity scoring so the admin can scroll all indexed content.
+     */
+    private TurAnnSearchResponse browseAll(String siteName, Locale locale,
+            TurAnnSearchRequest body, TurGenAiContext context, String collectionName) {
+        int pageSize = clampPageSize(body.pageSize());
+        int page = body.page() == null ? 0 : Math.max(0, body.page());
+
+        var infra = context.getRagInfrastructure();
+        log.info("ANN browse-all site='{}' locale='{}' page={} pageSize={} filters={}",
+                siteName, locale, page, pageSize, body.filters());
+
+        TurStoreChunkPage chunkPage;
+        try {
+            chunkPage = infra.storeProvider().listChunks(
+                    infra.storeInstance(),
+                    infra.storeCredential(),
+                    collectionName,
+                    page,
+                    pageSize,
+                    body.filters());
+        } catch (UnsupportedOperationException e) {
+            log.warn("ANN browse-all not supported by store '{}': {}",
+                    infra.storeProvider().getPluginType(), e.getMessage());
+            return new TurAnnSearchResponse(body.query(), locale.toString(), 0,
+                    page, pageSize, 0, false, List.of(), Map.of());
+        } catch (Exception e) {
+            log.error("ANN browse-all failed for site '{}': {}", siteName, e.getMessage(), e);
+            return new TurAnnSearchResponse(body.query(), locale.toString(), 0,
+                    page, pageSize, 0, false, List.of(), Map.of());
+        }
+
+        List<TurAnnResultItem> items = new ArrayList<>(chunkPage.chunks().size());
+        for (TurStoreChunkPage.Chunk c : chunkPage.chunks()) {
+            items.add(new TurAnnResultItem(c.id(), c.content(), null, c.metadata()));
+        }
+        Map<String, List<TurAnnFacetItem>> facets = aggregateFacets(items);
+        long total = chunkPage.total();
+        boolean hasMore = total >= 0
+                ? (long) (page + 1) * pageSize < total
+                : items.size() == pageSize;
+        int totalHits = total >= 0 ? (int) Math.min(Integer.MAX_VALUE, total) : items.size();
+        return new TurAnnSearchResponse(
+                body.query(), locale.toString(), 0,
+                page, pageSize, totalHits, hasMore,
+                items, facets);
+    }
+
+    private int clampPageSize(Integer requested) {
+        if (requested == null || requested <= 0) {
+            return DEFAULT_TOP_K;
+        }
+        return Math.min(requested, MAX_TOP_K);
     }
 
     private int clampTopK(Integer requested) {

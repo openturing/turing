@@ -36,7 +36,7 @@ import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -85,6 +85,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+    const [isReindexing, setIsReindexing] = useState(false);
+    const [reindexProgress, setReindexProgress] = useState<{ processed: number; total: number; phase: string } | null>(null);
 
     useEffect(() => {
         turLLMInstanceService.query().then(setLlmInstances);
@@ -159,6 +161,68 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         setShowOverwriteDialog(false);
         generateSitePrompt();
     }
+
+    const subscribeToReindex = useCallback(async (taskId: string, notifyOnComplete: boolean) => {
+        await turSNSiteService.subscribeExportProgress(
+            taskId,
+            (data) => {
+                setReindexProgress({
+                    processed: data.processedDocuments,
+                    total: data.totalDocuments,
+                    phase: data.phase,
+                });
+            },
+            () => {
+                setIsReindexing(false);
+                setReindexProgress(null);
+                if (notifyOnComplete) {
+                    toast.success(t("forms.snGenai.reindexComplete"));
+                }
+            },
+            (error) => {
+                setIsReindexing(false);
+                setReindexProgress(null);
+                console.error("RAG reindex SSE error", error);
+                toast.error(t("forms.snGenai.reindexFailed"));
+            },
+        );
+    }, [t]);
+
+    const handleReindexClick = useCallback(async () => {
+        if (isReindexing) return;
+        setIsReindexing(true);
+        setReindexProgress({ processed: 0, total: 0, phase: "starting" });
+
+        const taskId = `rag-reindex-${snSite.id}-${Date.now()}`;
+        const startedTaskId = await turSNSiteService.reindexGenAi(snSite.id, taskId);
+        if (!startedTaskId) {
+            setIsReindexing(false);
+            setReindexProgress(null);
+            toast.error(t("forms.snGenai.reindexFailed"));
+            return;
+        }
+        await subscribeToReindex(startedTaskId, true);
+    }, [isReindexing, snSite.id, subscribeToReindex, t]);
+
+    // Auto-resume: when the form remounts (admin navigated away and came back)
+    // check whether a reindex is still running on the server for this site and
+    // re-attach the progress UI to its SSE stream.
+    useEffect(() => {
+        let cancelled = false;
+        turSNSiteService.getActiveReindex(snSite.id).then((status) => {
+            if (cancelled || !status) return;
+            setIsReindexing(true);
+            setReindexProgress({
+                processed: status.processedDocuments,
+                total: status.totalDocuments,
+                phase: status.phase,
+            });
+            subscribeToReindex(status.taskId, false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [snSite.id, subscribeToReindex]);
 
     function getSelectValue(instance: { id: string } | null | undefined): string {
         if (instance === undefined) return NONE_VALUE;
@@ -321,6 +385,33 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         </FormItemTwoColumns>
                                     )}
                                 />
+                                {enabled && (
+                                    <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                                        <GradientButton
+                                            type="button"
+                                            variant="outline"
+                                            disabled={isReindexing}
+                                            onClick={handleReindexClick}
+                                        >
+                                            {isReindexing ? (
+                                                <IconLoader2 className="size-4 animate-spin" />
+                                            ) : (
+                                                <IconRefresh className="size-4" />
+                                            )}
+                                            {isReindexing && reindexProgress
+                                                ? t("forms.snGenai.reindexing", {
+                                                    processed: reindexProgress.processed,
+                                                    total: reindexProgress.total,
+                                                })
+                                                : t("forms.snGenai.reindexAll")}
+                                        </GradientButton>
+                                        <span className="text-xs text-muted-foreground">
+                                            {isReindexing
+                                                ? t("forms.snGenai.reindexInProgress")
+                                                : t("forms.snGenai.reindexHint")}
+                                        </span>
+                                    </div>
+                                )}
                             </SectionCard.Content>
                         </SectionCard>
 
