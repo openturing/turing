@@ -66,25 +66,7 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
     public VectorStore createVectorStore(TurStoreInstance turStoreInstance,
             EmbeddingModel embeddingModel,
             String decryptedCredential) {
-
-        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
-        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
-
-        String collectionName = firstNonBlank(
-                optionsParser.stringValue(options, "collectionName"),
-                turStoreInstance.getCollectionName(),
-                DEFAULT_COLLECTION);
-        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
-        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
-        boolean initializeSchema = Boolean.TRUE
-                .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
-
-        return ChromaVectorStore.builder(chromaApi, embeddingModel)
-                .collectionName(collectionName)
-                .tenantName(tenantName)
-                .databaseName(databaseName)
-                .initializeSchema(initializeSchema)
-                .build();
+        return createVectorStore(turStoreInstance, embeddingModel, decryptedCredential, null);
     }
 
     @Override
@@ -107,12 +89,18 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         boolean initializeSchema = Boolean.TRUE
                 .equals(firstNonNull(optionsParser.booleanValue(options, "initializeSchema"), Boolean.TRUE));
 
-        return ChromaVectorStore.builder(chromaApi, embeddingModel)
+        ChromaVectorStore springAiStore = ChromaVectorStore.builder(chromaApi, embeddingModel)
                 .collectionName(collectionName)
                 .tenantName(tenantName)
                 .databaseName(databaseName)
                 .initializeSchema(initializeSchema)
                 .build();
+        // Wrap so we can intercept add/similaritySearch — adds marker keys at
+        // index time and translates Filter.Expression to a where clause that
+        // hits those markers, side-stepping Chroma's array-stringification
+        // limitation.
+        return new TurChromaVectorStore(springAiStore, chromaApi, embeddingModel,
+                tenantName, databaseName, collectionName);
     }
 
     @SafeVarargs

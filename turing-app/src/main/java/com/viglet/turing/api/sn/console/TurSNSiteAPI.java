@@ -309,7 +309,8 @@ public class TurSNSiteAPI {
                                 "percentage", p.percentage(),
                                 "currentLocale", p.currentLocale(),
                                 "phase", p.phase(),
-                                "estimatedRemainingMillis", p.estimatedRemainingMillis()))))
+                                "estimatedRemainingMillis", p.estimatedRemainingMillis(),
+                                "parallelism", contentExchangeService.getParallelism(taskId)))))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
@@ -359,7 +360,8 @@ public class TurSNSiteAPI {
                                         "percentage", p.percentage(),
                                         "currentLocale", p.currentLocale(),
                                         "phase", p.phase(),
-                                        "estimatedRemainingMillis", p.estimatedRemainingMillis()
+                                        "estimatedRemainingMillis", p.estimatedRemainingMillis(),
+                                        "parallelism", contentExchangeService.getParallelism(taskId)
                                 )));
                         if ("completed".equals(p.phase())) {
                             completed = true;

@@ -20,5 +20,6 @@ public class TurConfigProperties {
 	private TurGitProperty git;
 	private TurMarketplaceProperty marketplace;
 	private TurAuthenticationProperty authentication;
+	private TurGenAiProperty genai = new TurGenAiProperty();
 
 }

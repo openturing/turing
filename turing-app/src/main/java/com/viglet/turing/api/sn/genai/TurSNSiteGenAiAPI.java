@@ -200,7 +200,7 @@ public class TurSNSiteGenAiAPI {
 			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}'",
 					siteName, locale, collectionName);
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
-			return turGenAi.assistantConversation(context, request.messages());
+			return turGenAi.assistantConversation(context, request.messages(), request.filters());
 		}).orElseGet(() -> {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
 			return TurChatMessage.builder().text("Couldn't find site name.").enabled(false).build();
@@ -210,6 +210,7 @@ public class TurSNSiteGenAiAPI {
 	public record ChatEnabledResponse(boolean enabled) {
 	}
 
-	public record ConversationRequest(List<ConversationMessage> messages, String locale) {
+	public record ConversationRequest(List<ConversationMessage> messages, String locale,
+			java.util.Map<String, List<String>> filters) {
 	}
 }

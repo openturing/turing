@@ -174,6 +174,11 @@ export interface ContentExchangeProgress {
   currentLocale: string;
   phase: string;
   estimatedRemainingMillis: number;
+  /**
+   * Worker-pool size of the in-flight job (RAG reindex). Sequential flows
+   * (export, import) report {@code 1}.
+   */
+  parallelism?: number;
 }
 
 export interface ActiveReindexStatus extends ContentExchangeProgress {

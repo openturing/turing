@@ -58,12 +58,15 @@ class TurSNGenAiTest {
     private TurSNSiteLocaleRepository localeRepository;
     @Mock
     private TurRagContextBuilder ragContextBuilder;
+    @Mock
+    private TurRagFacetExtractor facetExtractor;
 
     private TurSNGenAi turSNGenAi;
 
     @BeforeEach
     void setUp() {
-        turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder);
+        turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder,
+                facetExtractor);
     }
 
     @Test

@@ -1,29 +1,14 @@
 import { BadgeLocale } from "@/components/badge-locale";
+import { useSmoothedEta } from "@/hooks/use-smoothed-eta";
+import { formatTime } from "@/lib/format-time";
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface ContentExchangeProgressBarProps {
   progress: ContentExchangeProgress | null;
   label?: string;
   preparingLabel?: string;
-}
-
-const EMA_ALPHA = 0.15;
-const MIN_UPDATE_INTERVAL_MS = 2000;
-
-function formatTime(ms: number): string {
-  if (ms <= 0) return "--:--";
-  const totalSec = Math.ceil(ms / 1000);
-  if (totalSec >= 3600) {
-    const hrs = Math.floor(totalSec / 3600);
-    const min = Math.floor((totalSec % 3600) / 60);
-    return `${hrs}:${min.toString().padStart(2, "0")}:00`;
-  }
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
 export function ContentExchangeProgressBar({
@@ -33,36 +18,9 @@ export function ContentExchangeProgressBar({
 }: ContentExchangeProgressBarProps) {
   const { t } = useTranslation();
 
-  const smoothedRef = useRef<number | null>(null);
-  const lastDisplayUpdateRef = useRef(0);
-  const [displayRemaining, setDisplayRemaining] = useState<number>(-1);
-
-  useEffect(() => {
-    if (!progress || progress.estimatedRemainingMillis <= 0) {
-      smoothedRef.current = null;
-      lastDisplayUpdateRef.current = 0;
-      setDisplayRemaining(-1);
-      return;
-    }
-
-    const raw = progress.estimatedRemainingMillis;
-
-    if (smoothedRef.current === null) {
-      smoothedRef.current = raw;
-      lastDisplayUpdateRef.current = Date.now();
-      setDisplayRemaining(raw);
-      return;
-    }
-
-    smoothedRef.current =
-      EMA_ALPHA * raw + (1 - EMA_ALPHA) * smoothedRef.current;
-
-    const now = Date.now();
-    if (now - lastDisplayUpdateRef.current >= MIN_UPDATE_INTERVAL_MS) {
-      lastDisplayUpdateRef.current = now;
-      setDisplayRemaining(smoothedRef.current);
-    }
-  }, [progress?.estimatedRemainingMillis, progress?.processedDocuments]);
+  const displayRemaining = useSmoothedEta(progress?.estimatedRemainingMillis, {
+    tick: progress?.processedDocuments,
+  });
 
   return (
     <div className="space-y-4">

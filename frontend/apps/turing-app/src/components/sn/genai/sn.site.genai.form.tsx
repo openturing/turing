@@ -30,6 +30,8 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
+import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
+import { formatTime } from "@/lib/format-time"
 import { TurChatService } from "@/services/chat/chat.service"
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
@@ -86,7 +88,18 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
     const [isReindexing, setIsReindexing] = useState(false);
-    const [reindexProgress, setReindexProgress] = useState<{ processed: number; total: number; phase: string } | null>(null);
+    const [reindexProgress, setReindexProgress] = useState<{
+        processed: number;
+        total: number;
+        phase: string;
+        rawEtaMs: number;
+        parallelism: number;
+    } | null>(null);
+    // Smoothed ETA via shared hook — same logic the export/import progress bar uses.
+    const reindexEtaMs = useSmoothedEta(
+        reindexProgress?.rawEtaMs,
+        { tick: reindexProgress?.processed },
+    );
 
     useEffect(() => {
         turLLMInstanceService.query().then(setLlmInstances);
@@ -170,6 +183,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     processed: data.processedDocuments,
                     total: data.totalDocuments,
                     phase: data.phase,
+                    rawEtaMs: data.estimatedRemainingMillis,
+                    parallelism: data.parallelism ?? 1,
                 });
             },
             () => {
@@ -191,7 +206,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const handleReindexClick = useCallback(async () => {
         if (isReindexing) return;
         setIsReindexing(true);
-        setReindexProgress({ processed: 0, total: 0, phase: "starting" });
+        setReindexProgress({ processed: 0, total: 0, phase: "starting", rawEtaMs: 0, parallelism: 1 });
 
         const taskId = `rag-reindex-${snSite.id}-${Date.now()}`;
         const startedTaskId = await turSNSiteService.reindexGenAi(snSite.id, taskId);
@@ -216,6 +231,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                 processed: status.processedDocuments,
                 total: status.totalDocuments,
                 phase: status.phase,
+                rawEtaMs: status.estimatedRemainingMillis,
+                parallelism: status.parallelism ?? 1,
             });
             subscribeToReindex(status.taskId, false);
         });
@@ -392,22 +409,34 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                             variant="outline"
                                             disabled={isReindexing}
                                             onClick={handleReindexClick}
+                                            // Fixed width sized for "Indexing 9,999,999/9,999,999"
+                                            // (≈7-digit/7-digit fits in 320px with the spinner) so the
+                                            // button stops reflowing as the counter ticks up.
+                                            // tabular-nums keeps each digit the same width.
+                                            className="min-w-[320px] justify-center tabular-nums"
                                         >
                                             {isReindexing ? (
-                                                <IconLoader2 className="size-4 animate-spin" />
+                                                <IconLoader2 className="size-4 animate-spin shrink-0" />
                                             ) : (
-                                                <IconRefresh className="size-4" />
+                                                <IconRefresh className="size-4 shrink-0" />
                                             )}
                                             {isReindexing && reindexProgress
                                                 ? t("forms.snGenai.reindexing", {
-                                                    processed: reindexProgress.processed,
-                                                    total: reindexProgress.total,
+                                                    processed: reindexProgress.processed.toLocaleString(),
+                                                    total: reindexProgress.total.toLocaleString(),
                                                 })
                                                 : t("forms.snGenai.reindexAll")}
                                         </GradientButton>
                                         <span className="text-xs text-muted-foreground">
                                             {isReindexing
-                                                ? t("forms.snGenai.reindexInProgress")
+                                                ? reindexEtaMs > 0
+                                                    ? t("forms.snGenai.reindexEtaWithThreads", {
+                                                        time: formatTime(reindexEtaMs),
+                                                        threads: reindexProgress?.parallelism ?? 1,
+                                                    })
+                                                    : t("forms.snGenai.reindexEtaCalculatingWithThreads", {
+                                                        threads: reindexProgress?.parallelism ?? 1,
+                                                    })
                                                 : t("forms.snGenai.reindexHint")}
                                         </span>
                                     </div>

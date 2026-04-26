@@ -28,10 +28,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.viglet.turing.genai.TurGenAiContext;
+import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteField;
@@ -40,6 +47,7 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
+import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -62,8 +70,16 @@ public class TurSNSiteContentExchangeService {
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurSNSiteFieldService turSNSiteFieldService;
     private final TurSNGenAi turSNGenAi;
+    private final TurGenAiContextFactory turGenAiContextFactory;
+    private final TurConfigProperties turConfigProperties;
 
     private final ConcurrentHashMap<String, ContentExchangeProgress> progressMap = new ConcurrentHashMap<>();
+    /**
+     * Sidecar map exposing the worker-pool size of an in-flight task. Kept
+     * separate from {@link ContentExchangeProgress} so the record stays
+     * focused on counters; only the reindex flow currently sets it.
+     */
+    private final ConcurrentHashMap<String, Integer> parallelismByTaskId = new ConcurrentHashMap<>();
 
     public record ContentExchangeProgress(int totalDocuments, int processedDocuments,
             String currentLocale, String phase, long startTimeMillis) {
@@ -88,12 +104,16 @@ public class TurSNSiteContentExchangeService {
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurSearchEnginePluginFactory pluginFactory,
             TurSNSiteFieldService turSNSiteFieldService,
-            TurSNGenAi turSNGenAi) {
+            TurSNGenAi turSNGenAi,
+            TurGenAiContextFactory turGenAiContextFactory,
+            TurConfigProperties turConfigProperties) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.pluginFactory = pluginFactory;
         this.turSNSiteFieldService = turSNSiteFieldService;
         this.turSNGenAi = turSNGenAi;
+        this.turGenAiContextFactory = turGenAiContextFactory;
+        this.turConfigProperties = turConfigProperties;
     }
 
     public Optional<ContentExchangeProgress> getProgress(String taskId) {
@@ -102,6 +122,17 @@ public class TurSNSiteContentExchangeService {
 
     public void removeProgress(String taskId) {
         progressMap.remove(taskId);
+        parallelismByTaskId.remove(taskId);
+    }
+
+    /**
+     * @return worker-pool size of the in-flight task, or {@code 1} when the
+     *         task didn't register a parallelism (sequential flows like
+     *         export/import).
+     */
+    public int getParallelism(String taskId) {
+        Integer p = parallelismByTaskId.get(taskId);
+        return p != null ? p : 1;
     }
 
     /**
@@ -306,43 +337,96 @@ public class TurSNSiteContentExchangeService {
                 turSNSite.getName(), locales.size(), totalDocs);
 
         long startTime = System.currentTimeMillis();
+        // Effectively-final snapshot for capture inside lambdas below.
+        final int totalDocsForLambda = (int) totalDocs;
         progressMap.put(taskId, new ContentExchangeProgress(
-                (int) totalDocs, 0, "", "counting", startTime));
+                totalDocsForLambda, 0, "", "counting", startTime));
 
-        int processedSoFar = 0;
-        int reindexed = 0;
-        for (TurSNSiteLocale siteLocale : locales) {
-            String localeKey = siteLocale.getLanguage().toString();
-            Locale locale = siteLocale.getLanguage();
-            progressMap.put(taskId, new ContentExchangeProgress(
-                    (int) totalDocs, processedSoFar, localeKey, "reindexing", startTime));
+        // Pool size from `turing.genai.reindex.parallel` (default 4). Embedding
+        // calls are I/O-bound (HTTP), so a small fixed pool fully utilizes the
+        // embedding API without saturating typical rate limits.
+        int parallelism = Math.max(1, turConfigProperties.getGenai().getReindex().getParallel());
+        // Expose so the SSE / status endpoints can show "X threads" in the UI.
+        parallelismByTaskId.put(taskId, parallelism);
+        ExecutorService executor = Executors.newFixedThreadPool(parallelism, r -> {
+            Thread t = new Thread(r);
+            t.setName("rag-reindex-" + taskId.hashCode());
+            t.setDaemon(true);
+            return t;
+        });
+        AtomicInteger processedCounter = new AtomicInteger(0);
+        AtomicInteger reindexedCounter = new AtomicInteger(0);
+        log.info("RAG reindex worker pool: site='{}' parallelism={}", turSNSite.getName(), parallelism);
 
-            int start = 0;
-            boolean hasMore = true;
-            while (hasMore) {
-                List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
-                        start, EXPORT_PAGE_SIZE);
-                for (Map<String, Object> doc : page) {
-                    try {
-                        turSNGenAi.addDocument(turSNSite, locale, doc);
-                        reindexed++;
-                    } catch (Exception e) {
-                        log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
-                                doc.getOrDefault("id", "unknown"), localeKey, e.getMessage());
-                    }
-                    processedSoFar++;
+        try {
+            for (TurSNSiteLocale siteLocale : locales) {
+                String localeKey = siteLocale.getLanguage().toString();
+                Locale locale = siteLocale.getLanguage();
+                // Resolve the GenAI context once per locale — sharing it across
+                // every doc of this locale eliminates per-doc DB round-trips and
+                // VectorStore re-construction. The context is locale-bound (it
+                // carries the locale's vector store collection) but otherwise
+                // doc-independent.
+                String collectionName = siteLocale.getCore();
+                TurGenAiContext context = turGenAiContextFactory.build(genAi, collectionName);
+                if (!context.isEnabled() || context.getVectorStore() == null) {
+                    log.warn("RAG reindex skipping locale '{}' for site '{}': context not available",
+                            localeKey, turSNSite.getName());
+                    continue;
                 }
+
                 progressMap.put(taskId, new ContentExchangeProgress(
-                        (int) totalDocs, processedSoFar, localeKey, "reindexing", startTime));
-                start += EXPORT_PAGE_SIZE;
-                hasMore = page.size() == EXPORT_PAGE_SIZE;
+                        (int) totalDocs, processedCounter.get(), localeKey, "reindexing", startTime));
+
+                int start = 0;
+                boolean hasMore = true;
+                while (hasMore) {
+                    List<Map<String, Object>> page = plugin.retrieveDocumentPage(siteLocale, siteFieldMap,
+                            start, EXPORT_PAGE_SIZE);
+                    List<Future<?>> futures = new ArrayList<>(page.size());
+                    for (Map<String, Object> doc : page) {
+                        futures.add(executor.submit(() -> {
+                            try {
+                                turSNGenAi.addDocumentToContext(turSNSite, locale, context, doc);
+                                reindexedCounter.incrementAndGet();
+                            } catch (Exception e) {
+                                log.warn("RAG reindex failed for doc '{}' (locale={}): {}",
+                                        doc.getOrDefault("id", "unknown"), localeKey, e.getMessage());
+                            } finally {
+                                int p = processedCounter.incrementAndGet();
+                                progressMap.put(taskId, new ContentExchangeProgress(
+                                        totalDocsForLambda, p, localeKey, "reindexing", startTime));
+                            }
+                        }));
+                    }
+                    // Wait for the page to drain before paginating to the next
+                    // batch — keeps memory bounded (no more than one page worth
+                    // of in-flight tasks) and lets us advance the search-engine
+                    // cursor predictably.
+                    for (Future<?> f : futures) {
+                        try {
+                            f.get();
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(ie);
+                        } catch (ExecutionException ee) {
+                            log.warn("RAG reindex worker error: {}", ee.getCause() == null
+                                    ? ee.getMessage() : ee.getCause().getMessage());
+                        }
+                    }
+                    start += EXPORT_PAGE_SIZE;
+                    hasMore = page.size() == EXPORT_PAGE_SIZE;
+                }
             }
+        } finally {
+            executor.shutdown();
         }
 
+        int reindexed = reindexedCounter.get();
         progressMap.put(taskId, new ContentExchangeProgress(
-                (int) totalDocs, processedSoFar, "", "completed", startTime));
-        log.info("RAG reindex finished for site '{}': {}/{} documents re-embedded",
-                turSNSite.getName(), reindexed, totalDocs);
+                (int) totalDocs, processedCounter.get(), "", "completed", startTime));
+        log.info("RAG reindex finished for site '{}': {}/{} documents re-embedded (parallelism={})",
+                turSNSite.getName(), reindexed, totalDocs, parallelism);
         return reindexed;
     }
 }

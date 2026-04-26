@@ -124,15 +124,18 @@ public class TurSNGenAi {
     private final TurGenAiContextFactory turGenAiContextFactory;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurRagContextBuilder turRagContextBuilder;
+    private final TurRagFacetExtractor facetExtractor;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurRagContextBuilder turRagContextBuilder) {
+            TurRagContextBuilder turRagContextBuilder,
+            TurRagFacetExtractor facetExtractor) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turRagContextBuilder = turRagContextBuilder;
+        this.facetExtractor = facetExtractor;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -162,6 +165,19 @@ public class TurSNGenAi {
      * @since 2026.2.4
      */
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history) {
+        return assistantConversation(context, history, null);
+    }
+
+    /**
+     * Same as {@link #assistantConversation(TurGenAiContext, List)} but applies
+     * the supplied {@code filters} as a Spring AI {@code Filter.Expression} on
+     * the similarity search — restricting the RAG context to chunks whose
+     * indexed metadata matches every selected facet.
+     *
+     * @since 2026.2.4
+     */
+    public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history,
+            java.util.Map<String, List<String>> filters) {
         if (!context.isEnabled()) {
             log.warn("RAG chat context disabled — check LLM, embedding model and store configuration");
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
@@ -181,16 +197,52 @@ public class TurSNGenAi {
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
-        int topK = 10;
-        double similarityThreshold = 0.4;
-        SearchRequest embeddingSearchRequest = SearchRequest.builder()
+        // Auto-extract filters from the user's natural-language query when the
+        // caller didn't pass any explicitly. Lets questions like "list the
+        // executive education courses" be answered against the full set of
+        // matching chunks (via filtered retrieval) instead of only the top-K
+        // most semantically similar chunks.
+        java.util.Map<String, List<String>> effectiveFilters = filters;
+        boolean autoExtracted = false;
+        if (effectiveFilters == null || effectiveFilters.isEmpty()) {
+            try {
+                java.util.Map<String, List<String>> available = facetExtractor
+                        .getAvailableFacets(context.getRagInfrastructure());
+                if (!available.isEmpty()) {
+                    java.util.Map<String, List<String>> extracted = facetExtractor
+                            .extractFilters(context.getChatModel(), latestUserQuery, available);
+                    if (!extracted.isEmpty()) {
+                        effectiveFilters = extracted;
+                        autoExtracted = true;
+                        log.info("RAG chat auto-extracted filters from query '{}': {}",
+                                latestUserQuery, extracted);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("RAG chat auto-extraction failed, falling back to plain similarity: {}",
+                        e.getMessage());
+            }
+        }
+
+        // Boost topK when filters narrow the universe — listing/enumeration
+        // questions need broader recall than a generic "find similar" query.
+        boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
+        int topK = hasFilters ? 50 : 10;
+        double similarityThreshold = hasFilters ? 0.0 : 0.4;
+        org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
+                TurRagFilters.buildFilterExpression(effectiveFilters);
+        SearchRequest.Builder reqBuilder = SearchRequest.builder()
                 .query(latestUserQuery)
                 .topK(topK)
-                .similarityThreshold(similarityThreshold)
-                .build();
+                .similarityThreshold(similarityThreshold);
+        if (filterExpr != null) {
+            reqBuilder.filterExpression(filterExpr);
+        }
+        SearchRequest embeddingSearchRequest = reqBuilder.build();
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.info("RAG chat similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
-                vectorStoreType, topK, similarityThreshold, latestUserQuery);
+        log.info("RAG chat similaritySearch: store='{}', topK={}, threshold={}, filters={}{}, query='{}'",
+                vectorStoreType, topK, similarityThreshold, effectiveFilters,
+                autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
         List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
         List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
         log.info("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
@@ -325,7 +377,7 @@ public class TurSNGenAi {
             return;
         }
         String collectionName = resolveCollectionName(turSNSite, locale);
-        log.info("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
+        log.debug("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
                 sourceId, turSNSite.getName(), collectionName);
         TurGenAiContext context = turGenAiContextFactory.build(
                 turSNSite.getTurSNSiteGenAi(), collectionName);
@@ -334,6 +386,35 @@ public class TurSNGenAi {
                     sourceId, turSNSite.getName());
             return;
         }
+        RagFields fields = partitionFields(doc);
+        if (fields.isEmpty()) {
+            log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
+                    sourceId, turSNSite.getName());
+        }
+        Map<String, Object> metadata = buildMetadata(turSNSite, locale, doc, fields);
+        addDocument(context, fields.header(), fields.body(), metadata);
+    }
+
+    /**
+     * Indexes a document with a {@link TurGenAiContext} that was already
+     * built by the caller — skips the per-doc {@code resolveCollectionName}
+     * and {@code turGenAiContextFactory.build} round-trips. Used by the
+     * parallel reindex flow which shares a single context across all
+     * documents of a locale, since the context is locale-bound but
+     * doc-independent.
+     *
+     * <p>Must only be called when {@code context.isEnabled()} is already
+     * verified (the public {@link #addDocument(TurSNSite, Locale, Map)}
+     * still does the validation when no pre-built context is available).</p>
+     *
+     * @since 2026.2.4
+     */
+    public void addDocumentToContext(TurSNSite turSNSite, Locale locale,
+            TurGenAiContext context, Map<String, Object> doc) {
+        if (turSNSite == null || context == null || !context.isEnabled() || doc == null) {
+            return;
+        }
+        Object sourceId = doc.get(ID);
         RagFields fields = partitionFields(doc);
         if (fields.isEmpty()) {
             log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
@@ -489,7 +570,7 @@ public class TurSNGenAi {
     }
 
     public void addDocuments(TurSNJobItems turSNJobItems) {
-        log.info("RAG addDocuments called with {} document(s)", turSNJobItems.getTuringDocuments().size());
+        log.debug("RAG addDocuments called with {} document(s)", turSNJobItems.getTuringDocuments().size());
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
                 .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
                     if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
@@ -498,7 +579,7 @@ public class TurSNGenAi {
                         return;
                     }
                     String collectionName = resolveCollectionName(turSNSite, jobItem.getLocale());
-                    log.info("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
+                    log.debug("RAG building context for Object ID '{}' of SN Site '{}' (collection='{}')",
                             jobItem.getId(), siteName, collectionName);
                     TurGenAiContext context = turGenAiContextFactory.build(
                             turSNSite.getTurSNSiteGenAi(), collectionName);
@@ -522,18 +603,23 @@ public class TurSNGenAi {
         String idPrefix = sourceId == null ? null : sourceId.toString();
         List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata, idPrefix);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.info("RAG indexing {} chunk(s) for Object ID '{}' into vector store '{}' — metadata={}",
-                documents.size(), sourceId, vectorStoreType, metadata);
-        for (int i = 0; i < documents.size(); i++) {
-            Document chunk = documents.get(i);
-            log.info("  RAG indexing chunk[{}/{}] Object ID '{}' text=<<<\n{}\n>>>",
-                    i + 1, documents.size(), sourceId,
-                    chunk.getText() == null ? "" : chunk.getText());
+        if (log.isDebugEnabled()) {
+            log.debug("RAG indexing metadata for Object ID '{}': {}", sourceId, metadata);
+            for (int i = 0; i < documents.size(); i++) {
+                Document chunk = documents.get(i);
+                log.debug("  RAG indexing chunk[{}/{}] Object ID '{}' text=<<<\n{}\n>>>",
+                        i + 1, documents.size(), sourceId,
+                        chunk.getText() == null ? "" : chunk.getText());
+            }
         }
         turRagContextBuilder.reindexByMetadata(context.getRagInfrastructure(), documents,
                 SOURCE_ID, sourceId == null ? null : sourceId.toString());
-        log.info("RAG indexed Object ID '{}' into vector store '{}' (previous embeddings for same source_id removed)",
-                sourceId, vectorStoreType);
+        // Logged AFTER reindexByMetadata so the INFO line confirms the
+        // documents actually landed in the vector store. If reindexByMetadata
+        // throws, the caller sees a WARN/ERROR instead of a misleading
+        // "indexing" log followed by silent failure.
+        log.info("RAG indexed Object ID '{}' ({} chunk{}) into vector store '{}'",
+                sourceId, documents.size(), documents.size() == 1 ? "" : "s", vectorStoreType);
     }
 
     @NotNull

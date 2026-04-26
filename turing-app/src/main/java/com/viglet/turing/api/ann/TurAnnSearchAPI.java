@@ -31,7 +31,6 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.filter.Filter;
-import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -44,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.genai.TurRagFilters;
 import com.viglet.turing.genai.provider.store.TurStoreChunkPage;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -155,7 +155,7 @@ public class TurAnnSearchAPI {
     private TurAnnSearchResponse similaritySearch(String siteName, Locale locale,
             TurAnnSearchRequest body, TurGenAiContext context) {
         int topK = clampTopK(body.topK());
-        Filter.Expression filterExpr = buildFilterExpression(body.filters());
+        Filter.Expression filterExpr = TurRagFilters.buildFilterExpression(body.filters());
 
         SearchRequest.Builder reqBuilder = SearchRequest.builder()
                 .query(body.query())
@@ -277,38 +277,6 @@ public class TurAnnSearchAPI {
         }
         TurSNSiteLocale siteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(site, locale);
         return siteLocale != null ? siteLocale.getCore() : null;
-    }
-
-    /**
-     * Builds an AND-of-OR filter expression from the supplied facet selections.
-     * Multiple values for the same key compose an {@code IN} clause; multiple
-     * keys are joined with {@code AND}.
-     */
-    private Filter.Expression buildFilterExpression(Map<String, List<String>> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return null;
-        }
-        FilterExpressionBuilder b = new FilterExpressionBuilder();
-        FilterExpressionBuilder.Op combined = null;
-        for (Map.Entry<String, List<String>> entry : filters.entrySet()) {
-            String key = entry.getKey();
-            List<String> values = entry.getValue();
-            if (!StringUtils.hasText(key) || values == null || values.isEmpty()) {
-                continue;
-            }
-            List<Object> nonEmpty = values.stream()
-                    .filter(StringUtils::hasText)
-                    .map(Object.class::cast)
-                    .toList();
-            if (nonEmpty.isEmpty()) {
-                continue;
-            }
-            FilterExpressionBuilder.Op op = nonEmpty.size() == 1
-                    ? b.eq(key, nonEmpty.getFirst())
-                    : b.in(key, nonEmpty.toArray());
-            combined = combined == null ? op : b.and(combined, op);
-        }
-        return combined != null ? combined.build() : null;
     }
 
     /**

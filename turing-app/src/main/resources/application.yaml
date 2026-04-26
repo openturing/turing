@@ -51,6 +51,13 @@ turing:
   marketplace:
     enabled: true
     url: https://turing.viglet.org/marketplace/marketplace.json
+  genai:
+    reindex:
+      # Number of documents indexed in parallel during a RAG reindex.
+      # Embedding HTTP calls are I/O-bound, so a small fixed pool fully utilizes
+      # the embedding API without saturating typical rate limits. Set to 1 to
+      # force sequential indexing (useful for debugging or rate-limited APIs).
+      parallel: 4
   logging:
     engine: none        # none | mongodb | redis
     database: turingLog
