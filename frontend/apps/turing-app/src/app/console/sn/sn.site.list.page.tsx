@@ -8,7 +8,7 @@ import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurGridItemAction, TurGridItemDropdownItem } from "@/models/ui/grid-item";
 import { TurSNSiteService } from "@/services/sn/sn.service";
 import { TurFeaturesService } from "@/services/system/features.service";
-import { IconDownload, IconSearch, IconSettings } from "@tabler/icons-react";
+import { IconAtom, IconDownload, IconSearch, IconSettings } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
@@ -82,7 +82,37 @@ export default function SNSiteListPage() {
       url: `${ROUTES.SN_INSTANCE}/${site.id}`,
     };
 
-    return [searchAction, configureAction];
+    const annUrl = `/ann/${site.name}`;
+    const annDropdownItems: TurGridItemDropdownItem[] = hasMultipleLocales
+      ? locales.map((locale) => ({
+          iconifyIcon: "mdi:atom",
+          label: locale.language,
+          url: `${annUrl}?_setlocale=${locale.language}`,
+          external: true,
+        }))
+      : [];
+
+    const annAction: TurGridItemAction | null = site.genAiEnabled
+      ? annDropdownItems.length > 0
+        ? {
+            icon: IconAtom,
+            label: t("ann.openAnnSearch"),
+            url: annUrl,
+            external: true,
+            dropdownItems: annDropdownItems,
+          }
+        : {
+            icon: IconAtom,
+            label: t("ann.openAnnSearch"),
+            url: annUrl,
+            external: true,
+          }
+      : null;
+
+    const actions: TurGridItemAction[] = [searchAction];
+    if (annAction) actions.push(annAction);
+    actions.push(configureAction);
+    return actions;
   }, [storageEnabled, t]);
 
   const gridItemList = useGridAdapter(snInstances, {

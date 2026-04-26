@@ -32,6 +32,7 @@ import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import { TuringServiceProvider } from "./contexts/TuringServiceContext"
 import { BreadcrumbProvider } from "./contexts/breadcrumb.context"
+import AnnSearchPage from "./search/pages/ann-search.page"
 import SearchPage from "./search/pages/search.page"
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
               <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
+              <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
                 <Route index element={<Navigate to={ROUTES.HOME} replace />} />
                 <Route path="home" element={<HomePage />} />

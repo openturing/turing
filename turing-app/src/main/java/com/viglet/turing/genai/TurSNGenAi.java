@@ -19,7 +19,10 @@
 package com.viglet.turing.genai;
 
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ABSTRACT;
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.DEFAULT;
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.EXACT_MATCH;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.ID;
+import static com.viglet.turing.commons.sn.field.TurSNFieldName.IMAGE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.MODIFICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.PUBLICATION_DATE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.SOURCE_APPS;
@@ -28,12 +31,13 @@ import static com.viglet.turing.commons.sn.field.TurSNFieldName.TITLE;
 import static com.viglet.turing.commons.sn.field.TurSNFieldName.URL;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
@@ -69,6 +73,43 @@ public class TurSNGenAi {
     public static final String SOURCE_ID = "source_id";
     public static final String SITES = "sites";
     public static final String LOCALE = "locale";
+
+    /** Hard cap on a categorical value's length before it falls into the body. */
+    static final int MAX_HEADER_VALUE_LENGTH = 500;
+
+    /** Field names dropped entirely (Solr internals or non-textual URLs). */
+    private static final Set<String> RAG_EXCLUDED_FIELDS = Set.of(DEFAULT, EXACT_MATCH, IMAGE);
+
+    /**
+     * Field names handled by {@link #buildMetadata} via fixed keys; never
+     * appear in the contextual header to avoid duplicating system identity
+     * data inside the embedding text.
+     */
+    private static final Set<String> RAG_SYSTEM_FIELDS = Set.of(
+            ID, URL, MODIFICATION_DATE, PUBLICATION_DATE, SOURCE_APPS);
+
+    /**
+     * Result of partitioning a document for RAG indexing.
+     *
+     * @param header         Markdown-like identity block (title + categorical
+     *                       fields) propagated to every chunk.
+     * @param body           long-form content ({@code abstract} + {@code text})
+     *                       that gets chunked.
+     * @param customMetadata simple-typed fields (other than system fields)
+     *                       captured for ANN facet/filter use; mirrors the
+     *                       header so retrieval can {@code fq} on any field.
+     */
+    record RagFields(String header, String body, Map<String, Object> customMetadata) {
+        boolean isEmpty() {
+            return (header == null || header.isBlank())
+                    && (body == null || body.isBlank());
+        }
+
+        static RagFields empty() {
+            return new RagFields("", "", Map.of());
+        }
+    }
+
     private static final String DEFAULT_BEHAVIOR_PROMPT = """
             You are an assistant that answers questions about this website using only the context provided below.
 
@@ -279,7 +320,7 @@ public class TurSNGenAi {
         }
         Object sourceId = doc.get(ID);
         if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
-            log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+            log.debug("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
                     sourceId, turSNSite.getName());
             return;
         }
@@ -293,28 +334,126 @@ public class TurSNGenAi {
                     sourceId, turSNSite.getName());
             return;
         }
-        String text = extractIndexableText(doc);
-        if (text.isEmpty()) {
+        RagFields fields = partitionFields(doc);
+        if (fields.isEmpty()) {
             log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
                     sourceId, turSNSite.getName());
         }
-        addDocument(context, text, buildMetadata(turSNSite, locale, doc));
+        Map<String, Object> metadata = buildMetadata(turSNSite, locale, doc, fields);
+        addDocument(context, fields.header(), fields.body(), metadata);
     }
 
-    private String extractIndexableText(Map<String, Object> doc) {
-        StringBuilder sb = new StringBuilder();
-        String[] allowedAttributes = { TITLE, ABSTRACT, TEXT };
-        for (String attr : allowedAttributes) {
-            Object value = doc.get(attr);
-            if (value != null) {
-                sb.append(value).append(System.lineSeparator());
+    /**
+     * Partitions a document's attributes into:
+     * <ul>
+     *   <li><b>Header</b> — categorical/short fields (title + custom fields)
+     *       formatted as a Markdown-like block ({@code "# Title\nField: value\n..."})
+     *       that is propagated to every chunk so each chunk is self-contained
+     *       and the embedding sees the document's full identity regardless of
+     *       which slice is retrieved.</li>
+     *   <li><b>Body</b> — long-form content ({@code abstract} + {@code text})
+     *       that gets chunked.</li>
+     *   <li><b>customMetadata</b> — every simple-typed field captured for
+     *       filter/facet use, mirroring what the header sees so ANN queries
+     *       can {@code fq} on any field without re-indexing.</li>
+     * </ul>
+     *
+     * <p>System fields ({@link #ID}, {@link #URL}, {@link #MODIFICATION_DATE},
+     * {@link #PUBLICATION_DATE}, {@link #SOURCE_APPS}) are excluded from the
+     * header/customMetadata path because {@link #buildMetadata} adds them via
+     * fixed keys. {@link #IMAGE} and Solr internals ({@code _text_},
+     * {@code exact_match}) are dropped entirely.</p>
+     */
+    RagFields partitionFields(Map<String, Object> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return RagFields.empty();
+        }
+        StringBuilder header = new StringBuilder();
+        StringBuilder body = new StringBuilder();
+        Map<String, Object> customMetadata = new LinkedHashMap<>();
+
+        Object titleValue = attributes.get(TITLE);
+        if (titleValue != null) {
+            String title = TurRagUtils.stripHtml(titleValue.toString()).trim();
+            if (!title.isEmpty()) {
+                header.append("# ").append(title).append("\n");
+                customMetadata.put(TITLE, titleValue);
             }
         }
-        return sb.toString();
+
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value == null || RAG_EXCLUDED_FIELDS.contains(key) || RAG_SYSTEM_FIELDS.contains(key)
+                    || TITLE.equals(key) || ABSTRACT.equals(key) || TEXT.equals(key)) {
+                continue;
+            }
+            if (!isSimpleType(value)) {
+                continue;
+            }
+            String formatted = formatHeaderValue(value);
+            if (formatted.isBlank()) {
+                continue;
+            }
+            // Long values fall through to the body so the header stays compact.
+            if (formatted.length() > MAX_HEADER_VALUE_LENGTH) {
+                body.append(key).append(": ").append(formatted).append("\n\n");
+                continue;
+            }
+            header.append(key).append(": ").append(formatted).append("\n");
+            customMetadata.put(key, value);
+        }
+
+        Object abstractValue = attributes.get(ABSTRACT);
+        if (abstractValue != null) {
+            String stripped = TurRagUtils.stripHtml(abstractValue.toString()).trim();
+            if (!stripped.isEmpty()) {
+                body.append(stripped).append("\n\n");
+            }
+        }
+        Object textValue = attributes.get(TEXT);
+        if (textValue != null) {
+            String stripped = TurRagUtils.stripHtml(textValue.toString()).trim();
+            if (!stripped.isEmpty()) {
+                body.append(stripped).append("\n\n");
+            }
+        }
+
+        return new RagFields(
+                header.toString().stripTrailing(),
+                body.toString().stripTrailing(),
+                customMetadata);
     }
 
-    private Map<String, Object> buildMetadata(TurSNSite turSNSite, Locale locale, Map<String, Object> doc) {
-        Map<String, Object> metadata = new HashMap<>();
+    private static String formatHeaderValue(Object value) {
+        if (value instanceof Collection<?> collection) {
+            return collection.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(Object::toString)
+                    .map(TurRagUtils::stripHtml)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.joining(", "));
+        }
+        return TurRagUtils.stripHtml(value.toString()).trim();
+    }
+
+    private static boolean isSimpleType(Object value) {
+        if (value instanceof CharSequence || value instanceof Number || value instanceof Boolean) {
+            return true;
+        }
+        if (value instanceof Collection<?> collection) {
+            return collection.stream().allMatch(v -> v == null
+                    || v instanceof CharSequence
+                    || v instanceof Number
+                    || v instanceof Boolean);
+        }
+        return false;
+    }
+
+    private Map<String, Object> buildMetadata(TurSNSite turSNSite, Locale locale,
+            Map<String, Object> doc, RagFields fields) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put(SOURCE_ID, doc.get(ID));
         if (locale != null) {
             metadata.put(LOCALE, locale.toString());
@@ -331,6 +470,11 @@ public class TurSNGenAi {
         }
         if (doc.containsKey(URL)) {
             metadata.put(URL, doc.get(URL));
+        }
+        // Categorical/short fields collected by partitionFields — these power
+        // ANN facets and filter queries (every key indexed as meta_<key> in Lucene).
+        for (Map.Entry<String, Object> entry : fields.customMetadata().entrySet()) {
+            metadata.putIfAbsent(entry.getKey(), entry.getValue());
         }
         return metadata;
     }
@@ -349,7 +493,7 @@ public class TurSNGenAi {
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
                 .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
                     if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
-                        log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+                        log.debug("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
                                 jobItem.getId(), siteName);
                         return;
                     }
@@ -363,19 +507,18 @@ public class TurSNGenAi {
                                 jobItem.getId(), siteName);
                         return;
                     }
-                    StringBuilder sb = new StringBuilder();
-                    addAttributes(context, jobItem, sb);
-                    if (sb.length() == 0) {
+                    RagFields fields = partitionFields(jobItem.getAttributes());
+                    if (fields.isEmpty()) {
                         log.warn("RAG document for Object ID '{}' of SN Site '{}' has no indexable text (title/abstract/text attributes are empty)",
                                 jobItem.getId(), siteName);
                     }
-                    addDocument(context, sb.toString(), setMetadata(jobItem));
+                    addDocument(context, fields.header(), fields.body(), buildMetadataFromJob(jobItem, fields));
                 }, () -> log.warn("RAG skipped for Object ID '{}': SN Site '{}' not resolved by search process",
                         jobItem.getId(), siteName))));
     }
 
-    private void addDocument(TurGenAiContext context, String text, Map<String, Object> metadata) {
-        List<Document> documents = TurRagUtils.createDocuments(text, metadata);
+    private void addDocument(TurGenAiContext context, String header, String body, Map<String, Object> metadata) {
+        List<Document> documents = TurRagUtils.createDocumentsWithHeader(header, body, metadata);
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
         Object sourceId = metadata.get(SOURCE_ID);
         log.info("RAG indexing {} chunk(s) for Object ID '{}' into vector store '{}' — metadata={}",
@@ -392,19 +535,9 @@ public class TurSNGenAi {
                 sourceId, vectorStoreType);
     }
 
-    private void addAttributes(TurGenAiContext context, TurSNJobItem jobItem, StringBuilder sb) {
-        if (context.isEnabled()) {
-            String[] allowedAttributes = { TITLE, ABSTRACT, TEXT };
-            jobItem.getAttributes().forEach((key, value) -> {
-                if (Arrays.asList(allowedAttributes).contains(key))
-                    sb.append(value).append(System.lineSeparator());
-            });
-        }
-    }
-
     @NotNull
-    private Map<String, Object> setMetadata(TurSNJobItem jobItem) {
-        Map<String, Object> metadata = new HashMap<>();
+    private Map<String, Object> buildMetadataFromJob(TurSNJobItem jobItem, RagFields fields) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put(SOURCE_ID, jobItem.getId());
         if (jobItem.getLocale() != null) {
             metadata.put(LOCALE, jobItem.getLocale().toString());
@@ -419,6 +552,11 @@ public class TurSNGenAi {
         }
         if (jobItem.getAttributes().containsKey(URL)) {
             metadata.put(URL, jobItem.getAttributes().get(URL));
+        }
+        // Categorical/short fields collected by partitionFields — these power
+        // ANN facets and filter queries (every key indexed as meta_<key> in Lucene).
+        for (Map.Entry<String, Object> entry : fields.customMetadata().entrySet()) {
+            metadata.putIfAbsent(entry.getKey(), entry.getValue());
         }
         return metadata;
     }

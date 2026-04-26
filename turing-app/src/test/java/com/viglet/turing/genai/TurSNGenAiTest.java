@@ -503,4 +503,123 @@ class TurSNGenAiTest {
         assertEquals("sites", TurSNGenAi.SITES);
         assertEquals("locale", TurSNGenAi.LOCALE);
     }
+
+    @Test
+    void partitionFields_shouldPlaceTitleAsHeadingAndAbstractTextInBody() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "MBA Executivo");
+        attrs.put("abstract", "Programa intensivo de gestão.");
+        attrs.put("text", "Conteúdo detalhado do curso aqui.");
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        assertTrue(fields.header().contains("# MBA Executivo"));
+        assertTrue(fields.body().contains("Programa intensivo"));
+        assertTrue(fields.body().contains("Conteúdo detalhado"));
+        assertFalse(fields.header().contains("Conteúdo detalhado"));
+        assertEquals("MBA Executivo", fields.customMetadata().get("title"));
+    }
+
+    @Test
+    void partitionFields_shouldPutCustomCategoricalFieldsInHeaderAndMetadata() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "Course X");
+        attrs.put("category", "Educação Executiva");
+        attrs.put("instructor", "João Silva");
+        attrs.put("level", "Avançado");
+        attrs.put("text", "Body content");
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        assertTrue(fields.header().contains("category: Educação Executiva"));
+        assertTrue(fields.header().contains("instructor: João Silva"));
+        assertTrue(fields.header().contains("level: Avançado"));
+        assertEquals("Educação Executiva", fields.customMetadata().get("category"));
+        assertEquals("João Silva", fields.customMetadata().get("instructor"));
+        assertEquals("Avançado", fields.customMetadata().get("level"));
+    }
+
+    @Test
+    void partitionFields_shouldExpandListValuesAsCommaSeparatedInHeader() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "Course");
+        attrs.put("tags", List.of("strategy", "leadership", "innovation"));
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        assertTrue(fields.header().contains("tags: strategy, leadership, innovation"));
+        // Original list preserved in metadata so Lucene indexes each value as a
+        // separate term for IN-filter and faceting.
+        assertEquals(List.of("strategy", "leadership", "innovation"),
+                fields.customMetadata().get("tags"));
+    }
+
+    @Test
+    void partitionFields_shouldExcludeSystemAndInternalFields() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "Course");
+        attrs.put("id", "doc-1");
+        attrs.put("url", "http://example.com");
+        attrs.put("modification_date", "2026-01-01");
+        attrs.put("publication_date", "2026-01-01");
+        attrs.put("source_apps", "provider");
+        attrs.put("image", "http://example.com/img.png");
+        attrs.put("_text_", "solr internal");
+        attrs.put("exact_match", "x");
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        // None of these system / internal fields should leak into the embedding header.
+        assertFalse(fields.header().contains("doc-1"));
+        assertFalse(fields.header().contains("http://example.com"));
+        assertFalse(fields.header().contains("source_apps"));
+        assertFalse(fields.header().contains("_text_"));
+        // And they're not mirrored into customMetadata either (handled separately).
+        assertFalse(fields.customMetadata().containsKey("id"));
+        assertFalse(fields.customMetadata().containsKey("url"));
+        assertFalse(fields.customMetadata().containsKey("source_apps"));
+    }
+
+    @Test
+    void partitionFields_shouldStripHtmlFromAllFields() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "<h1>Curso <em>MBA</em></h1>");
+        attrs.put("category", "<p>Educação <strong>Executiva</strong></p>");
+        attrs.put("text", "<div>Conteúdo <a href=\"x\">real</a> aqui.</div>");
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        assertFalse(fields.header().contains("<"));
+        assertFalse(fields.body().contains("<"));
+        assertTrue(fields.header().contains("Curso MBA"));
+        assertTrue(fields.header().contains("Educação Executiva"));
+        assertTrue(fields.body().contains("Conteúdo real aqui"));
+    }
+
+    @Test
+    void partitionFields_shouldPushOversizedCategoricalToBody() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("title", "Course");
+        // 600 chars > 500 limit → falls into body.
+        String longDescription = "x".repeat(600);
+        attrs.put("description", longDescription);
+
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(attrs);
+
+        assertFalse(fields.header().contains("description:"));
+        assertTrue(fields.body().contains("description: " + longDescription));
+        assertFalse(fields.customMetadata().containsKey("description"));
+    }
+
+    @Test
+    void partitionFields_shouldHandleEmptyAttributes() {
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(new HashMap<>());
+        assertTrue(fields.isEmpty());
+    }
+
+    @Test
+    void partitionFields_shouldHandleNullAttributes() {
+        TurSNGenAi.RagFields fields = turSNGenAi.partitionFields(null);
+        assertTrue(fields.isEmpty());
+    }
 }

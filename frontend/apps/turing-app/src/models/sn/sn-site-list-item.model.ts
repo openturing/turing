@@ -11,6 +11,7 @@ export type TurSNSiteListItem = {
   description: string;
   icon?: string | null;
   searchTemplate?: string | null;
+  genAiEnabled?: boolean;
   turSNSiteLocales: TurSNSiteListLocale[];
 };
 

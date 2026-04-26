@@ -1,0 +1,286 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package com.viglet.turing.api.ann;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.commons.lang3.LocaleUtils;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
+import com.viglet.turing.genai.TurGenAiContext;
+import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.sn.TurSNSearchProcess;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Public ANN (Approximate Nearest Neighbor) search endpoint that queries the
+ * site's configured vector store directly. All metadata fields on the
+ * retrieved documents are exposed as facets, aggregated within the {@code topK}
+ * window. Requires {@code TurSNSiteGenAi.enabled = true} on the site —
+ * otherwise responds {@code 404} so the page is effectively gated by RAG.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.4
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/ann/{siteName}")
+@Tag(name = "ANN Search", description = "Vector store similarity search per SN site")
+public class TurAnnSearchAPI {
+
+    private static final int DEFAULT_TOP_K = 20;
+    private static final int MAX_TOP_K = 200;
+
+    private final TurSNSearchProcess turSNSearchProcess;
+    private final TurGenAiContextFactory turGenAiContextFactory;
+    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteSearchService turSNSiteSearchService;
+
+    public TurAnnSearchAPI(TurSNSearchProcess turSNSearchProcess,
+            TurGenAiContextFactory turGenAiContextFactory,
+            TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+            TurSNSiteSearchService turSNSiteSearchService) {
+        this.turSNSearchProcess = turSNSearchProcess;
+        this.turGenAiContextFactory = turGenAiContextFactory;
+        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteSearchService = turSNSiteSearchService;
+    }
+
+    public record TurAnnSearchRequest(
+            String query,
+            String locale,
+            Integer topK,
+            Map<String, List<String>> filters) {
+    }
+
+    public record TurAnnResultItem(
+            String id,
+            String content,
+            Double score,
+            Map<String, Object> metadata) {
+    }
+
+    public record TurAnnFacetItem(String value, int count) {
+    }
+
+    public record TurAnnSearchResponse(
+            String query,
+            String locale,
+            int topK,
+            int totalHits,
+            List<TurAnnResultItem> results,
+            Map<String, List<TurAnnFacetItem>> facets) {
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<TurAnnSearchResponse> search(@PathVariable String siteName,
+            @RequestBody TurAnnSearchRequest body) {
+        if (body == null || !StringUtils.hasText(body.query())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        TurSNSite site = turSNSearchProcess.getSNSite(siteName).orElse(null);
+        if (site == null) {
+            return ResponseEntity.notFound().build();
+        }
+        var genAi = site.getTurSNSiteGenAi();
+        if (genAi == null || !genAi.isEnabled()) {
+            // 403 (not 404) so the frontend can distinguish "RAG disabled" from
+            // "endpoint missing / app not restarted yet".
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Locale locale = resolveLocale(body.locale(), siteName);
+        String collectionName = resolveCollectionName(site, locale);
+
+        TurGenAiContext context = turGenAiContextFactory.build(genAi, collectionName);
+        if (!context.isEnabled() || context.getVectorStore() == null) {
+            log.warn("ANN search: RAG context not available for site '{}' (locale='{}')", siteName, locale);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
+
+        int topK = clampTopK(body.topK());
+        Filter.Expression filterExpr = buildFilterExpression(body.filters());
+
+        SearchRequest.Builder reqBuilder = SearchRequest.builder()
+                .query(body.query())
+                .topK(topK);
+        if (filterExpr != null) {
+            reqBuilder.filterExpression(filterExpr);
+        }
+
+        log.info("ANN search site='{}' locale='{}' topK={} filters={} query='{}'",
+                siteName, locale, topK, body.filters(), body.query());
+
+        List<Document> hits;
+        try {
+            hits = context.getVectorStore().similaritySearch(reqBuilder.build());
+        } catch (Exception e) {
+            log.error("ANN search failed for site '{}': {}", siteName, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        if (hits == null) {
+            hits = List.of();
+        }
+
+        List<TurAnnResultItem> items = new ArrayList<>(hits.size());
+        for (Document doc : hits) {
+            items.add(new TurAnnResultItem(
+                    doc.getId(),
+                    doc.getText(),
+                    doc.getScore(),
+                    doc.getMetadata() != null ? doc.getMetadata() : Map.of()));
+        }
+
+        Map<String, List<TurAnnFacetItem>> facets = aggregateFacets(items);
+
+        return ResponseEntity.ok(new TurAnnSearchResponse(
+                body.query(),
+                locale.toString(),
+                topK,
+                items.size(),
+                items,
+                facets));
+    }
+
+    private int clampTopK(Integer requested) {
+        if (requested == null || requested <= 0) {
+            return DEFAULT_TOP_K;
+        }
+        return Math.min(requested, MAX_TOP_K);
+    }
+
+    private Locale resolveLocale(String requested, String siteName) {
+        if (!StringUtils.hasText(requested)) {
+            return turSNSiteSearchService.resolveDefaultLocale(siteName);
+        }
+        try {
+            return LocaleUtils.toLocale(requested);
+        } catch (IllegalArgumentException e) {
+            return turSNSiteSearchService.resolveDefaultLocale(siteName);
+        }
+    }
+
+    private String resolveCollectionName(TurSNSite site, Locale locale) {
+        if (locale == null) {
+            return null;
+        }
+        TurSNSiteLocale siteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(site, locale);
+        return siteLocale != null ? siteLocale.getCore() : null;
+    }
+
+    /**
+     * Builds an AND-of-OR filter expression from the supplied facet selections.
+     * Multiple values for the same key compose an {@code IN} clause; multiple
+     * keys are joined with {@code AND}.
+     */
+    private Filter.Expression buildFilterExpression(Map<String, List<String>> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return null;
+        }
+        FilterExpressionBuilder b = new FilterExpressionBuilder();
+        FilterExpressionBuilder.Op combined = null;
+        for (Map.Entry<String, List<String>> entry : filters.entrySet()) {
+            String key = entry.getKey();
+            List<String> values = entry.getValue();
+            if (!StringUtils.hasText(key) || values == null || values.isEmpty()) {
+                continue;
+            }
+            List<Object> nonEmpty = values.stream()
+                    .filter(StringUtils::hasText)
+                    .map(Object.class::cast)
+                    .toList();
+            if (nonEmpty.isEmpty()) {
+                continue;
+            }
+            FilterExpressionBuilder.Op op = nonEmpty.size() == 1
+                    ? b.eq(key, nonEmpty.getFirst())
+                    : b.in(key, nonEmpty.toArray());
+            combined = combined == null ? op : b.and(combined, op);
+        }
+        return combined != null ? combined.build() : null;
+    }
+
+    /**
+     * Aggregates facet counts over the returned hits. Scalar values become a
+     * single bucket; collections/arrays expand into multiple buckets. Buckets
+     * are sorted by count desc.
+     */
+    private Map<String, List<TurAnnFacetItem>> aggregateFacets(List<TurAnnResultItem> items) {
+        Map<String, Map<String, Integer>> raw = new LinkedHashMap<>();
+        for (TurAnnResultItem item : items) {
+            for (Map.Entry<String, Object> entry : item.metadata().entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value == null) {
+                    continue;
+                }
+                Map<String, Integer> bucket = raw.computeIfAbsent(key, k -> new LinkedHashMap<>());
+                if (value instanceof Collection<?> collection) {
+                    for (Object v : collection) {
+                        if (v != null) {
+                            bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
+                        }
+                    }
+                } else if (value.getClass().isArray()) {
+                    for (Object v : (Object[]) value) {
+                        if (v != null) {
+                            bucket.merge(String.valueOf(v), 1, (a, c) -> a + c);
+                        }
+                    }
+                } else {
+                    bucket.merge(String.valueOf(value), 1, (a, c) -> a + c);
+                }
+            }
+        }
+        Map<String, List<TurAnnFacetItem>> facets = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Integer>> entry : raw.entrySet()) {
+            List<TurAnnFacetItem> sorted = entry.getValue().entrySet().stream()
+                    .sorted((a, c) -> Integer.compare(c.getValue(), a.getValue()))
+                    .map(e -> new TurAnnFacetItem(e.getKey(), e.getValue()))
+                    .toList();
+            facets.put(entry.getKey(), sorted);
+        }
+        return facets;
+    }
+}

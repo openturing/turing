@@ -1,0 +1,21 @@
+{
+  "ann": {
+    "title": "Busca ANN",
+    "placeholder": "Pergunte qualquer coisa — busca semântica vetorial...",
+    "search": "Buscar",
+    "facets": "Filtros",
+    "noFacets": "Sem metadados disponíveis para filtragem ainda.",
+    "noResults": "Nenhum resultado encontrado.",
+    "empty": "Digite uma pergunta para buscar no banco vetorial.",
+    "resultsCount": "Exibindo {{count}} de top {{topK}} correspondências",
+    "clearFilters": "Limpar filtros",
+    "score": "Score",
+    "viewJson": "Ver JSON cru",
+    "applyFilter": "Filtrar por este valor",
+    "removeFilter": "Remover este filtro",
+    "notAvailable": "Busca ANN não está disponível para este site (RAG desabilitado).",
+    "siteNotFound": "Site não encontrado.",
+    "error": "A busca falhou. Tente novamente.",
+    "openAnnSearch": "Abrir Busca ANN"
+  }
+}

@@ -7,6 +7,7 @@ export const ROUTES = {
   CONSOLE: consolePath,
   HOME: `${consolePath}/home`,
   SN_SEARCH: `/sn`,
+  ANN_SEARCH: `/ann`,
   SN_ROOT: `${consolePath}/sn`,
   SN_INSTANCE: `${consolePath}/sn/instance`,
   SE_ROOT: `${consolePath}/se`,

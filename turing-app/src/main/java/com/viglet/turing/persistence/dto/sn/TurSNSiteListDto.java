@@ -43,6 +43,7 @@ public record TurSNSiteListDto(
         String description,
         String icon,
         String searchTemplate,
+        boolean genAiEnabled,
         List<TurSNSiteLocaleSummary> turSNSiteLocales
 ) {
     public record TurSNSiteLocaleSummary(Locale language) {
