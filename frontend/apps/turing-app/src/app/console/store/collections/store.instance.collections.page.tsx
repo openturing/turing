@@ -21,19 +21,22 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
+import { ROUTES } from "@/app/routes.const"
 import { type TurStoreCollectionInfo, TurStoreInstanceService } from "@/services/store/store.service"
-import { IconDatabase, IconEraser, IconLayersSubtract, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconDatabase, IconDownload, IconEraser, IconLayersSubtract, IconPackageImport, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 
 function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreCollectionInfo; storeId: string; onRefresh: () => void }>) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [clearOpen, setClearOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const handleClear = () => {
     setClearOpen(false)
@@ -49,6 +52,27 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
       .catch(() => toast.error(t("store.collections.deleteFailed", { name: col.name })))
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const blob = await turStoreInstanceService.exportCollection(storeId, col.name)
+      const safeName = col.name.replace(/[^A-Za-z0-9._-]/g, "_")
+      const url = globalThis.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${safeName}.jsonl.zip`
+      document.body.appendChild(a)
+      a.click()
+      globalThis.URL.revokeObjectURL(url)
+      a.remove()
+      toast.success(t("store.collections.exported", { name: col.name }))
+    } catch {
+      toast.error(t("store.collections.exportFailed", { name: col.name }))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <TableRow>
       <TableCell className="font-medium">
@@ -62,6 +86,27 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
       <TableCell className="text-right font-medium tabular-nums">{col.chunkCount.toLocaleString()}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t("store.collections.import")}
+            onClick={() =>
+              navigate(
+                `${ROUTES.STORE_INSTANCE}/${storeId}/collections/${encodeURIComponent(col.name)}/import`,
+              )
+            }
+          >
+            <IconPackageImport className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t("store.collections.export")}
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <IconDownload className="size-4" />
+          </Button>
           <DialogDelete
             feature="documents"
             name={col.name}

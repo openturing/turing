@@ -7,7 +7,14 @@ import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+/**
+ * Pluggable backend for embedding/vector storage. Implementations bridge a
+ * particular store (Chroma, PGVector, Lucene, Milvus, …) into Spring AI's
+ * {@link VectorStore} abstraction and expose admin operations (collection
+ * lifecycle, listing, export, import) used by the React console.
+ */
 public interface TurGenAiStoreProvider {
 
     String getPluginType();
@@ -104,5 +111,70 @@ public interface TurGenAiStoreProvider {
                                           Map<String, List<String>> filters) {
         throw new UnsupportedOperationException(
                 "listChunks not supported by store provider '" + getPluginType() + "'");
+    }
+
+    /**
+     * Streams every chunk in {@code collectionName} to {@code consumer} for an
+     * agnostic export (e.g., JSONL download). Implementations decide their own
+     * page/cursor strategy and must call the consumer once per chunk in any
+     * order — the writer on the other side accumulates lines.
+     * <p>
+     * The default implementation paginates via {@link #listChunks} without
+     * embeddings, so out-of-the-box exports preserve {@code id}, {@code content}
+     * and {@code metadata}. Providers that can cheaply expose the raw vector
+     * (PGVector, Lucene, Chroma) override this method and populate
+     * {@link TurStoreExportRecord#embedding()}.
+     *
+     * @since 2026.2.4
+     */
+    /**
+     * Bulk upserts the given records into {@code collectionName}. Records
+     * whose {@link TurStoreExportRecord#embedding()} is null/empty are
+     * re-embedded using {@code embeddingModel}; records that already have a
+     * vector are persisted verbatim.
+     * <p>
+     * Default implementation throws {@link UnsupportedOperationException}
+     * — admin-style imports rely on each backend's native upsert (Chroma's
+     * {@code upsertEmbeddings}, PGVector's batch INSERT, …) so the provider
+     * decides the contract. Spring AI's {@link VectorStore#add} is not used:
+     * Document in 2.x has no embedding setter, so {@code add()} would force a
+     * re-embed for every record and silently discard the JSONL vectors.
+     *
+     * @param embeddingModel non-null when any input record may lack a vector
+     *                       — required to re-embed; ignored when every record
+     *                       already has an embedding.
+     * @since 2026.2.4
+     */
+    default TurStoreImportResult importChunks(TurStoreInstance turStoreInstance,
+                                                String decryptedCredential,
+                                                String collectionName,
+                                                Iterable<TurStoreExportRecord> records,
+                                                EmbeddingModel embeddingModel) {
+        throw new UnsupportedOperationException(
+                "importChunks not supported by store provider '" + getPluginType() + "'");
+    }
+
+    default void streamExport(TurStoreInstance turStoreInstance,
+                              String decryptedCredential,
+                              String collectionName,
+                              Consumer<TurStoreExportRecord> consumer) {
+        int pageSize = 200;
+        int page = 0;
+        while (true) {
+            TurStoreChunkPage result = listChunks(turStoreInstance, decryptedCredential,
+                    collectionName, page, pageSize, null);
+            List<TurStoreChunkPage.Chunk> chunks = result.chunks();
+            if (chunks == null || chunks.isEmpty()) {
+                return;
+            }
+            for (TurStoreChunkPage.Chunk chunk : chunks) {
+                consumer.accept(new TurStoreExportRecord(
+                        chunk.id(), chunk.content(), null, chunk.metadata()));
+            }
+            if (chunks.size() < pageSize) {
+                return;
+            }
+            page++;
+        }
     }
 }

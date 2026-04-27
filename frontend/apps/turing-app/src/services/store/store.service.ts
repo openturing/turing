@@ -8,6 +8,14 @@ export interface TurStoreCollectionInfo {
   chunkCount: number;
 }
 
+export interface TurStoreImportResult {
+  total: number;
+  imported: number;
+  preserved: number;
+  reEmbedded: number;
+  failed: number;
+}
+
 export class TurStoreInstanceService {
   async query(): Promise<TurStoreInstance[]> {
     const response = await axios.get<TurStoreInstance[]>("/store");
@@ -52,6 +60,42 @@ export class TurStoreInstanceService {
 
   async deleteCollection(id: string, collectionName: string): Promise<void> {
     await axios.delete(`/store/${id}/collections/${encodeURIComponent(collectionName)}`);
+  }
+
+  async exportCollection(id: string, collectionName: string): Promise<Blob> {
+    const response = await axios.get<Blob>(
+      `/store/${id}/collections/${encodeURIComponent(collectionName)}/export`,
+      { responseType: "blob" },
+    );
+    return response.data;
+  }
+
+  async importCollection(
+    id: string,
+    collectionName: string,
+    file: File,
+    onProgress?: (progress: number) => void,
+    embeddingModelId?: string,
+  ): Promise<TurStoreImportResult> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const params: Record<string, string> = {};
+    if (embeddingModelId) {
+      params.embeddingModelId = embeddingModelId;
+    }
+    const response = await axios.post<TurStoreImportResult>(
+      `/store/${id}/collections/${encodeURIComponent(collectionName)}/import`,
+      formData,
+      {
+        params,
+        onUploadProgress: (e) => {
+          if (e.total && onProgress) {
+            onProgress(Math.round((e.loaded * 100) / e.total));
+          }
+        },
+      },
+    );
+    return response.data;
   }
   async getSystemInfo(id: string): Promise<Record<string, string>> {
     const response = await axios.get<Record<string, string>>(`/store/${id}/system-info`);

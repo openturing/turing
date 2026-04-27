@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+
+import java.util.LinkedHashMap;
 
 import org.springframework.ai.chroma.vectorstore.ChromaApi;
 import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
@@ -384,6 +387,273 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             return new TurStoreChunkPage(List.of(), total);
         }
     }
+
+    /**
+     * Bulk upserts JSONL records into a Chroma collection. Records that
+     * already carry an embedding are persisted verbatim via
+     * {@link ChromaApi#upsertEmbeddings}; records with a missing/empty vector
+     * are re-embedded through {@code embeddingModel}. Both paths share the
+     * same upsert call so the on-disk row count matches what the user
+     * uploaded.
+     * <p>
+     * Records are flushed in batches of {@link #IMPORT_BATCH_SIZE} to bound
+     * peak memory (embeddings dominate the request body) and to give the user
+     * feedback in case a transport error aborts the import partway through.
+     *
+     * @since 2026.2.4
+     */
+    @Override
+    public TurStoreImportResult importChunks(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            Iterable<TurStoreExportRecord> records,
+            EmbeddingModel embeddingModel) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
+
+        ChromaApi.Collection collection;
+        try {
+            collection = chromaApi.getCollection(tenantName, databaseName, collectionName);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to resolve collection '{}' for importChunks: {}",
+                    collectionName, e.getMessage());
+            throw new TurRuntimeException("Failed to resolve collection: " + collectionName, e);
+        }
+        if (collection == null) {
+            throw new TurRuntimeException("Collection not found: " + collectionName);
+        }
+
+        ImportBatchAccumulator batch = new ImportBatchAccumulator();
+        int total = 0;
+        int preserved = 0;
+        int reEmbedded = 0;
+        int failed = 0;
+
+        for (TurStoreExportRecord record : records) {
+            total++;
+            if (record == null) {
+                failed++;
+                continue;
+            }
+            String id = StringUtils.hasText(record.id())
+                    ? record.id()
+                    : java.util.UUID.randomUUID().toString();
+            String content = record.content() == null ? "" : record.content();
+            float[] embedding = record.embedding();
+            boolean wasReEmbedded = false;
+            if (embedding == null || embedding.length == 0) {
+                if (embeddingModel == null || content.isBlank()) {
+                    failed++;
+                    log.debug("[Chroma] Skipping record '{}': cannot re-embed (model={}, blank={})",
+                            id, embeddingModel != null, content.isBlank());
+                    continue;
+                }
+                try {
+                    embedding = embeddingModel.embed(content);
+                    wasReEmbedded = true;
+                } catch (Exception e) {
+                    failed++;
+                    log.warn("[Chroma] Failed to re-embed record '{}': {}", id, e.getMessage());
+                    continue;
+                }
+            }
+            batch.add(id, embedding, toChromaMetadata(record.metadata()), content, wasReEmbedded);
+            if (batch.size() >= IMPORT_BATCH_SIZE) {
+                int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
+                preserved += outcome[0];
+                reEmbedded += outcome[1];
+                failed += outcome[2];
+                batch.clear();
+            }
+        }
+        if (batch.size() > 0) {
+            int[] outcome = flushImportBatch(chromaApi, tenantName, databaseName, collection.id(), batch);
+            preserved += outcome[0];
+            reEmbedded += outcome[1];
+            failed += outcome[2];
+        }
+        return new TurStoreImportResult(total, preserved + reEmbedded, preserved, reEmbedded, failed);
+    }
+
+    /**
+     * Flushes the accumulated batch via {@link ChromaApi#upsertEmbeddings}.
+     * Returns {@code [preservedCount, reEmbeddedCount, failedCount]} so the
+     * caller can fold per-batch outcomes into running totals exactly — on a
+     * transport failure the entire batch moves to {@code failed}, leaving the
+     * "preserved + reEmbedded = imported" invariant intact.
+     */
+    private int[] flushImportBatch(ChromaApi chromaApi, String tenantName, String databaseName,
+            String collectionId, ImportBatchAccumulator batch) {
+        try {
+            ChromaApi.AddEmbeddingsRequest request = new ChromaApi.AddEmbeddingsRequest(
+                    new ArrayList<>(batch.ids),
+                    new ArrayList<>(batch.embeddings),
+                    new ArrayList<>(batch.metadata),
+                    new ArrayList<>(batch.documents));
+            chromaApi.upsertEmbeddings(tenantName, databaseName, collectionId, request);
+            log.info("[Chroma] Imported batch of {} records into '{}'", batch.size(), collectionId);
+            return new int[] { batch.preservedInBatch, batch.reEmbeddedInBatch, 0 };
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to upsert batch of {} records into '{}': {}",
+                    batch.size(), collectionId, e.getMessage());
+            return new int[] { 0, 0, batch.size() };
+        }
+    }
+
+    /**
+     * Mutable accumulator paired with {@link #flushImportBatch} — keeps the
+     * four parallel arrays Chroma's {@code AddEmbeddingsRequest} expects, plus
+     * per-batch counters so the controller can render an accurate summary.
+     */
+    private static final class ImportBatchAccumulator {
+        final List<String> ids = new ArrayList<>(IMPORT_BATCH_SIZE);
+        final List<float[]> embeddings = new ArrayList<>(IMPORT_BATCH_SIZE);
+        final List<Map<String, Object>> metadata = new ArrayList<>(IMPORT_BATCH_SIZE);
+        final List<String> documents = new ArrayList<>(IMPORT_BATCH_SIZE);
+        int preservedInBatch;
+        int reEmbeddedInBatch;
+
+        void add(String id, float[] embedding, Map<String, Object> meta, String content, boolean reEmbedded) {
+            ids.add(id);
+            embeddings.add(embedding);
+            metadata.add(meta);
+            documents.add(content);
+            if (reEmbedded) {
+                reEmbeddedInBatch++;
+            } else {
+                preservedInBatch++;
+            }
+        }
+
+        int size() {
+            return ids.size();
+        }
+
+        void clear() {
+            ids.clear();
+            embeddings.clear();
+            metadata.clear();
+            documents.clear();
+            preservedInBatch = 0;
+            reEmbeddedInBatch = 0;
+        }
+    }
+
+    /**
+     * Converts the JSONL metadata map (arbitrary scalar values) to the shape
+     * Chroma's API expects: every value coerced to its {@code String} form.
+     * Chroma stringifies metadata internally on insert, so passing typed
+     * values would risk inconsistent retrieval (a number coming back as a
+     * string). Stringifying at insert time matches what the existing
+     * {@code TurChromaVectorStore} does.
+     */
+    private Map<String, Object> toChromaMetadata(Map<String, Object> source) {
+        if (source == null || source.isEmpty()) {
+            return new LinkedHashMap<>();
+        }
+        Map<String, Object> result = new LinkedHashMap<>(source.size());
+        for (Map.Entry<String, Object> e : source.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) {
+                continue;
+            }
+            result.put(e.getKey(), String.valueOf(e.getValue()));
+        }
+        return result;
+    }
+
+    /**
+     * Page size used by {@link #importChunks} when batching upserts to Chroma.
+     * Mirrors the export page size to bound peak memory regardless of vector
+     * dimensionality.
+     */
+    private static final int IMPORT_BATCH_SIZE = 200;
+
+    /**
+     * Streams every chunk in the collection — including the raw embedding
+     * vector — by paging through Chroma's {@code /get} endpoint with
+     * {@link ChromaApi.QueryRequest.Include#EMBEDDINGS} requested. Stops as
+     * soon as a page returns fewer than {@code EXPORT_PAGE_SIZE} ids, which is
+     * Chroma's convention for "end of result set". Per-page failures are
+     * logged and abort the export so partial files are not produced silently.
+     *
+     * @since 2026.2.4
+     */
+    @Override
+    public void streamExport(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName,
+            Consumer<TurStoreExportRecord> consumer) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
+
+        ChromaApi.Collection collection;
+        try {
+            collection = chromaApi.getCollection(tenantName, databaseName, collectionName);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to resolve collection '{}' for streamExport: {}",
+                    collectionName, e.getMessage());
+            return;
+        }
+        if (collection == null) {
+            return;
+        }
+
+        int offset = 0;
+        while (true) {
+            ChromaApi.GetEmbeddingsRequest request = new ChromaApi.GetEmbeddingsRequest(
+                    null,
+                    null,
+                    EXPORT_PAGE_SIZE,
+                    offset,
+                    List.of(ChromaApi.QueryRequest.Include.METADATAS,
+                            ChromaApi.QueryRequest.Include.DOCUMENTS,
+                            ChromaApi.QueryRequest.Include.EMBEDDINGS));
+            ChromaApi.GetEmbeddingResponse response;
+            try {
+                response = chromaApi.getEmbeddings(tenantName, databaseName, collection.id(), request);
+            } catch (Exception e) {
+                log.warn("[Chroma] Failed to fetch export page (offset={}) for '{}': {}",
+                        offset, collectionName, e.getMessage());
+                return;
+            }
+            if (response == null || response.ids() == null || response.ids().isEmpty()) {
+                return;
+            }
+            List<String> ids = response.ids();
+            List<String> documents = response.documents() != null ? response.documents() : List.of();
+            List<Map<String, String>> metadatas = response.metadata() != null ? response.metadata() : List.of();
+            List<float[]> embeddings = response.embeddings() != null ? response.embeddings() : List.of();
+            for (int i = 0; i < ids.size(); i++) {
+                String content = i < documents.size() ? documents.get(i) : "";
+                Map<String, String> rawMeta = i < metadatas.size() ? metadatas.get(i) : Map.of();
+                Map<String, Object> metadata = rawMeta == null
+                        ? Map.of()
+                        : new java.util.LinkedHashMap<>(rawMeta);
+                float[] embedding = i < embeddings.size() ? embeddings.get(i) : null;
+                consumer.accept(new TurStoreExportRecord(
+                        ids.get(i),
+                        content == null ? "" : content,
+                        embedding,
+                        metadata));
+            }
+            if (ids.size() < EXPORT_PAGE_SIZE) {
+                return;
+            }
+            offset += ids.size();
+        }
+    }
+
+    /**
+     * Page size used by {@link #streamExport} when paging through a Chroma
+     * collection. Smaller than the metadata-only scan (1000) to keep the JSONL
+     * writer flushing frequently and bound peak memory — embeddings dominate
+     * the payload.
+     */
+    private static final int EXPORT_PAGE_SIZE = 200;
 
     /**
      * Builds a Chroma {@code where} filter from the

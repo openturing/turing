@@ -20,9 +20,21 @@
  */
 package com.viglet.turing.api.store;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,22 +46,36 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
 import com.viglet.turing.genai.provider.store.TurStoreCollectionInfo;
+import com.viglet.turing.genai.provider.store.TurStoreExportRecord;
+import com.viglet.turing.genai.provider.store.TurStoreImportResult;
 import com.viglet.turing.persistence.dto.store.TurStoreInstanceDto;
 import com.viglet.turing.persistence.mapper.store.TurStoreInstanceMapper;
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.model.store.TurStoreVendor;
+import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
+import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
+
+import org.springframework.ai.embedding.EmbeddingModel;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/store")
 @Tag(name = "Embedding Store", description = "Embedding Store API")
@@ -58,16 +84,25 @@ public class TurStoreInstanceAPI {
     private final TurStoreInstanceMapper turStoreInstanceMapper;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
+    private final TurEmbeddingModelRepository embeddingModelRepository;
+    private final TurGlobalSettingsService globalSettingsService;
+    private final TurRagContextBuilder ragContextBuilder;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurStoreInstanceAPI(TurStoreInstanceRepository turStoreInstanceRepository,
             TurStoreInstanceMapper turStoreInstanceMapper,
             TurSecretCryptoService turSecretCryptoService,
-            TurGenAiStoreProviderFactory storeProviderFactory) {
+            TurGenAiStoreProviderFactory storeProviderFactory,
+            TurEmbeddingModelRepository embeddingModelRepository,
+            TurGlobalSettingsService globalSettingsService,
+            TurRagContextBuilder ragContextBuilder) {
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turStoreInstanceMapper = turStoreInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
         this.storeProviderFactory = storeProviderFactory;
+        this.embeddingModelRepository = embeddingModelRepository;
+        this.globalSettingsService = globalSettingsService;
+        this.ragContextBuilder = ragContextBuilder;
     }
 
     @Operation(summary = "Embedding Store List")
@@ -176,6 +211,205 @@ public class TurStoreInstanceAPI {
             provider.deleteCollection(instance, credential, collectionName);
         });
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Imports a JSONL file (optionally wrapped in a ZIP) into a collection.
+     * The file shape mirrors the export endpoint:
+     * <pre>
+     * { "id": "...", "content": "...", "embedding": [...], "metadata": {...} }
+     * </pre>
+     * Records that already carry an embedding are upserted verbatim. Records
+     * with a missing/empty {@code embedding} are re-embedded by the LLM
+     * resolved from {@code embeddingModelId} (or, when omitted, the Global
+     * Settings default), so third-party datasets without precomputed vectors
+     * can still be imported in one click.
+     *
+     * @since 2026.2.4
+     */
+    @Operation(summary = "Import JSONL into a collection")
+    @PostMapping(value = "/{id}/collections/{collectionName}/import",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Secured({"ROLE_ADMIN", "STORE_EDIT"})
+    public ResponseEntity<TurStoreImportResult> importCollection(@PathVariable String id,
+            @PathVariable String collectionName,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "embeddingModelId", required = false) String embeddingModelId) {
+        TurStoreInstance instance = turStoreInstanceRepository.findById(id).orElse(null);
+        if (instance == null || file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var provider = storeProviderFactory.getProvider(instance);
+        String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+        EmbeddingModel embeddingModel = resolveImportEmbeddingModel(embeddingModelId);
+
+        try (InputStream raw = file.getInputStream();
+                InputStream payload = openPayloadStream(raw, file.getOriginalFilename())) {
+            if (payload == null) {
+                log.warn("[Store] No JSONL entry found inside ZIP '{}'", file.getOriginalFilename());
+                return ResponseEntity.badRequest().build();
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(payload, StandardCharsets.UTF_8));
+            Iterable<TurStoreExportRecord> records = () -> jsonlIterator(reader);
+            TurStoreImportResult result = provider.importChunks(
+                    instance, credential, collectionName, records, embeddingModel);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            log.warn("[Store] Import failed for collection '{}': {}", collectionName, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Resolves the {@link EmbeddingModel} used to re-embed records whose
+     * vector is missing in the JSONL: explicit {@code embeddingModelId} from
+     * the request wins; otherwise falls back to the global default. Returns
+     * {@code null} when nothing can be resolved — the provider will skip such
+     * records and report them under {@code failed} in the result.
+     */
+    private EmbeddingModel resolveImportEmbeddingModel(String embeddingModelId) {
+        String resolvedId = StringUtils.hasText(embeddingModelId)
+                ? embeddingModelId
+                : globalSettingsService.getDefaultEmbeddingModelId();
+        if (!StringUtils.hasText(resolvedId)) {
+            return null;
+        }
+        TurEmbeddingModel embModel = embeddingModelRepository.findById(resolvedId).orElse(null);
+        if (embModel == null) {
+            return null;
+        }
+        try {
+            return ragContextBuilder.resolveEmbeddingModel(embModel);
+        } catch (Exception e) {
+            log.warn("[Store] Could not resolve embedding model '{}' for import: {}",
+                    resolvedId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Detects the upload format from the filename and exposes a JSONL stream:
+     * {@code .zip} → first {@code .jsonl} / {@code .ndjson} entry inside;
+     * everything else → the raw bytes (assumed to be JSONL). Returns
+     * {@code null} when a ZIP has no JSONL entry — the controller treats that
+     * as a 400.
+     */
+    private InputStream openPayloadStream(InputStream raw, String fileName) throws IOException {
+        String name = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
+        if (!name.endsWith(".zip")) {
+            return raw;
+        }
+        ZipInputStream zip = new ZipInputStream(raw);
+        ZipEntry entry;
+        while ((entry = zip.getNextEntry()) != null) {
+            String entryName = entry.getName().toLowerCase(Locale.ROOT);
+            if (!entry.isDirectory() && (entryName.endsWith(".jsonl") || entryName.endsWith(".ndjson"))) {
+                return zip;
+            }
+        }
+        zip.close();
+        return null;
+    }
+
+    /**
+     * Lazy iterator over JSONL lines: parses one line at a time so the
+     * request body never materializes in memory. Blank lines are skipped;
+     * malformed lines are logged at WARN and yield {@code null} records,
+     * which the provider counts as {@code failed}.
+     */
+    private java.util.Iterator<TurStoreExportRecord> jsonlIterator(BufferedReader reader) {
+        TypeReference<TurStoreExportRecord> recordType = new TypeReference<>() {};
+        return new java.util.Iterator<>() {
+            private TurStoreExportRecord next;
+            private boolean exhausted = false;
+
+            private void advance() {
+                if (exhausted || next != null) {
+                    return;
+                }
+                try {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.isBlank()) {
+                            continue;
+                        }
+                        try {
+                            next = objectMapper.readValue(line, recordType);
+                            return;
+                        } catch (Exception parseError) {
+                            log.warn("[Store] Skipping malformed JSONL line: {}",
+                                    parseError.getMessage());
+                            next = null;
+                            return;
+                        }
+                    }
+                } catch (IOException ioError) {
+                    log.warn("[Store] JSONL read failed: {}", ioError.getMessage());
+                }
+                exhausted = true;
+            }
+
+            @Override
+            public boolean hasNext() {
+                advance();
+                return !exhausted || next != null;
+            }
+
+            @Override
+            public TurStoreExportRecord next() {
+                advance();
+                if (next == null && exhausted) {
+                    throw new java.util.NoSuchElementException();
+                }
+                TurStoreExportRecord out = next;
+                next = null;
+                return out;
+            }
+        };
+    }
+
+    /**
+     * Streams every chunk in the collection as a single JSONL entry inside a
+     * ZIP archive. JSONL keeps each row independent so consumers can stream
+     * the file line-by-line; the ZIP wrapper compresses the (verbose) embedding
+     * vectors and yields a single, easy-to-share artifact.
+     *
+     * @since 2026.2.4
+     */
+    @Operation(summary = "Export collection contents as JSONL inside a ZIP")
+    @GetMapping(value = "/{id}/collections/{collectionName}/export", produces = "application/zip")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
+    public ResponseEntity<StreamingResponseBody> exportCollection(@PathVariable String id,
+            @PathVariable String collectionName) {
+        return turStoreInstanceRepository.findById(id).map(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            String safeName = collectionName.replaceAll("[^A-Za-z0-9._-]", "_");
+            StreamingResponseBody body = output -> {
+                ObjectMapper jsonl = new ObjectMapper();
+                try (ZipOutputStream zip = new ZipOutputStream(output)) {
+                    zip.putNextEntry(new ZipEntry(safeName + ".jsonl"));
+                    Writer writer = new OutputStreamWriter(zip, StandardCharsets.UTF_8);
+                    provider.streamExport(instance, credential, collectionName, record -> {
+                        try {
+                            writer.write(jsonl.writeValueAsString(record));
+                            writer.write('\n');
+                        } catch (java.io.IOException e) {
+                            throw new java.io.UncheckedIOException(e);
+                        }
+                    });
+                    writer.flush();
+                    zip.closeEntry();
+                } catch (java.io.UncheckedIOException e) {
+                    log.warn("[Store] Export aborted for collection '{}': {}",
+                            collectionName, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                }
+            };
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("application/zip"))
+                    .header("Content-Disposition", "attachment; filename=\"" + safeName + ".jsonl.zip\"")
+                    .body(body);
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Get system information for an Embedding Store instance")
