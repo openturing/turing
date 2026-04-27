@@ -1,12 +1,10 @@
 package com.viglet.turing.email;
 
 import java.text.NumberFormat;
-import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Locale;
 
@@ -20,6 +18,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -93,26 +93,27 @@ public class TurWeeklySearchReportService {
         this.tokenUsageService = tokenUsageService;
     }
 
-    @Scheduled(cron = "0 0 8 * * MON")
+    @Scheduled(cron = "0 0 8 1 * *")
+    @SchedulerLock(name = "monthlySearchReport", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
     public void sendWeeklyReport() {
-        log.info("Generating weekly search report...");
+        log.info("Generating monthly search report...");
         try {
             String html = buildReportHtml();
-            emailService.sendEmail("Viglet Turing ES - Weekly Intelligence Report", html);
-            log.info("Weekly search report sent successfully.");
+            emailService.sendEmail("Viglet Turing ES - Monthly Intelligence Report", html);
+            log.info("Monthly search report sent successfully.");
         } catch (Exception e) {
-            log.error("Failed to send weekly search report", e);
+            log.error("Failed to send monthly search report", e);
         }
     }
 
     public String buildReportHtml() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-        ZonedDateTime weekStart = now.with(TemporalAdjusters.previous(DayOfWeek.MONDAY)).toLocalDate()
+        ZonedDateTime monthStart = now.toLocalDate().withDayOfMonth(1).minusMonths(1)
                 .atStartOfDay(now.getZone());
-        ZonedDateTime weekEnd = weekStart.plusDays(7);
+        ZonedDateTime monthEnd = monthStart.plusMonths(1);
 
-        Instant startInstant = weekStart.toInstant();
-        Instant endInstant = weekEnd.toInstant();
+        Instant startInstant = monthStart.toInstant();
+        Instant endInstant = monthEnd.toInstant();
 
         List<TurSNSite> sites = snSiteRepository.findAll(Sort.by("name"));
 
@@ -171,7 +172,7 @@ public class TurWeeklySearchReportService {
             siteCardsHtml.append(siteCard);
         }
 
-        String reportPeriod = weekStart.format(DATE_FORMAT) + " - " + weekEnd.minusDays(1).format(DATE_FORMAT);
+        String reportPeriod = monthStart.format(DATE_FORMAT) + " - " + monthEnd.minusDays(1).format(DATE_FORMAT);
 
         String reportHtml = emailService.loadTemplate(TEMPLATE_PATH);
         return reportHtml
@@ -269,7 +270,7 @@ public class TurWeeklySearchReportService {
     private String buildTopSearchRows(List<TurSNSiteMetricAccessTerm> topTerms, String accentColor) {
         if (topTerms.isEmpty()) {
             return "<tr><td style=\"padding:14px;text-align:center;color:#475569;font-size:12px;font-style:italic;\">"
-                    + "No searches recorded this week</td></tr>";
+                    + "No searches recorded this month</td></tr>";
         }
 
         StringBuilder rows = new StringBuilder();

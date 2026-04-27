@@ -54,7 +54,7 @@ public class TurSNSiteSummaryAPI {
             @PathVariable String snSiteId,
             @RequestParam(defaultValue = "false") boolean regenerate) {
 
-        TurSNSite site = snSiteRepository.findById(snSiteId).orElse(null);
+        TurSNSite site = snSiteRepository.findByIdNoCache(snSiteId).orElse(null);
         if (site == null) {
             return ResponseEntity.notFound().build();
         }

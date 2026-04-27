@@ -82,7 +82,7 @@ class TurWeeklySearchReportServiceTest {
 
         service.sendWeeklyReport();
 
-        verify(emailService).sendEmail(eq("Viglet Turing ES - Weekly Intelligence Report"), anyString());
+        verify(emailService).sendEmail(eq("Viglet Turing ES - Monthly Intelligence Report"), anyString());
     }
 
     @Test
@@ -189,7 +189,7 @@ class TurWeeklySearchReportServiceTest {
 
         String html = service.buildReportHtml();
 
-        assertTrue(html.contains("No searches recorded this week"));
+        assertTrue(html.contains("No searches recorded this month"));
     }
 
     @Test

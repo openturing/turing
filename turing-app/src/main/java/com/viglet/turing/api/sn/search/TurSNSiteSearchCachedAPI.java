@@ -30,6 +30,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -85,6 +87,7 @@ public class TurSNSiteSearchCachedAPI {
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    @SchedulerLock(name = "purgeMongoDBLogs", lockAtMostFor = "PT15M", lockAtLeastFor = "PT1M")
     public void purgeMongoDBLogs() {
         if (!enabled)
             return;
