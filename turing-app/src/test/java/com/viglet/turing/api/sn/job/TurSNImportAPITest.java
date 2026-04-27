@@ -80,8 +80,14 @@ class TurSNImportAPITest {
         jobItems.add(item);
 
         TurSNSite site = new TurSNSite();
+        // Site GenAI now requires an enabled agent with RAG enabled in order
+        // to route documents to the vector store.
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent =
+                new com.viglet.turing.persistence.model.agent.TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
+        genAi.setTurAIAgent(agent);
         site.setTurSNSiteGenAi(genAi);
 
         when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));

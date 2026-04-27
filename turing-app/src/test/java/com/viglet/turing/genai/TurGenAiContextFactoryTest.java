@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +23,11 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
-import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,12 +38,6 @@ class TurGenAiContextFactoryTest {
 
     @Mock
     private TurSecretCryptoService turSecretCryptoService;
-
-    @Mock
-    private TurGlobalSettingsService turGlobalSettingsService;
-
-    @Mock
-    private TurLLMInstanceRepository turLLMInstanceRepository;
 
     @Mock
     private TurRagContextBuilder turRagContextBuilder;
@@ -58,40 +53,57 @@ class TurGenAiContextFactoryTest {
     }
 
     @Test
-    void testBuild_disabled() {
-        turSNSiteGenAi.setEnabled(false);
+    void testBuild_disabled_whenNoAgent() {
+        // No agent attached → context is disabled.
         TurGenAiContext context = factory.build(turSNSiteGenAi);
         assertFalse(context.isEnabled());
     }
 
     @Test
-    void testBuild_enabledButMissingInstances() {
-        turSNSiteGenAi.setEnabled(true);
-        // No LLM instance set, global default is empty
-        when(turGlobalSettingsService.getDefaultLlmId()).thenReturn("");
+    void testBuild_disabled_whenAgentRagDisabled() {
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(false);
+        turSNSiteGenAi.setTurAIAgent(agent);
+        TurGenAiContext context = factory.build(turSNSiteGenAi);
+        assertFalse(context.isEnabled());
+    }
+
+    @Test
+    void testBuild_disabled_whenAgentHasNoLlm() {
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        // No LLM instances on the agent.
+        turSNSiteGenAi.setTurAIAgent(agent);
         TurGenAiContext context = factory.build(turSNSiteGenAi);
         assertFalse(context.isEnabled());
     }
 
     @Test
     void testBuild_success() {
-        turSNSiteGenAi.setEnabled(true);
+        TurAIAgent agent = new TurAIAgent();
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        agent.setSystemPrompt("agent prompt");
 
         TurLLMInstance llmInstance = new TurLLMInstance();
         llmInstance.setApiKeyEncrypted("llm-encrypted");
-        turSNSiteGenAi.setTurLLMInstance(llmInstance);
+        llmInstance.setEnabled(1);
+        Set<TurLLMInstance> llms = new HashSet<>();
+        llms.add(llmInstance);
+        agent.setLlmInstances(llms);
 
         TurStoreInstance storeInstance = new TurStoreInstance();
         storeInstance.setId("store-1");
-        turSNSiteGenAi.setTurStoreInstance(storeInstance);
+        agent.setTurStoreInstance(storeInstance);
 
         TurEmbeddingModel embeddingModel = new TurEmbeddingModel();
         embeddingModel.setId("emb-1");
-        turSNSiteGenAi.setTurEmbeddingModelInstance(embeddingModel);
+        agent.setTurEmbeddingModelInstance(embeddingModel);
 
-        turSNSiteGenAi.setSystemPrompt("test prompt");
+        turSNSiteGenAi.setTurAIAgent(agent);
 
-        // Mock LLM provider
         TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         when(turSecretCryptoService.decrypt("llm-encrypted")).thenReturn("llm-decrypted");
@@ -99,7 +111,6 @@ class TurGenAiContextFactoryTest {
         ChatModel chatModel = mock(ChatModel.class);
         when(llmProvider.createChatModel(llmInstance, "llm-decrypted")).thenReturn(chatModel);
 
-        // Mock RAG context builder
         EmbeddingModel springEmbeddingModel = mock(EmbeddingModel.class);
         VectorStore vectorStore = mock(VectorStore.class);
         var ragInfra = new TurRagContextBuilder.RagInfrastructure(
@@ -113,6 +124,6 @@ class TurGenAiContextFactoryTest {
         assertNotNull(context.getVectorStore());
         assertNotNull(context.getEmbeddingModel());
         assertNotNull(context.getChatModel());
-        assertEquals("test prompt", context.getSystemPrompt());
+        assertEquals("agent prompt", context.getSystemPrompt());
     }
 }

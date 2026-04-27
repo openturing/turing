@@ -5,6 +5,8 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.CascadeType;
@@ -12,6 +14,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -53,6 +57,16 @@ public class TurIntent implements Serializable {
 
     @Column(name = "sortOrder")
     private int sortOrder;
+
+    /**
+     * Owning AI agent. Intents are scoped per agent — the client always knows
+     * the agent id from the URL, so this back-reference is hidden from JSON to
+     * keep the payload small and avoid serializing the full agent graph.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agent_id")
+    @JsonIgnore
+    private TurAIAgent turAIAgent;
 
     @OneToMany(mappedBy = "turIntent", orphanRemoval = true,
             fetch = FetchType.EAGER, cascade = CascadeType.ALL)

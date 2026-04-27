@@ -92,6 +92,7 @@ public class TurSNSiteImport {
 	private final TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository;
 	private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 	private final TurEmbeddingModelRepository turEmbeddingModelRepository;
+	private final com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository;
 	private final TurSearchEnginePluginFactory turSearchEnginePluginFactory;
 	private final CacheManager cacheManager;
 
@@ -112,6 +113,7 @@ public class TurSNSiteImport {
 			TurSNSiteMergeProvidersRepository turSNSiteMergeProvidersRepository,
 			TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
 			TurEmbeddingModelRepository turEmbeddingModelRepository,
+			com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository,
 			TurSearchEnginePluginFactory turSearchEnginePluginFactory,
 			CacheManager cacheManager) {
 		this.turSNSiteRepository = turSNSiteRepository;
@@ -131,6 +133,7 @@ public class TurSNSiteImport {
 		this.turSNSiteMergeProvidersRepository = turSNSiteMergeProvidersRepository;
 		this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
 		this.turEmbeddingModelRepository = turEmbeddingModelRepository;
+		this.turAIAgentRepository = turAIAgentRepository;
 		this.turSearchEnginePluginFactory = turSearchEnginePluginFactory;
 		this.cacheManager = cacheManager;
 	}
@@ -381,39 +384,17 @@ public class TurSNSiteImport {
 		if (genAiExchange != null) {
 			TurSNSiteGenAi genAi = new TurSNSiteGenAi();
 			genAi.setId(genAiExchange.getId());
-			genAi.setEnabled(genAiExchange.isEnabled());
-			genAi.setSystemPrompt(genAiExchange.getSystemPrompt());
 			genAi.setSitePrompt(genAiExchange.getSitePrompt());
-			if (genAiExchange.getTurEmbeddingModelInstance() != null) {
-				turEmbeddingModelRepository.findById(genAiExchange.getTurEmbeddingModelInstance())
-						.ifPresent(genAi::setTurEmbeddingModelInstance);
+			if (genAiExchange.getTurAIAgent() != null) {
+				turAIAgentRepository.findById(genAiExchange.getTurAIAgent())
+						.ifPresent(genAi::setTurAIAgent);
 			}
-			genAi.setTurLLMInstance(resolveOrCreateLLMInstanceById(genAiExchange.getTurLLMInstance(), turExchange));
-			genAi.setTurStoreInstance(
-					resolveOrCreateStoreInstanceById(genAiExchange.getTurStoreInstance(), turExchange));
 
 			TurSNSiteGenAi savedGenAi = turSNSiteGenAiRepository.save(genAi);
 			turSNSite.setTurSNSiteGenAi(savedGenAi);
-			log.info("Saved GenAi configuration with resolved or created LLM/Store references when available.");
+			log.info("Saved GenAi configuration with resolved AI Agent reference when available. (turExchange={})",
+					turExchange != null ? "present" : "absent");
 		}
-	}
-
-	private TurLLMInstance resolveOrCreateLLMInstanceById(String llmInstanceId, TurExchange turExchange) {
-		if (llmInstanceId == null) {
-			return null;
-		}
-		TurLLMInstance llmReference = new TurLLMInstance();
-		llmReference.setId(llmInstanceId);
-		return resolveOrCreateLLMInstance(llmReference, turExchange);
-	}
-
-	private TurStoreInstance resolveOrCreateStoreInstanceById(String storeInstanceId, TurExchange turExchange) {
-		if (storeInstanceId == null) {
-			return null;
-		}
-		TurStoreInstance storeReference = new TurStoreInstance();
-		storeReference.setId(storeInstanceId);
-		return resolveOrCreateStoreInstance(storeReference, turExchange);
 	}
 
 	private TurLLMInstance resolveOrCreateLLMInstance(TurLLMInstance exportedLlmInstance, TurExchange turExchange) {

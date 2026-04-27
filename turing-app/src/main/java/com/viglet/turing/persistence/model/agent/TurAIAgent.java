@@ -5,8 +5,10 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
+import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
@@ -17,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,6 +53,9 @@ public class TurAIAgent implements Serializable {
     @Column(nullable = false)
     private int enabled;
 
+    @Column(name = "rag_enabled", nullable = false)
+    private boolean ragEnabled = false;
+
     @Column(length = 2000)
     private String nativeTools;
 
@@ -64,4 +70,12 @@ public class TurAIAgent implements Serializable {
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "mcp_server_id"))
     private Set<TurMcpServer> mcpServers = new HashSet<>();
+
+    @ManyToOne
+    @JoinColumn(name = "embedding_model_instance_id")
+    private TurEmbeddingModel turEmbeddingModelInstance;
+
+    @ManyToOne
+    @JoinColumn(name = "store_instance_id")
+    private TurStoreInstance turStoreInstance;
 }

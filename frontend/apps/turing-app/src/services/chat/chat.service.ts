@@ -276,7 +276,9 @@ export class TurChatService {
           globalThis.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
           return;
         }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let body = "";
+        try { body = await response.text(); } catch { /* ignore */ }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}${body ? ` — ${body}` : ""}`);
       }
 
       const reader = response.body?.getReader();

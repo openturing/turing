@@ -44,6 +44,7 @@ public class TurConfigVarOnStartup {
 	public static final String RAG_ENABLED = "GLOBAL_RAG_ENABLED";
 	public static final String DEFAULT_EMBEDDING_MODEL_ID = "GLOBAL_DEFAULT_EMBEDDING_MODEL";
 	public static final String DEFAULT_EMBEDDING_STORE_ID = "GLOBAL_DEFAULT_EMBEDDING_STORE";
+	public static final String DEFAULT_AI_AGENT_ID = "GLOBAL_DEFAULT_AI_AGENT";
 	public static final String SYSTEM_PATH = "/system";
 	public static final String GLOBAL_PATH = "/system/global";
 	public static final String DECIMAL_SEPARATOR_DEFAULT_VALUE = "DOT";
@@ -72,6 +73,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(RAG_ENABLED, GLOBAL_PATH, FALSE_VALUE);
 		ensureConfigVar(DEFAULT_EMBEDDING_MODEL_ID, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_EMBEDDING_STORE_ID, GLOBAL_PATH, "");
+		ensureConfigVar(DEFAULT_AI_AGENT_ID, GLOBAL_PATH, "");
 	}
 
 	private void ensureConfigVar(String id, String path, String value) {

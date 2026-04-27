@@ -2,10 +2,8 @@ package com.viglet.turing.api.agent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -17,8 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
@@ -58,6 +54,8 @@ class TurAIAgentChatAPITest {
     private TurLLMTokenUsageService tokenUsageService;
     @Mock
     private TurGenAiLlmProvider provider;
+    @Mock
+    private com.viglet.turing.genai.TurAgentChatExecutor agentChatExecutor;
 
     private TurAIAgentChatAPI api;
 
@@ -65,8 +63,7 @@ class TurAIAgentChatAPITest {
     void setUp() {
         api = new TurAIAgentChatAPI(
                 turAIAgentRepository, turLLMInstanceRepository, llmProviderFactory,
-                turSecretCryptoService, nativeToolService, mcpToolCallbackService,
-                tokenUsageService);
+                turSecretCryptoService, agentChatExecutor);
     }
 
     @AfterEach
@@ -257,127 +254,10 @@ class TurAIAgentChatAPITest {
                 .hasMessageContaining("LLM instance not found");
     }
 
-    // --- parseNativeTools Tests ---
-
-    @Test
-    void parseNativeToolsShouldReturnEmptySetForNull() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, (String) null);
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void parseNativeToolsShouldReturnEmptySetForBlank() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "   ");
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    void parseNativeToolsShouldParseCommaSeparated() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "tool1, tool2, tool3");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2", "tool3");
-    }
-
-    @Test
-    void parseNativeToolsShouldTrimValues() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, " tool1 , tool2 ");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2");
-    }
-
-    @Test
-    void parseNativeToolsShouldIgnoreEmptyEntries() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "tool1,,, tool2,");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2");
-    }
-
-    // --- resolveUsername Tests ---
-
-    @Test
-    void resolveUsernameShouldReturnAnonymousWhenNoAuth() throws Exception {
-        SecurityContextHolder.clearContext();
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("resolveUsername");
-        method.setAccessible(true);
-
-        String username = (String) method.invoke(api);
-
-        assertThat(username).isEqualTo("anonymous");
-    }
-
-    @Test
-    void resolveUsernameShouldReturnUsernameWhenAuthenticated() throws Exception {
-        var auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("resolveUsername");
-        method.setAccessible(true);
-
-        String username = (String) method.invoke(api);
-
-        assertThat(username).isEqualTo("testuser");
-    }
-
-    // --- Additional coverage: parseNativeTools edge cases ---
-
-    @Test
-    void parseNativeToolsShouldHandleSingleTool() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "weather");
-        assertThat(result).containsExactly("weather");
-    }
-
-    @Test
-    void parseNativeToolsShouldHandleTrailingComma() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "tool1,tool2,");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2");
-    }
-
-    @Test
-    void parseNativeToolsShouldHandleLeadingComma() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, ",tool1,tool2");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2");
-    }
-
-    @Test
-    void parseNativeToolsShouldDeduplicateEntries() throws Exception {
-        Method method = TurAIAgentChatAPI.class.getDeclaredMethod("parseNativeTools", String.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        Set<String> result = (Set<String>) method.invoke(null, "tool1,tool1,tool2");
-        assertThat(result).containsExactlyInAnyOrder("tool1", "tool2");
-    }
+    // parseNativeTools and resolveUsername were moved to TurAgentChatExecutor
+    // (private statics) when the chat pipeline was extracted. Their behavior
+    // is exercised through the executor; the previous reflection-based unit
+    // tests no longer apply.
 
     // --- contextInfo edge cases ---
 

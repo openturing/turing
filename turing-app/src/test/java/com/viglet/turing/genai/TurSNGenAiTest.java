@@ -60,13 +60,15 @@ class TurSNGenAiTest {
     private TurRagContextBuilder ragContextBuilder;
     @Mock
     private TurRagFacetExtractor facetExtractor;
+    @Mock
+    private TurAgentChatExecutor agentChatExecutor;
 
     private TurSNGenAi turSNGenAi;
 
     @BeforeEach
     void setUp() {
         turSNGenAi = new TurSNGenAi(turSNSearchProcess, contextFactory, localeRepository, ragContextBuilder,
-                facetExtractor);
+                facetExtractor, agentChatExecutor);
     }
 
     @Test
@@ -293,25 +295,6 @@ class TurSNGenAiTest {
     }
 
     @Test
-    void addDocuments_shouldSkipWhenGenAiDisabled() {
-        TurSNJobItem jobItem = new TurSNJobItem();
-        jobItem.setSiteNames(List.of("test-site"));
-
-        TurSNJobItems jobItems = new TurSNJobItems();
-        jobItems.setTuringDocuments(List.of(jobItem));
-
-        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(false);
-        TurSNSite site = new TurSNSite();
-        site.setTurSNSiteGenAi(genAi);
-        when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));
-
-        turSNGenAi.addDocuments(jobItems);
-
-        verifyNoInteractions(contextFactory);
-    }
-
-    @Test
     void addDocuments_shouldSkipWhenContextIsDisabled() {
         TurSNJobItem jobItem = new TurSNJobItem();
         jobItem.setSiteNames(List.of("test-site"));
@@ -321,7 +304,6 @@ class TurSNGenAiTest {
         jobItems.setTuringDocuments(List.of(jobItem));
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
         when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));
@@ -355,7 +337,6 @@ class TurSNGenAiTest {
         jobItems.setTuringDocuments(List.of(jobItem));
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
         when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));
@@ -394,7 +375,6 @@ class TurSNGenAiTest {
         jobItems.setTuringDocuments(List.of(jobItem));
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
         when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));
@@ -429,7 +409,6 @@ class TurSNGenAiTest {
         jobItems.setTuringDocuments(List.of(jobItem));
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
         when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));
@@ -469,7 +448,6 @@ class TurSNGenAiTest {
         jobItems.setTuringDocuments(List.of(jobItem));
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(true);
         TurSNSite site = new TurSNSite();
         site.setTurSNSiteGenAi(genAi);
         when(turSNSearchProcess.getSNSite("test-site")).thenReturn(Optional.of(site));

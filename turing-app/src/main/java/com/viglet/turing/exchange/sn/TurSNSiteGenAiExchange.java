@@ -6,16 +6,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Exchange DTO for an SN site's GenAI binding. Since 2026.2.4 the binding
+ * carries only a reference to an AI agent — RAG/LLM/embedding/store now live
+ * on the agent. Older exports may still contain the dropped fields; they are
+ * silently ignored thanks to {@link JsonIgnoreProperties}.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.4
+ */
 @Setter
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurSNSiteGenAiExchange {
     private String id;
-    private boolean enabled;
-    private String systemPrompt;
     private String sitePrompt;
-    private String turLLMInstance;
-    private String turStoreInstance;
-    private String turEmbeddingModelInstance;
+    /** ID of the referenced AI agent. Resolved on import. */
+    private String turAIAgent;
 }

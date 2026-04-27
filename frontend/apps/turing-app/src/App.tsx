@@ -8,7 +8,6 @@ import SetupPage from "./app/setup/setup.page"
 import {
   AdminRoutes,
   AIAgentRoutes,
-  IntentRoutes,
   AssetRoutes,
   GitRoutes,
   PageRoutes,
@@ -60,7 +59,6 @@ function App() {
                 {LLMRoutes}
                 {McpServerRoutes}
                 {AIAgentRoutes}
-                {IntentRoutes}
                 {IntegrationRoutes}
                 {LoggingRoutes}
                 {ExchangeRoutes}

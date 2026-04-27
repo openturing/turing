@@ -152,31 +152,19 @@ public class TurSNSiteExportValidator {
         if (genAi == null) {
             return;
         }
-        if (genAi.isEnabled()) {
-            if (genAi.getTurLLMInstance() == null || genAi.getTurLLMInstance().isBlank()) {
-                warnings.add("SN Site '%s': GenAI is enabled but has no LLM Instance reference."
-                        .formatted(siteLabel));
-            } else if (turExchange.getLlm() != null) {
-                boolean found = turExchange.getLlm().stream()
-                        .anyMatch(llm -> genAi.getTurLLMInstance().equals(llm.getId()));
-                if (!found) {
-                    warnings.add("SN Site '%s': GenAI LLM Instance '%s' not found in export."
-                            .formatted(siteLabel, genAi.getTurLLMInstance()));
-                }
-            }
-            if (genAi.getSystemPrompt() == null || genAi.getSystemPrompt().isBlank()) {
-                warnings.add("SN Site '%s': GenAI is enabled but has no system prompt."
-                        .formatted(siteLabel));
-            }
-            if (genAi.getTurEmbeddingModelInstance() != null
-                    && turExchange.getEmbeddingModels() != null) {
-                boolean found = turExchange.getEmbeddingModels().stream()
-                        .anyMatch(em -> genAi.getTurEmbeddingModelInstance().equals(em.getId()));
-                if (!found) {
-                    warnings.add("SN Site '%s': GenAI Embedding Model '%s' not found in export."
-                            .formatted(siteLabel, genAi.getTurEmbeddingModelInstance()));
-                }
-            }
+        // Since 2026.2.4 the site GenAI binding only points to an AI agent.
+        // System prompt now lives on the agent (out of scope for SN export
+        // validation). Agents are not bundled into the SN export, so this
+        // method only checks the binding has an agent id.
+        if (genAi.getTurAIAgent() == null || genAi.getTurAIAgent().isBlank()) {
+            warnings.add("SN Site '%s': GenAI binding has no AI Agent reference."
+                    .formatted(siteLabel));
+        }
+        // Reference turExchange to keep the parameter purposeful for future use
+        // (e.g., once agents are bundled into the export).
+        if (turExchange == null) {
+            warnings.add("SN Site '%s': missing exchange context for GenAI validation."
+                    .formatted(siteLabel));
         }
     }
 

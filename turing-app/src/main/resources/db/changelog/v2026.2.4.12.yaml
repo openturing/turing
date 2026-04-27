@@ -1,0 +1,90 @@
+databaseChangeLog:
+  # Replace per-site LLM/Store/Embedding/RAG-toggle on sn_site_genai with a
+  # single FK to ai_agent. The agent already carries those settings.
+  - changeSet:
+      id: drop-fks-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+      changes:
+        - dropAllForeignKeyConstraints:
+            baseTableName: sn_site_genai
+
+  - changeSet:
+      id: drop-llm-instance-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: llm_instance_id
+      changes:
+        - dropColumn:
+            tableName: sn_site_genai
+            columnName: llm_instance_id
+
+  - changeSet:
+      id: drop-store-instance-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: store_instance_id
+      changes:
+        - dropColumn:
+            tableName: sn_site_genai
+            columnName: store_instance_id
+
+  - changeSet:
+      id: drop-embedding-model-instance-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: embedding_model_instance_id
+      changes:
+        - dropColumn:
+            tableName: sn_site_genai
+            columnName: embedding_model_instance_id
+
+  - changeSet:
+      id: drop-enabled-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: enabled
+      changes:
+        - dropColumn:
+            tableName: sn_site_genai
+            columnName: enabled
+
+  - changeSet:
+      id: add-agent-id-to-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: agent_id
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: agent_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_genai
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_sn_site_genai_ai_agent

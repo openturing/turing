@@ -21,13 +21,12 @@ package com.viglet.turing.persistence.model.sn.genai;
 import java.io.Serial;
 import java.io.Serializable;
 
-import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
@@ -36,6 +35,15 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * GenAI binding for an SN site. The site delegates LLM, embedding model,
+ * vector store and the RAG enabled flag to a referenced {@link TurAIAgent} —
+ * only the site-specific prompts (system prompt and site description prompt)
+ * remain here.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.4
+ */
 @Getter
 @Setter
 @Entity
@@ -50,25 +58,21 @@ public class TurSNSiteGenAi implements Serializable {
     @Column(name = "id", updatable = false, nullable = false)
     private String id;
 
-    @Column
-    private boolean enabled = false;
+    /**
+     * AI agent that powers this site's GenAI features. When null, GenAI is
+     * effectively disabled for the site. The agent's {@code ragEnabled},
+     * embedding model, store, LLM list and {@code systemPrompt} are the
+     * source of truth.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "agent_id")
+    private TurAIAgent turAIAgent;
 
-    @ManyToOne
-    @JoinColumn(name = "llm_instance_id")
-    private TurLLMInstance turLLMInstance;
-
-    @ManyToOne
-    @JoinColumn(name = "store_instance_id")
-    private TurStoreInstance turStoreInstance;
-
-    @ManyToOne
-    @JoinColumn(name = "embedding_model_instance_id")
-    private TurEmbeddingModel turEmbeddingModelInstance;
-
-    @Lob
-    @Column
-    private String systemPrompt;
-
+    /**
+     * Site description used as input to the summary/insights LLM call (a
+     * different feature from the chat). Distinct from the agent's system
+     * prompt, which drives the chat itself.
+     */
     @Lob
     @Column
     private String sitePrompt;

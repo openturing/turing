@@ -4,13 +4,14 @@ import { ROUTES } from "@/app/routes.const"
 import { TurLogo } from "@/components/logo/tur-logo"
 import { PageHeader } from "@/components/page-header"
 import { useCurrentUser } from "@/contexts/user.context"
+import type { TurAIAgent } from "@/models/agent/ai-agent.model"
+import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import type { Icon } from "@tabler/icons-react"
 import {
   IconBook,
   IconBrandGraphql,
-  IconBulb,
   IconChartBar,
   IconCompass,
   IconCpu2,
@@ -34,6 +35,7 @@ import { NavLink } from "react-router-dom"
 
 const turLLMInstanceService = new TurLLMInstanceService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
+const turAIAgentService = new TurAIAgentService()
 
 interface FeatureCard {
   titleKey: string
@@ -65,7 +67,6 @@ const SECTIONS: FeatureSection[] = [
       { titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", url: "/admin/store/instance", icon: IconDatabase, privilege: "STORE_VIEW", docUrl: "https://docs.viglet.org/turing/embedding-stores" },
       { titleKey: "home.features.mcpServer.title", descriptionKey: "home.features.mcpServer.description", url: "/admin/mcp/instance", icon: IconServer2, docUrl: "https://docs.viglet.org/turing/mcp-servers" },
       { titleKey: "home.features.aiAgent.title", descriptionKey: "home.features.aiAgent.description", url: "/admin/ai-agent/instance", icon: IconRobot, privilege: "AI_AGENT_VIEW", docUrl: "https://docs.viglet.org/turing/ai-agents" },
-      { titleKey: "home.features.intent.title", descriptionKey: "home.features.intent.description", url: ROUTES.INTENT_INSTANCE, icon: IconBulb, privilege: "INTENT_VIEW", docUrl: "https://docs.viglet.org/turing/intent" },
       { titleKey: "home.features.tokenUsage.title", descriptionKey: "home.features.tokenUsage.description", url: ROUTES.TOKEN_USAGE, icon: IconChartBar, docUrl: "https://docs.viglet.org/turing/token-usage" },
       { titleKey: "home.features.chat.title", descriptionKey: "home.features.chat.description", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot, docUrl: "https://docs.viglet.org/turing/chat" },
     ],
@@ -107,20 +108,30 @@ export default function HomePage() {
   const isAdmin = !!user?.admin
   const userPrivileges = useMemo(() => new Set(user?.privileges ?? []), [user?.privileges])
   const [hasEnabledLlm, setHasEnabledLlm] = useState(false)
+  const [defaultAgent, setDefaultAgent] = useState<TurAIAgent | null>(null)
   const [chatLlmId, setChatLlmId] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
       turLLMInstanceService.query().catch(() => []),
       turGlobalSettingsService.query().catch(() => null),
-    ]).then(([instances, settings]) => {
-      const enabled = instances.filter((i) => i.enabled === 1)
-      setHasEnabledLlm(enabled.length > 0)
-      const defaultId = settings?.defaultLlmId
-      if (defaultId && enabled.some((i) => i.id === defaultId)) {
-        setChatLlmId(defaultId)
-      } else if (enabled.length > 0) {
-        setChatLlmId(enabled[0].id)
+    ]).then(async ([instances, settings]) => {
+      const enabledLlms = instances.filter((i) => i.enabled === 1)
+      setHasEnabledLlm(enabledLlms.length > 0)
+
+      const defaultAgentId = settings?.defaultAiAgentId
+      if (!defaultAgentId) return
+
+      try {
+        const agent = await turAIAgentService.get(defaultAgentId)
+        if (!agent || agent.enabled !== 1) return
+        const enabledLlmIds = new Set(enabledLlms.map((i) => i.id))
+        const agentLlm = agent.llmInstances.find((l) => enabledLlmIds.has(l.id))
+        if (!agentLlm) return
+        setDefaultAgent(agent)
+        setChatLlmId(agentLlm.id)
+      } catch (err) {
+        console.warn("Failed to load default AI agent for home chat:", err)
       }
     })
   }, [])
@@ -160,11 +171,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Chat */}
-        {chatLlmId && (
+        {/* Quick Chat — only renders when a default AI agent is configured in
+            Global Settings, has at least one enabled LLM, and the agent itself
+            is enabled. The chat then runs through the agent (system prompt,
+            tools, RAG) on the chat page. */}
+        {chatLlmId && defaultAgent && (
           <div className="mb-10">
             <ChatStarter
               defaultLlmId={chatLlmId}
+              agentId={defaultAgent.id}
+              modelLabel={defaultAgent.title}
               showHeader={false}
             />
           </div>

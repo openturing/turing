@@ -255,6 +255,23 @@ public class TurCodeInterpreterToolService {
                     _mpl.rcParams['font.family'] = 'sans-serif'
                     _mpl.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial', 'Segoe UI', 'sans-serif']
                     _mpl.rcParams['axes.unicode_minus'] = False
+                    # Headless capture: the LLM-generated code typically calls
+                    # plt.show() to display the chart, but in MPLBACKEND=Agg
+                    # show() does nothing and emits a warning. Replace it with
+                    # a no-arg shim that saves every open figure to a numbered
+                    # PNG in the session directory; the agent then picks them
+                    # up via the "Generated Files" section and surfaces them
+                    # as inline images in the chat response.
+                    import matplotlib.pyplot as _plt
+                    _fig_counter = [0]
+                    def _save_show(*args, **kwargs):
+                        for _num in _plt.get_fignums():
+                            _fig_counter[0] += 1
+                            _plt.figure(_num).savefig(
+                                f'figure_{_fig_counter[0]}.png',
+                                bbox_inches='tight', dpi=120)
+                        _plt.close('all')
+                    _plt.show = _save_show
                 except ImportError:
                     pass
                 _src = open(%s, encoding='utf-8').read()
@@ -266,6 +283,13 @@ public class TurCodeInterpreterToolService {
                         args=[_last.value], keywords=[]))
                     ast.fix_missing_locations(_tree)
                 exec(compile(_tree, %s, 'exec'))
+                # If the user code created figures but never called show(),
+                # flush them too so nothing is silently dropped.
+                try:
+                    if _plt.get_fignums():
+                        _save_show()
+                except NameError:
+                    pass
                 """.formatted(repr(scriptFilename), repr(scriptFilename));
     }
 

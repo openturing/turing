@@ -17,4 +17,5 @@ export interface TurGlobalSettings {
   ragEnabled?: boolean;
   defaultEmbeddingModelId?: string;
   defaultEmbeddingStoreId?: string;
+  defaultAiAgentId?: string;
 }

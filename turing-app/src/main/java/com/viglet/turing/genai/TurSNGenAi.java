@@ -125,17 +125,20 @@ public class TurSNGenAi {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurRagContextBuilder turRagContextBuilder;
     private final TurRagFacetExtractor facetExtractor;
+    private final TurAgentChatExecutor agentChatExecutor;
 
     public TurSNGenAi(TurSNSearchProcess turSNSearchProcess,
             TurGenAiContextFactory turGenAiContextFactory,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
             TurRagContextBuilder turRagContextBuilder,
-            TurRagFacetExtractor facetExtractor) {
+            TurRagFacetExtractor facetExtractor,
+            TurAgentChatExecutor agentChatExecutor) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turGenAiContextFactory = turGenAiContextFactory;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turRagContextBuilder = turRagContextBuilder;
         this.facetExtractor = facetExtractor;
+        this.agentChatExecutor = agentChatExecutor;
     }
 
     public TurChatMessage assistant(TurGenAiContext context, String q) {
@@ -176,6 +179,105 @@ public class TurSNGenAi {
      *
      * @since 2026.2.4
      */
+    /**
+     * Streaming conversational variant that delegates LLM execution and tool
+     * calling to {@link TurAgentChatExecutor}, while keeping the SN-specific
+     * RAG retrieval here. The retrieved chunks are injected into the system
+     * prompt before the executor runs, so the agent's tools (native + MCP)
+     * are also available to the LLM during the same call.
+     *
+     * @since 2026.2.4
+     */
+    public reactor.core.publisher.Flux<TurAgentChatExecutor.ChatResponse> assistantConversationStreaming(
+            TurGenAiContext context,
+            com.viglet.turing.persistence.model.agent.TurAIAgent agent,
+            com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,
+            List<ConversationMessage> history,
+            java.util.Map<String, List<String>> filters) {
+        if (!context.isEnabled()) {
+            log.warn("RAG chat streaming context disabled — check agent RAG configuration");
+            return reactor.core.publisher.Flux.just(
+                    new TurAgentChatExecutor.ChatResponse("assistant", "AI configuration is not enabled"));
+        }
+        if (history == null || history.isEmpty()) {
+            log.info("RAG chat streaming called with empty history");
+            return reactor.core.publisher.Flux.empty();
+        }
+        String latestUserQuery = history.stream()
+                .filter(m -> "user".equals(m.role()))
+                .map(ConversationMessage::content)
+                .reduce((first, second) -> second)
+                .orElse("");
+        if (latestUserQuery.isBlank()) {
+            return reactor.core.publisher.Flux.empty();
+        }
+
+        String augmentedSystemPrompt = retrieveAndBuildSystemPrompt(context, latestUserQuery, filters);
+
+        var mapped = history.stream()
+                .map(m -> new TurAgentChatExecutor.ChatMessageItem(
+                        m.role(), m.content() == null ? "" : m.content()))
+                .toList();
+        return agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt);
+    }
+
+    /**
+     * Performs the RAG retrieval (auto-extracts filters when none given,
+     * picks topK/threshold based on whether filtering narrows the universe),
+     * then composes the final system prompt by appending the retrieved
+     * chunks to the agent's behavior prompt. Shared between the legacy
+     * single-shot {@link #assistantConversation} flow and the new streaming
+     * tool-calling flow.
+     */
+    private String retrieveAndBuildSystemPrompt(TurGenAiContext context,
+            String latestUserQuery,
+            java.util.Map<String, List<String>> filters) {
+        java.util.Map<String, List<String>> effectiveFilters = filters;
+        boolean autoExtracted = false;
+        if (effectiveFilters == null || effectiveFilters.isEmpty()) {
+            try {
+                java.util.Map<String, List<String>> available = facetExtractor
+                        .getAvailableFacets(context.getRagInfrastructure());
+                if (!available.isEmpty()) {
+                    java.util.Map<String, List<String>> extracted = facetExtractor
+                            .extractFilters(context.getChatModel(), latestUserQuery, available);
+                    if (!extracted.isEmpty()) {
+                        effectiveFilters = extracted;
+                        autoExtracted = true;
+                        log.info("RAG chat auto-extracted filters from query '{}': {}",
+                                latestUserQuery, extracted);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("RAG chat auto-extraction failed, falling back to plain similarity: {}",
+                        e.getMessage());
+            }
+        }
+        boolean hasFilters = effectiveFilters != null && !effectiveFilters.isEmpty();
+        int topK = hasFilters ? 50 : 10;
+        double similarityThreshold = hasFilters ? 0.0 : 0.4;
+        org.springframework.ai.vectorstore.filter.Filter.Expression filterExpr =
+                TurRagFilters.buildFilterExpression(effectiveFilters);
+        SearchRequest.Builder reqBuilder = SearchRequest.builder()
+                .query(latestUserQuery)
+                .topK(topK)
+                .similarityThreshold(similarityThreshold);
+        if (filterExpr != null) {
+            reqBuilder.filterExpression(filterExpr);
+        }
+        SearchRequest embeddingSearchRequest = reqBuilder.build();
+        log.info("RAG chat similaritySearch: topK={}, threshold={}, filters={}{}, query='{}'",
+                topK, similarityThreshold, effectiveFilters,
+                autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
+        List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
+        List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
+        log.info("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
+        String information = relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n"));
+        return buildSystemPrompt(context.getSystemPrompt(), information);
+    }
+
     public TurChatMessage assistantConversation(TurGenAiContext context, List<ConversationMessage> history,
             java.util.Map<String, List<String>> filters) {
         if (!context.isEnabled()) {
@@ -371,8 +473,8 @@ public class TurSNGenAi {
             return;
         }
         Object sourceId = doc.get(ID);
-        if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
-            log.debug("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+        if (turSNSite.getTurSNSiteGenAi() == null) {
+            log.debug("RAG skipped for Object ID '{}' of SN Site '{}': no GenAI binding",
                     sourceId, turSNSite.getName());
             return;
         }
@@ -382,7 +484,7 @@ public class TurSNGenAi {
         TurGenAiContext context = turGenAiContextFactory.build(
                 turSNSite.getTurSNSiteGenAi(), collectionName);
         if (!context.isEnabled()) {
-            log.warn("RAG context disabled for Object ID '{}' of SN Site '{}': check LLM, embedding model and store configuration",
+            log.warn("RAG context disabled for Object ID '{}' of SN Site '{}': agent not configured for RAG",
                     sourceId, turSNSite.getName());
             return;
         }
@@ -573,8 +675,8 @@ public class TurSNGenAi {
         log.debug("RAG addDocuments called with {} document(s)", turSNJobItems.getTuringDocuments().size());
         turSNJobItems.getTuringDocuments().forEach(jobItem -> jobItem.getSiteNames()
                 .forEach(siteName -> turSNSearchProcess.getSNSite(siteName).ifPresentOrElse(turSNSite -> {
-                    if (turSNSite.getTurSNSiteGenAi() == null || !turSNSite.getTurSNSiteGenAi().isEnabled()) {
-                        log.debug("RAG skipped for Object ID '{}' of SN Site '{}': GenAI not enabled on site",
+                    if (turSNSite.getTurSNSiteGenAi() == null) {
+                        log.debug("RAG skipped for Object ID '{}' of SN Site '{}': no GenAI binding",
                                 jobItem.getId(), siteName);
                         return;
                     }

@@ -228,21 +228,26 @@ public class TurSNSiteExportFileService {
 		}
 
 		TurSNSiteGenAi genAi = turSNSite.getTurSNSiteGenAi();
-		if (genAi == null) {
+		if (genAi == null || genAi.getTurAIAgent() == null) {
 			return;
 		}
+		var agent = genAi.getTurAIAgent();
 
-		if (genAi.getTurLLMInstance() != null && genAi.getTurLLMInstance().getId() != null) {
-			llmInstances.putIfAbsent(genAi.getTurLLMInstance().getId(), genAi.getTurLLMInstance());
+		// Pull the referenced LLM/store/embedding from the agent so the export
+		// bundle is self-contained even after the per-site fields were removed.
+		if (agent.getLlmInstances() != null) {
+			agent.getLlmInstances().forEach(llm -> {
+				if (llm != null && llm.getId() != null) {
+					llmInstances.putIfAbsent(llm.getId(), llm);
+				}
+			});
 		}
-
-		if (genAi.getTurStoreInstance() != null && genAi.getTurStoreInstance().getId() != null) {
-			storeInstances.putIfAbsent(genAi.getTurStoreInstance().getId(), genAi.getTurStoreInstance());
+		if (agent.getTurStoreInstance() != null && agent.getTurStoreInstance().getId() != null) {
+			storeInstances.putIfAbsent(agent.getTurStoreInstance().getId(), agent.getTurStoreInstance());
 		}
-
-		if (genAi.getTurEmbeddingModelInstance() != null && genAi.getTurEmbeddingModelInstance().getId() != null) {
-			embeddingModels.putIfAbsent(genAi.getTurEmbeddingModelInstance().getId(),
-					genAi.getTurEmbeddingModelInstance());
+		if (agent.getTurEmbeddingModelInstance() != null && agent.getTurEmbeddingModelInstance().getId() != null) {
+			embeddingModels.putIfAbsent(agent.getTurEmbeddingModelInstance().getId(),
+					agent.getTurEmbeddingModelInstance());
 		}
 	}
 }

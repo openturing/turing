@@ -31,7 +31,10 @@ public interface TurSNSiteMapper {
      * gating the ANN Search button on the admin listing.
      */
     @Mapping(target = "genAiEnabled",
-            expression = "java(entity.getTurSNSiteGenAi() != null && entity.getTurSNSiteGenAi().isEnabled())")
+            expression = "java(entity.getTurSNSiteGenAi() != null"
+                    + " && entity.getTurSNSiteGenAi().getTurAIAgent() != null"
+                    + " && entity.getTurSNSiteGenAi().getTurAIAgent().getEnabled() == 1"
+                    + " && entity.getTurSNSiteGenAi().getTurAIAgent().isRagEnabled())")
     TurSNSiteListDto toListDto(TurSNSite entity);
 
     List<TurSNSiteListDto> toListDtoList(List<TurSNSite> entities);

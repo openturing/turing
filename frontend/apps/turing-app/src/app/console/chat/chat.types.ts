@@ -2,6 +2,8 @@ import type { ChatMessageItem } from "@/services/chat/chat.service"
 
 export const DEFAULT_CONTEXT_WINDOW = 128000
 export const LLM_STORAGE_KEY = "turing-chat-selected-llm"
+export const CHAT_INITIAL_PROMPT_KEY = "turing-chat-initial-prompt"
+export const CHAT_INITIAL_AGENT_KEY = "turing-chat-initial-agent"
 export const TITLE_TIMEOUT_MS = 8000
 
 export interface ChatAttachment {

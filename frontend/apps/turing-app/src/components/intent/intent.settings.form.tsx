@@ -36,14 +36,15 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
 const turIntentService = new TurIntentService()
-const urlBase = ROUTES.INTENT_INSTANCE
 
 interface Props {
   value: TurIntent
   isNew: boolean
+  agentId: string
 }
 
-export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
+export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) => {
+  const urlBase = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`
   const { t } = useTranslation();
   const form = useForm<TurIntent>({
     defaultValues: value,
@@ -102,7 +103,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     }
     try {
       if (isNew) {
-        const result = await turIntentService.create(payload)
+        const result = await turIntentService.create(agentId, payload)
         if (result) {
           toast.success(t("forms.common.saved", { name: `"${payload.title}"`, feature: t("intent.title") }))
           navigate(`${urlBase}/${result.id}/settings`)
@@ -110,7 +111,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           toast.error(t("forms.common.notSaved", { name: `"${payload.title}"`, feature: t("intent.title") }))
         }
       } else {
-        const result = await turIntentService.update(payload)
+        const result = await turIntentService.update(agentId, payload)
         if (result) {
           toast.success(t("forms.common.updated", { name: `"${payload.title}"`, feature: t("intent.title") }))
         } else {

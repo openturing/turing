@@ -5,7 +5,7 @@ import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
-import { IconCpu2, IconRobot, IconServer2, IconSettings, IconSitemap, IconTool } from "@tabler/icons-react";
+import { IconBulb, IconCpu2, IconRobot, IconServer2, IconSettings, IconSitemap, IconTool } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -41,6 +41,7 @@ export default function AIAgentPage() {
         { title: t("aiAgent.nav.languageModels"), url: "/llm", icon: IconCpu2 },
         { title: t("aiAgent.nav.nativeTools"), url: "/tools", icon: IconTool },
         { title: t("aiAgent.nav.mcpServers"), url: "/mcp", icon: IconServer2 },
+        { title: t("aiAgent.nav.intents"), url: "/intent", icon: IconBulb },
         { title: t("aiAgent.nav.chatFlow"), url: "/chat-flow", icon: IconSitemap },
       ],
     };

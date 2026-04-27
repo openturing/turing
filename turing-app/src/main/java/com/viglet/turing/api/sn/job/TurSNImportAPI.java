@@ -153,11 +153,13 @@ public class TurSNImportAPI {
                 Object objectId = turJobItem.getAttributes().get(TurSNFieldName.ID);
                 turJobItem.getSiteNames().forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName)
                         .ifPresentOrElse(turSNSite -> {
-                            if (turSNSite.getTurSNSiteGenAi() == null) {
+                            var siteGenAi = turSNSite.getTurSNSiteGenAi();
+                            var agent = siteGenAi == null ? null : siteGenAi.getTurAIAgent();
+                            if (siteGenAi == null) {
                                 log.info("RAG skipped for Object ID '{}' of SN Site '{}': TurSNSiteGenAi is null",
                                         objectId, siteName);
-                            } else if (!turSNSite.getTurSNSiteGenAi().isEnabled()) {
-                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': GenAI is disabled",
+                            } else if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
+                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': agent not configured for RAG",
                                         objectId, siteName);
                             } else {
                                 log.info("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",

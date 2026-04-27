@@ -41,4 +41,8 @@ public interface TurIntentRepository extends JpaRepository<TurIntent, String> {
     void delete(String id);
 
     List<TurIntent> findByEnabledOrderBySortOrderAsc(int enabled);
+
+    List<TurIntent> findByTurAIAgent_IdOrderByTitleAsc(String agentId);
+
+    List<TurIntent> findByTurAIAgent_IdAndEnabledOrderBySortOrderAsc(String agentId, int enabled);
 }

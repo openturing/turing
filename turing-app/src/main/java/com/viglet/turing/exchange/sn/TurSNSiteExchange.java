@@ -136,17 +136,9 @@ public class TurSNSiteExchange {
 		}
 		TurSNSiteGenAiExchange referenceGenAi = new TurSNSiteGenAiExchange();
 		referenceGenAi.setId(source.getId());
-		referenceGenAi.setEnabled(source.isEnabled());
-		referenceGenAi.setSystemPrompt(source.getSystemPrompt());
 		referenceGenAi.setSitePrompt(source.getSitePrompt());
-		if (source.getTurEmbeddingModelInstance() != null && source.getTurEmbeddingModelInstance().getId() != null) {
-			referenceGenAi.setTurEmbeddingModelInstance(source.getTurEmbeddingModelInstance().getId());
-		}
-		if (source.getTurLLMInstance() != null && source.getTurLLMInstance().getId() != null) {
-			referenceGenAi.setTurLLMInstance(source.getTurLLMInstance().getId());
-		}
-		if (source.getTurStoreInstance() != null && source.getTurStoreInstance().getId() != null) {
-			referenceGenAi.setTurStoreInstance(source.getTurStoreInstance().getId());
+		if (source.getTurAIAgent() != null && source.getTurAIAgent().getId() != null) {
+			referenceGenAi.setTurAIAgent(source.getTurAIAgent().getId());
 		}
 		return referenceGenAi;
 	}

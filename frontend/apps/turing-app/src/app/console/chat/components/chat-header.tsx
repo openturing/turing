@@ -4,7 +4,7 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
-import { IconCompass, IconHistory, IconMessageCircle, IconPlus, IconRobot } from "@tabler/icons-react"
+import { IconHistory, IconPlus, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 
 interface ChatHeaderProps {
@@ -50,24 +50,8 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
         </div>
       </div>
 
-      {/* Row 2: Tabs */}
+      {/* Row 2: Tabs — agent-only. The first agent is the global default. */}
       <div className="flex items-center justify-center px-3 pb-2 overflow-x-auto gap-1">
-        <button
-          type="button"
-          onClick={() => onTabChange("chat")}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === "chat" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-        >
-          <IconMessageCircle className="size-4" />
-          {t("chat.chatTab")}
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("semantic")}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap shrink-0 ${activeTab === "semantic" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-        >
-          <IconCompass className="size-4" />
-          <span className="hidden sm:inline">{t("chat.semanticTab")}</span> <span className="sm:hidden">{t("chat.semanticTabShort")}</span>
-        </button>
         {agents.map((agent) => (
           <button
             key={agent.id}

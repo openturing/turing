@@ -132,14 +132,8 @@ public class TurSNSiteExport {
 		TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
 		if (genAi != null) {
 			Hibernate.initialize(genAi);
-			if (genAi.getTurEmbeddingModelInstance() != null) {
-				Hibernate.initialize(genAi.getTurEmbeddingModelInstance());
-			}
-			if (genAi.getTurLLMInstance() != null) {
-				Hibernate.initialize(genAi.getTurLLMInstance());
-			}
-			if (genAi.getTurStoreInstance() != null) {
-				Hibernate.initialize(genAi.getTurStoreInstance());
+			if (genAi.getTurAIAgent() != null) {
+				Hibernate.initialize(genAi.getTurAIAgent());
 			}
 		}
 	}

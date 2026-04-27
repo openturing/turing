@@ -1,6 +1,5 @@
 export { AdminRoutes } from "./admin.routes";
 export { AIAgentRoutes } from "./ai-agent.routes";
-export { IntentRoutes } from "./intent.routes";
 export { EmbeddingModelRoutes } from "./embedding-model.routes";
 export { AssetRoutes } from "./asset.routes";
 export { GitRoutes } from "./git.routes";

@@ -57,3 +57,11 @@ databaseChangeLog:
       file: db/changelog/v2026.2.4.8.yaml
   - include:
       file: db/changelog/v2026.2.4.9.yaml
+  - include:
+      file: db/changelog/v2026.2.4.10.yaml
+  - include:
+      file: db/changelog/v2026.2.4.11.yaml
+  - include:
+      file: db/changelog/v2026.2.4.12.yaml
+  - include:
+      file: db/changelog/v2026.2.4.13.yaml

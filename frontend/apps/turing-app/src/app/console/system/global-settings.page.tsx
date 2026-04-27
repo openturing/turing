@@ -24,9 +24,11 @@ import { IconBrain, IconDatabase, IconDeviceFloppy, IconLoader2, IconMail, IconM
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
 import type { TurStoreInstance } from "@/models/store/store-instance.model";
+import type { TurAIAgent } from "@/models/agent/ai-agent.model";
 import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service";
 import { TurStoreInstanceService } from "@/services/store/store.service";
+import { TurAIAgentService } from "@/services/agent/ai-agent.service";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { GradientSwitch } from "@/components/ui/gradient-switch";
 import { DurationInput } from "@/components/ui/duration-input";
@@ -40,6 +42,7 @@ const turGlobalSettingsService = new TurGlobalSettingsService();
 const turLLMInstanceService = new TurLLMInstanceService();
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
+const turAIAgentService = new TurAIAgentService();
 
 const DEFAULT_SETTINGS: TurGlobalSettings = {
     decimalSeparator: "DOT",
@@ -56,6 +59,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     ragEnabled: false,
     defaultEmbeddingModelId: "",
     defaultEmbeddingStoreId: "",
+    defaultAiAgentId: "",
 };
 
 export default function GlobalSettingsPage() {
@@ -73,6 +77,7 @@ export default function GlobalSettingsPage() {
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
+    const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
 
     useEffect(() => {
         Promise.all([
@@ -80,11 +85,13 @@ export default function GlobalSettingsPage() {
             turLLMInstanceService.query(),
             turEmbeddingModelService.query(),
             turStoreInstanceService.query(),
+            turAIAgentService.query(),
         ])
-            .then(([loadedSettings, instances, embModels, stores]) => {
+            .then(([loadedSettings, instances, embModels, stores, agents]) => {
                 setLlmInstances(instances.filter((i) => i.enabled === 1));
                 setEmbeddingModels(embModels.filter((m) => m.enabled === 1));
                 setStoreInstances(stores.filter((s) => s.enabled === 1));
+                setAiAgents(agents.filter((a) => a.enabled === 1));
                 setSettings(loadedSettings);
             })
             .catch(() => {
@@ -242,6 +249,41 @@ export default function GlobalSettingsPage() {
                                                         {llmInstances.map((instance) => (
                                                             <SelectItem key={instance.id} value={instance.id}>
                                                                 {instance.title}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                        </FormItemTwoColumns.Right>
+                                    </FormItemTwoColumns>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="defaultAiAgentId"
+                                render={({ field }) => (
+                                    <FormItemTwoColumns>
+                                        <FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Label>{t("globalSettings.defaultAiAgent")}</FormItemTwoColumns.Label>
+                                            <FormItemTwoColumns.Description>
+                                                {t("globalSettings.defaultAiAgentDesc")}
+                                            </FormItemTwoColumns.Description>
+                                        </FormItemTwoColumns.Left>
+                                        <FormItemTwoColumns.Right>
+                                            <FormControl>
+                                                <Select
+                                                    onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                                                    value={field.value || "none"}
+                                                    disabled={isLoading}
+                                                >
+                                                    <SelectTrigger className="w-full max-w-xs">
+                                                        <SelectValue placeholder={t("globalSettings.selectAiAgent")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">{t("globalSettings.none")}</SelectItem>
+                                                        {aiAgents.map((agent) => (
+                                                            <SelectItem key={agent.id} value={agent.id}>
+                                                                {agent.title}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>

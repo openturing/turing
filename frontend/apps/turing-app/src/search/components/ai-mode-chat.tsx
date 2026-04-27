@@ -1,5 +1,5 @@
 import { GradientAvatar, GradientAvatarFallback } from "@/components/ui/gradient-avatar";
-import { postChatConversation, type TurChatConversationMessage } from "@viglet/turing-react-sdk";
+import type { TurChatConversationMessage } from "@viglet/turing-react-sdk";
 import {
   IconArrowUp,
   IconCpu2,
@@ -37,6 +37,13 @@ const genId = () =>
   (typeof crypto !== "undefined" && crypto.randomUUID)
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/** Read the CSRF token Spring stores in the XSRF-TOKEN cookie. */
+function readXsrfCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 function encodeMarkdownLinkUrls(text: string): string {
   return text.replaceAll(
@@ -83,9 +90,68 @@ export const AiModeChat = forwardRef<AiModeChatHandle, AiModeChatProps>(function
     setLoading(true);
 
     try {
-      const response = await postChatConversation(siteName, historyForRequest, locale);
-      const text = response?.text ?? t("search.aiModeError");
-      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: text } : m)));
+      // Stream the agent-driven RAG response over SSE. The backend now exposes
+      // the linked AI agent's tool callings (native + MCP) inside this same
+      // endpoint, so the LLM can call tools while still grounded by the site
+      // RAG context that the server injects into the system prompt.
+      const csrfToken = readXsrfCookie();
+      const headers: Record<string, string> = {
+        Accept: "text/event-stream",
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) headers["X-XSRF-TOKEN"] = csrfToken;
+
+      const response = await fetch(`/api/sn/${siteName}/chat/conversation`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ messages: historyForRequest, locale }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let assembled = "";
+
+      const flushChunk = (jsonStr: string) => {
+        if (!jsonStr) return;
+        try {
+          const parsed = JSON.parse(jsonStr) as { content?: string };
+          if (parsed.content) {
+            // The backend executor emits a single ChatResponse at the end
+            // (Spring AI resolves the tool-calling loop before flushing), so
+            // we replace rather than append. If a future server-side refactor
+            // emits incremental tokens, swap to `+= parsed.content`.
+            assembled = parsed.content;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, content: assembled } : m)),
+            );
+          }
+        } catch {
+          // ignore malformed JSON chunks
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (line.startsWith("data:")) flushChunk(line.slice(5).trim());
+        }
+      }
+      if (buffer.startsWith("data:")) flushChunk(buffer.slice(5).trim());
+
+      if (!assembled) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: t("search.aiModeError") } : m)),
+        );
+      }
     } catch {
       setMessages((prev) =>
         prev.map((m) => (m.id === assistantId ? { ...m, content: t("search.aiModeError") } : m)),

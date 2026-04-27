@@ -68,12 +68,18 @@ class TurSNSiteExportFileServiceTest {
         storeInstance.setUrl("http://localhost:8000");
         storeInstance.setTurStoreVendor(storeVendor);
 
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent =
+                new com.viglet.turing.persistence.model.agent.TurAIAgent();
+        agent.setId("agent-1");
+        agent.setEnabled(1);
+        agent.setRagEnabled(true);
+        agent.getLlmInstances().add(llmInstance);
+        agent.setTurStoreInstance(storeInstance);
+
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setId("genai-1");
-        genAi.setEnabled(true);
-        genAi.setSystemPrompt("You are an assistant");
-        genAi.setTurLLMInstance(llmInstance);
-        genAi.setTurStoreInstance(storeInstance);
+        genAi.setSitePrompt("This site is...");
+        genAi.setTurAIAgent(agent);
 
         TurSNSite siteA = new TurSNSite();
         siteA.setId("site-a");
@@ -108,10 +114,10 @@ class TurSNSiteExportFileServiceTest {
 
             JsonNode firstSite = rootJson.path("snSites").get(0);
             assertThat(firstSite.path("turSEInstance").asText()).isEqualTo("se-1");
-            assertThat(firstSite.path("turSNSiteGenAi").path("turLLMInstance").asText())
-                    .isEqualTo("llm-1");
-            assertThat(firstSite.path("turSNSiteGenAi").path("turStoreInstance").asText())
-                    .isEqualTo("store-1");
+            // The site GenAI now references the AI agent only — LLM and store
+            // come from the agent and are collected at the root of the export.
+            assertThat(firstSite.path("turSNSiteGenAi").path("turAIAgent").asText())
+                    .isEqualTo("agent-1");
 
             assertThat(rootJson.path("llm").get(0).path("id").asText()).isEqualTo("llm-1");
             assertThat(rootJson.path("llm").get(0).path("title").asText()).isEqualTo("LLM 1");

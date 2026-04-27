@@ -8,17 +8,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 @ExtendWith(MockitoExtension.class)
 class TurSNSiteGenAiTest {
 
     @Mock
-    private TurLLMInstance turLLMInstance;
-
-    @Mock
-    private TurStoreInstance turStoreInstance;
+    private TurAIAgent turAIAgent;
 
     private TurSNSiteGenAi turSNSiteGenAi;
 
@@ -30,24 +26,18 @@ class TurSNSiteGenAiTest {
     @Test
     void shouldSetAndGetAllProperties() {
         turSNSiteGenAi.setId("genai-id");
-        turSNSiteGenAi.setEnabled(true);
-        turSNSiteGenAi.setTurLLMInstance(turLLMInstance);
-        turSNSiteGenAi.setTurStoreInstance(turStoreInstance);
-        turSNSiteGenAi.setSystemPrompt("You are a search assistant.");
+        turSNSiteGenAi.setTurAIAgent(turAIAgent);
+        turSNSiteGenAi.setSitePrompt("Site description.");
 
         assertThat(turSNSiteGenAi.getId()).isEqualTo("genai-id");
-        assertThat(turSNSiteGenAi.isEnabled()).isTrue();
-        assertThat(turSNSiteGenAi.getTurLLMInstance()).isEqualTo(turLLMInstance);
-        assertThat(turSNSiteGenAi.getTurStoreInstance()).isEqualTo(turStoreInstance);
-        assertThat(turSNSiteGenAi.getSystemPrompt()).isEqualTo("You are a search assistant.");
+        assertThat(turSNSiteGenAi.getTurAIAgent()).isEqualTo(turAIAgent);
+        assertThat(turSNSiteGenAi.getSitePrompt()).isEqualTo("Site description.");
     }
 
     @Test
     void shouldExposeDefaultValuesOnNoArgsConstructor() {
         assertThat(turSNSiteGenAi.getId()).isNull();
-        assertThat(turSNSiteGenAi.isEnabled()).isFalse();
-        assertThat(turSNSiteGenAi.getTurLLMInstance()).isNull();
-        assertThat(turSNSiteGenAi.getTurStoreInstance()).isNull();
-        assertThat(turSNSiteGenAi.getSystemPrompt()).isNull();
+        assertThat(turSNSiteGenAi.getTurAIAgent()).isNull();
+        assertThat(turSNSiteGenAi.getSitePrompt()).isNull();
     }
 }

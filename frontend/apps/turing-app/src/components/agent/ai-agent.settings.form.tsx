@@ -10,12 +10,24 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
+import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
+import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { IconDeviceFloppy, IconFileText, IconInfoCircle, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
+import { TurStoreInstanceService } from "@/services/store/store.service"
+import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
+import { IconBrain, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
@@ -28,7 +40,13 @@ import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
 
 const turAIAgentService = new TurAIAgentService();
+const turEmbeddingModelService = new TurEmbeddingModelService();
+const turStoreInstanceService = new TurStoreInstanceService();
+const turGlobalSettingsService = new TurGlobalSettingsService();
 const urlBase = ROUTES.AI_AGENT_INSTANCE
+
+const DEFAULT_VALUE = "__default__";
+const NONE_VALUE = "__none__";
 
 interface Props {
   value: TurAIAgent;
@@ -41,6 +59,31 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     defaultValues: value
   });
   const navigate = useNavigate()
+  const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
+  const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
+  const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
+  const [globalDefaultEmbeddingModelId, setGlobalDefaultEmbeddingModelId] = useState<string>("");
+  const [globalDefaultEmbeddingStoreId, setGlobalDefaultEmbeddingStoreId] = useState<string>("");
+
+  const ragEnabled = form.watch("ragEnabled");
+  const embeddingModelValue = form.watch("turEmbeddingModelInstance");
+  const storeInstanceValue = form.watch("turStoreInstance");
+
+  // RAG can only be ON if both an embedding model AND a store are resolvable
+  // (either explicitly set on the agent, or via global RAG defaults).
+  const hasResolvableEmbeddingModel =
+      embeddingModelValue !== undefined && embeddingModelValue !== null
+          ? true
+          : embeddingModelValue === null
+              ? !!globalDefaultEmbeddingModelId
+              : false;
+  const hasResolvableStore =
+      storeInstanceValue !== undefined && storeInstanceValue !== null
+          ? true
+          : storeInstanceValue === null
+              ? !!globalDefaultEmbeddingStoreId
+              : false;
+  const canEnableRag = hasResolvableEmbeddingModel && hasResolvableStore;
 
   useEffect(() => {
     form.reset({
@@ -50,8 +93,57 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       nativeTools: value.nativeTools ?? null,
       llmInstances: value.llmInstances ?? [],
       mcpServers: value.mcpServers ?? [],
+      ragEnabled: value.ragEnabled ?? false,
+      turEmbeddingModelInstance: value.turEmbeddingModelInstance,
+      turStoreInstance: value.turStoreInstance,
     });
   }, [value])
+
+  useEffect(() => {
+    turEmbeddingModelService.query().then(setEmbeddingModels);
+    turStoreInstanceService.query().then(setStoreInstances);
+    turGlobalSettingsService.query().then((settings) => {
+      setGlobalRagEnabled(settings.ragEnabled ?? false);
+      setGlobalDefaultEmbeddingModelId(settings.defaultEmbeddingModelId ?? "");
+      setGlobalDefaultEmbeddingStoreId(settings.defaultEmbeddingStoreId ?? "");
+    });
+  }, []);
+
+  // If the user changes embedding model/store and RAG is no longer resolvable,
+  // force ragEnabled = false so the saved state is consistent.
+  useEffect(() => {
+    if (ragEnabled && !canEnableRag) {
+      form.setValue("ragEnabled", false);
+    }
+  }, [ragEnabled, canEnableRag, form]);
+
+  function getSelectValue(instance: { id: string } | null | undefined, hasGlobalDefault: boolean): string {
+    if (instance === undefined) return NONE_VALUE;
+    if (instance === null) return hasGlobalDefault ? DEFAULT_VALUE : NONE_VALUE;
+    return instance.id;
+  }
+
+  function handleEmbeddingModelChange(val: string) {
+    if (val === DEFAULT_VALUE) {
+      form.setValue("turEmbeddingModelInstance", null);
+    } else if (val === NONE_VALUE) {
+      form.setValue("turEmbeddingModelInstance", undefined);
+    } else {
+      const instance = embeddingModels.find((i) => i.id === val);
+      form.setValue("turEmbeddingModelInstance", instance ?? undefined);
+    }
+  }
+
+  function handleStoreChange(val: string) {
+    if (val === DEFAULT_VALUE) {
+      form.setValue("turStoreInstance", null);
+    } else if (val === NONE_VALUE) {
+      form.setValue("turStoreInstance", undefined);
+    } else {
+      const instance = storeInstances.find((i) => i.id === val);
+      form.setValue("turStoreInstance", instance ?? undefined);
+    }
+  }
 
   async function onSubmit(agent: TurAIAgent) {
     const payload: TurAIAgent = { ...agent }
@@ -191,6 +283,119 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                     </FormControl>
                     <FormMessage />
                   </FormItem>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="violet">
+            <SectionCard.Header icon={IconBrain} title={t("forms.agentSettings.ragModels")} description={t("forms.agentSettings.ragModelsDesc")} />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="turEmbeddingModelInstance"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.embeddingModel")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.embeddingModelDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={handleEmbeddingModelChange}
+                          value={getSelectValue(field.value, !!globalDefaultEmbeddingModelId)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={t("forms.agentSettings.noEmbeddingModel")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {globalRagEnabled && globalDefaultEmbeddingModelId && (
+                              <SelectItem value={DEFAULT_VALUE}>{t("forms.agentSettings.defaultGlobal")}</SelectItem>
+                            )}
+                            <SelectItem value={NONE_VALUE}>{t("forms.agentSettings.noEmbeddingModel")}</SelectItem>
+                            {embeddingModels.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                {model.modelName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="turStoreInstance"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.embeddingStore")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.embeddingStoreDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={handleStoreChange}
+                          value={getSelectValue(field.value, !!globalDefaultEmbeddingStoreId)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={t("forms.agentSettings.noEmbeddingStore")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {globalRagEnabled && globalDefaultEmbeddingStoreId && (
+                              <SelectItem value={DEFAULT_VALUE}>{t("forms.agentSettings.defaultGlobal")}</SelectItem>
+                            )}
+                            <SelectItem value={NONE_VALUE}>{t("forms.agentSettings.noEmbeddingStore")}</SelectItem>
+                            {storeInstances.map((instance) => (
+                              <SelectItem key={instance.id} value={instance.id}>
+                                {instance.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header icon={IconPower} title={t("forms.agentSettings.rag")} description={t("forms.agentSettings.ragDesc")} />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="ragEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.enableRag")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {canEnableRag
+                          ? t("forms.agentSettings.enableRagDesc")
+                          : t("forms.agentSettings.enableRagBlocked")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          disabled={!canEnableRag}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
                 )}
               />
             </SectionCard.Content>

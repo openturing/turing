@@ -14,18 +14,19 @@ import { toast } from "@viglet/viglet-design-system";
 const turIntentService = new TurIntentService();
 
 export default function IntentPage() {
-  const { id } = useParams() as { id: string };
+  const { id: agentId, intentId } = useParams() as { id: string; intentId: string };
   const { t } = useTranslation();
   const [intent, setIntent] = useState<TurIntent>({} as TurIntent);
   const [isNew, setIsNew] = useState<boolean>(true);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[] | undefined>(
-    id === "new" ? [{ label: t("intent.newInstance") }] : undefined
+    intentId === "new" ? [{ label: t("intent.newInstance") }] : undefined
   );
   useSubPageBreadcrumb(breadcrumb);
   const navigate = useNavigate();
-  const urlBase = `${ROUTES.INTENT_INSTANCE}/${id}`;
+  const intentListUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`;
+  const urlBase = `${intentListUrl}/${intentId}`;
 
   const data = useMemo(() => ({
     navMain: [
@@ -34,23 +35,25 @@ export default function IntentPage() {
   }), [t]);
 
   useEffect(() => {
-    if (id === "new") {
+    if (!agentId) return;
+    if (intentId === "new") {
       setIntent({ actions: [] } as unknown as TurIntent);
       setIsNew(true);
     } else {
-      turIntentService.get(id).then((i) => {
+      turIntentService.get(agentId, intentId).then((i) => {
         setIntent(i);
-        setBreadcrumb([{ label: i.title, href: `${ROUTES.INTENT_INSTANCE}/${i.id}` }]);
+        setBreadcrumb([{ label: i.title, href: `${intentListUrl}/${i.id}` }]);
       }).catch(() => setError(t("common.connectionError", { resource: t("intent.title").toLowerCase() })));
       setIsNew(false);
     }
-  }, [id]);
+  }, [agentId, intentId]);
 
   async function onDelete() {
+    if (!agentId) return;
     try {
-      if (await turIntentService.delete(intent)) {
+      if (await turIntentService.delete(agentId, intent)) {
         toast.success(t("intent.deleted", { name: intent.title }));
-        navigate(ROUTES.INTENT_INSTANCE);
+        navigate(intentListUrl);
       } else {
         toast.error(t("intent.notDeleted", { name: intent.title }));
       }
@@ -62,7 +65,7 @@ export default function IntentPage() {
   }
 
   return (
-    <LoadProvider checkIsNotUndefined={intent} error={error} tryAgainUrl={`${ROUTES.INTENT_INSTANCE}/${id}`}>
+    <LoadProvider checkIsNotUndefined={intent} error={error} tryAgainUrl={urlBase}>
       <SubPage icon={IconBulb} feature={t("intent.title")} name={intent.title}
         onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
     </LoadProvider>

@@ -1,23 +1,8 @@
 package com.viglet.turing.api.agent;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
-import org.springframework.ai.tool.ToolCallback;
-import java.util.HashSet;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,24 +10,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.llm.chat.TurLLMChatAPI;
+import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
-import com.viglet.turing.genai.tool.TurLoggingToolCallback;
-import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
-import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
-import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
-import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * Chat endpoint for AI Agent. Each agent has its own LLM instances,
@@ -57,34 +36,22 @@ import reactor.core.scheduler.Schedulers;
 @Tag(name = "AI Agent Chat", description = "Chat using AI Agent configuration")
 public class TurAIAgentChatAPI {
 
-    private static final String DEFAULT_SYSTEM_PROMPT = """
-            You are an AI assistant. Answer the user's questions using the tools available to you.
-            If you have access to MCP server tools, use them when relevant to fulfill the user's request.
-            If the user asks in a specific language, respond in that same language.
-            """;
-
     private final TurAIAgentRepository turAIAgentRepository;
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
-    private final TurNativeToolService nativeToolService;
-    private final TurMcpToolCallbackService mcpToolCallbackService;
-    private final TurLLMTokenUsageService tokenUsageService;
+    private final TurAgentChatExecutor agentChatExecutor;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurNativeToolService nativeToolService,
-            TurMcpToolCallbackService mcpToolCallbackService,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurAgentChatExecutor agentChatExecutor) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
-        this.nativeToolService = nativeToolService;
-        this.mcpToolCallbackService = mcpToolCallbackService;
-        this.tokenUsageService = tokenUsageService;
+        this.agentChatExecutor = agentChatExecutor;
     }
 
     public record AgentChatRequest(String llmInstanceId, List<ChatMessageItem> messages) {
@@ -123,81 +90,14 @@ public class TurAIAgentChatAPI {
         log.info("[AgentChat] Agent '{}' received request with {} messages, LLM: {}",
                 agent.getTitle(), request.messages().size(), turLLMInstance.getTitle());
 
-        String username = resolveUsername();
-
-        TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
-        String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
-        ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
-
-        // Native tools: use only those selected for this agent (comma-separated in nativeTools field)
-        Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
-        ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
-                ? new ToolCallback[0]
-                : nativeToolService.getToolCallbacks(selectedNativeTools);
-
-        // Only load MCP servers configured for this agent
-        Set<TurMcpServer> agentMcpServers = agent.getMcpServers();
-        ToolCallback[] mcpCallbacks = agentMcpServers.isEmpty()
-                ? new ToolCallback[0]
-                : mcpToolCallbackService.getToolCallbacks(agentMcpServers);
-
-        ToolCallback[] allCallbacks = TurLoggingToolCallback.wrap(
-                Stream.concat(
-                        Arrays.stream(nativeCallbacks),
-                        Arrays.stream(mcpCallbacks)
-                ).toArray(ToolCallback[]::new));
-
-        log.info("[AgentChat] Agent '{}': {} tool callbacks ({} native + {} MCP)",
-                agent.getTitle(), allCallbacks.length, nativeCallbacks.length, mcpCallbacks.length);
-
-        // Log tool names for debugging
-        for (ToolCallback cb : allCallbacks) {
-            log.info("[AgentChat] Available tool: '{}' - {}",
-                    cb.getToolDefinition().name(),
-                    cb.getToolDefinition().description());
-        }
-
-        var chatOptions = DefaultToolCallingChatOptions.builder()
-                .toolCallbacks(allCallbacks)
-                .internalToolExecutionEnabled(true)
-                .build();
-
-        String systemPrompt = agent.getSystemPrompt() != null && !agent.getSystemPrompt().isBlank()
-                ? agent.getSystemPrompt()
-                : DEFAULT_SYSTEM_PROMPT;
-
-        List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage(systemPrompt));
-        for (ChatMessageItem item : request.messages()) {
-            if ("assistant".equals(item.role())) {
-                messages.add(new AssistantMessage(item.content()));
-            } else {
-                messages.add(new UserMessage(item.content()));
-            }
-        }
-
-        Prompt prompt = new Prompt(messages, chatOptions);
-
-        return Mono.fromCallable(() -> {
-            log.info("[AgentChat] Calling LLM for agent '{}', LLM '{}'",
-                    agent.getTitle(), turLLMInstance.getTitle());
-            var response = chatModel.call(prompt);
-
-            tokenUsageService.recordUsage(turLLMInstance, response, username);
-
-            String text = response.getResult() != null
-                    && response.getResult().getOutput() != null
-                    && response.getResult().getOutput().getText() != null
-                            ? response.getResult().getOutput().getText()
-                            : "";
-            log.info("[AgentChat] Agent '{}' response: {} chars", agent.getTitle(), text.length());
-            return new ChatResponse("assistant", text);
-        })
-                .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(err -> log.error("[AgentChat] Agent '{}' error: {}",
-                        agent.getTitle(), err.getMessage(), err))
-                .filter(response -> !response.content().isEmpty())
-                .flux();
+        // All the tool resolution + chat model + streaming logic is centralized
+        // in TurAgentChatExecutor so the SN site AI Mode can reuse the same
+        // pipeline with an augmented system prompt (for RAG context).
+        List<TurAgentChatExecutor.ChatMessageItem> mapped = request.messages().stream()
+                .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
+                .toList();
+        return agentChatExecutor.execute(agent, turLLMInstance, mapped, null)
+                .map(r -> new ChatResponse(r.role(), r.content()));
     }
 
     @GetMapping("/chat/context-info")
@@ -225,22 +125,4 @@ public class TurAIAgentChatAPI {
         return new TurLLMChatAPI.ContextInfoResponse(stored, "config");
     }
 
-    private String resolveUsername() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth != null ? auth.getName() : "anonymous";
-    }
-
-    private static Set<String> parseNativeTools(String nativeTools) {
-        if (nativeTools == null || nativeTools.isBlank()) {
-            return new HashSet<>();
-        }
-        Set<String> result = new HashSet<>();
-        for (String tool : nativeTools.split(",")) {
-            String trimmed = tool.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(trimmed);
-            }
-        }
-        return result;
-    }
 }

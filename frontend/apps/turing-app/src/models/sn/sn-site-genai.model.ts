@@ -1,13 +1,17 @@
-import type { TurEmbeddingModel } from "../embedding/embedding-model.model.ts";
-import type { TurLLMInstance } from "../llm/llm-instance.model.ts";
-import type { TurStoreInstance } from "../store/store-instance.model.ts";
+import type { TurAIAgent } from "../agent/ai-agent.model.ts";
 
 export interface TurSNSiteGenAi {
   id: string;
-  turLLMInstance: TurLLMInstance;
-  turStoreInstance: TurStoreInstance;
-  turEmbeddingModelInstance: TurEmbeddingModel;
-  enabled: boolean;
-  systemPrompt: string;
+  /**
+   * AI Agent that powers this site's GenAI features. The agent owns the
+   * RAG enabled flag, LLM list, embedding model, vector store AND the
+   * system prompt used by the chat. When null, GenAI is disabled for the
+   * site.
+   */
+  turAIAgent?: TurAIAgent | null;
+  /**
+   * Site description prompt used by the summary/insights LLM call. This is
+   * NOT the chat system prompt (that one lives on the agent).
+   */
   sitePrompt?: string;
 }

@@ -57,6 +57,7 @@ import com.viglet.turing.persistence.model.sn.TurSNSiteFacetSortEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -82,6 +83,7 @@ public class TurSNSiteAPI {
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
+    private final TurAIAgentRepository turAIAgentRepository;
     private final TurSNSiteExport turSNSiteExport;
     private final TurSNSiteContentExchangeService contentExchangeService;
     private final TurSNTemplate turSNTemplate;
@@ -167,11 +169,14 @@ public class TurSNSiteAPI {
             Optional.ofNullable(turSNSite.getTurSNSiteGenAi()).ifPresent(genAi -> {
                 TurSNSiteGenAi turSNSiteGenAi = Optional.ofNullable(turSNSiteEdit.getTurSNSiteGenAi())
                         .orElse(new TurSNSiteGenAi());
-                turSNSiteGenAi.setEnabled(genAi.isEnabled());
-                turSNSiteGenAi.setTurLLMInstance(genAi.getTurLLMInstance());
-                turSNSiteGenAi.setTurStoreInstance(genAi.getTurStoreInstance());
-                turSNSiteGenAi.setTurEmbeddingModelInstance(genAi.getTurEmbeddingModelInstance());
-                turSNSiteGenAi.setSystemPrompt(genAi.getSystemPrompt());
+                // Resolve agent reference from incoming payload — clients may send
+                // either a full TurAIAgent or just an object with the id field.
+                turSNSiteGenAi.setTurAIAgent(
+                        Optional.ofNullable(genAi.getTurAIAgent())
+                                .map(a -> a.getId() != null
+                                        ? turAIAgentRepository.findById(a.getId()).orElse(null)
+                                        : null)
+                                .orElse(null));
                 turSNSiteGenAi.setSitePrompt(genAi.getSitePrompt());
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
@@ -321,7 +326,8 @@ public class TurSNSiteAPI {
         return turSNSiteRepository.findById(id)
                 .map(site -> {
                     var genAi = site.getTurSNSiteGenAi();
-                    if (genAi == null || !genAi.isEnabled()) {
+                    var agent = genAi == null ? null : genAi.getTurAIAgent();
+                    if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .<Map<String, String>>body(Map.of("error", "RAG is not enabled on this site"));
                     }

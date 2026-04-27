@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-rag-enabled-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: rag_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: rag_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: add-embedding-model-instance-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: embedding_model_instance_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: embedding_model_instance_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent
+            baseColumnNames: embedding_model_instance_id
+            referencedTableName: embedding_model
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_embedding_model
+
+  - changeSet:
+      id: add-store-instance-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: store_instance_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: store_instance_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent
+            baseColumnNames: store_instance_id
+            referencedTableName: store_instance
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_store_instance

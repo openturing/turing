@@ -11,6 +11,7 @@
       "languageModels": "Language Models",
       "nativeTools": "Native Tools",
       "mcpServers": "MCP Servers",
+      "intents": "Intents",
       "chatFlow": "Chat Flow"
     },
     "chatFlow": {

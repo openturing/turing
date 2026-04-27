@@ -16,7 +16,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns"
-import { GradientSwitch } from "@/components/ui/gradient-switch"
 import {
     Select,
     SelectContent,
@@ -24,21 +23,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
-import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
+import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
-import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
+import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurChatService } from "@/services/chat/chat.service"
-import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
-import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
-import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconMessageChatbot, IconPower, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
+import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
 import React, { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -50,23 +44,10 @@ import { SectionCard } from "../../ui/section-card"
 import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
-const turLLMInstanceService = new TurLLMInstanceService();
-const turStoreInstanceService = new TurStoreInstanceService();
-const turEmbeddingModelService = new TurEmbeddingModelService();
+const turAIAgentService = new TurAIAgentService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turChatService = new TurChatService();
 
-const DEFAULT_SYSTEM_PROMPT = `You are an assistant that answers questions about this website using only the context provided below.
-
-How to respond:
-- Use the context as the single source of truth. You may paraphrase, summarize, or combine information from different snippets when they relate to the same topic.
-- If the topic appears in the context only as a passing mention (e.g., a name or word with no explanatory detail), do NOT expand with external knowledge. Instead, answer what the context says — even if it is just "The context mentions X only as <role>, but does not provide further details."
-- If the topic is not present in the context at all, respond exactly with: "I'm sorry, but that information is not available in the website's database."
-- Never use prior knowledge, training data, or outside facts. Even if you know the answer, stay within the context.
-
-Language: Always respond in English.`;
-
-const DEFAULT_VALUE = "__default__";
 const NONE_VALUE = "__none__";
 
 interface Props {
@@ -80,11 +61,8 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
             ...snSite.turSNSiteGenAi
         },
     });
-    const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
-    const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
-    const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
+    const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
-    const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
     const [isReindexing, setIsReindexing] = useState(false);
@@ -102,12 +80,11 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     );
 
     useEffect(() => {
-        turLLMInstanceService.query().then(setLlmInstances);
-        turStoreInstanceService.query().then(setStoreInstances);
-        turEmbeddingModelService.query().then(setEmbeddingModels);
+        turAIAgentService.query().then((all) =>
+            setAiAgents(all.filter((a) => a.enabled === 1)),
+        );
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
-            setGlobalRagEnabled(settings.ragEnabled ?? false);
         });
     }, []);
 
@@ -118,13 +95,16 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         });
     }, [snSite]);
 
-    const enabled = form.watch("enabled");
+    const selectedAgent = form.watch("turAIAgent");
+    const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true;
 
-    function handleEnabledChange(checked: boolean) {
-        form.setValue("enabled", checked);
-        if (checked && !form.getValues("systemPrompt")) {
-            form.setValue("systemPrompt", DEFAULT_SYSTEM_PROMPT);
+    function handleAgentChange(val: string) {
+        if (val === NONE_VALUE) {
+            form.setValue("turAIAgent", null);
+            return;
         }
+        const agent = aiAgents.find((a) => a.id === val);
+        form.setValue("turAIAgent", agent ?? null);
     }
 
     const generateSitePrompt = useCallback(async () => {
@@ -241,45 +221,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         };
     }, [snSite.id, subscribeToReindex]);
 
-    function getSelectValue(instance: { id: string } | null | undefined): string {
-        if (instance === undefined) return NONE_VALUE;
-        if (instance === null) return globalRagEnabled ? DEFAULT_VALUE : NONE_VALUE;
-        return instance.id;
-    }
-
-    function handleLlmChange(val: string) {
-        if (val === DEFAULT_VALUE) {
-            form.setValue("turLLMInstance", null as unknown as TurLLMInstance);
-        } else if (val === NONE_VALUE) {
-            form.setValue("turLLMInstance", undefined as unknown as TurLLMInstance);
-        } else {
-            const instance = llmInstances.find((i) => i.id === val);
-            form.setValue("turLLMInstance", instance ?? (undefined as unknown as TurLLMInstance));
-        }
-    }
-
-    function handleStoreChange(val: string) {
-        if (val === DEFAULT_VALUE) {
-            form.setValue("turStoreInstance", null as unknown as TurStoreInstance);
-        } else if (val === NONE_VALUE) {
-            form.setValue("turStoreInstance", undefined as unknown as TurStoreInstance);
-        } else {
-            const instance = storeInstances.find((i) => i.id === val);
-            form.setValue("turStoreInstance", instance ?? (undefined as unknown as TurStoreInstance));
-        }
-    }
-
-    function handleEmbeddingModelChange(val: string) {
-        if (val === DEFAULT_VALUE) {
-            form.setValue("turEmbeddingModelInstance", null as unknown as TurEmbeddingModel);
-        } else if (val === NONE_VALUE) {
-            form.setValue("turEmbeddingModelInstance", undefined as unknown as TurEmbeddingModel);
-        } else {
-            const instance = embeddingModels.find((i) => i.id === val);
-            form.setValue("turEmbeddingModelInstance", instance ?? (undefined as unknown as TurEmbeddingModel));
-        }
-    }
-
     async function onSubmit(data: TurSNSiteGenAi) {
         try {
             const updatedSite = {
@@ -376,43 +317,80 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             </SectionCard.Content>
                         </SectionCard>
 
-                        {/* Section 2: RAG Activation */}
-                        <SectionCard variant="blue">
-                            <SectionCard.Header icon={IconPower} title={t("forms.snGenai.rag")} description={t("forms.snGenai.ragDesc")} />
+                        {/* Section 2: AI Agent (single source of truth for LLM, embedding, store and RAG flag) */}
+                        <SectionCard variant="violet">
+                            <SectionCard.Header icon={IconBrain} title={t("forms.snGenai.aiAgent")} description={t("forms.snGenai.aiAgentDesc")} />
                             <SectionCard.Content>
                                 <FormField
                                     control={form.control}
-                                    name="enabled"
+                                    name="turAIAgent"
                                     render={({ field }) => (
                                         <FormItemTwoColumns>
                                             <FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Label>{t("forms.snGenai.enableRag")}</FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Label>{t("forms.snGenai.aiAgent")}</FormItemTwoColumns.Label>
                                                 <FormItemTwoColumns.Description>
-                                                    Enable Retrieval-Augmented Generation (RAG) to combine search results with a language model, providing AI-powered answers grounded in this site's indexed content.
+                                                    {t("forms.snGenai.aiAgentDesc")}
                                                 </FormItemTwoColumns.Description>
                                             </FormItemTwoColumns.Left>
                                             <FormItemTwoColumns.Right>
                                                 <FormControl>
-                                                    <GradientSwitch
-                                                        checked={field.value}
-                                                        onCheckedChange={handleEnabledChange}
-                                                    />
+                                                    <Select
+                                                        onValueChange={handleAgentChange}
+                                                        value={field.value?.id ?? NONE_VALUE}
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder={t("forms.snGenai.noAiAgent")} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noAiAgent")}</SelectItem>
+                                                            {aiAgents.map((agent) => (
+                                                                <SelectItem key={agent.id} value={agent.id}>
+                                                                    {agent.title}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </FormControl>
+                                                <FormMessage />
                                             </FormItemTwoColumns.Right>
                                         </FormItemTwoColumns>
                                     )}
                                 />
-                                {enabled && (
+                                {selectedAgent && (
+                                    <div className="rounded-lg bg-muted/40 px-4 py-3 mt-2 text-xs text-muted-foreground space-y-1">
+                                        <div>
+                                            <strong>RAG:</strong>{" "}
+                                            {ragEnabled
+                                                ? t("forms.snGenai.ragEnabledOnAgent")
+                                                : t("forms.snGenai.ragDisabledOnAgent")}
+                                        </div>
+                                        {selectedAgent.turEmbeddingModelInstance?.modelName && (
+                                            <div>
+                                                <strong>{t("forms.snGenai.embeddingModel")}:</strong>{" "}
+                                                {selectedAgent.turEmbeddingModelInstance.modelName}
+                                            </div>
+                                        )}
+                                        {selectedAgent.turStoreInstance?.title && (
+                                            <div>
+                                                <strong>{t("forms.snGenai.embeddingStore")}:</strong>{" "}
+                                                {selectedAgent.turStoreInstance.title}
+                                            </div>
+                                        )}
+                                        {selectedAgent.llmInstances?.[0]?.title && (
+                                            <div>
+                                                <strong>{t("forms.snGenai.languageModel")}:</strong>{" "}
+                                                {selectedAgent.llmInstances[0].title}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                {ragEnabled && (
                                     <div className="flex items-center gap-3 pt-4 border-t border-border/40">
                                         <GradientButton
                                             type="button"
                                             variant="outline"
                                             disabled={isReindexing}
                                             onClick={handleReindexClick}
-                                            // Fixed width sized for "Indexing 9,999,999/9,999,999"
-                                            // (≈7-digit/7-digit fits in 320px with the spinner) so the
-                                            // button stops reflowing as the counter ticks up.
-                                            // tabular-nums keeps each digit the same width.
                                             className="min-w-[320px] justify-center tabular-nums"
                                         >
                                             {isReindexing ? (
@@ -444,164 +422,6 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                             </SectionCard.Content>
                         </SectionCard>
 
-                        {/* Section 3: Models */}
-                        {enabled && (
-                            <SectionCard variant="violet">
-                                <SectionCard.Header icon={IconBrain} title={t("forms.snGenai.aiModelConfig")} description={t("forms.snGenai.aiModelConfigDesc")} />
-                                <SectionCard.Content>
-                                    {/* Language Model */}
-                                    <FormField
-                                        control={form.control}
-                                        name="turLLMInstance"
-                                        render={({ field }) => (
-                                            <FormItemTwoColumns>
-                                                <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.languageModel")}</FormItemTwoColumns.Label>
-                                                    <FormItemTwoColumns.Description>
-                                                        {t("forms.snGenai.languageModelDesc")}
-                                                    </FormItemTwoColumns.Description>
-                                                </FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Right>
-                                                    <FormControl>
-                                                        <Select
-                                                            onValueChange={handleLlmChange}
-                                                            value={getSelectValue(field.value)}
-                                                        >
-                                                            <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder={t("forms.snGenai.noLanguageModel")} />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
-                                                                )}
-                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noLanguageModel")}</SelectItem>
-                                                                {llmInstances.map((instance) => (
-                                                                    <SelectItem key={instance.id} value={instance.id}>
-                                                                        {instance.title}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItemTwoColumns.Right>
-                                            </FormItemTwoColumns>
-                                        )}
-                                    />
-
-                                    {/* Embedding Store */}
-                                    <FormField
-                                        control={form.control}
-                                        name="turStoreInstance"
-                                        render={({ field }) => (
-                                            <FormItemTwoColumns>
-                                                <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.embeddingStore")}</FormItemTwoColumns.Label>
-                                                    <FormItemTwoColumns.Description>
-                                                        {t("forms.snGenai.embeddingStoreDesc")}
-                                                    </FormItemTwoColumns.Description>
-                                                </FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Right>
-                                                    <FormControl>
-                                                        <Select
-                                                            onValueChange={handleStoreChange}
-                                                            value={getSelectValue(field.value)}
-                                                        >
-                                                            <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder={t("forms.snGenai.noEmbeddingStore")} />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
-                                                                )}
-                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noEmbeddingStore")}</SelectItem>
-                                                                {storeInstances.map((instance) => (
-                                                                    <SelectItem key={instance.id} value={instance.id}>
-                                                                        {instance.title}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItemTwoColumns.Right>
-                                            </FormItemTwoColumns>
-                                        )}
-                                    />
-
-                                    {/* Embedding Model */}
-                                    <FormField
-                                        control={form.control}
-                                        name="turEmbeddingModelInstance"
-                                        render={({ field }) => (
-                                            <FormItemTwoColumns>
-                                                <FormItemTwoColumns.Left>
-                                                    <FormItemTwoColumns.Label>{t("forms.snGenai.embeddingModel")}</FormItemTwoColumns.Label>
-                                                    <FormItemTwoColumns.Description>
-                                                        {t("forms.snGenai.embeddingModelDesc")}
-                                                    </FormItemTwoColumns.Description>
-                                                </FormItemTwoColumns.Left>
-                                                <FormItemTwoColumns.Right>
-                                                    <FormControl>
-                                                        <Select
-                                                            onValueChange={handleEmbeddingModelChange}
-                                                            value={getSelectValue(field.value)}
-                                                        >
-                                                            <SelectTrigger className="w-full">
-                                                                <SelectValue placeholder={t("forms.snGenai.noEmbeddingModel")} />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {globalRagEnabled && (
-                                                                    <SelectItem value={DEFAULT_VALUE}>{t("forms.snGenai.defaultGlobal")}</SelectItem>
-                                                                )}
-                                                                <SelectItem value={NONE_VALUE}>{t("forms.snGenai.noEmbeddingModel")}</SelectItem>
-                                                                {embeddingModels.map((model) => (
-                                                                    <SelectItem key={model.id} value={model.id}>
-                                                                        {model.modelName}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItemTwoColumns.Right>
-                                            </FormItemTwoColumns>
-                                        )}
-                                    />
-                                </SectionCard.Content>
-                            </SectionCard>
-                        )}
-
-                        {/* Section 4: System Prompt */}
-                        {enabled && (
-                            <SectionCard variant="emerald">
-                                <SectionCard.Header icon={IconMessageChatbot} title={t("forms.snGenai.systemPrompt")} description={t("forms.snGenai.systemPromptDesc")} />
-                                <SectionCard.Content>
-                                    <FormField
-                                        control={form.control}
-                                        name="systemPrompt"
-                                        rules={{ required: enabled && t("forms.snGenai.systemPromptRequired") }}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>{t("forms.snGenai.promptTemplate")}</FormLabel>
-                                                <FormDescription>
-                                                    {t("forms.snGenai.promptTemplateDesc")}
-                                                </FormDescription>
-                                                <FormControl>
-                                                    <SystemPromptEditor
-                                                        value={field.value ?? ""}
-                                                        onChange={field.onChange}
-                                                        fieldRef={field.ref}
-                                                        placeholder={t("forms.snGenai.promptTemplatePlaceholder")}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </SectionCard.Content>
-                            </SectionCard>
-                        )}
                     </div>
 
                 </form>

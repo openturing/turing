@@ -47,6 +47,7 @@ public class TurGlobalSettingsAPI {
                 .ragEnabled(turGlobalSettingsService.isRagEnabled())
                 .defaultEmbeddingModelId(turGlobalSettingsService.getDefaultEmbeddingModelId())
                 .defaultEmbeddingStoreId(turGlobalSettingsService.getDefaultEmbeddingStoreId())
+                .defaultAiAgentId(turGlobalSettingsService.getDefaultAiAgentId())
                 .build();
     }
 
@@ -82,6 +83,8 @@ public class TurGlobalSettingsAPI {
                         .updateDefaultEmbeddingModelId(globalSettings.getDefaultEmbeddingModelId()))
                 .defaultEmbeddingStoreId(turGlobalSettingsService
                         .updateDefaultEmbeddingStoreId(globalSettings.getDefaultEmbeddingStoreId()))
+                .defaultAiAgentId(turGlobalSettingsService
+                        .updateDefaultAiAgentId(globalSettings.getDefaultAiAgentId()))
                 .build();
     }
 

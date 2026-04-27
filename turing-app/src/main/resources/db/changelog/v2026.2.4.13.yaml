@@ -1,0 +1,17 @@
+databaseChangeLog:
+  # Drop systemPrompt from sn_site_genai — the prompt now comes from the
+  # AI agent referenced by the site. The per-site sitePrompt (site description)
+  # remains because it serves a different purpose (used by the summary/insights
+  # endpoint).
+  - changeSet:
+      id: drop-system-prompt-from-sn-site-genai
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: sn_site_genai
+            columnName: systemPrompt
+      changes:
+        - dropColumn:
+            tableName: sn_site_genai
+            columnName: systemPrompt

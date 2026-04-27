@@ -19,10 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentDto;
 import com.viglet.turing.persistence.mapper.agent.TurAIAgentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
+import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
+import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
+import com.viglet.turing.system.TurGlobalSettingsService;
+
+import org.springframework.util.StringUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,15 +42,24 @@ public class TurAIAgentAPI {
     private final TurAIAgentMapper turAIAgentMapper;
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurMcpServerRepository turMcpServerRepository;
+    private final TurEmbeddingModelRepository turEmbeddingModelRepository;
+    private final TurStoreInstanceRepository turStoreInstanceRepository;
+    private final TurGlobalSettingsService turGlobalSettingsService;
 
     public TurAIAgentAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentMapper turAIAgentMapper,
             TurLLMInstanceRepository turLLMInstanceRepository,
-            TurMcpServerRepository turMcpServerRepository) {
+            TurMcpServerRepository turMcpServerRepository,
+            TurEmbeddingModelRepository turEmbeddingModelRepository,
+            TurStoreInstanceRepository turStoreInstanceRepository,
+            TurGlobalSettingsService turGlobalSettingsService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentMapper = turAIAgentMapper;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turMcpServerRepository = turMcpServerRepository;
+        this.turEmbeddingModelRepository = turEmbeddingModelRepository;
+        this.turStoreInstanceRepository = turStoreInstanceRepository;
+        this.turGlobalSettingsService = turGlobalSettingsService;
     }
 
     @Operation(summary = "AI Agent List")
@@ -86,6 +102,13 @@ public class TurAIAgentAPI {
                     turAIAgent.getLlmInstances(), turLLMInstanceRepository));
             agentEdit.setMcpServers(resolveRelations(
                     turAIAgent.getMcpServers(), turMcpServerRepository));
+            agentEdit.setTurEmbeddingModelInstance(resolveSingleRelation(
+                    turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
+            agentEdit.setTurStoreInstance(resolveSingleRelation(
+                    turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+            agentEdit.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
+                    agentEdit.getTurEmbeddingModelInstance(),
+                    agentEdit.getTurStoreInstance()));
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());
@@ -109,8 +132,55 @@ public class TurAIAgentAPI {
                 turAIAgent.getLlmInstances(), turLLMInstanceRepository));
         turAIAgent.setMcpServers(resolveRelations(
                 turAIAgent.getMcpServers(), turMcpServerRepository));
+        turAIAgent.setTurEmbeddingModelInstance(resolveSingleRelation(
+                turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
+        turAIAgent.setTurStoreInstance(resolveSingleRelation(
+                turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+        turAIAgent.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
+                turAIAgent.getTurEmbeddingModelInstance(),
+                turAIAgent.getTurStoreInstance()));
         this.turAIAgentRepository.save(turAIAgent);
         return turAIAgentMapper.toDto(turAIAgent);
+    }
+
+    /**
+     * Resolves a single ManyToOne relation. If the incoming entity has an id,
+     * fetches the managed instance from the repo. Returns null if not found or
+     * if the input was null.
+     */
+    private <T> T resolveSingleRelation(
+            T incoming,
+            org.springframework.data.jpa.repository.JpaRepository<T, String> repo) {
+        if (incoming == null) {
+            return null;
+        }
+        if (incoming instanceof org.springframework.data.domain.Persistable) {
+            var persistable = (org.springframework.data.domain.Persistable<?>) incoming;
+            String id = (String) persistable.getId();
+            if (id == null) {
+                return null;
+            }
+            return repo.findById(id).orElse(null);
+        }
+        return incoming;
+    }
+
+    /**
+     * RAG can only be enabled on the agent when an embedding model and an
+     * embedding store are resolvable — either set on the agent itself, or via
+     * the global RAG defaults configured in Global Settings.
+     */
+    private boolean canEnableRag(boolean requested,
+            TurEmbeddingModel embeddingModel,
+            TurStoreInstance storeInstance) {
+        if (!requested) {
+            return false;
+        }
+        boolean modelOk = embeddingModel != null
+                || StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingModelId());
+        boolean storeOk = storeInstance != null
+                || StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingStoreId());
+        return modelOk && storeOk;
     }
 
     private <T> Set<T> resolveRelations(

@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(15)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(16)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())

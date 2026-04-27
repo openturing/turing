@@ -29,4 +29,5 @@ public class TurGlobalSettingsBean {
     private boolean ragEnabled;
     private String defaultEmbeddingModelId;
     private String defaultEmbeddingStoreId;
+    private String defaultAiAgentId;
 }

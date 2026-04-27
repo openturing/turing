@@ -72,7 +72,6 @@ class TurSNSiteGenAiAPITest {
         // We test the disabled path which can be fully mocked instead.
         TurSNSite site = new TurSNSite();
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(false);
         site.setTurSNSiteGenAi(genAi);
 
         when(turSNSearchProcess.existsByTurSNSiteAndLanguage(eq("site1"), any(Locale.class))).thenReturn(true);
@@ -100,7 +99,6 @@ class TurSNSiteGenAiAPITest {
     void testChatMessage_GenAiNotEnabled() throws Exception {
         TurSNSite site = new TurSNSite();
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setEnabled(false);
         site.setTurSNSiteGenAi(genAi);
 
         when(turSNSearchProcess.existsByTurSNSiteAndLanguage(eq("site1"), any())).thenReturn(true);

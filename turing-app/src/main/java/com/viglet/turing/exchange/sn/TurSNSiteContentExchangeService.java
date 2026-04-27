@@ -318,8 +318,9 @@ public class TurSNSiteContentExchangeService {
             return 0;
         }
         var genAi = turSNSite.getTurSNSiteGenAi();
-        if (genAi == null || !genAi.isEnabled()) {
-            log.warn("RAG reindex skipped for site '{}': GenAI not enabled", turSNSite.getName());
+        var agent = genAi == null ? null : genAi.getTurAIAgent();
+        if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
+            log.warn("RAG reindex skipped for site '{}': agent not configured for RAG", turSNSite.getName());
             progressMap.put(taskId, new ContentExchangeProgress(
                     0, 0, "", "completed", System.currentTimeMillis()));
             return 0;

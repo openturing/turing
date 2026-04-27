@@ -130,7 +130,8 @@ public class TurAnnSearchAPI {
             return ResponseEntity.notFound().build();
         }
         var genAi = site.getTurSNSiteGenAi();
-        if (genAi == null || !genAi.isEnabled()) {
+        var agent = genAi == null ? null : genAi.getTurAIAgent();
+        if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
             // 403 (not 404) so the frontend can distinguish "RAG disabled" from
             // "endpoint missing / app not restarted yet".
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

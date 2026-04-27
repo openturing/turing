@@ -2,39 +2,40 @@ package com.viglet.turing.genai;
 
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
-import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
-import com.viglet.turing.system.TurGlobalSettingsService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Builds runtime GenAI contexts (vector store + embedding model + chat model)
+ * from an SN site's GenAI binding. Since 2026.2.4 the binding holds only a
+ * reference to a {@link TurAIAgent} — all RAG infrastructure choices come
+ * from the agent.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.4
+ */
 @Slf4j
 @Component
 public class TurGenAiContextFactory {
 
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
-    private final TurGlobalSettingsService turGlobalSettingsService;
-    private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurRagContextBuilder turRagContextBuilder;
 
     public TurGenAiContextFactory(TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurGlobalSettingsService turGlobalSettingsService,
-            TurLLMInstanceRepository turLLMInstanceRepository,
             TurRagContextBuilder turRagContextBuilder) {
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
-        this.turGlobalSettingsService = turGlobalSettingsService;
-        this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turRagContextBuilder = turRagContextBuilder;
     }
 
@@ -43,68 +44,65 @@ public class TurGenAiContextFactory {
     }
 
     public TurGenAiContext build(TurSNSiteGenAi turSNSiteGenAi, String collectionNameOverride) {
-        if (turSNSiteGenAi == null || !turSNSiteGenAi.isEnabled()) {
+        if (turSNSiteGenAi == null) {
+            return TurGenAiContext.disabled();
+        }
+        TurAIAgent agent = turSNSiteGenAi.getTurAIAgent();
+        if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
             return TurGenAiContext.disabled();
         }
 
-        // Resolve LLM Instance (for chat)
-        TurLLMInstance llmInstance = resolveLlmInstance(turSNSiteGenAi.getTurLLMInstance());
+        TurLLMInstance llmInstance = pickLlmInstance(agent);
         if (llmInstance == null) {
-            log.warn("GenAI enabled without LLM instance. siteGenAiId={}", turSNSiteGenAi.getId());
+            log.warn("RAG enabled on agent without any LLM instance. agentId={}", agent.getId());
             return TurGenAiContext.disabled();
         }
 
-        // Resolve Embedding Model and Store via shared TurRagContextBuilder
-        String embeddingModelId = resolveEmbeddingModelId(turSNSiteGenAi.getTurEmbeddingModelInstance());
-        String storeInstanceId = resolveStoreInstanceId(turSNSiteGenAi.getTurStoreInstance());
-        log.info("RAG resolved settings for siteGenAiId={}: llmInstanceId={}, embeddingModelId={}, storeInstanceId={}, collection={}",
-                turSNSiteGenAi.getId(), llmInstance.getId(), embeddingModelId, storeInstanceId, collectionNameOverride);
+        TurEmbeddingModel embeddingModel = agent.getTurEmbeddingModelInstance();
+        TurStoreInstance storeInstance = agent.getTurStoreInstance();
+        if (embeddingModel == null || storeInstance == null) {
+            log.warn("RAG enabled on agent without embedding model or store. agentId={}", agent.getId());
+            return TurGenAiContext.disabled();
+        }
 
-        var ragInfra = turRagContextBuilder.build(embeddingModelId, storeInstanceId, collectionNameOverride);
+        log.info("RAG resolved from agent: agentId={}, llmInstanceId={}, embeddingModelId={}, storeInstanceId={}, collection={}",
+                agent.getId(), llmInstance.getId(), embeddingModel.getId(), storeInstance.getId(), collectionNameOverride);
+
+        var ragInfra = turRagContextBuilder.build(embeddingModel.getId(), storeInstance.getId(), collectionNameOverride);
         if (ragInfra.isEmpty()) {
-            log.warn("GenAI enabled without complete embedding/store settings. siteGenAiId={}, embeddingModelId={}, storeInstanceId={}",
-                    turSNSiteGenAi.getId(), embeddingModelId, storeInstanceId);
+            log.warn("RAG enabled on agent but infrastructure could not be built. agentId={}", agent.getId());
             return TurGenAiContext.disabled();
         }
 
-        // Build ChatModel from LLM Instance
         TurGenAiLlmProvider llmProvider = llmProviderFactory.getProvider(llmInstance);
         String llmApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         ChatModel chatModel = llmProvider.createChatModel(llmInstance, llmApiKey);
 
         var infra = ragInfra.get();
+        // System prompt always comes from the agent — sites no longer
+        // override it.
         return TurGenAiContext.builder()
                 .vectorStore(infra.vectorStore())
                 .embeddingModel(infra.embeddingModel())
                 .chatModel(chatModel)
                 .enabled(true)
-                .systemPrompt(turSNSiteGenAi.getSystemPrompt())
+                .systemPrompt(agent.getSystemPrompt())
                 .ragInfrastructure(infra)
                 .build();
     }
 
-    private TurLLMInstance resolveLlmInstance(TurLLMInstance configured) {
-        if (configured != null) {
-            return configured;
+    /**
+     * Picks the first LLM instance attached to the agent. Agents currently
+     * model a {@code Set<TurLLMInstance>}; for the SN GenAI binding we treat
+     * the first one (by id ordering) as the active one.
+     */
+    private TurLLMInstance pickLlmInstance(TurAIAgent agent) {
+        if (agent.getLlmInstances() == null || agent.getLlmInstances().isEmpty()) {
+            return null;
         }
-        String defaultId = turGlobalSettingsService.getDefaultLlmId();
-        if (StringUtils.hasText(defaultId)) {
-            return turLLMInstanceRepository.findById(defaultId).orElse(null);
-        }
-        return null;
-    }
-
-    private String resolveEmbeddingModelId(TurEmbeddingModel configured) {
-        if (configured != null) {
-            return configured.getId();
-        }
-        return turGlobalSettingsService.getDefaultEmbeddingModelId();
-    }
-
-    private String resolveStoreInstanceId(TurStoreInstance configured) {
-        if (configured != null) {
-            return configured.getId();
-        }
-        return turGlobalSettingsService.getDefaultEmbeddingStoreId();
+        return agent.getLlmInstances().stream()
+                .filter(llm -> llm.getEnabled() == 1)
+                .findFirst()
+                .orElseGet(() -> agent.getLlmInstances().iterator().next());
     }
 }

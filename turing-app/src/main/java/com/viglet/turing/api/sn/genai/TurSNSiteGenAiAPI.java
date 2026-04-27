@@ -33,19 +33,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.http.MediaType;
+
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
+import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurChatMessage;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
-import com.viglet.turing.system.TurGlobalSettingsService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 @RestController
@@ -53,41 +59,40 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Semantic Navigation with Generative AI", description = "Semantic Navigation with Generative AI API")
 public class TurSNSiteGenAiAPI {
 	private static final String NOT_ENABLED_MESSAGE = "Language Model is not enabled for this site.";
+	private static final String ASSISTANT_ROLE = "assistant";
 
 	private final TurSNSearchProcess turSNSearchProcess;
 	private final TurSNGenAi turGenAi;
 	private final TurGenAiContextFactory turGenAiContextFactory;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	private final TurSNSiteSearchService turSNSiteSearchService;
-	private final TurGlobalSettingsService turGlobalSettingsService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
 			TurGenAiContextFactory turGenAiContextFactory,
 			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-			TurSNSiteSearchService turSNSiteSearchService,
-			TurGlobalSettingsService turGlobalSettingsService) {
+			TurSNSiteSearchService turSNSiteSearchService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 		this.turSNSiteSearchService = turSNSiteSearchService;
-		this.turGlobalSettingsService = turGlobalSettingsService;
 	}
 
-	private boolean hasLlm(com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi genAi) {
-		return genAi.getTurLLMInstance() != null
-				|| org.springframework.util.StringUtils.hasText(turGlobalSettingsService.getDefaultLlmId());
-	}
-
-	private boolean hasEmbeddingModel(com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi genAi) {
-		return genAi.getTurEmbeddingModelInstance() != null
-				|| org.springframework.util.StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingModelId());
-	}
-
-	private boolean hasStore(com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi genAi) {
-		return genAi.getTurStoreInstance() != null
-				|| org.springframework.util.StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingStoreId());
+	/**
+	 * Site GenAI is reachable when an enabled agent with RAG enabled and a
+	 * complete embedding/store/LLM setup is bound to the site. The check is
+	 * config-only — no model is instantiated, so broken credentials do not
+	 * hide the AI Mode button.
+	 */
+	private boolean isAgentRagReady(TurSNSiteGenAi genAi) {
+		if (genAi == null) return false;
+		TurAIAgent agent = genAi.getTurAIAgent();
+		if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) return false;
+		boolean hasLlm = agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty();
+		return hasLlm
+				&& agent.getTurEmbeddingModelInstance() != null
+				&& agent.getTurStoreInstance() != null;
 	}
 
 	private Locale resolveLocale(String requested, String siteName) {
@@ -111,8 +116,8 @@ public class TurSNSiteGenAiAPI {
 		if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			return turSNSearchProcess.getSNSite(siteName).map(site -> {
 				var turSNSiteGenAI = site.getTurSNSiteGenAi();
-				if (turSNSiteGenAI == null || !turSNSiteGenAI.isEnabled()) {
-					log.info("RAG chat (single-turn) skipped for SN Site '{}': GenAI not enabled on site", siteName);
+				if (!isAgentRagReady(turSNSiteGenAI)) {
+					log.info("RAG chat (single-turn) skipped for SN Site '{}': agent not ready", siteName);
 					return TurChatMessage.builder()
 							.text(NOT_ENABLED_MESSAGE)
 							.build();
@@ -150,27 +155,23 @@ public class TurSNSiteGenAiAPI {
 	@GetMapping("/enabled")
 	public ChatEnabledResponse isEnabled(@PathVariable String siteName) {
 		boolean enabled = turSNSearchProcess.getSNSite(siteName)
-				.map(site -> {
-					var turSNSiteGenAI = site.getTurSNSiteGenAi();
-					if (turSNSiteGenAI == null || !turSNSiteGenAI.isEnabled()) {
-						return false;
-					}
-					return hasLlm(turSNSiteGenAI)
-							&& hasEmbeddingModel(turSNSiteGenAI)
-							&& hasStore(turSNSiteGenAI);
-				})
+				.map(site -> isAgentRagReady(site.getTurSNSiteGenAi()))
 				.orElse(false);
 		return new ChatEnabledResponse(enabled);
 	}
 
 	/**
-	 * Conversational RAG endpoint: accepts the full message history so follow-up
-	 * questions preserve context. The latest user message drives document retrieval.
+	 * Conversational RAG endpoint with full agent capabilities: streams the
+	 * response (SSE) and exposes the agent's native tools + MCP servers to the
+	 * LLM, while still injecting the SN site's RAG-retrieved chunks into the
+	 * system prompt so answers stay grounded in the indexed content.
 	 *
 	 * @since 2026.2.4
 	 */
-	@PostMapping("/conversation")
-	public TurChatMessage conversation(@PathVariable String siteName,
+	@PostMapping(value = "/conversation",
+			produces = MediaType.TEXT_EVENT_STREAM_VALUE,
+			consumes = MediaType.APPLICATION_JSON_VALUE)
+	public Flux<TurAgentChatExecutor.ChatResponse> conversation(@PathVariable String siteName,
 			@RequestBody ConversationRequest request) {
 		int historySize = request.messages() == null ? 0 : request.messages().size();
 		log.info("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
@@ -178,32 +179,32 @@ public class TurSNSiteGenAiAPI {
 		Locale locale = resolveLocale(request.locale(), siteName);
 		if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			log.info("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
-			return TurChatMessage.builder()
-					.text(NOT_ENABLED_MESSAGE)
-					.enabled(false)
-					.build();
+			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
 		}
 		return turSNSearchProcess.getSNSite(siteName).map(site -> {
-			var turSNSiteGenAI = site.getTurSNSiteGenAi();
-			if (turSNSiteGenAI == null || !turSNSiteGenAI.isEnabled()) {
-				log.info("RAG chat skipped for SN Site '{}': GenAI not enabled on site", siteName);
-				return TurChatMessage.builder()
-						.text(NOT_ENABLED_MESSAGE)
-						.enabled(false)
-						.build();
+			TurSNSiteGenAi turSNSiteGenAI = site.getTurSNSiteGenAi();
+			if (!isAgentRagReady(turSNSiteGenAI)) {
+				log.info("RAG chat skipped for SN Site '{}': agent not ready", siteName);
+				return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
 			}
+			TurAIAgent agent = turSNSiteGenAI.getTurAIAgent();
+			TurLLMInstance llmInstance = agent.getLlmInstances().stream()
+					.filter(llm -> llm.getEnabled() == 1)
+					.findFirst()
+					.orElseGet(() -> agent.getLlmInstances().iterator().next());
 			String collectionName = null;
 			var siteLocale = turSNSiteLocaleRepository.findByTurSNSiteAndLanguage(site, locale);
 			if (siteLocale != null) {
 				collectionName = siteLocale.getCore();
 			}
-			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}'",
-					siteName, locale, collectionName);
+			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}', agent='{}', llm='{}'",
+					siteName, locale, collectionName, agent.getTitle(), llmInstance.getTitle());
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
-			return turGenAi.assistantConversation(context, request.messages(), request.filters());
+			return turGenAi.assistantConversationStreaming(
+					context, agent, llmInstance, request.messages(), request.filters());
 		}).orElseGet(() -> {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
-			return TurChatMessage.builder().text("Couldn't find site name.").enabled(false).build();
+			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, "Couldn't find site name."));
 		});
 	}
 

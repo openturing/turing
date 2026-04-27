@@ -32,6 +32,14 @@ export function useLlmInstances() {
       setFetchedContextWindow(null)
       return
     }
+    // Wait until the enabled-instances list has loaded; otherwise we may hit
+    // /context-info for a stale id from localStorage that no longer exists in
+    // the database (returns 400 "LLM instance not found").
+    if (!loaded) return
+    if (!llmInstances.some((i) => i.id === selectedLlmId)) {
+      setFetchedContextWindow(null)
+      return
+    }
     const cached = contextWindowCache.get(selectedLlmId)
     if (cached) {
       setFetchedContextWindow(cached)
@@ -46,7 +54,7 @@ export function useLlmInstances() {
       console.warn("Failed to fetch context info:", err)
       setFetchedContextWindow(null)
     })
-  }, [selectedLlmId])
+  }, [selectedLlmId, loaded, llmInstances])
 
   const selectLlm = useCallback((id: string) => {
     setSelectedLlmId(id)

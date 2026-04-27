@@ -131,11 +131,15 @@ public class TurSNSiteDataCollectorService {
 
     private void appendGenAiConfigurationSection(StringBuilder sb, TurSNSite site) {
         var genAi = site.getTurSNSiteGenAi();
+        var agent = genAi == null ? null : genAi.getTurAIAgent();
         sb.append("## Generative AI Configuration\n");
-        if (genAi != null && genAi.isEnabled()) {
+        if (agent != null && agent.getEnabled() == 1 && agent.isRagEnabled()) {
             sb.append("- Enabled: yes\n");
-            if (genAi.getTurLLMInstance() != null) {
-                sb.append("- LLM: ").append(genAi.getTurLLMInstance().getTitle()).append("\n");
+            sb.append("- AI Agent: ").append(agent.getTitle()).append("\n");
+            if (agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty()) {
+                sb.append("- LLM: ")
+                        .append(agent.getLlmInstances().iterator().next().getTitle())
+                        .append("\n");
             }
         } else {
             sb.append("- Enabled: no\n");

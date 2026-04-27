@@ -1,0 +1,42 @@
+databaseChangeLog:
+  # Per-agent intents: existing global seed rows (productivity/learn/content/health)
+  # are no longer reachable in the new model — drop them before adding the FK so
+  # we don't leave orphans without an owning agent.
+  - changeSet:
+      id: delete-orphan-intents
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: intent
+      changes:
+        - sql:
+            sql: DELETE FROM intent_action
+        - sql:
+            sql: DELETE FROM intent
+
+  - changeSet:
+      id: add-agent-id-to-intent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: intent
+                columnName: agent_id
+      changes:
+        - addColumn:
+            tableName: intent
+            columns:
+              - column:
+                  name: agent_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: intent
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_intent_ai_agent
+            onDelete: CASCADE

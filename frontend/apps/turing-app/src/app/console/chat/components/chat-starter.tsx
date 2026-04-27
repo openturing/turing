@@ -4,13 +4,19 @@ import { IconMessageChatbot } from "@tabler/icons-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { LLM_STORAGE_KEY } from "../chat.types"
+import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, LLM_STORAGE_KEY } from "../chat.types"
 import { ChatInput } from "./chat-input"
 import { ChatSuggestions } from "./chat-suggestions"
 
 interface ChatStarterProps {
   /** LLM instance ID to use. If provided, sets it as selected before navigating. */
   readonly defaultLlmId?: string
+  /**
+   * AI agent ID. When set (home-page chat with default agent),
+   * navigation to the chat page lands on that agent's tab and runs
+   * the conversation through the agent's system prompt / tools / RAG.
+   */
+  readonly agentId?: string
   /** Model label to show below the input */
   readonly modelLabel?: string
   /** Whether to show the icon and heading */
@@ -34,7 +40,7 @@ interface ChatStarterProps {
  * - Navigate mode (home page): stores prompt in sessionStorage and navigates to chat
  * - In-place mode (chat page): calls onSendInPlace directly
  */
-export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSendInPlace, attachments }: ChatStarterProps) {
+export function ChatStarter({ defaultLlmId, agentId, modelLabel, showHeader = true, onSendInPlace, attachments }: ChatStarterProps) {
   const [input, setInput] = useState("")
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -47,7 +53,12 @@ export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSen
     if (defaultLlmId) {
       localStorage.setItem(LLM_STORAGE_KEY, defaultLlmId)
     }
-    sessionStorage.setItem("turing-chat-initial-prompt", prompt)
+    if (agentId) {
+      sessionStorage.setItem(CHAT_INITIAL_AGENT_KEY, agentId)
+    } else {
+      sessionStorage.removeItem(CHAT_INITIAL_AGENT_KEY)
+    }
+    sessionStorage.setItem(CHAT_INITIAL_PROMPT_KEY, prompt)
     navigate(ROUTES.CHAT_ROOT)
   }
 
@@ -82,7 +93,7 @@ export function ChatStarter({ defaultLlmId, modelLabel, showHeader = true, onSen
           attachments={attachments}
         />
       </div>
-      <ChatSuggestions onSelectPrompt={dispatchPrompt} />
+      <ChatSuggestions onSelectPrompt={dispatchPrompt} agentId={agentId} />
     </div>
   )
 }

@@ -14,19 +14,30 @@ const turIntentService = new TurIntentService()
 
 interface ChatSuggestionsProps {
   onSelectPrompt: (prompt: string) => void
+  /**
+   * Agent whose intents drive the suggestion chips. When omitted (e.g. a chat
+   * UI not yet bound to an agent), no suggestions are rendered.
+   */
+  agentId?: string
 }
 
-export function ChatSuggestions({ onSelectPrompt }: ChatSuggestionsProps) {
+export function ChatSuggestions({ onSelectPrompt, agentId }: ChatSuggestionsProps) {
   const [intents, setIntents] = useState<TurIntent[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIntent, setSelectedIntent] = useState<TurIntent | null>(null)
 
   useEffect(() => {
-    turIntentService.queryEnabled()
+    if (!agentId) {
+      setIntents([])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    turIntentService.queryEnabled(agentId)
       .then(setIntents)
       .catch(() => setIntents([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [agentId])
 
   if (loading) {
     return (

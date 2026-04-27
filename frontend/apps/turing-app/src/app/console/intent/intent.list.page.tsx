@@ -8,30 +8,34 @@ import { TurIntentService } from "@/services/intent/intent.service";
 import { IconBulb } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 
 const turIntentService = new TurIntentService();
 
 export default function IntentListPage() {
   const { t } = useTranslation();
+  const { id: agentId } = useParams();
   const [intents, setIntents] = useState<TurIntent[]>();
   const [error, setError] = useState<string | null>(null);
+  const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`;
 
   useEffect(() => {
-    turIntentService.query().then(setIntents).catch(() => setError(t("common.connectionError", { resource: "intents" })));
-  }, [])
+    if (!agentId) return;
+    turIntentService.query(agentId).then(setIntents).catch(() => setError(t("common.connectionError", { resource: "intents" })));
+  }, [agentId])
 
   const gridItemList = useGridAdapter(intents, {
     name: "title",
     description: "description",
-    url: (item) => `${ROUTES.INTENT_INSTANCE}/${item.id}`,
+    url: (item) => `${baseUrl}/${item.id}`,
     icon: "icon",
   });
 
   return (
-    <LoadProvider checkIsNotUndefined={intents} error={error} tryAgainUrl={ROUTES.INTENT_INSTANCE}>
+    <LoadProvider checkIsNotUndefined={intents} error={error} tryAgainUrl={baseUrl}>
       {gridItemList.length > 0 ? (
         <GridList gridItemList={gridItemList}>
-          <GridList.NewButton to={`${ROUTES.INTENT_INSTANCE}/new`} label={t("intent.title")} />
+          <GridList.NewButton to={`${baseUrl}/new`} label={t("intent.title")} />
         </GridList>
       ) : (
         <BlankSlate
@@ -39,7 +43,7 @@ export default function IntentListPage() {
           title={t("intent.blankTitle")}
           description={t("intent.blankDescription")}
           buttonText={t("intent.newInstance")}
-          urlNew={`${ROUTES.INTENT_INSTANCE}/new`} />
+          urlNew={`${baseUrl}/new`} />
       )}
     </LoadProvider>
   )

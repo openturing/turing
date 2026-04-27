@@ -10,20 +10,21 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
-import { IconMessageChatbot } from "@tabler/icons-react"
+import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
+import { IconMessageChatbot, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
-import { type ChatMessage, estimateTokens, generateId } from "./chat.types"
+import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
 import { ChatHeader } from "./components/chat-header"
 import { ChatInput } from "./components/chat-input"
 import { ChatMessageList } from "./components/chat-message-list"
 import { ChatSessionSidebar } from "./components/chat-session-sidebar"
-import { ChatStarter } from "./components/chat-starter"
 import { ContextBar } from "./components/context-bar"
 import { useChatSession } from "./hooks/use-chat-session"
 import { useLlmInstances } from "./hooks/use-llm-instances"
 
 const turAIAgentService = new TurAIAgentService()
+const turGlobalSettingsService = new TurGlobalSettingsService()
 
 interface AgentTabState {
   messages: ChatMessage[]
@@ -34,53 +35,63 @@ interface AgentTabState {
 
 export default function ChatPage() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<string>("chat")
+  // Empty until agents load — then becomes `agent:<id>` of the default or first agent.
+  const [activeTab, setActiveTab] = useState<string>("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // AI Agents
   const [agents, setAgents] = useState<TurAIAgent[]>([])
+  const [agentsLoaded, setAgentsLoaded] = useState(false)
+  const [defaultAgentId, setDefaultAgentId] = useState<string>("")
   const [agentStates, setAgentStates] = useState<Record<string, AgentTabState>>({})
-
-  // Chat tab state
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [chatInput, setChatInput] = useState("")
-  const [chatLoading, setChatLoading] = useState(false)
-  const [chatCompacting, setChatCompacting] = useState(false)
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  const chatEndRef = useRef<HTMLDivElement>(null)
-
-  // Semantic tab state
-  const [semMessages, setSemMessages] = useState<ChatMessage[]>([])
-  const [semInput, setSemInput] = useState("")
-  const [semLoading, setSemLoading] = useState(false)
-  const [semCompacting, setSemCompacting] = useState(false)
-  const semEndRef = useRef<HTMLDivElement>(null)
 
   // Agent tab ref
   const agentEndRef = useRef<HTMLDivElement>(null)
 
-  // Refs for latest messages (used in async callbacks)
-  const chatMessagesRef = useRef(chatMessages)
-  chatMessagesRef.current = chatMessages
-  const semMessagesRef = useRef(semMessages)
-  semMessagesRef.current = semMessages
+  // Ref for latest agent messages (used in async callbacks)
   const agentStatesRef = useRef(agentStates)
   agentStatesRef.current = agentStates
 
   // Hooks
   const { llmInstances, loaded, selectedLlmId, selectedInstance, contextWindow, selectLlm, turChatService } = useLlmInstances()
 
-  // Load AI Agents
+  // Load AI Agents + global default agent. Sort enabled agents so the default
+  // appears first; this is what powers the tab order in the header.
   useEffect(() => {
-    turAIAgentService.query().then((all) => {
+    Promise.all([
+      turAIAgentService.query().catch(() => [] as TurAIAgent[]),
+      turGlobalSettingsService.query().catch(() => null),
+    ]).then(([all, settings]) => {
       const enabled = all.filter((a) => a.enabled === 1)
-      setAgents(enabled)
-    }).catch((err) => console.warn("Failed to load AI agents:", err))
+      const defaultId = settings?.defaultAiAgentId ?? ""
+      setDefaultAgentId(defaultId)
+
+      // Default agent first, others keep relative order
+      const sorted = defaultId
+        ? [
+            ...enabled.filter((a) => a.id === defaultId),
+            ...enabled.filter((a) => a.id !== defaultId),
+          ]
+        : enabled
+      setAgents(sorted)
+      setAgentsLoaded(true)
+    })
   }, [])
 
   // Active agent (if on agent tab)
   const activeAgentId = activeTab.startsWith("agent:") ? activeTab.slice(6) : null
   const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null
+
+  // Once agents have loaded, pick the initial active tab.
+  // Priority: agent forwarded from home page (sessionStorage) → global default → first agent.
+  useEffect(() => {
+    if (!agentsLoaded || activeTab) return
+    if (agents.length === 0) return
+    const forwardedAgentId = sessionStorage.getItem(CHAT_INITIAL_AGENT_KEY)
+    const forwardedAgent = forwardedAgentId ? agents.find((a) => a.id === forwardedAgentId) : null
+    const target = forwardedAgent ?? agents.find((a) => a.id === defaultAgentId) ?? agents[0]
+    setActiveTab(`agent:${target.id}`)
+  }, [agentsLoaded, agents, activeTab, defaultAgentId])
 
   // LLM instances filtered by active agent
   const visibleLlmInstances = useMemo(() => {
@@ -122,26 +133,10 @@ export default function ChatPage() {
 
   // Auto-scroll
   useEffect(() => {
-    if (activeTab === "chat") chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [chatMessages, activeTab])
-  useEffect(() => {
-    if (activeTab === "semantic") semEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [semMessages, activeTab])
-  useEffect(() => {
     if (activeAgentId) agentEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [agentStates, activeAgentId, activeTab])
 
   // Context usage
-  const chatContextUsage = useMemo(() => {
-    const tokens = estimateTokens(chatMessages.map((m) => m.content).join(""))
-    return { tokens, percentage: Math.min(Math.round((tokens / contextWindow) * 100), 100) }
-  }, [chatMessages, contextWindow])
-
-  const semContextUsage = useMemo(() => {
-    const tokens = estimateTokens(semMessages.map((m) => m.content).join(""))
-    return { tokens, percentage: Math.min(Math.round((tokens / contextWindow) * 100), 100) }
-  }, [semMessages, contextWindow])
-
   const agentContextUsage = useMemo(() => {
     if (!activeAgentId) return { tokens: 0, percentage: 0 }
     const state = getAgentState(activeAgentId)
@@ -149,190 +144,50 @@ export default function ChatPage() {
     return { tokens, percentage: Math.min(Math.round((tokens / contextWindow) * 100), 100) }
   }, [activeAgentId, agentStates, contextWindow, getAgentState])
 
-  // ── Chat tab handlers ──
-
-  const addFiles = (newFiles: FileList | File[]) => setAttachedFiles((prev) => [...prev, ...Array.from(newFiles)])
-  const removeFile = (index: number) => setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
-
-  const sendChatPrompt = useCallback(async (prompt: string) => {
-    if ((!prompt.trim() && attachedFiles.length === 0) || chatLoading || !selectedLlmId) return
-
-    const filesToSend = [...attachedFiles]
-    const content = prompt.trim() || (filesToSend.length > 0 ? `[${filesToSend.map((f) => f.name).join(", ")}]` : "")
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: "user",
-      content,
-      attachments: filesToSend.map((f) => ({ name: f.name, type: f.type, size: f.size })),
-    }
-    const assistantId = generateId()
-    const updated = [...chatMessagesRef.current, userMessage]
-    setChatMessages([...updated, { id: assistantId, role: "assistant", content: "" }])
-    setChatInput("")
-    setAttachedFiles([])
-    setChatLoading(true)
-
-    const apiMessages: ChatMessageItem[] = updated.map(({ role, content: c }) => ({ role, content: c }))
-    const llmId = selectedLlmId
-
-    await turChatService.sendStream(
-      llmId,
-      apiMessages,
-      (token) => setChatMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
-      () => {
-        setChatLoading(false)
-        setTimeout(() => saveAfterResponse("chat", chatMessagesRef.current, llmId), 0)
-      },
-      (error) => {
-        console.error(error)
-        toast.error(t("chat.failedResponse"))
-        setChatMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
-        setChatLoading(false)
-      },
-      filesToSend.length > 0 ? filesToSend : undefined,
-    )
-  }, [attachedFiles, chatLoading, selectedLlmId, turChatService, saveAfterResponse, t])
-
-  // Auto-send initial prompt from sessionStorage (set by home page ChatStarter)
-  useEffect(() => {
-    const prompt = sessionStorage.getItem("turing-chat-initial-prompt")
-    if (prompt && selectedLlmId) {
-      sessionStorage.removeItem("turing-chat-initial-prompt")
-      sendChatPrompt(prompt)
-    }
-  }, [selectedLlmId, sendChatPrompt])
-
-  const handleChatSend = async () => {
-    const trimmed = chatInput.trim()
-    if ((!trimmed && attachedFiles.length === 0) || chatLoading || !selectedLlmId) return
-
-    const filesToSend = [...attachedFiles]
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: "user",
-      content: trimmed || (filesToSend.length > 0 ? `[${filesToSend.map((f) => f.name).join(", ")}]` : ""),
-      attachments: filesToSend.map((f) => ({ name: f.name, type: f.type, size: f.size })),
-    }
-
-    const assistantId = generateId()
-    const updated = [...chatMessages, userMessage]
-    setChatMessages([...updated, { id: assistantId, role: "assistant", content: "" }])
-    setChatInput("")
-    setAttachedFiles([])
-    setChatLoading(true)
-
-    const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
-    const llmId = selectedLlmId
-
-    await turChatService.sendStream(
-      llmId,
-      apiMessages,
-      (token) => setChatMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
-      () => {
-        setChatLoading(false)
-        setTimeout(() => saveAfterResponse("chat", chatMessagesRef.current, llmId), 0)
-      },
-      (error) => {
-        console.error(error)
-        toast.error(t("chat.failedResponse"))
-        setChatMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
-        setChatLoading(false)
-      },
-      filesToSend.length > 0 ? filesToSend : undefined,
-    )
-  }
-
-  const handleChatCompact = async () => {
-    if (chatLoading || chatCompacting || chatMessages.length < 4 || !selectedLlmId) return
-    setChatCompacting(true)
-    const text = chatMessages.map((m) => `${m.role}: ${m.content}`).join("\n\n")
-    let summary = ""
-    await turChatService.sendStream(
-      selectedLlmId,
-      [{ role: "user", content: `Summarize the following conversation concisely, preserving key facts, decisions, and context needed to continue the conversation. Write the summary in the same language as the conversation.\n\n${text}` }],
-      (token) => { summary += token },
-      () => {
-        setChatMessages([{ id: generateId(), role: "assistant", content: `${t("chat.contextCompactedLabel")}\n\n${summary}` }])
-        setChatCompacting(false)
-        toast.success(t("chat.contextCompacted"))
-      },
-      (error) => { console.error(error); toast.error(t("chat.failedCompact")); setChatCompacting(false) },
-    )
-  }
-
-  // ── Semantic tab handlers ──
-
-  const handleSemSend = async () => {
-    const trimmed = semInput.trim()
-    if (!trimmed || semLoading || !selectedLlmId) return
-
-    const userMessage: ChatMessage = { id: generateId(), role: "user", content: trimmed }
-    const assistantId = generateId()
-    const updated = [...semMessages, userMessage]
-    setSemMessages([...updated, { id: assistantId, role: "assistant", content: "" }])
-    setSemInput("")
-    setSemLoading(true)
-
-    const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
-    const llmId = selectedLlmId
-
-    await turChatService.sendSemanticStream(
-      llmId,
-      apiMessages,
-      (token) => setSemMessages((prev) => prev.map((msg) => msg.id === assistantId ? { ...msg, content: msg.content + token } : msg)),
-      () => {
-        setSemLoading(false)
-        setTimeout(() => saveAfterResponse("semantic", semMessagesRef.current, llmId), 0)
-      },
-      (error) => {
-        console.error(error)
-        toast.error(t("chat.failedResponse"))
-        setSemMessages((prev) => prev.filter((msg) => msg.id !== assistantId || msg.content !== ""))
-        setSemLoading(false)
-      },
-    )
-  }
-
-  const handleSemCompact = async () => {
-    if (semLoading || semCompacting || semMessages.length < 4 || !selectedLlmId) return
-    setSemCompacting(true)
-    const text = semMessages.map((m) => `${m.role}: ${m.content}`).join("\n\n")
-    let summary = ""
-    await turChatService.sendSemanticStream(
-      selectedLlmId,
-      [{ role: "user", content: `Summarize the following conversation concisely, preserving key facts, decisions, and context needed to continue the conversation. Write the summary in the same language as the conversation.\n\n${text}` }],
-      (token) => { summary += token },
-      () => {
-        setSemMessages([{ id: generateId(), role: "assistant", content: `${t("chat.contextCompactedLabel")}\n\n${summary}` }])
-        setSemCompacting(false)
-        toast.success(t("chat.contextCompacted"))
-      },
-      (error) => { console.error(error); toast.error(t("chat.failedCompact")); setSemCompacting(false) },
-    )
-  }
-
   // ── Agent tab handlers ──
 
-  const handleAgentSend = async () => {
-    if (!activeAgentId || !selectedLlmId) return
-    const state = getAgentState(activeAgentId)
-    const trimmed = state.input.trim()
-    if (!trimmed || state.loading) return
+  const sendAgentPrompt = useCallback(async (agentId: string, prompt: string) => {
+    const agent = agents.find((a) => a.id === agentId)
+    if (!agent) return
+    const trimmed = prompt.trim()
+    if (!trimmed) return
+    const state = agentStatesRef.current[agentId] ?? { messages: [], input: "", loading: false, compacting: false }
+    if (state.loading) return
+
+    // Resolve the LLM: prefer the user's selection when it belongs to this
+    // agent; otherwise prefer an agent LLM that is also in the enabled list,
+    // and as a last resort just pick the agent's first LLM. The backend is
+    // the final authority on whether the LLM is usable.
+    const allowedLlms = agent.llmInstances ?? []
+    if (allowedLlms.length === 0) {
+      toast.error(t("chat.agentHasNoLlm", {
+        agent: agent.title,
+        defaultValue: `Agent "{{agent}}" has no LLM configured. Open the agent and attach at least one LLM.`,
+      }))
+      return
+    }
+    const allowedIds = new Set(allowedLlms.map((l) => l.id))
+    let llmId = selectedLlmId
+    if (!llmId || !allowedIds.has(llmId)) {
+      const fallback = allowedLlms.find((l) =>
+        llmInstances.some((i) => i.id === l.id),
+      ) ?? allowedLlms[0]
+      llmId = fallback.id
+      selectLlm(llmId)
+    }
 
     const userMessage: ChatMessage = { id: generateId(), role: "user", content: trimmed }
     const assistantId = generateId()
     const updated = [...state.messages, userMessage]
 
-    updateAgentState(activeAgentId, {
+    updateAgentState(agentId, {
       messages: [...updated, { id: assistantId, role: "assistant", content: "" }],
       input: "",
       loading: true,
     })
 
     const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
-    const llmId = selectedLlmId
-    const agentId = activeAgentId
-    const agentTitle = activeAgent?.title
+    const agentTitle = agent.title
 
     await turChatService.sendAgentStream(
       agentId,
@@ -379,7 +234,24 @@ export default function ChatPage() {
         })
       },
     )
+  }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState])
+
+  const handleAgentSend = () => {
+    if (!activeAgentId) return
+    const state = getAgentState(activeAgentId)
+    void sendAgentPrompt(activeAgentId, state.input)
   }
+
+  // Auto-send initial prompt from sessionStorage (set by home page ChatStarter).
+  // Fires once an active agent is in scope; sendAgentPrompt itself resolves
+  // a valid LLM, so we don't need to gate on selectedLlmId here.
+  useEffect(() => {
+    const prompt = sessionStorage.getItem(CHAT_INITIAL_PROMPT_KEY)
+    if (!prompt || !activeAgentId || agents.length === 0) return
+    sessionStorage.removeItem(CHAT_INITIAL_PROMPT_KEY)
+    sessionStorage.removeItem(CHAT_INITIAL_AGENT_KEY)
+    void sendAgentPrompt(activeAgentId, prompt)
+  }, [activeAgentId, agents, sendAgentPrompt])
 
   const handleAgentCompact = async () => {
     if (!activeAgentId || !selectedLlmId) return
@@ -410,11 +282,7 @@ export default function ChatPage() {
   // ── Shared handlers ──
 
   const handleNewChat = () => {
-    if (activeTab === "chat") {
-      setChatMessages([]); setChatInput(""); setAttachedFiles([])
-    } else if (activeTab === "semantic") {
-      setSemMessages([]); setSemInput("")
-    } else if (activeAgentId) {
+    if (activeAgentId) {
       updateAgentState(activeAgentId, { messages: [], input: "" })
     }
     resetSession()
@@ -423,26 +291,19 @@ export default function ChatPage() {
 
   const handleModelChange = (v: string) => {
     selectLlm(v)
-    setChatMessages([]); setChatInput(""); setAttachedFiles([])
-    setSemMessages([]); setSemInput("")
     setAgentStates({})
     resetSession()
   }
 
   const handleRestoreSession = (session: ChatSession) => {
+    if (!session.tab.startsWith("agent:")) {
+      // Old chat/semantic sessions are no longer rendered — ignore.
+      return
+    }
     setActiveTab(session.tab)
     setActiveSessionId(session.id)
-    if (session.tab === "chat") {
-      setChatMessages(session.messages as ChatMessage[])
-      setChatInput("")
-      setAttachedFiles([])
-    } else if (session.tab === "semantic") {
-      setSemMessages(session.messages as ChatMessage[])
-      setSemInput("")
-    } else if (session.tab.startsWith("agent:")) {
-      const agentId = session.tab.slice(6)
-      updateAgentState(agentId, { messages: session.messages as ChatMessage[], input: "" })
-    }
+    const agentId = session.tab.slice(6)
+    updateAgentState(agentId, { messages: session.messages as ChatMessage[], input: "" })
     if (session.llmId && llmInstances.some((i) => i.id === session.llmId)) {
       selectLlm(session.llmId)
     }
@@ -451,9 +312,8 @@ export default function ChatPage() {
 
   // Derived
   const currentAgentState = activeAgentId ? getAgentState(activeAgentId) : null
-  const messages = activeTab === "chat" ? chatMessages : activeTab === "semantic" ? semMessages : currentAgentState?.messages ?? []
+  const messages = currentAgentState?.messages ?? []
   const isEmpty = messages.length === 0
-  const assistantName = activeAgent?.title ?? selectedInstance?.title ?? "Assistant"
   const modelLabel = selectedInstance ? `${selectedInstance.turLLMVendor?.id ?? ""} · ${selectedInstance.modelName ?? ""}` : "No model selected"
 
   if (loaded && llmInstances.length === 0) {
@@ -466,6 +326,21 @@ export default function ChatPage() {
           description={t("chat.noLlmDescription")}
           buttonText={t("chat.createLlmInstance")}
           urlNew={ROUTES.LLM_INSTANCE + "/new"}
+        />
+      </>
+    )
+  }
+
+  if (agentsLoaded && agents.length === 0) {
+    return (
+      <>
+        <PageHeader turIcon={IconMessageChatbot} title={t("chat.chatTab")} />
+        <BlankSlate
+          icon={IconRobot}
+          title={t("chat.noAgentAvailable")}
+          description={t("chat.noAgentDescription")}
+          buttonText={t("chat.createAiAgent")}
+          urlNew={ROUTES.AI_AGENT_INSTANCE + "/new"}
         />
       </>
     )
@@ -494,91 +369,6 @@ export default function ChatPage() {
           onNewChat={handleNewChat}
           agents={agents}
         />
-
-        {/* Chat Tab */}
-        {activeTab === "chat" && (
-          <>
-            {isEmpty ? (
-              <div className="flex-1 flex flex-col items-center justify-center px-4">
-                <ChatStarter
-                  defaultLlmId={selectedLlmId}
-                  modelLabel={selectedInstance ? t("chat.usingModel", { model: selectedInstance.title, vendor: selectedInstance.turLLMVendor?.id ?? "" }) : t("chat.selectModelToChat")}
-                  onSendInPlace={sendChatPrompt}
-                  attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
-                />
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  <ChatMessageList messages={chatMessages} loading={chatLoading} assistantName={assistantName} endRef={chatEndRef} />
-                </div>
-                <div className="shrink-0 border-t bg-background">
-                  <div className="max-w-3xl mx-auto px-2 py-1 md:px-4 md:py-3">
-                    <ChatInput
-                      value={chatInput}
-                      onChange={setChatInput}
-                      onSend={handleChatSend}
-                      loading={chatLoading}
-                      disabled={!selectedLlmId}
-                      placeholder={selectedLlmId ? t("chat.askMeAnything") : t("chat.selectModelToStart")}
-                      accentColor="blue"
-                      attachments={{ files: attachedFiles, onAdd: addFiles, onRemove: removeFile }}
-                    />
-                    <div className="flex items-center justify-between mt-1 gap-4">
-                      <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
-                      <ContextBar
-                        tokens={chatContextUsage.tokens}
-                        percentage={chatContextUsage.percentage}
-                        contextWindow={contextWindow}
-                        compacting={chatCompacting}
-                        canCompact={!chatLoading && chatMessages.length >= 4}
-                        onCompact={handleChatCompact}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </>
-        )}
-
-        {/* Semantic Tab */}
-        {activeTab === "semantic" && (
-          <>
-            <div className="flex-1 overflow-y-auto">
-              {semMessages.length === 0
-                ? <ChatEmptyState variant="semantic" selectedInstance={selectedInstance} />
-                : <ChatMessageList messages={semMessages} loading={semLoading} assistantName={assistantName} endRef={semEndRef} />
-              }
-            </div>
-            <div className="shrink-0 border-t bg-background">
-              <div className="max-w-3xl mx-auto px-4 py-4">
-                <ChatInput
-                  value={semInput}
-                  onChange={setSemInput}
-                  onSend={handleSemSend}
-                  loading={semLoading}
-                  disabled={!selectedLlmId}
-                  placeholder={selectedLlmId ? t("chat.askAboutSemantic") : t("chat.selectModelToStart")}
-                  accentColor="emerald"
-                />
-                <div className="flex items-center justify-between mt-2 gap-4">
-                  <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
-                  {semMessages.length > 0 && (
-                    <ContextBar
-                      tokens={semContextUsage.tokens}
-                      percentage={semContextUsage.percentage}
-                      contextWindow={contextWindow}
-                      compacting={semCompacting}
-                      canCompact={!semLoading && semMessages.length >= 4}
-                      onCompact={handleSemCompact}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
 
         {/* Agent Tabs */}
         {activeAgentId && currentAgentState && (

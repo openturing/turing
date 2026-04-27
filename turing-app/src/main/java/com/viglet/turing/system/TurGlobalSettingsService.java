@@ -271,4 +271,21 @@ public class TurGlobalSettingsService {
         turConfigVarRepository.save(configVar);
         return value;
     }
+
+    public String getDefaultAiAgentId() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updateDefaultAiAgentId(String id) {
+        String value = id == null ? "" : id.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.DEFAULT_AI_AGENT_ID);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
 }

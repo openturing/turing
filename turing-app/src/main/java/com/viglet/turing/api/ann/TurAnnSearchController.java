@@ -63,7 +63,12 @@ public class TurAnnSearchController {
     @GetMapping("/{siteName}")
     public ResponseEntity<?> serve(@PathVariable String siteName) {
         boolean enabled = turSNSiteRepository.findByName(siteName)
-                .map(site -> site.getTurSNSiteGenAi() != null && site.getTurSNSiteGenAi().isEnabled())
+                .map(site -> {
+                    var genAi = site.getTurSNSiteGenAi();
+                    if (genAi == null) return false;
+                    var agent = genAi.getTurAIAgent();
+                    return agent != null && agent.getEnabled() == 1 && agent.isRagEnabled();
+                })
                 .orElse(false);
         if (!enabled) {
             log.debug("ANN page requested for site '{}' but RAG is not enabled", siteName);

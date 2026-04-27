@@ -8,11 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
-import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
 class TurSNSiteExchangeTest {
 
@@ -32,17 +31,13 @@ class TurSNSiteExchangeTest {
         seInstance.setId("se-1");
         site.setTurSEInstance(seInstance);
 
-        TurLLMInstance llmInstance = new TurLLMInstance();
-        llmInstance.setId("llm-1");
-        TurStoreInstance storeInstance = new TurStoreInstance();
-        storeInstance.setId("store-1");
+        TurAIAgent agent = new TurAIAgent();
+        agent.setId("agent-1");
 
         TurSNSiteGenAi genAi = new TurSNSiteGenAi();
         genAi.setId("genai-1");
-        genAi.setEnabled(true);
-        genAi.setSystemPrompt("prompt");
-        genAi.setTurLLMInstance(llmInstance);
-        genAi.setTurStoreInstance(storeInstance);
+        genAi.setSitePrompt("site description");
+        genAi.setTurAIAgent(agent);
         site.setTurSNSiteGenAi(genAi);
 
         TurSNSiteExchange exchange = new TurSNSiteExchange(site);
@@ -56,8 +51,7 @@ class TurSNSiteExchangeTest {
         assertEquals("se-1", exchange.getTurSEInstance());
         assertNotNull(exchange.getTurSNSiteGenAi());
         assertEquals("genai-1", exchange.getTurSNSiteGenAi().getId());
-        assertEquals("llm-1", exchange.getTurSNSiteGenAi().getTurLLMInstance());
-        assertEquals("store-1", exchange.getTurSNSiteGenAi().getTurStoreInstance());
+        assertEquals("agent-1", exchange.getTurSNSiteGenAi().getTurAIAgent());
     }
 
     @Test

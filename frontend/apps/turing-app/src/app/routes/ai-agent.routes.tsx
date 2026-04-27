@@ -6,12 +6,20 @@ import AIAgentSettingsPage from "../console/ai-agent/settings/ai-agent.settings.
 import AIAgentLlmPage from "../console/ai-agent/llm/ai-agent.llm.page"
 import AIAgentMcpPage from "../console/ai-agent/mcp/ai-agent.mcp.page"
 import AIAgentToolsPage from "../console/ai-agent/tools/ai-agent.tools.page"
+import IntentListPage from "../console/intent/intent.list.page"
+import IntentPage from "../console/intent/intent.page"
+import IntentSettingsPage from "../console/intent/settings/intent.settings.page"
 import ChatFlowPage from "../console/chat-flow/chat-flow.page"
 import { ROUTES } from "../routes.const"
 
 function RedirectToAIAgentSettings() {
     const { id } = useParams();
     return <Navigate to={`${ROUTES.AI_AGENT_INSTANCE}/${id}/settings`} replace />;
+}
+
+function RedirectToIntentSettings() {
+    const { id, intentId } = useParams();
+    return <Navigate to={`${ROUTES.AI_AGENT_INSTANCE}/${id}/intent/${intentId}/settings`} replace />;
 }
 
 export const AIAgentRoutes = (
@@ -25,6 +33,11 @@ export const AIAgentRoutes = (
             <Route path="mcp" element={<AIAgentMcpPage />} />
             <Route path="tools" element={<AIAgentToolsPage />} />
             <Route path="chat-flow" element={<ChatFlowPage />} />
+            <Route path="intent" element={<IntentListPage />} />
+            <Route path="intent/:intentId" element={<IntentPage />}>
+                <Route index element={<RedirectToIntentSettings />} />
+                <Route path="settings" element={<IntentSettingsPage />} />
+            </Route>
         </Route>
     </Route>
 )

@@ -83,6 +83,8 @@ class TurSNSiteImportTest {
         @Mock
         private TurSNSiteGenAiRepository turSNSiteGenAiRepository;
         @Mock
+        private com.viglet.turing.persistence.repository.agent.TurAIAgentRepository turAIAgentRepository;
+        @Mock
         private TurLLMInstanceRepository turLLMInstanceRepository;
         @Mock
         private TurLLMVendorRepository turLLMVendorRepository;
@@ -190,9 +192,12 @@ class TurSNSiteImportTest {
                 existingStore.setUrl("http://localhost:8000");
                 existingStore.setTurStoreVendor(storeVendor);
 
+                com.viglet.turing.persistence.model.agent.TurAIAgent existingAgent =
+                                new com.viglet.turing.persistence.model.agent.TurAIAgent();
+                existingAgent.setId("agent-1");
+
                 TurSNSiteGenAiExchange genAiRef = new TurSNSiteGenAiExchange();
-                genAiRef.setTurLLMInstance("llm-1");
-                genAiRef.setTurStoreInstance("store-1");
+                genAiRef.setTurAIAgent("agent-1");
 
                 TurSNSiteExchange siteExchange = new TurSNSiteExchange();
                 siteExchange.setId("site-1");
@@ -207,8 +212,7 @@ class TurSNSiteImportTest {
 
                 when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.empty());
                 when(turSEInstanceRepository.findById("se-1")).thenReturn(Optional.of(existingSe));
-                when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(existingLlm));
-                when(turStoreInstanceRepository.findById("store-1")).thenReturn(Optional.of(existingStore));
+                when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(existingAgent));
                 when(turSNSiteGenAiRepository.save(any(TurSNSiteGenAi.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
                 when(turSNSiteRepository.saveAndFlush(any(TurSNSite.class)))
@@ -220,11 +224,9 @@ class TurSNSiteImportTest {
                 verify(turSNSiteGenAiRepository).save(genAiCaptor.capture());
 
                 TurSNSiteGenAi savedGenAi = genAiCaptor.getValue();
-                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurLLMInstance()).isNotNull();
-                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurLLMInstance().getId()).isEqualTo("llm-1");
-                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurStoreInstance()).isNotNull();
-                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurStoreInstance().getId())
-                                .isEqualTo("store-1");
+                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurAIAgent()).isNotNull();
+                org.assertj.core.api.Assertions.assertThat(savedGenAi.getTurAIAgent().getId())
+                                .isEqualTo("agent-1");
 
                 verify(turSNSiteRepository).saveAndFlush(any(TurSNSite.class));
                 verify(turSEInstanceRepository).findById("se-1");
