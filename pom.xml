@@ -35,7 +35,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <spring-boot.version>4.0.5</spring-boot.version>
+        <spring-boot.version>4.0.6</spring-boot.version>
         <sonar.organization>viglet</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -48,7 +48,7 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.0</minio.version>
         <okhttp.version>5.3.2</okhttp.version>
-        <shedlock.version>6.4.0</shedlock.version>
+        <shedlock.version>7.7.0</shedlock.version>
         <tika.version>3.3.0</tika.version>
         <jgit.version>7.6.0.202603022253-r</jgit.version>
     </properties>
@@ -302,7 +302,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.21.0</version>
+                <version>2.22.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -317,7 +317,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.13.2</version>
+                <version>2.14.0</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
@@ -332,7 +332,7 @@
             <dependency>
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
-                <version>7.4.1</version>
+                <version>7.5.0</version>
             </dependency>
             <!-- Not in Spring Boot BOM -->
             <dependency>
