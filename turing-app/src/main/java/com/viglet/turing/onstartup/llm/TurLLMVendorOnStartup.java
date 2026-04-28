@@ -79,14 +79,6 @@ public class TurLLMVendorOnStartup {
 			geminiOpenAI.setWebsite("https://ai.google.dev");
 			turLLMVendorRepository.save(geminiOpenAI);
 
-			TurLLMVendor azureOpenai = new TurLLMVendor();
-			azureOpenai.setId("AZURE_OPENAI");
-			azureOpenai.setDescription("Azure OpenAI (Copilot)");
-			azureOpenai.setPlugin("azure-openai");
-			azureOpenai.setTitle("Azure OpenAI");
-			azureOpenai.setWebsite("https://azure.microsoft.com/products/ai-services/openai-service");
-			turLLMVendorRepository.save(azureOpenai);
-
 		}
 	}
 }

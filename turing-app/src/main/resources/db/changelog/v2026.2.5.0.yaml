@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # Remove Azure OpenAI vendor and its instances. Spring AI 2.0.0-M5 dropped
+  # the spring-ai-azure-openai module, so the vendor is no longer supported.
+  - changeSet:
+      id: v2026.2.5-00-delete-azure-openai-llm-instances
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_instance
+      changes:
+        - delete:
+            tableName: llm_instance
+            where: "llm_vendor_id = 'AZURE_OPENAI'"
+
+  - changeSet:
+      id: v2026.2.5-01-delete-azure-openai-vendor
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: llm_vendor
+      changes:
+        - delete:
+            tableName: llm_vendor
+            where: "id = 'AZURE_OPENAI'"

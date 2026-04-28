@@ -9,17 +9,20 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.openai.client.OpenAIClient;
+import com.openai.client.OpenAIClientAsync;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.client.okhttp.OpenAIOkHttpClientAsync;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 @Component
 public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
 
-    private static final String DEFAULT_BASE_URL = "https://api.openai.com";
+    private static final String DEFAULT_BASE_URL = "https://api.openai.com/v1";
     private static final String DEFAULT_CHAT_MODEL = "gpt-4o-mini";
     private static final String DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
 
@@ -37,12 +40,12 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
     @Override
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl(resolveBaseUrl(firstNonBlank(
-                        optionsParser.stringValue(options, "baseUrl"),
-                        turLLMInstance.getUrl())))
-                .apiKey(requireApiKey(decryptedApiKey, turLLMInstance))
-                .build();
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        String apiKey = requireApiKey(decryptedApiKey, turLLMInstance);
+        OpenAIClient openAiClient = OpenAIOkHttpClient.builder().baseUrl(baseUrl).apiKey(apiKey).build();
+        OpenAIClientAsync openAiClientAsync = OpenAIOkHttpClientAsync.builder().baseUrl(baseUrl).apiKey(apiKey).build();
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
                 .model(resolveChatModelName(firstNonBlank(
@@ -69,15 +72,16 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
         }
 
         return OpenAiChatModel.builder()
-                .openAiApi(openAiApi)
-                .defaultOptions(optionsBuilder.build())
+                .openAiClient(openAiClient)
+                .openAiClientAsync(openAiClientAsync)
+                .options(optionsBuilder.build())
                 .build();
     }
 
     @Override
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
-        OpenAiApi openAiApi = OpenAiApi.builder()
+        OpenAIClient openAiClient = OpenAIOkHttpClient.builder()
                 .baseUrl(resolveBaseUrl(firstNonBlank(
                         optionsParser.stringValue(options, "baseUrl"),
                         turLLMInstance.getUrl())))
@@ -91,7 +95,7 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
                         turLLMInstance.getModelName())))
                 .build();
 
-        return new OpenAiEmbeddingModel(openAiApi, MetadataMode.NONE, embeddingOptions);
+        return new OpenAiEmbeddingModel(openAiClient, MetadataMode.NONE, embeddingOptions);
     }
 
     private String requireApiKey(String decryptedApiKey, TurLLMInstance turLLMInstance) {

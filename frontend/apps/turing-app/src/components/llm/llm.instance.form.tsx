@@ -181,15 +181,6 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       form.setValue("supportedCapabilities", "", { shouldDirty: true });
       setMaxTokensInput("8192")
     }
-    if (vendorId === "AZURE_OPENAI") {
-      form.setValue("url", "", { shouldDirty: true });
-      form.setValue("modelName", "gpt-4o", { shouldDirty: true });
-      form.setValue("temperature", 0.7, { shouldDirty: true });
-      form.setValue("topP", 0.9, { shouldDirty: true });
-      form.setValue("seed", 42, { shouldDirty: true });
-      form.setValue("supportedCapabilities", "", { shouldDirty: true });
-      setMaxTokensInput("1024")
-    }
   }
 
   async function onSubmit(llmInstance: TurLLMInstance) {
@@ -514,8 +505,8 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                         )}
                       />
                     </div>
-                    {/* Seed — OLLAMA, OPENAI, AZURE_OPENAI */}
-                    {(selectedVendorId === "OLLAMA" || selectedVendorId === "OPENAI" || selectedVendorId === "AZURE_OPENAI") && (
+                    {/* Seed — OLLAMA, OPENAI */}
+                    {(selectedVendorId === "OLLAMA" || selectedVendorId === "OPENAI") && (
                       <div className="w-full">
                         <FormField
                           control={form.control}

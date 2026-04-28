@@ -6,10 +6,13 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import com.openai.client.OpenAIClient;
+import com.openai.client.OpenAIClientAsync;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.client.okhttp.OpenAIOkHttpClientAsync;
 import com.viglet.turing.genai.provider.TurProviderOptionsParser;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
@@ -42,14 +45,13 @@ public class TurGeminiOpenAiLlmProvider implements TurGenAiLlmProvider {
     @Override
     public ChatModel createChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        String apiKey = requireApiKey(decryptedApiKey, turLLMInstance);
 
-        OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl(resolveBaseUrl(firstNonBlank(
-                        optionsParser.stringValue(options, "baseUrl"),
-                        turLLMInstance.getUrl())))
-                .completionsPath("/chat/completions")
-                .apiKey(requireApiKey(decryptedApiKey, turLLMInstance))
-                .build();
+        OpenAIClient openAiClient = OpenAIOkHttpClient.builder().baseUrl(baseUrl).apiKey(apiKey).build();
+        OpenAIClientAsync openAiClientAsync = OpenAIOkHttpClientAsync.builder().baseUrl(baseUrl).apiKey(apiKey).build();
 
         OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder()
                 .model(resolveChatModelName(firstNonBlank(
@@ -72,8 +74,9 @@ public class TurGeminiOpenAiLlmProvider implements TurGenAiLlmProvider {
         }
 
         return OpenAiChatModel.builder()
-                .openAiApi(openAiApi)
-                .defaultOptions(optionsBuilder.build())
+                .openAiClient(openAiClient)
+                .openAiClientAsync(openAiClientAsync)
+                .options(optionsBuilder.build())
                 .build();
     }
 

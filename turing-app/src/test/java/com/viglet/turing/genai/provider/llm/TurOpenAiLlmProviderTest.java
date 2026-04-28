@@ -55,11 +55,8 @@ class TurOpenAiLlmProviderTest {
         when(optionsParser.intValue(any(), eq("seed"))).thenReturn(null);
         when(optionsParser.intValue(any(), eq("maxTokens"))).thenReturn(null);
 
-        try (org.mockito.MockedConstruction<org.springframework.ai.openai.api.OpenAiApi> mocked = org.mockito.Mockito
-                .mockConstruction(org.springframework.ai.openai.api.OpenAiApi.class)) {
-            ChatModel model = provider.createChatModel(instance, "dummy-key");
-            assertNotNull(model);
-        }
+        ChatModel model = provider.createChatModel(instance, "dummy-key");
+        assertNotNull(model);
     }
 
     @Test
@@ -77,11 +74,8 @@ class TurOpenAiLlmProviderTest {
         when(optionsParser.stringValue(any(), eq("embeddingModel"))).thenReturn(null);
         when(optionsParser.stringValue(any(), eq("model"))).thenReturn(null);
 
-        try (org.mockito.MockedConstruction<org.springframework.ai.openai.api.OpenAiApi> mocked = org.mockito.Mockito
-                .mockConstruction(org.springframework.ai.openai.api.OpenAiApi.class)) {
-            EmbeddingModel model = provider.createEmbeddingModel(instance, "dummy-key");
-            assertNotNull(model);
-        }
+        EmbeddingModel model = provider.createEmbeddingModel(instance, "dummy-key");
+        assertNotNull(model);
     }
 
     @Test
