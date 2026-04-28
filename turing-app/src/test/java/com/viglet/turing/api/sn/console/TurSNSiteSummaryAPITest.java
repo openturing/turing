@@ -64,8 +64,6 @@ class TurSNSiteSummaryAPITest {
 
     @Test
     void generateSummaryShouldReturnNotFoundWhenSiteNotFound() {
-        when(snSiteRepository.findById("site-1")).thenReturn(Optional.empty());
-
         ResponseEntity<TurLlmSummaryService.SummaryResult> response = api.generateSummary("site-1", false);
 
         assertThat(response.getStatusCode().value()).isEqualTo(404);
@@ -75,7 +73,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnBadRequestWhenNoDefaultLlm() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
         when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(
@@ -92,7 +90,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnSuccessWithContent() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
         when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(true, null, "AI summary", true));
@@ -110,7 +108,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldPassRegenerateFlag() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
         when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(true)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(true, null, "Regenerated", true));
@@ -125,7 +123,7 @@ class TurSNSiteSummaryAPITest {
     void generateSummaryShouldReturnErrorOnFailure() {
         TurSNSite site = new TurSNSite();
         site.setId("site-1");
-        when(snSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
+        when(snSiteRepository.findByIdNoCache("site-1")).thenReturn(Optional.of(site));
         when(siteDataCollectorService.collectSiteData(site)).thenReturn("Site data");
         when(llmSummaryService.generate(eq("site-1"), anyString(), anyString(), eq(false)))
                 .thenReturn(new TurLlmSummaryService.SummaryResult(
