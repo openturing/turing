@@ -1,0 +1,99 @@
+databaseChangeLog:
+  # Custom Tool: user-defined Spring AI tool callable backed by a Groovy
+  # script. The `parametersJson` column stores the schema of the args the
+  # LLM is allowed to pass (name + primitive type), so we don't need a
+  # second table just to model two columns.
+  - changeSet:
+      id: v2026.2.5-create-custom-tool-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: custom_tool
+      changes:
+        - createTable:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: icon
+                  type: VARCHAR(150)
+              - column:
+                  name: llmDescription
+                  type: VARCHAR(2000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: groovyScript
+                  type: longtext
+                  constraints:
+                    nullable: false
+              - column:
+                  name: parametersJson
+                  type: longtext
+              - column:
+                  name: returnType
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.2.5-create-ai-agent-custom-tool-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_agent_custom_tool
+      changes:
+        - createTable:
+            tableName: ai_agent_custom_tool
+            columns:
+              - column:
+                  name: agent_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: custom_tool_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: ai_agent_custom_tool
+            columnNames: agent_id, custom_tool_id
+            constraintName: pk_ai_agent_custom_tool
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_custom_tool
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_custom_tool_agent
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_custom_tool
+            baseColumnNames: custom_tool_id
+            referencedTableName: custom_tool
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_custom_tool_tool
+            onDelete: CASCADE

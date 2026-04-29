@@ -37,6 +37,7 @@ import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurLoggingToolCallback;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurNativeToolService;
@@ -92,6 +93,7 @@ public class TurAgentChatExecutor {
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurNativeToolService nativeToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
+    private final TurCustomToolCallbackService customToolCallbackService;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
@@ -100,6 +102,7 @@ public class TurAgentChatExecutor {
             TurSecretCryptoService turSecretCryptoService,
             TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
+            TurCustomToolCallbackService customToolCallbackService,
             TurLLMTokenUsageService tokenUsageService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService) {
@@ -107,6 +110,7 @@ public class TurAgentChatExecutor {
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
+        this.customToolCallbackService = customToolCallbackService;
         this.tokenUsageService = tokenUsageService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
@@ -118,7 +122,7 @@ public class TurAgentChatExecutor {
     public record ChatResponse(String role, String content) {
     }
 
-    /** Resolve the union of native + MCP tool callbacks attached to the agent. */
+    /** Resolve the union of native + MCP + custom tool callbacks attached to the agent. */
     public ToolCallback[] resolveToolCallbacks(TurAIAgent agent) {
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
@@ -127,8 +131,12 @@ public class TurAgentChatExecutor {
         ToolCallback[] mcpCallbacks = agent.getMcpServers() == null || agent.getMcpServers().isEmpty()
                 ? new ToolCallback[0]
                 : mcpToolCallbackService.getToolCallbacks(agent.getMcpServers());
+        ToolCallback[] customCallbacks = agent.getCustomTools() == null || agent.getCustomTools().isEmpty()
+                ? new ToolCallback[0]
+                : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
         return TurLoggingToolCallback.wrap(
-                Stream.concat(Arrays.stream(nativeCallbacks), Arrays.stream(mcpCallbacks))
+                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks)
+                        .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
     }
 

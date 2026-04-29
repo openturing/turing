@@ -1,0 +1,9 @@
+{
+  "customTool": {
+    "title": "Custom Tool",
+    "blankTitle": "You don't seem to have any custom tool.",
+    "blankDescription": "Create a new custom tool to expose Groovy scripts as Spring AI tool callings.",
+    "newInstance": "New Custom Tool",
+    "newCustomTool": "New Custom Tool"
+  }
+}

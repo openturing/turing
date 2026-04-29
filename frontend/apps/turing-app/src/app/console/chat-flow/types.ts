@@ -7,6 +7,8 @@
 
 export type FlowNodeType = "start" | "end" | "aiQuestion" | "condition" | "functionCall";
 
+export type FlowToolSource = "NATIVE" | "MCP";
+
 export interface FlowNodeData extends Record<string, unknown> {
   label: string;
   type: FlowNodeType;
@@ -16,10 +18,14 @@ export interface FlowNodeData extends Record<string, unknown> {
   outputVariable?: string;
   /** Validation rule for AI question outputs. */
   validationRule?: string;
-  /** Target function name for Function Call nodes. */
+  /** Target function name for Function Call nodes — Spring AI @Tool method when toolSource=NATIVE. */
   functionName?: string;
   /** Condition expression for Condition nodes. */
   conditionExpression?: string;
+  /** Origin of the tool callable for Function Call nodes: Turing native @Tool or an MCP server. */
+  toolSource?: FlowToolSource;
+  /** MCP server id to expose as the tool source when toolSource=MCP. */
+  mcpServerId?: string;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {

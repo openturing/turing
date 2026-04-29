@@ -33,4 +33,11 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      */
     List<TurChatFlowState> findByConversationIdAndFlow_TurAIAgent_Id(
             String conversationId, String agentId);
+
+    /**
+     * All states ever recorded for a flow, newest first. The submissions
+     * page filters this list further to keep only the rows that have
+     * reached an end node.
+     */
+    List<TurChatFlowState> findByFlow_IdOrderByUpdatedAtDesc(String flowId);
 }

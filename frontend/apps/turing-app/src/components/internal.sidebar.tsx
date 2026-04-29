@@ -20,7 +20,10 @@ import {
 
 interface NavMainItem {
   title: string;
-  url: string;
+  /** Navigable URL fragment. When omitted *and* `children` is set, the item
+   *  is rendered as a `SidebarGroupLabel` heading the children — useful for
+   *  grouping related sub-pages without introducing a clickable parent. */
+  url?: string;
   icon?: React.ElementType;
   children?: NavMainItem[];
 }
@@ -43,6 +46,25 @@ interface InternalSidebarProps {
 
 const formatCount = (value?: number) => (value ?? 0).toLocaleString();
 
+// Items without a url + with children are group labels rather than clickable
+// nav targets; everything else is a regular link.
+const isGroupLabel = (item: NavMainItem): boolean =>
+  (!item.url || item.url === "") && Array.isArray(item.children) && item.children.length > 0;
+
+// Parent items with `children` should also light up when any descendant
+// matches the current path, so the user always knows which section they
+// are in even when the active page is a nested child.
+const isItemActive = (
+  item: NavMainItem,
+  urlBase: string | undefined,
+  pathname: string,
+): boolean => {
+  if (item.url && pathname.startsWith((urlBase ?? "") + item.url)) {
+    return true;
+  }
+  return item.children?.some((c) => isItemActive(c, urlBase, pathname)) ?? false;
+};
+
 const renderNavItems = (
   items: NavMainItem[],
   urlBase: string | undefined,
@@ -54,10 +76,10 @@ const renderNavItems = (
     <SidebarMenuItem key={item.title}>
       <SidebarMenuButton
         tooltip={item.title}
-        isActive={pathname.startsWith((urlBase ?? "") + item.url)}
+        isActive={isItemActive(item, urlBase, pathname)}
         asChild
       >
-        <NavLink to={(urlBase ?? "") + item.url} onClick={onNavigate}>
+        <NavLink to={(urlBase ?? "") + (item.url ?? "")} onClick={onNavigate}>
           {item.icon && <item.icon className="size-5!" />}
           <span>{item.title}</span>
         </NavLink>
@@ -158,18 +180,44 @@ export const InternalSidebar: React.FC<InternalSidebarProps> = ({
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-        <SidebarGroup>
-          <SidebarGroupLabel>{feature}</SidebarGroupLabel>
-          <SidebarGroupContent className="flex flex-col gap-2">
-            <SidebarMenu>
-              {data?.navMain &&
-                renderNavItems(
-                  isNew ? data.navMain.filter((item) => item.url === "/detail") : data.navMain,
-                  urlBase, pathname, isCollapsed, onNavigate
-                )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {(() => {
+          const allItems = data?.navMain ?? [];
+          const visibleItems = isNew
+            ? allItems.filter((item) => item.url === "/detail")
+            : allItems;
+          // Items with a url stay in the main feature group; items without
+          // one (group labels) become their own SidebarGroup below.
+          const flatItems = visibleItems.filter((item) => !isGroupLabel(item));
+          const groupItems = visibleItems.filter(isGroupLabel);
+          return (
+            <>
+              <SidebarGroup>
+                <SidebarGroupLabel>{feature}</SidebarGroupLabel>
+                <SidebarGroupContent className="flex flex-col gap-2">
+                  <SidebarMenu>
+                    {renderNavItems(flatItems, urlBase, pathname, isCollapsed, onNavigate)}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+              {groupItems.map((group) => (
+                <SidebarGroup key={group.title}>
+                  <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
+                  <SidebarGroupContent className="flex flex-col gap-2">
+                    <SidebarMenu>
+                      {renderNavItems(
+                        group.children ?? [],
+                        urlBase,
+                        pathname,
+                        isCollapsed,
+                        onNavigate,
+                      )}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ))}
+            </>
+          );
+        })()}
       </SidebarContent>
     </Sidebar>
   );

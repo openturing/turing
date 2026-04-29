@@ -11,8 +11,28 @@
       "languageModels": "Language Models",
       "nativeTools": "Native Tools",
       "mcpServers": "MCP Servers",
+      "customTools": "Custom Tools",
       "intents": "Intents",
-      "chatFlow": "Chat Flow"
+      "chat": "Chat",
+      "chatFlow": "Chat Flow",
+      "history": "History"
+    },
+    "history": {
+      "title": "History",
+      "flowLabel": "Flow",
+      "flowPlaceholder": "Select a flow",
+      "totalSubmissions": "{{count}} submissions",
+      "empty": "No completed submissions for this flow yet.",
+      "columns": {
+        "conversation": "Conversation",
+        "completedAt": "Completed at",
+        "user": "User",
+        "status": "Status"
+      },
+      "status": {
+        "completed": "Completed",
+        "abandoned": "Abandoned"
+      }
     },
     "settings": {
       "title": "Settings",
@@ -29,6 +49,10 @@
     "mcp": {
       "title": "MCP Servers",
       "description": "Select one or more MCP servers for tool access."
+    },
+    "customTool": {
+      "title": "Custom Tools",
+      "description": "Select which Groovy-backed custom tools are available to this agent."
     }
   }
 }

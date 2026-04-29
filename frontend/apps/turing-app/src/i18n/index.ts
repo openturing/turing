@@ -11,6 +11,7 @@ import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
 import enChatFlow from "./locales/en/chatFlow.json";
 import enCommon from "./locales/en/common.json";
+import enCustomTool from "./locales/en/customTool.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enDialog from "./locales/en/dialog.json";
 import enEmbeddingModel from "./locales/en/embeddingModel.json";
@@ -48,6 +49,7 @@ import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
 import ptChatFlow from "./locales/pt/chatFlow.json";
 import ptCommon from "./locales/pt/common.json";
+import ptCustomTool from "./locales/pt/customTool.json";
 import ptDashboard from "./locales/pt/dashboard.json";
 import ptDialog from "./locales/pt/dialog.json";
 import ptEmbeddingModel from "./locales/pt/embeddingModel.json";
@@ -80,7 +82,7 @@ import ptTokenUsage from "./locales/pt/tokenUsage.json";
 const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
-  ...enStore, ...enIntegration, ...enMcp, ...enEmbeddingModel,
+  ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
   ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
@@ -90,7 +92,7 @@ const en = {
 const pt = {
   ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat, ...ptChatFlow,
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
-  ...ptStore, ...ptIntegration, ...ptMcp, ...ptEmbeddingModel,
+  ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
   ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,

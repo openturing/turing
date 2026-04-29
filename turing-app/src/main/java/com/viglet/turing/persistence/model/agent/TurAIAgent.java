@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
@@ -70,6 +71,12 @@ public class TurAIAgent implements Serializable {
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "mcp_server_id"))
     private Set<TurMcpServer> mcpServers = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "ai_agent_custom_tool",
+            joinColumns = @JoinColumn(name = "agent_id"),
+            inverseJoinColumns = @JoinColumn(name = "custom_tool_id"))
+    private Set<TurCustomTool> customTools = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "embedding_model_instance_id")

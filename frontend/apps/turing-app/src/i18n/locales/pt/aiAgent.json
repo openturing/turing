@@ -11,8 +11,28 @@
       "languageModels": "Modelos de Linguagem",
       "nativeTools": "Ferramentas Nativas",
       "mcpServers": "Servidores MCP",
+      "customTools": "Ferramentas Customizadas",
       "intents": "Intents",
-      "chatFlow": "Chat Flow"
+      "chat": "Chat",
+      "chatFlow": "Chat Flow",
+      "history": "Histórico"
+    },
+    "history": {
+      "title": "Histórico",
+      "flowLabel": "Fluxo",
+      "flowPlaceholder": "Selecione um fluxo",
+      "totalSubmissions": "{{count}} submissões",
+      "empty": "Ainda não há submissões concluídas para este fluxo.",
+      "columns": {
+        "conversation": "Conversa",
+        "completedAt": "Concluído em",
+        "user": "Usuário",
+        "status": "Status"
+      },
+      "status": {
+        "completed": "Concluído",
+        "abandoned": "Abandonado"
+      }
     },
     "settings": {
       "title": "Configurações",
@@ -29,6 +49,10 @@
     "mcp": {
       "title": "Servidores MCP",
       "description": "Selecione um ou mais servidores MCP para acesso a ferramentas."
+    },
+    "customTool": {
+      "title": "Ferramentas Customizadas",
+      "description": "Selecione quais ferramentas customizadas (Groovy) estão disponíveis para este agente."
     }
   }
 }

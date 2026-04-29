@@ -1,4 +1,5 @@
 import {
+  IconBraces,
   IconBrandGraphql,
   IconBuildingStore,
   IconChartBar,
@@ -66,6 +67,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "embeddingModel", titleKey: "home.features.embeddingModel.title", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube },
   { key: "embeddingStore", titleKey: "home.features.embeddingStore.title", url: "/admin/store/instance", icon: IconDatabase },
   { key: "mcpServer", titleKey: "home.features.mcpServer.title", url: "/admin/mcp/instance", icon: IconServer2 },
+  { key: "customTool", titleKey: "home.features.customTool.title", url: ROUTES.CUSTOM_TOOL_INSTANCE, icon: IconBraces },
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },

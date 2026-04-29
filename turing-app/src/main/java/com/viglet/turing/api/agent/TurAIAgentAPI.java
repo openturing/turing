@@ -22,6 +22,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
@@ -42,6 +43,7 @@ public class TurAIAgentAPI {
     private final TurAIAgentMapper turAIAgentMapper;
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurMcpServerRepository turMcpServerRepository;
+    private final TurCustomToolRepository turCustomToolRepository;
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurStoreInstanceRepository turStoreInstanceRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
@@ -50,6 +52,7 @@ public class TurAIAgentAPI {
             TurAIAgentMapper turAIAgentMapper,
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurMcpServerRepository turMcpServerRepository,
+            TurCustomToolRepository turCustomToolRepository,
             TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurStoreInstanceRepository turStoreInstanceRepository,
             TurGlobalSettingsService turGlobalSettingsService) {
@@ -57,6 +60,7 @@ public class TurAIAgentAPI {
         this.turAIAgentMapper = turAIAgentMapper;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turMcpServerRepository = turMcpServerRepository;
+        this.turCustomToolRepository = turCustomToolRepository;
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
@@ -102,6 +106,8 @@ public class TurAIAgentAPI {
                     turAIAgent.getLlmInstances(), turLLMInstanceRepository));
             agentEdit.setMcpServers(resolveRelations(
                     turAIAgent.getMcpServers(), turMcpServerRepository));
+            agentEdit.setCustomTools(resolveRelations(
+                    turAIAgent.getCustomTools(), turCustomToolRepository));
             agentEdit.setTurEmbeddingModelInstance(resolveSingleRelation(
                     turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
             agentEdit.setTurStoreInstance(resolveSingleRelation(
@@ -132,6 +138,8 @@ public class TurAIAgentAPI {
                 turAIAgent.getLlmInstances(), turLLMInstanceRepository));
         turAIAgent.setMcpServers(resolveRelations(
                 turAIAgent.getMcpServers(), turMcpServerRepository));
+        turAIAgent.setCustomTools(resolveRelations(
+                turAIAgent.getCustomTools(), turCustomToolRepository));
         turAIAgent.setTurEmbeddingModelInstance(resolveSingleRelation(
                 turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
         turAIAgent.setTurStoreInstance(resolveSingleRelation(

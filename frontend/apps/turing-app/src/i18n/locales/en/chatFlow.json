@@ -102,6 +102,17 @@
       "aiInstructionHint": "Prompt forwarded to Spring AI when this step runs.",
       "outputVariable": "Output Variable",
       "functionName": "Function Call",
+      "toolSource": "Tool Source",
+      "toolSourceOptions": {
+        "NATIVE": "Turing native functions",
+        "MCP": "MCP Server"
+      },
+      "nativeTool": "Tool Calling",
+      "nativeToolPlaceholder": "Pick a Turing native tool",
+      "nativeToolHint": "Spring AI @Tool method exposed by the Turing backend.",
+      "mcpServer": "MCP Server",
+      "mcpServerPlaceholder": "Pick an MCP server",
+      "mcpServerHint": "All tools exposed by the selected MCP server will be available to the LLM.",
       "condition": "Condition Expression",
       "validationRule": "Validation Rules",
       "validationNone": "None",

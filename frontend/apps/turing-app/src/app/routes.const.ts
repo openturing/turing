@@ -32,6 +32,8 @@ export const ROUTES = {
   TOKEN_USAGE: `${consolePath}/token-usage`,
   MCP_ROOT: `${consolePath}/mcp`,
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
+  CUSTOM_TOOL_ROOT: `${consolePath}/custom-tool`,
+  CUSTOM_TOOL_INSTANCE: `${consolePath}/custom-tool/instance`,
   AI_AGENT_ROOT: `${consolePath}/ai-agent`,
   AI_AGENT_INSTANCE: `${consolePath}/ai-agent/instance`,
   ASSET_ROOT: `${consolePath}/asset`,

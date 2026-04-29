@@ -65,6 +65,39 @@ import type { FlowNodeData, FlowNodeType } from "./types";
 
 const turChatFlowService = new TurChatFlowService();
 
+/**
+ * Layout helper that mirrors {@code FormItemTwoColumns} from the design
+ * system without depending on `react-hook-form`'s FormProvider context. The
+ * chat flow editor stores its values in plain `useState`, so the design
+ * system primitive (which uses `useFormContext` internally) cannot be used
+ * directly here.
+ */
+function FormRow({
+  htmlFor,
+  label,
+  description,
+  children,
+}: {
+  htmlFor: string;
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-3 md:gap-6 md:items-start">
+      <div className="md:col-span-1">
+        <Label htmlFor={htmlFor} className="text-sm font-medium leading-none">
+          {label}
+        </Label>
+        {description && (
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="md:col-span-2">{children}</div>
+    </div>
+  );
+}
+
 const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   start: "START",
   end: "END",
@@ -423,7 +456,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
 
         {/* ─── Tab 1 — Settings (form) ─── */}
         <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-4 lg:px-6 py-2 grid gap-6 lg:grid-cols-2 max-w-7xl">
+          <div className="space-y-4 px-4 lg:px-6 py-2 pb-8">
             {/* ── Card: General ── */}
             <SectionCard variant="blue">
               <SectionCard.Header
@@ -432,42 +465,43 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
                 description={t("chatFlow.sections.general.description")}
               />
               <SectionCard.Content>
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <Label htmlFor="chat-flow-name" className="text-xs font-medium text-muted-foreground">
-                      {t("chatFlow.fields.name")}
-                    </Label>
+                <div className="space-y-6">
+                  <FormRow
+                    htmlFor="chat-flow-name"
+                    label={t("chatFlow.fields.name")}
+                    description={t("chatFlow.fields.namePlaceholder")}
+                  >
                     <Input
                       id="chat-flow-name"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder={t("chatFlow.fields.namePlaceholder")}
-                      className="mt-1"
                     />
-                  </div>
+                  </FormRow>
 
-                  <div>
-                    <Label htmlFor="chat-flow-description" className="text-xs font-medium text-muted-foreground">
-                      {t("chatFlow.fields.description")}
-                    </Label>
+                  <FormRow
+                    htmlFor="chat-flow-description"
+                    label={t("chatFlow.fields.description")}
+                    description={t("chatFlow.fields.descriptionPlaceholder")}
+                  >
                     <Input
                       id="chat-flow-description"
                       value={description}
                       onChange={(event) => setDescription(event.target.value)}
                       placeholder={t("chatFlow.fields.descriptionPlaceholder")}
-                      className="mt-1"
                     />
-                  </div>
+                  </FormRow>
 
-                  <div>
-                    <Label htmlFor="chat-flow-guardrail" className="text-xs font-medium text-muted-foreground">
-                      {t("chatFlow.fields.guardrailMethod")}
-                    </Label>
+                  <FormRow
+                    htmlFor="chat-flow-guardrail"
+                    label={t("chatFlow.fields.guardrailMethod")}
+                    description={t(`chatFlow.guardrailMethods.${guardrailMethod}.description`)}
+                  >
                     <Select
                       value={guardrailMethod}
                       onValueChange={(value) => setGuardrailMethod(value as TurChatFlowGuardrailMethod)}
                     >
-                      <SelectTrigger id="chat-flow-guardrail" className="mt-1 w-full">
+                      <SelectTrigger id="chat-flow-guardrail" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -478,10 +512,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                      {t(`chatFlow.guardrailMethods.${guardrailMethod}.description`)}
-                    </p>
-                  </div>
+                  </FormRow>
                 </div>
               </SectionCard.Content>
             </SectionCard>
@@ -494,33 +525,31 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
                 description={t("chatFlow.sections.trigger.description")}
               />
               <SectionCard.Content>
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <Label htmlFor="chat-flow-trigger-description" className="text-xs font-medium text-muted-foreground">
-                      {t("chatFlow.fields.triggerDescription")}
-                    </Label>
+                <div className="space-y-6">
+                  <FormRow
+                    htmlFor="chat-flow-trigger-description"
+                    label={t("chatFlow.fields.triggerDescription")}
+                    description={t("chatFlow.fields.triggerDescriptionHint")}
+                  >
                     <Textarea
                       id="chat-flow-trigger-description"
                       value={triggerDescription}
                       onChange={(event) => setTriggerDescription(event.target.value)}
                       placeholder={t("chatFlow.fields.triggerDescriptionPlaceholder")}
                       rows={4}
-                      className="mt-1"
                     />
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                      {t("chatFlow.fields.triggerDescriptionHint")}
-                    </p>
-                  </div>
+                  </FormRow>
 
-                  <div>
-                    <Label htmlFor="chat-flow-trigger-mode" className="text-xs font-medium text-muted-foreground">
-                      {t("chatFlow.fields.triggerMode")}
-                    </Label>
+                  <FormRow
+                    htmlFor="chat-flow-trigger-mode"
+                    label={t("chatFlow.fields.triggerMode")}
+                    description={t(`chatFlow.triggerModes.${triggerMode}.description`)}
+                  >
                     <Select
                       value={triggerMode}
                       onValueChange={(value) => setTriggerMode(value as TurChatFlowTriggerMode)}
                     >
-                      <SelectTrigger id="chat-flow-trigger-mode" className="mt-1 w-full">
+                      <SelectTrigger id="chat-flow-trigger-mode" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -531,10 +560,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                      {t(`chatFlow.triggerModes.${triggerMode}.description`)}
-                    </p>
-                  </div>
+                  </FormRow>
                 </div>
               </SectionCard.Content>
             </SectionCard>

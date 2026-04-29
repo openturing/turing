@@ -1,0 +1,69 @@
+databaseChangeLog:
+  # Append-only record of finished chat-flow runs. Decouples final
+  # submissions from the in-flight `chat_flow_state` rows, so re-triggers
+  # of an ALWAYS flow keep prior captures instead of overwriting them.
+  - changeSet:
+      id: v2026.2.5-create-chat-flow-submission-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_flow_submission
+      changes:
+        - createTable:
+            tableName: chat_flow_submission
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: flow_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: variablesJson
+                  type: longtext
+              - column:
+                  name: completedAt
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: userId
+                  type: VARCHAR(100)
+              - column:
+                  name: endNodeId
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: chat_flow_submission
+            baseColumnNames: flow_id
+            referencedTableName: chat_flow
+            referencedColumnNames: id
+            constraintName: fk_chat_flow_submission_flow
+            onDelete: CASCADE
+        - createIndex:
+            tableName: chat_flow_submission
+            indexName: ix_chat_flow_submission_flow_completed
+            columns:
+              - column:
+                  name: flow_id
+              - column:
+                  name: completedAt
+        - createIndex:
+            tableName: chat_flow_submission
+            indexName: ix_chat_flow_submission_conversation
+            columns:
+              - column:
+                  name: conversationId

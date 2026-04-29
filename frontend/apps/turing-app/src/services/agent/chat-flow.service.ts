@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { TurChatFlow } from "@/models/agent/chat-flow.model";
+import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
 
 /**
  * Agent-scoped chat flow client. Every endpoint requires the parent agent id;
@@ -27,5 +28,16 @@ export class TurChatFlowService {
   async delete(agentId: string, turChatFlow: TurChatFlow): Promise<boolean> {
     const response = await axios.delete<TurChatFlow>(`/ai-agent/${agentId}/chat-flow/${turChatFlow.id}`);
     return response.status == 200;
+  }
+
+  /**
+   * Submissions: every flow run that reached an end node, newest first.
+   * Used by the AI Agent History page.
+   */
+  async submissions(agentId: string, flowId: string): Promise<TurChatFlowSubmission[]> {
+    const response = await axios.get<TurChatFlowSubmission[]>(
+      `/ai-agent/${agentId}/chat-flow/${flowId}/submissions`,
+    );
+    return response.data;
   }
 }

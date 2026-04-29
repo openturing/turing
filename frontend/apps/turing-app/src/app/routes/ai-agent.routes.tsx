@@ -5,12 +5,14 @@ import AIAgentRootPage from "../console/ai-agent/ai-agent.root.page"
 import AIAgentSettingsPage from "../console/ai-agent/settings/ai-agent.settings.page"
 import AIAgentLlmPage from "../console/ai-agent/llm/ai-agent.llm.page"
 import AIAgentMcpPage from "../console/ai-agent/mcp/ai-agent.mcp.page"
+import AIAgentCustomToolPage from "../console/ai-agent/custom-tool/ai-agent.custom-tool.page"
 import AIAgentToolsPage from "../console/ai-agent/tools/ai-agent.tools.page"
 import IntentListPage from "../console/intent/intent.list.page"
 import IntentPage from "../console/intent/intent.page"
 import IntentSettingsPage from "../console/intent/settings/intent.settings.page"
 import ChatFlowListPage from "../console/chat-flow/chat-flow.list.page"
 import ChatFlowPage from "../console/chat-flow/chat-flow.page"
+import AIAgentHistoryPage from "../console/ai-agent/history/ai-agent.history.page"
 import { ROUTES } from "../routes.const"
 
 function RedirectToAIAgentSettings() {
@@ -32,9 +34,11 @@ export const AIAgentRoutes = (
             <Route path="settings" element={<AIAgentSettingsPage />} />
             <Route path="llm" element={<AIAgentLlmPage />} />
             <Route path="mcp" element={<AIAgentMcpPage />} />
+            <Route path="custom-tool" element={<AIAgentCustomToolPage />} />
             <Route path="tools" element={<AIAgentToolsPage />} />
             <Route path="chat-flow" element={<ChatFlowListPage />} />
             <Route path="chat-flow/:flowId" element={<ChatFlowPage />} />
+            <Route path="history" element={<AIAgentHistoryPage />} />
             <Route path="intent" element={<IntentListPage />} />
             <Route path="intent/:intentId" element={<IntentPage />}>
                 <Route index element={<RedirectToIntentSettings />} />

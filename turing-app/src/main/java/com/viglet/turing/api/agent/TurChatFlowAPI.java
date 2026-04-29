@@ -28,7 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
@@ -53,13 +55,16 @@ public class TurChatFlowAPI {
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowMapper turChatFlowMapper;
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurChatFlowEngineService chatFlowEngineService;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
-            TurAIAgentRepository turAIAgentRepository) {
+            TurAIAgentRepository turAIAgentRepository,
+            TurChatFlowEngineService chatFlowEngineService) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
+        this.chatFlowEngineService = chatFlowEngineService;
     }
 
     private TurAIAgent loadAgent(String agentId) {
@@ -134,6 +139,18 @@ public class TurChatFlowAPI {
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);
                 }).orElse(new TurChatFlowDto());
+    }
+
+    @Operation(summary = "Submissions of a Chat Flow (states that reached an end node)")
+    @GetMapping("/{id}/submissions")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_VIEW" })
+    public List<TurChatFlowSubmissionDto> turChatFlowSubmissions(@PathVariable String agentId,
+            @PathVariable String id) {
+        return turChatFlowRepository.findById(id)
+                .filter(flow -> flow.getTurAIAgent() != null
+                        && agentId.equals(flow.getTurAIAgent().getId()))
+                .map(chatFlowEngineService::listSubmissions)
+                .orElse(List.of());
     }
 
     @Transactional

@@ -40,6 +40,10 @@
         "title": "MCP Server",
         "description": "Connect to Model Context Protocol servers for external tool integration."
       },
+      "customTool": {
+        "title": "Custom Tool",
+        "description": "Define your own Spring AI tool callings backed by Groovy scripts."
+      },
       "aiAgent": {
         "title": "AI Agent",
         "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."

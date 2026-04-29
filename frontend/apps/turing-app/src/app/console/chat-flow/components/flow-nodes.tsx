@@ -75,17 +75,24 @@ export function ConditionNode({ data }: ChatFlowNodeProps) {
 }
 
 export function FunctionCallNode({ data }: ChatFlowNodeProps) {
+  const source = data.toolSource ?? "NATIVE";
+  const target = source === "MCP" ? data.mcpServerId : data.functionName;
   return (
     <div className="w-64 overflow-hidden rounded-lg border-2 border-orange-500 bg-background shadow-md">
-      <div className="flex items-center gap-2 bg-orange-500 px-3 py-2 text-white">
-        <IconBell className="size-4" />
-        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Function Call"}</div>
+      <div className="flex items-center justify-between gap-2 bg-orange-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconBell className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Function Call"}</div>
+        </div>
+        <span className="rounded bg-orange-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+          {source}
+        </span>
       </div>
       <div className="bg-orange-50 p-3 text-xs leading-relaxed text-orange-900 dark:bg-orange-950/40 dark:text-orange-100">
         <div>
-          <span className="font-semibold">Function: </span>
+          <span className="font-semibold">{source === "MCP" ? "MCP Server: " : "Function: "}</span>
           <code className="rounded bg-orange-200/60 px-1 py-0.5 text-[11px] dark:bg-orange-900/50">
-            {data.functionName?.trim() || "not set"}
+            {target?.trim() || "not set"}
           </code>
         </div>
         {data.aiInstruction && (
