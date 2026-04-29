@@ -96,6 +96,14 @@ interface SmartDescriptionProps {
   /** Type of entity (e.g. "Language Model", "AI Agent") — used as context for AI generation */
   entityType?: string
   /**
+   * Structural instruction about the field being edited (purpose, target
+   * language, audience, hard constraints). Sent as a system message before
+   * EVERY LLM call (generate / refine / expand / summarize / fix / metaPrompt)
+   * so it carries more weight than user input — the user shouldn't be able
+   * to override field-level rules through the meta-prompt.
+   */
+  fieldInstruction?: string | null
+  /**
    * Persisted user-written meta-prompt — instructions describing how the
    * description should be generated (e.g. tone, target language, content
    * focus). When this prop AND {@link onMetaPromptChange} are provided, a
@@ -116,6 +124,7 @@ function SmartDescriptionComponent({
   rows,
   title,
   entityType,
+  fieldInstruction,
   metaPrompt,
   onMetaPromptChange,
   children,
@@ -142,6 +151,17 @@ function SmartDescriptionComponent({
 
   const contextLabel = [entityType, title].filter(Boolean).join(" called ") || "item"
 
+  /** Prepends a system message with the field-level instruction (if any). */
+  function buildMessages(userContent: string): ChatMessageItem[] {
+    const messages: ChatMessageItem[] = []
+    const instruction = fieldInstruction?.trim()
+    if (instruction) {
+      messages.push({ role: "system", content: instruction })
+    }
+    messages.push({ role: "user", content: userContent })
+    return messages
+  }
+
   async function handleAction(action: ActionDef) {
     if (!defaultLlmId || activeAction) return
     if (action.needsText && !text.trim()) return
@@ -151,14 +171,11 @@ function SmartDescriptionComponent({
       ? `${action.prompt(contextLabel, maxLength)}\n\n${text}`
       : action.prompt(contextLabel, maxLength)
 
-    const messages: ChatMessageItem[] = [
-      { role: "user", content: promptText },
-    ]
     let result = ""
 
     await chatService.sendStream(
       defaultLlmId,
-      messages,
+      buildMessages(promptText),
       (token) => {
         result += token
         onChange(maxLength ? result.slice(0, maxLength) : result)
@@ -188,14 +205,11 @@ function SmartDescriptionComponent({
       "Return ONLY the resulting description text, with no preamble or quotes.",
     ].filter(Boolean).join("\n")
 
-    const messages: ChatMessageItem[] = [
-      { role: "user", content: promptText },
-    ]
     let result = ""
 
     await chatService.sendStream(
       defaultLlmId,
-      messages,
+      buildMessages(promptText),
       (token) => {
         result += token
         onChange(maxLength ? result.slice(0, maxLength) : result)

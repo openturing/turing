@@ -70,6 +70,10 @@ public class TurCustomTool implements Serializable {
     private String groovyScript;
 
     @Lob
+    @Column(name = "groovyMetaPrompt")
+    private String groovyMetaPrompt;
+
+    @Lob
     @Column(name = "parametersJson")
     private String parametersJson;
 

@@ -72,6 +72,7 @@ import reactor.core.scheduler.Schedulers;
 public class TurLLMChatAPI {
 
     private static final String ROLE_ASSISTANT = "assistant";
+    private static final String ROLE_SYSTEM = "system";
 
     private static final Set<String> IMAGE_MIME_TYPES = Set.of(
             "image/png", "image/jpeg", "image/gif", "image/webp");
@@ -300,6 +301,8 @@ public class TurLLMChatAPI {
             ChatMessageItem item = items.get(i);
             if (ROLE_ASSISTANT.equals(item.role())) {
                 messages.add(new AssistantMessage(item.content()));
+            } else if (ROLE_SYSTEM.equals(item.role())) {
+                messages.add(new SystemMessage(item.content()));
             } else {
                 boolean isLast = (i == items.size() - 1);
                 if (isLast && files != null && !files.isEmpty()) {

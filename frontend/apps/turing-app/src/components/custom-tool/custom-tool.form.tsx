@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import type { CustomToolParameter, CustomToolPrimitive, TurCustomTool } from "@/models/customtool/custom-tool.model.ts"
 import { TurCustomToolService, type ValidateScriptResponse } from "@/services/customtool/custom-tool.service"
+import { VibeCodingButton } from "@/components/custom-tool/vibe-coding-button"
 import { StreamLanguage } from "@codemirror/language"
 import { groovy } from "@codemirror/legacy-modes/mode/groovy"
 import { oneDark } from "@codemirror/theme-one-dark"
@@ -60,6 +61,47 @@ const DEFAULT_SCRIPT = `// Groovy. Args available as variables (e.g. \`name\`) a
 // Return any value — it will be coerced to string for the LLM.
 return "Hello " + (args.name ?: "world")
 `;
+
+/**
+ * Builds the system message handed to the LLM by the Vibe Coding sheet.
+ * Includes the runtime contract (bindings, return coercion, no class wrapper)
+ * AND the live tool spec (title, parameters, return type) so the generated
+ * code matches the form's current state.
+ */
+function buildGroovyFieldInstruction(spec: {
+  title?: string;
+  llmDescription?: string;
+  parameters?: CustomToolParameter[];
+  returnType?: CustomToolPrimitive;
+}): string {
+  const params = spec.parameters?.length
+    ? spec.parameters.filter((p) => p.name?.trim()).map((p) => `${p.name}: ${p.type}`).join(", ")
+    : "(none)";
+  return [
+    "You are generating Groovy 4 source code that runs as the body of a Spring AI tool callback inside the Turing Enterprise Search platform.",
+    "",
+    "EXECUTION CONTRACT (cannot be violated):",
+    "- The script runs inside a GroovyShell with a Binding — the body is executed directly, NOT inside a class or method wrapper. Do NOT define a class, package, or top-level method.",
+    "- Each declared parameter is exposed as a top-level variable with that exact name. Reference the parameter directly (e.g. `name`, `courseName`).",
+    "- The full argument map is also available as `args` (Map<String, Object>) — use `args.fieldName ?: defaultValue` to defend against missing values.",
+    "- Use top-level `return` to produce the final value. The result is coerced via .toString() before being returned to the LLM, so it must be a single value (string/number/boolean/Map/List/etc).",
+    "- Common Java/Groovy stdlib (java.util, java.time, etc.) is available implicitly. Add explicit `import` statements only when strictly necessary.",
+    "- Do NOT call System.exit, do NOT spawn threads, do NOT do file/network I/O unless the user explicitly asks for it.",
+    "",
+    "TOOL SPEC (current form state — match it exactly):",
+    `- Tool title: ${spec.title?.trim() || "(unset)"}`,
+    `- LLM-facing description: ${spec.llmDescription?.trim() || "(unset)"}`,
+    `- Parameters: ${params}`,
+    `- Return type: ${spec.returnType || "string"}`,
+    "",
+    "OUTPUT RULES:",
+    "- Return ONLY the Groovy source code.",
+    "- Do NOT wrap the output in markdown code fences (no ```groovy, no ```).",
+    "- Do NOT include preamble, commentary, headers, or trailing explanation.",
+    "- If a current script exists, prefer the smallest change that satisfies the user's instructions.",
+    "- The result must compile cleanly with `new GroovyShell().getClassLoader().parseClass(...)`.",
+  ].join("\n");
+}
 
 function parseParameters(json?: string | null): CustomToolParameter[] {
   if (!json?.trim()) return [];
@@ -269,6 +311,12 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                             rows={4}
                             title={form.watch("title")}
                             entityType={t("customTool.title")}
+                            fieldInstruction={
+                              "This text is the description of a Spring AI tool calling — it is sent to the LLM as the @Tool description so the model can decide WHEN to invoke this tool and WHAT arguments to pass. " +
+                              "MUST be written in English regardless of any other instruction. " +
+                              "MUST clearly state the tool's purpose, the trigger conditions (when the LLM should call it), the input parameters and their meaning, and the format of the returned value. " +
+                              "Be concise but specific; avoid filler. Do not include preamble, quotes, markdown, or commentary — return only the description text."
+                            }
                             metaPrompt={form.watch("llmDescriptionMetaPrompt") ?? ""}
                             onMetaPromptChange={(v) =>
                               form.setValue("llmDescriptionMetaPrompt", v, { shouldDirty: true })
@@ -414,7 +462,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                             />
                           </div>
                         </FormControl>
-                        <div className="flex flex-col gap-2 mt-2 sm:flex-row sm:items-center">
+                        <div className="flex flex-col gap-2 mt-2 sm:flex-row sm:items-center sm:flex-wrap">
                           <Button
                             type="button"
                             variant="outline"
@@ -432,6 +480,23 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                               ? t("forms.customTool.validateRunning")
                               : t("forms.customTool.validateButton")}
                           </Button>
+                          <VibeCodingButton
+                            value={field.value ?? ""}
+                            onChange={(val) => {
+                              field.onChange(val);
+                              if (validation) setValidation(null);
+                            }}
+                            metaPrompt={form.watch("groovyMetaPrompt") ?? ""}
+                            onMetaPromptChange={(v) =>
+                              form.setValue("groovyMetaPrompt", v, { shouldDirty: true })
+                            }
+                            fieldInstruction={buildGroovyFieldInstruction({
+                              title: form.watch("title"),
+                              llmDescription: form.watch("llmDescription"),
+                              parameters: form.watch("parameters"),
+                              returnType: form.watch("returnType"),
+                            })}
+                          />
                           {validation?.valid && (
                             <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-300">
                               <IconCheck className="size-3.5" />

@@ -1,0 +1,23 @@
+databaseChangeLog:
+  # Persisted brief that drives the "Vibe coding" sheet on the Groovy
+  # script editor — equivalent to the SmartDescription metaPrompt but
+  # targeting the script field. Stored separately so users can iterate
+  # on the prompt without retyping after each generation.
+  - changeSet:
+      id: v2026.2.5-add-customtool-groovy-meta-prompt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: custom_tool
+        - not:
+            - columnExists:
+                tableName: custom_tool
+                columnName: groovyMetaPrompt
+      changes:
+        - addColumn:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: groovyMetaPrompt
+                  type: longtext

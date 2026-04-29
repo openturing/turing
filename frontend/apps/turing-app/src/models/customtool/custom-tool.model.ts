@@ -22,6 +22,8 @@ export interface TurCustomTool {
   /** User-authored brief that drives the SmartDescription "Help me write" modal for llmDescription. */
   llmDescriptionMetaPrompt?: string | null;
   groovyScript: string;
+  /** User-authored brief that drives the "Vibe coding" sheet for the Groovy editor. */
+  groovyMetaPrompt?: string | null;
   /** JSON-serialized {@link CustomToolParameter} array. */
   parametersJson?: string | null;
   returnType: CustomToolPrimitive;

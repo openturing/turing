@@ -826,6 +826,12 @@
       "validateErrorTitle": "Compilation error",
       "validateLineCol": "line {{line}}, col {{col}}",
       "validateUnreachable": "Could not reach the validator. Check the backend connection and try again.",
+      "vibeCoding": "Vibe coding",
+      "vibeCodingTitle": "Vibe coding — generate Groovy code",
+      "vibeCodingDescription": "Describe what the script should do. The LLM will write or update the Groovy code respecting the tool spec (parameters, return type) currently configured in the form. Your brief is saved with the tool so you can iterate later.",
+      "vibeCodingPlaceholder": "e.g. Look up the price of the course passed as `courseName` from a hard-coded map (Medicine: R$ 12000, Engineering: R$ 9500, default: R$ 0) and return a string \"Price of {course}: R$ {value}\".",
+      "vibeCodingHint": "Tip: refer to the parameter names you declared in the form — they are exposed directly as variables in the script (and also via the `args` map).",
+      "vibeCodingGenerate": "Generate code",
       "statusDesc": "Disable to hide this tool from all agents.",
       "enabledDesc": "When disabled, the tool will not be exposed to any agent."
     },

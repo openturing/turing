@@ -2,7 +2,7 @@ import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts";
 import axios from "axios";
 
 export interface ChatMessageItem {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 

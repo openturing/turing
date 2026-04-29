@@ -98,25 +98,46 @@ public class TurCustomToolAPI {
         return mapper.toDto(entity);
     }
 
+    /**
+     * Groovy 4's ANTLR-based parser writes "unknown recognition error type: ..."
+     * messages straight to {@link System#out}/{@link System#err} for some
+     * unrecognizable tokens — outside the regular {@code ErrorCollector}
+     * pipeline. We synchronize globally on this monitor while the streams
+     * are redirected so a concurrent log line from elsewhere doesn't get
+     * swallowed.
+     */
+    private static final Object PARSE_OUTPUT_LOCK = new Object();
+
     @Operation(summary = "Validate a Groovy script for syntax / compile errors")
     @PostMapping("/validate")
     public ValidateScriptResponse validate(@RequestBody ValidateScriptRequest request) {
         String script = request.script() == null ? "" : request.script();
-        try {
-            // Force a full parse — we only care about compile-time issues, no execution.
-            new GroovyShell().getClassLoader().parseClass(script, "TurCustomTool_validate.groovy");
-            return new ValidateScriptResponse(true, null, null, null);
-        } catch (MultipleCompilationErrorsException e) {
-            // Pull the first SyntaxException so we can surface line/column to the editor.
-            return e.getErrorCollector().getErrors().stream()
-                    .filter(SyntaxErrorMessage.class::isInstance)
-                    .map(SyntaxErrorMessage.class::cast)
-                    .findFirst()
-                    .map(SyntaxErrorMessage::getCause)
-                    .map(this::toErrorResponse)
-                    .orElseGet(() -> new ValidateScriptResponse(false, e.getMessage(), null, null));
-        } catch (Exception e) {
-            return new ValidateScriptResponse(false, e.getMessage(), null, null);
+        synchronized (PARSE_OUTPUT_LOCK) {
+            PrintStream originalOut = System.out;
+            PrintStream originalErr = System.err;
+            PrintStream sink = new PrintStream(OutputStream.nullOutputStream(), true, StandardCharsets.UTF_8);
+            System.setOut(sink);
+            System.setErr(sink);
+            try {
+                // Force a full parse — we only care about compile-time issues, no execution.
+                new GroovyShell().getClassLoader().parseClass(script, "TurCustomTool_validate.groovy");
+                return new ValidateScriptResponse(true, null, null, null);
+            } catch (MultipleCompilationErrorsException e) {
+                // Pull the first SyntaxException so we can surface line/column to the editor.
+                return e.getErrorCollector().getErrors().stream()
+                        .filter(SyntaxErrorMessage.class::isInstance)
+                        .map(SyntaxErrorMessage.class::cast)
+                        .findFirst()
+                        .map(SyntaxErrorMessage::getCause)
+                        .map(this::toErrorResponse)
+                        .orElseGet(() -> new ValidateScriptResponse(false, e.getMessage(), null, null));
+            } catch (Exception e) {
+                return new ValidateScriptResponse(false, e.getMessage(), null, null);
+            } finally {
+                System.setOut(originalOut);
+                System.setErr(originalErr);
+                sink.close();
+            }
         }
     }
 
