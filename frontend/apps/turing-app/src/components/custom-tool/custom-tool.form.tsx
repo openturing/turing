@@ -19,11 +19,11 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import type { CustomToolParameter, CustomToolPrimitive, TurCustomTool } from "@/models/customtool/custom-tool.model.ts"
-import { TurCustomToolService } from "@/services/customtool/custom-tool.service"
+import { TurCustomToolService, type ValidateScriptResponse } from "@/services/customtool/custom-tool.service"
 import { StreamLanguage } from "@codemirror/language"
 import { groovy } from "@codemirror/legacy-modes/mode/groovy"
 import { oneDark } from "@codemirror/theme-one-dark"
-import { IconBraces, IconCode, IconList, IconSettings, IconToggleLeft } from "@tabler/icons-react"
+import { IconBraces, IconCheck, IconCode, IconList, IconLoader2, IconPlayerPlay, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
 import CodeMirror from "@uiw/react-codemirror"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect, useState } from "react"
@@ -78,6 +78,8 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<ValidateScriptResponse | null>(null);
   const form = useForm<FormShape>({
     defaultValues: {
       ...value,
@@ -102,6 +104,22 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
       enabled: value.enabled ?? 1,
     });
   }, [value]);
+
+  async function onValidate() {
+    if (validating) return;
+    const script = form.getValues("groovyScript") ?? "";
+    setValidating(true);
+    setValidation(null);
+    try {
+      const result = await turCustomToolService.validate(script);
+      setValidation(result);
+    } catch (error) {
+      console.error("Validate error", error);
+      setValidation({ valid: false, error: t("forms.customTool.validateUnreachable") });
+    } finally {
+      setValidating(false);
+    }
+  }
 
   async function onSubmit(formValue: FormShape) {
     const { parameters, ...rest } = formValue;
@@ -197,6 +215,10 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                             maxLength={500}
                             title={form.watch("title")}
                             entityType={t("customTool.title")}
+                            metaPrompt={form.watch("descriptionMetaPrompt") ?? ""}
+                            onMetaPromptChange={(v) =>
+                              form.setValue("descriptionMetaPrompt", v, { shouldDirty: true })
+                            }
                           >
                             <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                             <SmartDescription.Description>{t("forms.customTool.descriptionDesc")}</SmartDescription.Description>
@@ -238,15 +260,23 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                     rules={{ required: t("forms.customTool.llmDescriptionRequired") }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("forms.customTool.llmDescriptionLabel")}</FormLabel>
-                        <FormDescription>{t("forms.customTool.llmDescriptionHint")}</FormDescription>
                         <FormControl>
-                          <textarea
-                            {...field}
-                            rows={4}
+                          <SmartDescription
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
                             placeholder={t("forms.customTool.llmDescriptionPlaceholder")}
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          />
+                            maxLength={2000}
+                            rows={4}
+                            title={form.watch("title")}
+                            entityType={t("customTool.title")}
+                            metaPrompt={form.watch("llmDescriptionMetaPrompt") ?? ""}
+                            onMetaPromptChange={(v) =>
+                              form.setValue("llmDescriptionMetaPrompt", v, { shouldDirty: true })
+                            }
+                          >
+                            <SmartDescription.Label>{t("forms.customTool.llmDescriptionLabel")}</SmartDescription.Label>
+                            <SmartDescription.Description>{t("forms.customTool.llmDescriptionHint")}</SmartDescription.Description>
+                          </SmartDescription>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -273,7 +303,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                           name={`parameters.${index}.name`}
                           rules={{
                             required: t("forms.customTool.parameterNameRequired"),
-                            pattern: { value: /^[A-Za-z_][A-Za-z0-9_]*$/, message: t("forms.customTool.parameterNameInvalid") },
+                            pattern: { value: /^[A-Za-z_]\w*$/, message: t("forms.customTool.parameterNameInvalid") },
                           }}
                           render={({ field: nameField }) => (
                             <FormItem className="mb-0 min-w-0">
@@ -376,11 +406,60 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                               height="360px"
                               theme={oneDark}
                               extensions={[StreamLanguage.define(groovy)]}
-                              onChange={(val) => field.onChange(val)}
+                              onChange={(val) => {
+                                field.onChange(val);
+                                if (validation) setValidation(null);
+                              }}
                               basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: true }}
                             />
                           </div>
                         </FormControl>
+                        <div className="flex flex-col gap-2 mt-2 sm:flex-row sm:items-center">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={onValidate}
+                            disabled={validating || !field.value?.trim()}
+                            className="gap-2 sm:w-auto"
+                          >
+                            {validating ? (
+                              <IconLoader2 className="size-4 animate-spin" />
+                            ) : (
+                              <IconPlayerPlay className="size-4" />
+                            )}
+                            {validating
+                              ? t("forms.customTool.validateRunning")
+                              : t("forms.customTool.validateButton")}
+                          </Button>
+                          {validation?.valid && (
+                            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+                              <IconCheck className="size-3.5" />
+                              {t("forms.customTool.validateOk")}
+                            </span>
+                          )}
+                          {validation && !validation.valid && (
+                            <div className="flex flex-1 items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                              <IconX className="size-3.5 mt-0.5 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold">
+                                  {t("forms.customTool.validateErrorTitle")}
+                                  {validation.line != null && (
+                                    <span className="ml-1 font-normal opacity-80">
+                                      ({t("forms.customTool.validateLineCol", {
+                                        line: validation.line,
+                                        col: validation.column ?? 1,
+                                      })})
+                                    </span>
+                                  )}
+                                </div>
+                                <pre className="mt-1 whitespace-pre-wrap wrap-break-word font-mono text-[11px] opacity-90">
+                                  {validation.error}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

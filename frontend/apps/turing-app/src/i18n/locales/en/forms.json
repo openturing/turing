@@ -820,6 +820,12 @@
       "scriptLabel": "Script",
       "scriptHint": "Use `return` to send a value back to the LLM. The result is coerced to a string.",
       "scriptRequired": "Script is required.",
+      "validateButton": "Validate code",
+      "validateRunning": "Validating…",
+      "validateOk": "No syntax or compilation errors.",
+      "validateErrorTitle": "Compilation error",
+      "validateLineCol": "line {{line}}, col {{col}}",
+      "validateUnreachable": "Could not reach the validator. Check the backend connection and try again.",
       "statusDesc": "Disable to hide this tool from all agents.",
       "enabledDesc": "When disabled, the tool will not be exposed to any agent."
     },
@@ -1135,7 +1141,14 @@
       "summarizeTooltip": "Shorten the text while keeping the key meaning",
       "fix": "Fix",
       "fixTooltip": "Fix only spelling and grammar errors",
-      "charLimit": "LIMIT: Max {{limit}} characters"
+      "charLimit": "LIMIT: Max {{limit}} characters",
+      "metaPrompt": "Help me write",
+      "metaPromptTooltip": "Open a brief editor — describe what you want and let the LLM write or rewrite the description",
+      "metaPromptTitle": "Help me write the description",
+      "metaPromptDescription": "Write your instructions (the brief). The LLM will use them to generate or rewrite the description. Your brief is saved with the entity so you can iterate later.",
+      "metaPromptPlaceholder": "e.g. Translate the current text to English. Or: Write a description in English for a tool that greets the user when they say \"How are you?\".",
+      "metaPromptHint": "Tip: refer to the current description as \"the current text\" if you want it adjusted instead of replaced.",
+      "metaPromptGenerate": "Generate"
     }
   }
 }

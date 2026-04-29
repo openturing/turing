@@ -9,6 +9,9 @@
  */
 package com.viglet.turing.api.customtool;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -27,8 +30,12 @@ import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
+import groovy.lang.GroovyShell;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * @author Alexandre Oliveira
@@ -89,5 +96,39 @@ public class TurCustomToolAPI {
         TurCustomTool entity = mapper.toEntity(dto);
         repository.save(entity);
         return mapper.toDto(entity);
+    }
+
+    @Operation(summary = "Validate a Groovy script for syntax / compile errors")
+    @PostMapping("/validate")
+    public ValidateScriptResponse validate(@RequestBody ValidateScriptRequest request) {
+        String script = request.script() == null ? "" : request.script();
+        try {
+            // Force a full parse — we only care about compile-time issues, no execution.
+            new GroovyShell().getClassLoader().parseClass(script, "TurCustomTool_validate.groovy");
+            return new ValidateScriptResponse(true, null, null, null);
+        } catch (MultipleCompilationErrorsException e) {
+            // Pull the first SyntaxException so we can surface line/column to the editor.
+            return e.getErrorCollector().getErrors().stream()
+                    .filter(SyntaxErrorMessage.class::isInstance)
+                    .map(SyntaxErrorMessage.class::cast)
+                    .findFirst()
+                    .map(SyntaxErrorMessage::getCause)
+                    .map(this::toErrorResponse)
+                    .orElseGet(() -> new ValidateScriptResponse(false, e.getMessage(), null, null));
+        } catch (Exception e) {
+            return new ValidateScriptResponse(false, e.getMessage(), null, null);
+        }
+    }
+
+    private ValidateScriptResponse toErrorResponse(SyntaxException sx) {
+        return new ValidateScriptResponse(false, sx.getMessage(),
+                sx.getStartLine() > 0 ? sx.getStartLine() : null,
+                sx.getStartColumn() > 0 ? sx.getStartColumn() : null);
+    }
+
+    public record ValidateScriptRequest(String script) {
+    }
+
+    public record ValidateScriptResponse(boolean valid, String error, Integer line, Integer column) {
     }
 }

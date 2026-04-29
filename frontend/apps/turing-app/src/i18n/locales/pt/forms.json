@@ -820,6 +820,12 @@
       "scriptLabel": "Script",
       "scriptHint": "Use `return` para devolver um valor para a LLM. O resultado é convertido para texto.",
       "scriptRequired": "O script é obrigatório.",
+      "validateButton": "Validar código",
+      "validateRunning": "Validando…",
+      "validateOk": "Sem erros de sintaxe ou compilação.",
+      "validateErrorTitle": "Erro de compilação",
+      "validateLineCol": "linha {{line}}, coluna {{col}}",
+      "validateUnreachable": "Não foi possível alcançar o validador. Verifique a conexão com o backend e tente novamente.",
       "statusDesc": "Desative para ocultar esta ferramenta de todos os agentes.",
       "enabledDesc": "Quando desativada, a ferramenta não fica exposta a nenhum agente."
     },
@@ -1135,7 +1141,14 @@
       "summarizeTooltip": "Encurtar o texto mantendo o significado principal",
       "fix": "Corrigir",
       "fixTooltip": "Corrigir apenas erros de ortografia e gramática",
-      "charLimit": "LIMITE: Máx {{limit}} caracteres"
+      "charLimit": "LIMITE: Máx {{limit}} caracteres",
+      "metaPrompt": "Ajude a redigir",
+      "metaPromptTooltip": "Abrir o editor de briefing — descreva o que quer e a LLM redige ou ajusta a descrição",
+      "metaPromptTitle": "Ajude a redigir a descrição",
+      "metaPromptDescription": "Escreva suas instruções (o briefing). A LLM vai usá-las para gerar ou reescrever a descrição. O briefing é salvo junto com o registro para você iterar depois.",
+      "metaPromptPlaceholder": "ex.: Traduza o texto atual para inglês. Ou: Escreva em inglês uma descrição para uma ferramenta que cumprimenta o usuário quando ele diz \"Como vai, tudo bem?\".",
+      "metaPromptHint": "Dica: refira-se à descrição atual como \"o texto atual\" se quiser que ela seja ajustada em vez de substituída.",
+      "metaPromptGenerate": "Gerar"
     }
   }
 }

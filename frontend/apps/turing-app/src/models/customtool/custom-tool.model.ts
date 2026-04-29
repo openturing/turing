@@ -15,8 +15,12 @@ export interface TurCustomTool {
   id: string;
   title: string;
   description?: string | null;
+  /** User-authored brief that drives the SmartDescription "Help me write" modal. */
+  descriptionMetaPrompt?: string | null;
   icon?: string | null;
   llmDescription: string;
+  /** User-authored brief that drives the SmartDescription "Help me write" modal for llmDescription. */
+  llmDescriptionMetaPrompt?: string | null;
   groovyScript: string;
   /** JSON-serialized {@link CustomToolParameter} array. */
   parametersJson?: string | null;

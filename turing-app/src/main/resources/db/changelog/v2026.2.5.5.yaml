@@ -1,0 +1,22 @@
+databaseChangeLog:
+  # Companion brief column for the llmDescription SmartDescription
+  # "Help me write" modal. The admin-facing description keeps its own
+  # descriptionMetaPrompt; this one is dedicated to the LLM-facing copy.
+  - changeSet:
+      id: v2026.2.5-add-customtool-llm-description-meta-prompt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: custom_tool
+        - not:
+            - columnExists:
+                tableName: custom_tool
+                columnName: llmDescriptionMetaPrompt
+      changes:
+        - addColumn:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: llmDescriptionMetaPrompt
+                  type: longtext

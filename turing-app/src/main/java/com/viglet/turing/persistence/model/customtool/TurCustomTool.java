@@ -51,11 +51,19 @@ public class TurCustomTool implements Serializable {
     @Column(length = 500)
     private String description;
 
+    @Lob
+    @Column(name = "descriptionMetaPrompt")
+    private String descriptionMetaPrompt;
+
     @Column(length = 150)
     private String icon;
 
     @Column(name = "llmDescription", nullable = false, length = 2000)
     private String llmDescription;
+
+    @Lob
+    @Column(name = "llmDescriptionMetaPrompt")
+    private String llmDescriptionMetaPrompt;
 
     @Lob
     @Column(name = "groovyScript", nullable = false)

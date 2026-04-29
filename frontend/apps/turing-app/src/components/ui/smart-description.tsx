@@ -1,7 +1,16 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { IconLoader2, IconPencil, IconArrowsMaximize, IconCut, IconAbc, IconSparkles } from "@tabler/icons-react"
+import { IconLoader2, IconPencil, IconArrowsMaximize, IconCut, IconAbc, IconSparkles, IconWand } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { TurChatService, type ChatMessageItem } from "@/services/chat/chat.service"
@@ -86,6 +95,15 @@ interface SmartDescriptionProps {
   title?: string
   /** Type of entity (e.g. "Language Model", "AI Agent") — used as context for AI generation */
   entityType?: string
+  /**
+   * Persisted user-written meta-prompt — instructions describing how the
+   * description should be generated (e.g. tone, target language, content
+   * focus). When this prop AND {@link onMetaPromptChange} are provided, a
+   * "Help me write" action becomes available; clicking it opens a modal
+   * to edit the meta-prompt and call the LLM with it as the brief.
+   */
+  metaPrompt?: string | null
+  onMetaPromptChange?: (value: string) => void
   children?: React.ReactNode
 }
 
@@ -98,18 +116,29 @@ function SmartDescriptionComponent({
   rows,
   title,
   entityType,
+  metaPrompt,
+  onMetaPromptChange,
   children,
 }: SmartDescriptionProps) {
   const { t } = useTranslation()
   const text = value ?? ""
   const [defaultLlmId, setDefaultLlmId] = useState<string | null>(null)
   const [activeAction, setActiveAction] = useState<AiAction | null>(null)
+  const [metaOpen, setMetaOpen] = useState(false)
+  const [metaDraft, setMetaDraft] = useState(metaPrompt ?? "")
+  const [metaRunning, setMetaRunning] = useState(false)
+  const metaTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     globalSettingsService.query()
       .then((s) => setDefaultLlmId(s.defaultLlmId ?? null))
       .catch(() => setDefaultLlmId(null))
   }, [])
+
+  // Re-sync local draft when the parent value changes from outside (e.g. form reset)
+  useEffect(() => {
+    setMetaDraft(metaPrompt ?? "")
+  }, [metaPrompt])
 
   const contextLabel = [entityType, title].filter(Boolean).join(" called ") || "item"
 
@@ -139,11 +168,49 @@ function SmartDescriptionComponent({
     )
   }
 
+  async function handleMetaPromptRun() {
+    if (!defaultLlmId || metaRunning) return
+    const brief = metaDraft.trim()
+    if (!brief) return
+    setMetaRunning(true)
+    onMetaPromptChange?.(metaDraft)
+
+    const promptText = [
+      `You are helping a user write a description for ${contextLabel}.`,
+      charLimitHint(maxLength).trim(),
+      "",
+      text.trim()
+        ? `Current description:\n${text}\n`
+        : "There is no current description yet.",
+      "User instructions (apply them strictly):",
+      brief,
+      "",
+      "Return ONLY the resulting description text, with no preamble or quotes.",
+    ].filter(Boolean).join("\n")
+
+    const messages: ChatMessageItem[] = [
+      { role: "user", content: promptText },
+    ]
+    let result = ""
+
+    await chatService.sendStream(
+      defaultLlmId,
+      messages,
+      (token) => {
+        result += token
+        onChange(maxLength ? result.slice(0, maxLength) : result)
+      },
+      () => { setMetaRunning(false); setMetaOpen(false) },
+      () => { setMetaRunning(false) },
+    )
+  }
+
   const hasLlm = !!defaultLlmId
   const hasText = !!text.trim()
   const hasContext = !!(title?.trim() || entityType?.trim())
   const charCount = text.length
   const expandDisabled = !!maxLength && charCount >= maxLength * 0.9
+  const metaSupported = !!onMetaPromptChange
 
   function isActionDisabled(action: ActionDef): boolean {
     if (activeAction) return true
@@ -192,6 +259,24 @@ function SmartDescriptionComponent({
                 </button>
               )
             })}
+            {metaSupported && (
+              <button
+                type="button"
+                title={t("forms.smartDescription.metaPromptTooltip")}
+                onClick={() => setMetaOpen(true)}
+                disabled={!!activeAction}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
+                  "border border-violet-500/40 text-violet-600 dark:text-violet-300",
+                  "hover:border-violet-500/60 hover:bg-violet-500/10",
+                  "disabled:opacity-40 disabled:cursor-not-allowed",
+                  (metaPrompt?.trim()) && "bg-violet-500/5",
+                )}
+              >
+                <IconWand className="size-3.5" />
+                {t("forms.smartDescription.metaPrompt")}
+              </button>
+            )}
           </div>
         ) : <div />}
         {maxLength != null && (
@@ -205,6 +290,67 @@ function SmartDescriptionComponent({
           </span>
         )}
       </div>
+
+      {metaSupported && (
+        <Sheet open={metaOpen} onOpenChange={(o) => !metaRunning && setMetaOpen(o)}>
+          <SheetContent
+            side="right"
+            className="flex w-full flex-col gap-0 p-0 sm:max-w-xl"
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+              metaTextareaRef.current?.focus();
+            }}
+          >
+            <SheetHeader className="border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <IconWand className="size-4 text-violet-500" />
+                {t("forms.smartDescription.metaPromptTitle")}
+              </SheetTitle>
+              <SheetDescription>
+                {t("forms.smartDescription.metaPromptDescription")}
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-auto p-4">
+              <Textarea
+                ref={metaTextareaRef}
+                value={metaDraft}
+                onChange={(e) => setMetaDraft(e.target.value)}
+                placeholder={t("forms.smartDescription.metaPromptPlaceholder")}
+                className="min-h-70 flex-1 resize-none"
+                disabled={metaRunning}
+              />
+              <p className="shrink-0 text-xs text-muted-foreground">
+                {t("forms.smartDescription.metaPromptHint")}
+              </p>
+            </div>
+
+            <SheetFooter className="flex-row justify-end gap-2 border-t bg-background p-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setMetaOpen(false)}
+                disabled={metaRunning}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleMetaPromptRun}
+                disabled={metaRunning || !metaDraft.trim() || !defaultLlmId}
+                className="gap-2"
+              >
+                {metaRunning ? (
+                  <IconLoader2 className="size-4 animate-spin" />
+                ) : (
+                  <IconSparkles className="size-4" />
+                )}
+                {t("forms.smartDescription.metaPromptGenerate")}
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }

@@ -1,0 +1,22 @@
+databaseChangeLog:
+  # Stores the user-authored meta-prompt that the SmartDescription
+  # "Help me write" modal uses to (re)generate the description column.
+  # Persisting it lets users iterate on the brief without re-typing.
+  - changeSet:
+      id: v2026.2.5-add-custom-tool-description-meta-prompt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: custom_tool
+        - not:
+            - columnExists:
+                tableName: custom_tool
+                columnName: descriptionMetaPrompt
+      changes:
+        - addColumn:
+            tableName: custom_tool
+            columns:
+              - column:
+                  name: descriptionMetaPrompt
+                  type: longtext
