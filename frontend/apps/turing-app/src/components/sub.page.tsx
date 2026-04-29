@@ -5,8 +5,12 @@ import { SidebarInset, SidebarProvider } from "./ui/sidebar";
 
 interface NavMainItem {
   title: string;
-  url: string;
+  /** Navigable URL fragment. When omitted *and* `children` is set, the item
+   *  is rendered as a SidebarGroupLabel heading the children — useful for
+   *  grouping related sub-pages without introducing a clickable parent. */
+  url?: string;
   icon?: React.ElementType;
+  children?: NavMainItem[];
 }
 
 interface NavCountItem {
