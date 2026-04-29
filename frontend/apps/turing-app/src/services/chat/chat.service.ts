@@ -249,6 +249,7 @@ export class TurChatService {
     onToken: (token: string) => void,
     onDone: () => void,
     onError: (error: Error) => void,
+    options?: { conversationId?: string; flowId?: string },
   ): Promise<void> {
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/ai-agent/${agentId}/chat`;
@@ -267,7 +268,12 @@ export class TurChatService {
         method: "POST",
         headers,
         credentials: "include",
-        body: JSON.stringify({ llmInstanceId, messages }),
+        body: JSON.stringify({
+          llmInstanceId,
+          messages,
+          conversationId: options?.conversationId,
+          flowId: options?.flowId,
+        }),
       });
 
       if (!response.ok) {
@@ -339,5 +345,22 @@ export class TurChatService {
       { params: { llmInstanceId } },
     );
     return response.data;
+  }
+
+  /**
+   * Drops the runtime state of a chat flow for the given conversation. The
+   * next message restarts the flow at the START node.
+   *
+   * @returns true when a row was deleted, false when there was none.
+   */
+  async resetAgentFlowState(
+    agentId: string,
+    flowId: string,
+    conversationId: string,
+  ): Promise<boolean> {
+    const response = await axios.delete<boolean>(`/v2/ai-agent/${agentId}/chat-flow-state`, {
+      params: { flowId, conversationId },
+    });
+    return response.data === true;
   }
 }

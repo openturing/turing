@@ -17,12 +17,36 @@ import {
   type Node,
   type NodeMouseHandler,
 } from "@xyflow/react";
-import { IconDownload, IconEye, IconSitemap } from "@tabler/icons-react";
+import { IconBolt, IconDeviceFloppy, IconDownload, IconEye, IconSettings, IconSitemap, IconUpload } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "@viglet/viglet-design-system";
 
+import { ROUTES } from "@/app/routes.const";
+import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SectionCard } from "@/components/ui/section-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  CHAT_FLOW_GUARDRAIL_METHODS,
+  CHAT_FLOW_TRIGGER_MODES,
+  type TurChatFlow,
+  type TurChatFlowGuardrailMethod,
+  type TurChatFlowTriggerMode,
+} from "@/models/agent/chat-flow.model";
+import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 
 import { ChatPreview } from "./components/chat-preview";
 import { FlowProperties } from "./components/flow-properties";
@@ -31,11 +55,15 @@ import { nodeTypes } from "./components/flow-nodes";
 import type { FlowNodeData, FlowNodeType } from "./types";
 
 /**
- * Chat Flow builder — visual editor for Spring AI conversation flows. Produces a JSON
- * representation of the authored graph that the backend Advisor can execute step by step.
+ * Chat Flow editor — visual builder for Spring AI conversation flows scoped
+ * to a single AI agent. The graph (nodes + edges) is serialized into the
+ * persisted {@link TurChatFlow} entity so the Phase B advisor can replay it
+ * as a state machine.
  *
- * @since 2026.2.4
+ * @since 2026.2.5
  */
+
+const turChatFlowService = new TurChatFlowService();
 
 const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   start: "START",
@@ -64,14 +92,75 @@ const INITIAL_NODES: Node<FlowNodeData>[] = [
 
 const INITIAL_EDGES: Edge[] = [];
 
-function ChatFlowInner() {
+interface SerializedFlow {
+  nodes: { id: string; type?: string; position: { x: number; y: number }; data: FlowNodeData }[];
+  edges: { id: string; source: string; target: string; sourceHandle?: string | null; targetHandle?: string | null; label?: string | null }[];
+}
+
+function serializeGraph(nodes: Node<FlowNodeData>[], edges: Edge[]): string {
+  const payload: SerializedFlow = {
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: n.data,
+    })),
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+      targetHandle: e.targetHandle,
+      label: typeof e.label === "string" ? e.label : null,
+    })),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+function deserializeGraph(json: string | null | undefined): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
+  if (!json?.trim()) {
+    return { nodes: INITIAL_NODES, edges: INITIAL_EDGES };
+  }
+  try {
+    const parsed = JSON.parse(json) as Partial<SerializedFlow>;
+    const nodes = (parsed.nodes ?? []).map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: n.data,
+    })) as Node<FlowNodeData>[];
+    const edges = (parsed.edges ?? []).map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? null,
+      targetHandle: e.targetHandle ?? null,
+      label: e.label ?? undefined,
+      type: "smoothstep",
+    })) as Edge[];
+    return { nodes: nodes.length > 0 ? nodes : INITIAL_NODES, edges };
+  } catch {
+    return { nodes: INITIAL_NODES, edges: INITIAL_EDGES };
+  }
+}
+
+interface InnerProps {
+  agentId: string;
+  flow: TurChatFlow;
+  isNew: boolean;
+}
+
+function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const { zoom } = useViewport();
   const zoomPercent = Math.round((zoom / INITIAL_ZOOM) * 100);
   const { setOpen } = useSidebar();
   const autoCollapsedRef = useRef(false);
+  const listUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
 
   /* Auto-collapse the AI Agent's internal sidebar on first render only: the canvas needs the
      extra horizontal space. The ref guard prevents re-collapsing after the user reopens the
@@ -83,10 +172,22 @@ function ChatFlowInner() {
     setOpen(false);
   }, [setOpen]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(INITIAL_NODES);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(INITIAL_EDGES);
+  const initialGraph = deserializeGraph(flow.definitionJson);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<FlowNodeData>>(initialGraph.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initialGraph.edges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [name, setName] = useState(flow.name ?? "");
+  const [description, setDescription] = useState(flow.description ?? "");
+  const [guardrailMethod, setGuardrailMethod] = useState<TurChatFlowGuardrailMethod>(
+    flow.guardrailMethod ?? "HEURISTIC",
+  );
+  const [triggerDescription, setTriggerDescription] = useState(flow.triggerDescription ?? "");
+  const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
+    flow.triggerMode ?? "ONCE",
+  );
+  const [open, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const onConnect = useCallback(
     (params: Connection) =>
@@ -138,102 +239,404 @@ function ChatFlowInner() {
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
 
-  const exportJson = useCallback(() => {
+  const onSave = useCallback(async () => {
+    if (!name.trim()) {
+      toast.error(t("chatFlow.errors.nameRequired"));
+      return;
+    }
+    setSaving(true);
+    const payload: TurChatFlow = {
+      ...flow,
+      name: name.trim(),
+      description: description.trim() || null,
+      definitionJson: serializeGraph(nodes, edges),
+      enabled: flow.enabled ?? 1,
+      guardrailMethod,
+      triggerDescription: triggerDescription.trim() || null,
+      triggerMode,
+    };
+    try {
+      if (isNew) {
+        const created = await turChatFlowService.create(agentId, payload);
+        toast.success(t("chatFlow.saved", { name: created.name }));
+      } else {
+        const updated = await turChatFlowService.update(agentId, payload);
+        toast.success(t("chatFlow.updated", { name: updated.name }));
+      }
+      navigate(listUrl);
+    } catch (error) {
+      console.error("Chat flow save failed", error);
+      toast.error(t("chatFlow.notSaved", { name: payload.name }));
+    } finally {
+      setSaving(false);
+    }
+  }, [name, description, guardrailMethod, triggerDescription, triggerMode, nodes, edges, flow, isNew, agentId, listUrl, navigate, t]);
+
+  const onExport = useCallback(() => {
+    const flowName = name.trim() || flow.name || "chat-flow";
     const payload = {
-      nodes: nodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: n.data,
-      })),
-      edges: edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle,
-        label: e.label,
-      })),
+      name: flowName,
+      description: description.trim() || null,
+      guardrailMethod,
+      triggerDescription: triggerDescription.trim() || null,
+      triggerMode,
+      graph: {
+        nodes: nodes.map((n) => ({
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: n.data,
+        })),
+        edges: edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle,
+          targetHandle: e.targetHandle,
+          label: typeof e.label === "string" ? e.label : null,
+        })),
+      },
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "chat-flow.json";
+    const safeFileName = flowName.replace(/[^a-zA-Z0-9-_]+/g, "-").toLowerCase() || "chat-flow";
+    link.download = `${safeFileName}.chat-flow.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [nodes, edges]);
+  }, [name, description, guardrailMethod, triggerDescription, triggerMode, nodes, edges, flow.name]);
+
+  const onImportFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as {
+        name?: string;
+        description?: string | null;
+        guardrailMethod?: TurChatFlowGuardrailMethod;
+        triggerDescription?: string | null;
+        triggerMode?: TurChatFlowTriggerMode;
+        graph?: { nodes?: unknown; edges?: unknown };
+        // Back-compat: pre-Phase-B exports stored nodes/edges at the top level.
+        nodes?: unknown;
+        edges?: unknown;
+      };
+      const graphSource =
+        parsed.graph && (parsed.graph.nodes || parsed.graph.edges)
+          ? parsed.graph
+          : { nodes: parsed.nodes, edges: parsed.edges };
+      const reHydrated = deserializeGraph(JSON.stringify(graphSource));
+      setNodes(reHydrated.nodes);
+      setEdges(reHydrated.edges);
+      if (typeof parsed.name === "string") setName(parsed.name);
+      if (typeof parsed.description === "string") setDescription(parsed.description);
+      if (parsed.guardrailMethod && CHAT_FLOW_GUARDRAIL_METHODS.includes(parsed.guardrailMethod)) {
+        setGuardrailMethod(parsed.guardrailMethod);
+      }
+      if (typeof parsed.triggerDescription === "string") setTriggerDescription(parsed.triggerDescription);
+      if (parsed.triggerMode && CHAT_FLOW_TRIGGER_MODES.includes(parsed.triggerMode)) {
+        setTriggerMode(parsed.triggerMode);
+      }
+      toast.success(t("chatFlow.imported", { name: parsed.name ?? file.name }));
+    } catch (error) {
+      console.error("Chat flow import failed", error);
+      toast.error(t("chatFlow.importFailed"));
+    }
+  }, [setNodes, setEdges, t]);
+
+  const onImportClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const onDelete = useCallback(async () => {
+    try {
+      if (await turChatFlowService.delete(agentId, flow)) {
+        toast.success(t("chatFlow.deleted", { name: flow.name }));
+        navigate(listUrl);
+      } else {
+        toast.error(t("chatFlow.notDeleted", { name: flow.name }));
+      }
+    } catch (error) {
+      console.error("Chat flow delete failed", error);
+      toast.error(t("chatFlow.notDeleted", { name: flow.name }));
+    }
+    setDialogOpen(false);
+  }, [agentId, flow, listUrl, navigate, t]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <SubPageHeader
         icon={IconSitemap}
-        feature={t("aiAgent.chatFlow.title")}
-        name={t("aiAgent.chatFlow.title")}
-        description={t("aiAgent.chatFlow.description")}
+        feature={t("chatFlow.title")}
+        name={flow.name ?? t("chatFlow.newInstance")}
+        description={t("chatFlow.description")}
+        urlBase={listUrl}
+        onDelete={isNew ? undefined : onDelete}
+        open={isNew ? undefined : open}
+        setOpen={isNew ? undefined : setDialogOpen}
       >
         <SubPageHeader.Action
-          label={t("chatFlow.actions.exportJson")}
-          icon={IconDownload}
-          onClick={exportJson}
+          label={saving ? t("chatFlow.actions.saving") : t("chatFlow.actions.save")}
+          icon={IconDeviceFloppy}
+          onClick={onSave}
+          disabled={saving}
         />
         <SubPageHeader.Action
           label={t("chatFlow.actions.preview")}
           icon={IconEye}
-          onClick={() => setPreviewOpen((open) => !open)}
+          onClick={() => setPreviewOpen((openPreview) => !openPreview)}
+        />
+        <SubPageHeader.Action
+          label={t("chatFlow.actions.exportJson")}
+          icon={IconDownload}
+          onClick={onExport}
+        />
+        <SubPageHeader.Action
+          label={t("chatFlow.actions.importJson")}
+          icon={IconUpload}
+          onClick={onImportClick}
         />
       </SubPageHeader>
 
-      <div className="flex flex-1 overflow-hidden">
-        <FlowSidebar />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        aria-label={t("chatFlow.actions.importJson")}
+        title={t("chatFlow.actions.importJson")}
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            void onImportFile(file);
+          }
+          // Reset so the same file can be re-imported.
+          event.target.value = "";
+        }}
+      />
 
-        <div
-          ref={wrapperRef}
-          role="application"
-          aria-label={t("chatFlow.title")}
-          className="relative flex-1"
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-        >
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            defaultEdgeOptions={{ type: "smoothstep" }}
-            defaultViewport={INITIAL_VIEWPORT}
-            fitViewOptions={{ minZoom: INITIAL_ZOOM, maxZoom: INITIAL_ZOOM }}
-            proOptions={{ hideAttribution: true }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-            <Controls showInteractive={false} />
-            <MiniMap pannable zoomable className="bg-background!" />
-          </ReactFlow>
-          <div className="pointer-events-none absolute right-3 top-3 rounded-md border bg-background/90 px-2 py-1 text-xs font-medium tabular-nums shadow-sm">
-            {t("chatFlow.zoom")}: {zoomPercent}%
+      <Tabs defaultValue="settings" className="flex flex-1 min-h-0 flex-col">
+        <TabsList className="mx-4 lg:mx-6 mb-3 self-start">
+          <TabsTrigger value="settings">{t("chatFlow.tabs.settings")}</TabsTrigger>
+          <TabsTrigger value="diagram">{t("chatFlow.tabs.diagram")}</TabsTrigger>
+        </TabsList>
+
+        {/* ─── Tab 1 — Settings (form) ─── */}
+        <TabsContent value="settings" className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-4 lg:px-6 py-2 grid gap-6 lg:grid-cols-2 max-w-7xl">
+            {/* ── Card: General ── */}
+            <SectionCard variant="blue">
+              <SectionCard.Header
+                icon={IconSettings}
+                title={t("chatFlow.sections.general.title")}
+                description={t("chatFlow.sections.general.description")}
+              />
+              <SectionCard.Content>
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <Label htmlFor="chat-flow-name" className="text-xs font-medium text-muted-foreground">
+                      {t("chatFlow.fields.name")}
+                    </Label>
+                    <Input
+                      id="chat-flow-name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder={t("chatFlow.fields.namePlaceholder")}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="chat-flow-description" className="text-xs font-medium text-muted-foreground">
+                      {t("chatFlow.fields.description")}
+                    </Label>
+                    <Input
+                      id="chat-flow-description"
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                      placeholder={t("chatFlow.fields.descriptionPlaceholder")}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="chat-flow-guardrail" className="text-xs font-medium text-muted-foreground">
+                      {t("chatFlow.fields.guardrailMethod")}
+                    </Label>
+                    <Select
+                      value={guardrailMethod}
+                      onValueChange={(value) => setGuardrailMethod(value as TurChatFlowGuardrailMethod)}
+                    >
+                      <SelectTrigger id="chat-flow-guardrail" className="mt-1 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CHAT_FLOW_GUARDRAIL_METHODS.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {t(`chatFlow.guardrailMethods.${method}.label`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                      {t(`chatFlow.guardrailMethods.${guardrailMethod}.description`)}
+                    </p>
+                  </div>
+                </div>
+              </SectionCard.Content>
+            </SectionCard>
+
+            {/* ── Card: Auto-trigger ── */}
+            <SectionCard variant="violet">
+              <SectionCard.Header
+                icon={IconBolt}
+                title={t("chatFlow.sections.trigger.title")}
+                description={t("chatFlow.sections.trigger.description")}
+              />
+              <SectionCard.Content>
+                <div className="flex flex-col gap-5">
+                  <div>
+                    <Label htmlFor="chat-flow-trigger-description" className="text-xs font-medium text-muted-foreground">
+                      {t("chatFlow.fields.triggerDescription")}
+                    </Label>
+                    <Textarea
+                      id="chat-flow-trigger-description"
+                      value={triggerDescription}
+                      onChange={(event) => setTriggerDescription(event.target.value)}
+                      placeholder={t("chatFlow.fields.triggerDescriptionPlaceholder")}
+                      rows={4}
+                      className="mt-1"
+                    />
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                      {t("chatFlow.fields.triggerDescriptionHint")}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="chat-flow-trigger-mode" className="text-xs font-medium text-muted-foreground">
+                      {t("chatFlow.fields.triggerMode")}
+                    </Label>
+                    <Select
+                      value={triggerMode}
+                      onValueChange={(value) => setTriggerMode(value as TurChatFlowTriggerMode)}
+                    >
+                      <SelectTrigger id="chat-flow-trigger-mode" className="mt-1 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CHAT_FLOW_TRIGGER_MODES.map((mode) => (
+                          <SelectItem key={mode} value={mode}>
+                            {t(`chatFlow.triggerModes.${mode}.label`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                      {t(`chatFlow.triggerModes.${triggerMode}.description`)}
+                    </p>
+                  </div>
+                </div>
+              </SectionCard.Content>
+            </SectionCard>
           </div>
-        </div>
+        </TabsContent>
 
-        <FlowProperties
-          node={selectedNode}
-          onChange={updateNodeData}
-          onClose={() => setSelectedNodeId(null)}
-        />
+        {/* ─── Tab 2 — Diagram (canvas) ─── */}
+        {/* `forceMount` keeps React Flow mounted while the user is on Settings,
+             so node positions and unsaved drag-state aren't lost on tab switch. */}
+        <TabsContent
+          value="diagram"
+          forceMount
+          className="flex-1 min-h-0 overflow-hidden data-[state=inactive]:hidden"
+        >
+          <div className="flex h-full overflow-hidden">
+            <FlowSidebar />
 
-        {previewOpen && <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />}
-      </div>
+            <div
+              ref={wrapperRef}
+              role="application"
+              aria-label={t("chatFlow.title")}
+              className="relative flex-1"
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+            >
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
+                defaultEdgeOptions={{ type: "smoothstep" }}
+                defaultViewport={INITIAL_VIEWPORT}
+                fitViewOptions={{ minZoom: INITIAL_ZOOM, maxZoom: INITIAL_ZOOM }}
+                proOptions={{ hideAttribution: true }}
+              >
+                <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+                <Controls showInteractive={false} />
+                <MiniMap pannable zoomable className="bg-background!" />
+              </ReactFlow>
+              <div className="pointer-events-none absolute right-3 top-3 rounded-md border bg-background/90 px-2 py-1 text-xs font-medium tabular-nums shadow-sm">
+                {t("chatFlow.zoom")}: {zoomPercent}%
+              </div>
+            </div>
+
+            <FlowProperties
+              node={selectedNode}
+              onChange={updateNodeData}
+              onClose={() => setSelectedNodeId(null)}
+            />
+
+            {previewOpen && <ChatPreview nodes={nodes} edges={edges} onClose={() => setPreviewOpen(false)} />}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
 export default function ChatFlowPage() {
+  const { id: agentId, flowId } = useParams() as { id: string; flowId: string };
+  const { t } = useTranslation();
+  const [flow, setFlow] = useState<TurChatFlow>();
+  const [error, setError] = useState<string | null>(null);
+  const isNew = flowId === "new";
+  const tryAgainUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow/${flowId}`;
+
+  useEffect(() => {
+    if (!agentId) return;
+    if (isNew) {
+      // Leave `id` undefined — the backend's UUID generator preserves any
+      // pre-assigned id (including ""), so we must omit it on creation.
+      setFlow({
+        name: "",
+        description: "",
+        definitionJson: "",
+        enabled: 1,
+        guardrailMethod: "HEURISTIC",
+        triggerDescription: "",
+        triggerMode: "ONCE",
+      });
+      return;
+    }
+    turChatFlowService
+      .get(agentId, flowId)
+      .then(setFlow)
+      .catch(() => setError(t("common.connectionError", { resource: t("chatFlow.title").toLowerCase() })));
+  }, [agentId, flowId, isNew, t]);
+
   return (
-    <ReactFlowProvider>
-      <ChatFlowInner />
-    </ReactFlowProvider>
+    <LoadProvider checkIsNotUndefined={flow} error={error} tryAgainUrl={tryAgainUrl}>
+      <ReactFlowProvider>
+        {flow && (
+          /* `key` forces a remount whenever the flow changes (after a save the
+             URL flips from `new` to the persisted UUID). Without it, the inner
+             `useState` initial values from the previous render would stick. */
+          <ChatFlowInner key={flowId} agentId={agentId} flow={flow} isNew={isNew} />
+        )}
+      </ReactFlowProvider>
+    </LoadProvider>
   );
 }

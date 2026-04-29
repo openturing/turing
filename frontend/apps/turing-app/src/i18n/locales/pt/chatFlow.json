@@ -1,9 +1,85 @@
 {
   "chatFlow": {
     "title": "Chat Flow Builder",
+    "description": "Desenhe fluxos de conversa que o seu agente de IA deverá seguir.",
+    "tabs": {
+      "settings": "Configurações",
+      "diagram": "Diagrama"
+    },
+    "sections": {
+      "general": {
+        "title": "Geral",
+        "description": "Identidade e estratégia de contenção em tempo de execução."
+      },
+      "trigger": {
+        "title": "Disparo automático",
+        "description": "Quando e com que frequência o roteador LLM deve ativar este fluxo."
+      }
+    },
+    "newInstance": "Novo Chat Flow",
+    "blankTitle": "Nenhum chat flow ainda",
+    "blankDescription": "Crie seu primeiro chat flow para roteirizar como o agente de IA deve conduzir uma conversa.",
+    "saved": "Chat flow \"{{name}}\" foi salvo.",
+    "updated": "Chat flow \"{{name}}\" foi atualizado.",
+    "notSaved": "Não foi possível salvar o chat flow \"{{name}}\".",
+    "deleted": "Chat flow \"{{name}}\" foi excluído.",
+    "notDeleted": "Não foi possível excluir o chat flow \"{{name}}\".",
+    "imported": "Chat flow \"{{name}}\" foi carregado — revise e salve para persistir.",
+    "importFailed": "Não foi possível importar o chat flow — o arquivo não é uma exportação válida.",
+    "fields": {
+      "name": "Nome",
+      "namePlaceholder": "ex.: Captura de lead",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Resumo opcional do que este fluxo faz.",
+      "guardrailMethod": "Método de Guard Rail",
+      "triggerDescription": "Condição de Disparo",
+      "triggerDescriptionPlaceholder": "ex.: Use este fluxo quando o usuário quiser agendar uma reunião ou perguntar sobre disponibilidade.",
+      "triggerDescriptionHint": "Descrição em linguagem natural que o roteador LLM usa para decidir se uma mensagem do usuário deve ativar este fluxo. Deixe em branco para desativar o disparo automático.",
+      "triggerMode": "Modo de Disparo"
+    },
+    "triggerModes": {
+      "ONCE": {
+        "label": "Uma vez por conversa",
+        "description": "Após o fluxo terminar, o roteador não vai disparar novamente nesta conversa."
+      },
+      "ALWAYS": {
+        "label": "Sempre re-disparar",
+        "description": "Sempre que a mensagem do usuário casar com a condição, o fluxo reinicia desde o primeiro passo."
+      }
+    },
+    "guardrailMethods": {
+      "HEURISTIC": {
+        "label": "Heurística",
+        "description": "Contrato no prompt por nó + avanço pela primeira aresta com heurística leve de aderência ao tópico. Sem chamadas extras à LLM."
+      },
+      "LLM_JUDGE": {
+        "label": "LLM como juiz",
+        "description": "Mesmo contrato no prompt mais uma segunda chamada à LLM após cada turno que decide se a resposta ficou no tópico, capturou valor válido e está pronta para avançar. Respostas fora do tópico são substituídas por uma mensagem de redirecionamento. ~200 tokens extras por turno."
+      },
+      "STRUCTURED_OUTPUT": {
+        "label": "Saída estruturada (uma chamada)",
+        "description": "Uma chamada à LLM por turno — o modelo retorna um JSON que junta a resposta para o usuário com os campos do veredito. Mesma contenção do modo \"LLM como juiz\", com menor latência e custo. Cai para a heurística quando o modelo não segue o contrato JSON."
+      }
+    },
+    "errors": {
+      "nameRequired": "Informe um nome para o chat flow antes de salvar."
+    },
     "actions": {
+      "save": "Salvar",
+      "saving": "Salvando…",
       "preview": "Pré-visualizar",
-      "exportJson": "Exportar JSON"
+      "exportJson": "Exportar JSON",
+      "importJson": "Importar JSON"
+    },
+    "selector": {
+      "label": "Chat Flow",
+      "auto": "Detecção automática",
+      "placeholder": "Escolha um fluxo"
+    },
+    "reset": {
+      "label": "Reiniciar fluxo",
+      "done": "Fluxo reiniciado — sua próxima mensagem começa no primeiro passo.",
+      "failed": "Não foi possível reiniciar o fluxo."
     },
     "zoom": "Zoom",
     "palette": {

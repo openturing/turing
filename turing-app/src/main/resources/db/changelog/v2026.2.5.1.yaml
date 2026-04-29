@@ -1,0 +1,124 @@
+databaseChangeLog:
+  # Phase A + B chat flow schema, in its final shape.
+  #
+  # This file consolidates everything that used to live in
+  # v2026.2.5.{1,2,3,4,5,6}.yaml. The old per-step files (which carried the
+  # column additions one-by-one and a couple of one-time data cleanups for
+  # dev-only bugs) are gone — this is what a fresh install runs.
+  #
+  # NOTE: do NOT edit existing changesets after they have run. Schema
+  # evolution must come in a NEW file.
+
+  - changeSet:
+      id: v2026.2.5-create-chat-flow-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_flow
+      changes:
+        - createTable:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: definitionJson
+                  type: longtext
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: VARCHAR(40)
+              - column:
+                  name: guardrailMethod
+                  type: VARCHAR(32)
+                  defaultValue: HEURISTIC
+                  constraints:
+                    nullable: false
+              - column:
+                  name: triggerDescription
+                  type: longtext
+              - column:
+                  name: triggerMode
+                  type: VARCHAR(16)
+                  defaultValue: ONCE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: chat_flow
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_chat_flow_agent
+            onDelete: CASCADE
+
+  - changeSet:
+      id: v2026.2.5-create-chat-flow-state-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: chat_flow_state
+      changes:
+        - createTable:
+            tableName: chat_flow_state
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: conversationId
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: flow_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currentNodeId
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: variablesJson
+                  type: longtext
+              - column:
+                  name: updatedAt
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: chat_flow_state
+            baseColumnNames: flow_id
+            referencedTableName: chat_flow
+            referencedColumnNames: id
+            constraintName: fk_chat_flow_state_flow
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: chat_flow_state
+            columnNames: conversationId, flow_id
+            constraintName: uq_chat_flow_state_conversation_flow

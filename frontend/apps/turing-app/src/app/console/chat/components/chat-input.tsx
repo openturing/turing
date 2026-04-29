@@ -36,6 +36,17 @@ export function ChatInput({ value, onChange, onSend, loading, disabled, placehol
 
   useEffect(() => { adjustHeight() }, [value, adjustHeight])
 
+  // Restore focus to the textarea when streaming finishes. The textarea is
+  // disabled while `loading` is true (browser drops focus), so without this
+  // the user has to click back into the input before typing the next turn.
+  const wasLoadingRef = useRef(loading)
+  useEffect(() => {
+    if (wasLoadingRef.current && !loading && !disabled) {
+      textareaRef.current?.focus()
+    }
+    wasLoadingRef.current = loading
+  }, [loading, disabled])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend() }
   }

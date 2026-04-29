@@ -9,6 +9,7 @@ import AIAgentToolsPage from "../console/ai-agent/tools/ai-agent.tools.page"
 import IntentListPage from "../console/intent/intent.list.page"
 import IntentPage from "../console/intent/intent.page"
 import IntentSettingsPage from "../console/intent/settings/intent.settings.page"
+import ChatFlowListPage from "../console/chat-flow/chat-flow.list.page"
 import ChatFlowPage from "../console/chat-flow/chat-flow.page"
 import { ROUTES } from "../routes.const"
 
@@ -32,7 +33,8 @@ export const AIAgentRoutes = (
             <Route path="llm" element={<AIAgentLlmPage />} />
             <Route path="mcp" element={<AIAgentMcpPage />} />
             <Route path="tools" element={<AIAgentToolsPage />} />
-            <Route path="chat-flow" element={<ChatFlowPage />} />
+            <Route path="chat-flow" element={<ChatFlowListPage />} />
+            <Route path="chat-flow/:flowId" element={<ChatFlowPage />} />
             <Route path="intent" element={<IntentListPage />} />
             <Route path="intent/:intentId" element={<IntentPage />}>
                 <Route index element={<RedirectToIntentSettings />} />

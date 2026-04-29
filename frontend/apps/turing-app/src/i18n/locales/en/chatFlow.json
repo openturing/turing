@@ -1,9 +1,85 @@
 {
   "chatFlow": {
     "title": "Chat Flow Builder",
+    "description": "Design conversational flows your AI agent will follow.",
+    "tabs": {
+      "settings": "Settings",
+      "diagram": "Diagram"
+    },
+    "sections": {
+      "general": {
+        "title": "General",
+        "description": "Identity and runtime guard rail strategy."
+      },
+      "trigger": {
+        "title": "Auto-trigger",
+        "description": "When and how often the LLM router should activate this flow."
+      }
+    },
+    "newInstance": "New Chat Flow",
+    "blankTitle": "No chat flows yet",
+    "blankDescription": "Create your first chat flow to script how your AI agent should drive a conversation.",
+    "saved": "Chat flow \"{{name}}\" was saved.",
+    "updated": "Chat flow \"{{name}}\" was updated.",
+    "notSaved": "Could not save chat flow \"{{name}}\".",
+    "deleted": "Chat flow \"{{name}}\" was deleted.",
+    "notDeleted": "Could not delete chat flow \"{{name}}\".",
+    "imported": "Chat flow \"{{name}}\" was loaded — review and save to persist.",
+    "importFailed": "Could not import chat flow — the file is not a valid export.",
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "e.g. Lead intake",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional summary of what this flow does.",
+      "guardrailMethod": "Guard Rail Method",
+      "triggerDescription": "Trigger Description",
+      "triggerDescriptionPlaceholder": "e.g. Use this flow when the user wants to schedule a meeting or asks about appointment availability.",
+      "triggerDescriptionHint": "Natural-language hint the LLM router uses to decide whether a user message should activate this flow. Leave blank to disable auto-trigger.",
+      "triggerMode": "Trigger Mode"
+    },
+    "triggerModes": {
+      "ONCE": {
+        "label": "Once per conversation",
+        "description": "After this flow ends, the router will not re-trigger it in the same conversation."
+      },
+      "ALWAYS": {
+        "label": "Always re-trigger",
+        "description": "Whenever the user message matches the trigger description, the flow restarts from its first step."
+      }
+    },
+    "guardrailMethods": {
+      "HEURISTIC": {
+        "label": "Heuristic",
+        "description": "Prompt-only contract per node + first-edge advance with a lightweight on-topic heuristic. No extra LLM calls."
+      },
+      "LLM_JUDGE": {
+        "label": "LLM as judge",
+        "description": "Same prompt contract plus a second LLM call after each turn that decides whether the reply stayed on topic, captured a valid value, and is ready to advance. Off-topic replies are replaced by a redirect message. ~200 extra tokens per turn."
+      },
+      "STRUCTURED_OUTPUT": {
+        "label": "Structured output (single call)",
+        "description": "One LLM call per turn — the model returns a JSON object that bundles the user-facing reply with the verdict fields. Same enforcement as LLM as judge, lower latency and cost. Falls back to heuristic when the model cannot follow the JSON contract."
+      }
+    },
+    "errors": {
+      "nameRequired": "Please give the chat flow a name before saving."
+    },
     "actions": {
+      "save": "Save",
+      "saving": "Saving…",
       "preview": "Preview",
-      "exportJson": "Export JSON"
+      "exportJson": "Export JSON",
+      "importJson": "Import JSON"
+    },
+    "selector": {
+      "label": "Chat Flow",
+      "auto": "Auto-detect",
+      "placeholder": "Pick a flow"
+    },
+    "reset": {
+      "label": "Restart flow",
+      "done": "Flow restarted — your next message starts at the first step.",
+      "failed": "Could not restart the flow."
     },
     "zoom": "Zoom",
     "palette": {

@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2016-2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ */
+package com.viglet.turing.persistence.model.agent;
+
+/**
+ * Controls how often the LLM router is allowed to auto-trigger a flow within
+ * the same conversation.
+ *
+ * @author Alexandre Oliveira
+ * @since 2026.2.5
+ */
+public enum TurChatFlowTriggerMode {
+
+    /** Auto-trigger at most once per conversation. After the flow reaches END,
+     *  the router will not pick it again for that conversation. */
+    ONCE,
+
+    /** Re-trigger the flow whenever the router decides the user message
+     *  matches the trigger description, even after a previous run. */
+    ALWAYS
+}

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -32,13 +33,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.genai.flow.ChatFlowGraph;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurLoggingToolCallback;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -75,22 +81,35 @@ public class TurAgentChatExecutor {
             If the user asks in a specific language, respond in that same language.
             """;
 
+    /**
+     * Sentinel value the front-end sends as {@code flowId} when the user
+     * picks "Sem fluxo" in the chat dropdown — the auto-trigger router must
+     * be skipped entirely.
+     */
+    public static final String FLOW_ID_NONE = "__none__";
+
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurNativeToolService nativeToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurLLMTokenUsageService tokenUsageService;
+    private final TurChatFlowRepository chatFlowRepository;
+    private final TurChatFlowEngineService chatFlowEngineService;
 
     public TurAgentChatExecutor(TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
-            TurLLMTokenUsageService tokenUsageService) {
+            TurLLMTokenUsageService tokenUsageService,
+            TurChatFlowRepository chatFlowRepository,
+            TurChatFlowEngineService chatFlowEngineService) {
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.tokenUsageService = tokenUsageService;
+        this.chatFlowRepository = chatFlowRepository;
+        this.chatFlowEngineService = chatFlowEngineService;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -114,10 +133,27 @@ public class TurAgentChatExecutor {
     }
 
     /**
+     * Run an agent-driven chat without a chat flow attached. Convenience
+     * wrapper kept for the SN site AI Mode (RAG) flow that doesn't use the
+     * Phase B engine.
+     */
+    public Flux<ChatResponse> execute(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            List<ChatMessageItem> history,
+            String systemPromptOverride) {
+        return execute(agent, llmInstance, history, systemPromptOverride, null, null);
+    }
+
+    /**
      * Run an agent-driven chat. The {@code systemPromptOverride}, when
      * provided, replaces the agent's own {@code TurAIAgent.getSystemPrompt()}.
      * Use this from RAG flows that need to embed retrieved chunks in the
      * system message.
+     *
+     * <p>When both {@code conversationId} and {@code flowId} are non-blank
+     * and the flow is reachable, the runtime engine augments the system
+     * prompt with the current node's contract and advances the persisted
+     * state after the LLM responds.
      *
      * @return a single-emission {@link Flux} carrying the assistant response
      *         (matches Spring AI's call-not-stream model so tool calling is
@@ -126,7 +162,9 @@ public class TurAgentChatExecutor {
     public Flux<ChatResponse> execute(TurAIAgent agent,
             TurLLMInstance llmInstance,
             List<ChatMessageItem> history,
-            String systemPromptOverride) {
+            String systemPromptOverride,
+            String conversationId,
+            String flowId) {
 
         TurGenAiLlmProvider provider = llmProviderFactory.getProvider(llmInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
@@ -143,11 +181,14 @@ public class TurAgentChatExecutor {
                 .internalToolExecutionEnabled(true)
                 .build();
 
-        String resolvedSystemPrompt = systemPromptOverride != null && !systemPromptOverride.isBlank()
-                ? systemPromptOverride
-                : (agent.getSystemPrompt() != null && !agent.getSystemPrompt().isBlank()
-                        ? agent.getSystemPrompt()
-                        : DEFAULT_SYSTEM_PROMPT);
+        String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
+        String lastUserMessageEarly = lastMessageOfRole(history, "user");
+        FlowContext flowContext = resolveFlowContext(agent, conversationId, flowId,
+                lastUserMessageEarly, chatModel);
+        String resolvedSystemPrompt = flowContext == null
+                ? baseSystemPrompt
+                : baseSystemPrompt + chatFlowEngineService.buildSystemPromptAddendum(
+                        flowContext.flow(), flowContext.state(), flowContext.graph());
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));
@@ -162,6 +203,8 @@ public class TurAgentChatExecutor {
 
         Prompt prompt = new Prompt(messages, chatOptions);
         String username = resolveUsername();
+        // Reuse the value already computed for the router; both paths need it.
+        final String lastUserMessage = lastUserMessageEarly;
 
         return Mono.fromCallable(() -> {
             log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
@@ -170,13 +213,26 @@ public class TurAgentChatExecutor {
 
             tokenUsageService.recordUsage(llmInstance, response, username);
 
-            String text = response.getResult() != null
+            String text = "";
+            if (response.getResult() != null
                     && response.getResult().getOutput() != null
-                    && response.getResult().getOutput().getText() != null
-                            ? response.getResult().getOutput().getText()
-                            : "";
+                    && response.getResult().getOutput().getText() != null) {
+                text = response.getResult().getOutput().getText();
+            }
             log.info("[AgentExec] Agent '{}' response: {} chars",
                     agent.getTitle(), text.length());
+
+            if (flowContext != null) {
+                var advance = chatFlowEngineService.advance(flowContext.flow(),
+                        flowContext.state(), flowContext.graph(),
+                        lastUserMessage, text, chatModel);
+                // LLM_JUDGE may rewrite the assistant text when it judges the
+                // reply off-topic; HEURISTIC always leaves the override null.
+                if (advance.assistantOverride() != null) {
+                    text = advance.assistantOverride();
+                }
+            }
+
             return new ChatResponse("assistant", text);
         })
                 .subscribeOn(Schedulers.boundedElastic())
@@ -184,6 +240,98 @@ public class TurAgentChatExecutor {
                         agent.getTitle(), err.getMessage(), err))
                 .filter(response -> !response.content().isEmpty())
                 .flux();
+    }
+
+    private static String resolveSystemPrompt(TurAIAgent agent, String systemPromptOverride) {
+        if (systemPromptOverride != null && !systemPromptOverride.isBlank()) {
+            return systemPromptOverride;
+        }
+        if (agent.getSystemPrompt() != null && !agent.getSystemPrompt().isBlank()) {
+            return agent.getSystemPrompt();
+        }
+        return DEFAULT_SYSTEM_PROMPT;
+    }
+
+    /**
+     * Resolves which flow (if any) should govern this chat turn, with three
+     * paths:
+     *
+     * <ul>
+     *   <li>{@code flowId == FLOW_ID_NONE}: user explicitly opted out in the
+     *       dropdown → no flow runs and the router is skipped.</li>
+     *   <li>{@code flowId != null} and not blank: forced selection — used to
+     *       simulate a specific path. Loads the flow and inits state.</li>
+     *   <li>{@code flowId == null/blank}: auto mode — the engine's router
+     *       picks a flow based on each flow's {@code triggerDescription},
+     *       continues an in-progress flow if any, or returns no selection.</li>
+     * </ul>
+     *
+     * Returns null in every case where no flow should be applied.
+     */
+    private FlowContext resolveFlowContext(TurAIAgent agent,
+            String conversationId,
+            String flowId,
+            String lastUserMessage,
+            ChatModel routerModel) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return null;
+        }
+        if (FLOW_ID_NONE.equals(flowId)) {
+            return null;
+        }
+        if (flowId != null && !flowId.isBlank()) {
+            return resolveForcedFlow(agent, conversationId, flowId);
+        }
+        // Auto mode: ask the engine's router which flow (if any) fits.
+        return chatFlowEngineService
+                .selectActiveFlow(agent, conversationId, lastUserMessage, routerModel)
+                .map(s -> new FlowContext(s.flow(), s.graph(), s.state()))
+                .orElse(null);
+    }
+
+    private FlowContext resolveForcedFlow(TurAIAgent agent, String conversationId, String flowId) {
+        Optional<TurChatFlow> flowOpt = chatFlowRepository.findById(flowId);
+        if (flowOpt.isEmpty()) {
+            log.warn("[AgentExec] Chat flow '{}' not found", flowId);
+            return null;
+        }
+        TurChatFlow flow = flowOpt.get();
+        // Defense in depth: a flow only governs chats for its owning agent.
+        if (flow.getTurAIAgent() == null || !agent.getId().equals(flow.getTurAIAgent().getId())) {
+            log.warn("[AgentExec] Flow '{}' does not belong to agent '{}'", flowId, agent.getId());
+            return null;
+        }
+        if (flow.getEnabled() != 1) {
+            log.info("[AgentExec] Flow '{}' is disabled — ignoring", flowId);
+            return null;
+        }
+        Optional<ChatFlowGraph> graphOpt = chatFlowEngineService.parseGraph(flow);
+        if (graphOpt.isEmpty()) {
+            log.warn("[AgentExec] Flow '{}' has no parseable graph — ignoring", flowId);
+            return null;
+        }
+        Optional<TurChatFlowState> stateOpt = chatFlowEngineService.loadOrInitState(
+                conversationId, flow, graphOpt.get());
+        if (stateOpt.isEmpty()) {
+            log.warn("[AgentExec] Could not initialize flow state for '{}'/'{}'",
+                    conversationId, flowId);
+            return null;
+        }
+        return new FlowContext(flow, graphOpt.get(), stateOpt.get());
+    }
+
+    private static String lastMessageOfRole(List<ChatMessageItem> history, String role) {
+        for (int i = history.size() - 1; i >= 0; i--) {
+            ChatMessageItem item = history.get(i);
+            if (role.equals(item.role())) {
+                return item.content() == null ? "" : item.content();
+            }
+        }
+        return "";
+    }
+
+    /** Resolved per-turn flow runtime — group of values that always travel together. */
+    private record FlowContext(TurChatFlow flow, ChatFlowGraph graph, TurChatFlowState state) {
     }
 
     private static Set<String> parseNativeTools(String nativeTools) {

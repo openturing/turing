@@ -3,19 +3,25 @@ package com.viglet.turing.api.agent;
 import java.util.List;
 
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.llm.chat.TurLLMChatAPI;
 import com.viglet.turing.genai.TurAgentChatExecutor;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -41,20 +47,30 @@ public class TurAIAgentChatAPI {
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurAgentChatExecutor agentChatExecutor;
+    private final TurChatFlowRepository turChatFlowRepository;
+    private final TurChatFlowEngineService chatFlowEngineService;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
             TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
-            TurAgentChatExecutor agentChatExecutor) {
+            TurAgentChatExecutor agentChatExecutor,
+            TurChatFlowRepository turChatFlowRepository,
+            TurChatFlowEngineService chatFlowEngineService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.agentChatExecutor = agentChatExecutor;
+        this.turChatFlowRepository = turChatFlowRepository;
+        this.chatFlowEngineService = chatFlowEngineService;
     }
 
-    public record AgentChatRequest(String llmInstanceId, List<ChatMessageItem> messages) {
+    public record AgentChatRequest(
+            String llmInstanceId,
+            List<ChatMessageItem> messages,
+            String conversationId,
+            String flowId) {
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -96,8 +112,33 @@ public class TurAIAgentChatAPI {
         List<TurAgentChatExecutor.ChatMessageItem> mapped = request.messages().stream()
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(m.role(), m.content()))
                 .toList();
-        return agentChatExecutor.execute(agent, turLLMInstance, mapped, null)
+        return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
+                        request.conversationId(), request.flowId())
                 .map(r -> new ChatResponse(r.role(), r.content()));
+    }
+
+    /**
+     * Resets the runtime state of a chat flow for a given conversation. The
+     * next chat turn rebuilds the state at the START node, freeing the user
+     * from any guard rail enforcement that was anchored on the previous
+     * current node.
+     */
+    @Transactional
+    @DeleteMapping("/chat-flow-state")
+    public boolean resetFlowState(@PathVariable String agentId,
+            @RequestParam String flowId,
+            @RequestParam String conversationId) {
+
+        TurChatFlow flow = turChatFlowRepository.findById(flowId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat flow not found: " + flowId));
+
+        // Defense in depth: a flow may only be reset by the agent that owns it.
+        if (flow.getTurAIAgent() == null || !agentId.equals(flow.getTurAIAgent().getId())) {
+            throw new IllegalArgumentException(
+                    "Chat flow '" + flowId + "' does not belong to agent '" + agentId + "'");
+        }
+
+        return chatFlowEngineService.resetState(conversationId, flowId);
     }
 
     @GetMapping("/chat/context-info")

@@ -25,6 +25,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -56,6 +57,10 @@ class TurAIAgentChatAPITest {
     private TurGenAiLlmProvider provider;
     @Mock
     private com.viglet.turing.genai.TurAgentChatExecutor agentChatExecutor;
+    @Mock
+    private TurChatFlowRepository turChatFlowRepository;
+    @Mock
+    private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
 
     private TurAIAgentChatAPI api;
 
@@ -63,7 +68,8 @@ class TurAIAgentChatAPITest {
     void setUp() {
         api = new TurAIAgentChatAPI(
                 turAIAgentRepository, turLLMInstanceRepository, llmProviderFactory,
-                turSecretCryptoService, agentChatExecutor);
+                turSecretCryptoService, agentChatExecutor,
+                turChatFlowRepository, chatFlowEngineService);
     }
 
     @AfterEach
@@ -76,12 +82,14 @@ class TurAIAgentChatAPITest {
     @Test
     void shouldCreateAgentChatRequest() {
         var item = new TurAIAgentChatAPI.ChatMessageItem("user", "Hello");
-        var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item));
+        var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item), "conv-1", "flow-1");
 
         assertThat(request.llmInstanceId()).isEqualTo("llm-1");
         assertThat(request.messages()).hasSize(1);
         assertThat(request.messages().getFirst().role()).isEqualTo("user");
         assertThat(request.messages().getFirst().content()).isEqualTo("Hello");
+        assertThat(request.conversationId()).isEqualTo("conv-1");
+        assertThat(request.flowId()).isEqualTo("flow-1");
     }
 
     @Test
@@ -107,7 +115,7 @@ class TurAIAgentChatAPITest {
         when(turAIAgentRepository.findById("missing")).thenReturn(Optional.empty());
 
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
-                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")));
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
         assertThatThrownBy(() -> api.chat("missing", request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -122,7 +130,7 @@ class TurAIAgentChatAPITest {
         when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
 
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
-                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")));
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
         assertThatThrownBy(() -> api.chat("agent-1", request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -138,7 +146,7 @@ class TurAIAgentChatAPITest {
         when(turLLMInstanceRepository.findById("missing-llm")).thenReturn(Optional.empty());
 
         var request = new TurAIAgentChatAPI.AgentChatRequest("missing-llm",
-                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")));
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
         assertThatThrownBy(() -> api.chat("agent-1", request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -162,7 +170,7 @@ class TurAIAgentChatAPITest {
         when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(llmInstance));
 
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
-                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")));
+                List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
         assertThatThrownBy(() -> api.chat("agent-1", request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -287,8 +295,8 @@ class TurAIAgentChatAPITest {
     @Test
     void agentChatRequestShouldHaveCorrectEquality() {
         var item = new TurAIAgentChatAPI.ChatMessageItem("user", "Hello");
-        var r1 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item));
-        var r2 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item));
+        var r1 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item), null, null);
+        var r2 = new TurAIAgentChatAPI.AgentChatRequest("llm-1", List.of(item), null, null);
 
         assertThat(r1).isEqualTo(r2);
         assertThat(r1).hasSameHashCodeAs(r2);

@@ -14,10 +14,6 @@
       "intents": "Intents",
       "chatFlow": "Chat Flow"
     },
-    "chatFlow": {
-      "title": "Chat Flow",
-      "description": "Design conversational flows visually — drag nodes, wire steps, and export JSON for the Spring AI advisor."
-    },
     "settings": {
       "title": "Settings",
       "description": "General information, system prompt and status."

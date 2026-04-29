@@ -6,12 +6,22 @@ import "./chat-highlight.css"
 import { ROUTES } from "@/app/routes.const"
 import { BlankSlate } from "@/components/blank-slate"
 import { PageHeader } from "@/components/page-header"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
+import type { TurChatFlow } from "@/models/agent/chat-flow.model"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
+import { TurChatFlowService } from "@/services/agent/chat-flow.service"
 import type { ChatSession } from "@/services/chat/chat-session.service"
 import type { ChatMessageItem } from "@/services/chat/chat.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconMessageChatbot, IconRobot } from "@tabler/icons-react"
+import { IconMessageChatbot, IconRefresh, IconRobot } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
 import { CHAT_INITIAL_AGENT_KEY, CHAT_INITIAL_PROMPT_KEY, type ChatMessage, estimateTokens, generateId } from "./chat.types"
 import { ChatEmptyState } from "./components/chat-empty-state"
@@ -25,6 +35,12 @@ import { useLlmInstances } from "./hooks/use-llm-instances"
 
 const turAIAgentService = new TurAIAgentService()
 const turGlobalSettingsService = new TurGlobalSettingsService()
+const turChatFlowService = new TurChatFlowService()
+
+/** Sentinel: dropdown option that lets the backend's LLM router decide.
+ *  Selecting a specific flow forces it; there's no "no flow" override —
+ *  Auto-detect already falls through to free chat when no trigger matches. */
+const FLOW_AUTO = "__auto__"
 
 interface AgentTabState {
   messages: ChatMessage[]
@@ -44,6 +60,10 @@ export default function ChatPage() {
   const [agentsLoaded, setAgentsLoaded] = useState(false)
   const [defaultAgentId, setDefaultAgentId] = useState<string>("")
   const [agentStates, setAgentStates] = useState<Record<string, AgentTabState>>({})
+
+  // Per-agent: list of flows fetched on demand + the currently selected flow.
+  const [flowsByAgent, setFlowsByAgent] = useState<Record<string, TurChatFlow[]>>({})
+  const [selectedFlowByAgent, setSelectedFlowByAgent] = useState<Record<string, string>>({})
 
   // Agent tab ref
   const agentEndRef = useRef<HTMLDivElement>(null)
@@ -81,6 +101,25 @@ export default function ChatPage() {
   // Active agent (if on agent tab)
   const activeAgentId = activeTab.startsWith("agent:") ? activeTab.slice(6) : null
   const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null
+
+  // Lazily fetch the agent's flows the first time it becomes active.
+  useEffect(() => {
+    if (!activeAgentId || flowsByAgent[activeAgentId] !== undefined) return
+    turChatFlowService
+      .query(activeAgentId)
+      .then((list) => {
+        setFlowsByAgent((prev) => ({ ...prev, [activeAgentId]: list.filter((f) => f.enabled === 1) }))
+      })
+      .catch(() => {
+        setFlowsByAgent((prev) => ({ ...prev, [activeAgentId]: [] }))
+      })
+  }, [activeAgentId, flowsByAgent])
+
+  const activeFlows = activeAgentId ? flowsByAgent[activeAgentId] ?? [] : []
+  // Default to AUTO so the backend router picks a flow when its trigger
+  // description matches the user message. Users can override to a specific
+  // flow (force) or to NONE (skip the router entirely).
+  const selectedFlowId = activeAgentId ? selectedFlowByAgent[activeAgentId] ?? FLOW_AUTO : FLOW_AUTO
 
   // Once agents have loaded, pick the initial active tab.
   // Priority: agent forwarded from home page (sessionStorage) → global default → first agent.
@@ -128,6 +167,24 @@ export default function ChatPage() {
   }, [llmInstances])
 
   const { sessions, activeSessionId, setActiveSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(turChatService, getLlmTitle)
+
+  // Reset the runtime state of the currently selected flow for this
+  // conversation. Only meaningful when a *specific* flow is forced (not Auto)
+  // and a session is active. Declared *after* useChatSession so
+  // `activeSessionId` is in scope.
+  const isSpecificFlowSelected = selectedFlowId !== FLOW_AUTO
+  const canResetFlow = !!activeAgentId && isSpecificFlowSelected && !!activeSessionId
+
+  const handleResetFlow = useCallback(async () => {
+    if (!activeAgentId || !isSpecificFlowSelected || !activeSessionId) return
+    try {
+      await turChatService.resetAgentFlowState(activeAgentId, selectedFlowId, activeSessionId)
+      toast.success(t("chatFlow.reset.done"))
+    } catch (error) {
+      console.error("Reset flow state failed", error)
+      toast.error(t("chatFlow.reset.failed"))
+    }
+  }, [activeAgentId, isSpecificFlowSelected, selectedFlowId, activeSessionId, turChatService, t])
 
   useEffect(() => { loadSessions() }, [loadSessions])
 
@@ -188,6 +245,11 @@ export default function ChatPage() {
 
     const apiMessages: ChatMessageItem[] = updated.map(({ role, content }) => ({ role, content }))
     const agentTitle = agent.title
+    // Translate the dropdown sentinel into what the backend expects:
+    //   AUTO  → omit flowId so the LLM router decides
+    //   uuid  → forced selection
+    const flowSelection = selectedFlowByAgent[agentId] ?? FLOW_AUTO
+    const flowIdForSend = flowSelection === FLOW_AUTO ? undefined : flowSelection
 
     await turChatService.sendAgentStream(
       agentId,
@@ -233,8 +295,9 @@ export default function ChatPage() {
           }
         })
       },
+      { conversationId: activeSessionId ?? undefined, flowId: flowIdForSend },
     )
-  }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState])
+  }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState, selectedFlowByAgent, activeSessionId])
 
   const handleAgentSend = () => {
     if (!activeAgentId) return
@@ -391,7 +454,44 @@ export default function ChatPage() {
                   accentColor="violet"
                 />
                 <div className="flex items-center justify-between mt-2 gap-4">
-                  <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs text-muted-foreground shrink-0">{modelLabel}</span>
+                    {activeFlows.length > 0 && (
+                      <>
+                        <Select
+                          value={selectedFlowId}
+                          onValueChange={(value) => {
+                            setSelectedFlowByAgent((prev) => ({ ...prev, [activeAgentId]: value }))
+                          }}
+                        >
+                          <SelectTrigger className="h-7 text-xs w-44">
+                            <SelectValue placeholder={t("chatFlow.selector.placeholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={FLOW_AUTO}>{t("chatFlow.selector.auto")}</SelectItem>
+                            {activeFlows.map((flow) => (
+                              <SelectItem key={flow.id} value={flow.id ?? ""}>
+                                {flow.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {canResetFlow && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            title={t("chatFlow.reset.label")}
+                            aria-label={t("chatFlow.reset.label")}
+                            onClick={handleResetFlow}
+                          >
+                            <IconRefresh className="size-3.5" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                   {currentAgentState.messages.length > 0 && (
                     <ContextBar
                       tokens={agentContextUsage.tokens}
