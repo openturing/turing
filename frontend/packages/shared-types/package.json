@@ -1,6 +1,6 @@
 {
   "name": "@viglet/turing-shared-types",
-  "version": "2026.2.11",
+  "version": "2026.2.12",
   "private": true,
   "description": "Shared TypeScript types used by the Turing React SDK and the apps that consume it.",
   "main": "src/index.ts",

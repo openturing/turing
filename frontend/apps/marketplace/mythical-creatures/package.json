@@ -1,7 +1,7 @@
 {
   "name": "turing-example-mythical-creatures",
   "private": true,
-  "version": "2026.2.11",
+  "version": "2026.2.12",
   "type": "module",
   "scripts": {
     "dev": "vite",
