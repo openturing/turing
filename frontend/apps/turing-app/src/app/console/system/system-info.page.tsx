@@ -460,11 +460,11 @@ export default function SystemInfoPage() {
 
     return (
         <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize={60} minSize={30}>
+            <ResizablePanel defaultSize="60" minSize="30">
                 {mainContent}
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40} minSize={20} overflowHidden>
+            <ResizablePanel defaultSize="40" minSize="20" overflowHidden>
                 <Card className="h-full flex flex-col m-2 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                         <div className="flex items-center gap-2 min-w-0">

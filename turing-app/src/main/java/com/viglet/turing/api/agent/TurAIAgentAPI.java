@@ -100,6 +100,7 @@ public class TurAIAgentAPI {
             agentEdit.setDescription(turAIAgent.getDescription());
             agentEdit.setIcon(turAIAgent.getIcon());
             agentEdit.setSystemPrompt(turAIAgent.getSystemPrompt());
+            agentEdit.setSystemPromptMetaPrompt(turAIAgent.getSystemPromptMetaPrompt());
             agentEdit.setEnabled(turAIAgent.getEnabled());
             agentEdit.setNativeTools(turAIAgent.getNativeTools());
             agentEdit.setLlmInstances(resolveRelations(

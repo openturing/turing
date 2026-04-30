@@ -60,9 +60,9 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
 
     @Override
     public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state) {
-        // Layer 1 (the prompt-side contract) is identical to HEURISTIC; the
-        // judge only adds layer 2 inside `advance`.
-        return fallback.buildSystemPromptAddendum(node, state);
+        // Layer 1 (the prompt-side contract) is shared with every other strategy
+        // via ChatFlowOps; the judge only adds layer 2 inside `advance`.
+        return ChatFlowOps.buildBaseAddendum(node, state);
     }
 
     @Override
@@ -109,13 +109,22 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             return null;
         }
 
-        if (verdict.collectedValue() != null && !verdict.collectedValue().isBlank()
-                && node.outputVariable() != null && !node.outputVariable().isBlank()) {
+        boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
+        boolean hasCollected = verdict.collectedValue() != null && !verdict.collectedValue().isBlank();
+        if (hasCollected && hasOutputVar) {
             variables.put(node.outputVariable().trim(), verdict.collectedValue().trim());
         }
 
-        if (!verdict.readyToAdvance()) {
-            log.info("[LlmJudge] Stay on node '{}' (not ready to advance)", node.id());
+        // Re-check the validation rule: the judge sometimes marks ready_to_advance
+        // even when the collected value clearly fails the rule (e.g. "pizza" as
+        // a phone). Treat a rule mismatch as "stay on this step" — the next turn
+        // gets another shot.
+        boolean valid = !hasOutputVar
+                || (hasCollected
+                        && ChatFlowOps.valueMatchesRule(node.validationRule(), verdict.collectedValue().trim()));
+        if (!verdict.readyToAdvance() || !valid) {
+            log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={})",
+                    node.id(), verdict.readyToAdvance(), valid);
             ChatFlowOps.writeVariables(state, variables);
             return null;
         }

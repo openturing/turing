@@ -4,7 +4,7 @@
  * @since 2026.2.5
  */
 
-export type CustomToolPrimitive = "string" | "integer" | "number" | "boolean";
+export type CustomToolPrimitive = "string" | "integer" | "number" | "boolean" | "html" | "markdown" | "json";
 
 export interface CustomToolParameter {
   name: string;

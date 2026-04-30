@@ -194,6 +194,7 @@ export const AdminRoleForm: React.FC<Props> = ({ value, isNew }) => {
                                             placeholder={t("forms.adminRole.descPlaceholder")}
                                             title={form.watch("name")}
                                             entityType={t("admin.roles.title")}
+                                            enableMetaPrompt
                                         >
                                             <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                             <SmartDescription.Description>{t("forms.adminRole.descPlaceholder")}</SmartDescription.Description>

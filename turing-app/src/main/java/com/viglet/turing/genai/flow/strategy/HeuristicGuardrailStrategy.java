@@ -43,45 +43,16 @@ public class HeuristicGuardrailStrategy implements TurChatFlowGuardrailStrategy 
         // so the user can keep chatting freely with the agent. The captured
         // variables remain in the conversation history, so the LLM still has
         // context if the user follows up about them.
-        if ("end".equals(node.type())) {
+        String base = ChatFlowOps.buildBaseAddendum(node, state);
+        if (base.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n\n=== ACTIVE FLOW STEP: ")
-                .append(ChatFlowOps.safe(node.label()))
-                .append(" ===\n");
-        if (node.aiInstruction() != null && !node.aiInstruction().isBlank()) {
-            sb.append("Goal: ").append(node.aiInstruction().trim()).append('\n');
-        }
         if (node.outputVariable() != null && !node.outputVariable().isBlank()) {
-            sb.append("Collect: ").append(node.outputVariable().trim()).append('\n');
+            return base + "- Do not advance until a valid "
+                    + node.outputVariable().trim()
+                    + " has been collected.\n";
         }
-        if (node.validationRule() != null && !node.validationRule().isBlank()
-                && !"none".equalsIgnoreCase(node.validationRule())) {
-            sb.append("Validate the collected value as: ")
-                    .append(node.validationRule().trim()).append('\n');
-        }
-        Map<String, String> variables = ChatFlowOps.readVariables(state);
-        if (!variables.isEmpty()) {
-            sb.append("Already collected: ").append(variables).append('\n');
-        }
-        sb.append("""
-
-                Hard rules:
-                - Stay strictly on the goal above. Do not answer off-topic questions.
-                - Accept short, bare answers as valid replies. If you asked for a name and the
-                  user replies with just "Alexandre", that IS the name — acknowledge it and
-                  move on. The same applies to emails, phone numbers, dates, etc. Never ask the
-                  same question again when the user already supplied a value, even briefly.
-                - If the user deviates, briefly redirect them back to this step.
-                - Reply only in the language the user used.
-                """);
-        if (node.outputVariable() != null && !node.outputVariable().isBlank()) {
-            sb.append("- Do not advance until a valid ")
-                    .append(node.outputVariable().trim())
-                    .append(" has been collected.\n");
-        }
-        return sb.toString();
+        return base;
     }
 
     @Override

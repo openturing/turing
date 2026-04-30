@@ -1,5 +1,6 @@
 import axios from "axios";
-import type { TurIntent } from "@/models/intent/intent.model";
+import type { TurIntent, IntentGeneration } from "@/models/intent/intent.model";
+import type { AiAuthoringRequest, AiAuthoringResponse } from "@/models/ai-authoring/ai-authoring.model";
 
 /**
  * Agent-scoped intent service. Every endpoint is nested under
@@ -32,5 +33,15 @@ export class TurIntentService {
   async delete(agentId: string, intent: TurIntent): Promise<boolean> {
     const response = await axios.delete(`/ai-agent/${agentId}/intent/${intent.id}`);
     return response.status === 200;
+  }
+  async aiChat(
+    agentId: string,
+    request: AiAuthoringRequest<IntentGeneration>,
+  ): Promise<AiAuthoringResponse<IntentGeneration>> {
+    const response = await axios.post<AiAuthoringResponse<IntentGeneration>>(
+      `/ai-agent/${agentId}/intent/chat`,
+      request,
+    );
+    return response.data;
   }
 }

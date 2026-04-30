@@ -61,6 +61,70 @@ public final class ChatFlowOps {
         // utility class — not instantiable
     }
 
+    // ─────────────────────────── System-prompt building ───────────────────────────
+
+    /**
+     * Base system-prompt addendum every guardrail strategy needs: an active-step
+     * header, the node's goal / collect / validation / already-collected
+     * variables, and the conversational HARD RULES that all strategies enforce.
+     * <p>
+     * Strategies append their strategy-specific tail (the heuristic adds a hint
+     * about validation; the structured-output strategy adds the JSON contract).
+     * Returns an empty string when the node is terminal — once the flow ended,
+     * the agent should chat freely.
+     */
+    public static String buildBaseAddendum(ChatFlowNode node, TurChatFlowState state) {
+        if (node == null || "end".equals(node.type())) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n\n=== ACTIVE FLOW STEP: ")
+                .append(safe(node.label()))
+                .append(" ===\n");
+        if (node.aiInstruction() != null && !node.aiInstruction().isBlank()) {
+            sb.append("Goal: ").append(node.aiInstruction().trim()).append('\n');
+        }
+        if (node.outputVariable() != null && !node.outputVariable().isBlank()) {
+            sb.append("Collect: ").append(node.outputVariable().trim()).append('\n');
+        }
+        if (node.validationRule() != null && !node.validationRule().isBlank()
+                && !"none".equalsIgnoreCase(node.validationRule())) {
+            sb.append("Validate the collected value as: ")
+                    .append(node.validationRule().trim()).append('\n');
+        }
+        Map<String, String> variables = readVariables(state);
+        if (!variables.isEmpty()) {
+            sb.append("Already collected: ").append(variables).append('\n');
+        }
+        sb.append(HARD_RULES);
+        return sb.toString();
+    }
+
+    /**
+     * Conversational rules every guardrail strategy enforces. Kept in a
+     * single place so wording fixes (e.g. politeness ≠ abandonment, no
+     * improvising the next step) propagate to all three strategies at once.
+     */
+    private static final String HARD_RULES = """
+
+            Hard rules (the Goal above is non-negotiable):
+            - Ask EXACTLY the question implied by Goal. Do NOT improvise the next
+              step ahead of time, do NOT volunteer information not in Goal, do NOT
+              try to be helpful by jumping to a later question. One step at a time.
+            - Stay strictly on Goal. If the user deviates, briefly redirect them
+              back to this step inside your reply.
+            - Accept short, bare answers as valid. If you asked for a name and the
+              user replies with just "Alexandre", that IS the name — acknowledge
+              it and move on. The same applies to emails, phone numbers, dates,
+              etc. Never ask the same question again when the user already
+              supplied a value, even briefly.
+            - Politeness markers in isolation — "obrigado", "valeu", "ok",
+              "thanks", "thank you", "got it" — are NEVER abandonment; they
+              acknowledge the previous message. Treat them as on-topic and
+              continue from where you were.
+            - Reply ONLY in the language the user used.
+            """;
+
     // ─────────────────────────── Graph navigation ───────────────────────────
 
     /** Returns the node currently active in the conversation, if resolvable. */
@@ -180,6 +244,28 @@ public final class ChatFlowOps {
         }
         var matcher = pattern.matcher(userMessage);
         return matcher.find() ? matcher.group() : null;
+    }
+
+    /**
+     * Whether {@code value} satisfies {@code validationRule}. {@code null}
+     * or blank rules (or {@code "none"}) accept any non-empty value. The LLM
+     * strategies call this AFTER the model returns a verdict, to override
+     * {@code ready_to_advance} when the model was too permissive (e.g.
+     * accepting "pizza" as a phone number).
+     */
+    public static boolean valueMatchesRule(String validationRule, String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        if (validationRule == null || validationRule.isBlank()
+                || "none".equalsIgnoreCase(validationRule)) {
+            return true;
+        }
+        Pattern pattern = VALIDATION_PATTERNS.get(validationRule.trim().toLowerCase());
+        if (pattern == null) {
+            return true;
+        }
+        return pattern.matcher(value).find();
     }
 
     /**

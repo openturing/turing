@@ -175,6 +175,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
                               maxLength={500}
                               title={form.watch("title")}
                               entityType={t("mcp.title")}
+                              enableMetaPrompt
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

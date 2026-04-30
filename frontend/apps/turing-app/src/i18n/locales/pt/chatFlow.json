@@ -132,6 +132,33 @@
       "bot": "Assistente",
       "user": "Usuário",
       "footer": "A pré-visualização percorre o fluxo seguindo a primeira aresta de saída de cada nó. Ferramentas e LLMs não são executados."
+    },
+    "aiChat": {
+      "breadcrumb": "Criar com IA",
+      "panelTitle": "Autoria com IA",
+      "panelSubtitle": "Descreva a conversa e eu monto o fluxo",
+      "placeholder": "ex.: Crie um fluxo de reserva de hotel: pergunte a cidade de destino, datas de check-in/out e número de hóspedes, valide cada valor, depois chame uma função para verificar disponibilidade e termine com um resumo de confirmação.",
+      "empty": "Comece descrevendo a conversa que quer roteirizar. Vou adicionando nós, ligando ramificações e escolhendo guard rails conforme conversamos.",
+      "untitled": "Fluxo sem nome",
+      "tipTitle": "Conte o que seu bot deve fazer",
+      "tipDesc": "Descreva o objetivo, as perguntas, o que validar e quaisquer consultas externas. Vou construir um fluxo com início/fim, perguntas de IA, condições e chamadas de função.",
+      "metaTitle": "Metadados do fluxo",
+      "metaDesc": "Roteamento e configuração de execução deste fluxo.",
+      "guardrail": "Guard rail",
+      "triggerMode": "Modo de disparo",
+      "enabled": "Ativo",
+      "nodeCount": "Nós",
+      "triggerDescription": "Condição de disparo",
+      "no": "Não",
+      "yes": "Sim",
+      "graphTitle": "Passos do fluxo",
+      "graphDesc": "Pré-visualização ordenada dos nós e suas ramificações. O editor visual abre após salvar.",
+      "nameRequired": "Informe um nome para o chat flow antes de salvar.",
+      "emptyFlow": "Adicione pelo menos um passo antes de salvar.",
+      "saved": "Chat flow \"{{name}}\" foi salvo.",
+      "saveFailed": "Não foi possível salvar o chat flow.",
+      "saving": "Salvando…",
+      "saveAndOpen": "Salvar e abrir no editor"
     }
   }
 }

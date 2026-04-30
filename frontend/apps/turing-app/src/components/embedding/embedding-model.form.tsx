@@ -176,6 +176,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                               maxLength={500}
                               title={form.watch("modelName")}
                               entityType={t("embeddingModel.title")}
+                              enableMetaPrompt
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

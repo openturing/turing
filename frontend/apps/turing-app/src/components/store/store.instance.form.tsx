@@ -376,6 +376,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               maxLength={500}
                               title={form.watch("title")}
                               entityType={t("store.title")}
+                              enableMetaPrompt
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

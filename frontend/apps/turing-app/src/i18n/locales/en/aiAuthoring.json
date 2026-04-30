@@ -1,0 +1,11 @@
+{
+  "aiAuthoring": {
+    "createWithAi": "Create with AI",
+    "send": "Send",
+    "sendHint": "Enter to send, Shift+Enter for newline",
+    "thinking": "Thinking…",
+    "empty": "Start the conversation to populate the form.",
+    "expand": "Open AI panel",
+    "collapse": "Close AI panel"
+  }
+}

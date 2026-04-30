@@ -51,6 +51,10 @@ public class TurAIAgent implements Serializable {
     @Column(name = "system_prompt")
     private String systemPrompt;
 
+    @Lob
+    @Column(name = "systemPromptMetaPrompt")
+    private String systemPromptMetaPrompt;
+
     @Column(nullable = false)
     private int enabled;
 

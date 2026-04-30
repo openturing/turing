@@ -12,6 +12,13 @@
     "settings": {
       "title": "Configurações",
       "description": "Informações gerais, ações (prompts) e status."
+    },
+    "aiChat": {
+      "breadcrumb": "Criar com IA",
+      "panelTitle": "Autoria com IA",
+      "panelSubtitle": "Descreva a intenção que vou preencher o formulário",
+      "placeholder": "ex.: Crie uma intenção para um chat de matrícula da universidade, com ações rápidas como 'Cursos disponíveis', 'Como me inscrever', 'Valores das mensalidades'.",
+      "empty": "Comece descrevendo para que serve esta intenção. O formulário à esquerda vai sendo preenchido conforme conversamos."
     }
   }
 }

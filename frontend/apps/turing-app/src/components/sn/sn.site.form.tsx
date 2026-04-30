@@ -208,6 +208,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
                               maxLength={500}
                               title={form.watch("name")}
                               entityType={t("sn.title")}
+                              enableMetaPrompt
                             >
                               <SmartDescription.Label>{t("forms.snSiteForm.descLabel")}</SmartDescription.Label>
                               <SmartDescription.Description>

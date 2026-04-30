@@ -176,6 +176,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                               maxLength={500}
                               title={form.watch("title")}
                               entityType={t("se.title")}
+                              enableMetaPrompt
                             >
                               <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                               <SmartDescription.Description>

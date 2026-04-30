@@ -20,6 +20,13 @@ public interface TurIntentMapper {
     TurIntent toEntity(TurIntentDto dto);
     List<TurIntentDto> toDtoList(List<TurIntent> entities);
 
+    /**
+     * Copy editable fields from {@code source} into {@code target}. The
+     * primary key and the parent agent are intentionally ignored so a
+     * naive PUT (where the frontend doesn't echo back {@code turAIAgent})
+     * doesn't null out the FK and orphan the intent.
+     */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "turAIAgent", ignore = true)
     void updateEntity(TurIntent source, @MappingTarget TurIntent target);
 }

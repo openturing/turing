@@ -48,11 +48,11 @@ import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
 import com.viglet.turing.genai.tool.TurRagSearchToolService;
-import com.viglet.turing.genai.tool.TurToolDescriptionCallback;
-import com.viglet.turing.genai.tool.TurToolDescriptionService;
+import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurIntegrationMonitoringToolService;
 import com.viglet.turing.genai.tool.TurLoggingToolService;
 import com.viglet.turing.genai.tool.TurSystemInfoToolService;
+import com.viglet.turing.genai.tool.TurIconifyToolService;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -113,10 +113,11 @@ public class TurLLMChatAPI {
     private final TurDateTimeToolService dateTimeToolService;
     private final TurRagSearchToolService ragSearchToolService;
     private final TurLLMTokenUsageService tokenUsageService;
-    private final TurToolDescriptionService toolDescriptionService;
+    private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurLoggingToolService loggingToolService;
     private final TurIntegrationMonitoringToolService integrationMonitoringToolService;
     private final TurSystemInfoToolService systemInfoToolService;
+    private final TurIconifyToolService iconifyToolService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
@@ -129,10 +130,11 @@ public class TurLLMChatAPI {
             TurDateTimeToolService dateTimeToolService,
             TurRagSearchToolService ragSearchToolService,
             TurLLMTokenUsageService tokenUsageService,
-            TurToolDescriptionService toolDescriptionService,
+            TurToolCallbackPipeline toolCallbackPipeline,
             TurLoggingToolService loggingToolService,
             TurIntegrationMonitoringToolService integrationMonitoringToolService,
-            TurSystemInfoToolService systemInfoToolService) {
+            TurSystemInfoToolService systemInfoToolService,
+            TurIconifyToolService iconifyToolService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -144,10 +146,11 @@ public class TurLLMChatAPI {
         this.dateTimeToolService = dateTimeToolService;
         this.ragSearchToolService = ragSearchToolService;
         this.tokenUsageService = tokenUsageService;
-        this.toolDescriptionService = toolDescriptionService;
+        this.toolCallbackPipeline = toolCallbackPipeline;
         this.loggingToolService = loggingToolService;
         this.integrationMonitoringToolService = integrationMonitoringToolService;
         this.systemInfoToolService = systemInfoToolService;
+        this.iconifyToolService = iconifyToolService;
     }
 
     public record ChatRequest(List<ChatMessageItem> messages) {
@@ -219,17 +222,17 @@ public class TurLLMChatAPI {
             java.util.List<Object> toolObjects = new java.util.ArrayList<>(java.util.List.of(
                     webCrawlerToolService, weatherToolService, financeToolService,
                     codeInterpreterToolService, imageSearchToolService, dateTimeToolService,
-                    loggingToolService, integrationMonitoringToolService, systemInfoToolService));
+                    loggingToolService, integrationMonitoringToolService, systemInfoToolService,
+                    iconifyToolService));
             if (ragSearchToolService.isAvailable()) {
                 toolObjects.add(ragSearchToolService);
             }
 
-            ToolCallback[] toolCallbacks = TurToolDescriptionCallback.wrap(
+            ToolCallback[] toolCallbacks = toolCallbackPipeline.decorate(
                     MethodToolCallbackProvider.builder()
                             .toolObjects(toolObjects.toArray())
                             .build()
-                            .getToolCallbacks(),
-                    toolDescriptionService);
+                            .getToolCallbacks());
 
             log.info("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
                     toolCallbacks.length, id, ragSearchToolService.isAvailable());

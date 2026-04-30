@@ -231,6 +231,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                             placeholder={t("forms.snMerge.mergeDescPlaceholder")}
                                             maxLength={500}
                                             entityType="Merge Provider"
+                                            enableMetaPrompt
                                         >
                                             <SmartDescription.Label>{t("forms.snMerge.mergeDescription")}</SmartDescription.Label>
                                             <SmartDescription.Description>

@@ -192,6 +192,7 @@ export const AdminGroupForm: React.FC<Props> = ({ value, isNew, onDelete, open, 
                                             placeholder={t("forms.adminGroup.descPlaceholder")}
                                             title={form.watch("name")}
                                             entityType={t("admin.groups.title")}
+                                            enableMetaPrompt
                                         >
                                             <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                             <SmartDescription.Description>{t("forms.adminGroup.descPlaceholder")}</SmartDescription.Description>

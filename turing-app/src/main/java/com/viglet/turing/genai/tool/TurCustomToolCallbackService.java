@@ -189,18 +189,83 @@ public class TurCustomToolCallbackService {
     }
 
     /**
+     * Strategy for the formats the chat UI knows how to render specially.
+     * For each, we (a) wrap the Groovy output in a markdown code fence (or
+     * leave it bare for {@code MARKDOWN} — markdown IS the default chat
+     * format), and (b) augment the tool description with an instruction
+     * telling the LLM to relay the output VERBATIM so the wrapper survives.
+     */
+    private enum RichReturn {
+        /** Iframe sandbox renderer ({@code SandboxPlayer}). */
+        HTML("html", """
+
+
+                IMPORTANT: This tool returns HTML wrapped in a ```html fenced code block. \
+                When the user asks for the result, return the tool's output VERBATIM, \
+                INCLUDING the opening and closing ``` fences. Do NOT translate, \
+                summarize, or rephrase. The chat UI renders it in a sandboxed iframe \
+                — the fence is what triggers that rendering."""),
+        /** Default markdown renderer (react-markdown + remark-gfm). No fence — markdown is the native format. */
+        MARKDOWN(null, """
+
+
+                IMPORTANT: This tool returns markdown-formatted text (headings, lists, \
+                tables, links, etc.). Return the output VERBATIM. Do NOT translate, \
+                summarize, or change the formatting. The chat UI renders markdown natively."""),
+        /** Highlighted code block via rehype-highlight. */
+        JSON("json", """
+
+
+                IMPORTANT: This tool returns JSON wrapped in a ```json fenced code block. \
+                Return the tool's output VERBATIM, INCLUDING the opening and closing \
+                ``` fences. Do NOT translate, summarize, or rephrase. The chat UI \
+                renders it as a highlighted JSON block.""");
+
+        /** Markdown info-string for the fence; null = no fence. */
+        final String fenceLanguage;
+        final String descriptionHint;
+
+        RichReturn(String fenceLanguage, String descriptionHint) {
+            this.fenceLanguage = fenceLanguage;
+            this.descriptionHint = descriptionHint;
+        }
+
+        String wrap(String result) {
+            return fenceLanguage == null
+                    ? result
+                    : "```" + fenceLanguage + "\n" + result + "\n```";
+        }
+
+        static RichReturn from(String returnType) {
+            if (returnType == null) return null;
+            return switch (returnType.toLowerCase()) {
+                case "html" -> HTML;
+                case "markdown" -> MARKDOWN;
+                case "json" -> JSON;
+                default -> null;
+            };
+        }
+    }
+
+    /**
      * Spring AI ToolCallback adapter for a single TurCustomTool. Outer
      * service is captured so we can reuse parser/cache logic.
      */
     final class GroovyToolCallback implements ToolCallback {
         private final TurCustomTool tool;
         private final ToolDefinition definition;
+        private final RichReturn richReturn;
 
         GroovyToolCallback(TurCustomTool tool) {
             this.tool = tool;
+            this.richReturn = RichReturn.from(tool.getReturnType());
+            String description = tool.getLlmDescription() == null ? "" : tool.getLlmDescription();
+            if (richReturn != null) {
+                description = description + richReturn.descriptionHint;
+            }
             this.definition = new DefaultToolDefinition(
                     sanitizeName(tool.getTitle()),
-                    tool.getLlmDescription() == null ? "" : tool.getLlmDescription(),
+                    description,
                     buildInputSchema(tool));
         }
 
@@ -217,7 +282,8 @@ public class TurCustomToolCallbackService {
         @Override
         public String call(String toolInput) {
             try {
-                return executeGroovy(tool, toolInput);
+                String result = executeGroovy(tool, toolInput);
+                return richReturn != null ? richReturn.wrap(result) : result;
             } catch (Exception e) {
                 log.error("[CustomTool] '{}' failed: {}", tool.getTitle(), e.getMessage(), e);
                 return "Error executing tool: " + e.getMessage();

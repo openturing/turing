@@ -29,6 +29,7 @@ import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
+import { DialogDelete } from "../dialog.delete"
 import { StickyPageHeader } from "../sticky-page-header"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientButton } from "../ui/gradient-button"
@@ -50,6 +51,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
     defaultValues: value,
   })
   const navigate = useNavigate()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
@@ -88,18 +90,49 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
   }
 
   function addAction() {
+    /* Leave the id undefined so {@code TurAssignableUuidGenerator} on the
+       backend assigns a fresh UUID. Sending "" instead would be preserved
+       verbatim and the second new action collides with the first. */
     append({
-      id: "",
+      id: undefined as unknown as string,
       label: "",
       prompt: "",
       sortOrder: fields.length,
     } as TurIntentAction)
   }
 
+  async function onDelete() {
+    try {
+      if (await turIntentService.delete(agentId, value)) {
+        toast.success(t("intent.deleted", { name: value.title }))
+        navigate(urlBase)
+      } else {
+        toast.error(t("intent.notDeleted", { name: value.title }))
+      }
+    } catch (error) {
+      console.error("Delete error", error)
+      toast.error(t("intent.notDeleted", { name: value.title }))
+    }
+    setDeleteOpen(false)
+  }
+
   async function onSubmit(intent: TurIntent) {
+    /* Strip empty/missing ids so the backend UUID generator kicks in.
+       Otherwise Hibernate persists `""` literally — second new action
+       collides on the PK, and the intent itself ends up with id=""
+       which makes its list-page link point back to the list. */
+    const { id: intentId, ...intentRest } = intent
+    const cleanIntent: TurIntent = (isNew && !intentId?.trim())
+      ? (intentRest as TurIntent)
+      : intent
     const payload: TurIntent = {
-      ...intent,
-      actions: intent.actions.map((a, i) => ({ ...a, sortOrder: i })),
+      ...cleanIntent,
+      actions: intent.actions.map((a, i) => {
+        const { id, ...rest } = a
+        return id?.trim()
+          ? { ...a, sortOrder: i }
+          : { ...rest, sortOrder: i } as TurIntentAction
+      }),
     }
     try {
       if (isNew) {
@@ -142,6 +175,15 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
               <IconX className="size-4" />
               {t("forms.formActions.cancel")}
             </GradientButton>
+            {!isNew && (
+              <DialogDelete
+                feature={t("intent.title")}
+                name={value.title}
+                onDelete={onDelete}
+                open={deleteOpen}
+                setOpen={setDeleteOpen}
+              />
+            )}
           </StickyPageHeader.Actions>
         </StickyPageHeader>
           <SectionCard variant="blue">
@@ -189,6 +231,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
                         maxLength={500}
                         title={form.watch("title")}
                         entityType={t("intent.title")}
+                        enableMetaPrompt
                       >
                         <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                         <SmartDescription.Description>

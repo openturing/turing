@@ -188,6 +188,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                             placeholder={t("sn.customSort.descriptionPlaceholder")}
                                             maxLength={500}
                                             entityType="Custom Sort"
+                                            enableMetaPrompt
                                         >
                                             <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                             <SmartDescription.Description>

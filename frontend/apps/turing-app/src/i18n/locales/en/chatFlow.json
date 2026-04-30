@@ -132,6 +132,33 @@
       "bot": "Assistant",
       "user": "User",
       "footer": "Preview walks the flow following the first outgoing edge of each node. It does not execute tools or LLMs."
+    },
+    "aiChat": {
+      "breadcrumb": "Create with AI",
+      "panelTitle": "AI Authoring",
+      "panelSubtitle": "Describe the conversation and I'll wire the flow",
+      "placeholder": "e.g. Build a flow for booking a hotel: ask the user for the destination city, check-in/out dates, and number of guests, validate each value, then call a function to look up availability and end with a confirmation summary.",
+      "empty": "Start by describing the conversation you want to script. I'll add nodes, connect branches, and pick guard rails as we chat.",
+      "untitled": "Untitled flow",
+      "tipTitle": "Tell me what your bot should do",
+      "tipDesc": "Describe the goal, the questions to ask, what to validate, and any external lookups. I'll build a flow with start/end, AI questions, conditions, and function calls.",
+      "metaTitle": "Flow metadata",
+      "metaDesc": "Routing and runtime configuration for this flow.",
+      "guardrail": "Guard rail",
+      "triggerMode": "Trigger mode",
+      "enabled": "Enabled",
+      "nodeCount": "Nodes",
+      "triggerDescription": "Trigger description",
+      "no": "No",
+      "yes": "Yes",
+      "graphTitle": "Flow steps",
+      "graphDesc": "Ordered preview of nodes and their branches. The visual editor opens after Save.",
+      "nameRequired": "Please give the chat flow a name before saving.",
+      "emptyFlow": "Add at least one step before saving.",
+      "saved": "Chat flow \"{{name}}\" was saved.",
+      "saveFailed": "Could not save chat flow.",
+      "saving": "Saving…",
+      "saveAndOpen": "Save & Open in Editor"
     }
   }
 }

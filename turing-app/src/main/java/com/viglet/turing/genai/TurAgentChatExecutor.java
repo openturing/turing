@@ -38,8 +38,8 @@ import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
-import com.viglet.turing.genai.tool.TurLoggingToolCallback;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
+import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
@@ -94,6 +94,7 @@ public class TurAgentChatExecutor {
     private final TurNativeToolService nativeToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
     private final TurCustomToolCallbackService customToolCallbackService;
+    private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
@@ -103,6 +104,7 @@ public class TurAgentChatExecutor {
             TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
             TurCustomToolCallbackService customToolCallbackService,
+            TurToolCallbackPipeline toolCallbackPipeline,
             TurLLMTokenUsageService tokenUsageService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService) {
@@ -111,6 +113,7 @@ public class TurAgentChatExecutor {
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
         this.customToolCallbackService = customToolCallbackService;
+        this.toolCallbackPipeline = toolCallbackPipeline;
         this.tokenUsageService = tokenUsageService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
@@ -134,7 +137,7 @@ public class TurAgentChatExecutor {
         ToolCallback[] customCallbacks = agent.getCustomTools() == null || agent.getCustomTools().isEmpty()
                 ? new ToolCallback[0]
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
-        return TurLoggingToolCallback.wrap(
+        return toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));

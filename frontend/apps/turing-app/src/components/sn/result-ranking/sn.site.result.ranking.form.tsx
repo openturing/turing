@@ -146,6 +146,7 @@ export const SNSiteResultRankingForm: React.FC<Props> = ({ snSiteId, value, isNe
                           maxLength={500}
                           title={form.watch("name")}
                           entityType="Ranking Expression"
+                          enableMetaPrompt
                         >
                           <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                           <SmartDescription.Description>

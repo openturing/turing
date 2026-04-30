@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
-import com.viglet.turing.genai.tool.TurLoggingToolCallback;
+import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -75,6 +75,7 @@ public class TurLLMSemanticChatAPI {
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurDslToolService dslToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
+    private final TurToolCallbackPipeline toolCallbackPipeline;
     private final TurLLMTokenUsageService tokenUsageService;
 
     public TurLLMSemanticChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
@@ -82,12 +83,14 @@ public class TurLLMSemanticChatAPI {
             TurSecretCryptoService turSecretCryptoService,
             TurDslToolService dslToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
+            TurToolCallbackPipeline toolCallbackPipeline,
             TurLLMTokenUsageService tokenUsageService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.dslToolService = dslToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
+        this.toolCallbackPipeline = toolCallbackPipeline;
         this.tokenUsageService = tokenUsageService;
     }
 
@@ -124,7 +127,7 @@ public class TurLLMSemanticChatAPI {
 
         ToolCallback[] mcpCallbacks = mcpToolCallbackService.getToolCallbacks();
 
-        ToolCallback[] allCallbacks = TurLoggingToolCallback.wrap(
+        ToolCallback[] allCallbacks = toolCallbackPipeline.decorate(
                 Stream.concat(
                         Arrays.stream(semanticCallbacks),
                         Arrays.stream(mcpCallbacks)

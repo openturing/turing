@@ -1,4 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
+import { AiAuthoringTrigger } from "@/components/ai-authoring/ai-authoring-trigger";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
@@ -53,6 +54,7 @@ export default function ChatFlowListPage() {
           urlNew={`${baseUrl}/new`}
         />
       )}
+      <AiAuthoringTrigger to={`${baseUrl}/new/ai-chat`} />
     </LoadProvider>
   );
 }

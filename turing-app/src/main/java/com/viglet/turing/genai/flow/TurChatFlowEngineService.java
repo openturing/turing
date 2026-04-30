@@ -291,18 +291,30 @@ public class TurChatFlowEngineService {
         List<TurChatFlowState> existingStates = stateRepository
                 .findByConversationIdAndFlow_TurAIAgent_Id(conversationId, agent.getId());
 
-        // 1) Continuation
+        // 1) Continuation. We resume an in-progress state UNLESS it is a fresh,
+        // empty ALWAYS-mode state — those are most likely zombie rows left by a
+        // previous test session and would force the user to "re-enter" the flow
+        // from wherever it stalled. Fresh+empty+ALWAYS rows get dropped here so
+        // the router (step 3) can pick the right flow for the current message.
         for (TurChatFlowState state : existingStates) {
             Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
             if (graphOpt.isEmpty()) {
                 continue;
             }
             Optional<ChatFlowNode> currentOpt = graphOpt.get().nodeById(state.getCurrentNodeId());
-            if (currentOpt.isPresent() && !"end".equals(currentOpt.get().type())) {
-                log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
-                        state.getFlow().getId(), conversationId);
-                return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state));
+            if (currentOpt.isEmpty() || "end".equals(currentOpt.get().type())) {
+                continue;
             }
+            if (isStaleAlwaysState(state, currentOpt.get())) {
+                log.info("[FlowEngine] Dropping stale ALWAYS state on flow '{}' (no progress yet)",
+                        state.getFlow().getId());
+                stateRepository.delete(state);
+                stateRepository.flush();
+                continue;
+            }
+            log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
+                    state.getFlow().getId(), conversationId);
+            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state));
         }
 
         // 2) Build candidate list
@@ -365,6 +377,28 @@ public class TurChatFlowEngineService {
     }
 
     private record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
+    }
+
+    /**
+     * A state is "stale" when its flow runs in {@code ALWAYS} mode and no
+     * variables have been collected yet — a zombie row left over from an
+     * earlier test that aborted before user input. We drop these so the
+     * router can pick the right flow for the current message instead of
+     * silently resuming where the previous run stalled.
+     */
+    private static boolean isStaleAlwaysState(TurChatFlowState state, ChatFlowNode currentNode) {
+        if (state.getFlow() == null
+                || state.getFlow().getTriggerMode() != TurChatFlowTriggerMode.ALWAYS) {
+            return false;
+        }
+        if (currentNode == null || "end".equals(currentNode.type())) {
+            return false;
+        }
+        String json = state.getVariablesJson();
+        return json == null
+                || json.isBlank()
+                || "{}".equals(json.trim())
+                || ChatFlowOps.readVariablesJson(json).isEmpty();
     }
 
     private String askRouter(ChatModel routerModel,

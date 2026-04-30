@@ -134,6 +134,7 @@ export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                           maxLength={500}
                           title={form.watch("title")}
                           entityType={t("integration.title")}
+                          enableMetaPrompt
                         >
                           <SmartDescription.Label>{t("forms.integration.descLabel")}</SmartDescription.Label>
                           <SmartDescription.Description>

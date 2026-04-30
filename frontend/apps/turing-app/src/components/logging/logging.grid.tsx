@@ -387,11 +387,11 @@ export const LoggingGrid: React.FC<PropsWithChildren<Props>> = ({
             <div className="px-4">
                 {selectedTrace ? (
                     <ResizablePanelGroup orientation="horizontal" className="min-h-[calc(100vh-14rem)]">
-                        <ResizablePanel defaultSize={60} minSize={30}>
+                        <ResizablePanel defaultSize="60" minSize="30">
                             {gridContent}
                         </ResizablePanel>
                         <ResizableHandle withHandle />
-                        <ResizablePanel defaultSize={40} minSize={20}>
+                        <ResizablePanel defaultSize="40" minSize="20">
                             <Card className="h-full flex flex-col ml-2 overflow-hidden">
                                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                                     <div className="flex flex-col gap-1 min-w-0">

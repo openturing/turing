@@ -52,7 +52,7 @@ export const SNSiteSearchRuleDetails: React.FC<Props> = ({ form }) => {
                                 <SmartDescription
                                     value={field.value || ""} onChange={field.onChange}
                                     placeholder={t("sn.searchRule.descriptionPlaceholder")}
-                                    maxLength={500} entityType="Search Rule"
+                                    maxLength={500} entityType="Search Rule" enableMetaPrompt
                                 >
                                     <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                     <SmartDescription.Description>{t("sn.searchRule.descriptionDesc")}</SmartDescription.Description>

@@ -43,3 +43,62 @@ export interface TurChatFlow {
   triggerDescription?: string | null;
   triggerMode: TurChatFlowTriggerMode;
 }
+
+/* ─────────────────── AI Authoring shapes ─────────────────── */
+
+/**
+ * LLM-facing shape used by the Chat Flow AI Authoring chat. Mirrors
+ * the backend {@code ChatFlowGeneration} record. Decoupled from
+ * {@link TurChatFlow} so the LLM doesn't see / mutate the persistence
+ * fields — the AI Chat page composes the saved {@code TurChatFlow}
+ * (with {@code definitionJson} serialized from {@code nodes}+{@code edges})
+ * from this snapshot before saving.
+ *
+ * @since 2026.2.5
+ */
+export interface ChatFlowGeneration {
+  name: string;
+  description?: string | null;
+  guardrailMethod?: TurChatFlowGuardrailMethod | null;
+  triggerDescription?: string | null;
+  triggerMode?: TurChatFlowTriggerMode | null;
+  enabled?: number | null;
+  nodes: ChatFlowNodeGeneration[];
+  edges: ChatFlowEdgeGeneration[];
+}
+
+/** {@code "start" | "end" | "aiQuestion" | "condition" | "functionCall"} */
+export type ChatFlowNodeType =
+  | "start"
+  | "end"
+  | "aiQuestion"
+  | "condition"
+  | "functionCall";
+
+export interface ChatFlowNodeGeneration {
+  /** Stable, semantic id (e.g. "ask-name"). */
+  id: string;
+  type: ChatFlowNodeType;
+  label: string;
+  aiInstruction?: string | null;
+  /** aiQuestion only. */
+  outputVariable?: string | null;
+  /** aiQuestion only. */
+  validationRule?: string | null;
+  /** condition only. */
+  conditionExpression?: string | null;
+  /** functionCall only. */
+  toolSource?: "NATIVE" | "MCP" | null;
+  /** functionCall + NATIVE. */
+  functionName?: string | null;
+  /** functionCall + MCP. */
+  mcpServerId?: string | null;
+}
+
+export interface ChatFlowEdgeGeneration {
+  source: string;
+  target: string;
+  /** "yes" / "no" for condition branches; null otherwise. */
+  sourceHandle?: string | null;
+  label?: string | null;
+}

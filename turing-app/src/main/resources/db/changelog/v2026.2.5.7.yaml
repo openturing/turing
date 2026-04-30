@@ -1,0 +1,22 @@
+databaseChangeLog:
+  # Persisted brief for the SystemPromptEditor "Help me write" sheet on
+  # the AI Agent settings page. Optional — agents that never used the
+  # feature stay with NULL.
+  - changeSet:
+      id: v2026.2.5-add-aiagent-system-prompt-meta-prompt
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: systemPromptMetaPrompt
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: systemPromptMetaPrompt
+                  type: longtext

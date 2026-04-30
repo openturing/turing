@@ -141,6 +141,7 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, ope
                     placeholder={t("forms.token.descriptionPlaceholder")}
                     title={form.watch("title")}
                     entityType={t("apiToken.title")}
+                    enableMetaPrompt
                   >
                     <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                     <SmartDescription.Description>{t("forms.token.descriptionDesc")}</SmartDescription.Description>

@@ -28,6 +28,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.genai.authoring.AiAuthoringRequest;
+import com.viglet.turing.genai.authoring.AiAuthoringResponse;
+import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
+import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
@@ -56,15 +60,18 @@ public class TurChatFlowAPI {
     private final TurChatFlowMapper turChatFlowMapper;
     private final TurAIAgentRepository turAIAgentRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
+    private final ChatFlowAuthoringSkill chatFlowAuthoringSkill;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
             TurAIAgentRepository turAIAgentRepository,
-            TurChatFlowEngineService chatFlowEngineService) {
+            TurChatFlowEngineService chatFlowEngineService,
+            ChatFlowAuthoringSkill chatFlowAuthoringSkill) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
         this.chatFlowEngineService = chatFlowEngineService;
+        this.chatFlowAuthoringSkill = chatFlowAuthoringSkill;
     }
 
     private TurAIAgent loadAgent(String agentId) {
@@ -165,5 +172,29 @@ public class TurChatFlowAPI {
                     turChatFlowRepository.delete(id);
                     return true;
                 }).orElse(false);
+    }
+
+    /**
+     * AI Authoring chat for chat flows.
+     * <p>
+     * Routes to {@link ChatFlowAuthoringSkill#create} on the very first
+     * turn (no prior assistant messages, no graph yet) — that path uses a
+     * detailed system prompt that documents every node type, every
+     * type-specific field, edge wiring rules, and guardrail / trigger
+     * policies, then post-processes for layout + validation. Subsequent
+     * turns route to {@link ChatFlowAuthoringSkill#revise}, a slimmer
+     * prompt focused on incremental edits to the existing state.
+     */
+    @Operation(summary = "AI Authoring chat for a Chat Flow — first turn invokes the planning skill, "
+            + "subsequent turns do incremental edits.")
+    @PostMapping("/chat")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE", "AI_AGENT_EDIT" })
+    public AiAuthoringResponse<ChatFlowGeneration> turChatFlowChat(
+            @PathVariable String agentId,
+            @RequestBody AiAuthoringRequest<ChatFlowGeneration> request) {
+        loadAgent(agentId);
+        return ChatFlowAuthoringSkill.isFirstTurn(request)
+                ? chatFlowAuthoringSkill.create(request)
+                : chatFlowAuthoringSkill.revise(request);
     }
 }

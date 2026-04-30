@@ -257,7 +257,7 @@ export default function AssetPage() {
         ) : (
           <ResizablePanelGroup orientation="horizontal" className="rounded-lg border min-h-125">
             {/* File list panel */}
-            <ResizablePanel defaultSize={selectedAsset ? 55 : 100} minSize={35}>
+            <ResizablePanel defaultSize={selectedAsset ? "55" : "100"} minSize="35">
               <div className="h-full overflow-auto">
                 <Table>
                   <TableHeader>
@@ -324,7 +324,7 @@ export default function AssetPage() {
             {selectedAsset && (
               <>
                 <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={45} minSize={25}>
+                <ResizablePanel defaultSize="45" minSize="25">
                   <AssetPreviewPanel
                     asset={selectedAsset}
                     onClose={() => setSelectedAsset(null)}

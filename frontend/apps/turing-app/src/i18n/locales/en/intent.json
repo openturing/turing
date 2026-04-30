@@ -12,6 +12,13 @@
     "settings": {
       "title": "Settings",
       "description": "General information, actions (prompts), and status."
+    },
+    "aiChat": {
+      "breadcrumb": "Create with AI",
+      "panelTitle": "AI Authoring",
+      "panelSubtitle": "Describe the intent and I'll fill the form",
+      "placeholder": "e.g. Create an intent for a university enrollment chat with quick actions like 'Show available courses', 'How to apply', 'Tuition prices'.",
+      "empty": "Start by describing what this intent is for. The form on the left will fill in as we chat."
     }
   }
 }

@@ -26,10 +26,11 @@ import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
 import com.viglet.turing.genai.tool.TurWeatherToolService;
 import com.viglet.turing.genai.tool.TurRagSearchToolService;
+import com.viglet.turing.genai.tool.TurIconifyToolService;
 import com.viglet.turing.genai.tool.TurIntegrationMonitoringToolService;
 import com.viglet.turing.genai.tool.TurLoggingToolService;
 import com.viglet.turing.genai.tool.TurSystemInfoToolService;
-import com.viglet.turing.genai.tool.TurToolDescriptionService;
+import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurWebCrawlerToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -62,13 +63,15 @@ class TurLLMChatAPITest {
     @Mock
     private TurLLMTokenUsageService tokenUsageService;
     @Mock
-    private TurToolDescriptionService toolDescriptionService;
+    private TurToolCallbackPipeline toolCallbackPipeline;
     @Mock
     private TurLoggingToolService loggingToolService;
     @Mock
     private TurIntegrationMonitoringToolService integrationMonitoringToolService;
     @Mock
     private TurSystemInfoToolService systemInfoToolService;
+    @Mock
+    private TurIconifyToolService iconifyToolService;
     @Mock
     private TurGenAiLlmProvider provider;
 
@@ -81,9 +84,9 @@ class TurLLMChatAPITest {
                 webCrawlerToolService, weatherToolService, financeToolService,
                 codeInterpreterToolService, imageSearchToolService,
                 dateTimeToolService, ragSearchToolService,
-                tokenUsageService, toolDescriptionService,
+                tokenUsageService, toolCallbackPipeline,
                 loggingToolService, integrationMonitoringToolService,
-                systemInfoToolService);
+                systemInfoToolService, iconifyToolService);
     }
 
     // --- Record Tests ---

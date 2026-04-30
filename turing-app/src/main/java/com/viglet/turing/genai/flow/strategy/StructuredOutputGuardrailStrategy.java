@@ -52,71 +52,68 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
 
     @Override
     public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state) {
-        if ("end".equals(node.type())) {
+        // Shared base (active-step header + goal/collect/validation + already-collected
+        // variables + HARD RULES) lives in ChatFlowOps so wording fixes propagate to
+        // every strategy at once. We just bolt the JSON contract on top.
+        String base = ChatFlowOps.buildBaseAddendum(node, state);
+        if (base.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n\n=== ACTIVE FLOW STEP: ")
-                .append(ChatFlowOps.safe(node.label()))
-                .append(" ===\n");
-        if (node.aiInstruction() != null && !node.aiInstruction().isBlank()) {
-            sb.append("Goal: ").append(node.aiInstruction().trim()).append('\n');
-        }
-        if (node.outputVariable() != null && !node.outputVariable().isBlank()) {
-            sb.append("Collect: ").append(node.outputVariable().trim()).append('\n');
-        }
-        if (node.validationRule() != null && !node.validationRule().isBlank()
-                && !"none".equalsIgnoreCase(node.validationRule())) {
-            sb.append("Validate the collected value as: ")
-                    .append(node.validationRule().trim()).append('\n');
-        }
-        Map<String, String> variables = ChatFlowOps.readVariables(state);
-        if (!variables.isEmpty()) {
-            sb.append("Already collected: ").append(variables).append('\n');
-        }
-        sb.append("""
-
-                You MUST reply with a SINGLE JSON OBJECT on one line — nothing else, no
-                code fences, no prose around it. Schema:
-
-                {
-                  "reply": "<the message the user will see, written in their language>",
-                  "on_topic": <true|false>,
-                  "collected_value": "<value extracted from the user's last message, or null>",
-                  "ready_to_advance": <true|false>,
-                  "abandoned": <true|false>
-                }
-
-                Rules for each field:
-                - reply: friendly conversational message addressed to the user, in their
-                  language. Keep it natural — never mention internal terms like "step",
-                  "goal" or "output variable". Accept short bare answers ("Alexandre",
-                  "foo@bar.com") as valid replies and acknowledge them; never ask the same
-                  question twice when the user already supplied a value.
-                - on_topic: false ONLY when YOUR reply went off-goal. If the USER asked
-                  something off-goal but YOUR reply politely brought them back, that is
-                  on_topic=true.
-                - collected_value: extract a value of the requested kind. Be permissive
-                  about FORMAT — bare answers count, no need for a "my name is X" prefix.
-                  But be SMART about INTENT: conversational requests, intents, greetings,
-                  or commands like "quero me inscrever", "I want to subscribe", "ajuda",
-                  "olá", "hi", "yes please" are NEVER values — return null for those even
-                  when the step asks for a name. A name is a person's name; an email is an
-                  email address; a phone is a phone number. Do NOT conflate the user's
-                  intent with a value. When in doubt, return null and let the next turn
-                  decide.
-                - ready_to_advance: true when collected_value is non-null and (when a
-                  validation rule applies) matches the rule. For steps without an output
-                  variable, true when the goal is clearly addressed. NEVER true on the
-                  same turn where collected_value is null for a step that requires a value.
-                - abandoned: true ONLY when the user clearly wants to quit / cancel /
-                  skip ("desisto", "cancelar", "no thanks"). When true, write a graceful
-                  goodbye in `reply`.
-
-                Example: {"reply":"Prazer, Alexandre! Qual seu e-mail?","on_topic":true,"collected_value":"Alexandre","ready_to_advance":true,"abandoned":false}
-                """);
-        return sb.toString();
+        return base + JSON_CONTRACT;
     }
+
+    /**
+     * The JSON envelope the chat LLM must emit on every turn. The schema is
+     * the contract between the model and {@link #parseStructuredVerdict};
+     * keeping it in a constant makes the {@code @Override} above tiny and
+     * highlights that everything ABOVE this contract comes from the
+     * heuristic addendum (single source of truth for the conversational
+     * rules).
+     */
+    private static final String JSON_CONTRACT = """
+
+            You MUST reply with a SINGLE JSON OBJECT on one line — nothing else, no
+            code fences, no prose around it. Schema:
+
+            {
+              "reply": "<the message the user will see, written in their language>",
+              "on_topic": <true|false>,
+              "collected_value": "<value extracted from the user's last message, or null>",
+              "ready_to_advance": <true|false>,
+              "abandoned": <true|false>
+            }
+
+            Rules for each field:
+            - reply: friendly conversational message addressed to the user, in their
+              language. Keep it natural — never mention internal terms like "step",
+              "goal" or "output variable". Accept short bare answers ("Alexandre",
+              "foo@bar.com") as valid replies and acknowledge them.
+            - on_topic: false ONLY when YOUR reply went off-goal. If the USER asked
+              something off-goal but YOUR reply politely brought them back, that is
+              on_topic=true.
+            - collected_value: extract a value of the requested kind. Be permissive
+              about FORMAT — bare answers count, no need for a "my name is X" prefix.
+              But be SMART about INTENT: conversational requests, intents, greetings,
+              or commands like "quero me inscrever", "I want to subscribe", "ajuda",
+              "olá", "hi", "yes please" are NEVER values — return null for those even
+              when the step asks for a name. A name is a person's name; an email is an
+              email address; a phone is a phone number. Do NOT conflate the user's
+              intent with a value. When in doubt, return null and let the next turn
+              decide.
+            - ready_to_advance: true when collected_value is non-null and (when a
+              validation rule applies) matches the rule. For steps without an output
+              variable, true when the goal is clearly addressed. NEVER true on the
+              same turn where collected_value is null for a step that requires a value.
+            - abandoned: true ONLY when the user uses an EXPLICIT cancellation verb:
+              "cancelar", "desisto", "quero parar", "cancel", "stop", "quit", "nevermind",
+              "I give up". Politeness markers in isolation — "obrigado", "valeu", "ok",
+              "thanks", "thank you", "got it" — are NEVER abandonment; they acknowledge
+              the assistant's previous message. If the user just supplied a valid
+              collected_value, abandoned MUST be false. When in doubt, return false.
+              When abandoned is true, write a graceful goodbye in `reply`.
+
+            Example: {"reply":"Prazer, Alexandre! Qual seu e-mail?","on_topic":true,"collected_value":"Alexandre","ready_to_advance":true,"abandoned":false}
+            """;
 
     @Override
     public String advance(AdvanceContext ctx) {
@@ -144,13 +141,22 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
             return reply;
         }
 
-        if (verdict.collectedValue() != null && !verdict.collectedValue().isBlank()
-                && node.outputVariable() != null && !node.outputVariable().isBlank()) {
+        boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
+        boolean hasCollected = verdict.collectedValue() != null && !verdict.collectedValue().isBlank();
+        if (hasCollected && hasOutputVar) {
             variables.put(node.outputVariable().trim(), verdict.collectedValue().trim());
         }
 
-        if (!verdict.readyToAdvance()) {
-            log.info("[StructuredOutput] Stay on node '{}'", node.id());
+        // Trust-but-verify: gpt-4o-mini happily marks ready_to_advance=true even
+        // when collected_value flagrantly fails the validation rule (e.g. "pizza"
+        // as a phone). Re-check here so a single permissive verdict cannot push
+        // the flow past a required field.
+        boolean valid = !hasOutputVar
+                || (hasCollected
+                        && ChatFlowOps.valueMatchesRule(node.validationRule(), verdict.collectedValue().trim()));
+        if (!verdict.readyToAdvance() || !valid) {
+            log.info("[StructuredOutput] Stay on node '{}' (advance={}, valid={})",
+                    node.id(), verdict.readyToAdvance(), valid);
             ChatFlowOps.writeVariables(state, variables);
             return reply;
         }

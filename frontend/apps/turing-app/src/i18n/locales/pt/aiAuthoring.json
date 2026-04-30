@@ -1,0 +1,11 @@
+{
+  "aiAuthoring": {
+    "createWithAi": "Criar com IA",
+    "send": "Enviar",
+    "sendHint": "Enter envia, Shift+Enter quebra linha",
+    "thinking": "Pensando…",
+    "empty": "Inicie a conversa para preencher o formulário.",
+    "expand": "Abrir painel IA",
+    "collapse": "Fechar painel IA"
+  }
+}

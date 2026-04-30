@@ -7,6 +7,7 @@ import { registerVigTranslations } from "@viglet/viglet-design-system";
 import enAccount from "./locales/en/account.json";
 import enAdmin from "./locales/en/admin.json";
 import enAiAgent from "./locales/en/aiAgent.json";
+import enAiAuthoring from "./locales/en/aiAuthoring.json";
 import enApiToken from "./locales/en/apiToken.json";
 import enChat from "./locales/en/chat.json";
 import enChatFlow from "./locales/en/chatFlow.json";
@@ -45,6 +46,7 @@ import enTokenUsage from "./locales/en/tokenUsage.json";
 import ptAccount from "./locales/pt/account.json";
 import ptAdmin from "./locales/pt/admin.json";
 import ptAiAgent from "./locales/pt/aiAgent.json";
+import ptAiAuthoring from "./locales/pt/aiAuthoring.json";
 import ptApiToken from "./locales/pt/apiToken.json";
 import ptChat from "./locales/pt/chat.json";
 import ptChatFlow from "./locales/pt/chatFlow.json";
@@ -83,7 +85,7 @@ const en = {
   ...enCommon, ...enTheme, ...enLogin, ...enSetup, ...enDialog, ...enChat, ...enChatFlow,
   ...enSidebar, ...enNav, ...enHome, ...enDashboard, ...enSn, ...enLlm, ...enSe,
   ...enStore, ...enIntegration, ...enMcp, ...enCustomTool, ...enEmbeddingModel,
-  ...enAiAgent, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
+  ...enAiAgent, ...enAiAuthoring, ...enIntent, ...enApiToken, ...enAdmin, ...enAccount,
   ...enExchange, ...enGraphql, ...enLogging, ...enTokenUsage,
   ...enSystemInfo, ...enGlobalSettings, ...enForms, ...enSearch, ...enAnn,
   ...enPage, ...enGit, ...enMarketplace,
@@ -93,7 +95,7 @@ const pt = {
   ...ptCommon, ...ptTheme, ...ptLogin, ...ptSetup, ...ptDialog, ...ptChat, ...ptChatFlow,
   ...ptSidebar, ...ptNav, ...ptHome, ...ptDashboard, ...ptSn, ...ptLlm, ...ptSe,
   ...ptStore, ...ptIntegration, ...ptMcp, ...ptCustomTool, ...ptEmbeddingModel,
-  ...ptAiAgent, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
+  ...ptAiAgent, ...ptAiAuthoring, ...ptIntent, ...ptApiToken, ...ptAdmin, ...ptAccount,
   ...ptExchange, ...ptGraphql, ...ptLogging, ...ptTokenUsage,
   ...ptSystemInfo, ...ptGlobalSettings, ...ptForms, ...ptSearch, ...ptAnn,
   ...ptPage, ...ptGit, ...ptMarketplace,

@@ -44,7 +44,8 @@ public class TurNativeToolService {
             TurImageSearchToolService imageSearchToolService,
             TurLoggingToolService loggingToolService,
             TurIntegrationMonitoringToolService integrationMonitoringToolService,
-            TurSystemInfoToolService systemInfoToolService) {
+            TurSystemInfoToolService systemInfoToolService,
+            TurIconifyToolService iconifyToolService) {
 
         this.toolServiceInstances = List.of(
                 dslToolService,
@@ -56,7 +57,8 @@ public class TurNativeToolService {
                 imageSearchToolService,
                 loggingToolService,
                 integrationMonitoringToolService,
-                systemInfoToolService);
+                systemInfoToolService,
+                iconifyToolService);
 
         this.toolGroups = discoverToolGroups();
         log.info("[NativeTool] Discovered {} tool groups with {} total tools",

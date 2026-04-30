@@ -281,6 +281,7 @@ export const SNSiteFieldForm: React.FC<Props> = ({ snSiteId, snField, isNew, onD
                           maxLength={500}
                           title={form.watch("name")}
                           entityType="Search Field"
+                          enableMetaPrompt
                         >
                           <SmartDescription.Label>Description</SmartDescription.Label>
                           <SmartDescription.Description>

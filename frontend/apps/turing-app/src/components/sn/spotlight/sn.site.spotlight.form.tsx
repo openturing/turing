@@ -271,6 +271,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                             maxLength={500}
                                             title={form.watch("name")}
                                             entityType="Spotlight"
+                                            enableMetaPrompt
                                         >
                                             <SmartDescription.Label>{t("forms.common.description")}</SmartDescription.Label>
                                             <SmartDescription.Description>

@@ -46,7 +46,14 @@ import { StickySaveBar } from "../ui/sticky-save-bar"
 
 const turCustomToolService = new TurCustomToolService();
 const urlBase = ROUTES.CUSTOM_TOOL_INSTANCE;
-const PRIMITIVES: CustomToolPrimitive[] = ["string", "integer", "number", "boolean"];
+/** Types acceptable as parameter primitives (LLM-callable args). */
+const PARAM_PRIMITIVES: CustomToolPrimitive[] = ["string", "integer", "number", "boolean"];
+/** Types acceptable as return type. The "rich" variants (html / markdown /
+ *  json) trigger backend wrapping + verbatim relay so the chat UI can
+ *  render the script output in a special way. */
+const RETURN_PRIMITIVES: CustomToolPrimitive[] = [
+  "string", "integer", "number", "boolean", "html", "markdown", "json",
+];
 
 interface FormShape extends Omit<TurCustomTool, "parametersJson"> {
   parameters: CustomToolParameter[];
@@ -376,7 +383,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {PRIMITIVES.map((p) => (
+                                  {PARAM_PRIMITIVES.map((p) => (
                                     <SelectItem key={p} value={p}>
                                       {t(`forms.customTool.primitive.${p}`)}
                                     </SelectItem>
@@ -420,7 +427,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {PRIMITIVES.map((p) => (
+                                {RETURN_PRIMITIVES.map((p) => (
                                   <SelectItem key={p} value={p}>
                                     {t(`forms.customTool.primitive.${p}`)}
                                   </SelectItem>

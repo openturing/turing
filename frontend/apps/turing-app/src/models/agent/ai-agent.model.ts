@@ -9,6 +9,8 @@ export interface TurAIAgent {
   title: string;
   description: string;
   systemPrompt?: string;
+  /** User-authored brief that drives the SystemPromptEditor "Help me write" sheet. */
+  systemPromptMetaPrompt?: string | null;
   enabled: number;
   ragEnabled: boolean;
   nativeTools?: string | null;
