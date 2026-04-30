@@ -110,18 +110,34 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         }
 
         boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
-        boolean hasCollected = verdict.collectedValue() != null && !verdict.collectedValue().isBlank();
-        if (hasCollected && hasOutputVar) {
-            variables.put(node.outputVariable().trim(), verdict.collectedValue().trim());
+        String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
+        boolean hasCollected = collected != null && !collected.isBlank();
+
+        // Defensive fallback: if the judge said advance but skipped extraction,
+        // use the user's raw message rather than dropping a known-good turn.
+        if (!hasCollected && hasOutputVar && verdict.readyToAdvance()
+                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
+            collected = ctx.userMessage().trim();
+            hasCollected = true;
+            log.info("[LlmJudge] Judge said advance but skipped extraction — "
+                    + "using user message '{}' as value for '{}'",
+                    collected, node.outputVariable());
         }
 
-        // Re-check the validation rule: the judge sometimes marks ready_to_advance
-        // even when the collected value clearly fails the rule (e.g. "pizza" as
-        // a phone). Treat a rule mismatch as "stay on this step" — the next turn
-        // gets another shot.
+        // Normalize yes/no tokens to lowercase for stable SpEL conditions.
+        if (hasCollected) {
+            collected = ChatFlowOps.normalizeYesNo(collected);
+        }
+        if (hasCollected && hasOutputVar) {
+            variables.put(node.outputVariable().trim(), collected);
+            log.info("[LlmJudge] Captured '{}' = '{}'", node.outputVariable(), collected);
+        }
+
+        // Re-check the validation rule so a single permissive verdict cannot
+        // push the flow past a required field (e.g. "pizza" as a phone).
         boolean valid = !hasOutputVar
                 || (hasCollected
-                        && ChatFlowOps.valueMatchesRule(node.validationRule(), verdict.collectedValue().trim()));
+                        && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
         if (!verdict.readyToAdvance() || !valid) {
             log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={})",
                     node.id(), verdict.readyToAdvance(), valid);

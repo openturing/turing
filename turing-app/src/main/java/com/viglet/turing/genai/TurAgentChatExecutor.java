@@ -183,8 +183,10 @@ public class TurAgentChatExecutor {
 
         ToolCallback[] callbacks = resolveToolCallbacks(agent);
         log.info("[AgentExec] Agent '{}': {} tool callbacks", agent.getTitle(), callbacks.length);
-        for (ToolCallback cb : callbacks) {
-            log.info("[AgentExec] Available tool: '{}'", cb.getToolDefinition().name());
+        if (log.isDebugEnabled()) {
+            for (ToolCallback cb : callbacks) {
+                log.debug("[AgentExec] Available tool: '{}'", cb.getToolDefinition().name());
+            }
         }
 
         var chatOptions = DefaultToolCallingChatOptions.builder()

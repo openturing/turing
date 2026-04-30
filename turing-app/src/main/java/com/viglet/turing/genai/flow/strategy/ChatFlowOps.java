@@ -19,6 +19,9 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.MapAccessor;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import com.viglet.turing.genai.flow.ChatFlowEdge;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
@@ -271,14 +274,17 @@ public final class ChatFlowOps {
     }
 
     /**
-     * Evaluates {@code expression} (plain language or simple comparison)
-     * against the collected {@code variables}. Uses the auxiliary LLM when
-     * available — the expression syntax is intentionally permissive
-     * ({@code stuffedCrust == 'sim'}, {@code "company_size > 50"}, even
-     * natural-language phrasings like "user said yes to scheduling"), so a
-     * judge call is the most reliable evaluator. Falls back to
-     * {@code true} (the {@code "yes"} branch) when the model is unavailable
-     * or the call fails — biased toward NOT stalling the flow.
+     * Evaluates {@code expression} against the collected {@code variables}.
+     * <p>
+     * Strategy: try {@link #trySpel(String, Map) SpEL} first — covers the
+     * 90%+ case ({@code var == 'value'}, {@code var > N}, boolean
+     * combinations) deterministically, with no extra LLM call. When SpEL
+     * cannot parse or evaluate the expression (typically because the author
+     * wrote it in plain language — "user said yes to scheduling"), fall
+     * back to the LLM-as-judge.
+     * <p>
+     * Default on every dead end is {@code true} (the {@code "yes"} branch)
+     * — biased toward NOT stalling the flow.
      */
     public static boolean evaluateCondition(ChatModel auxModel,
             String expression,
@@ -286,7 +292,17 @@ public final class ChatFlowOps {
         if (expression == null || expression.isBlank()) {
             return true;
         }
+        String varsJsonForLog = serializeVariables(variables);
+        Boolean spelResult = trySpel(expression, variables);
+        if (spelResult != null) {
+            log.info("[FlowOps] Condition (SpEL): expr='{}' vars={} result={}",
+                    expression, varsJsonForLog, spelResult);
+            return spelResult;
+        }
+        log.info("[FlowOps] Condition fell back to LLM judge: expr='{}' vars={}",
+                expression, varsJsonForLog);
         if (auxModel == null) {
+            // No SpEL match and no judge model — bias toward yes.
             return true;
         }
         String varsJson = serializeVariables(variables);
@@ -338,6 +354,38 @@ public final class ChatFlowOps {
             return true;
         }
     }
+
+    /**
+     * Attempts to evaluate {@code expression} as a SpEL expression against
+     * {@code variables} as the root object (with {@link MapAccessor} so
+     * plain identifiers like {@code stuffedCrust} resolve to map entries —
+     * no need for the {@code #var} prefix).
+     * <p>
+     * Returns the boolean result on success, or {@code null} when SpEL
+     * cannot parse / evaluate / coerce-to-boolean — that signals the caller
+     * to fall back to the LLM judge. Common reasons to return {@code null}:
+     * <ul>
+     *   <li>The expression is plain language (no operators).</li>
+     *   <li>A referenced variable is missing from the map.</li>
+     *   <li>The expression evaluates to a non-boolean value
+     *       (e.g. a string or number).</li>
+     * </ul>
+     */
+    private static Boolean trySpel(String expression, Map<String, String> variables) {
+        try {
+            Map<String, String> root = variables == null ? Map.of() : variables;
+            StandardEvaluationContext ctx = new StandardEvaluationContext(root);
+            ctx.addPropertyAccessor(new MapAccessor());
+            Object result = SPEL_PARSER.parseExpression(expression).getValue(ctx);
+            return result instanceof Boolean b ? b : null;
+        } catch (RuntimeException e) {
+            log.debug("[FlowOps] SpEL could not evaluate '{}': {}", expression, e.getMessage());
+            return null;
+        }
+    }
+
+    /** Reused parser — SpEL parsers are thread-safe and stateless. */
+    private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
 
     /**
      * Serializes the runtime variables as a compact JSON object — the format
@@ -410,6 +458,29 @@ public final class ChatFlowOps {
         }
         var matcher = pattern.matcher(userMessage);
         return matcher.find() ? matcher.group() : null;
+    }
+
+    /**
+     * Folds an obvious yes/no answer to a canonical lowercase token —
+     * {@code "Sim"}/{@code "SIM"}/{@code "yep"} → {@code "sim"};
+     * {@code "Não"}/{@code "Nope"} → {@code "não"}; {@code "Yes"} → {@code "yes"};
+     * {@code "No"} → {@code "no"}. Anything else passes through unchanged
+     * (preserves names, addresses, free text). The point is to make
+     * downstream SpEL conditions like {@code stuffedCrust == 'sim'} match
+     * regardless of how the model cased the captured value.
+     */
+    public static String normalizeYesNo(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return trimmed;
+        String lower = trimmed.toLowerCase();
+        return switch (lower) {
+            case "sim", "s", "claro" -> "sim";
+            case "não", "nao", "n" -> "não";
+            case "yes", "yep", "yeah", "y" -> "yes";
+            case "no", "nope" -> "no";
+            default -> trimmed;
+        };
     }
 
     /**

@@ -133,7 +133,13 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
 
         StructuredVerdict verdict = parseStructuredVerdict(ctx.assistantMessage());
         if (verdict == null) {
-            log.warn("[StructuredOutput] Could not parse JSON, falling back to heuristic");
+            // Log the raw response so the next failure tells us WHY the LLM
+            // ignored the JSON contract — usually the model produced a normal
+            // conversational reply, sometimes it wrapped JSON in fences, etc.
+            log.warn("[StructuredOutput] Could not parse JSON on node '{}'. Raw response ({} chars): {}",
+                    node.id(),
+                    ctx.assistantMessage() == null ? 0 : ctx.assistantMessage().length(),
+                    truncate(ctx.assistantMessage(), 500));
             return fallback.advance(ctx);
         }
 
@@ -151,18 +157,41 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
         }
 
         boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
-        boolean hasCollected = verdict.collectedValue() != null && !verdict.collectedValue().isBlank();
-        if (hasCollected && hasOutputVar) {
-            variables.put(node.outputVariable().trim(), verdict.collectedValue().trim());
+        String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
+        boolean hasCollected = collected != null && !collected.isBlank();
+
+        // Defensive fallback: gpt-4o-mini sometimes marks ready_to_advance=true
+        // but skips collected_value (especially for short yes/no answers like
+        // "sim"). When the model thought we should advance and there IS an
+        // output variable to fill, use the user's raw message as the value
+        // instead of dropping the turn — better than ending up with an empty
+        // variable that breaks downstream conditions.
+        if (!hasCollected && hasOutputVar && verdict.readyToAdvance()
+                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
+            collected = ctx.userMessage().trim();
+            hasCollected = true;
+            log.info("[StructuredOutput] LLM said advance but skipped extraction — "
+                    + "using user message '{}' as value for '{}'",
+                    collected, node.outputVariable());
         }
 
-        // Trust-but-verify: gpt-4o-mini happily marks ready_to_advance=true even
-        // when collected_value flagrantly fails the validation rule (e.g. "pizza"
-        // as a phone). Re-check here so a single permissive verdict cannot push
-        // the flow past a required field.
+        // Normalize obvious yes/no tokens to lowercase so downstream SpEL
+        // conditions like `stuffedCrust == 'sim'` match regardless of how the
+        // model cased the value.
+        if (hasCollected) {
+            collected = ChatFlowOps.normalizeYesNo(collected);
+        }
+        if (hasCollected && hasOutputVar) {
+            variables.put(node.outputVariable().trim(), collected);
+            log.info("[StructuredOutput] Captured '{}' = '{}'", node.outputVariable(), collected);
+        }
+
+        // Trust-but-verify: re-check the validation rule so a single permissive
+        // verdict cannot push the flow past a required field (e.g. "pizza" as
+        // a phone).
         boolean valid = !hasOutputVar
                 || (hasCollected
-                        && ChatFlowOps.valueMatchesRule(node.validationRule(), verdict.collectedValue().trim()));
+                        && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
         if (!verdict.readyToAdvance() || !valid) {
             log.info("[StructuredOutput] Stay on node '{}' (advance={}, valid={})",
                     node.id(), verdict.readyToAdvance(), valid);
@@ -177,6 +206,11 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
         }
         ChatFlowOps.writeVariables(state, variables);
         return reply;
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) return "";
+        return s.length() <= max ? s : s.substring(0, max) + "…";
     }
 
     /** Fields extracted from the structured-output JSON. */

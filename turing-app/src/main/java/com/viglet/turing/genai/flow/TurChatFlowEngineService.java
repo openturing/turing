@@ -195,6 +195,10 @@ public class TurChatFlowEngineService {
             return AdvanceResult.of(state);
         }
         String previousNodeId = state.getCurrentNodeId();
+        log.info("[FlowEngine] advance: flow='{}' conv='{}' node='{}' guardrail={} userMsg='{}'",
+                flow.getId(), state.getConversationId(), previousNodeId,
+                flow.getGuardrailMethod(),
+                userMessage == null ? "" : truncate(userMessage, 80));
         AdvanceContext ctx = new AdvanceContext(state, graph, nodeOpt.get(),
                 userMessage, assistantMessage, auxiliaryModel);
         String override = resolveStrategy(flow).advance(ctx);
@@ -203,8 +207,18 @@ public class TurChatFlowEngineService {
         // conditions in the same turn so the next chat round lands on the next
         // interactive node.
         ChatFlowOps.walkThroughConditions(state, graph, auxiliaryModel);
+        if (!java.util.Objects.equals(previousNodeId, state.getCurrentNodeId())) {
+            log.info("[FlowEngine] advance: '{}' → '{}' vars={}",
+                    previousNodeId, state.getCurrentNodeId(),
+                    state.getVariablesJson());
+        }
         TurChatFlowState saved = saveAndMaybeRecord(flow, state, graph, previousNodeId);
         return new AdvanceResult(saved, override);
+    }
+
+    private static String truncate(String s, int max) {
+        if (s == null) return "";
+        return s.length() <= max ? s : s.substring(0, max) + "…";
     }
 
     private TurChatFlowGuardrailStrategy resolveStrategy(TurChatFlow flow) {
