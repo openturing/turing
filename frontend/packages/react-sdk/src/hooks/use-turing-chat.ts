@@ -124,6 +124,11 @@ export function useTuringChat(
 
   const requestRef = useRef(0);
   const abortedRef = useRef(false);
+  // Keep a synchronous mirror of the latest messages so `send` can read the
+  // newest history without depending on `messages` (which would re-create the
+  // callback on every turn) and without relying on the setState updater fn
+  // (which is queued, not synchronous).
+  const messagesRef = useRef<ChatMessage[]>(messages);
 
   // Resolve enabled flag once per site
   useEffect(() => {
@@ -140,8 +145,9 @@ export function useTuringChat(
     };
   }, [config.site]);
 
-  // Persist on change
+  // Persist on change + keep the synchronous ref in sync
   useEffect(() => {
+    messagesRef.current = messages;
     if (persistKey) savePersisted(persistKey, messages);
   }, [persistKey, messages]);
 
@@ -162,14 +168,13 @@ export function useTuringChat(
       setError(null);
       setStatus("loading");
 
-      // Snapshot history with the new user message for the API call.
-      // We strip id/timestamp on the wire — server only needs role+content.
-      let nextMessages: ChatMessage[] = [];
-      setMessages((prev) => {
-        const all = [...prev, userMsg];
-        nextMessages = all.length > maxMessages ? all.slice(-maxMessages) : all;
-        return nextMessages;
-      });
+      // Build next history synchronously from the ref (always up-to-date),
+      // commit it to state and the ref, then send the same array on the wire.
+      const all = [...messagesRef.current, userMsg];
+      const nextMessages =
+        all.length > maxMessages ? all.slice(-maxMessages) : all;
+      messagesRef.current = nextMessages;
+      setMessages(nextMessages);
 
       try {
         const wire: TurChatConversationMessage[] = nextMessages.map((m) => ({
@@ -188,10 +193,13 @@ export function useTuringChat(
           timestamp: Date.now(),
         };
 
-        setMessages((prev) => {
-          const all = [...prev, assistantMsg];
-          return all.length > maxMessages ? all.slice(-maxMessages) : all;
-        });
+        const allWithReply = [...messagesRef.current, assistantMsg];
+        const nextWithReply =
+          allWithReply.length > maxMessages
+            ? allWithReply.slice(-maxMessages)
+            : allWithReply;
+        messagesRef.current = nextWithReply;
+        setMessages(nextWithReply);
         setStatus("success");
       } catch (err) {
         if (requestId !== requestRef.current || abortedRef.current) return;
@@ -211,6 +219,7 @@ export function useTuringChat(
   const reset = useCallback(() => {
     abortedRef.current = true;
     requestRef.current++;
+    messagesRef.current = [];
     setMessages([]);
     setError(null);
     setStatus("idle");
