@@ -48,17 +48,17 @@
       }
     },
     "guardrailMethods": {
-      "HEURISTIC": {
-        "label": "Heurística",
-        "description": "Contrato no prompt por nó + avanço pela primeira aresta com heurística leve de aderência ao tópico. Sem chamadas extras à LLM."
-      },
       "LLM_JUDGE": {
-        "label": "LLM como juiz",
-        "description": "Mesmo contrato no prompt mais uma segunda chamada à LLM após cada turno que decide se a resposta ficou no tópico, capturou valor válido e está pronta para avançar. Respostas fora do tópico são substituídas por uma mensagem de redirecionamento. ~200 tokens extras por turno."
+        "label": "LLM como juiz (recomendado)",
+        "description": "Mais confiável em produção. Após cada turno, uma chamada à LLM focada retorna um JSON com o veredito (no tópico, valor capturado, pronto para avançar). O juiz roda sem o histórico do chat ou o ruído das tools, então até modelos menores seguem o contrato de forma confiável. ~1 chamada extra à LLM por turno (~200 tokens extras)."
+      },
+      "HEURISTIC": {
+        "label": "Heurística (mais barato)",
+        "description": "Contrato no prompt + heurística de regex/keyword. Sem chamadas extras à LLM. Confiável para nós com validação estrita (e-mail, telefone, número, data, URL). Para nós de texto livre (nome, sabor, pergunta genérica) aceita qualquer resposta do usuário como valor — frágil em conversas reais."
       },
       "STRUCTURED_OUTPUT": {
         "label": "Saída estruturada (uma chamada)",
-        "description": "Uma chamada à LLM por turno — o modelo retorna um JSON que junta a resposta para o usuário com os campos do veredito. Mesma contenção do modo \"LLM como juiz\", com menor latência e custo. Cai para a heurística quando o modelo não segue o contrato JSON."
+        "description": "Tenta unir a resposta para o usuário e o veredito numa única chamada JSON. Soa ideal, mas modelos menores (GPT-4o-mini) costumam ignorar o contrato JSON quando o histórico cresce ou há muitas tools ativas, caindo no juiz como fallback mesmo assim — saindo mais caro que o LLM como juiz puro. Vale a pena apenas com modelos topo de linha (GPT-4o completo, Claude 3.7 Sonnet)."
       }
     },
     "errors": {

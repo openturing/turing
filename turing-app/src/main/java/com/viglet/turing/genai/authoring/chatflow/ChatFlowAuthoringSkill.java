@@ -222,16 +222,27 @@ public class ChatFlowAuthoringSkill {
             ════════════ GUARDRAIL METHOD ════════════
 
             Field: guardrailMethod ∈ {"HEURISTIC", "LLM_JUDGE", "STRUCTURED_OUTPUT"}.
+            - LLM_JUDGE (RECOMMENDED — safe default): extra focused LLM call
+              after each turn that returns a JSON verdict (on_topic,
+              collected_value, ready_to_advance). The judge call is "clean"
+              (no chat history, no tools competing) so smaller models follow
+              the contract reliably. Most accurate in production.
             - HEURISTIC: cheapest, prompt-only contract per node + first-edge
-              advance with light alignment heuristic. Pick when the flow is short
-              (≤4 steps) and the questions have clear answers.
-            - LLM_JUDGE: extra LLM call after each turn that returns a JSON
-              verdict (on_topic, collected_value, ready_to_advance). Pick when
-              the flow has many steps OR captures values that NEED validation
-              (emails, dates, structured data).
-            - STRUCTURED_OUTPUT: single LLM call per turn that bundles reply +
-              verdict in one JSON. Best for modern providers (GPT-4o, Claude 3.7+).
-              Use this as the safe DEFAULT when in doubt.
+              advance with regex/keyword heuristics. Reliable ONLY for nodes
+              with strict validationRule (email/phone/number/date/url). For
+              free-text nodes (name, flavor, generic question) it accepts any
+              user reply as the value — fragile in real conversations.
+            - STRUCTURED_OUTPUT: tries to bundle reply + verdict in a single
+              JSON call. Sounds ideal, but smaller models (gpt-4o-mini) often
+              ignore the JSON contract and produce plain conversational text
+              when chat history grows or many tools are active — then it
+              falls back to LLM_JUDGE anyway, costing more than LLM_JUDGE
+              alone. Worth picking only with top-tier models (gpt-4o full,
+              Claude 3.7 Sonnet) or once OpenAI's response_format=json_object
+              support is wired in.
+
+            Pick LLM_JUDGE unless the user explicitly asks for one of the
+            other two with a good reason.
 
             ════════════ AUTO-TRIGGER ════════════
 
@@ -307,7 +318,7 @@ public class ChatFlowAuthoringSkill {
             aiQuestion fields: aiInstruction, outputVariable, validationRule
             condition fields: conditionExpression + 2 edges (sourceHandle "yes"/"no")
             functionCall fields: toolSource (NATIVE|MCP), functionName, mcpServerId
-            Guardrail: HEURISTIC | LLM_JUDGE | STRUCTURED_OUTPUT (default)
+            Guardrail: HEURISTIC | LLM_JUDGE (default) | STRUCTURED_OUTPUT
             Trigger: ONCE | ALWAYS
             """;
 

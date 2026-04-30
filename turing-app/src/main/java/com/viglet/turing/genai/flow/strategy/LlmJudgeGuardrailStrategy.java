@@ -18,6 +18,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -59,10 +60,10 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state) {
+    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
         // Layer 1 (the prompt-side contract) is shared with every other strategy
         // via ChatFlowOps; the judge only adds layer 2 inside `advance`.
-        return ChatFlowOps.buildBaseAddendum(node, state);
+        return ChatFlowOps.buildBaseAddendum(node, state, graph);
     }
 
     @Override
@@ -85,6 +86,12 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
 
         TurChatFlowState state = ctx.state();
         Map<String, String> variables = ChatFlowOps.readVariables(state);
+        log.info("[LlmJudge] Verdict on node '{}': onTopic={} ready={} abandoned={} collected='{}'",
+                node.id(),
+                verdict.onTopic(),
+                verdict.readyToAdvance(),
+                verdict.abandoned(),
+                verdict.collectedValue());
 
         // Abandon → end gracefully and use the judge's farewell as the reply.
         if (verdict.abandoned()) {
@@ -95,20 +102,13 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             return (farewell != null && !farewell.isBlank()) ? farewell.trim() : null;
         }
 
-        // Off-topic → stay on the node; substitute the reply only when the
-        // judge supplied a polite redirect.
-        if (!verdict.onTopic()) {
-            ChatFlowOps.writeVariables(state, variables);
-            String redirect = verdict.redirectMessage();
-            if (redirect != null && !redirect.isBlank()) {
-                log.info("[LlmJudge] Off-topic on node '{}' — using judge-supplied redirect", node.id());
-                return redirect.trim();
-            }
-            log.info("[LlmJudge] Off-topic on node '{}' but no redirect supplied — keeping LLM reply",
-                    node.id());
-            return null;
-        }
-
+        // ─── Capture + advance evaluation runs FIRST ─────────────────
+        // The on_topic flag describes whether the BOT'S reply was on-goal.
+        // It must NOT gate state transitions: when the user supplied a
+        // valid value but the bot improvised an off-goal reply (e.g. a
+        // premature wrap-up summary at ask-flavor), we still need to
+        // capture the value and move to the next step. on_topic only
+        // decides what TEXT we display back.
         boolean hasOutputVar = node.outputVariable() != null && !node.outputVariable().isBlank();
         String collected = verdict.collectedValue() == null ? null : verdict.collectedValue().trim();
         boolean hasCollected = collected != null && !collected.isBlank();
@@ -138,13 +138,27 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         boolean valid = !hasOutputVar
                 || (hasCollected
                         && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
-        if (!verdict.readyToAdvance() || !valid) {
-            log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={})",
-                    node.id(), verdict.readyToAdvance(), valid);
+        boolean shouldAdvance = verdict.readyToAdvance() && valid;
+
+        if (!shouldAdvance) {
+            // Not advancing: write current variables back and decide reply.
             ChatFlowOps.writeVariables(state, variables);
+            log.info("[LlmJudge] Stay on node '{}' (advance={}, valid={}, onTopic={})",
+                    node.id(), verdict.readyToAdvance(), valid, verdict.onTopic());
+            // Bot reply was off-goal: replace with the judge's redirect when present.
+            if (!verdict.onTopic()) {
+                String redirect = verdict.redirectMessage();
+                if (redirect != null && !redirect.isBlank()) {
+                    log.info("[LlmJudge] Off-topic on node '{}' — using judge redirect", node.id());
+                    return redirect.trim();
+                }
+                log.info("[LlmJudge] Off-topic on node '{}' — no redirect, keeping LLM reply",
+                        node.id());
+            }
             return null;
         }
 
+        // ─── We ARE advancing ────────────────────────────────────────
         String previous = node.id();
         String next = ChatFlowOps.advanceToFirstEdge(state, ctx.graph(), node);
         if (!previous.equals(next)) {
@@ -152,6 +166,16 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                     previous, next, state.getConversationId());
         }
         ChatFlowOps.writeVariables(state, variables);
+        // If the bot's reply was off-goal (e.g. it improvised a wrap-up
+        // summary instead of asking the next question), the user would see a
+        // misleading message even though we correctly advanced. Don't replace
+        // with the judge's redirect — that targets the OLD goal which is now
+        // satisfied. Logging is enough; the next turn will produce the right
+        // question for the new node.
+        if (!verdict.onTopic()) {
+            log.info("[LlmJudge] Advanced past off-goal bot reply on node '{}' — "
+                    + "next turn will land on the new node's goal", previous);
+        }
         return null;
     }
 
@@ -169,27 +193,37 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                 You are a strict conversation auditor. You receive the active step of a guided
                 chat flow plus the most recent user/assistant exchange and decide five things:
 
-                1. on_topic: did the assistant stay on the goal of the active step?
-                2. collected_value: did the *user's last message* supply a value the step is
-                   collecting? Be permissive about FORMAT — a bare reply that fits the value
-                   type counts:
-                     - "Alexandre" or "Alexandre Oliveira" for a name
-                     - "foo@bar.com" for an email
-                     - "+5511999999999" or "11 99999-9999" for a phone
-                     - "2026-04-28" or "28/04/2026" for a date
-                   The user does NOT need to use a full sentence like "my name is X".
-                   But be SMART about INTENT: conversational requests, intents, greetings,
-                   or commands like "quero me inscrever", "I want to subscribe", "ajuda",
-                   "olá", "hi", "yes please" are NEVER values — return null for those even
-                   when the step asks for a name. A name is a person's name; an email is an
-                   email address; a phone is a phone number. Do NOT conflate the user's
-                   intent with a value. When in doubt, return null.
+                1. on_topic: did the ASSISTANT stay on the goal of the active step? This
+                   judges the assistant's reply only — never gate the user's value on this.
+                2. collected_value: did the *user's last message* supply whatever ANSWERS
+                   the Goal? Be permissive about FORMAT — bare replies count, no need for
+                   full sentences. Examples by goal type:
+                     - Goal asks for a name → "Alexandre", "Alexandre Oliveira"
+                     - Goal asks for an email → "foo@bar.com"
+                     - Goal asks for a phone → "+5511999999999", "11 99999-9999"
+                     - Goal asks for a date → "2026-04-28", "28/04/2026"
+                     - Goal asks a yes/no question → "sim", "não", "yes", "no", "yep",
+                       "nope" — these ARE values; do NOT return null for them just because
+                       they are short.
+                     - Goal asks for a flavor / option / category → the option name verbatim
+                       ("portuguesa", "calabresa", "média", "grande", "pix", "dinheiro").
+                       Variants with prepositions still count: "pizza de portuguesa",
+                       "sabor portuguesa", "quero portuguesa" → all → "portuguesa".
+                   POLITENESS MARKERS in isolation are NEVER values regardless of Goal:
+                     "obrigado", "valeu", "ok", "thanks", "thank you", "got it".
+                   CONVERSATIONAL INTENTS — phrases that say "I want to start X" but do
+                   NOT answer the Goal — are NEVER values:
+                     Goal: "ask for the user's name" + user: "quero me inscrever" → null
+                     Goal: "ask for an email" + user: "olá" → null
+                   When the user's message clearly answers the Goal, EXTRACT IT.
                 3. ready_to_advance: should the conversation move to the next step?
-                   true when collected_value is non-null AND, when a validation rule applies,
-                   the value matches the rule (a syntactically valid email for the "email"
-                   rule, etc.). For steps without an output variable, true when the goal is
-                   clearly addressed by the assistant. NEVER true on the same turn where
-                   collected_value is null for a step that requires a value.
+                   STRICT RULE: if you set collected_value to a non-null string AND no
+                   validation rule fails for it, you MUST set ready_to_advance to true.
+                   on_topic does NOT matter for this decision — the user did the right
+                   thing even if the assistant didn't. For steps without an output
+                   variable, true when the goal is clearly addressed by the assistant.
+                   NEVER true on the same turn where collected_value is null for a step
+                   that requires a value.
                 4. abandoned: true ONLY when the user clearly wants to quit, cancel, give up
                    on, or skip this flow ("desisto", "cancelar", "quero parar", "no thanks",
                    "I don't want to continue", etc.). When abandoned is true, the flow ends

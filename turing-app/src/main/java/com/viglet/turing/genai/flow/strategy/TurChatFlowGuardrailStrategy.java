@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.flow.strategy;
 
+import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -44,8 +45,14 @@ public interface TurChatFlowGuardrailStrategy {
      * Builds the system-prompt addendum the chat LLM receives for the
      * current node. Returns {@code ""} when the current node is terminal,
      * so the conversation flows freely after the flow ends.
+     * <p>
+     * The {@code graph} is used to look ahead at the next interactive node
+     * so the addendum can tell the chat LLM to chain into it (e.g. "after
+     * capturing the name, immediately ask for the phone") — without that
+     * hint, the bot stops after each value and the user has to send a
+     * trigger message between every step.
      */
-    String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state);
+    String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph);
 
     /**
      * Decides the next node and an optional assistant override given the

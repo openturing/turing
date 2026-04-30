@@ -48,17 +48,17 @@
       }
     },
     "guardrailMethods": {
-      "HEURISTIC": {
-        "label": "Heuristic",
-        "description": "Prompt-only contract per node + first-edge advance with a lightweight on-topic heuristic. No extra LLM calls."
-      },
       "LLM_JUDGE": {
-        "label": "LLM as judge",
-        "description": "Same prompt contract plus a second LLM call after each turn that decides whether the reply stayed on topic, captured a valid value, and is ready to advance. Off-topic replies are replaced by a redirect message. ~200 extra tokens per turn."
+        "label": "LLM as judge (recommended)",
+        "description": "Most reliable in production. After each turn, a focused LLM call returns a JSON verdict (on-topic, collected value, ready to advance). The judge runs without chat history or tool noise, so even smaller models follow the contract reliably. ~1 extra LLM call per turn (~200 extra tokens)."
+      },
+      "HEURISTIC": {
+        "label": "Heuristic (cheapest)",
+        "description": "Prompt-only contract + regex/keyword heuristics. No extra LLM calls. Reliable for nodes with strict validation rules (email, phone, number, date, URL). For free-text nodes (name, flavor, generic question) it accepts any user reply as the value — fragile in real conversations."
       },
       "STRUCTURED_OUTPUT": {
         "label": "Structured output (single call)",
-        "description": "One LLM call per turn — the model returns a JSON object that bundles the user-facing reply with the verdict fields. Same enforcement as LLM as judge, lower latency and cost. Falls back to heuristic when the model cannot follow the JSON contract."
+        "description": "Tries to bundle the user-facing reply and the verdict in one JSON call. Sounds ideal, but smaller models (GPT-4o-mini) often ignore the JSON contract when chat history grows or many tools are active, and fall back to a judge call anyway — costing more than LLM as judge alone. Worth picking only with top-tier models (GPT-4o full, Claude 3.7 Sonnet)."
       }
     },
     "errors": {

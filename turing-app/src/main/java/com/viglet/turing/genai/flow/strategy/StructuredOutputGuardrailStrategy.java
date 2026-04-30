@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -39,10 +40,23 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final HeuristicGuardrailStrategy fallback;
+    /**
+     * Preferred fallback when the chat LLM ignores the JSON contract — we
+     * make a dedicated judge call (one extra round-trip but with a focused
+     * prompt that gpt-4o-mini follows reliably). The judge in turn falls
+     * back to the heuristic if its own call fails. Real-world observation
+     * with the agent chat: the main reply is conversational ~80% of the
+     * time on Portuguese flows, so the judge call is the path that lands
+     * the right values.
+     */
+    private final LlmJudgeGuardrailStrategy judgeFallback;
+    /** Last-resort fallback if both JSON parsing AND the judge call fail. */
+    private final HeuristicGuardrailStrategy heuristicFallback;
 
-    public StructuredOutputGuardrailStrategy(HeuristicGuardrailStrategy fallback) {
-        this.fallback = fallback;
+    public StructuredOutputGuardrailStrategy(LlmJudgeGuardrailStrategy judgeFallback,
+            HeuristicGuardrailStrategy heuristicFallback) {
+        this.judgeFallback = judgeFallback;
+        this.heuristicFallback = heuristicFallback;
     }
 
     @Override
@@ -51,11 +65,11 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state) {
+    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
         // Shared base (active-step header + goal/collect/validation + already-collected
         // variables + HARD RULES) lives in ChatFlowOps so wording fixes propagate to
         // every strategy at once. We just bolt the JSON contract on top.
-        String base = ChatFlowOps.buildBaseAddendum(node, state);
+        String base = ChatFlowOps.buildBaseAddendum(node, state, graph);
         if (base.isEmpty()) {
             return "";
         }
@@ -140,7 +154,14 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
                     node.id(),
                     ctx.assistantMessage() == null ? 0 : ctx.assistantMessage().length(),
                     truncate(ctx.assistantMessage(), 500));
-            return fallback.advance(ctx);
+            // Delegate to the judge: a focused, JSON-only LLM call. It runs
+            // its own heuristic fallback if the judge call also fails.
+            if (judgeFallback != null && ctx.auxiliaryModel() != null) {
+                log.info("[StructuredOutput] Falling back to dedicated judge call");
+                return judgeFallback.advance(ctx);
+            }
+            log.info("[StructuredOutput] No judge model available — falling back to heuristic");
+            return heuristicFallback.advance(ctx);
         }
 
         TurChatFlowState state = ctx.state();

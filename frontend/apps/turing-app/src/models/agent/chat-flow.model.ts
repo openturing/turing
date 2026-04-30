@@ -16,9 +16,14 @@
  */
 export type TurChatFlowGuardrailMethod = "HEURISTIC" | "LLM_JUDGE" | "STRUCTURED_OUTPUT";
 
+/**
+ * Display order for guardrail method pickers — recommended option first so
+ * the default lines up with what we suggest in the UI ({@code LLM_JUDGE} is
+ * the most reliable in practice; see the i18n descriptions for the trade-offs).
+ */
 export const CHAT_FLOW_GUARDRAIL_METHODS: TurChatFlowGuardrailMethod[] = [
-  "HEURISTIC",
   "LLM_JUDGE",
+  "HEURISTIC",
   "STRUCTURED_OUTPUT",
 ];
 

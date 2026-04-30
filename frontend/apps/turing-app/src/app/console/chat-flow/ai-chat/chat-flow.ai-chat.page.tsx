@@ -88,7 +88,7 @@ export default function ChatFlowAiChatPage() {
       name: flow.name.trim(),
       description: flow.description ?? null,
       enabled: flow.enabled ?? 1,
-      guardrailMethod: flow.guardrailMethod ?? "STRUCTURED_OUTPUT",
+      guardrailMethod: flow.guardrailMethod ?? "LLM_JUDGE",
       triggerDescription: flow.triggerDescription ?? null,
       triggerMode: flow.triggerMode ?? "ONCE",
       definitionJson: serializeForEditor(flow),
@@ -339,7 +339,7 @@ function emptyFlow(): ChatFlowGeneration {
   return {
     name: "",
     description: "",
-    guardrailMethod: "STRUCTURED_OUTPUT",
+    guardrailMethod: "LLM_JUDGE",
     triggerDescription: "",
     triggerMode: "ONCE",
     enabled: 1,

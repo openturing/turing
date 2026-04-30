@@ -74,14 +74,16 @@ public final class ChatFlowOps {
     /**
      * Base system-prompt addendum every guardrail strategy needs: an active-step
      * header, the node's goal / collect / validation / already-collected
-     * variables, and the conversational HARD RULES that all strategies enforce.
+     * variables, the next interactive node's goal (so the bot can chain
+     * directly into the next question instead of waiting for the user to
+     * "ping" again), and the conversational HARD RULES.
      * <p>
      * Strategies append their strategy-specific tail (the heuristic adds a hint
      * about validation; the structured-output strategy adds the JSON contract).
      * Returns an empty string when the node is terminal — once the flow ended,
      * the agent should chat freely.
      */
-    public static String buildBaseAddendum(ChatFlowNode node, TurChatFlowState state) {
+    public static String buildBaseAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
         if (node == null || "end".equals(node.type())) {
             return "";
         }
@@ -104,8 +106,100 @@ public final class ChatFlowOps {
         if (!variables.isEmpty()) {
             sb.append("Already collected: ").append(variables).append('\n');
         }
+        appendNextStepHint(sb, graph, node);
         sb.append(HARD_RULES);
         return sb.toString();
+    }
+
+    /**
+     * Appends a "NEXT STEP" hint pointing at the next interactive node so the
+     * chat LLM can chain from "user gave a value" straight into "next question"
+     * in a single reply. Without this hint, the bot collects a value and stops,
+     * forcing the user to send a "ping" between steps.
+     * <p>
+     * Three cases:
+     * <ol>
+     *   <li>Single edge to a normal interactive node → show its goal.</li>
+     *   <li>Single edge to a {@code condition} node → show BOTH branch goals
+     *       prefixed with the {@code yes}/{@code no} handle, so the bot can
+     *       pick the right next question based on the user's answer.</li>
+     *   <li>Anything else (multiple edges, dead end, end node) → no hint;
+     *       the bot will just collect the value.</li>
+     * </ol>
+     */
+    private static void appendNextStepHint(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode current) {
+        if (graph == null || current == null) {
+            return;
+        }
+        List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
+        if (outgoing.size() != 1) {
+            return;
+        }
+        Optional<ChatFlowNode> targetOpt = graph.nodeById(outgoing.get(0).target());
+        if (targetOpt.isEmpty()) {
+            return;
+        }
+        ChatFlowNode target = targetOpt.get();
+        String type = target.type();
+        if ("end".equals(type)) {
+            return;
+        }
+        if ("condition".equals(type)) {
+            appendConditionalNextSteps(sb, graph, target);
+            return;
+        }
+        if (target.aiInstruction() == null || target.aiInstruction().isBlank()) {
+            return;
+        }
+        sb.append("Next step preview (for chaining your reply): ")
+                .append(target.aiInstruction().trim())
+                .append("\n");
+    }
+
+    /**
+     * For condition targets, expands each {@code yes}/{@code no} branch so the
+     * bot knows what to ask after the user's answer routes the flow. The
+     * condition expression is included so the LLM can pick the branch
+     * deterministically (the engine will evaluate it for state, but the LLM
+     * needs to know which question to chain into in its REPLY).
+     */
+    private static void appendConditionalNextSteps(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode condition) {
+        List<ChatFlowEdge> branches = graph.outgoingEdges(condition.id());
+        if (branches.isEmpty()) {
+            return;
+        }
+        StringBuilder hint = new StringBuilder();
+        boolean any = false;
+        for (ChatFlowEdge edge : branches) {
+            Optional<ChatFlowNode> branchOpt = graph.nodeById(edge.target());
+            if (branchOpt.isEmpty()) {
+                continue;
+            }
+            ChatFlowNode branch = branchOpt.get();
+            if ("end".equals(branch.type())) {
+                continue;
+            }
+            String instruction = branch.aiInstruction();
+            if (instruction == null || instruction.isBlank()) {
+                continue;
+            }
+            String handle = edge.sourceHandle() == null || edge.sourceHandle().isBlank()
+                    ? "default"
+                    : edge.sourceHandle();
+            hint.append("  - If '").append(handle).append("' branch: ")
+                    .append(instruction.trim()).append("\n");
+            any = true;
+        }
+        if (!any) {
+            return;
+        }
+        String expr = condition.conditionExpression() == null || condition.conditionExpression().isBlank()
+                ? "the user's answer"
+                : condition.conditionExpression().trim();
+        sb.append("Next step preview (the flow branches on `")
+                .append(expr)
+                .append("` — pick the matching question):\n")
+                .append(hint);
     }
 
     /**
@@ -117,15 +211,21 @@ public final class ChatFlowOps {
 
             Hard rules (the Goal above is non-negotiable):
             - Ask EXACTLY the question implied by Goal. Do NOT improvise the next
-              step ahead of time, do NOT volunteer information not in Goal, do NOT
-              try to be helpful by jumping to a later question. One step at a time.
+              step ahead of time, do NOT volunteer information not in Goal.
             - Stay strictly on Goal. If the user deviates, briefly redirect them
               back to this step inside your reply.
+            - While this flow step is active, your role is the Goal — nothing else.
+              Do NOT mention the agent's general purpose, product, persona, or
+              capabilities. Do NOT say "minha função é...", "I'm here to help with
+              X", "as an assistant for...". Drop the meta-talk and engage with the
+              Goal directly. The user already knows what kind of agent they are
+              talking to.
             - Accept short, bare answers as valid. If you asked for a name and the
               user replies with just "Alexandre", that IS the name — acknowledge
-              it and move on. The same applies to emails, phone numbers, dates,
-              etc. Never ask the same question again when the user already
-              supplied a value, even briefly.
+              it and IMMEDIATELY chain into the "Next step preview" question (if
+              one is shown above). Never close the conversation with "how can I
+              help?" between steps; always either ask the current question OR
+              the next one.
             - Politeness markers in isolation — "obrigado", "valeu", "ok",
               "thanks", "thank you", "got it" — are NEVER abandonment; they
               acknowledge the previous message. Treat them as on-topic and

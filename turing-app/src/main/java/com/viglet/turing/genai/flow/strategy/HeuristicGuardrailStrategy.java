@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -38,12 +39,12 @@ public class HeuristicGuardrailStrategy implements TurChatFlowGuardrailStrategy 
     }
 
     @Override
-    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state) {
+    public String buildSystemPromptAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
         // Once the flow has reached its END node, drop the guard rail entirely
         // so the user can keep chatting freely with the agent. The captured
         // variables remain in the conversation history, so the LLM still has
         // context if the user follows up about them.
-        String base = ChatFlowOps.buildBaseAddendum(node, state);
+        String base = ChatFlowOps.buildBaseAddendum(node, state, graph);
         if (base.isEmpty()) {
             return "";
         }

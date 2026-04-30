@@ -213,7 +213,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [name, setName] = useState(flow.name ?? "");
   const [description, setDescription] = useState(flow.description ?? "");
   const [guardrailMethod, setGuardrailMethod] = useState<TurChatFlowGuardrailMethod>(
-    flow.guardrailMethod ?? "HEURISTIC",
+    flow.guardrailMethod ?? "LLM_JUDGE",
   );
   const [triggerDescription, setTriggerDescription] = useState(flow.triggerDescription ?? "");
   const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
