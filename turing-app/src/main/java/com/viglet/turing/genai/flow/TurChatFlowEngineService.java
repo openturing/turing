@@ -148,6 +148,10 @@ public class TurChatFlowEngineService {
         created.setFlow(flow);
         created.setCurrentNodeId(anchor.id());
         created.setVariablesJson("{}");
+        // If the very first interactive node is a condition (rare but legal —
+        // a flow that branches immediately on context the user already
+        // provided), evaluate it before the user sends their next turn.
+        ChatFlowOps.walkThroughConditions(created, graph, null);
         return Optional.of(stateRepository.save(created));
     }
 
@@ -194,6 +198,11 @@ public class TurChatFlowEngineService {
         AdvanceContext ctx = new AdvanceContext(state, graph, nodeOpt.get(),
                 userMessage, assistantMessage, auxiliaryModel);
         String override = resolveStrategy(flow).advance(ctx);
+        // Condition nodes are transparent to the chat — the LLM never sees them
+        // as a "Goal" because they have none. Walk through any chain of
+        // conditions in the same turn so the next chat round lands on the next
+        // interactive node.
+        ChatFlowOps.walkThroughConditions(state, graph, auxiliaryModel);
         TurChatFlowState saved = saveAndMaybeRecord(flow, state, graph, previousNodeId);
         return new AdvanceResult(saved, override);
     }

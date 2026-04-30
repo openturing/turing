@@ -15,6 +15,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
+
 import com.viglet.turing.genai.flow.ChatFlowEdge;
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.ChatFlowNode;
@@ -188,6 +193,167 @@ public final class ChatFlowOps {
             return true;
         }
         return graph.nodeById(nodeId).map(n -> "end".equals(n.type())).orElse(false);
+    }
+
+    // ─────────────────────────── Condition walker ───────────────────────────
+
+    /**
+     * Hard cap on consecutive condition hops in {@link #walkThroughConditions}.
+     * Authored flows never need this many — the cap exists purely to make a
+     * pathological cycle non-fatal.
+     */
+    private static final int CONDITION_WALK_MAX = 8;
+
+    /**
+     * Walks the state through any chain of {@code condition} nodes, evaluating
+     * each {@code conditionExpression} and following the matching
+     * {@code "yes"} / {@code "no"} edge. Returns when the state lands on a
+     * non-condition node, when the chain dead-ends, or when the safety cap is
+     * hit. Mutates {@code state.currentNodeId}.
+     * <p>
+     * Conditions are transparent to the chat — the LLM never sees them as a
+     * "Goal", because they have none. The engine resolves them between turns.
+     */
+    public static void walkThroughConditions(TurChatFlowState state,
+            ChatFlowGraph graph,
+            ChatModel auxModel) {
+        if (state == null || graph == null) {
+            return;
+        }
+        for (int i = 0; i < CONDITION_WALK_MAX; i++) {
+            Optional<ChatFlowNode> currentOpt = currentNode(state, graph);
+            if (currentOpt.isEmpty()) {
+                return;
+            }
+            ChatFlowNode current = currentOpt.get();
+            if (!"condition".equals(current.type())) {
+                return;
+            }
+            Map<String, String> variables = readVariables(state);
+            boolean truthy = evaluateCondition(auxModel, current.conditionExpression(), variables);
+            String wantedHandle = truthy ? "yes" : "no";
+            ChatFlowEdge edge = pickConditionEdge(graph, current.id(), wantedHandle);
+            if (edge == null) {
+                log.warn("[FlowOps] Condition '{}' has no '{}' branch — staying", current.id(), wantedHandle);
+                return;
+            }
+            Optional<ChatFlowNode> target = graph.nodeById(edge.target());
+            if (target.isEmpty()) {
+                log.warn("[FlowOps] Condition edge '{}' points at missing node '{}'",
+                        edge.id(), edge.target());
+                return;
+            }
+            log.info("[FlowOps] Condition '{}' = {} → '{}'",
+                    current.id(), truthy, target.get().id());
+            state.setCurrentNodeId(target.get().id());
+        }
+        log.warn("[FlowOps] walkThroughConditions hit the {}-hop safety cap", CONDITION_WALK_MAX);
+    }
+
+    /**
+     * Picks an outgoing edge from {@code sourceId} whose {@code sourceHandle}
+     * matches {@code handle} (case-insensitive, null/blank treated as a
+     * wildcard fallback when no exact match exists).
+     */
+    private static ChatFlowEdge pickConditionEdge(ChatFlowGraph graph, String sourceId, String handle) {
+        List<ChatFlowEdge> outgoing = graph.outgoingEdges(sourceId);
+        ChatFlowEdge wildcard = null;
+        for (ChatFlowEdge edge : outgoing) {
+            String h = edge.sourceHandle();
+            if (h != null && h.equalsIgnoreCase(handle)) {
+                return edge;
+            }
+            if ((h == null || h.isBlank()) && wildcard == null) {
+                wildcard = edge;
+            }
+        }
+        return wildcard;
+    }
+
+    /**
+     * Evaluates {@code expression} (plain language or simple comparison)
+     * against the collected {@code variables}. Uses the auxiliary LLM when
+     * available — the expression syntax is intentionally permissive
+     * ({@code stuffedCrust == 'sim'}, {@code "company_size > 50"}, even
+     * natural-language phrasings like "user said yes to scheduling"), so a
+     * judge call is the most reliable evaluator. Falls back to
+     * {@code true} (the {@code "yes"} branch) when the model is unavailable
+     * or the call fails — biased toward NOT stalling the flow.
+     */
+    public static boolean evaluateCondition(ChatModel auxModel,
+            String expression,
+            Map<String, String> variables) {
+        if (expression == null || expression.isBlank()) {
+            return true;
+        }
+        if (auxModel == null) {
+            return true;
+        }
+        String varsJson = serializeVariables(variables);
+        String sys = """
+                You evaluate boolean conditions for a chat-flow engine. You receive a
+                variables map (JSON object collected by previous flow steps) and a
+                condition. Reply with EXACTLY one word: true or false. No quotes, no
+                JSON, no explanation.
+
+                Treat string values case-insensitively for yes/no equality:
+                  "sim" / "Sim" / "yes" / "yep" all equal "sim" or "yes".
+                  "não" / "Não" / "nao" / "no" / "nope" all equal "não" or "no".
+
+                If the condition references a variable that is missing or has an empty
+                string value, reply false. If the condition is genuinely ambiguous,
+                reply false.
+
+                Examples:
+                  Variables: {"stuffedCrust": "sim"}
+                  Condition: stuffedCrust == 'sim'
+                  Answer: true
+
+                  Variables: {"stuffedCrust": "Não"}
+                  Condition: stuffedCrust == 'sim'
+                  Answer: false
+
+                  Variables: {"company_size": "120"}
+                  Condition: company_size > 50
+                  Answer: true
+                """;
+        String user = "Variables: " + varsJson + "\n"
+                + "Condition: " + expression.trim() + "\n"
+                + "Answer (true|false):";
+        try {
+            Prompt prompt = new Prompt(List.of(new SystemMessage(sys), new UserMessage(user)));
+            var response = auxModel.call(prompt);
+            String reply = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText().trim().toLowerCase()
+                            : "";
+            log.info("[FlowOps] Condition judge: vars={} expr='{}' reply='{}'",
+                    varsJson, expression, reply);
+            // Default to the yes branch on any unexpected output — biased
+            // toward not stalling.
+            return !reply.startsWith("false");
+        } catch (Exception e) {
+            log.warn("[FlowOps] Condition judge failed: {} — defaulting to yes branch", e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Serializes the runtime variables as a compact JSON object — the format
+     * the LLM judge in {@link #evaluateCondition} expects. Falls back to
+     * {@link Map#toString()} only when Jackson somehow throws on a plain
+     * String→String map (effectively unreachable, kept for safety).
+     */
+    private static String serializeVariables(Map<String, String> variables) {
+        if (variables == null || variables.isEmpty()) {
+            return "{}";
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(variables);
+        } catch (JacksonException e) {
+            return variables.toString();
+        }
     }
 
     // ─────────────────────────── Variable I/O ───────────────────────────

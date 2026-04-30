@@ -91,15 +91,24 @@ public class StructuredOutputGuardrailStrategy implements TurChatFlowGuardrailSt
             - on_topic: false ONLY when YOUR reply went off-goal. If the USER asked
               something off-goal but YOUR reply politely brought them back, that is
               on_topic=true.
-            - collected_value: extract a value of the requested kind. Be permissive
+            - collected_value: extract whatever ANSWERS the Goal. Be permissive
               about FORMAT — bare answers count, no need for a "my name is X" prefix.
-              But be SMART about INTENT: conversational requests, intents, greetings,
-              or commands like "quero me inscrever", "I want to subscribe", "ajuda",
-              "olá", "hi", "yes please" are NEVER values — return null for those even
-              when the step asks for a name. A name is a person's name; an email is an
-              email address; a phone is a phone number. Do NOT conflate the user's
-              intent with a value. When in doubt, return null and let the next turn
-              decide.
+                Goal asks for a name → "Alexandre", "João Silva"
+                Goal asks for an email → "foo@bar.com"
+                Goal asks for a phone → "+5511999999999", "11 99999-9999"
+                Goal asks a yes/no question → "sim", "não", "yes", "no", "yep",
+                  "nope" — these ARE the values to collect; do NOT return null
+                  for them just because they are short.
+                Goal asks for a flavor / option → the option name verbatim
+                  ("portuguesa", "calabresa", "média").
+              POLITENESS MARKERS in isolation are NEVER values regardless of Goal:
+                "obrigado", "valeu", "ok", "thanks", "thank you", "got it".
+              CONVERSATIONAL INTENTS — phrases that say "I want to start X" but
+              do NOT answer the Goal — are NEVER values:
+                Goal: "ask for the user's name" + user: "quero me inscrever" → null
+                Goal: "ask for an email" + user: "olá" → null
+              When the user's message clearly answers the Goal, extract it; when in
+              doubt, return null and let the next turn decide.
             - ready_to_advance: true when collected_value is non-null and (when a
               validation rule applies) matches the rule. For steps without an output
               variable, true when the goal is clearly addressed. NEVER true on the
