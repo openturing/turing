@@ -146,6 +146,35 @@ export interface TurChatConversationMessage {
   content: string;
 }
 
+// ── Intents (curated quick prompts) ──
+
+export interface TurIntentAction {
+  /** Stable id from the backend */
+  id?: string;
+  /** Short visible label rendered on the chip */
+  label: string;
+  /** Full prompt text sent to the LLM when the chip is clicked */
+  prompt: string;
+  /** Sort order assigned by the author */
+  sortOrder?: number;
+}
+
+export interface TurIntent {
+  id?: string;
+  /** Category title (e.g. "Cursos", "Inscrições") */
+  title: string;
+  /** Optional admin-facing description */
+  description?: string;
+  /** Iconify identifier in the format `<prefix>:<name>` (e.g. `tabler:bulb`) */
+  icon?: string;
+  /** 1 = enabled, 0 = disabled */
+  enabled: number;
+  /** Sort order assigned by the author */
+  sortOrder?: number;
+  /** Quick-prompt actions for this intent */
+  actions: TurIntentAction[];
+}
+
 // ── Search State ──
 
 export type SearchStatus = "idle" | "loading" | "success" | "error";

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TurChatConversationMessage, TurChatResponse, TurSearchResponse, TurSortOption } from "./types";
+import type { TurChatConversationMessage, TurChatResponse, TurIntent, TurSearchResponse, TurSortOption } from "./types";
 
 /**
  * Low-level Turing API client. All hooks delegate to this module.
@@ -84,6 +84,18 @@ export async function postChatConversation(
     { messages, locale },
   );
   return data;
+}
+
+/**
+ * Fetches the curated list of enabled Intents for the site's AI agent.
+ * Each Intent groups quick-prompt suggestions ("actions") that authors set
+ * up in the Turing admin to surface as chips below the chat composer.
+ * Returns an empty array when the site has no agent or no enabled intents.
+ *
+ * @since 2026.2.12
+ */
+export function fetchIntents(site: string): Promise<TurIntent[]> {
+  return get<TurIntent[]>(`/sn/${site}/chat/intents`);
 }
 
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {

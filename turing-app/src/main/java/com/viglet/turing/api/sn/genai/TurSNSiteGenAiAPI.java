@@ -43,9 +43,12 @@ import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.persistence.dto.intent.TurIntentDto;
+import com.viglet.turing.persistence.mapper.intent.TurIntentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
+import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
@@ -66,17 +69,23 @@ public class TurSNSiteGenAiAPI {
 	private final TurGenAiContextFactory turGenAiContextFactory;
 	private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 	private final TurSNSiteSearchService turSNSiteSearchService;
+	private final TurIntentRepository turIntentRepository;
+	private final TurIntentMapper turIntentMapper;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
 			TurGenAiContextFactory turGenAiContextFactory,
 			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-			TurSNSiteSearchService turSNSiteSearchService) {
+			TurSNSiteSearchService turSNSiteSearchService,
+			TurIntentRepository turIntentRepository,
+			TurIntentMapper turIntentMapper) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
 		this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
 		this.turSNSiteSearchService = turSNSiteSearchService;
+		this.turIntentRepository = turIntentRepository;
+		this.turIntentMapper = turIntentMapper;
 	}
 
 	/**
@@ -206,6 +215,31 @@ public class TurSNSiteGenAiAPI {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, "Couldn't find site name."));
 		});
+	}
+
+	/**
+	 * Public, unauthenticated list of enabled intents for the site's AI agent.
+	 * Surfaces the curated quick-prompt suggestions that authors set up in the
+	 * agent's Intent admin UI, so the search frontend can render them as chips
+	 * below the chat input. Returns an empty list when the site has no agent
+	 * bound, the agent is disabled, or no intents are enabled.
+	 *
+	 * @since 2026.2.12
+	 */
+	@GetMapping("/intents")
+	public List<TurIntentDto> intents(@PathVariable String siteName) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null) return null;
+					TurAIAgent agent = genAi.getTurAIAgent();
+					if (agent == null || agent.getEnabled() != 1) return null;
+					return turIntentMapper.toDtoList(
+							turIntentRepository
+									.findByTurAIAgent_IdAndEnabledOrderBySortOrderAsc(
+											agent.getId(), 1));
+				})
+				.orElseGet(List::of);
 	}
 
 	public record ChatEnabledResponse(boolean enabled) {

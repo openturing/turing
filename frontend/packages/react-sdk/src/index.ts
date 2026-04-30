@@ -5,7 +5,7 @@ export { useSearchStore } from "./core/use-search-store";
 export type { TuringContextValue, SearchStoreValue } from "./core/context";
 
 // ── API ──
-export { fetchSearch, fetchChat, fetchChatEnabled, postChatConversation, fetchAutoComplete, fetchSortOptions, parseHrefToParams } from "./core/api";
+export { fetchSearch, fetchChat, fetchChatEnabled, postChatConversation, fetchAutoComplete, fetchIntents, fetchSortOptions, parseHrefToParams } from "./core/api";
 export type { SearchParams } from "./core/api";
 
 // ── Resolve utilities ──
@@ -32,6 +32,10 @@ export { useTuringPagination } from "./hooks/use-turing-pagination";
 export type { UseTuringPaginationReturn, PaginationPage } from "./hooks/use-turing-pagination";
 export { useTuringTabs } from "./hooks/use-turing-tabs";
 export type { UseTuringTabsReturn, UseTuringTabsOptions, TabDefinition, EnrichedTab } from "./hooks/use-turing-tabs";
+export { useTuringChat } from "./hooks/use-turing-chat";
+export type { UseTuringChatReturn, UseTuringChatOptions, ChatMessage, ChatStatus } from "./hooks/use-turing-chat";
+export { useTuringIntents } from "./hooks/use-turing-intents";
+export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
 
 // ── UI Components ──
 export { TuringSearchBar } from "./ui/TuringSearchBar";
@@ -58,6 +62,8 @@ export type {
   TurSortOption,
   TurChatResponse,
   TurChatConversationMessage,
+  TurIntent,
+  TurIntentAction,
   SearchStatus,
   SearchState,
   ResolvedDocument,
