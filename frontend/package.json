@@ -1,7 +1,7 @@
 {
   "name": "@viglet/turing-frontend",
   "private": true,
-  "version": "2026.2.14",
+  "version": "2026.2.15",
   "packageManager": "pnpm@10.33.0",
   "description": "Viglet Turing ES — unified JavaScript monorepo (dashboard, SDK, marketplace apps)",
   "scripts": {
