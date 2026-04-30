@@ -146,6 +146,30 @@ export interface TurChatConversationMessage {
   content: string;
 }
 
+/**
+ * One Server-Sent Event emitted by `POST /sn/{site}/chat/conversation`.
+ * The backend currently flushes a single event with the full content after
+ * the LLM tool-calling loop completes; future server changes may stream
+ * incremental tokens. Aggregators should append, not replace.
+ *
+ * @since 2026.2.15
+ */
+export interface TurChatStreamEvent {
+  role: "assistant";
+  content: string;
+}
+
+/**
+ * Aggregated response returned by `postChatConversation` once the SSE
+ * stream is fully consumed.
+ *
+ * @since 2026.2.15
+ */
+export interface TurChatConversationResponse {
+  role: "assistant";
+  content: string;
+}
+
 // ── Intents (curated quick prompts) ──
 
 export interface TurIntentAction {

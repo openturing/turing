@@ -189,7 +189,7 @@ export function useTuringChat(
         const assistantMsg: ChatMessage = {
           id: newId(),
           role: "assistant",
-          content: res?.text ?? "",
+          content: res?.content ?? "",
           timestamp: Date.now(),
         };
 

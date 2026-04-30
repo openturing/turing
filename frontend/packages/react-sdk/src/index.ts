@@ -62,6 +62,8 @@ export type {
   TurSortOption,
   TurChatResponse,
   TurChatConversationMessage,
+  TurChatConversationResponse,
+  TurChatStreamEvent,
   TurIntent,
   TurIntentAction,
   SearchStatus,
