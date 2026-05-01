@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install workspace deps
@@ -76,7 +76,7 @@ jobs:
       - name: Deploy to openviglet/turing-ce (github-pages branch)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          personal_token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          personal_token: ${{ secrets.GH_PKG_TOKEN }}
           external_repository: openviglet/turing-ce
           publish_branch: github-pages
           publish_dir: ./_site
