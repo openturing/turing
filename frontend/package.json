@@ -13,7 +13,7 @@
     "build:app": "turbo run build --filter=turing-app && node scripts/build-status.mjs",
     "build:marketplace": "turbo run build --filter=\"./apps/marketplace/*\" && node scripts/build-status.mjs",
     "build-storybook:react-sdk": "turbo run build-storybook --filter=@viglet/turing-react-sdk",
-    "package:marketplace": "pnpm --filter=\"./apps/marketplace/*\" run package",
+    "package:marketplace": "pnpm --filter @viglet/turing-react-sdk run build && pnpm --filter=\"./apps/marketplace/*\" run package",
     "dev:app": "turbo run dev --filter=turing-app",
     "dev:mythical-creatures": "turbo run dev --filter=turing-example-mythical-creatures",
     "dev:space-missions": "turbo run dev --filter=turing-example-space-missions",
