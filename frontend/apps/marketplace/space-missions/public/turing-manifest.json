@@ -1,10 +1,10 @@
 {
   "name": "space-missions",
-  "version": "2026.2.10",
+  "version": "2026.2.15",
   "author": "Alexandre Oliveira",
   "repository": "https://github.com/openviglet/turing",
   "description": "space-missions — Turing ES example application",
-  "buildDate": "2026-04-20T16:05:31.382Z",
+  "buildDate": "2026-05-01T17:12:55.192Z",
   "snSite": "space-missions",
   "locale": "en_US",
   "framework": "react",

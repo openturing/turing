@@ -40,4 +40,4 @@ jobs:
 
       - name: Build
         working-directory: frontend
-        run: pnpm --filter ${{ matrix.workspace }} run build
+        run: pnpm --filter "${{ matrix.workspace }}..." run build
