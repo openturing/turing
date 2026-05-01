@@ -5,8 +5,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -15,9 +13,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v6
@@ -78,12 +73,10 @@ jobs:
       - name: Copy static pages assets
         run: cp .github/pages/* _site/
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Deploy to openviglet/turing-ce (github-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          external_repository: openviglet/turing-ce
+          publish_branch: github-pages
+          publish_dir: ./_site
