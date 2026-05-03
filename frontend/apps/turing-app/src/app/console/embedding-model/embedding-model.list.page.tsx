@@ -1,24 +1,16 @@
+import { useEmbeddingModels } from "@/api/queries/embedding-model.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts";
-import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service";
 import { IconCube } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turEmbeddingModelService = new TurEmbeddingModelService();
 
 export default function EmbeddingModelListPage() {
   const { t } = useTranslation();
-  const [models, setModels] = useState<TurEmbeddingModel[]>();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    turEmbeddingModelService.query().then(setModels).catch(() => setError(t("common.connectionError", { resource: "embedding models" })));
-  }, []);
+  const { data: models, isError } = useEmbeddingModels();
+  const error = isError ? t("common.connectionError", { resource: "embedding models" }) : null;
 
   const gridItemList = useGridAdapter(models, {
     name: "modelName",

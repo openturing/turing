@@ -1,8 +1,10 @@
+import { lazy } from "react"
 import { Navigate, Route } from "react-router-dom"
-import LLMInstanceListPage from "../console/llm/llm.instance.list.page"
-import LLMInstancePage from "../console/llm/llm.instance.page"
-import LLMInstanceRootPage from "../console/llm/llm.instance.root.page"
 import { ROUTES } from "../routes.const"
+
+const LLMInstanceListPage = lazy(() => import("../console/llm/llm.instance.list.page"))
+const LLMInstancePage = lazy(() => import("../console/llm/llm.instance.page"))
+const LLMInstanceRootPage = lazy(() => import("../console/llm/llm.instance.root.page"))
 
 export const LLMRoutes = (
     <Route path={ROUTES.LLM_ROOT} element={<LLMInstanceRootPage />}>

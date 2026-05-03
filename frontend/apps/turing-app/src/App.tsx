@@ -1,10 +1,13 @@
+import { lazy, Suspense } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
 import ConsoleRootPage from "./app/console/console.root.page"
-import DashboardPage from "./app/console/dashboard/dashboard.page"
-import HomePage from "./app/console/home/home.page"
-import LoginPage from "./app/login/login.page"
-import RegisterPage from "./app/register/register.page"
-import SetupPage from "./app/setup/setup.page"
+// Top-level pages are lazy-loaded so the auth/login bundle stays small —
+// users hitting /login don't need to download the dashboard, and vice-versa.
+const DashboardPage = lazy(() => import("./app/console/dashboard/dashboard.page"))
+const HomePage = lazy(() => import("./app/console/home/home.page"))
+const LoginPage = lazy(() => import("./app/login/login.page"))
+const RegisterPage = lazy(() => import("./app/register/register.page"))
+const SetupPage = lazy(() => import("./app/setup/setup.page"))
 import {
   AdminRoutes,
   AIAgentRoutes,
@@ -32,8 +35,8 @@ import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
 import { TuringServiceProvider } from "./contexts/TuringServiceContext"
 import { BreadcrumbProvider } from "./contexts/breadcrumb.context"
-import AnnSearchPage from "./search/pages/ann-search.page"
-import SearchPage from "./search/pages/search.page"
+const AnnSearchPage = lazy(() => import("./search/pages/ann-search.page"))
+const SearchPage = lazy(() => import("./search/pages/search.page"))
 
 function App() {
   return (
@@ -42,6 +45,7 @@ function App() {
         <BreadcrumbProvider>
           <TuringServiceProvider>
             <Toaster />
+            <Suspense fallback={<div className="h-screen w-screen" aria-busy="true" />}>
             <Routes>
               <Route path={ROUTES.ROOT} element={<Navigate to={ROUTES.CONSOLE} replace />} />
               <Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -75,6 +79,7 @@ function App() {
                 {AdminRoutes}
               </Route>
             </Routes>
+            </Suspense>
           </TuringServiceProvider>
         </BreadcrumbProvider>
       </ThemeProvider>

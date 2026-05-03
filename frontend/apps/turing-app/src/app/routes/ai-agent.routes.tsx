@@ -1,20 +1,24 @@
+import { lazy } from "react"
 import { Navigate, Route, useParams } from "react-router-dom"
-import AIAgentListPage from "../console/ai-agent/ai-agent.list.page"
-import AIAgentPage from "../console/ai-agent/ai-agent.page"
-import AIAgentRootPage from "../console/ai-agent/ai-agent.root.page"
-import AIAgentSettingsPage from "../console/ai-agent/settings/ai-agent.settings.page"
-import AIAgentLlmPage from "../console/ai-agent/llm/ai-agent.llm.page"
-import AIAgentMcpPage from "../console/ai-agent/mcp/ai-agent.mcp.page"
-import AIAgentCustomToolPage from "../console/ai-agent/custom-tool/ai-agent.custom-tool.page"
-import AIAgentToolsPage from "../console/ai-agent/tools/ai-agent.tools.page"
-import IntentListPage from "../console/intent/intent.list.page"
-import IntentSettingsPage from "../console/intent/settings/intent.settings.page"
-import IntentAiChatPage from "../console/intent/ai-chat/intent.ai-chat.page"
-import ChatFlowListPage from "../console/chat-flow/chat-flow.list.page"
-import ChatFlowPage from "../console/chat-flow/chat-flow.page"
-import ChatFlowAiChatPage from "../console/chat-flow/ai-chat/chat-flow.ai-chat.page"
-import AIAgentHistoryPage from "../console/ai-agent/history/ai-agent.history.page"
 import { ROUTES } from "../routes.const"
+
+// chat-flow.page.tsx alone is 668 lines and pulls react-flow; lazy-loading
+// keeps that out of the initial bundle.
+const AIAgentListPage = lazy(() => import("../console/ai-agent/ai-agent.list.page"))
+const AIAgentPage = lazy(() => import("../console/ai-agent/ai-agent.page"))
+const AIAgentRootPage = lazy(() => import("../console/ai-agent/ai-agent.root.page"))
+const AIAgentSettingsPage = lazy(() => import("../console/ai-agent/settings/ai-agent.settings.page"))
+const AIAgentLlmPage = lazy(() => import("../console/ai-agent/llm/ai-agent.llm.page"))
+const AIAgentMcpPage = lazy(() => import("../console/ai-agent/mcp/ai-agent.mcp.page"))
+const AIAgentCustomToolPage = lazy(() => import("../console/ai-agent/custom-tool/ai-agent.custom-tool.page"))
+const AIAgentToolsPage = lazy(() => import("../console/ai-agent/tools/ai-agent.tools.page"))
+const IntentListPage = lazy(() => import("../console/intent/intent.list.page"))
+const IntentSettingsPage = lazy(() => import("../console/intent/settings/intent.settings.page"))
+const IntentAiChatPage = lazy(() => import("../console/intent/ai-chat/intent.ai-chat.page"))
+const ChatFlowListPage = lazy(() => import("../console/chat-flow/chat-flow.list.page"))
+const ChatFlowPage = lazy(() => import("../console/chat-flow/chat-flow.page"))
+const ChatFlowAiChatPage = lazy(() => import("../console/chat-flow/ai-chat/chat-flow.ai-chat.page"))
+const AIAgentHistoryPage = lazy(() => import("../console/ai-agent/history/ai-agent.history.page"))
 
 function RedirectToAIAgentSettings() {
     const { id } = useParams();

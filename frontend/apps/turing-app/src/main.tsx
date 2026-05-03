@@ -1,5 +1,8 @@
 import '@/i18n';
 import '@/lib/axios'; // Configure axios interceptors for CSRF + backend status
+import { turingQueryClient } from '@/lib/query-client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BackendStatusProvider, ErrorBoundary } from '@viglet/viglet-design-system';
 import axios from 'axios';
 import React from 'react';
@@ -25,11 +28,14 @@ if (!(globalThis as Record<string, unknown>).__TURING_LOADING_TEST__) {
   createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
-        <ErrorBoundary>
-          <BackendStatusProvider healthEndpoint="/api/v2/ping">
-            <App />
-          </BackendStatusProvider>
-        </ErrorBoundary>
+        <QueryClientProvider client={turingQueryClient}>
+          <ErrorBoundary>
+            <BackendStatusProvider healthEndpoint="/api/v2/ping">
+              <App />
+            </BackendStatusProvider>
+          </ErrorBoundary>
+          {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+        </QueryClientProvider>
       </BrowserRouter>
     </React.StrictMode>
   )

@@ -1,30 +1,35 @@
+import { lazy } from "react"
 import { Navigate, Route, useParams } from "react-router-dom"
-import SNSiteBehaviorPage from "../console/sn/behavior/sn.site.behavior.page"
-import SNSiteCustomSortListPage from "../console/sn/custom-sort/sn.site.custom.sort.list.page"
-import SNSiteCustomSortPage from "../console/sn/custom-sort/sn.site.custom.sort.page"
-import SNSiteSearchRuleListPage from "../console/sn/search-rules/sn.site.search.rule.list.page"
-import SNSiteSearchRulePage from "../console/sn/search-rules/sn.site.search.rule.page"
-import SNSiteDetailPage from "../console/sn/detail/sn.site.detail.page"
-import SNSiteCustomFacetPage from "../console/sn/facet/sn.site.custom.facet.page"
-import SNSiteFacetListPage from "../console/sn/facet/sn.site.facet.list.page"
-import SNSiteFacetedFieldPage from "../console/sn/facet/sn.site.faceted.field.page"
-import SNSiteFieldListPage from "../console/sn/fields/sn.site.field.list.page"
-import SNSiteFieldPage from "../console/sn/fields/sn.site.field.page"
-import SNSiteGenAIPage from "../console/sn/genai/sn.site.genai.page"
-import SNSiteMergeProvidersListPage from "../console/sn/merge-providers/sn.site.merge.providers.list.page"
-import SNSiteMergeProvidersPage from "../console/sn/merge-providers/sn.site.merge.providers.page"
-import SNSiteMultiLanguageListPage from "../console/sn/multi-language/sn.site.multi.language.list.page"
-import SNSiteMultiLanguagePage from "../console/sn/multi-language/sn.site.multi.language.page"
-import SNSiteResultRankingListPage from "../console/sn/result-ranking/sn.site.result.ranking.list.page"
-import SNSiteResultRankingPage from "../console/sn/result-ranking/sn.site.result.ranking.page"
-import SNSiteListPage from "../console/sn/sn.site.list.page"
-import SNSitePage from "../console/sn/sn.site.page"
-import SNSiteRootPage from "../console/sn/sn.site.root.page"
-import SNSiteSpotlightListPage from "../console/sn/spotlight/sn.site.spotlight.list.page"
-import SNSiteSpotlightPage from "../console/sn/spotlight/sn.site.spotlight.page"
-import SNSiteInsightsPage from "../console/sn/insights/sn.site.insights.page"
-import SNSiteTopSearchTermsPage from "../console/sn/top-search-terms/sn.site.top.search.terms.page"
 import { ROUTES } from "../routes.const"
+
+// Heaviest console area — every form page (custom facet, multi-language) is
+// large and pulls in CodeMirror / form libraries. Lazy loading keeps the
+// initial bundle out of these chunks until the user navigates here.
+const SNSiteBehaviorPage = lazy(() => import("../console/sn/behavior/sn.site.behavior.page"))
+const SNSiteCustomSortListPage = lazy(() => import("../console/sn/custom-sort/sn.site.custom.sort.list.page"))
+const SNSiteCustomSortPage = lazy(() => import("../console/sn/custom-sort/sn.site.custom.sort.page"))
+const SNSiteSearchRuleListPage = lazy(() => import("../console/sn/search-rules/sn.site.search.rule.list.page"))
+const SNSiteSearchRulePage = lazy(() => import("../console/sn/search-rules/sn.site.search.rule.page"))
+const SNSiteDetailPage = lazy(() => import("../console/sn/detail/sn.site.detail.page"))
+const SNSiteCustomFacetPage = lazy(() => import("../console/sn/facet/sn.site.custom.facet.page"))
+const SNSiteFacetListPage = lazy(() => import("../console/sn/facet/sn.site.facet.list.page"))
+const SNSiteFacetedFieldPage = lazy(() => import("../console/sn/facet/sn.site.faceted.field.page"))
+const SNSiteFieldListPage = lazy(() => import("../console/sn/fields/sn.site.field.list.page"))
+const SNSiteFieldPage = lazy(() => import("../console/sn/fields/sn.site.field.page"))
+const SNSiteGenAIPage = lazy(() => import("../console/sn/genai/sn.site.genai.page"))
+const SNSiteMergeProvidersListPage = lazy(() => import("../console/sn/merge-providers/sn.site.merge.providers.list.page"))
+const SNSiteMergeProvidersPage = lazy(() => import("../console/sn/merge-providers/sn.site.merge.providers.page"))
+const SNSiteMultiLanguageListPage = lazy(() => import("../console/sn/multi-language/sn.site.multi.language.list.page"))
+const SNSiteMultiLanguagePage = lazy(() => import("../console/sn/multi-language/sn.site.multi.language.page"))
+const SNSiteResultRankingListPage = lazy(() => import("../console/sn/result-ranking/sn.site.result.ranking.list.page"))
+const SNSiteResultRankingPage = lazy(() => import("../console/sn/result-ranking/sn.site.result.ranking.page"))
+const SNSiteListPage = lazy(() => import("../console/sn/sn.site.list.page"))
+const SNSitePage = lazy(() => import("../console/sn/sn.site.page"))
+const SNSiteRootPage = lazy(() => import("../console/sn/sn.site.root.page"))
+const SNSiteSpotlightListPage = lazy(() => import("../console/sn/spotlight/sn.site.spotlight.list.page"))
+const SNSiteSpotlightPage = lazy(() => import("../console/sn/spotlight/sn.site.spotlight.page"))
+const SNSiteInsightsPage = lazy(() => import("../console/sn/insights/sn.site.insights.page"))
+const SNSiteTopSearchTermsPage = lazy(() => import("../console/sn/top-search-terms/sn.site.top.search.terms.page"))
 
 function RedirectToSNDetail() {
     const { id } = useParams();

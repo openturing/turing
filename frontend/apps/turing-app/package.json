@@ -42,6 +42,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "@uiw/react-codemirror": "^4.23.6",
     "@tailwindcss/vite": "^4.2.4",
+    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query-devtools": "^5.62.0",
     "@tanstack/react-table": "^8.21.3",
     "@viglet/turing-react-sdk": "workspace:*",
     "@viglet/viglet-design-system": "^2026.2.53",

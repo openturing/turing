@@ -1,8 +1,10 @@
+import { lazy } from "react"
 import { Navigate, Route } from "react-router-dom"
-import EmbeddingModelListPage from "../console/embedding-model/embedding-model.list.page"
-import EmbeddingModelPage from "../console/embedding-model/embedding-model.page"
-import EmbeddingModelRootPage from "../console/embedding-model/embedding-model.root.page"
 import { ROUTES } from "../routes.const"
+
+const EmbeddingModelListPage = lazy(() => import("../console/embedding-model/embedding-model.list.page"))
+const EmbeddingModelPage = lazy(() => import("../console/embedding-model/embedding-model.page"))
+const EmbeddingModelRootPage = lazy(() => import("../console/embedding-model/embedding-model.root.page"))
 
 export const EmbeddingModelRoutes = (
     <Route path={ROUTES.EMBEDDING_MODEL_ROOT} element={<EmbeddingModelRootPage />}>
