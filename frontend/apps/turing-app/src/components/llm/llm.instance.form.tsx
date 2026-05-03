@@ -21,10 +21,14 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import {
+  useCreateLlmInstance,
+  useDeleteLlmInstance,
+  useUpdateLlmInstance,
+} from "@/api/queries/llm-instance.queries"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
 import type { TurLLMVendor } from "@/models/llm/llm-vendor.model"
 import { TurLLMVendorService } from "@/services/llm/llm-vendor.service"
-import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -38,7 +42,6 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
-const turLLMInstanceService = new TurLLMInstanceService();
 const turLLMVendorService = new TurLLMVendorService();
 const urlBase = ROUTES.LLM_INSTANCE
 interface Props {
@@ -107,6 +110,10 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [preservedOptions, setPreservedOptions] = useState<Record<string, unknown>>({})
   const selectedVendorId = form.watch("turLLMVendor.id");
   const navigate = useNavigate()
+
+  const createMutation = useCreateLlmInstance()
+  const updateMutation = useUpdateLlmInstance()
+  const deleteMutation = useDeleteLlmInstance()
 
   useEffect(() => {
     turLLMVendorService.query().then(setVendors);
@@ -206,7 +213,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
     try {
       if (isNew) {
-        const result = await turLLMInstanceService.create(payload);
+        const result = await createMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.title, feature: t("llm.title") }));
           navigate(urlBase);
@@ -215,7 +222,7 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         }
       }
       else {
-        const result = await turLLMInstanceService.update(payload);
+        const result = await updateMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.title, feature: t("llm.title") }));
         } else {
@@ -229,9 +236,8 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   }
 
   async function onDelete() {
-    console.log("delete");
     try {
-      if (await turLLMInstanceService.delete(value)) {
+      if (await deleteMutation.mutateAsync(value)) {
         toast.success(t("forms.common.deleted", { name: value.title, feature: t("llm.title") }));
         navigate(urlBase);
       }

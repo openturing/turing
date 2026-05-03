@@ -18,6 +18,11 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import {
+  useCreateCustomTool,
+  useDeleteCustomTool,
+  useUpdateCustomTool,
+} from "@/api/queries/custom-tool.queries"
 import type { CustomToolParameter, CustomToolPrimitive, TurCustomTool } from "@/models/customtool/custom-tool.model.ts"
 import { TurCustomToolService, type ValidateScriptResponse } from "@/services/customtool/custom-tool.service"
 import { VibeCodingButton } from "@/components/custom-tool/vibe-coding-button"
@@ -129,6 +134,11 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
   const [open, setOpen] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validation, setValidation] = useState<ValidateScriptResponse | null>(null);
+
+  const createMutation = useCreateCustomTool();
+  const updateMutation = useUpdateCustomTool();
+  const deleteMutation = useDeleteCustomTool();
+
   const form = useForm<FormShape>({
     defaultValues: {
       ...value,
@@ -178,7 +188,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
     };
     try {
       if (isNew) {
-        const result = await turCustomToolService.create(payload);
+        const result = await createMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.title, feature: t("customTool.title") }));
           navigate(urlBase);
@@ -186,7 +196,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
           toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("customTool.title") }));
         }
       } else {
-        const result = await turCustomToolService.update(payload);
+        const result = await updateMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.title, feature: t("customTool.title") }));
         } else {
@@ -201,7 +211,7 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
 
   async function onDelete() {
     try {
-      if (await turCustomToolService.delete(value)) {
+      if (await deleteMutation.mutateAsync(value)) {
         toast.success(t("forms.common.deleted", { name: value.title, feature: t("customTool.title") }));
         navigate(urlBase);
       } else {

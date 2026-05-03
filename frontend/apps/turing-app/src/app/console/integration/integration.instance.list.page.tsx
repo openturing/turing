@@ -1,23 +1,16 @@
+import { useIntegrationInstances } from "@/api/queries/integration-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts";
-import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import { IconPlugConnectedX } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turIntegrationInstanceService = new TurIntegrationInstanceService();
 
 export default function IntegrationInstanceListPage() {
   const { t } = useTranslation();
-  const [integrationInstances, setIntegrationInstances] = useState<TurIntegrationInstance[]>();
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    turIntegrationInstanceService.query().then(setIntegrationInstances).catch(() => setError(t("common.connectionError", { resource: "instances" })));
-  }, [])
+  const { data: integrationInstances, isError } = useIntegrationInstances();
+  const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
   const gridItemList = useGridAdapter(integrationInstances, {
     name: "title",
     description: "description",

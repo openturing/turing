@@ -1,28 +1,18 @@
+import { useAdminRoles } from "@/api/queries/admin.queries";
 import { ROUTES } from "@/app/routes.const";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurRole } from "@/models/auth/role";
-import { TurRoleService } from "@/services/auth/role.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUserShield } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turRoleService = new TurRoleService();
 
 export default function AdminRolesListPage() {
     const { t } = useTranslation();
-    const [roles, setRoles] = useState<TurRole[]>();
-    const [error, setError] = useState<string | null>(null);
+    const { data: roles, isError } = useAdminRoles();
+    const error = isError ? t("admin.roles.loadFailed") : null;
     useSubPageBreadcrumb(t("admin.roles.title"));
-
-    useEffect(() => {
-        turRoleService.query()
-            .then(setRoles)
-            .catch(() => setError(t("admin.roles.loadFailed")));
-    }, []);
 
     const gridItemList = useGridAdapter(roles, {
         name: "name",

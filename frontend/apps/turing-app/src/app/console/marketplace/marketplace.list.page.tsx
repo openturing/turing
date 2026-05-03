@@ -1,3 +1,4 @@
+import { useMarketplaceItems } from "@/api/queries/marketplace.queries";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ import {
     IconPackageImport,
     IconX,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 import ReactMarkdown from "react-markdown";
@@ -57,8 +58,8 @@ function getItemIcon(key: string): React.ReactNode {
 
 export default function MarketplaceListPage() {
     const { t } = useTranslation();
-    const [items, setItems] = useState<TurMarketplaceItem[]>();
-    const [error, setError] = useState<string | null>(null);
+    const { data: items, isError } = useMarketplaceItems();
+    const error = isError ? t("common.connectionError", { resource: "marketplace" }) : null;
 
     const [selectedItem, setSelectedItem] = useState<TurMarketplaceItem | null>(null);
     const [includeContent, setIncludeContent] = useState(true);
@@ -75,13 +76,6 @@ export default function MarketplaceListPage() {
     const [readmeContent, setReadmeContent] = useState<string | null>(null);
     const [readmeLoading, setReadmeLoading] = useState(false);
     const [readmeError, setReadmeError] = useState<string | null>(null);
-
-    useEffect(() => {
-        marketplaceService
-            .list()
-            .then(setItems)
-            .catch(() => setError(t("common.connectionError", { resource: "marketplace" })));
-    }, [t]);
 
     const openImportDialog = useCallback((item: TurMarketplaceItem) => {
         setSelectedItem(item);

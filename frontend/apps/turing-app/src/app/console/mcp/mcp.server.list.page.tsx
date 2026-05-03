@@ -1,24 +1,16 @@
+import { useMcpServers } from "@/api/queries/mcp-server.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts";
-import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 import { IconServer2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turMcpServerService = new TurMcpServerService();
 
 export default function McpServerListPage() {
   const { t } = useTranslation();
-  const [mcpServers, setMcpServers] = useState<TurMcpServer[]>();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    turMcpServerService.query().then(setMcpServers).catch(() => setError(t("common.connectionError", { resource: "MCP servers" })));
-  }, [])
+  const { data: mcpServers, isError } = useMcpServers();
+  const error = isError ? t("common.connectionError", { resource: "MCP servers" }) : null;
   const gridItemList = useGridAdapter(mcpServers, {
     name: "title",
     description: "description",

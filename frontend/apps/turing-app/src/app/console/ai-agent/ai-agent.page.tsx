@@ -1,3 +1,4 @@
+import { useDeleteAiAgent } from "@/api/queries/ai-agent.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
@@ -26,6 +27,7 @@ export default function AIAgentPage() {
   useSubPageBreadcrumb(breadcrumb);
   const navigate = useNavigate();
   const urlBase = `${ROUTES.AI_AGENT_INSTANCE}/${id}`;
+  const deleteMutation = useDeleteAiAgent();
 
   const data = useMemo(() => {
     if (isNew) {
@@ -71,7 +73,7 @@ export default function AIAgentPage() {
 
   async function onDelete() {
     try {
-      if (await turAIAgentService.delete(agent)) {
+      if (await deleteMutation.mutateAsync(agent)) {
         toast.success(t("aiAgent.deleted", { name: agent.title }));
         navigate(ROUTES.AI_AGENT_INSTANCE);
       } else {

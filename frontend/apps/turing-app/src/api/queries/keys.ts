@@ -36,4 +36,53 @@ export const queryKeys = {
     all: () => ['features'] as const,
     current: () => [...queryKeys.features.all(), 'current'] as const,
   },
+  chatFlows: {
+    all: () => ['chat-flows'] as const,
+    listByAgent: (agentId: string) => [...queryKeys.chatFlows.all(), 'list', 'agent', agentId] as const,
+  },
+  customTools: {
+    all: () => ['custom-tools'] as const,
+    list: () => [...queryKeys.customTools.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.customTools.all(), 'detail', id] as const,
+  },
+  intents: {
+    all: () => ['intents'] as const,
+    listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,
+  },
+  mcpServers: {
+    all: () => ['mcp-servers'] as const,
+    list: () => [...queryKeys.mcpServers.all(), 'list'] as const,
+  },
+  integrationInstances: {
+    all: () => ['integration-instances'] as const,
+    list: () => [...queryKeys.integrationInstances.all(), 'list'] as const,
+  },
+  storeInstances: {
+    all: () => ['store-instances'] as const,
+    list: () => [...queryKeys.storeInstances.all(), 'list'] as const,
+  },
+  tokenInstances: {
+    all: () => ['token-instances'] as const,
+    list: () => [...queryKeys.tokenInstances.all(), 'list'] as const,
+  },
+  marketplaceItems: {
+    all: () => ['marketplace-items'] as const,
+    list: () => [...queryKeys.marketplaceItems.all(), 'list'] as const,
+  },
+  authDiscovery: {
+    all: () => ['auth-discovery'] as const,
+    current: () => [...queryKeys.authDiscovery.all(), 'current'] as const,
+  },
+  adminUsers: {
+    all: () => ['admin-users'] as const,
+    list: (source: 'jpa' | 'keycloak') => [...queryKeys.adminUsers.all(), 'list', source] as const,
+  },
+  adminGroups: {
+    all: () => ['admin-groups'] as const,
+    list: (source: 'jpa' | 'keycloak') => [...queryKeys.adminGroups.all(), 'list', source] as const,
+  },
+  adminRoles: {
+    all: () => ['admin-roles'] as const,
+    list: () => [...queryKeys.adminRoles.all(), 'list'] as const,
+  },
 } as const;

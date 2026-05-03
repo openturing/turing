@@ -1,27 +1,19 @@
+import { useTokenInstances } from "@/api/queries/token-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurTokenInstance } from "@/models/token/token-instance.model.ts";
-import { TurTokenInstanceService } from "@/services/token/token.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconCode } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turTokenInstanceService = new TurTokenInstanceService();
 
 export default function TokenInstanceListPage() {
   const { t } = useTranslation();
-  const [tokenInstances, setTokenInstances] = useState<TurTokenInstance[]>();
-  const [error, setError] = useState<string | null>(null);
+  const { data: tokenInstances, isError } = useTokenInstances();
+  const error = isError ? t("common.connectionError", { resource: "api tokens" }) : null;
   useSubPageBreadcrumb(t("apiToken.title"));
-
-  useEffect(() => {
-    turTokenInstanceService.query().then(setTokenInstances).catch(() => setError(t("common.connectionError", { resource: "api tokens" })));
-  }, []);
   const gridItemList = useGridAdapter(tokenInstances, {
     name: "title",
     description: "description",

@@ -18,10 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
+import { useCreateAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
@@ -40,7 +40,6 @@ import { SectionCard } from "../ui/section-card"
 import { MetaPromptSheet } from "../ui/meta-prompt-sheet"
 import { SmartDescription } from "../ui/smart-description"
 
-const turAIAgentService = new TurAIAgentService();
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
@@ -102,6 +101,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
   const [globalDefaultEmbeddingModelId, setGlobalDefaultEmbeddingModelId] = useState<string>("");
   const [globalDefaultEmbeddingStoreId, setGlobalDefaultEmbeddingStoreId] = useState<string>("");
+
+  const createMutation = useCreateAiAgent();
+  const updateMutation = useUpdateAiAgent();
 
   const ragEnabled = form.watch("ragEnabled");
   const embeddingModelValue = form.watch("turEmbeddingModelInstance");
@@ -187,7 +189,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
     const payload: TurAIAgent = { ...agent }
     try {
       if (isNew) {
-        const result = await turAIAgentService.create(payload);
+        const result = await createMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.title, feature: t("aiAgent.title") }));
           navigate(`${urlBase}/${result.id}/settings`);
@@ -195,7 +197,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
           toast.error(t("forms.common.notSaved", { name: payload.title, feature: t("aiAgent.title") }));
         }
       } else {
-        const result = await turAIAgentService.update(payload);
+        const result = await updateMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.title, feature: t("aiAgent.title") }));
         } else {

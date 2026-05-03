@@ -1,29 +1,20 @@
+import { useIntents } from "@/api/queries/intent.queries";
 import { ROUTES } from "@/app/routes.const";
 import { AiAuthoringTrigger } from "@/components/ai-authoring/ai-authoring-trigger";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurIntent } from "@/models/intent/intent.model";
-import { TurIntentService } from "@/services/intent/intent.service";
 import { IconBulb } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
-const turIntentService = new TurIntentService();
 
 export default function IntentListPage() {
   const { t } = useTranslation();
   const { id: agentId } = useParams();
-  const [intents, setIntents] = useState<TurIntent[]>();
-  const [error, setError] = useState<string | null>(null);
+  const { data: intents, isError } = useIntents(agentId);
+  const error = isError ? t("common.connectionError", { resource: "intents" }) : null;
   const baseUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/intent`;
-
-  useEffect(() => {
-    if (!agentId) return;
-    turIntentService.query(agentId).then(setIntents).catch(() => setError(t("common.connectionError", { resource: "intents" })));
-  }, [agentId])
 
   const gridItemList = useGridAdapter(intents, {
     name: "title",

@@ -1,27 +1,19 @@
+import { useCustomTools } from "@/api/queries/custom-tool.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurCustomTool } from "@/models/customtool/custom-tool.model.ts";
-import { TurCustomToolService } from "@/services/customtool/custom-tool.service";
 import { IconBraces } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
  * @since 2026.2.5
  */
-const turCustomToolService = new TurCustomToolService();
-
 export default function CustomToolListPage() {
   const { t } = useTranslation();
-  const [tools, setTools] = useState<TurCustomTool[]>();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    turCustomToolService.query().then(setTools).catch(() => setError(t("common.connectionError", { resource: "Custom Tools" })));
-  }, []);
+  const { data: tools, isError } = useCustomTools();
+  const error = isError ? t("common.connectionError", { resource: "Custom Tools" }) : null;
 
   const gridItemList = useGridAdapter(tools, {
     name: "title",

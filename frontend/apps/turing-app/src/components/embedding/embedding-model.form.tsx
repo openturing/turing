@@ -1,4 +1,10 @@
 "use client"
+import {
+  useCreateEmbeddingModel,
+  useDeleteEmbeddingModel,
+  useUpdateEmbeddingModel,
+} from "@/api/queries/embedding-model.queries"
+import { useLlmInstances } from "@/api/queries/llm-instance.queries"
 import { ROUTES } from "@/app/routes.const"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -19,9 +25,6 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts"
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
-import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
-import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { IconAdjustments, IconCube, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -38,8 +41,6 @@ import { SmartDescription } from "../ui/smart-description"
 
 const TRANSFORMERS_LOCAL = "TRANSFORMERS_LOCAL"
 
-const turEmbeddingModelService = new TurEmbeddingModelService()
-const turLLMInstanceService = new TurLLMInstanceService()
 const urlBase = ROUTES.EMBEDDING_MODEL_INSTANCE
 
 interface Props {
@@ -51,13 +52,15 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
   const form = useForm<TurEmbeddingModel>({ defaultValues: value })
   const [open, setOpen] = useState(false)
-  const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([])
+  const { data: llmInstances = [] } = useLlmInstances()
   const navigate = useNavigate()
   const selectedProviderType = form.watch("providerType")
 
-  useEffect(() => {
-    turLLMInstanceService.query().then(setLlmInstances)
-  }, [])
+  // Mutations: cache invalidation happens inside each hook so the list page
+  // refreshes automatically after navigate(urlBase).
+  const createMutation = useCreateEmbeddingModel()
+  const updateMutation = useUpdateEmbeddingModel()
+  const deleteMutation = useDeleteEmbeddingModel()
 
   useEffect(() => {
     form.reset({
@@ -84,7 +87,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
     try {
       if (isNew) {
-        const result = await turEmbeddingModelService.create(payload)
+        const result = await createMutation.mutateAsync(payload)
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.modelName, feature: t("embeddingModel.title") }))
           navigate(urlBase)
@@ -92,7 +95,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
           toast.error(t("forms.common.notSaved", { name: payload.modelName, feature: t("embeddingModel.title") }))
         }
       } else {
-        const result = await turEmbeddingModelService.update(payload)
+        const result = await updateMutation.mutateAsync(payload)
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.modelName, feature: t("embeddingModel.title") }))
         } else {
@@ -107,7 +110,7 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
 
   async function onDelete() {
     try {
-      if (await turEmbeddingModelService.delete(value)) {
+      if (await deleteMutation.mutateAsync(value)) {
         toast.success(t("forms.common.deleted", { name: value.modelName, feature: t("embeddingModel.title") }))
         navigate(urlBase)
       } else {

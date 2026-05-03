@@ -1,65 +1,25 @@
+import { useAdminUsers } from "@/api/queries/admin.queries";
+import { useAuthDiscovery } from "@/api/queries/auth.queries";
 import { ROUTES } from "@/app/routes.const";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurUser } from "@/models/auth/user";
-import type { TurKeycloakUser } from "@/models/auth/keycloak-user";
-import { TurAdminUserService } from "@/services/auth/admin-user.service";
-import { TurKeycloakAdminService } from "@/services/auth/keycloak-admin.service";
-import { TurAuthorizationService } from "@/services/auth/authorization.service";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconUsers } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turAdminUserService = new TurAdminUserService();
-const turKeycloakAdminService = new TurKeycloakAdminService();
-const turAuthorizationService = new TurAuthorizationService();
-
-type AdminUserItem = {
-    username: string;
-    email?: string;
-    description?: string;
-};
 
 export default function AdminUsersListPage() {
     const { t } = useTranslation();
-    const [users, setUsers] = useState<AdminUserItem[]>();
-    const [error, setError] = useState<string | null>(null);
-    const [keycloak, setKeycloak] = useState<boolean | null>(null);
+    const { data: discovery, isError: discoveryError } = useAuthDiscovery();
+    // Discovery resolves to a boolean once it returns or fails; null while pending.
+    // The legacy code treated a failed discovery as "no Keycloak" — preserved here.
+    const keycloak: boolean | null = discovery !== undefined
+        ? !!discovery.keycloak
+        : (discoveryError ? false : null);
+    const { data: users, isError: usersError } = useAdminUsers(keycloak);
+    const error = usersError ? t("admin.users.loadFailed") : null;
     useSubPageBreadcrumb(t("admin.users.title"));
-
-    useEffect(() => {
-        turAuthorizationService.discovery()
-            .then((d) => setKeycloak(!!d.keycloak))
-            .catch(() => setKeycloak(false));
-    }, []);
-
-    useEffect(() => {
-        if (keycloak === null) return;
-        if (keycloak) {
-            turKeycloakAdminService.listUsers()
-                .then((kcUsers: TurKeycloakUser[]) => {
-                    setUsers(kcUsers.map((u) => ({
-                        username: u.username,
-                        email: u.email,
-                        description: [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email,
-                    })));
-                })
-                .catch(() => setError(t("admin.users.loadFailed")));
-        } else {
-            turAdminUserService.query()
-                .then((list: TurUser[]) => {
-                    setUsers(list.map((u) => ({
-                        username: u.username,
-                        email: u.email,
-                        description: u.email,
-                    })));
-                })
-                .catch(() => setError(t("admin.users.loadFailed")));
-        }
-    }, [keycloak]);
 
     const gridItemList = useGridAdapter(users, {
         id: "username",

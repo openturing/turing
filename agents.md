@@ -4,17 +4,23 @@
 
 ### Project Structure
 
-- **turing-app**: Spring Boot 4 backend (Java 21), main module
-- **turing-react**: React + TypeScript frontend (Vite, Tailwind CSS v4, shadcn/ui)
-- **turing-react-sdk**: React SDK with hooks and UI components for Turing API
-- **turing-commons**: Shared library
+- **turing-app**: Spring Boot 4 backend (Java 21), main Maven module
+- **frontend/**: pnpm + Turborepo monorepo with the React apps and SDK packages
+  - **frontend/apps/turing-app**: React 19 + TypeScript frontend (Vite, Tailwind v4, shadcn/ui)
+  - **frontend/apps/marketplace**: marketplace example apps (mythical-creatures, space-missions, vinyl-records)
+  - **frontend/packages/react-sdk**: `@viglet/turing-react-sdk` — hooks and UI components for the Turing API
+  - **frontend/packages/shared-types**: `@viglet/turing-shared-types`
+- **turing-commons**, **turing-spring**, **turing-java-sdk**: shared libraries
 - Root Maven POM is multi-module
+- The legacy `turing-react/` directory is a stub (only contains `node/`); it has been migrated to the monorepo above
 
 ### Key Paths
 
 - Backend source: `turing-app/src/main/java/com/viglet/turing/`
 - Backend tests: `turing-app/src/test/java/com/viglet/turing/`
-- Frontend source: `turing-react/src/`
+- Frontend source: `frontend/apps/turing-app/src/`
+- Frontend route definitions: `frontend/apps/turing-app/src/app/routes/` (all use `React.lazy()` since 2026.2.6)
+- Frontend query hooks: `frontend/apps/turing-app/src/api/queries/` (React Query v5)
 - Liquibase changelogs: `turing-app/src/main/resources/db/changelog/`
 
 ### Build & Test Commands
@@ -26,15 +32,18 @@ mvn test -pl turing-app -Dskip.npm=true
 # Run specific test class
 mvn test -pl turing-app -Dskip.npm=true -Dtest="ClassName"
 
-# Frontend compile
-cd turing-react && npm run compile
+# Backend integration tests (requires Docker — uses Testcontainers)
+mvn verify -pl turing-app -Dskip.npm=true
 
-# Full build
+# Frontend compile (from frontend/apps/turing-app)
+pnpm run build           # tsc -b && vite build
+pnpm exec tsc -b --noEmit  # type-check only, no emit
+pnpm dev                 # local dev server
+
+# Full Maven build
 mvn clean install
 
-# Copy design system to turing-react node_modules (after changes to viglet-design-system)
-# Builds the design system and copies dist + package.json to node_modules
-copy-ds.cmd
+# Design system iteration: copy-ds.cmd at repo root (rebuilds + copies viglet-design-system dist)
 ```
 
 > **Windows PowerShell**: quote `-D` flags, e.g. `"-Dskip.npm=true"`
@@ -106,10 +115,40 @@ copy-ds.cmd
 - **shadcn/ui** components in `src/components/ui/`
 - Custom gradient components: `GradientButton`, `GradientAvatar`, `GradientSwitch`
 - Icons: `@tabler/icons-react` (primary), `lucide-react` (some components)
-- Routing: `react-router-dom` with routes defined in `src/app/routes/`
+- Routing: `react-router-dom` with routes defined in `src/app/routes/`. **All route files use `React.lazy()`** — when adding a new route, follow the pattern (`const FooPage = lazy(() => import("..."))`) so the new bundle is code-split automatically
 - Services: class-based in `src/services/`, use `axios` for REST, native `fetch` for SSE streaming
 - Models: TypeScript interfaces in `src/models/`
 - CSRF: For non-axios requests, read `XSRF-TOKEN` cookie or fetch from `/csrf` endpoint
+
+#### Data fetching with React Query (since 2026.2.6)
+
+Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `useEffect` + `axios.then()` — that pattern is being phased out.
+
+- **Singleton client** in `src/lib/query-client.ts` — defaults: 30s staleTime, 5min gcTime, 1 retry, no refetch-on-window-focus.
+- **Query hooks** live in `src/api/queries/{feature}.queries.ts` and wrap a service:
+  ```ts
+  // src/api/queries/foo.queries.ts
+  const service = new TurFooService();
+  export function useFoos() {
+    return useQuery({ queryKey: queryKeys.foos.list(), queryFn: () => service.query() });
+  }
+  // For entity-scoped lists:
+  export function useFoos(parentId: string | undefined) {
+    return useQuery({
+      queryKey: parentId ? queryKeys.foos.listByParent(parentId) : ['foos', 'pending'],
+      queryFn: () => service.query(parentId as string),
+      enabled: Boolean(parentId),
+    });
+  }
+  ```
+- **Query keys** are centralised in `src/api/queries/keys.ts` so mutations can invalidate them deterministically. Always extend `queryKeys` rather than inlining string arrays.
+- **Dependent query** (e.g. Keycloak vs JPA backend in admin pages): pass the discriminator as a parameter, set `enabled: discriminator !== null`, and split the query key by source so toggling invalidates cleanly. See `src/api/queries/admin.queries.ts` for the canonical example.
+- **Mutations** (when adding new write paths): use `useMutation` and call `queryClient.invalidateQueries({ queryKey: queryKeys.foos.all() })` in the `onSuccess` handler so cached lists refresh automatically.
+- **Page pattern** — replace the legacy `useState`/`useEffect` block with one line:
+  ```ts
+  const { data: foos, isError } = useFoos();
+  const error = isError ? t("common.connectionError", { resource: "foos" }) : null;
+  ```
 
 ### Testing Conventions
 
