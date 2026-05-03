@@ -1,7 +1,9 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import MarketplaceListPage from "../console/marketplace/marketplace.list.page";
-import MarketplaceRootPage from "../console/marketplace/marketplace.root.page";
 import { ROUTES } from "../routes.const";
+
+const MarketplaceListPage = lazy(() => import("../console/marketplace/marketplace.list.page"));
+const MarketplaceRootPage = lazy(() => import("../console/marketplace/marketplace.root.page"));
 
 export const MarketplaceRoutes = (
     <Route path={ROUTES.MARKETPLACE_ROOT} element={<MarketplaceRootPage />}>

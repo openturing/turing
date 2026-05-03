@@ -1,7 +1,9 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import ExchangeImportPage from "../console/exchange/exchange.import.page";
-import ExchangeImportRootPage from "../console/exchange/exchange.import.root.page";
 import { ROUTES } from "../routes.const";
+
+const ExchangeImportPage = lazy(() => import("../console/exchange/exchange.import.page"));
+const ExchangeImportRootPage = lazy(() => import("../console/exchange/exchange.import.root.page"));
 
 export const ExchangeRoutes = (
     <Route path={ROUTES.EXCHANGE_ROOT} element={<ExchangeImportRootPage />}>

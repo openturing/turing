@@ -1,12 +1,14 @@
+import { lazy } from "react"
 import { Navigate, Route, useParams } from "react-router-dom"
-import StoreInstanceCollectionImportPage from "../console/store/collections/store.instance.collection.import.page"
-import StoreInstanceCollectionsPage from "../console/store/collections/store.instance.collections.page"
-import StoreInstanceDetailPage from "../console/store/detail/store.instance.detail.page"
-import StoreInstanceSystemInfoPage from "../console/store/system-info/store.instance.system-info.page"
-import StoreInstanceListPage from "../console/store/store.instance.list.page"
-import StoreInstancePage from "../console/store/store.instance.page"
-import StoreInstanceRootPage from "../console/store/store.instance.root.page"
 import { ROUTES } from "../routes.const"
+
+const StoreInstanceCollectionImportPage = lazy(() => import("../console/store/collections/store.instance.collection.import.page"))
+const StoreInstanceCollectionsPage = lazy(() => import("../console/store/collections/store.instance.collections.page"))
+const StoreInstanceDetailPage = lazy(() => import("../console/store/detail/store.instance.detail.page"))
+const StoreInstanceSystemInfoPage = lazy(() => import("../console/store/system-info/store.instance.system-info.page"))
+const StoreInstanceListPage = lazy(() => import("../console/store/store.instance.list.page"))
+const StoreInstancePage = lazy(() => import("../console/store/store.instance.page"))
+const StoreInstanceRootPage = lazy(() => import("../console/store/store.instance.root.page"))
 
 function RedirectToStoreDetail() {
     const { id } = useParams();

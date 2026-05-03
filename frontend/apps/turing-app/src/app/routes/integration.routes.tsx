@@ -1,10 +1,12 @@
+import { lazy } from "react"
 import { Navigate, Route, useParams } from "react-router-dom"
-import IntegrationInstanceDetailPage from "../console/integration/integration.instance.detail.page"
-import IntegrationInstanceDumontPage from "../console/integration/integration.instance.dumont.page"
-import IntegrationInstanceListPage from "../console/integration/integration.instance.list.page"
-import IntegrationInstancePage from "../console/integration/integration.instance.page"
-import IntegrationInstanceRootPage from "../console/integration/integration.instance.root.page"
 import { ROUTES } from "../routes.const"
+
+const IntegrationInstanceDetailPage = lazy(() => import("../console/integration/integration.instance.detail.page"))
+const IntegrationInstanceDumontPage = lazy(() => import("../console/integration/integration.instance.dumont.page"))
+const IntegrationInstanceListPage = lazy(() => import("../console/integration/integration.instance.list.page"))
+const IntegrationInstancePage = lazy(() => import("../console/integration/integration.instance.page"))
+const IntegrationInstanceRootPage = lazy(() => import("../console/integration/integration.instance.root.page"))
 
 function RedirectToIntegrationDetail() {
     const { id } = useParams();

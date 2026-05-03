@@ -1,8 +1,10 @@
+import { lazy } from "react";
 import { Navigate, Route } from "react-router-dom";
-import CustomToolListPage from "../console/custom-tool/custom-tool.list.page";
-import CustomToolPage from "../console/custom-tool/custom-tool.page";
-import CustomToolRootPage from "../console/custom-tool/custom-tool.root.page";
 import { ROUTES } from "../routes.const";
+
+const CustomToolListPage = lazy(() => import("../console/custom-tool/custom-tool.list.page"));
+const CustomToolPage = lazy(() => import("../console/custom-tool/custom-tool.page"));
+const CustomToolRootPage = lazy(() => import("../console/custom-tool/custom-tool.root.page"));
 
 /**
  * @since 2026.2.5

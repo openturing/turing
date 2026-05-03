@@ -1,8 +1,10 @@
+import { lazy } from "react"
 import { Navigate, Route } from "react-router-dom"
-import UserAccountPage from "../console/user/user.account.page"
-import UserPreferencesPage from "../console/user/preferences/user.preferences.page"
-import UserProfilePage from "../console/user/profile/user.profile.page"
 import { ROUTES } from "../routes.const"
+
+const UserAccountPage = lazy(() => import("../console/user/user.account.page"))
+const UserPreferencesPage = lazy(() => import("../console/user/preferences/user.preferences.page"))
+const UserProfilePage = lazy(() => import("../console/user/profile/user.profile.page"))
 
 export const UserRoutes = (
     <Route path={ROUTES.USER_ACCOUNT} element={<UserAccountPage />}>

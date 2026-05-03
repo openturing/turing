@@ -1,7 +1,9 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
-import GitPage from "../console/git/git.page";
-import GitRepoPage from "../console/git/git.repo.page";
 import { ROUTES } from "../routes.const";
+
+const GitPage = lazy(() => import("../console/git/git.page"));
+const GitRepoPage = lazy(() => import("../console/git/git.repo.page"));
 
 export const GitRoutes = (
     <>

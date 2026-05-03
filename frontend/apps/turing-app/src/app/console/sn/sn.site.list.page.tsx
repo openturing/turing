@@ -1,3 +1,5 @@
+import { useFeatures } from "@/api/queries/features.queries";
+import { useSnSites } from "@/api/queries/sn-site.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
@@ -7,28 +9,20 @@ import { useGridAdapter } from "@/hooks/use-grid-adapter";
 import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurGridItemAction, TurGridItemDropdownItem } from "@/models/ui/grid-item";
 import { TurSNSiteService } from "@/services/sn/sn.service";
-import { TurFeaturesService } from "@/services/system/features.service";
 import { IconAtom, IconDownload, IconSearch, IconSettings } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@viglet/viglet-design-system";
 
 const turSNSiteService = new TurSNSiteService();
-const turFeaturesService = new TurFeaturesService();
 
 export default function SNSiteListPage() {
   const { t } = useTranslation();
-  const [snInstances, setSnInstances] = useState<TurSNSiteListItem[]>();
-  const [error, setError] = useState<string | null>(null);
+  const { data: snInstances, isError } = useSnSites();
+  const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
+  const { data: features } = useFeatures();
+  const storageEnabled = features?.storageEnabled ?? false;
   const [exporting, setExporting] = useState(false);
-  const [storageEnabled, setStorageEnabled] = useState(false);
-
-  useEffect(() => {
-    turSNSiteService.query().then(setSnInstances).catch(() => setError(t("common.connectionError", { resource: "instances" })));
-    turFeaturesService.getFeatures().then((features) => {
-      setStorageEnabled(features.storageEnabled);
-    }).catch(() => setStorageEnabled(false));
-  }, []);
 
   const buildActions = useCallback((site: TurSNSiteListItem): TurGridItemAction[] => {
     const searchUrl = `/sn/${site.name}`;

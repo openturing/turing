@@ -1,10 +1,12 @@
+import { lazy } from "react"
 import { Navigate, Route } from "react-router-dom"
-import LoggingAemPage from "../console/logging/instance/logging.aem.page"
-import LoggingIndexingPage from "../console/logging/instance/logging.indexing.page"
-import LoggingServerPage from "../console/logging/instance/logging.server.page"
-import LoggingInstanceListPage from "../console/logging/logging.instance.list.page"
-import LoggingInstanceRootPage from "../console/logging/logging.instance.root.page"
 import { ROUTES } from "../routes.const"
+
+const LoggingAemPage = lazy(() => import("../console/logging/instance/logging.aem.page"))
+const LoggingIndexingPage = lazy(() => import("../console/logging/instance/logging.indexing.page"))
+const LoggingServerPage = lazy(() => import("../console/logging/instance/logging.server.page"))
+const LoggingInstanceListPage = lazy(() => import("../console/logging/logging.instance.list.page"))
+const LoggingInstanceRootPage = lazy(() => import("../console/logging/logging.instance.root.page"))
 
 export const LoggingRoutes = (
     <Route path={ROUTES.LOGGING_ROOT} element={<LoggingInstanceRootPage />}>

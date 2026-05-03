@@ -1,33 +1,19 @@
+import { useFeatures } from "@/api/queries/features.queries";
+import { useSeInstances } from "@/api/queries/se-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurSEInstance } from "@/models/se/se-instance.model.ts";
-import { TurSEInstanceService } from "@/services/se/se.service";
-import { TurFeaturesService } from "@/services/system/features.service";
 import { IconZoomCode } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turSEInstanceService = new TurSEInstanceService();
-const turFeaturesService = new TurFeaturesService();
 
 export default function SEInstanceListPage() {
   const { t } = useTranslation();
-  const [seInstances, setSeInstances] = useState<TurSEInstance[]>();
-  const [error, setError] = useState<string | null>(null);
-  const [readOnly, setReadOnly] = useState<boolean>(false);
-
-  useEffect(() => {
-    turSEInstanceService
-      .query()
-      .then(setSeInstances)
-      .catch(() => setError(t("common.connectionError", { resource: "instances" })));
-    turFeaturesService.getFeatures()
-      .then((f) => setReadOnly(f.seInstanceReadOnly))
-      .catch(() => setReadOnly(false));
-  }, []);
+  const { data: seInstances, isError } = useSeInstances();
+  const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
+  const { data: features } = useFeatures();
+  const readOnly = features?.seInstanceReadOnly ?? false;
 
   const gridItemList = useGridAdapter(seInstances, {
     name: "title",

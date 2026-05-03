@@ -1,23 +1,16 @@
+import { useLlmInstances } from "@/api/queries/llm-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
 import { useGridAdapter } from "@/hooks/use-grid-adapter";
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts";
-import { TurLLMInstanceService } from "@/services/llm/llm.service";
 import { IconCpu2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const turLLMInstanceService = new TurLLMInstanceService();
 
 export default function LLMInstanceListPage() {
   const { t } = useTranslation();
-  const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>();
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    turLLMInstanceService.query().then(setLlmInstances).catch(() => setError(t("common.connectionError", { resource: "instances" })));
-  }, []);
+  const { data: llmInstances, isError } = useLlmInstances();
+  const error = isError ? t("common.connectionError", { resource: "instances" }) : null;
   const gridItemList = useGridAdapter(llmInstances, {
     name: "title",
     description: "description",
