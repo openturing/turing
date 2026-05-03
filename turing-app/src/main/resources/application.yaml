@@ -290,13 +290,31 @@ springdoc:
     path: /swagger-ui.html
 
 # ---------------------------------------------------------------------------
-# Management
+# Management & Observability
 # ---------------------------------------------------------------------------
+# Metrics: Prometheus scrape endpoint at /actuator/prometheus.
+# Tracing: traces are exported to OTLP if OTEL_EXPORTER_OTLP_ENDPOINT is set;
+#   sampling defaults to 10% of requests, override with
+#   management.tracing.sampling.probability.
+# Set turing.observability.tracing.enabled=false to disable spans entirely.
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+  metrics:
+    tags:
+      application: turing-es
+    distribution:
+      percentiles-histogram:
+        "[turing.llm.calls]": true
+        "[turing.search.calls]": true
+  tracing:
+    sampling:
+      probability: 0.1
+  observations:
+    annotations:
+      enabled: true
 
 # ---------------------------------------------------------------------------
 # Logging

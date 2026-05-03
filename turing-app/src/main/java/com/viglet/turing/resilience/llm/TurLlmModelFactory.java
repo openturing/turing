@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.resilience.TurResilienceExecutor;
 import com.viglet.turing.resilience.TurResilienceRegistry;
@@ -45,24 +46,27 @@ public class TurLlmModelFactory {
     private final TurGenAiLlmProviderFactory providerFactory;
     private final TurResilienceExecutor executor;
     private final TurResilienceRegistry registry;
+    private final TurLlmObservation observation;
 
     public TurLlmModelFactory(TurGenAiLlmProviderFactory providerFactory,
             TurResilienceExecutor executor,
-            TurResilienceRegistry registry) {
+            TurResilienceRegistry registry,
+            TurLlmObservation observation) {
         this.providerFactory = providerFactory;
         this.executor = executor;
         this.registry = registry;
+        this.observation = observation;
     }
 
     public ChatModel createChatModel(TurLLMInstance llmInstance, String decryptedApiKey) {
         TurGenAiLlmProvider provider = providerFactory.getProvider(llmInstance);
         ChatModel raw = provider.createChatModel(llmInstance, decryptedApiKey);
-        return new TurResilientChatModel(raw, executor, registry, provider.getPluginType());
+        return new TurResilientChatModel(raw, executor, registry, observation, provider.getPluginType());
     }
 
     public EmbeddingModel createEmbeddingModel(TurLLMInstance llmInstance, String decryptedApiKey) {
         TurGenAiLlmProvider provider = providerFactory.getProvider(llmInstance);
         EmbeddingModel raw = provider.createEmbeddingModel(llmInstance, decryptedApiKey);
-        return new TurResilientEmbeddingModel(raw, executor, provider.getPluginType());
+        return new TurResilientEmbeddingModel(raw, executor, observation, provider.getPluginType());
     }
 }

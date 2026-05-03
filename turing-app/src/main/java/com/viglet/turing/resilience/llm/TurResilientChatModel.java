@@ -21,6 +21,8 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 
+import com.viglet.turing.observability.TurLlmObservation;
+import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.resilience.TurResilienceExecutor;
 import com.viglet.turing.resilience.TurResilienceRegistry;
 import com.viglet.turing.resilience.TurResilienceRegistry.Kind;
@@ -43,19 +45,24 @@ public class TurResilientChatModel implements ChatModel {
     private final ChatModel delegate;
     private final TurResilienceExecutor executor;
     private final TurResilienceRegistry registry;
+    private final TurLlmObservation observation;
     private final String providerType;
 
     public TurResilientChatModel(ChatModel delegate, TurResilienceExecutor executor,
-            TurResilienceRegistry registry, String providerType) {
+            TurResilienceRegistry registry, TurLlmObservation observation, String providerType) {
         this.delegate = delegate;
         this.executor = executor;
         this.registry = registry;
+        this.observation = observation;
         this.providerType = providerType;
     }
 
     @Override
     public ChatResponse call(Prompt prompt) {
-        return executor.execute(Kind.LLM, providerType, () -> delegate.call(prompt));
+        // Outer = observability span/timer; inner = resilience pipeline. Order matters:
+        // we want the span to capture the full retry/timeout window, not just the last attempt.
+        return observation.observeCall(providerType, TurMeterNames.OP_CHAT,
+                () -> executor.execute(Kind.LLM, providerType, () -> delegate.call(prompt)));
     }
 
     @Override

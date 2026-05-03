@@ -21,6 +21,8 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 
+import com.viglet.turing.observability.TurLlmObservation;
+import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.resilience.TurResilienceExecutor;
 import com.viglet.turing.resilience.TurResilienceRegistry.Kind;
 
@@ -38,23 +40,27 @@ public class TurResilientEmbeddingModel implements EmbeddingModel {
 
     private final EmbeddingModel delegate;
     private final TurResilienceExecutor executor;
+    private final TurLlmObservation observation;
     private final String providerType;
 
     public TurResilientEmbeddingModel(EmbeddingModel delegate, TurResilienceExecutor executor,
-            String providerType) {
+            TurLlmObservation observation, String providerType) {
         this.delegate = delegate;
         this.executor = executor;
+        this.observation = observation;
         this.providerType = providerType;
     }
 
     @Override
     public EmbeddingResponse call(EmbeddingRequest request) {
-        return executor.execute(Kind.LLM, providerType, () -> delegate.call(request));
+        return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
+                () -> executor.execute(Kind.LLM, providerType, () -> delegate.call(request)));
     }
 
     @Override
     public float[] embed(Document document) {
-        return executor.execute(Kind.LLM, providerType, () -> delegate.embed(document));
+        return observation.observeCall(providerType, TurMeterNames.OP_EMBED,
+                () -> executor.execute(Kind.LLM, providerType, () -> delegate.embed(document)));
     }
 
     @Override

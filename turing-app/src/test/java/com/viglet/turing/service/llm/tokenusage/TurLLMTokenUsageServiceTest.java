@@ -16,10 +16,14 @@ import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 
+import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class TurLLMTokenUsageServiceTest {
@@ -41,7 +45,8 @@ class TurLLMTokenUsageServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TurLLMTokenUsageService(tokenUsageRepository);
+        TurLlmObservation observation = new TurLlmObservation(ObservationRegistry.NOOP, new SimpleMeterRegistry());
+        service = new TurLLMTokenUsageService(tokenUsageRepository, observation);
 
         instance = new TurLLMInstance();
         instance.setId("inst-1");

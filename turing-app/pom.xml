@@ -125,6 +125,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Observability: Prometheus exporter + OTel tracing bridge. Endpoints
+             and exporters are configured in application.yaml; tests use a
+             SimpleMeterRegistry so these only matter at runtime. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>

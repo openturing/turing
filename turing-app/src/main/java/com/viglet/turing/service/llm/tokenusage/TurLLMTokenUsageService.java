@@ -6,6 +6,7 @@ import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMTokenUsage;
 import com.viglet.turing.persistence.repository.llm.TurLLMTokenUsageRepository;
@@ -17,9 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 public class TurLLMTokenUsageService {
 
     private final TurLLMTokenUsageRepository tokenUsageRepository;
+    private final TurLlmObservation observation;
 
-    public TurLLMTokenUsageService(TurLLMTokenUsageRepository tokenUsageRepository) {
+    public TurLLMTokenUsageService(TurLLMTokenUsageRepository tokenUsageRepository,
+            TurLlmObservation observation) {
         this.tokenUsageRepository = tokenUsageRepository;
+        this.observation = observation;
     }
 
     public void recordUsage(TurLLMInstance instance, ChatResponse response, String username) {
@@ -53,6 +57,12 @@ public class TurLLMTokenUsageService {
             turLLMTokenUsage.setCreatedAt(LocalDateTime.now());
 
             tokenUsageRepository.save(turLLMTokenUsage);
+
+            // Mirror persisted usage into Micrometer counters for live dashboards.
+            String providerTag = instance.getTurLLMVendor() != null
+                    ? instance.getTurLLMVendor().getId()
+                    : "unknown";
+            observation.recordTokens(providerTag, instance.getModelName(), inputTokens, outputTokens);
 
             log.info("[TokenUsage] Recorded: instance={}, model={}, input={}, output={}, total={}, user={}",
                     instance.getId(), instance.getModelName(),

@@ -24,12 +24,15 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 
+import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.resilience.TurResilienceExecutor;
 import com.viglet.turing.resilience.TurResilienceRegistry;
 import com.viglet.turing.resilience.config.TurResilienceProperties;
 import com.viglet.turing.resilience.config.TurResilienceProperties.Group;
 import com.viglet.turing.resilience.config.TurResilienceProperties.Profile;
 import com.viglet.turing.resilience.config.TurResilienceProperties.RetryConfig;
+
+import io.micrometer.observation.ObservationRegistry;
 
 import reactor.core.publisher.Flux;
 
@@ -59,7 +62,8 @@ class TurResilientChatModelTest {
 
         registry = new TurResilienceRegistry(properties, null);
         TurResilienceExecutor executor = new TurResilienceExecutor(registry);
-        resilient = new TurResilientChatModel(delegate, executor, registry, "openai");
+        TurLlmObservation observation = new TurLlmObservation(ObservationRegistry.NOOP, null);
+        resilient = new TurResilientChatModel(delegate, executor, registry, observation, "openai");
     }
 
     @Test

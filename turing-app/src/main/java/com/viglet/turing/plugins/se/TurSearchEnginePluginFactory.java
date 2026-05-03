@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.plugins.se;
 
+import com.viglet.turing.observability.TurSearchObservation;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.resilience.TurResilienceExecutor;
@@ -54,39 +55,44 @@ public class TurSearchEnginePluginFactory {
     private final Map<String, TurSearchEnginePlugin> pluginMap;
     private final TurResilienceExecutor resilienceExecutor;
     private final TurResilienceRegistry resilienceRegistry;
+    private final TurSearchObservation searchObservation;
 
     @org.springframework.beans.factory.annotation.Autowired
     public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins,
             TurResilienceExecutor resilienceExecutor,
-            TurResilienceRegistry resilienceRegistry) {
+            TurResilienceRegistry resilienceRegistry,
+            TurSearchObservation searchObservation) {
         this.resilienceExecutor = resilienceExecutor;
         this.resilienceRegistry = resilienceRegistry;
+        this.searchObservation = searchObservation;
         this.pluginMap = plugins.stream()
                 .collect(Collectors.toMap(
                         plugin -> plugin.getPluginType().toLowerCase(),
                         this::wrapWithResilience,
                         (a, b) -> a));
-        log.info("Initialized TurSearchEnginePluginFactory with {} plugins (resilience pipeline {}).",
+        log.info("Initialized TurSearchEnginePluginFactory with {} plugins (resilience pipeline {}, observation {}).",
                 pluginMap.size(),
-                resilienceRegistry == null ? "disabled" : "applied");
+                resilienceRegistry == null ? "disabled" : "applied",
+                searchObservation == null ? "disabled" : "applied");
         pluginMap.keySet().forEach(type -> log.info("Registered plugin: {}", type));
     }
 
     /**
-     * Test-only constructor — resilience pipeline is bypassed since the
-     * executor and registry are absent. Production code goes through Spring DI
-     * which always provides the multi-arg constructor.
+     * Test-only constructor — resilience pipeline and observation are bypassed
+     * since their dependencies are absent. Production code goes through Spring
+     * DI which always provides the multi-arg constructor.
      */
     public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins) {
-        this(plugins, null, null);
+        this(plugins, null, null, null);
     }
 
     /**
      * Wraps a plugin with a JDK dynamic proxy that routes every IO-bound method
      * call through the resilience executor (retry + circuit breaker + time
-     * limiter). Methods that don't perform IO are excluded so they don't pollute
-     * circuit-breaker statistics. When the resilience deps are absent (test
-     * setup) the delegate is returned unwrapped.
+     * limiter) and then through the observation layer (timer + span). Methods
+     * that don't perform IO are excluded so they don't pollute circuit-breaker
+     * statistics or span volume. When dependencies are absent (test setup) the
+     * delegate is returned unwrapped.
      */
     private TurSearchEnginePlugin wrapWithResilience(TurSearchEnginePlugin delegate) {
         if (resilienceExecutor == null || resilienceRegistry == null) {
@@ -98,15 +104,20 @@ public class TurSearchEnginePluginFactory {
                     || !resilienceRegistry.isEnabled(Kind.SEARCH_ENGINE)) {
                 return invokeRaw(delegate, method, args);
             }
-            return resilienceExecutor.execute(Kind.SEARCH_ENGINE, pluginType, () -> {
-                try {
-                    return invokeRaw(delegate, method, args);
-                } catch (RuntimeException re) {
-                    throw re;
-                } catch (Throwable t) {
-                    throw new InvocationWrapper(t);
-                }
-            });
+            String operation = method.getName();
+            java.util.function.Supplier<Object> resilient = () ->
+                    resilienceExecutor.execute(Kind.SEARCH_ENGINE, pluginType, () -> {
+                        try {
+                            return invokeRaw(delegate, method, args);
+                        } catch (RuntimeException re) {
+                            throw re;
+                        } catch (Throwable t) {
+                            throw new InvocationWrapper(t);
+                        }
+                    });
+            return searchObservation != null
+                    ? searchObservation.observeCall(pluginType, operation, resilient)
+                    : resilient.get();
         };
         return (TurSearchEnginePlugin) Proxy.newProxyInstance(
                 delegate.getClass().getClassLoader(),

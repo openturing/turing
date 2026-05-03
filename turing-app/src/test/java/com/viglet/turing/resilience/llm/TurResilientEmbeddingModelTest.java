@@ -20,12 +20,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 
+import com.viglet.turing.observability.TurLlmObservation;
 import com.viglet.turing.resilience.TurResilienceExecutor;
 import com.viglet.turing.resilience.TurResilienceRegistry;
 import com.viglet.turing.resilience.config.TurResilienceProperties;
 import com.viglet.turing.resilience.config.TurResilienceProperties.Group;
 import com.viglet.turing.resilience.config.TurResilienceProperties.Profile;
 import com.viglet.turing.resilience.config.TurResilienceProperties.RetryConfig;
+
+import io.micrometer.observation.ObservationRegistry;
 
 class TurResilientEmbeddingModelTest {
 
@@ -51,7 +54,8 @@ class TurResilientEmbeddingModelTest {
 
         TurResilienceRegistry registry = new TurResilienceRegistry(properties, null);
         TurResilienceExecutor executor = new TurResilienceExecutor(registry);
-        resilient = new TurResilientEmbeddingModel(delegate, executor, "openai");
+        TurLlmObservation observation = new TurLlmObservation(ObservationRegistry.NOOP, null);
+        resilient = new TurResilientEmbeddingModel(delegate, executor, observation, "openai");
     }
 
     @Test
