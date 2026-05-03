@@ -1,8 +1,8 @@
 import { LoginForm } from "@/components/login/login-form"
+import { IconSearch, IconSparkles, IconWorld } from "@tabler/icons-react";
 import { TurLogo } from "@/components/logo/tur-logo"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Login } from "@viglet/viglet-design-system"
-import { Globe, Search, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { LoginSettingsButton, useLoginSettings } from "./login-settings"
 
@@ -35,13 +35,13 @@ const LoginPage = () => {
         <Login.Tagline>{t("login.heroTagline")}</Login.Tagline>
 
         <Login.Features>
-          <Login.FeaturePill icon={<Search className="h-3.5 w-3.5 text-blue-500" />}>
+          <Login.FeaturePill icon={<IconSearch className="h-3.5 w-3.5 text-blue-500" />}>
             {t("login.featureSearch")}
           </Login.FeaturePill>
-          <Login.FeaturePill icon={<Sparkles className="h-3.5 w-3.5 text-indigo-500" />}>
+          <Login.FeaturePill icon={<IconSparkles className="h-3.5 w-3.5 text-indigo-500" />}>
             {t("login.featureAi")}
           </Login.FeaturePill>
-          <Login.FeaturePill icon={<Globe className="h-3.5 w-3.5 text-cyan-500" />}>
+          <Login.FeaturePill icon={<IconWorld className="h-3.5 w-3.5 text-cyan-500" />}>
             {t("login.featureKnowledge")}
           </Login.FeaturePill>
         </Login.Features>
@@ -50,7 +50,7 @@ const LoginPage = () => {
           <LoginForm />
         </Login.Card>
 
-        <Login.Footer>Viglet Turing ES &mdash; Enterprise Search Intelligence</Login.Footer>
+        <Login.Footer>Viglet Turing ES &mdash; Enterprise IconSearch Intelligence</Login.Footer>
       </Login.Content>
     </Login>
   )

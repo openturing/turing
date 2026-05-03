@@ -35,9 +35,8 @@ import type {
     TurSNSiteCustomSortOrder,
 } from "@/models/sn/sn-site-custom-sort.model"
 import { TurSNSiteCustomSortService } from "@/services/sn/sn.site.custom.sort.service"
-import { IconArrowsSort, IconDeviceFloppy, IconFileText, IconX } from "@tabler/icons-react"
+import { IconArrowDown, IconArrowUp, IconArrowsSort, IconCirclePlus, IconDeviceFloppy, IconFileText, IconTrash, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
-import { ArrowDown, ArrowUp, PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -209,7 +208,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                     <SectionCard.Content>
                         <div className="flex items-center justify-between mb-4">
                             <GradientButton variant="outline" type="button" onClick={addSortLevel} disabled={fieldOptions.length === 0}>
-                                <PlusCircle className="h-4 w-4 mr-2" />
+                                <IconCirclePlus className="h-4 w-4 mr-2" />
                                 {t("sn.customSort.addLevel")}
                             </GradientButton>
                         </div>
@@ -277,7 +276,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                                         onClick={() => moveItem(index, -1)}
                                                         disabled={index === 0}
                                                     >
-                                                        <ArrowUp className="h-4 w-4" />
+                                                        <IconArrowUp className="h-4 w-4" />
                                                     </GradientButton>
                                                     <GradientButton
                                                         variant="ghost"
@@ -286,7 +285,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                                         onClick={() => moveItem(index, 1)}
                                                         disabled={index === fields.length - 1}
                                                     >
-                                                        <ArrowDown className="h-4 w-4" />
+                                                        <IconArrowDown className="h-4 w-4" />
                                                     </GradientButton>
                                                     <GradientButton
                                                         variant="destructive"
@@ -294,7 +293,7 @@ export const SNSiteCustomSortForm: React.FC<Props> = ({ snSiteId, value, isNew, 
                                                         type="button"
                                                         onClick={() => removeSortLevel(index)}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <IconTrash className="h-4 w-4" />
                                                     </GradientButton>
                                                 </div>
                                             </TableCell>

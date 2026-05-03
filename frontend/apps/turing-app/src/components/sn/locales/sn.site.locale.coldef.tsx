@@ -1,4 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
+import { IconArrowsUpDown, IconChevronDown } from "@tabler/icons-react";
 import { BadgeColorful } from "@/components/badge-colorful";
 import { BadgeLocale } from "@/components/badge-locale";
 import {
@@ -13,8 +14,6 @@ import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
 import { Icon } from "@iconify/react";
 import { Checkbox } from "@radix-ui/react-checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
-
 export const buildColumns = (t: (key: string) => string, storageEnabled = false): ColumnDef<TurSNSiteLocale>[] => [
     {
         id: "select",
@@ -47,7 +46,7 @@ export const buildColumns = (t: (key: string) => string, storageEnabled = false)
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     {t("forms.localeTable.language")}
-                    <ArrowUpDown />
+                    <IconArrowsUpDown />
                 </GradientButton>
             )
         },
@@ -86,7 +85,7 @@ export const buildColumns = (t: (key: string) => string, storageEnabled = false)
                             <DropdownMenuTrigger asChild>
                                 <GradientButton size={"sm"}>
                                     {t("forms.localeTable.openSearch")}
-                                    <ChevronDown className="size-3.5" />
+                                    <IconChevronDown className="size-3.5" />
                                 </GradientButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

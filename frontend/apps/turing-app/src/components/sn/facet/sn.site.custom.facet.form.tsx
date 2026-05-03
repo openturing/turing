@@ -64,10 +64,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { IconDeviceFloppy, IconFilter, IconInfoCircle, IconLanguage, IconListDetails, IconX } from '@tabler/icons-react'
+import { IconAlertTriangle, IconCirclePlus, IconDeviceFloppy, IconFilter, IconGripVertical, IconInfoCircle, IconLanguage, IconListDetails, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
 import { GradientButton } from "@/components/ui/gradient-button"
 import { DialogDelete } from "@/components/dialog.delete"
-import { AlertTriangle, GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { useEffect, useState } from "react"
 import {
   useForm
@@ -325,14 +324,14 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, fieldName, 
     <TableRow ref={setNodeRef} style={style} className={overlapClass}>
       <TableCell className="w-10">
         <button {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing">
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <IconGripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
       </TableCell>
       <TableCell className="w-16">
         <div className="flex items-center gap-2">
           <span>{index + 1}</span>
           {hasOverlap && (
-            <AlertTriangle
+            <IconAlertTriangle
               className="h-4 w-4 text-amber-600 dark:text-amber-400"
               aria-label={t("forms.snCustomFacet.overlapIconLabel")}
             />
@@ -349,10 +348,10 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, index, isDateField, fieldName, 
       <TableCell className="w-24 text-right">
         <div className="flex justify-end gap-1">
           <Button type="button" variant="ghost" size="icon" onClick={() => onEdit(index)} title="Edit">
-            <Pencil className="h-4 w-4" />
+            <IconPencil className="h-4 w-4" />
           </Button>
           <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(index)} title="Remove">
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <IconTrash className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       </TableCell>
@@ -913,7 +912,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                     <FormDescription>{t("forms.snCustomFacet.defineItemsDesc")}</FormDescription>
                   </div>
                   <Button type="button" variant="outline" onClick={onOpenAddItem}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
+                    <IconCirclePlus className="h-4 w-4 mr-2" />
                     {t("forms.snCustomFacet.addItem")}
                   </Button>
                 </div>
@@ -923,7 +922,7 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
                     className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
                   >
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="space-y-1">
                         <p className="font-medium">
                           {t("forms.snCustomFacet.overlapDetectedTitle", { count: overlapPairs.length })}

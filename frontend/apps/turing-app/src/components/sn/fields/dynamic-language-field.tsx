@@ -1,10 +1,10 @@
 import { LanguageSelect } from '@/components/language-select';
+import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
 import type { TurLocale } from '@/models/locale/locale.model';
 import type { TurSNSiteField } from '@/models/sn/sn-site-field.model';
 import { TurLocaleService } from '@/services/locale/locale.service';
-import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useFieldArray, type Control, type UseFormRegister } from 'react-hook-form';
 
@@ -57,14 +57,14 @@ export function DynamicLanguageFields({ control, register, fieldName }: Readonly
                         aria-label="Remove the field"
                         type="button"
                     >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <IconTrash className="h-4 w-4 text-red-500" />
                     </GradientButton>
                 </div>
             ))}
 
             <div className="mt-2">
                 <GradientButton variant="outline" onClick={handleAddField} type="button">
-                    <PlusCircle className="h-4 w-4 mr-2" />
+                    <IconCirclePlus className="h-4 w-4 mr-2" />
                     Add
                 </GradientButton>
             </div>

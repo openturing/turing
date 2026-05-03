@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Globe, PencilLine } from "lucide-react";
-
+import { IconPencilMinus, IconWorld } from "@tabler/icons-react";
 interface BadgeAemEnvProps {
     environment: string;
     className?: string;
@@ -23,12 +22,12 @@ export const BadgeAemEnv: React.FC<BadgeAemEnvProps> = ({ environment, className
         >
             {isAuthor ? (
                 <>
-                    <PencilLine className="w-3.5 h-3.5" />
+                    <IconPencilMinus className="w-3.5 h-3.5" />
                     <span>AUTHOR</span>
                 </>
             ) : (
                 <>
-                    <Globe className="w-3.5 h-3.5" />
+                    <IconWorld className="w-3.5 h-3.5" />
                     <span>PUBLISHING</span>
                 </>
             )}

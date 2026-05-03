@@ -35,9 +35,8 @@ import {
 import type { TurSNSiteMergeField } from "@/models/sn/sn-site-merge-field.model"
 import type { TurSNSiteMerge } from "@/models/sn/sn-site-merge.model"
 import { TurSNSiteMergeService } from "@/services/sn/sn.site.merge.service"
-import { IconDeviceFloppy, IconFileText, IconGitMerge, IconLink, IconReplace, IconX } from "@tabler/icons-react"
+import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconGitMerge, IconLink, IconReplace, IconTrash, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
-import { PlusCircle, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -254,7 +253,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                             <Dialog open={addFieldOpen} onOpenChange={setAddFieldOpen}>
                                 <DialogTrigger asChild>
                                     <GradientButton variant="outline" type="button">
-                                        <PlusCircle className="h-4 w-4 mr-2" />
+                                        <IconCirclePlus className="h-4 w-4 mr-2" />
                                         {t("forms.snMerge.addField")}
                                     </GradientButton>
                                 </DialogTrigger>
@@ -309,7 +308,7 @@ export const SNSiteMergeForm: React.FC<Props> = ({ snSiteId, value, isNew, onDel
                                                     type="button"
                                                     onClick={() => removeOverwrittenField(index)}
                                                 >
-                                                    <Trash2 className="h-4 w-4 mr-1" />
+                                                    <IconTrash className="h-4 w-4 mr-1" />
                                                     {t("forms.formActions.delete")}
                                                 </GradientButton>
                                             </TableCell>

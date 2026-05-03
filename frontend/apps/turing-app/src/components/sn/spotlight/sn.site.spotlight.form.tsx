@@ -38,9 +38,8 @@ import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
 import { toast } from "@viglet/viglet-design-system"
-import { IconDeviceFloppy, IconFileText, IconSpeakerphone, IconTags, IconX } from "@tabler/icons-react"
+import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconSearch, IconSpeakerphone, IconTags, IconTrash, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
-import { PlusCircle, Search, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -170,7 +169,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
             });
             setSearchResult(result);
         } catch (error) {
-            console.error("Search error", error);
+            console.error("IconSearch error", error);
             toast.error(t("forms.snSpotlight.searchFailed"));
         }
     }
@@ -344,14 +343,14 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                             onClick={() => removeTerm(index)}
                                             aria-label="Remove term"
                                         >
-                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                            <IconTrash className="h-4 w-4 text-red-500" />
                                         </GradientButton>
                                     </div>
                                 ))}
                             </div>
                             <div className="mt-4">
                                 <GradientButton variant="outline" type="button" onClick={addTerm}>
-                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    <IconCirclePlus className="h-4 w-4 mr-2" />
                                     {t("forms.snSpotlight.addTerm")}
                                 </GradientButton>
                             </div>
@@ -381,7 +380,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                 }}>
                                     <DialogTrigger asChild>
                                         <GradientButton variant="outline" type="button">
-                                            <PlusCircle className="h-4 w-4 mr-2" />
+                                            <IconCirclePlus className="h-4 w-4 mr-2" />
                                             {t("forms.snSpotlight.addDocument")}
                                         </GradientButton>
                                     </DialogTrigger>
@@ -411,7 +410,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                                 size="icon"
                                                 onClick={() => searchDocument(1)}
                                             >
-                                                <Search className="h-4 w-4" />
+                                                <IconSearch className="h-4 w-4" />
                                             </GradientButton>
                                         </div>
                                         {searchResult?.results?.document && searchResult.results.document.length > 0 && (
@@ -486,7 +485,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                                                         type="button"
                                                         onClick={() => removeDocument(index)}
                                                     >
-                                                        <Trash2 className="h-4 w-4 mr-1" />
+                                                        <IconTrash className="h-4 w-4 mr-1" />
                                                         {t("forms.common.remove")}
                                                     </GradientButton>
                                                 </TableCell>

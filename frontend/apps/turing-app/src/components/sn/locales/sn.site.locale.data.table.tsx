@@ -9,7 +9,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model.ts";
-import { IconColumns3Filled } from "@tabler/icons-react";
+import { IconChevronDown, IconColumns3Filled } from "@tabler/icons-react";
 import {
     type ColumnFiltersState,
     flexRender,
@@ -18,7 +18,6 @@ import {
     getSortedRowModel, type SortingState,
     useReactTable, type VisibilityState
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -74,7 +73,7 @@ export const SNSiteMultiLanguageDataTable: React.FC<Props> = ({ data, storageEna
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size={"sm"} className="hidden md:inline-flex">
-                                <IconColumns3Filled /> {t("forms.common.columns")} <ChevronDown />
+                                <IconColumns3Filled /> {t("forms.common.columns")} <IconChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

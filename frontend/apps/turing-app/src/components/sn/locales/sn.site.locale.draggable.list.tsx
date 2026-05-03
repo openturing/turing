@@ -1,3 +1,4 @@
+import { IconChevronDown, IconGripVertical } from "@tabler/icons-react";
 import {
     closestCenter,
     DndContext,
@@ -13,7 +14,6 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronDown, GripVertical } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -81,7 +81,7 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
                     className="p-2 cursor-grab active:cursor-grabbing hover:bg-accent rounded transition-colors"
                     aria-label={t("forms.localeTable.dragToReorder")}
                 >
-                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                    <IconGripVertical className="h-5 w-5 text-muted-foreground" />
                 </button>
             </TableCell>
             <TableCell>
@@ -111,7 +111,7 @@ const SNSiteLocaleDraggableListRow: React.FC<SNSiteLocaleDraggableListRowProps> 
                             <DropdownMenuTrigger asChild>
                                 <GradientButton size="sm">
                                     {t("forms.localeTable.openSearch")}
-                                    <ChevronDown className="size-3.5" />
+                                    <IconChevronDown className="size-3.5" />
                                 </GradientButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

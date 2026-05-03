@@ -26,8 +26,7 @@ import type {
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model"
 import type { TurSNSiteFacetOrdering } from "@/models/sn/sn-site-facet-ordering.model"
 import { SortValueSelector } from "./sn.site.search.rule.conditions"
-import { IconBolt } from "@tabler/icons-react"
-import { PlusCircle, Trash2 } from "lucide-react"
+import { IconBolt, IconCirclePlus, IconTrash } from "@tabler/icons-react"
 import React, { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
@@ -273,7 +272,7 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
             <SectionCard.Content>
                 <div className="flex items-center justify-between mb-4">
                     <GradientButton variant="outline" type="button" onClick={addAction}>
-                        <PlusCircle className="h-4 w-4 mr-2" />
+                        <IconCirclePlus className="h-4 w-4 mr-2" />
                         {t("sn.searchRule.addAction")}
                     </GradientButton>
                 </div>
@@ -315,7 +314,7 @@ export const SNSiteSearchRuleActions: React.FC<Props> = ({ form, fieldOptions, c
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <GradientButton variant="destructive" size="icon" type="button" onClick={() => removeAction(index)}>
-                                            <Trash2 className="h-4 w-4" />
+                                            <IconTrash className="h-4 w-4" />
                                         </GradientButton>
                                     </TableCell>
                                 </TableRow>

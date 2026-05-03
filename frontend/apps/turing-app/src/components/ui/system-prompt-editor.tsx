@@ -1,5 +1,4 @@
-import { IconEye, IconInfoCircle, IconPencil } from "@tabler/icons-react";
-import { PlusCircle } from "lucide-react";
+import { IconCirclePlus, IconEye, IconInfoCircle, IconPencil } from "@tabler/icons-react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -122,7 +121,7 @@ export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
                 onClick={() => { setMode("write"); insertVariable(v.token); }}
                 className="text-[10px] flex items-center gap-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded hover:bg-amber-500/20 transition-all font-mono dark:text-amber-400 dark:border-amber-400/20"
               >
-                <PlusCircle className="w-3 h-3" /> {v.token}
+                <IconCirclePlus className="w-3 h-3" /> {v.token}
               </button>
             ))}
           </div>

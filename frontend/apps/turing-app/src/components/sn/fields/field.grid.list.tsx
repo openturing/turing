@@ -10,12 +10,6 @@ import {
     useReactTable,
     type VisibilityState,
 } from "@tanstack/react-table"
-import {
-    AlertTriangle,
-    ArrowUpDown,
-    CheckCircle2,
-    ChevronDown,
-} from "lucide-react"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -42,7 +36,7 @@ import type { TurSNFieldCheck } from "@/models/sn/sn-field-check.model.ts"
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
-import { IconColumns3Filled } from "@tabler/icons-react"
+import { IconAlertTriangle, IconArrowsUpDown, IconChevronDown, IconCircleCheck, IconColumns3Filled } from "@tabler/icons-react"
 import type { PropsWithChildren } from "react"
 import { BadgeFieldType } from "../../badge-field-type"
 
@@ -62,9 +56,9 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                 <GradientButton variant="ghost" size="icon" className="h-6 w-6 p-0">
                     <span className="sr-only">{t("forms.fieldGrid.openStatus")}</span>
                     {statusField.correct ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <IconCircleCheck className="h-4 w-4 text-emerald-500" />
                     ) : (
-                        <AlertTriangle className="h-4 w-4 text-rose-500" />
+                        <IconAlertTriangle className="h-4 w-4 text-rose-500" />
                     )}
                 </GradientButton>
             </DropdownMenuTrigger>
@@ -75,7 +69,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                             key={core.name}
                             className="flex items-center gap-2"
                         >
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <IconCircleCheck className="h-4 w-4 text-emerald-500" />
                             <span>{core.name}</span>
                         </DropdownMenuItem>
                     ))
@@ -83,7 +77,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                         <div key={core.name} className="py-1">
                             {core.correct ? (
                                 <DropdownMenuItem className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <IconCircleCheck className="h-4 w-4 text-emerald-500" />
                                     <span>{core.name}</span>
                                 </DropdownMenuItem>
                             ) : (
@@ -100,7 +94,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                     {!core.exists && (
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
-                                                <AlertTriangle className="h-4 w-4" />
+                                                <IconAlertTriangle className="h-4 w-4" />
                                                 <span>{t("forms.fieldGrid.missingField")}</span>
                                             </div>
                                             <button
@@ -114,7 +108,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                     {core.exists && !statusField.facetIsCorrect && (
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
-                                                <AlertTriangle className="h-4 w-4" />
+                                                <IconAlertTriangle className="h-4 w-4" />
                                                 <span>{t("forms.fieldGrid.facetTypeIncorrect")}</span>
                                             </div>
                                             <button
@@ -128,7 +122,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                     {core.exists && !core.multiValuedIsCorrect && (
                                         <div className="flex items-center justify-between px-2 py-1 text-sm">
                                             <div className="flex items-center gap-2 text-rose-600">
-                                                <AlertTriangle className="h-4 w-4" />
+                                                <IconAlertTriangle className="h-4 w-4" />
                                                 <span>{t("forms.fieldGrid.multiValuedNotConfigured")}</span>
                                             </div>
                                             <button
@@ -144,7 +138,7 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                         !core.typeIsCorrect && (
                                             <div className="flex items-center justify-between px-2 py-1 text-sm">
                                                 <div className="flex items-center gap-2 text-rose-600">
-                                                    <AlertTriangle className="h-4 w-4" />
+                                                    <IconAlertTriangle className="h-4 w-4" />
                                                     <span>{t("forms.fieldGrid.usingType", { type: core.type })}</span>
                                                 </div>
                                                 <button
@@ -182,7 +176,7 @@ const buildColumns = (
                             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                         >
                             {t("forms.common.field")}
-                            <ArrowUpDown />
+                            <IconArrowsUpDown />
                         </GradientButton>
                     </div>
                 )
@@ -451,7 +445,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <GradientButton variant="outline" size="sm" className="hidden md:inline-flex">
-                                <IconColumns3Filled /> {t("forms.common.columns")} <ChevronDown />
+                                <IconColumns3Filled /> {t("forms.common.columns")} <IconChevronDown />
                             </GradientButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

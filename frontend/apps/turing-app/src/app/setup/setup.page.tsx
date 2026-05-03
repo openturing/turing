@@ -1,8 +1,8 @@
 import { SetupForm } from "@/components/setup/setup-form"
+import { IconShield } from "@tabler/icons-react";
 import { TurLogo } from "@/components/logo/tur-logo"
 import { ModeToggle } from "@/components/mode-toggle"
 import { StartupFirst } from "@viglet/viglet-design-system"
-import { Shield } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { LoginSettingsButton, useLoginSettings } from "../login/login-settings"
 
@@ -36,7 +36,7 @@ const SetupPage = () => {
 
         <div className="flex flex-wrap justify-center gap-2 mb-5">
           <div className="vig-login__feature-pill flex items-center gap-1.5 rounded-full px-3 py-1">
-            <Shield className="h-3.5 w-3.5 text-blue-500" />
+            <IconShield className="h-3.5 w-3.5 text-blue-500" />
             <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
               {t("setup.firstAccess")}
             </span>

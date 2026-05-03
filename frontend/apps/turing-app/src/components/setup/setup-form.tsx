@@ -1,11 +1,11 @@
 import { ROUTES } from '@/app/routes.const';
+import { IconAlertCircle, IconCircleCheck, IconKey, IconLoader2 } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { GradientButton } from '@/components/ui/gradient-button';
 import { Input } from '@/components/ui/input';
 import { cn } from "@/lib/utils";
 import { TurSetupService } from '@/services/auth/setup.service';
-import { AlertCircle, CheckCircle2, KeyRound, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -73,7 +73,7 @@ export function SetupForm({
                     <form onSubmit={form.handleSubmit(onSubmit)} className={cn("flex flex-col gap-5", className)} {...props}>
                         {error && (
                             <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                <IconAlertCircle className="h-4 w-4 shrink-0" />
                                 <span>{error}</span>
                             </div>
                         )}
@@ -86,7 +86,7 @@ export function SetupForm({
                                         <FormLabel className="text-sm font-medium">{t('setup.password')}</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <IconKey className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('setup.enterPassword')}
@@ -108,7 +108,7 @@ export function SetupForm({
                                         <FormLabel className="text-sm font-medium">{t('setup.confirmPassword')}</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <IconKey className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('setup.repeatPassword')}
@@ -129,9 +129,9 @@ export function SetupForm({
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                <IconCircleCheck className="mr-2 h-4 w-4" />
                             )}
                             {isLoading ? t('setup.saving') : t('setup.save')}
                         </GradientButton>

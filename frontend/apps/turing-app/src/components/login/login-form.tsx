@@ -1,4 +1,5 @@
 import { ROUTES } from '@/app/routes.const';
+import { IconAlertCircle, IconKey, IconLoader2, IconLogin, IconUser } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { GradientButton } from '@/components/ui/gradient-button';
@@ -8,7 +9,6 @@ import type { TurRestInfo } from '@/models/auth/rest-info';
 import { TurAuthorizationService } from '@/services/auth/authorization.service';
 import { TurSetupService } from '@/services/auth/setup.service';
 import { Icon } from '@iconify/react';
-import { AlertCircle, KeyRound, Loader2, LogIn, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -90,7 +90,7 @@ export function LoginForm({
                     <form onSubmit={form.handleSubmit(onSubmit)} className={cn("flex flex-col gap-5", className)} {...props}>
                         {error && (
                             <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                <IconAlertCircle className="h-4 w-4 shrink-0" />
                                 <span>{error}</span>
                             </div>
                         )}
@@ -103,7 +103,7 @@ export function LoginForm({
                                         <FormLabel className="text-sm font-medium">{t('login.username')}</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <IconUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('login.enterUsername')}
@@ -125,7 +125,7 @@ export function LoginForm({
                                         <FormLabel className="text-sm font-medium">{t('login.password')}</FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <IconKey className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     {...field}
                                                     placeholder={t('login.enterPassword')}
@@ -146,9 +146,9 @@ export function LoginForm({
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                                <LogIn className="mr-2 h-4 w-4" />
+                                <IconLogin className="mr-2 h-4 w-4" />
                             )}
                             {isLoading ? t('login.signingIn') : t('login.signIn')}
                         </GradientButton>

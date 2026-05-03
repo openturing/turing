@@ -1,4 +1,5 @@
 import { GradientButton } from '@/components/ui/gradient-button';
+import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -10,7 +11,6 @@ import {
 import type { TurSNRankingExpression } from '@/models/sn/sn-ranking-expression.model';
 import type { TurSNSiteField } from '@/models/sn/sn-site-field.model';
 import { TurSNFieldService } from '@/services/sn/sn.field.service';
-import { PlusCircle, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useFieldArray, type Control, type FieldErrors, type UseFormRegister, type FieldValues, type ArrayPath } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -128,7 +128,7 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
                                     type="button"
                                     className="text-destructive hover:text-destructive"
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    <IconTrash className="h-4 w-4" />
                                 </GradientButton>
                             </div>
                         </div>
@@ -138,7 +138,7 @@ export function DynamicResultRankingFields<TFieldValues extends FieldValues = Fi
 
             <div>
                 <GradientButton variant="outline" onClick={handleAddField} type="button" size="sm">
-                    <PlusCircle className="h-4 w-4 mr-1.5" />
+                    <IconCirclePlus className="h-4 w-4 mr-1.5" />
                     {t("forms.resultRankingField.addCondition")}
                 </GradientButton>
             </div>

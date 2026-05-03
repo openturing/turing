@@ -1,4 +1,5 @@
 import { ROUTES } from "@/app/routes.const";
+import { IconAlertCircle, IconArrowLeft, IconLoader2, IconUserPlus } from "@tabler/icons-react";
 import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,6 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TurAuthorizationService } from "@/services/auth/authorization.service";
-import { AlertCircle, ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -75,7 +75,7 @@ export default function RegisterPage() {
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             {error && (
                                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                                    <AlertCircle className="h-4 w-4 shrink-0" />
+                                    <IconAlertCircle className="h-4 w-4 shrink-0" />
                                     <span>{error}</span>
                                 </div>
                             )}
@@ -156,9 +156,9 @@ export default function RegisterPage() {
 
                             <GradientButton type="submit" className="w-full" disabled={isLoading}>
                                 {isLoading ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    <IconUserPlus className="mr-2 h-4 w-4" />
                                 )}
                                 {isLoading ? t("register.creating") : t("register.createAccount")}
                             </GradientButton>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
                                     to={ROUTES.LOGIN}
                                     className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    <ArrowLeft className="h-3.5 w-3.5" />
+                                    <IconArrowLeft className="h-3.5 w-3.5" />
                                     {t("register.backToLogin")}
                                 </Link>
                             </div>

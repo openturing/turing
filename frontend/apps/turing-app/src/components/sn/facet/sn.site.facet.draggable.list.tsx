@@ -1,3 +1,4 @@
+import { IconGripVertical } from "@tabler/icons-react";
 import {
     closestCenter,
     DndContext,
@@ -13,7 +14,6 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -65,7 +65,7 @@ const SNSiteFacetDraggableListRow: React.FC<SNSiteFacetDraggableListRowProps> = 
                     className="p-2 cursor-grab active:cursor-grabbing hover:bg-accent rounded transition-colors"
                     aria-label={t("forms.facetDraggable.dragToReorder")}
                 >
-                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                    <IconGripVertical className="h-5 w-5 text-muted-foreground" />
                 </button>
             </TableCell>
             <TableCell className="text-muted-foreground">

@@ -27,8 +27,7 @@ import type {
 } from "@/models/sn/sn-site-search-rule.model"
 import type { TurSNSiteCustomSort } from "@/models/sn/sn-site-custom-sort.model"
 import type { TurSNSiteLocale } from "@/models/sn/sn-site-locale.model"
-import { IconFilter } from "@tabler/icons-react"
-import { PlusCircle, Trash2, X } from "lucide-react"
+import { IconCirclePlus, IconFilter, IconTrash, IconX } from "@tabler/icons-react"
 import React, { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { UseFormReturn } from "react-hook-form"
@@ -322,7 +321,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
                                     </div>
                                     <GradientButton variant="ghost" size="icon" type="button"
                                         onClick={() => removeConditionGroup(group.parameter)} className="h-7 w-7">
-                                        <X className="h-4 w-4" />
+                                        <IconX className="h-4 w-4" />
                                     </GradientButton>
                                 </div>
                                 <Table>
@@ -372,7 +371,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
                                                 <TableCell className="text-right">
                                                     <GradientButton variant="destructive" size="icon" type="button"
                                                         onClick={() => removeCondition(item.globalIndex)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <IconTrash className="h-4 w-4" />
                                                     </GradientButton>
                                                 </TableCell>
                                             </TableRow>
@@ -380,7 +379,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
                                     </TableBody>
                                 </Table>
                                 <GradientButton variant="outline" size="sm" type="button" onClick={() => addConditionToGroup(group.parameter)}>
-                                    <PlusCircle className="h-3 w-3 mr-1" />
+                                    <IconCirclePlus className="h-3 w-3 mr-1" />
                                     {t("sn.searchRule.addCondition")}
                                 </GradientButton>
                             </div>
@@ -392,7 +391,7 @@ export const SNSiteSearchRuleConditions: React.FC<Props> = ({ form, fieldOptions
                         <span className="text-sm text-muted-foreground">{t("sn.searchRule.addGroup")}:</span>
                         {availableParameters.map((p) => (
                             <GradientButton key={p} variant="outline" size="sm" type="button" onClick={() => addConditionGroup(p)}>
-                                <PlusCircle className="h-3 w-3 mr-1" />
+                                <IconCirclePlus className="h-3 w-3 mr-1" />
                                 {t(`sn.searchRule.parameterValues.${p}`)}
                             </GradientButton>
                         ))}

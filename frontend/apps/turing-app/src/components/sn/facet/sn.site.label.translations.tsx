@@ -1,11 +1,11 @@
 "use client"
 
 import { LanguageSelect } from "@/components/language-select"
+import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button"
 import { FormDescription, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import type { TurLocale } from "@/models/locale/locale.model"
-import { PlusCircle, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 export type SNSiteLabelTranslationEntry = {
@@ -37,7 +37,7 @@ export const SNSiteLabelTranslations: React.FC<SNSiteLabelTranslationsProps> = (
                     <FormDescription>{t("forms.snLabelTranslations.addTranslationsDesc")}</FormDescription>
                 </div>
                 <Button type="button" variant="outline" onClick={onAdd}>
-                    <PlusCircle className="h-4 w-4 mr-2" />
+                    <IconCirclePlus className="h-4 w-4 mr-2" />
                     {t("forms.snLabelTranslations.addLabel")}
                 </Button>
             </div>
@@ -57,7 +57,7 @@ export const SNSiteLabelTranslations: React.FC<SNSiteLabelTranslationsProps> = (
                             className="flex-1"
                         />
                         <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(index)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <IconTrash className="h-4 w-4 text-red-500" />
                         </Button>
                     </div>
                 ))}
