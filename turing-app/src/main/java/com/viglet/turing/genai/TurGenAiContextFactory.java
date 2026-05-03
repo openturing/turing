@@ -3,9 +3,8 @@ package com.viglet.turing.genai;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Component;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
@@ -27,14 +26,14 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TurGenAiContextFactory {
 
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurRagContextBuilder turRagContextBuilder;
 
-    public TurGenAiContextFactory(TurGenAiLlmProviderFactory llmProviderFactory,
+    public TurGenAiContextFactory(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurRagContextBuilder turRagContextBuilder) {
-        this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.turRagContextBuilder = turRagContextBuilder;
     }
@@ -74,9 +73,8 @@ public class TurGenAiContextFactory {
             return TurGenAiContext.disabled();
         }
 
-        TurGenAiLlmProvider llmProvider = llmProviderFactory.getProvider(llmInstance);
         String llmApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-        ChatModel chatModel = llmProvider.createChatModel(llmInstance, llmApiKey);
+        ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, llmApiKey);
 
         var infra = ragInfra.get();
         // System prompt always comes from the agent — sites no longer

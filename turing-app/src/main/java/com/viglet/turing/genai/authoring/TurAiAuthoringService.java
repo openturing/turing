@@ -26,8 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -62,17 +61,17 @@ public class TurAiAuthoringService {
 
     private final TurGlobalSettingsService globalSettings;
     private final TurLLMInstanceRepository llmRepository;
-    private final TurGenAiLlmProviderFactory providerFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurAiAuthoringService(TurGlobalSettingsService globalSettings,
             TurLLMInstanceRepository llmRepository,
-            TurGenAiLlmProviderFactory providerFactory,
+            TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService) {
         this.globalSettings = globalSettings;
         this.llmRepository = llmRepository;
-        this.providerFactory = providerFactory;
+        this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
     }
 
@@ -200,9 +199,8 @@ public class TurAiAuthoringService {
         TurLLMInstance llmInstance = llmRepository.findById(defaultLlmId)
                 .orElseThrow(() -> new IllegalStateException(
                         "Default LLM instance not found: " + defaultLlmId));
-        TurGenAiLlmProvider provider = providerFactory.getProvider(llmInstance);
         String key = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-        return provider.createChatModel(llmInstance, key);
+        return llmModelFactory.createChatModel(llmInstance, key);
     }
 
     private String serializeState(Object state) {

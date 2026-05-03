@@ -21,7 +21,7 @@ import org.springframework.util.StringUtils;
 
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -61,7 +61,7 @@ public class TurWeeklySearchReportService {
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurSNSiteDataCollectorService siteDataCollectorService;
     private final TurLlmCacheService llmCacheService;
@@ -74,7 +74,7 @@ public class TurWeeklySearchReportService {
             TurSearchEnginePluginFactory pluginFactory,
             TurGlobalSettingsService globalSettingsService,
             TurLLMInstanceRepository llmInstanceRepository,
-            TurGenAiLlmProviderFactory llmProviderFactory,
+            TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService secretCryptoService,
             TurSNSiteDataCollectorService siteDataCollectorService,
             TurLlmCacheService llmCacheService,
@@ -86,7 +86,7 @@ public class TurWeeklySearchReportService {
         this.pluginFactory = pluginFactory;
         this.globalSettingsService = globalSettingsService;
         this.llmInstanceRepository = llmInstanceRepository;
-        this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.secretCryptoService = secretCryptoService;
         this.siteDataCollectorService = siteDataCollectorService;
         this.llmCacheService = llmCacheService;
@@ -127,9 +127,8 @@ public class TurWeeklySearchReportService {
             if (llmInstance != null && llmInstance.getEnabled() == 1) {
                 resolvedLlmInstance = llmInstance;
                 try {
-                    var provider = llmProviderFactory.getProvider(llmInstance);
                     String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-                    chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
+                    chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
                     llmModelName = StringUtils.hasText(llmInstance.getModelName())
                             ? llmInstance.getTitle() + " (" + llmInstance.getModelName() + ")"
                             : llmInstance.getTitle();

@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
@@ -28,7 +28,7 @@ public class TurLlmSummaryService {
 
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurLlmCacheService llmCacheService;
     private final TurLLMTokenUsageService tokenUsageService;
@@ -59,9 +59,8 @@ public class TurLlmSummaryService {
         }
 
         try {
-            var provider = llmProviderFactory.getProvider(llmInstance);
             String decryptedApiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-            ChatModel chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
+            ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
 
             List<Message> messages = List.of(
                     new SystemMessage(systemPrompt),

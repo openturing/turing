@@ -21,9 +21,8 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
@@ -34,7 +33,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 class TurGenAiContextFactoryTest {
 
     @Mock
-    private TurGenAiLlmProviderFactory llmProviderFactory;
+    private TurLlmModelFactory llmModelFactory;
 
     @Mock
     private TurSecretCryptoService turSecretCryptoService;
@@ -104,12 +103,10 @@ class TurGenAiContextFactoryTest {
 
         turSNSiteGenAi.setTurAIAgent(agent);
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         when(turSecretCryptoService.decrypt("llm-encrypted")).thenReturn("llm-decrypted");
 
         ChatModel chatModel = mock(ChatModel.class);
-        when(llmProvider.createChatModel(llmInstance, "llm-decrypted")).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(llmInstance, "llm-decrypted")).thenReturn(chatModel);
 
         EmbeddingModel springEmbeddingModel = mock(EmbeddingModel.class);
         VectorStore vectorStore = mock(VectorStore.class);

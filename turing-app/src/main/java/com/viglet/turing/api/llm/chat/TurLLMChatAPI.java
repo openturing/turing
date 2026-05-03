@@ -42,6 +42,7 @@ import org.xml.sax.SAXException;
 
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
 import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
@@ -104,6 +105,7 @@ public class TurLLMChatAPI {
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurWebCrawlerToolService webCrawlerToolService;
     private final TurWeatherToolService weatherToolService;
@@ -121,6 +123,7 @@ public class TurLLMChatAPI {
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
+            TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurWebCrawlerToolService webCrawlerToolService,
             TurWeatherToolService weatherToolService,
@@ -137,6 +140,7 @@ public class TurLLMChatAPI {
             TurIconifyToolService iconifyToolService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.webCrawlerToolService = webCrawlerToolService;
         this.weatherToolService = weatherToolService;
@@ -206,9 +210,8 @@ public class TurLLMChatAPI {
         // Capture username from security context on the request thread
         String username = resolveUsername();
 
-        TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
-        ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
+        ChatModel chatModel = llmModelFactory.createChatModel(turLLMInstance, decryptedApiKey);
 
         List<Message> springMessages = new ArrayList<>();
         String systemPrompt = turLLMInstance.isToolsEnabled()

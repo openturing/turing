@@ -17,8 +17,7 @@
 
 package com.viglet.turing.genai;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -50,20 +49,20 @@ import java.util.Optional;
 @Component
 public class TurRagContextBuilder {
 
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurGenAiStoreProviderFactory storeProviderFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurGlobalSettingsService globalSettingsService;
     private final TurEmbeddingModelRepository embeddingModelRepository;
     private final TurStoreInstanceRepository storeInstanceRepository;
 
-    public TurRagContextBuilder(TurGenAiLlmProviderFactory llmProviderFactory,
+    public TurRagContextBuilder(TurLlmModelFactory llmModelFactory,
             TurGenAiStoreProviderFactory storeProviderFactory,
             TurSecretCryptoService secretCryptoService,
             TurGlobalSettingsService globalSettingsService,
             TurEmbeddingModelRepository embeddingModelRepository,
             TurStoreInstanceRepository storeInstanceRepository) {
-        this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.storeProviderFactory = storeProviderFactory;
         this.secretCryptoService = secretCryptoService;
         this.globalSettingsService = globalSettingsService;
@@ -105,9 +104,8 @@ public class TurRagContextBuilder {
         embLlmInstance.setModelName(
                 StringUtils.hasText(embModelRef) ? embModelRef : llmInstance.getModelName());
 
-        TurGenAiLlmProvider llmProvider = llmProviderFactory.getProvider(embLlmInstance);
         String apiKey = secretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-        return llmProvider.createEmbeddingModel(embLlmInstance, apiKey);
+        return llmModelFactory.createEmbeddingModel(embLlmInstance, apiKey);
     }
 
     /**

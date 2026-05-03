@@ -21,6 +21,7 @@ import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
@@ -32,6 +33,8 @@ class TurLLMSemanticChatAPITest {
     private TurLLMInstanceRepository turLLMInstanceRepository;
     @Mock
     private TurGenAiLlmProviderFactory llmProviderFactory;
+    @Mock
+    private TurLlmModelFactory llmModelFactory;
     @Mock
     private TurSecretCryptoService turSecretCryptoService;
     @Mock
@@ -50,7 +53,7 @@ class TurLLMSemanticChatAPITest {
     @BeforeEach
     void setUp() {
         api = new TurLLMSemanticChatAPI(
-                turLLMInstanceRepository, llmProviderFactory, turSecretCryptoService,
+                turLLMInstanceRepository, llmProviderFactory, llmModelFactory, turSecretCryptoService,
                 dslToolService, mcpToolCallbackService, toolCallbackPipeline, tokenUsageService);
     }
 

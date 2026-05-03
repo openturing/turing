@@ -18,14 +18,21 @@ package com.viglet.turing.plugins.se;
 
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.resilience.TurResilienceExecutor;
+import com.viglet.turing.resilience.TurResilienceRegistry;
+import com.viglet.turing.resilience.TurResilienceRegistry.Kind;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -38,15 +45,88 @@ import java.util.stream.Collectors;
 @Component
 public class TurSearchEnginePluginFactory {
 
-    private final Map<String, TurSearchEnginePlugin> pluginMap;
+    private static final Set<String> NON_IO_METHODS = Set.of(
+            "getPluginType",
+            "toString",
+            "hashCode",
+            "equals");
 
-    public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins) {
+    private final Map<String, TurSearchEnginePlugin> pluginMap;
+    private final TurResilienceExecutor resilienceExecutor;
+    private final TurResilienceRegistry resilienceRegistry;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins,
+            TurResilienceExecutor resilienceExecutor,
+            TurResilienceRegistry resilienceRegistry) {
+        this.resilienceExecutor = resilienceExecutor;
+        this.resilienceRegistry = resilienceRegistry;
         this.pluginMap = plugins.stream()
                 .collect(Collectors.toMap(
                         plugin -> plugin.getPluginType().toLowerCase(),
-                        Function.identity()));
-        log.info("Initialized TurSearchEnginePluginFactory with {} plugins.", pluginMap.size());
+                        this::wrapWithResilience,
+                        (a, b) -> a));
+        log.info("Initialized TurSearchEnginePluginFactory with {} plugins (resilience pipeline {}).",
+                pluginMap.size(),
+                resilienceRegistry == null ? "disabled" : "applied");
         pluginMap.keySet().forEach(type -> log.info("Registered plugin: {}", type));
+    }
+
+    /**
+     * Test-only constructor — resilience pipeline is bypassed since the
+     * executor and registry are absent. Production code goes through Spring DI
+     * which always provides the multi-arg constructor.
+     */
+    public TurSearchEnginePluginFactory(List<TurSearchEnginePlugin> plugins) {
+        this(plugins, null, null);
+    }
+
+    /**
+     * Wraps a plugin with a JDK dynamic proxy that routes every IO-bound method
+     * call through the resilience executor (retry + circuit breaker + time
+     * limiter). Methods that don't perform IO are excluded so they don't pollute
+     * circuit-breaker statistics. When the resilience deps are absent (test
+     * setup) the delegate is returned unwrapped.
+     */
+    private TurSearchEnginePlugin wrapWithResilience(TurSearchEnginePlugin delegate) {
+        if (resilienceExecutor == null || resilienceRegistry == null) {
+            return delegate;
+        }
+        String pluginType = delegate.getPluginType();
+        InvocationHandler handler = (proxy, method, args) -> {
+            if (NON_IO_METHODS.contains(method.getName())
+                    || !resilienceRegistry.isEnabled(Kind.SEARCH_ENGINE)) {
+                return invokeRaw(delegate, method, args);
+            }
+            return resilienceExecutor.execute(Kind.SEARCH_ENGINE, pluginType, () -> {
+                try {
+                    return invokeRaw(delegate, method, args);
+                } catch (RuntimeException re) {
+                    throw re;
+                } catch (Throwable t) {
+                    throw new InvocationWrapper(t);
+                }
+            });
+        };
+        return (TurSearchEnginePlugin) Proxy.newProxyInstance(
+                delegate.getClass().getClassLoader(),
+                new Class<?>[] { TurSearchEnginePlugin.class },
+                handler);
+    }
+
+    private static Object invokeRaw(TurSearchEnginePlugin delegate, Method method, Object[] args) throws Throwable {
+        try {
+            return method.invoke(delegate, args);
+        } catch (InvocationTargetException ite) {
+            throw ite.getTargetException();
+        }
+    }
+
+    /** Carries checked exceptions so the resilience executor can surface them as RuntimeExceptions. */
+    private static final class InvocationWrapper extends RuntimeException {
+        InvocationWrapper(Throwable cause) {
+            super(cause);
+        }
     }
 
     /**

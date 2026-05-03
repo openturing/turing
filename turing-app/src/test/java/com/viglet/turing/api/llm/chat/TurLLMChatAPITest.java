@@ -21,6 +21,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurDateTimeToolService;
 import com.viglet.turing.genai.tool.TurFinanceToolService;
 import com.viglet.turing.genai.tool.TurImageSearchToolService;
@@ -44,6 +45,8 @@ class TurLLMChatAPITest {
     private TurLLMInstanceRepository turLLMInstanceRepository;
     @Mock
     private TurGenAiLlmProviderFactory llmProviderFactory;
+    @Mock
+    private TurLlmModelFactory llmModelFactory;
     @Mock
     private TurSecretCryptoService turSecretCryptoService;
     @Mock
@@ -80,7 +83,7 @@ class TurLLMChatAPITest {
     @BeforeEach
     void setUp() {
         api = new TurLLMChatAPI(
-                turLLMInstanceRepository, llmProviderFactory, turSecretCryptoService,
+                turLLMInstanceRepository, llmProviderFactory, llmModelFactory, turSecretCryptoService,
                 webCrawlerToolService, weatherToolService, financeToolService,
                 codeInterpreterToolService, imageSearchToolService,
                 dateTimeToolService, ragSearchToolService,

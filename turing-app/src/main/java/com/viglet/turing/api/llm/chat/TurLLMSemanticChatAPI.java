@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurDslToolService;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -72,6 +73,7 @@ public class TurLLMSemanticChatAPI {
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurDslToolService dslToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
@@ -80,6 +82,7 @@ public class TurLLMSemanticChatAPI {
 
     public TurLLMSemanticChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurGenAiLlmProviderFactory llmProviderFactory,
+            TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurDslToolService dslToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -87,6 +90,7 @@ public class TurLLMSemanticChatAPI {
             TurLLMTokenUsageService tokenUsageService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.dslToolService = dslToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
@@ -116,9 +120,8 @@ public class TurLLMSemanticChatAPI {
 
         String username = resolveUsername();
 
-        TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
-        ChatModel chatModel = provider.createChatModel(turLLMInstance, decryptedApiKey);
+        ChatModel chatModel = llmModelFactory.createChatModel(turLLMInstance, decryptedApiKey);
 
         ToolCallback[] semanticCallbacks = MethodToolCallbackProvider.builder()
                 .toolObjects(dslToolService)

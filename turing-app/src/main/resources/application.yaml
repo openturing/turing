@@ -58,6 +58,72 @@ turing:
       # the embedding API without saturating typical rate limits. Set to 1 to
       # force sequential indexing (useful for debugging or rate-limited APIs).
       parallel: 4
+  # ---------------------------------------------------------------------------
+  # Resilience for outbound calls (LLM providers + search engines)
+  # ---------------------------------------------------------------------------
+  # Each group ("llm", "search-engine") has shared `defaults` and per-type
+  # `overrides`. Null fields in an override fall back to defaults. Set
+  # `turing.resilience.enabled: false` to bypass the entire pipeline globally.
+  resilience:
+    enabled: true
+    llm:
+      enabled: true
+      defaults:
+        retry:
+          max-attempts: 3
+          wait-duration: 1s
+          exponential-backoff-multiplier: 2.0
+          retry-on-exceptions:
+            - java.io.IOException
+            - java.net.SocketTimeoutException
+        circuit-breaker:
+          failure-rate-threshold: 50
+          slow-call-rate-threshold: 80
+          slow-call-duration-threshold: 30s
+          sliding-window-size: 20
+          minimum-number-of-calls: 10
+          wait-duration-in-open-state: 30s
+          permitted-number-of-calls-in-half-open-state: 3
+        time-limiter:
+          timeout-duration: 60s
+          cancel-running-future: true
+      overrides:
+        openai:
+          time-limiter:
+            timeout-duration: 90s
+        ollama:
+          time-limiter:
+            timeout-duration: 300s
+        gemini:
+          circuit-breaker:
+            wait-duration-in-open-state: 60s
+    search-engine:
+      enabled: true
+      defaults:
+        retry:
+          max-attempts: 2
+          wait-duration: 250ms
+          exponential-backoff-multiplier: 2.0
+          retry-on-exceptions:
+            - java.io.IOException
+            - java.net.SocketTimeoutException
+        circuit-breaker:
+          failure-rate-threshold: 50
+          slow-call-duration-threshold: 5s
+          sliding-window-size: 30
+          minimum-number-of-calls: 20
+          wait-duration-in-open-state: 15s
+          permitted-number-of-calls-in-half-open-state: 5
+        time-limiter:
+          timeout-duration: 30s
+          cancel-running-future: true
+      overrides:
+        lucene:
+          # Embedded engine; loosen circuit breaker since failures are rare and local.
+          circuit-breaker:
+            minimum-number-of-calls: 50
+          time-limiter:
+            timeout-duration: 10s
   logging:
     engine: none        # none | mongodb | redis
     database: turingLog

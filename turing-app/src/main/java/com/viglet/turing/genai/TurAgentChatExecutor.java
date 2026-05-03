@@ -35,8 +35,7 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
@@ -89,7 +88,7 @@ public class TurAgentChatExecutor {
      */
     public static final String FLOW_ID_NONE = "__none__";
 
-    private final TurGenAiLlmProviderFactory llmProviderFactory;
+    private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurNativeToolService nativeToolService;
     private final TurMcpToolCallbackService mcpToolCallbackService;
@@ -99,7 +98,7 @@ public class TurAgentChatExecutor {
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
 
-    public TurAgentChatExecutor(TurGenAiLlmProviderFactory llmProviderFactory,
+    public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurNativeToolService nativeToolService,
             TurMcpToolCallbackService mcpToolCallbackService,
@@ -108,7 +107,7 @@ public class TurAgentChatExecutor {
             TurLLMTokenUsageService tokenUsageService,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService) {
-        this.llmProviderFactory = llmProviderFactory;
+        this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
         this.mcpToolCallbackService = mcpToolCallbackService;
@@ -177,9 +176,8 @@ public class TurAgentChatExecutor {
             String conversationId,
             String flowId) {
 
-        TurGenAiLlmProvider provider = llmProviderFactory.getProvider(llmInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
-        ChatModel chatModel = provider.createChatModel(llmInstance, decryptedApiKey);
+        ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
 
         ToolCallback[] callbacks = resolveToolCallbacks(agent);
         log.info("[AgentExec] Agent '{}': {} tool callbacks", agent.getTitle(), callbacks.length);

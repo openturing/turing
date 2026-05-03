@@ -22,8 +22,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.InitializingBean;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProvider;
 import com.viglet.turing.genai.provider.store.TurGenAiStoreProviderFactory;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
@@ -44,7 +43,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 class TurRagContextBuilderTest {
 
     @Mock
-    private TurGenAiLlmProviderFactory llmProviderFactory;
+    private TurLlmModelFactory llmModelFactory;
     @Mock
     private TurGenAiStoreProviderFactory storeProviderFactory;
     @Mock
@@ -95,11 +94,9 @@ class TurRagContextBuilderTest {
     void resolveEmbeddingModelShouldUseModelReferenceWhenPresent() {
         embModel.setModelReference("custom-embedding-ref");
 
-        TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(provider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(provider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
         assertThat(result).isSameAs(springEmb);
@@ -109,11 +106,9 @@ class TurRagContextBuilderTest {
     void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenNoReference() {
         embModel.setModelReference(null);
 
-        TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(provider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(provider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
         assertThat(result).isSameAs(springEmb);
@@ -123,11 +118,9 @@ class TurRagContextBuilderTest {
     void resolveEmbeddingModelShouldFallbackToLlmModelNameWhenReferenceIsEmpty() {
         embModel.setModelReference("");
 
-        TurGenAiLlmProvider provider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(provider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(provider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         EmbeddingModel result = builder.resolveEmbeddingModel(embModel);
         assertThat(result).isSameAs(springEmb);
@@ -167,11 +160,9 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         VectorStore vectorStore = mock(VectorStore.class);
@@ -191,11 +182,9 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         VectorStore vectorStore = mock(VectorStore.class);
@@ -217,11 +206,9 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         VectorStore vectorStore = mock(VectorStore.class);
@@ -239,7 +226,7 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class)))
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("provider error"));
 
         Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build("emb-1", "store-1");
@@ -272,11 +259,9 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         VectorStore vectorStore = mock(VectorStore.class);
@@ -295,11 +280,9 @@ class TurRagContextBuilderTest {
         when(embeddingModelRepository.findById("emb-1")).thenReturn(Optional.of(embModel));
         when(storeInstanceRepository.findById("store-1")).thenReturn(Optional.of(storeInstance));
 
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         VectorStore vectorStore = mock(VectorStore.class);
@@ -330,11 +313,9 @@ class TurRagContextBuilderTest {
 
     @Test
     void buildWithEntitiesShouldCallAfterPropertiesSetOnInitializingBeanVectorStore() throws Exception {
-        TurGenAiLlmProvider llmProvider = mock(TurGenAiLlmProvider.class);
         EmbeddingModel springEmb = mock(EmbeddingModel.class);
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class))).thenReturn(llmProvider);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("plain-key");
-        when(llmProvider.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), eq("plain-key"))).thenReturn(springEmb);
 
         TurGenAiStoreProvider storeProvider = mock(TurGenAiStoreProvider.class);
         when(storeProviderFactory.getProvider(storeInstance)).thenReturn(storeProvider);
@@ -351,7 +332,7 @@ class TurRagContextBuilderTest {
 
     @Test
     void buildWithEntitiesShouldReturnEmptyOnException() {
-        when(llmProviderFactory.getProvider(any(TurLLMInstance.class)))
+        when(llmModelFactory.createEmbeddingModel(any(TurLLMInstance.class), org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("build error"));
 
         Optional<TurRagContextBuilder.RagInfrastructure> result = builder.build(embModel, storeInstance, null);

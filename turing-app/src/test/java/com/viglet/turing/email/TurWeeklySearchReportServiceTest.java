@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
-import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
+import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
@@ -53,7 +53,7 @@ class TurWeeklySearchReportServiceTest {
     @Mock
     private TurLLMInstanceRepository llmInstanceRepository;
     @Mock
-    private TurGenAiLlmProviderFactory llmProviderFactory;
+    private TurLlmModelFactory llmModelFactory;
     @Mock
     private TurSecretCryptoService secretCryptoService;
     @Mock
@@ -69,7 +69,7 @@ class TurWeeklySearchReportServiceTest {
     void setUp() {
         service = new TurWeeklySearchReportService(emailService, snSiteRepository,
                 snSiteLocaleRepository, metricAccessRepository, pluginFactory,
-                globalSettingsService, llmInstanceRepository, llmProviderFactory,
+                globalSettingsService, llmInstanceRepository, llmModelFactory,
                 secretCryptoService, siteDataCollectorService, llmCacheService,
                 tokenUsageService);
     }
@@ -275,7 +275,7 @@ class TurWeeklySearchReportServiceTest {
         service.buildReportHtml();
 
         verifyNoInteractions(llmInstanceRepository);
-        verifyNoInteractions(llmProviderFactory);
+        verifyNoInteractions(llmModelFactory);
     }
 
     @Test
@@ -288,7 +288,7 @@ class TurWeeklySearchReportServiceTest {
         String html = service.buildReportHtml();
 
         assertNotNull(html);
-        verifyNoInteractions(llmProviderFactory);
+        verifyNoInteractions(llmModelFactory);
     }
 
     @Test
@@ -315,10 +315,8 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setApiKeyEncrypted("enc-key");
         when(llmInstanceRepository.findById("llm-1")).thenReturn(Optional.of(llmInstance));
 
-        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
-        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
         when(secretCryptoService.decrypt("enc-key")).thenReturn("decrypted-key");
 
         // Return cached content
@@ -361,10 +359,8 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setApiKeyEncrypted("enc-key-2");
         when(llmInstanceRepository.findById("llm-2")).thenReturn(Optional.of(llmInstance));
 
-        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
-        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
         when(secretCryptoService.decrypt("enc-key-2")).thenReturn("decrypted-key");
 
         // No cache
@@ -419,10 +415,8 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setApiKeyEncrypted("enc-key-3");
         when(llmInstanceRepository.findById("llm-3")).thenReturn(Optional.of(llmInstance));
 
-        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
-        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
         when(secretCryptoService.decrypt("enc-key-3")).thenReturn("decrypted-key");
 
         when(llmCacheService.get("site-err-1")).thenReturn(null);
@@ -451,7 +445,7 @@ class TurWeeklySearchReportServiceTest {
         String html = service.buildReportHtml();
 
         assertNotNull(html);
-        verifyNoInteractions(llmProviderFactory);
+        verifyNoInteractions(llmModelFactory);
     }
 
     @Test
@@ -559,7 +553,7 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setTitle("Failing LLM");
         llmInstance.setApiKeyEncrypted("enc");
         when(llmInstanceRepository.findById("llm-fail")).thenReturn(Optional.of(llmInstance));
-        when(llmProviderFactory.getProvider(llmInstance)).thenThrow(new RuntimeException("Provider init failed"));
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenThrow(new RuntimeException("Provider init failed"));
         when(emailService.loadTemplate(anyString())).thenReturn("{{reportPeriod}}{{totalSearches}}{{siteCards}}{{generatedAt}}");
 
         String html = service.buildReportHtml();
@@ -591,10 +585,8 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setApiKeyEncrypted("enc-empty");
         when(llmInstanceRepository.findById("llm-empty")).thenReturn(Optional.of(llmInstance));
 
-        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
-        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
         when(secretCryptoService.decrypt("enc-empty")).thenReturn("key");
 
         when(llmCacheService.get("site-empty-ai")).thenReturn(null);
@@ -643,10 +635,8 @@ class TurWeeklySearchReportServiceTest {
         llmInstance.setApiKeyEncrypted("enc-mn");
         when(llmInstanceRepository.findById("llm-mn")).thenReturn(Optional.of(llmInstance));
 
-        var llmProvider = mock(com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider.class);
-        when(llmProviderFactory.getProvider(llmInstance)).thenReturn(llmProvider);
         var chatModel = mock(org.springframework.ai.chat.model.ChatModel.class);
-        when(llmProvider.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
+        when(llmModelFactory.createChatModel(eq(llmInstance), any())).thenReturn(chatModel);
         when(secretCryptoService.decrypt("enc-mn")).thenReturn("key");
 
         // Return cached content to test model name format
