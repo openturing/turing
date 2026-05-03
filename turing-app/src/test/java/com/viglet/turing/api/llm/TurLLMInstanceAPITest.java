@@ -26,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -47,6 +48,9 @@ class TurLLMInstanceAPITest {
 
         @Mock
         private TurSecretCryptoService turSecretCryptoService;
+
+        @Mock
+        private ApplicationEventPublisher eventPublisher;
 
         @Spy
         private TurLLMInstanceMapper turLLMInstanceMapper = Mappers.getMapper(TurLLMInstanceMapper.class);

@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,6 +47,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteMonitoringStatusBean;
+import com.viglet.turing.domain.sn.SnSiteIndexInvalidatedEvent;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExport;
 import com.viglet.turing.persistence.dto.sn.TurSNSiteDto;
@@ -91,6 +93,7 @@ public class TurSNSiteAPI {
     private final TurSearchEnginePluginFactory pluginFactory;
     private final TurConfigProperties turConfigProperties;
     private final TurSNSiteMapper turSNSiteMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Operation(summary = "Semantic Navigation Site List")
     @GetMapping
@@ -182,6 +185,8 @@ public class TurSNSiteAPI {
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });
             turSNSiteRepository.save(turSNSiteEdit);
+            eventPublisher.publishEvent(SnSiteIndexInvalidatedEvent.updated(
+                    turSNSiteEdit.getId(), turSNSiteEdit.getName()));
             return turSNSiteMapper.toDto(turSNSiteEdit);
         }).orElse(new TurSNSiteDto()));
     }
@@ -234,6 +239,8 @@ public class TurSNSiteAPI {
         }
         turSNSiteRepository.save(turSNSite);
         turSNTemplate.createSNSite(turSNSite, principal.getName(), Locale.US);
+        eventPublisher.publishEvent(SnSiteIndexInvalidatedEvent.created(
+                turSNSite.getId(), turSNSite.getName()));
         return ResponseEntity.ok(turSNSiteMapper.toDto(turSNSite));
     }
 

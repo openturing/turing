@@ -91,7 +91,8 @@ class TurSNSiteAPITest {
                 return new TurSNSiteAPI(siteRepository, localeRepository, genAiRepository,
                                 mock(com.viglet.turing.persistence.repository.agent.TurAIAgentRepository.class),
                                 export, mock(TurSNSiteContentExchangeService.class),
-                                template, queue, pluginFactory, configProperties, siteMapper);
+                                template, queue, pluginFactory, configProperties, siteMapper,
+                                mock(org.springframework.context.ApplicationEventPublisher.class));
         }
 
         @Test

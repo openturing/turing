@@ -20,6 +20,7 @@ package com.viglet.turing.api.llm;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,6 +33,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.domain.llm.LlmInstanceUpdatedEvent;
+import com.viglet.turing.domain.llm.LlmProviderType;
 import com.viglet.turing.persistence.dto.llm.TurLLMInstanceDto;
 import com.viglet.turing.persistence.mapper.llm.TurLLMInstanceMapper;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
@@ -51,14 +54,17 @@ public class TurLLMInstanceAPI {
     private final TurLLMInstanceRepository turLLMInstanceRepository;
     private final TurLLMInstanceMapper turLLMInstanceMapper;
     private final TurSecretCryptoService turSecretCryptoService;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TurLLMInstanceAPI(TurLLMInstanceRepository turLLMInstanceRepository,
             TurLLMInstanceMapper turLLMInstanceMapper,
-            TurSecretCryptoService turSecretCryptoService) {
+            TurSecretCryptoService turSecretCryptoService,
+            ApplicationEventPublisher eventPublisher) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
         this.turLLMInstanceMapper = turLLMInstanceMapper;
         this.turSecretCryptoService = turSecretCryptoService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Secured({"ROLE_ADMIN", "LLM_VIEW"})
@@ -117,6 +123,9 @@ public class TurLLMInstanceAPI {
                 turLLMInstanceEdit.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey));
             }
             this.turLLMInstanceRepository.save(turLLMInstanceEdit);
+            eventPublisher.publishEvent(LlmInstanceUpdatedEvent.updated(
+                    turLLMInstanceEdit.getId(),
+                    LlmProviderType.of(resolveProviderPlugin(turLLMInstanceEdit))));
             return turLLMInstanceMapper.toDto(turLLMInstanceEdit);
         }).orElse(new TurLLMInstanceDto());
 
@@ -141,7 +150,27 @@ public class TurLLMInstanceAPI {
             turLLMInstance.setApiKeyEncrypted(turSecretCryptoService.encrypt(apiKey));
         }
         this.turLLMInstanceRepository.save(turLLMInstance);
+        eventPublisher.publishEvent(LlmInstanceUpdatedEvent.created(
+                turLLMInstance.getId(),
+                LlmProviderType.of(resolveProviderPlugin(turLLMInstance))));
         return turLLMInstanceMapper.toDto(turLLMInstance);
 
+    }
+
+    /**
+     * Mirrors the lookup used by {@code TurGenAiLlmProviderFactory}: the plugin
+     * id falls back to the vendor id when the explicit plugin field is blank.
+     * Defaults to {@code "unknown"} when the vendor isn't set yet so the value
+     * object never receives a null.
+     */
+    private static String resolveProviderPlugin(TurLLMInstance instance) {
+        TurLLMVendor vendor = instance.getTurLLMVendor();
+        if (vendor == null) {
+            return "unknown";
+        }
+        if (StringUtils.hasText(vendor.getPlugin())) {
+            return vendor.getPlugin();
+        }
+        return StringUtils.hasText(vendor.getId()) ? vendor.getId() : "unknown";
     }
 }
