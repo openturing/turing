@@ -13,8 +13,11 @@ import {
   Input
 } from "@/components/ui/input"
 import { SmartDescription } from "@/components/ui/smart-description"
+import {
+  useCreateTokenInstance,
+  useUpdateTokenInstance,
+} from "@/api/queries/token-instance.queries"
 import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
-import { TurTokenInstanceService } from "@/services/token/token.service"
 import { IconCode, IconDeviceFloppy, IconKey, IconNotes, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import { useEffect } from "react"
@@ -27,7 +30,6 @@ import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../sticky-page-header"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
-const turTokenInstanceService = new TurTokenInstanceService();
 interface Props {
   value: TurTokenInstance;
   isNew: boolean;
@@ -42,6 +44,9 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, ope
     defaultValues: value
   });
   const navigate = useNavigate()
+  const createMutation = useCreateTokenInstance();
+  const updateMutation = useUpdateTokenInstance();
+
   useEffect(() => {
     form.reset(value);
   }, [value]);
@@ -49,7 +54,7 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, ope
   async function onSubmit(tokenInstance: TurTokenInstance) {
     try {
       if (isNew) {
-        const result = await turTokenInstanceService.create(tokenInstance);
+        const result = await createMutation.mutateAsync(tokenInstance);
         if (result) {
           toast.success(t("forms.common.saved", { name: tokenInstance.title, feature: t("apiToken.title") }));
           navigate(ROUTES.ADMIN_TOKENS);
@@ -58,7 +63,7 @@ export const TokenInstanceForm: React.FC<Props> = ({ value, isNew, onDelete, ope
         }
       }
       else {
-        const result = await turTokenInstanceService.update(tokenInstance);
+        const result = await updateMutation.mutateAsync(tokenInstance);
         if (result) {
           toast.success(t("forms.common.updated", { name: tokenInstance.title, feature: t("apiToken.title") }));
         } else {

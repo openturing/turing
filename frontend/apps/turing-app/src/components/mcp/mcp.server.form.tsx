@@ -20,8 +20,12 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import {
+  useCreateMcpServer,
+  useDeleteMcpServer,
+  useUpdateMcpServer,
+} from "@/api/queries/mcp-server.queries"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
-import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconPlug, IconServer2, IconSettings, IconTerminal2, IconToggleLeft } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -38,7 +42,6 @@ import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
 
-const turMcpServerService = new TurMcpServerService();
 const urlBase = ROUTES.MCP_INSTANCE
 
 interface Props {
@@ -54,6 +57,10 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
   const [open, setOpen] = useState(false);
   const selectedConnectionType = form.watch("connectionType");
   const navigate = useNavigate()
+
+  const createMutation = useCreateMcpServer();
+  const updateMutation = useUpdateMcpServer();
+  const deleteMutation = useDeleteMcpServer();
 
   useEffect(() => {
     form.reset({
@@ -77,7 +84,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
 
     try {
       if (isNew) {
-        const result = await turMcpServerService.create(payload);
+        const result = await createMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.title, feature: t("mcp.title") }));
           navigate(urlBase);
@@ -86,7 +93,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
         }
       }
       else {
-        const result = await turMcpServerService.update(payload);
+        const result = await updateMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.title, feature: t("mcp.title") }));
         } else {
@@ -101,7 +108,7 @@ export const McpServerForm: React.FC<Props> = ({ value, isNew }) => {
 
   async function onDelete() {
     try {
-      if (await turMcpServerService.delete(value)) {
+      if (await deleteMutation.mutateAsync(value)) {
         toast.success(t("forms.common.deleted", { name: value.title, feature: t("mcp.title") }));
         navigate(urlBase);
       }

@@ -7,6 +7,7 @@ import { SectionCard } from "@/components/ui/section-card";
 import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useAiAuthoring } from "@/hooks/use-ai-authoring";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
+import { useCreateChatFlow } from "@/api/queries/chat-flow.queries";
 import type {
   ChatFlowEdgeGeneration,
   ChatFlowGeneration,
@@ -55,6 +56,7 @@ export default function ChatFlowAiChatPage() {
 
   const [flow, setFlow] = useState<ChatFlowGeneration>(emptyFlow());
   const [saving, setSaving] = useState(false);
+  const createMutation = useCreateChatFlow();
   const [breadcrumb] = useState<BreadcrumbItem[] | undefined>([
     { label: t("chatFlow.aiChat.breadcrumb") },
   ]);
@@ -94,7 +96,7 @@ export default function ChatFlowAiChatPage() {
       definitionJson: serializeForEditor(flow),
     };
     try {
-      const created = await turChatFlowService.create(agentId, payload);
+      const created = await createMutation.mutateAsync({ agentId, flow: payload });
       toast.success(t("chatFlow.aiChat.saved", { name: created.name }));
       navigate(`${flowListUrl}/${created.id}`);
     } catch (error) {

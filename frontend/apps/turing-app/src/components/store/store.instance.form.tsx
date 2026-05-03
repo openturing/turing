@@ -19,9 +19,12 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import {
+  useCreateStoreInstance,
+  useUpdateStoreInstance,
+} from "@/api/queries/store-instance.queries"
 import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import type { TurStoreVendor } from "@/models/store/store-vendor.model.ts"
-import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurStoreVendorService } from "@/services/store/store-vendor.service"
 import { IconAdjustments, IconBuildingStore, IconDeviceFloppy, IconPlug, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
@@ -38,7 +41,6 @@ import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
-const turStoreInstanceService = new TurStoreInstanceService();
 const turStoreVendorService = new TurStoreVendorService();
 const urlBase = ROUTES.STORE_INSTANCE
 interface Props {
@@ -222,6 +224,8 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [vendors, setVendors] = useState<TurStoreVendor[]>([]);
   const selectedVendorId = form.watch("turStoreVendor.id");
   const navigate = useNavigate()
+  const createMutation = useCreateStoreInstance();
+  const updateMutation = useUpdateStoreInstance();
 
   useEffect(() => {
     turStoreVendorService.query().then(setVendors);
@@ -293,7 +297,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
 
     try {
       if (isNew) {
-        const result = await turStoreInstanceService.create(payload);
+        const result = await createMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.saved", { name: payload.title, feature: t("store.title") }));
           navigate(urlBase);
@@ -302,7 +306,7 @@ export const StoreInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         }
       }
       else {
-        const result = await turStoreInstanceService.update(payload);
+        const result = await updateMutation.mutateAsync(payload);
         if (result) {
           toast.success(t("forms.common.updated", { name: payload.title, feature: t("store.title") }));
         } else {

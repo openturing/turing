@@ -23,33 +23,49 @@ import {
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
 import { ROUTES } from "@/app/routes.const"
 import { type TurStoreCollectionInfo, TurStoreInstanceService } from "@/services/store/store.service"
+import {
+  useClearStoreCollection,
+  useCreateStoreCollection,
+  useDeleteStoreCollection,
+  useStoreCollections,
+} from "@/api/queries/store-collection.queries"
 import { IconDatabase, IconDownload, IconEraser, IconLayersSubtract, IconPackageImport, IconPlus, IconTrash } from "@tabler/icons-react"
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 
 const turStoreInstanceService = new TurStoreInstanceService()
 
-function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreCollectionInfo; storeId: string; onRefresh: () => void }>) {
+function CollectionRow({ col, storeId }: Readonly<{ col: TurStoreCollectionInfo; storeId: string }>) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [clearOpen, setClearOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const clearMutation = useClearStoreCollection()
+  const deleteMutation = useDeleteStoreCollection()
 
   const handleClear = () => {
     setClearOpen(false)
-    turStoreInstanceService.clearCollection(storeId, col.name)
-      .then(() => { toast.success(t("store.collections.cleared", { name: col.name })); onRefresh() })
-      .catch(() => toast.error(t("store.collections.clearFailed", { name: col.name })))
+    clearMutation.mutate(
+      { storeId, collectionName: col.name },
+      {
+        onSuccess: () => toast.success(t("store.collections.cleared", { name: col.name })),
+        onError: () => toast.error(t("store.collections.clearFailed", { name: col.name })),
+      },
+    )
   }
 
   const handleDelete = () => {
     setDeleteOpen(false)
-    turStoreInstanceService.deleteCollection(storeId, col.name)
-      .then(() => { toast.success(t("store.collections.collectionDeleted", { name: col.name })); onRefresh() })
-      .catch(() => toast.error(t("store.collections.deleteFailed", { name: col.name })))
+    deleteMutation.mutate(
+      { storeId, collectionName: col.name },
+      {
+        onSuccess: () => toast.success(t("store.collections.collectionDeleted", { name: col.name })),
+        onError: () => toast.error(t("store.collections.deleteFailed", { name: col.name })),
+      },
+    )
   }
 
   const handleExport = async () => {
@@ -140,25 +156,27 @@ function CollectionRow({ col, storeId, onRefresh }: Readonly<{ col: TurStoreColl
   )
 }
 
-function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: string; onCreated: () => void }>) {
+function CreateCollectionDialog({ storeId }: Readonly<{ storeId: string }>) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
-  const [creating, setCreating] = useState(false)
+  const createMutation = useCreateStoreCollection()
+  const creating = createMutation.isPending
 
   const handleCreate = () => {
     const trimmed = name.trim()
     if (!trimmed) return
-    setCreating(true)
-    turStoreInstanceService.createCollection(storeId, trimmed)
-      .then(() => {
-        toast.success(t("store.collections.created", { name: trimmed }))
-        setName("")
-        setOpen(false)
-        onCreated()
-      })
-      .catch(() => toast.error(t("store.collections.createFailed", { name: trimmed })))
-      .finally(() => setCreating(false))
+    createMutation.mutate(
+      { storeId, name: trimmed },
+      {
+        onSuccess: () => {
+          toast.success(t("store.collections.created", { name: trimmed }))
+          setName("")
+          setOpen(false)
+        },
+        onError: () => toast.error(t("store.collections.createFailed", { name: trimmed })),
+      },
+    )
   }
 
   return (
@@ -197,17 +215,10 @@ function CreateCollectionDialog({ storeId, onCreated }: Readonly<{ storeId: stri
 export default function StoreInstanceCollectionsPage() {
   const { t } = useTranslation()
   const { id } = useParams() as { id: string }
-  const [collections, setCollections] = useState<TurStoreCollectionInfo[]>()
-  const [error, setError] = useState<string | null>(null)
   useSubPageBreadcrumb(t("store.collections.title"))
 
-  const loadCollections = useCallback(() => {
-    turStoreInstanceService.collections(id)
-      .then(setCollections)
-      .catch(() => setError(t("store.collections.loadFailed")))
-  }, [id])
-
-  useEffect(() => { loadCollections() }, [loadCollections])
+  const { data: collections, isError } = useStoreCollections(id)
+  const error = isError ? t("store.collections.loadFailed") : null
 
   const totalDocuments = collections?.reduce((sum, c) => sum + c.documentCount, 0) ?? 0
   const totalChunks = collections?.reduce((sum, c) => sum + c.chunkCount, 0) ?? 0
@@ -237,7 +248,7 @@ export default function StoreInstanceCollectionsPage() {
               </>
             )}
           </div>
-          <CreateCollectionDialog storeId={id} onCreated={loadCollections} />
+          <CreateCollectionDialog storeId={id} />
         </div>
 
         {collections && collections.length === 0 ? (
@@ -262,7 +273,7 @@ export default function StoreInstanceCollectionsPage() {
                   ?.slice()
                   .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
                   .map((col) => (
-                    <CollectionRow key={col.id} col={col} storeId={id} onRefresh={loadCollections} />
+                    <CollectionRow key={col.id} col={col} storeId={id} />
                   ))}
               </TableBody>
             </Table>

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
+import { useUpdateSnSite } from "@/api/queries/sn-site.queries"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
@@ -56,6 +57,7 @@ interface Props {
 
 export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
     const { t } = useTranslation();
+    const updateMutation = useUpdateSnSite();
     const form = useForm<TurSNSiteGenAi>({
         defaultValues: {
             ...snSite.turSNSiteGenAi
@@ -230,7 +232,7 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                     sitePrompt: data.sitePrompt ?? "",
                 },
             };
-            const result = await turSNSiteService.update(updatedSite);
+            const result = await updateMutation.mutateAsync(updatedSite);
             if (result) {
                 toast.success(t("forms.snGenai.siteUpdated", { name: snSite.name }));
             } else {

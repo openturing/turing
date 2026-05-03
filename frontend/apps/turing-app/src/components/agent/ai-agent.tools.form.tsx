@@ -1,8 +1,8 @@
 "use client"
+import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { NativeToolGroup } from "@/models/genai/native-tool.model.ts"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurNativeToolService } from "@/services/genai/native-tool.service"
 import { IconCheck, IconTool } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
@@ -11,7 +11,6 @@ import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 
-const turAIAgentService = new TurAIAgentService();
 const turNativeToolService = new TurNativeToolService();
 
 interface Props {
@@ -34,6 +33,7 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
   const [toolGroups, setToolGroups] = useState<NativeToolGroup[]>([]);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [savedTools, setSavedTools] = useState<Set<string>>(new Set());
+  const updateMutation = useUpdateAiAgent();
 
   useEffect(() => {
     turNativeToolService.query().then(setToolGroups);
@@ -88,7 +88,7 @@ export const AIAgentToolsForm: React.FC<Props> = ({ value }) => {
       nativeTools: serializeNativeTools(selectedTools),
     };
     try {
-      const result = await turAIAgentService.update(payload);
+      const result = await updateMutation.mutateAsync(payload);
       if (result) {
         toast.success(t("forms.agentTools.updated"));
         setSavedTools(new Set(selectedTools));

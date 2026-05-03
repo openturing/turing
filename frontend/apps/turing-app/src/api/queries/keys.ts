@@ -32,6 +32,10 @@ export const queryKeys = {
     list: () => [...queryKeys.seInstances.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.seInstances.all(), 'detail', id] as const,
   },
+  seCores: {
+    all: () => ['se-cores'] as const,
+    listByInstance: (seId: string) => [...queryKeys.seCores.all(), 'list', 'instance', seId] as const,
+  },
   features: {
     all: () => ['features'] as const,
     current: () => [...queryKeys.features.all(), 'current'] as const,
@@ -39,6 +43,7 @@ export const queryKeys = {
   chatFlows: {
     all: () => ['chat-flows'] as const,
     listByAgent: (agentId: string) => [...queryKeys.chatFlows.all(), 'list', 'agent', agentId] as const,
+    detail: (id: string) => [...queryKeys.chatFlows.all(), 'detail', id] as const,
   },
   customTools: {
     all: () => ['custom-tools'] as const,
@@ -48,22 +53,31 @@ export const queryKeys = {
   intents: {
     all: () => ['intents'] as const,
     listByAgent: (agentId: string) => [...queryKeys.intents.all(), 'list', 'agent', agentId] as const,
+    detail: (id: string) => [...queryKeys.intents.all(), 'detail', id] as const,
   },
   mcpServers: {
     all: () => ['mcp-servers'] as const,
     list: () => [...queryKeys.mcpServers.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.mcpServers.all(), 'detail', id] as const,
   },
   integrationInstances: {
     all: () => ['integration-instances'] as const,
     list: () => [...queryKeys.integrationInstances.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.integrationInstances.all(), 'detail', id] as const,
   },
   storeInstances: {
     all: () => ['store-instances'] as const,
     list: () => [...queryKeys.storeInstances.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.storeInstances.all(), 'detail', id] as const,
+  },
+  storeCollections: {
+    all: () => ['store-collections'] as const,
+    listByInstance: (storeId: string) => [...queryKeys.storeCollections.all(), 'list', 'instance', storeId] as const,
   },
   tokenInstances: {
     all: () => ['token-instances'] as const,
     list: () => [...queryKeys.tokenInstances.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.tokenInstances.all(), 'detail', id] as const,
   },
   marketplaceItems: {
     all: () => ['marketplace-items'] as const,

@@ -1,3 +1,4 @@
+import { useDeleteStoreInstance } from "@/api/queries/store-instance.queries"
 import { ROUTES } from "@/app/routes.const"
 import { LoadProvider } from "@/components/loading-provider"
 import { SubPage } from "@/components/sub.page"
@@ -25,6 +26,7 @@ export default function StoreInstancePage() {
   )
   const navigate = useNavigate()
   const urlBase = `${ROUTES.STORE_INSTANCE}/${id}`
+  const deleteMutation = useDeleteStoreInstance()
 
   const data = useMemo(() => {
     if (isNew) {
@@ -60,7 +62,7 @@ export default function StoreInstancePage() {
 
   async function onDelete() {
     try {
-      if (await turStoreInstanceService.delete(storeInstance)) {
+      if (await deleteMutation.mutateAsync(storeInstance)) {
         toast.success(t("store.deleted", { name: storeInstance.title }))
         navigate(ROUTES.STORE_INSTANCE)
       } else {

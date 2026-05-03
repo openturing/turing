@@ -1,9 +1,8 @@
 "use client"
+import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
+import { useCustomTools } from "@/api/queries/custom-tool.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
-import type { TurCustomTool } from "@/models/customtool/custom-tool.model.ts"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { TurCustomToolService } from "@/services/customtool/custom-tool.service"
 import { IconBraces, IconCheck } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -14,8 +13,6 @@ import { SectionCard } from "../ui/section-card"
 /**
  * @since 2026.2.5
  */
-const turAIAgentService = new TurAIAgentService();
-const turCustomToolService = new TurCustomToolService();
 
 interface Props {
   readonly value: TurAIAgent;
@@ -23,13 +20,10 @@ interface Props {
 
 export const AIAgentCustomToolForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
-  const [tools, setTools] = useState<TurCustomTool[]>([]);
+  const { data: tools = [] } = useCustomTools();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    turCustomToolService.query().then(setTools);
-  }, []);
+  const updateMutation = useUpdateAiAgent();
 
   useEffect(() => {
     const ids = new Set((value.customTools ?? []).map((s) => s.id));
@@ -58,7 +52,7 @@ export const AIAgentCustomToolForm: React.FC<Props> = ({ value }) => {
     const selected = tools.filter((s) => selectedIds.has(s.id));
     const payload: TurAIAgent = { ...value, customTools: selected };
     try {
-      const result = await turAIAgentService.update(payload);
+      const result = await updateMutation.mutateAsync(payload);
       if (result) {
         toast.success(t("forms.agentCustomTool.updated"));
         setSavedIds(new Set(selectedIds));

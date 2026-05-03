@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import { useCreateSnSite, useUpdateSnSite } from "@/api/queries/sn-site.queries"
 import type { TurPageSite } from "@/models/page/page-site.model"
 import type { TurSEInstance } from "@/models/se/se-instance.model"
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
@@ -59,6 +60,8 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const urlBase = "/admin/sn/instance";
   const navigate = useNavigate()
+  const createMutation = useCreateSnSite();
+  const updateMutation = useUpdateSnSite();
 
   const validateNameUnique = useCallback(async (name: string) => {
     if (!name) return true;
@@ -88,7 +91,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
     setIsLoading(true);
     try {
       if (isNew) {
-        const result = await turSNSiteService.create(snSite);
+        const result = await createMutation.mutateAsync(snSite);
         setIsLoading(false)
         if (result) {
           toast.success(t("sn.siteSaved", { name: snSite.name }));
@@ -98,7 +101,7 @@ export const SNSiteForm: React.FC<Props> = ({ value, isNew }) => {
         }
       }
       else {
-        const result = await turSNSiteService.update(snSite);
+        const result = await updateMutation.mutateAsync(snSite);
         setIsLoading(false)
         if (result) {
           toast.success(t("sn.siteUpdated", { name: snSite.name }));

@@ -46,6 +46,11 @@ import {
   type TurChatFlowGuardrailMethod,
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
+import {
+  useCreateChatFlow,
+  useDeleteChatFlow,
+  useUpdateChatFlow,
+} from "@/api/queries/chat-flow.queries";
 import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 
 import { ChatPreview } from "./components/chat-preview";
@@ -194,6 +199,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const { setOpen } = useSidebar();
   const autoCollapsedRef = useRef(false);
   const listUrl = `${ROUTES.AI_AGENT_INSTANCE}/${agentId}/chat-flow`;
+  const createMutation = useCreateChatFlow();
+  const updateMutation = useUpdateChatFlow();
+  const deleteMutation = useDeleteChatFlow();
 
   /* Auto-collapse the AI Agent's internal sidebar on first render only: the canvas needs the
      extra horizontal space. The ref guard prevents re-collapsing after the user reopens the
@@ -290,10 +298,10 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     };
     try {
       if (isNew) {
-        const created = await turChatFlowService.create(agentId, payload);
+        const created = await createMutation.mutateAsync({ agentId, flow: payload });
         toast.success(t("chatFlow.saved", { name: created.name }));
       } else {
-        const updated = await turChatFlowService.update(agentId, payload);
+        const updated = await updateMutation.mutateAsync({ agentId, flow: payload });
         toast.success(t("chatFlow.updated", { name: updated.name }));
       }
       navigate(listUrl);
@@ -383,7 +391,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
 
   const onDelete = useCallback(async () => {
     try {
-      if (await turChatFlowService.delete(agentId, flow)) {
+      if (await deleteMutation.mutateAsync({ agentId, flow })) {
         toast.success(t("chatFlow.deleted", { name: flow.name }));
         navigate(listUrl);
       } else {

@@ -1,3 +1,4 @@
+import { useDeleteSnSite } from "@/api/queries/sn-site.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
@@ -44,6 +45,7 @@ export default function SNSitePage() {
     const navigate = useNavigate()
     const { t } = useTranslation();
     const urlBase = `${ROUTES.SN_INSTANCE}/${id}`;
+    const deleteMutation = useDeleteSnSite();
     const [error, setError] = useState<string | null>(null);
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
         id === "new" ? [{ label: t("sn.newSite") }] : [{ label: "…" }]
@@ -178,7 +180,7 @@ export default function SNSitePage() {
 
     async function onDelete() {
         try {
-            if (await turSNSiteService.delete(snSite)) {
+            if (await deleteMutation.mutateAsync(snSite)) {
                 toast.success(t("sn.siteDeleted", { name: snSite.name }));
                 navigate(`${ROUTES.SN_INSTANCE}`);
             } else {

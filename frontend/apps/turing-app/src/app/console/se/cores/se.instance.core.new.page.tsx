@@ -16,7 +16,7 @@ import { SectionCard } from "@/components/ui/section-card";
 import { Switch } from "@/components/ui/switch";
 import type { TurLocale } from "@/models/locale/locale.model";
 import { TurLocaleService } from "@/services/locale/locale.service";
-import { TurSEInstanceService } from "@/services/se/se.service";
+import { useCreateSeCore } from "@/api/queries/se-core.queries";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import { IconDatabase, IconDeviceFloppy, IconInfoCircle, IconX } from "@tabler/icons-react";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -27,7 +27,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@viglet/viglet-design-system";
 
-const turSEInstanceService = new TurSEInstanceService();
 const turLocaleService = new TurLocaleService();
 
 const CORE_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -50,6 +49,7 @@ export default function SEInstanceCoreNewPage() {
   const navigate = useNavigate();
   const [locales, setLocales] = useState<TurLocale[]>([]);
   const [appendLocale, setAppendLocale] = useState(true);
+  const createCoreMutation = useCreateSeCore();
   useSubPageBreadcrumb([
     { label: t("se.cores.title"), href: `${ROUTES.SE_INSTANCE}/${id}/cores` },
     { label: t("se.newCore.title") },
@@ -74,7 +74,7 @@ export default function SEInstanceCoreNewPage() {
       return;
     }
     try {
-      await turSEInstanceService.createCore(id, coreName, data.locale);
+      await createCoreMutation.mutateAsync({ seId: id, name: coreName, locale: data.locale });
       toast.success(t("se.newCore.createSuccess", { name: coreName }));
       navigate(`${ROUTES.SE_INSTANCE}/${id}/cores`);
     } catch (error) {

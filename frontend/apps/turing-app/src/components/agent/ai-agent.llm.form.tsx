@@ -1,9 +1,8 @@
 "use client"
+import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
+import { useLlmInstances } from "@/api/queries/llm-instance.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
-import type { TurLLMInstance } from "@/models/llm/llm-instance.model.ts"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { TurLLMInstanceService } from "@/services/llm/llm.service"
 import { IconCheck, IconCpu2 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -11,22 +10,16 @@ import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 
-const turAIAgentService = new TurAIAgentService();
-const turLLMInstanceService = new TurLLMInstanceService();
-
 interface Props {
   value: TurAIAgent;
 }
 
 export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
-  const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
+  const { data: llmInstances = [] } = useLlmInstances();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    turLLMInstanceService.query().then(setLlmInstances);
-  }, []);
+  const updateMutation = useUpdateAiAgent();
 
   useEffect(() => {
     const ids = new Set((value.llmInstances ?? []).map((i) => i.id));
@@ -55,7 +48,7 @@ export const AIAgentLlmForm: React.FC<Props> = ({ value }) => {
     const selected = llmInstances.filter((i) => selectedIds.has(i.id));
     const payload: TurAIAgent = { ...value, llmInstances: selected };
     try {
-      const result = await turAIAgentService.update(payload);
+      const result = await updateMutation.mutateAsync(payload);
       if (result) {
         toast.success(t("forms.agentLlm.updated"));
         setSavedIds(new Set(selectedIds));

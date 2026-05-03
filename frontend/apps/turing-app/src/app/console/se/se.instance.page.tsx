@@ -1,3 +1,4 @@
+import { useDeleteSeInstance } from "@/api/queries/se-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
@@ -28,6 +29,7 @@ export default function SEInstancePage() {
   );
   const navigate = useNavigate();
   const urlBase = `${ROUTES.SE_INSTANCE}/${id}`;
+  const deleteMutation = useDeleteSeInstance();
 
   const data = useMemo(() => {
     if (isNew) {
@@ -66,7 +68,7 @@ export default function SEInstancePage() {
 
   async function onDelete() {
     try {
-      if (await turSEInstanceService.delete(seInstance)) {
+      if (await deleteMutation.mutateAsync(seInstance)) {
         toast.success(t("se.deleted", { name: seInstance.title }));
         navigate(ROUTES.SE_INSTANCE);
       } else {

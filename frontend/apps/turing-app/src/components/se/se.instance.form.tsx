@@ -19,9 +19,13 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import {
+  useCreateSeInstance,
+  useUpdateSeInstance,
+} from "@/api/queries/se-instance.queries"
 import type { TurSEInstance } from "@/models/se/se-instance.model.ts"
 import type { TurSEVendor } from "@/models/se/se-vendor.model.ts"
-import { TurSEInstanceService, TurSEVendorService } from "@/services/se/se.service"
+import { TurSEVendorService } from "@/services/se/se.service"
 import { TurFeaturesService } from "@/services/system/features.service"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -37,7 +41,6 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { IconPicker } from "../ui/icon-picker"
 import { SmartDescription } from "../ui/smart-description"
 import { SectionCard } from "../ui/section-card"
-const turSEInstanceService = new TurSEInstanceService();
 const turSEVendorService = new TurSEVendorService();
 const turFeaturesService = new TurFeaturesService();
 
@@ -61,6 +64,8 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const [readOnly, setReadOnly] = useState<boolean>(false);
   const navigate = useNavigate()
   const selectedVendorId = useWatch({ control, name: "turSEVendor.id" });
+  const createMutation = useCreateSeInstance();
+  const updateMutation = useUpdateSeInstance();
 
   useEffect(() => {
     form.reset(value);
@@ -82,7 +87,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   async function onSubmit(seInstance: TurSEInstance) {
     try {
       if (isNew) {
-        const result = await turSEInstanceService.create(seInstance);
+        const result = await createMutation.mutateAsync(seInstance);
         if (result) {
           toast.success(t("forms.common.saved", { name: seInstance.title, feature: t("se.title") }));
           navigate(ROUTES.SE_INSTANCE);
@@ -91,7 +96,7 @@ export const SEInstanceForm: React.FC<Props> = ({ value, isNew }) => {
         }
       }
       else {
-        const result = await turSEInstanceService.update(seInstance);
+        const result = await updateMutation.mutateAsync(seInstance);
         if (result) {
           toast.success(t("forms.common.updated", { name: seInstance.title, feature: t("se.title") }));
         } else {

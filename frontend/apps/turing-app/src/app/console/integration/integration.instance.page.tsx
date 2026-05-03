@@ -1,3 +1,4 @@
+import { useDeleteIntegrationInstance } from "@/api/queries/integration-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { SubPage } from "@/components/sub.page";
@@ -55,6 +56,7 @@ export default function IntegrationInstancePage() {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
     const urlBase = `${ROUTES.INTEGRATION_INSTANCE}/${id}`;
+    const deleteMutation = useDeleteIntegrationInstance();
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>(
         id === "new" ? [{ label: t("integration.newIntegration") }] : [{ label: "…" }]
     );
@@ -130,7 +132,7 @@ export default function IntegrationInstancePage() {
             return;
         }
         try {
-            if (await turIntegrationInstanceService.delete(integration)) {
+            if (await deleteMutation.mutateAsync(integration)) {
                 toast.success(t("integration.deleted", { name: integration.title }));
                 navigate(`${ROUTES.INTEGRATION_INSTANCE}`);
             } else {

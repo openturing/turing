@@ -18,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import { useCreateSnSite, useUpdateSnSite } from "@/api/queries/sn-site.queries"
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts"
-import { TurSNSiteService } from "@/services/sn/sn.service"
 import {
   IconCodeAsterisk,
   IconCopy,
@@ -46,7 +46,6 @@ import { StickyPageHeader } from "../sticky-page-header"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
-const turSNSiteService = new TurSNSiteService();
 interface Props {
   value: TurSNSite;
   isNew: boolean;
@@ -59,6 +58,8 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
   });
   const urlBase = ROUTES.SN_INSTANCE;
   const navigate = useNavigate()
+  const createMutation = useCreateSnSite();
+  const updateMutation = useUpdateSnSite();
   useEffect(() => {
     form.reset(value);
   }, [value]);
@@ -66,12 +67,12 @@ export const SNSiteBehaviorForm: React.FC<Props> = ({ value, isNew }) => {
   function onSubmit(snSite: TurSNSite) {
     try {
       if (isNew) {
-        turSNSiteService.create(snSite);
+        createMutation.mutate(snSite);
         toast.success(t("sn.siteSaved", { name: snSite.name }));
         navigate(urlBase);
       }
       else {
-        turSNSiteService.update(snSite);
+        updateMutation.mutate(snSite);
         toast.success(t("sn.siteUpdated", { name: snSite.name }));
       }
     } catch (error) {

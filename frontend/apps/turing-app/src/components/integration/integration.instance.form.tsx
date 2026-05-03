@@ -12,11 +12,13 @@ import {
 import {
   Input
 } from "@/components/ui/input"
+import {
+  useCreateIntegrationInstance,
+  useUpdateIntegrationInstance,
+} from "@/api/queries/integration-instance.queries"
+import { useTokenInstances } from "@/api/queries/token-instance.queries"
 import type { TurIntegrationInstance } from "@/models/integration/integration-instance.model.ts"
-import type { TurTokenInstance } from "@/models/token/token-instance.model.ts"
-import { TurIntegrationInstanceService } from "@/services/integration/integration.service"
-import { TurTokenInstanceService } from "@/services/token/token.service"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
   useForm
@@ -31,8 +33,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { IconDeviceFloppy, IconSettings, IconPlug, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 
-const turIntegrationInstanceService = new TurIntegrationInstanceService();
-const turTokenInstanceService = new TurTokenInstanceService();
 interface Props {
   value: TurIntegrationInstance;
   isNew: boolean;
@@ -42,30 +42,29 @@ const DEFAULT_ENDPOINT = "http://localhost:30130/";
 
 export const IntegrationInstanceForm: React.FC<Props> = ({ value, isNew }) => {
   const { t } = useTranslation();
-  const [tokens, setTokens] = useState<TurTokenInstance[]>([]);
+  const { data: tokens = [] } = useTokenInstances();
   const form = useForm<TurIntegrationInstance>({
     defaultValues: isNew
       ? { ...value, endpoint: value.endpoint || DEFAULT_ENDPOINT }
       : value,
   });
   const navigate = useNavigate()
+  const createMutation = useCreateIntegrationInstance();
+  const updateMutation = useUpdateIntegrationInstance();
+
   useEffect(() => {
     form.reset(value);
   }, [value]);
-  useEffect(() => {
-    turTokenInstanceService.query().then(setTokens);
-  }, []);
-
 
   function onSubmit(integrationInstance: TurIntegrationInstance) {
     try {
       if (isNew) {
-        turIntegrationInstanceService.create(integrationInstance);
+        createMutation.mutate(integrationInstance);
         toast.success(t("forms.common.saved", { name: integrationInstance.title, feature: t("integration.title") }));
         navigate(ROUTES.INTEGRATION_INSTANCE);
       }
       else {
-        turIntegrationInstanceService.update(integrationInstance);
+        updateMutation.mutate(integrationInstance);
         toast.success(t("forms.common.updated", { name: integrationInstance.title, feature: t("integration.title") }));
       }
     } catch (error) {

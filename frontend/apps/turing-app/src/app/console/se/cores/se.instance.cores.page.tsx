@@ -8,7 +8,7 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TurSECoreInfo } from "@/models/se/se-core-info.model.ts";
-import { TurSEInstanceService } from "@/services/se/se.service";
+import { useClearSeCore, useDeleteSeCore, useSeCores } from "@/api/queries/se-core.queries";
 import {
   IconChevronDown,
   IconDatabase,
@@ -20,11 +20,10 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-
-const turSEInstanceService = new TurSEInstanceService();
+import { toast } from "@viglet/viglet-design-system";
 
 // --- Core grouping ---
 
@@ -275,30 +274,29 @@ export default function SEInstanceCoresPage() {
   const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [cores, setCores] = useState<TurSECoreInfo[]>();
-  const [error, setError] = useState<string | null>(null);
   useSubPageBreadcrumb(t("se.cores.title"));
 
-  const loadCores = () => {
-    turSEInstanceService.getCores(id)
-      .then(setCores)
-      .catch(() => setError(t("common.connectionError", { resource: "Solr cores" })));
-  };
-
-  useEffect(() => {
-    loadCores();
-  }, [id]);
+  const { data: cores, isError } = useSeCores(id);
+  const error = isError ? t("common.connectionError", { resource: "Solr cores" }) : null;
+  const deleteCoreMutation = useDeleteSeCore();
+  const clearCoreMutation = useClearSeCore();
 
   const handleDelete = (coreName: string) => {
-    turSEInstanceService.deleteCore(id, coreName)
-      .then(loadCores)
-      .catch(() => setError(t("se.cores.deleteFailed", { name: coreName })));
+    deleteCoreMutation.mutate(
+      { seId: id, coreName },
+      {
+        onError: () => toast.error(t("se.cores.deleteFailed", { name: coreName })),
+      },
+    );
   };
 
   const handleClear = (coreName: string) => {
-    turSEInstanceService.clearCore(id, coreName)
-      .then(loadCores)
-      .catch(() => setError(t("se.cores.removeDocsFailed", { name: coreName })));
+    clearCoreMutation.mutate(
+      { seId: id, coreName },
+      {
+        onError: () => toast.error(t("se.cores.removeDocsFailed", { name: coreName })),
+      },
+    );
   };
 
   const [search, setSearch] = useState(() => searchParams.get("search") ?? "");

@@ -1,9 +1,9 @@
 "use client"
+import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
+import { useMcpServers } from "@/api/queries/mcp-server.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurMcpServer } from "@/models/mcp/mcp-server.model.ts"
-import { TurAIAgentService } from "@/services/agent/ai-agent.service"
-import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { IconCheck, IconServer2 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -11,22 +11,16 @@ import { toast } from "@viglet/viglet-design-system"
 import { GradientButton } from "../ui/gradient-button"
 import { SectionCard } from "../ui/section-card"
 
-const turAIAgentService = new TurAIAgentService();
-const turMcpServerService = new TurMcpServerService();
-
 interface Props {
   value: TurAIAgent;
 }
 
 export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
   const { t } = useTranslation();
-  const [mcpServers, setMcpServers] = useState<TurMcpServer[]>([]);
+  const { data: mcpServers = [] } = useMcpServers();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    turMcpServerService.query().then(setMcpServers);
-  }, []);
+  const updateMutation = useUpdateAiAgent();
 
   useEffect(() => {
     const ids = new Set((value.mcpServers ?? []).map((s) => s.id));
@@ -55,7 +49,7 @@ export const AIAgentMcpForm: React.FC<Props> = ({ value }) => {
     const selected = mcpServers.filter((s) => selectedIds.has(s.id));
     const payload: TurAIAgent = { ...value, mcpServers: selected };
     try {
-      const result = await turAIAgentService.update(payload);
+      const result = await updateMutation.mutateAsync(payload);
       if (result) {
         toast.success(t("forms.agentMcp.updated"));
         setSavedIds(new Set(selectedIds));

@@ -9,8 +9,12 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  useCreateIntent,
+  useDeleteIntent,
+  useUpdateIntent,
+} from "@/api/queries/intent.queries"
 import type { TurIntent, TurIntentAction } from "@/models/intent/intent.model"
-import { TurIntentService } from "@/services/intent/intent.service"
 import { IconPicker } from "@/components/ui/icon-picker"
 import { SmartDescription } from "@/components/ui/smart-description"
 import {
@@ -36,8 +40,6 @@ import { GradientButton } from "../ui/gradient-button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { SectionCard } from "../ui/section-card"
 
-const turIntentService = new TurIntentService()
-
 interface Props {
   value: TurIntent
   isNew: boolean
@@ -52,6 +54,10 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
   })
   const navigate = useNavigate()
   const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const createMutation = useCreateIntent();
+  const updateMutation = useUpdateIntent();
+  const deleteMutation = useDeleteIntent();
 
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
@@ -103,7 +109,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
 
   async function onDelete() {
     try {
-      if (await turIntentService.delete(agentId, value)) {
+      if (await deleteMutation.mutateAsync({ agentId, intent: value })) {
         toast.success(t("intent.deleted", { name: value.title }))
         navigate(urlBase)
       } else {
@@ -136,7 +142,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
     }
     try {
       if (isNew) {
-        const result = await turIntentService.create(agentId, payload)
+        const result = await createMutation.mutateAsync({ agentId, intent: payload })
         if (result) {
           toast.success(t("forms.common.saved", { name: `"${payload.title}"`, feature: t("intent.title") }))
           navigate(`${urlBase}/${result.id}/settings`)
@@ -144,7 +150,7 @@ export const IntentSettingsForm: React.FC<Props> = ({ value, isNew, agentId }) =
           toast.error(t("forms.common.notSaved", { name: `"${payload.title}"`, feature: t("intent.title") }))
         }
       } else {
-        const result = await turIntentService.update(agentId, payload)
+        const result = await updateMutation.mutateAsync({ agentId, intent: payload })
         if (result) {
           toast.success(t("forms.common.updated", { name: `"${payload.title}"`, feature: t("intent.title") }))
         } else {

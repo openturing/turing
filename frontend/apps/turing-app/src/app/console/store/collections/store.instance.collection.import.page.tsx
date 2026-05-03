@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FloatingFormulasBg } from "@/components/ui/floating-formulas-bg"
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb"
-import {
-  type TurStoreImportResult,
-  TurStoreInstanceService,
-} from "@/services/store/store.service"
+import { useImportStoreCollection } from "@/api/queries/store-collection.queries"
+import { type TurStoreImportResult } from "@/services/store/store.service"
 import {
   IconArrowLeft,
   IconCheck,
@@ -21,8 +19,6 @@ import { useCallback, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
-
-const turStoreInstanceService = new TurStoreInstanceService()
 
 type ImportStatus = "idle" | "uploading" | "success" | "error"
 
@@ -51,6 +47,7 @@ export default function StoreInstanceCollectionImportPage() {
   const [errorMessage, setErrorMessage] = useState("")
   const [result, setResult] = useState<TurStoreImportResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const importMutation = useImportStoreCollection()
 
   useSubPageBreadcrumb(t("store.collections.importTitle", { name: collectionName }))
 
@@ -63,12 +60,12 @@ export default function StoreInstanceCollectionImportPage() {
       setErrorMessage("")
       setResult(null)
       try {
-        const r = await turStoreInstanceService.importCollection(
-          id,
+        const r = await importMutation.mutateAsync({
+          storeId: id,
           collectionName,
-          selected,
-          (p) => setProgress(p),
-        )
+          file: selected,
+          onProgress: (p) => setProgress(p),
+        })
         setResult(r)
         setStatus("success")
         setProgress(100)
@@ -82,7 +79,7 @@ export default function StoreInstanceCollectionImportPage() {
         toast.error(msg)
       }
     },
-    [collectionName, id, t],
+    [collectionName, id, importMutation, t],
   )
 
   const handleFile = useCallback(

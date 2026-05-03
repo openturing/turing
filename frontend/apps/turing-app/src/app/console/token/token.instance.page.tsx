@@ -1,3 +1,4 @@
+import { useDeleteTokenInstance } from "@/api/queries/token-instance.queries";
 import { ROUTES } from "@/app/routes.const";
 import { LoadProvider } from "@/components/loading-provider";
 import { TokenInstanceForm } from "@/components/token/token.instance.form";
@@ -19,6 +20,7 @@ export default function TokenInstancePage() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>();
+  const deleteMutation = useDeleteTokenInstance();
 
   useEffect(() => {
     if (id === "new") {
@@ -36,7 +38,7 @@ export default function TokenInstancePage() {
   useSubPageBreadcrumb(breadcrumb);
 
   function onDelete() {
-    turTokenInstanceService.delete(tokenInstance).then((success) => {
+    deleteMutation.mutateAsync(tokenInstance).then((success) => {
       if (success) {
         toast.success(`The ${tokenInstance.title} API Token was deleted`);
         navigate(ROUTES.ADMIN_TOKENS);
