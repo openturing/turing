@@ -115,6 +115,14 @@ class TurSNSearchProcessTest {
         @Mock
         private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
+        // Real renderer (not mocked) — the existing end-to-end search tests assert
+        // on facet beans produced inside the search response, which would all
+        // collapse to empty if the renderer were stubbed.
+        private com.viglet.turing.sn.facet.TurSNFacetRenderer turSNFacetRenderer() {
+                return new com.viglet.turing.sn.facet.TurSNFacetRenderer(
+                                searchEnginePluginFactory, turSolrQueryBuilder);
+        }
+
         private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory() {
                 return new TurSNFacetDefinitionFactory(turSNSiteCustomFacetRepository);
         }
@@ -127,7 +135,7 @@ class TurSNSearchProcessTest {
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
         }
 
         private TurSNSiteSearchContext context(String query) {
@@ -293,7 +301,7 @@ class TurSNSearchProcessTest {
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 false, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
 
                 TurSNSearchParams searchParamsWildcard = new TurSNSearchParams();
                 searchParamsWildcard.setQ("*");
@@ -312,7 +320,7 @@ class TurSNSearchProcessTest {
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 true, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setQ("java");

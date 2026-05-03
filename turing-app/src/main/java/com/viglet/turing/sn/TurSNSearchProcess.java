@@ -33,25 +33,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.SerializationUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.api.sn.bean.TurSNSiteFilterQueryBean;
-import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
-import com.viglet.turing.commons.sn.bean.TurSNFilterParams;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDefaultFieldsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetItemBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchFacetLabelBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchPaginationBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
@@ -65,7 +58,6 @@ import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
-import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtFacetDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -80,12 +72,12 @@ import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessR
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
-import com.viglet.turing.se.facet.TurSEFacetResult;
 import com.viglet.turing.se.result.TurSEGenericResults;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
+import com.viglet.turing.sn.facet.TurSNFacetRenderer;
 import com.viglet.turing.sn.facet.TurSNFacetTypeContext;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolrInstance;
@@ -104,9 +96,6 @@ public class TurSNSearchProcess {
         public static final String NEXT = "Next";
         public static final String FIRST = "First";
         public static final String LANGUAGE = "language";
-        public static final String FACETS_TO_REMOVE = "Facets To Remove";
-        public static final String AND_OR = "AND-OR";
-        public static final String FACET_ITEM_AND = "-AND";
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
         private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
@@ -119,6 +108,7 @@ public class TurSNSearchProcess {
         private final TurSearchEnginePluginFactory searchEnginePluginFactory;
         private final TurSolrQueryBuilder turSolrQueryBuilder;
         private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory;
+        private final TurSNFacetRenderer facetRenderer;
 
         public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                         TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
@@ -131,7 +121,8 @@ public class TurSNSearchProcess {
                         @Value("${turing.search.metrics.enabled:false}") boolean metricsEnabled,
                         TurSearchEnginePluginFactory searchEnginePluginFactory,
                         TurSolrQueryBuilder turSolrQueryBuilder,
-                        TurSNFacetDefinitionFactory turSNFacetDefinitionFactory) {
+                        TurSNFacetDefinitionFactory turSNFacetDefinitionFactory,
+                        TurSNFacetRenderer facetRenderer) {
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
@@ -144,6 +135,7 @@ public class TurSNSearchProcess {
                 this.searchEnginePluginFactory = searchEnginePluginFactory;
                 this.turSolrQueryBuilder = turSolrQueryBuilder;
                 this.turSNFacetDefinitionFactory = turSNFacetDefinitionFactory;
+                this.facetRenderer = facetRenderer;
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
@@ -162,82 +154,6 @@ public class TurSNSearchProcess {
                 return Collections.unmodifiableSet(
                                 EnumSet.of(TurSNFieldType.NER, TurSNFieldType.THESAURUS))
                                 .contains(snType);
-        }
-
-        private static boolean showFacetByFacetItemType(TurSNSite turSNSite) {
-                if (turSNSite.getFacetItemType() == null)
-                        return false;
-                else
-                        return switch (turSNSite.getFacetItemType()) {
-                                case OR -> true;
-                                case AND, DEFAULT -> false;
-                        };
-        }
-
-        private static boolean showSecondaryFacet(List<String> facetsInFilterQueries,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEFacetResult facet,
-                        TurSNSite turSNSite) {
-                return showFacet(facetsInFilterQueries, facetMap, facet, turSNSite)
-                                && facetMap.get(facet.getFacet()).getSecondaryFacet() != null
-                                && facetMap.get(facet.getFacet()).getSecondaryFacet();
-        }
-
-        private static boolean showMainFacet(List<String> facetsInFilterQueries,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEFacetResult facet,
-                        TurSNSite turSNSite) {
-                return showFacet(facetsInFilterQueries, facetMap, facet, turSNSite) && (facetMap
-                                .get(facet.getFacet()).getSecondaryFacet() == null
-                                || !(facetMap.get(facet.getFacet()).getSecondaryFacet() != null
-                                                && facetMap.get(facet.getFacet())
-                                                                .getSecondaryFacet()));
-        }
-
-        private static boolean showFacet(List<String> facetsInFilterQueries,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEFacetResult facet,
-                        TurSNSite turSNSite) {
-                return facetMap.containsKey(facet.getFacet())
-                                && (!facetsInFilterQueries.contains(facet.getFacet())
-                                                || showFacetByFacetItemType(turSNSite))
-                                && !facet.getTurSEFacetResultAttr().isEmpty();
-        }
-
-        @NotNull
-        private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(
-                        TurSNSiteSearchContext context, TurSNSiteFieldExtDto turSNSiteFieldExtDto,
-                        List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans) {
-                TurSNSiteFieldExtFacetDto turSNSiteFieldExtFacetDto = turSNSiteFieldExtDto
-                                .getFacetLocales().stream()
-                                .filter(o -> o.getLocale().toString()
-                                                .equals(context.getLocale().toString()))
-                                .findFirst()
-                                .orElse(TurSNSiteFieldExtFacetDto.builder()
-                                                .locale(context.getLocale())
-                                                .label(turSNSiteFieldExtDto.getFacetName())
-                                                .build());
-                return new TurSNSiteSearchFacetBean()
-                                .setLabel(new TurSNSiteSearchFacetLabelBean()
-                                                .setLang(context.getLocale().toString())
-                                                .setText(turSNSiteFieldExtFacetDto.getLabel()))
-                                .setName(turSNSiteFieldExtDto.getName())
-                                .setDescription(turSNSiteFieldExtDto.getDescription())
-                                .setType(turSNSiteFieldExtDto.getType())
-                                .setFacets(turSNSiteSearchFacetItemBeans)
-                                .setMultiValued(TurSNUtils
-                                                .isTrue(turSNSiteFieldExtDto.getMultiValued()))
-                                .setCleanUpLink(TurSNUtils
-                                                .removeFilterQueryByFieldName(context.getUri(),
-                                                                turSNSiteFieldExtDto.getName())
-                                                .toString())
-                                .setSelectedFilterQueries(TurSNUtils.filterQueryByFieldName(
-                                                context.getUri(), turSNSiteFieldExtDto.getName()));
-        }
-
-        @NotNull
-        private static TurSNSiteSearchFacetBean getTurSNSiteSearchFacetBean(
-                        List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans) {
-                return new TurSNSiteSearchFacetBean().setLabel(new TurSNSiteSearchFacetLabelBean()
-                                .setLang(TurSNUtils.DEFAULT_LANGUAGE).setText(FACETS_TO_REMOVE))
-                                .setFacets(turSNSiteSearchFacetToRemoveItemBeans);
         }
 
         private static boolean isCurrentPage(TurSEGenericResults turSEResults, int page) {
@@ -564,20 +480,16 @@ public class TurSNSearchProcess {
         private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context,
                         TurSNSite turSNSite,
                         Map<String, TurSNSiteFieldExtDto> facetMap, TurSEResults turSEResults) {
-                return new TurSNSiteSearchWidgetBean().setFacet(responseFacet(context,
-                                turSNSite,
-                                requestFilterQuery(context.getTurSEParameters()
-                                                .getTurSNFilterParams().getDefaultValues())
-                                                .getFacetsInFilterQueries(),
-                                facetMap, turSEResults))
-                                .setSecondaryFacet(responseSecondaryFacet(context,
-                                                turSNSite,
-                                                requestFilterQuery(context.getTurSEParameters()
-                                                                .getTurSNFilterParams()
-                                                                .getDefaultValues())
-                                                                .getFacetsInFilterQueries(),
-                                                facetMap, turSEResults))
-                                .setFacetToRemove(responseFacetToRemove(context, turSNSite))
+                List<String> facetsInFilterQueries = requestFilterQuery(context.getTurSEParameters()
+                                .getTurSNFilterParams().getDefaultValues())
+                                .getFacetsInFilterQueries();
+                return new TurSNSiteSearchWidgetBean()
+                                .setFacet(facetRenderer.responseFacet(context, turSNSite,
+                                                facetsInFilterQueries, facetMap, turSEResults))
+                                .setSecondaryFacet(facetRenderer.responseSecondaryFacet(context,
+                                                turSNSite, facetsInFilterQueries, facetMap,
+                                                turSEResults))
+                                .setFacetToRemove(facetRenderer.responseFacetToRemove(context, turSNSite))
                                 .setSimilar(responseMLT(turSNSite, turSEResults))
                                 .setSpellCheck(turSEResults.getSpellCheck() != null
                                                 ? new TurSNSiteSpellCheckBean(context, turSEResults.getSpellCheck())
@@ -676,42 +588,6 @@ public class TurSNSearchProcess {
                                 && !turSEResults.getSimilarResults().isEmpty();
         }
 
-        private TurSNSiteSearchFacetBean responseFacetToRemove(TurSNSiteSearchContext context,
-                        TurSNSite turSNSite) {
-                if (!CollectionUtils.isEmpty(context.getTurSEParameters().getTurSNFilterParams()
-                                .getDefaultValues())) {
-                        TurSNFacetTypeContext turSNFacetTypeContext = new TurSNFacetTypeContext(
-                                        null, turSNSite,
-                                        context.getTurSEParameters().getTurSNFilterParams());
-                        List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetToRemoveItemBeans = new ArrayList<>();
-                        context.getTurSEParameters().getTurSNFilterParams().getDefaultValues()
-                                        .forEach(facetToRemove -> TurCommonsUtils
-                                                        .getKeyValueFromColon(facetToRemove)
-                                                        .ifPresent(f -> {
-                                                                if (turSolrQueryBuilder.getFacetFieldsInFilterQuery(
-                                                                                turSNFacetTypeContext)
-                                                                                .contains(f.getKey())) {
-                                                                        turSNSiteSearchFacetToRemoveItemBeans
-                                                                                        .add(new TurSNSiteSearchFacetItemBean()
-                                                                                                        .setLabel(f.getValue()
-                                                                                                                        .replace("\"", ""))
-                                                                                                        .setLink(TurSNUtils
-                                                                                                                        .removeFilterQuery(
-                                                                                                                                        context.getUri(),
-                                                                                                                                        facetToRemove)
-                                                                                                                        .toString())
-                                                                                                        .setFilterQuery(facetToRemove)
-                                                                                                        .setSelected(true));
-                                                                }
-                                                        }));
-                        if (!turSNSiteSearchFacetToRemoveItemBeans.isEmpty()) {
-                                return getTurSNSiteSearchFacetBean(
-                                                turSNSiteSearchFacetToRemoveItemBeans);
-                        }
-                }
-                return new TurSNSiteSearchFacetBean();
-        }
-
         private String responseCleanUpFacet(TurSNSiteSearchContext context, TurSNSite turSNSite) {
                 return TurSNUtils
                                 .removeFilterQueryByFieldNames(context.getUri(),
@@ -729,204 +605,6 @@ public class TurSNSearchProcess {
                         TurSNSite turSNSite) {
                 return TurSNUtils.filterQueryByFieldNames(context.getUri(),
                                 getFacetFieldsInFilterQuery(context, turSNSite));
-        }
-
-        private List<TurSNSiteSearchFacetBean> responseFacet(TurSNSiteSearchContext context,
-                        TurSNSite turSNSite,
-                        List<String> facetsInFilterQueries,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEResults turSEResults) {
-                if (facetIsEnabled(turSNSite, turSEResults)) {
-                        List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
-                        turSEResults.getFacetResults().stream()
-                                        .filter(f -> showMainFacet(facetsInFilterQueries, facetMap,
-                                                        f, turSNSite))
-                                        .forEach(facet -> {
-                                                if (facetMap.containsKey(facet.getFacet())) {
-                                                        TurSNFacetTypeContext turSNFacetTypeContext = new TurSNFacetTypeContext(
-                                                                        facetMap.get(facet
-                                                                                        .getFacet()),
-                                                                        turSNSite,
-                                                                        context.getTurSEParameters()
-                                                                                        .getTurSNFilterParams());
-                                                        getFacetResponse(context, facetMap,
-                                                                        getFacetResult(context,
-                                                                                        turSEResults,
-                                                                                        turSNFacetTypeContext),
-                                                                        turSNSiteSearchFacetBeans);
-                                                }
-                                        });
-                        return turSNSiteSearchFacetBeans;
-                }
-                return Collections.emptyList();
-        }
-
-        private static boolean facetIsEnabled(TurSNSite turSNSite, TurSEResults turSEResults) {
-                return TurSNUtils.isTrue(turSNSite.getFacet())
-                                && turSEResults.getFacetResults() != null
-                                && !turSEResults.getFacetResults().isEmpty();
-        }
-
-        private List<TurSNSiteSearchFacetBean> responseSecondaryFacet(
-                        TurSNSiteSearchContext context,
-                        TurSNSite turSNSite, List<String> facetsInFilterQueries,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEResults turSEResults) {
-                if (facetIsEnabled(turSNSite, turSEResults)) {
-                        List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans = new ArrayList<>();
-                        turSEResults.getFacetResults().stream()
-                                        .filter(f -> showSecondaryFacet(facetsInFilterQueries,
-                                                        facetMap, f, turSNSite))
-                                        .forEach(facet -> {
-                                                if (facetMap.containsKey(facet.getFacet())) {
-                                                        TurSNFacetTypeContext turSNFacetTypeContext = new TurSNFacetTypeContext(
-                                                                        facetMap.get(facet
-                                                                                        .getFacet()),
-                                                                        turSNSite,
-                                                                        context.getTurSEParameters()
-                                                                                        .getTurSNFilterParams());
-                                                        getFacetResponse(context, facetMap,
-                                                                        getFacetResult(context,
-                                                                                        turSEResults,
-                                                                                        turSNFacetTypeContext),
-                                                                        turSNSiteSearchFacetBeans);
-                                                }
-                                        });
-                        return turSNSiteSearchFacetBeans;
-                }
-                return Collections.emptyList();
-        }
-
-        @NotNull
-        private FacetResult getFacetResult(TurSNSiteSearchContext context, TurSEResults turSEResults,
-                        TurSNFacetTypeContext turSNFacetTypeContext) {
-                String facetName = turSNFacetTypeContext.getTurSNSiteFacetFieldExtDto().getName();
-                String facetTypeAndFacetItemTypeValues = TurSolrQueryBuilder
-                                .getFacetTypeAndFacetItemTypeValues(turSNFacetTypeContext);
-                List<String> usedFacetItems = getUsedFacetItems(context);
-                if (facetTypeAndFacetItemTypeValues.equals(AND_OR)
-                                && turSolrQueryBuilder.getFqFields(turSNFacetTypeContext.getTurSNFilterParams())
-                                                .contains(facetName)) {
-                        TurSearchEnginePlugin plugin = searchEnginePluginFactory
-                                        .getPluginForSite(turSNFacetTypeContext.getTurSNSite());
-                        TurSEFacetResult turSEFacetResult = plugin
-                                        .retrieveFacetResults(getContextSearchFacet(context, facetName),
-                                                        facetName)
-                                        .map(turSEFacetResults -> turSEFacetResults
-                                                        .getFacetResults().stream()
-                                                        .filter(ff -> ff.getFacet()
-                                                                        .equals(facetName))
-                                                        .findFirst()
-                                                        .orElseGet(() -> getTurSEFacetResultDefault(
-                                                                        turSEResults, facetName)))
-                                        .orElseGet(() -> getTurSEFacetResultDefault(turSEResults,
-                                                        facetName));
-                        return new FacetResult(usedFacetItems, facetTypeAndFacetItemTypeValues,
-                                        turSEFacetResult);
-                }
-                TurSEFacetResult turSEFacetResult = getTurSEFacetResultDefault(turSEResults, facetName);
-                return new FacetResult(usedFacetItems, facetTypeAndFacetItemTypeValues,
-                                turSEFacetResult);
-
-        }
-
-        @NotNull
-        private static TurSNSiteSearchContext getContextSearchFacet(TurSNSiteSearchContext context,
-                        String facetName) {
-                TurSNSiteSearchContext contextSearchFacet = SerializationUtils.clone(context);
-                contextSearchFacet.getTurSEParameters().getTurSNFilterParams()
-                                .setDefaultValues(contextSearchFacet.getTurSEParameters()
-                                                .getTurSNFilterParams().getDefaultValues().stream()
-                                                .filter(fq -> !fq.startsWith(facetName)).toList());
-                contextSearchFacet.getTurSEParameters().setRows(-1);
-                return contextSearchFacet;
-        }
-
-        @NotNull
-        private static List<String> getUsedFacetItems(TurSNSiteSearchContext context) {
-                return Optional.ofNullable(context.getTurSEParameters())
-                                .map(TurSEParameters::getTurSNFilterParams)
-                                .map(TurSNFilterParams::getDefaultValues)
-                                .orElse(Collections.emptyList());
-        }
-
-        @NotNull
-        private static TurSEFacetResult getTurSEFacetResultDefault(TurSEResults turSEResults,
-                        String facet) {
-                return turSEResults.getFacetResults().stream()
-                                .filter(ff -> ff.getFacet().equals(facet)).findFirst()
-                                .orElse(new TurSEFacetResult());
-        }
-
-        private record FacetResult(List<String> usedFacetItems,
-                        String facetTypeAndFacetItemTypeValues, TurSEFacetResult turSEFacetResult) {
-        }
-
-        private static void getFacetResponse(TurSNSiteSearchContext context,
-                        Map<String, TurSNSiteFieldExtDto> facetMap, FacetResult facetResult,
-                        List<TurSNSiteSearchFacetBean> turSNSiteSearchFacetBeans) {
-                List<TurSNSiteSearchFacetItemBean> turSNSiteSearchFacetItemBeans = new ArrayList<>();
-                if (facetMap.containsKey(facetResult.turSEFacetResult.getFacet())) {
-
-                        TurSNSiteFieldExtDto turSNSiteFieldExtDto = facetMap
-                                        .get(facetResult.turSEFacetResult.getFacet());
-                        boolean showAllFacetItems = turSNSiteFieldExtDto.getShowAllFacetItems() != null
-                                        && turSNSiteFieldExtDto
-                                                        .getShowAllFacetItems();
-                        facetResult.turSEFacetResult.getTurSEFacetResultAttr().values()
-                                        .forEach(facetItem -> {
-                                                final String fq = facetResult.turSEFacetResult
-                                                                .getFacet() + ":"
-                                                                + facetItem.getAttribute();
-                                                if (showAllFacetItems || facetItem.getCount() > 0
-                                                                || (facetResult.usedFacetItems
-                                                                                .contains(fq)
-                                                                                && facetResult.facetTypeAndFacetItemTypeValues
-                                                                                                .equals(AND_OR))) {
-                                                        boolean selected = facetResult.usedFacetItems
-                                                                        .contains(fq);
-                                                        turSNSiteSearchFacetItemBeans.add(
-                                                                        new TurSNSiteSearchFacetItemBean()
-                                                                                        .setCount(facetItem
-                                                                                                        .getCount())
-                                                                                        .setLabel(facetItem
-                                                                                                        .getAttribute())
-                                                                                        .setSelected(selected)
-                                                                                        .setFilterQuery(fq)
-                                                                                        .setLink(getLink(
-                                                                                                        context,
-                                                                                                        selected,
-                                                                                                        fq,
-                                                                                                        facetResult.facetTypeAndFacetItemTypeValues,
-                                                                                                        turSNSiteFieldExtDto)));
-
-                                                }
-                                        });
-                        if (!turSNSiteSearchFacetItemBeans.isEmpty()) {
-                                turSNSiteSearchFacetBeans.add(getTurSNSiteSearchFacetBean(context,
-                                                turSNSiteFieldExtDto,
-                                                turSNSiteSearchFacetItemBeans));
-                        }
-                }
-
-        }
-
-        private static String getLink(TurSNSiteSearchContext context, boolean selected, String fq,
-                        String facetTypeAndFacetItemTypeValues,
-                        TurSNSiteFieldExtDto turSNSiteFieldExtDto) {
-                if (facetTypeAndFacetItemTypeValues.endsWith(FACET_ITEM_AND)) {
-                        if (selected) {
-                                return TurSNUtils.removeFilterQuery(context.getUri(), fq)
-                                                .toString();
-                        } else {
-                                URI uri = TurSNUtils.removeFilterQueryByFieldName(context.getUri(),
-                                                turSNSiteFieldExtDto.getName());
-                                return TurSNUtils.addFilterQuery(uri, fq).toString();
-                        }
-                } else {
-                        return selected ? TurSNUtils.removeFilterQuery(context.getUri(), fq)
-                                        .toString()
-                                        : TurSNUtils.addFilterQuery(context.getUri(), fq)
-                                                        .toString();
-                }
         }
 
         private List<TurSNSiteSearchPaginationBean> responsePagination(URI uri,
