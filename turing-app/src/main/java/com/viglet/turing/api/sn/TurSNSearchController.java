@@ -20,7 +20,8 @@
  */
 package com.viglet.turing.api.sn;
 
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteDomain;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.service.storage.TurStorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -55,12 +56,12 @@ public class TurSNSearchController {
     private static final String PAGES_PREFIX = "public/";
     private static final ClassPathResource DEFAULT_INDEX = new ClassPathResource("/public/index.html");
 
-    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
     private final TurStorageService storageService;
 
-    public TurSNSearchController(TurSNSiteRepository turSNSiteRepository,
+    public TurSNSearchController(TurSNSiteRepositoryPort turSNSiteRepositoryPort,
                                  TurStorageService storageService) {
-        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
         this.storageService = storageService;
     }
 
@@ -72,10 +73,10 @@ public class TurSNSearchController {
         }
         // If site has a template, redirect to trailing slash so relative asset paths resolve correctly
         // e.g. ./assets/index.css resolves to /sn/mythical-creatures/assets/index.css (not /sn/assets/index.css)
-        String template = turSNSiteRepository.findByName(siteName)
-                .map(site -> site.getSearchTemplate())
-                .orElse(null);
-        if (template != null && !template.isBlank() && storageService.isEnabled()) {
+        boolean hasTemplate = turSNSiteRepositoryPort.findByName(siteName)
+                .map(TurSNSiteDomain::hasSearchTemplate)
+                .orElse(false);
+        if (hasTemplate && storageService.isEnabled()) {
             String query = request.getQueryString();
             String redirect = "/sn/" + siteName + "/" + (query != null ? "?" + query : "");
             return ResponseEntity.status(301)
@@ -111,11 +112,12 @@ public class TurSNSearchController {
             return serveEmbeddedIndex();
         }
 
-        String template = turSNSiteRepository.findByName(siteName)
-                .map(site -> site.getSearchTemplate())
+        String template = turSNSiteRepositoryPort.findByName(siteName)
+                .filter(TurSNSiteDomain::hasSearchTemplate)
+                .map(TurSNSiteDomain::searchTemplate)
                 .orElse(null);
 
-        if (template == null || template.isBlank() || !storageService.isEnabled()) {
+        if (template == null || !storageService.isEnabled()) {
             return serveEmbeddedIndex();
         }
 
