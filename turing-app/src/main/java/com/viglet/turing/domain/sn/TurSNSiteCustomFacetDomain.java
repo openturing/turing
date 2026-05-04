@@ -26,10 +26,14 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
  * extension. Free of JPA / Jackson annotations and immutable.
  *
  * <p>The localised label map is exposed as an immutable {@code Map<locale,
- * label>}; the cascade-deleted items are projected to an immutable set of
- * IDs ({@code itemIds}). The owning field extension is referenced by
- * {@code fieldExtId}; resolve through {@link TurSNSiteFieldExtRepositoryPort}
- * when the full field is needed.
+ * label>}. The cascade-deleted items are <em>aggregate parts</em> of this
+ * facet (no standalone repository) and are projected as an immutable set of
+ * {@link TurSNSiteCustomFacetItemDomain} records carrying their full payload
+ * (label, position, ranges, operator) — consumers reading a custom facet
+ * always need the item data, so projecting them as IDs would force an N+1
+ * round-trip. The owning field extension is referenced by
+ * {@code fieldExtId}; resolve through
+ * {@link TurSNSiteFieldExtRepositoryPort} when the full field is needed.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
@@ -42,6 +46,6 @@ public record TurSNSiteCustomFacetDomain(
         TurSNSiteFacetFieldEnum facetType,
         TurSNSiteFacetFieldEnum facetItemType,
         Map<String, String> label,
-        Set<String> itemIds,
+        Set<TurSNSiteCustomFacetItemDomain> items,
         String fieldExtId) {
 }

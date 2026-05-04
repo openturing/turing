@@ -27,14 +27,17 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.viglet.turing.domain.sn.TurSNSiteCustomFacetDomain;
+import com.viglet.turing.domain.sn.TurSNSiteCustomFacetItemDomain;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
 
 /**
  * MapStruct mapper for the JPA {@link TurSNSiteCustomFacet} entity to the
  * {@link TurSNSiteCustomFacetDomain} aggregate. The locale-keyed label map
- * is copied into an immutable map; cascade-deleted items are projected to
- * an immutable set of IDs.
+ * is copied into an immutable map. The cascade-deleted items are projected
+ * as full {@link TurSNSiteCustomFacetItemDomain} records (not just IDs)
+ * because consumers reading a custom facet always need the item payload —
+ * label, ranges, operator — and the JPA repository fetches them eagerly.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
@@ -43,16 +46,18 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
 public interface TurSNSiteCustomFacetDomainMapper {
 
     @Mapping(target = "fieldExtId", source = "turSNSiteFieldExt.id")
-    @Mapping(target = "itemIds", source = "items")
+    @Mapping(target = "items", source = "items")
     @Mapping(target = "label", source = "label")
     TurSNSiteCustomFacetDomain toDomain(TurSNSiteCustomFacet entity);
 
     List<TurSNSiteCustomFacetDomain> toDomainList(List<TurSNSiteCustomFacet> entities);
 
-    default Set<String> itemsToIds(Set<TurSNSiteCustomFacetItem> set) {
+    TurSNSiteCustomFacetItemDomain toItemDomain(TurSNSiteCustomFacetItem entity);
+
+    default Set<TurSNSiteCustomFacetItemDomain> itemsToDomain(Set<TurSNSiteCustomFacetItem> set) {
         return set == null ? Set.of()
-                : Collections.unmodifiableSet(set.stream().map(TurSNSiteCustomFacetItem::getId)
-                        .collect(Collectors.toSet()));
+                : Collections.unmodifiableSet(
+                        set.stream().map(this::toItemDomain).collect(Collectors.toSet()));
     }
 
     default Map<String, String> labelMap(Map<String, String> source) {

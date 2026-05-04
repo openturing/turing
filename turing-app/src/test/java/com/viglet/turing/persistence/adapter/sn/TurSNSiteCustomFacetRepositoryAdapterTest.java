@@ -26,8 +26,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.viglet.turing.domain.sn.TurSNSiteCustomFacetDomain;
+import com.viglet.turing.domain.sn.TurSNSiteCustomFacetItemDomain;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
+import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperatorEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 
@@ -47,7 +49,7 @@ class TurSNSiteCustomFacetRepositoryAdapterTest {
     }
 
     @Test
-    void findByIdProjectsLabelMapAndItemIds() {
+    void findByIdProjectsLabelMapAndFullItemDomains() {
         Map<String, String> labels = Map.of("en_US", "Color", "pt_BR", "Cor");
         TurSNSiteCustomFacet entity = TurSNSiteCustomFacet.builder()
                 .id("cf-1")
@@ -65,11 +67,41 @@ class TurSNSiteCustomFacetRepositoryAdapterTest {
         assertThat(domain.name()).isEqualTo("color");
         assertThat(domain.fieldExtId()).isEqualTo("f-1");
         assertThat(domain.label()).containsAllEntriesOf(labels);
-        assertThat(domain.itemIds()).containsExactlyInAnyOrder("i-1", "i-2");
+        assertThat(domain.items()).extracting(TurSNSiteCustomFacetItemDomain::id)
+                .containsExactlyInAnyOrder("i-1", "i-2");
+        assertThat(domain.items()).extracting(TurSNSiteCustomFacetItemDomain::label)
+                .containsExactlyInAnyOrder("label-i-1", "label-i-2");
     }
 
     @Test
-    void labelMapAndItemIdsAreUnmodifiable() {
+    void itemPayloadIncludesRangesAndOperator() {
+        TurSNSiteCustomFacetItem item = new TurSNSiteCustomFacetItem();
+        item.setId("i-1");
+        item.setLabel("0-100");
+        item.setPosition(0);
+        item.setRangeStart(java.math.BigDecimal.ZERO);
+        item.setRangeEnd(java.math.BigDecimal.valueOf(100));
+        item.setOperator(TurSNSiteCustomFacetOperatorEnum.values()[0]);
+        TurSNSiteCustomFacet entity = TurSNSiteCustomFacet.builder()
+                .id("cf-1")
+                .name("price")
+                .label(new java.util.HashMap<>())
+                .items(java.util.Set.of(item))
+                .turSNSiteFieldExt(stubFieldExt("f-1"))
+                .build();
+        when(turSNSiteCustomFacetRepository.findById("cf-1")).thenReturn(Optional.of(entity));
+
+        TurSNSiteCustomFacetItemDomain projected = adapter.findById("cf-1").orElseThrow().items()
+                .iterator().next();
+
+        assertThat(projected.label()).isEqualTo("0-100");
+        assertThat(projected.rangeStart()).isEqualByComparingTo(java.math.BigDecimal.ZERO);
+        assertThat(projected.rangeEnd()).isEqualByComparingTo(java.math.BigDecimal.valueOf(100));
+        assertThat(projected.operator()).isEqualTo(TurSNSiteCustomFacetOperatorEnum.values()[0]);
+    }
+
+    @Test
+    void labelMapAndItemSetAreUnmodifiable() {
         TurSNSiteCustomFacet entity = TurSNSiteCustomFacet.builder()
                 .id("cf-1")
                 .name("color")
@@ -81,7 +113,7 @@ class TurSNSiteCustomFacetRepositoryAdapterTest {
 
         TurSNSiteCustomFacetDomain domain = adapter.findById("cf-1").orElseThrow();
 
-        assertThatThrownBy(() -> domain.itemIds().add("smuggled"))
+        assertThatThrownBy(() -> domain.items().clear())
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> domain.label().put("xx", "smuggled"))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -119,6 +151,7 @@ class TurSNSiteCustomFacetRepositoryAdapterTest {
         for (String id : ids) {
             TurSNSiteCustomFacetItem item = new TurSNSiteCustomFacetItem();
             item.setId(id);
+            item.setLabel("label-" + id);
             set.add(item);
         }
         return set;
