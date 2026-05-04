@@ -42,10 +42,7 @@ import com.viglet.turing.commons.se.similar.TurSESimilarResult;
 import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDefaultFieldsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextBean;
-import com.viglet.turing.commons.sn.bean.TurSNSiteSearchQueryContextQueryBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchWidgetBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSpotlightDocumentBean;
 import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
@@ -54,7 +51,6 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
 import com.viglet.turing.persistence.model.sn.metric.TurSNSiteMetricAccess;
@@ -74,6 +70,7 @@ import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
 import com.viglet.turing.sn.facet.TurSNFacetRenderer;
 import com.viglet.turing.sn.facet.TurSNFacetTypeContext;
 import com.viglet.turing.sn.pagination.TurSNPaginationBuilder;
+import com.viglet.turing.sn.querycontext.TurSNQueryContextBuilder;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
@@ -102,6 +99,7 @@ public class TurSNSearchProcess {
         private final TurSNFacetRenderer facetRenderer;
         private final TurSNPaginationBuilder paginationBuilder;
         private final TurSNDocumentResponse documentResponse;
+        private final TurSNQueryContextBuilder queryContextBuilder;
 
         public TurSNSearchProcess(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
                         TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
@@ -117,7 +115,8 @@ public class TurSNSearchProcess {
                         TurSNFacetDefinitionFactory turSNFacetDefinitionFactory,
                         TurSNFacetRenderer facetRenderer,
                         TurSNPaginationBuilder paginationBuilder,
-                        TurSNDocumentResponse documentResponse) {
+                        TurSNDocumentResponse documentResponse,
+                        TurSNQueryContextBuilder queryContextBuilder) {
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
@@ -133,6 +132,7 @@ public class TurSNSearchProcess {
                 this.facetRenderer = facetRenderer;
                 this.paginationBuilder = paginationBuilder;
                 this.documentResponse = documentResponse;
+                this.queryContextBuilder = queryContextBuilder;
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
@@ -268,7 +268,7 @@ public class TurSNSearchProcess {
                                 .setPagination(paginationBuilder.build(context.getUri(), turSEResults))
                                 .setWidget(responseWidget(context, turSNSite,
                                                 facetMap, turSEResults))
-                                .setQueryContext(responseQueryContext(turSNSite, turSEResults,
+                                .setQueryContext(queryContextBuilder.build(turSNSite, turSEResults,
                                                 context.getLocale()));
         }
 
@@ -280,7 +280,7 @@ public class TurSNSearchProcess {
                                                 facetMap, turSEResults))
                                 .setWidget(responseWidget(context, turSNSite,
                                                 facetMap, turSEResults))
-                                .setQueryContext(responseQueryContext(turSNSite, turSEResults,
+                                .setQueryContext(queryContextBuilder.build(turSNSite, turSEResults,
                                                 context.getLocale()));
         }
 
@@ -468,42 +468,6 @@ public class TurSNSearchProcess {
                                                                                 .toString())));
 
                 return turSNSiteLocaleBeans;
-        }
-
-        private TurSNSiteSearchQueryContextBean responseQueryContext(TurSNSite turSNSite,
-                        TurSEResults turSEResults, Locale locale) {
-                int lastItemOfFullPage = (int) turSEResults.getStart() + turSEResults.getLimit();
-                int firstItemOfFullPage = (int) turSEResults.getStart() + 1;
-                int count = (int) turSEResults.getNumFound();
-                int pageEnd = Math.min(lastItemOfFullPage, count);
-                return new TurSNSiteSearchQueryContextBean()
-                                .setQuery(new TurSNSiteSearchQueryContextQueryBean()
-                                                .setQueryString(turSEResults.getQueryString())
-                                                .setSort(turSEResults.getSort()).setLocale(locale))
-                                .setDefaultFields(defaultFields(turSNSite))
-                                .setPageCount(turSEResults.getPageCount())
-                                .setPage(turSEResults.getCurrentPage()).setCount(count)
-                                .setPageEnd(pageEnd)
-                                .setPageStart(Math.min(firstItemOfFullPage, pageEnd))
-                                .setLimit(turSEResults.getLimit()).setOffset(0)
-                                .setResponseTime(turSEResults.getElapsedTime())
-                                .setIndex(turSNSite.getName())
-                                .setFacetType(turSNSite.getFacetType() != null
-                                                ? turSNSite.getFacetType().toString()
-                                                : TurSNSiteFacetFieldEnum.AND.toString())
-                                .setFacetItemType(turSNSite.getFacetItemType() != null
-                                                ? turSNSite.getFacetItemType().toString()
-                                                : TurSNSiteFacetFieldEnum.AND.toString());
-        }
-
-        private TurSNSiteSearchDefaultFieldsBean defaultFields(TurSNSite turSNSite) {
-                return new TurSNSiteSearchDefaultFieldsBean()
-                                .setDate(turSNSite.getDefaultDateField())
-                                .setDescription(turSNSite.getDefaultDescriptionField())
-                                .setImage(turSNSite.getDefaultImageField())
-                                .setText(turSNSite.getDefaultTextField())
-                                .setTitle(turSNSite.getDefaultTitleField())
-                                .setUrl(turSNSite.getDefaultURLField());
         }
 
         private List<TurSESimilarResult> responseMLT(TurSNSite turSNSite,

@@ -136,6 +136,10 @@ class TurSNSearchProcessTest {
                                 turSNSiteFieldExtRepository, turSNSpotlightProcess);
         }
 
+        private com.viglet.turing.sn.querycontext.TurSNQueryContextBuilder turSNQueryContextBuilder() {
+                return new com.viglet.turing.sn.querycontext.TurSNQueryContextBuilder();
+        }
+
         private TurSNSearchProcess process(boolean metricsEnabled) {
                 return new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
@@ -145,7 +149,8 @@ class TurSNSearchProcessTest {
                                 turSNSiteMetricAccessRepository,
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
-                                turSNPaginationBuilder(), turSNDocumentResponse());
+                                turSNPaginationBuilder(), turSNDocumentResponse(),
+                                turSNQueryContextBuilder());
         }
 
         private TurSNSiteSearchContext context(String query) {
@@ -312,7 +317,8 @@ class TurSNSearchProcessTest {
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 false, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
-                                turSNPaginationBuilder(), turSNDocumentResponse());
+                                turSNPaginationBuilder(), turSNDocumentResponse(),
+                                turSNQueryContextBuilder());
 
                 TurSNSearchParams searchParamsWildcard = new TurSNSearchParams();
                 searchParamsWildcard.setQ("*");
@@ -332,7 +338,8 @@ class TurSNSearchProcessTest {
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 true, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
-                                turSNPaginationBuilder(), turSNDocumentResponse());
+                                turSNPaginationBuilder(), turSNDocumentResponse(),
+                                turSNQueryContextBuilder());
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setQ("java");
