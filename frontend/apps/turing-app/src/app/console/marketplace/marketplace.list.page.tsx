@@ -20,7 +20,7 @@ import { ContentExchangeProgressBar } from "@/components/ui/content-exchange-pro
 import type { ContentExchangeProgress } from "@/services/sn/sn.service";
 import { TurMarketplaceService } from "@/services/marketplace/marketplace.service";
 import { TurFeaturesService } from "@/services/system/features.service";
-import * as TablerIcons from "@tabler/icons-react";
+import { Icon } from "@iconify/react";
 import {
     IconBook,
     IconBrowserCheck,
@@ -43,17 +43,13 @@ const featuresService = new TurFeaturesService();
 type ImportStatus = "idle" | "importing" | "indexing" | "success" | "error";
 
 /**
- * Resolves a kebab-case icon key (e.g. "chef-hat") to a Tabler Icon component.
- * Falls back to IconPackageImport when the icon doesn't exist.
+ * Resolves a kebab-case icon key (e.g. "chef-hat") to a Tabler icon rendered
+ * via Iconify's runtime API. Iconify lazy-fetches the SVG so we don't have to
+ * bundle the entire tabler set just to support unknown server-provided keys.
  */
 function getItemIcon(key: string): React.ReactNode {
-    const pascalName = `Icon${key
-        .split("-")
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join("")}`;
-    const IconComponent =
-        (TablerIcons as unknown as Record<string, TablerIcons.Icon | undefined>)[pascalName] ?? IconPackageImport;
-    return <IconComponent className="size-6" />;
+    if (!key) return <IconPackageImport className="size-6" />;
+    return <Icon icon={`tabler:${key}`} className="size-6" />;
 }
 
 export default function MarketplaceListPage() {
