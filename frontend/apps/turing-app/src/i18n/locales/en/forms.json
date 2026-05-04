@@ -416,6 +416,7 @@
       "reindexHint": "Re-embed all indexed content with current RAG settings. Useful after changing models or chunking.",
       "reindexComplete": "Vector store reindex complete.",
       "reindexFailed": "Vector store reindex failed.",
+      "reindexRequiresSave": "Save the form first — reindex uses the persisted AI agent on this site.",
       "aiModelConfig": "AI Model & Embedding Configuration",
       "aiModelConfigDesc": "Language model, embedding model, and vector store configuration.",
       "languageModel": "Language Model",

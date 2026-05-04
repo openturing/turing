@@ -19,6 +19,32 @@ export function useStoreCollections(storeId: string | undefined) {
   });
 }
 
+/**
+ * Per-row distinct document count, fetched lazily after the listing renders.
+ * The backend returns -1 in {@link TurStoreCollectionInfo.documentCount} when
+ * computing it eagerly would be too expensive (Chroma scans chunk metadata);
+ * pages call this hook for those rows so the table loads instantly and
+ * counts fill in afterwards.
+ *
+ * @param enabled gates the request — pass {@code false} when the listing
+ *                already came back with a real count.
+ */
+export function useStoreCollectionDocumentCount(
+  storeId: string | undefined,
+  collectionName: string | undefined,
+  enabled: boolean,
+) {
+  return useQuery<number>({
+    queryKey:
+      storeId && collectionName
+        ? queryKeys.storeCollections.documentCount(storeId, collectionName)
+        : ['store-collections', 'document-count', 'pending'],
+    queryFn: () => service.collectionDocumentCount(storeId as string, collectionName as string),
+    enabled: enabled && Boolean(storeId) && Boolean(collectionName),
+    staleTime: 60_000,
+  });
+}
+
 function invalidateStoreCollections(
   queryClient: ReturnType<typeof useQueryClient>,
   storeId: string,

@@ -73,6 +73,8 @@ export const queryKeys = {
   storeCollections: {
     all: () => ['store-collections'] as const,
     listByInstance: (storeId: string) => [...queryKeys.storeCollections.all(), 'list', 'instance', storeId] as const,
+    documentCount: (storeId: string, collectionName: string) =>
+      [...queryKeys.storeCollections.all(), 'document-count', storeId, collectionName] as const,
   },
   tokenInstances: {
     all: () => ['token-instances'] as const,

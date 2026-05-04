@@ -1,0 +1,273 @@
+{
+  "name": "PedidoDePizza",
+  "description": "Fluxo de atendimento para registrar pedidos de pizza, guiando o cliente do início ao fim.",
+  "guardrailMethod": "LLM_JUDGE",
+  "triggerDescription": "Use este fluxo quando o usuário quiser pedir uma pizza, fazer um pedido de delivery, ou perguntar sobre o cardápio para fazer pedido.",
+  "triggerMode": "ALWAYS",
+  "graph": {
+    "nodes": [
+      {
+        "id": "start",
+        "type": "start",
+        "position": {
+          "x": 80,
+          "y": 240
+        },
+        "data": {
+          "label": "START",
+          "type": "start"
+        }
+      },
+      {
+        "id": "ask-name",
+        "type": "aiQuestion",
+        "position": {
+          "x": 340,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Nome",
+          "type": "aiQuestion",
+          "aiInstruction": "Cumprimente o cliente e pergunte o nome dele.",
+          "outputVariable": "customerName"
+        }
+      },
+      {
+        "id": "ask-phone",
+        "type": "aiQuestion",
+        "position": {
+          "x": 600,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Telefone",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte o telefone para contato.",
+          "outputVariable": "customerPhone",
+          "validationRule": "phone"
+        }
+      },
+      {
+        "id": "ask-flavor",
+        "type": "aiQuestion",
+        "position": {
+          "x": 826.25,
+          "y": 398.75
+        },
+        "data": {
+          "label": "Perguntar Sabor da Pizza",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte qual o sabor da pizza. Os sabores aceitos são: Margherita, Calabresa, Portuguesa, Quatro Queijos, Pepperoni.",
+          "outputVariable": "pizzaFlavor"
+        }
+      },
+      {
+        "id": "ask-size",
+        "type": "aiQuestion",
+        "position": {
+          "x": 1120,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Tamanho da Pizza",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte o tamanho da pizza (Pequena, Média ou Grande).",
+          "outputVariable": "pizzaSize"
+        }
+      },
+      {
+        "id": "ask-stuffed-crust",
+        "type": "aiQuestion",
+        "position": {
+          "x": 1380,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Borda Recheada",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte se o cliente quer adicionar borda recheada (sim ou não).",
+          "outputVariable": "stuffedCrust"
+        }
+      },
+      {
+        "id": "decide-stuffed-crust",
+        "type": "condition",
+        "position": {
+          "x": 1640,
+          "y": 240
+        },
+        "data": {
+          "label": "Decidir Borda Recheada",
+          "type": "condition",
+          "conditionExpression": "stuffedCrust == 'sim'"
+        }
+      },
+      {
+        "id": "ask-crust-flavor",
+        "type": "aiQuestion",
+        "position": {
+          "x": 1900,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Sabor da Borda",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte qual o sabor da borda (Catupiry, Cheddar ou Chocolate).",
+          "outputVariable": "crustFlavor"
+        }
+      },
+      {
+        "id": "ask-delivery-address",
+        "type": "aiQuestion",
+        "position": {
+          "x": 2160,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Endereço de Entrega",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte o endereço de entrega completo (rua, número, bairro, cidade).",
+          "outputVariable": "deliveryAddress"
+        }
+      },
+      {
+        "id": "ask-payment-method",
+        "type": "aiQuestion",
+        "position": {
+          "x": 2420,
+          "y": 240
+        },
+        "data": {
+          "label": "Perguntar Forma de Pagamento",
+          "type": "aiQuestion",
+          "aiInstruction": "Pergunte a forma de pagamento (Dinheiro, Cartão na entrega, ou Pix).",
+          "outputVariable": "paymentMethod"
+        }
+      },
+      {
+        "id": "create-order",
+        "type": "functionCall",
+        "position": {
+          "x": 2680,
+          "y": 240
+        },
+        "data": {
+          "label": "Registrar Pedido",
+          "type": "functionCall",
+          "toolSource": "NATIVE",
+          "functionName": "create_order"
+        }
+      },
+      {
+        "id": "end-thank-you",
+        "type": "end",
+        "position": {
+          "x": 2940,
+          "y": 240
+        },
+        "data": {
+          "label": "END",
+          "type": "end"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e-start-ask-name-0",
+        "source": "start",
+        "target": "ask-name",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-name-ask-phone-1",
+        "source": "ask-name",
+        "target": "ask-phone",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-phone-ask-flavor-2",
+        "source": "ask-phone",
+        "target": "ask-flavor",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-flavor-ask-size-3",
+        "source": "ask-flavor",
+        "target": "ask-size",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-size-ask-stuffed-crust-4",
+        "source": "ask-size",
+        "target": "ask-stuffed-crust",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-stuffed-crust-decide-stuffed-crust-5",
+        "source": "ask-stuffed-crust",
+        "target": "decide-stuffed-crust",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-decide-stuffed-crust-ask-crust-flavor-6",
+        "source": "decide-stuffed-crust",
+        "target": "ask-crust-flavor",
+        "sourceHandle": "yes",
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-decide-stuffed-crust-ask-delivery-address-7",
+        "source": "decide-stuffed-crust",
+        "target": "ask-delivery-address",
+        "sourceHandle": "no",
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-crust-flavor-ask-delivery-address-8",
+        "source": "ask-crust-flavor",
+        "target": "ask-delivery-address",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-delivery-address-ask-payment-method-9",
+        "source": "ask-delivery-address",
+        "target": "ask-payment-method",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-ask-payment-method-create-order-10",
+        "source": "ask-payment-method",
+        "target": "create-order",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      },
+      {
+        "id": "e-create-order-end-thank-you-11",
+        "source": "create-order",
+        "target": "end-thank-you",
+        "sourceHandle": null,
+        "targetHandle": null,
+        "label": null
+      }
+    ]
+  }
+}

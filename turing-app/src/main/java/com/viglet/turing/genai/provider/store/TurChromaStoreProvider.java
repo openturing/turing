@@ -150,6 +150,17 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         }
     }
 
+    /**
+     * Lists collections with only the cheap counters: collection metadata
+     * from {@code listCollections} + a single {@code countEmbeddings} call per
+     * collection (one HTTP RTT). The expensive distinct-document scan is
+     * <strong>not</strong> run here — it would page through up to
+     * {@link #METADATA_SCAN_PAGE_SIZE} × {@link #METADATA_SCAN_MAX_PAGES}
+     * chunks per collection, multiplying the page-load latency by collection
+     * count × chunk count. Document count is reported as {@code -1} (sentinel
+     * for "not computed"); the console fetches it lazily per row via
+     * {@link #countDocuments}.
+     */
     @Override
     public List<TurStoreCollectionInfo> listCollections(TurStoreInstance turStoreInstance,
             String decryptedCredential) {
@@ -162,7 +173,16 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
             List<ChromaApi.Collection> collections = chromaApi.listCollections(tenantName, databaseName);
             List<TurStoreCollectionInfo> result = new ArrayList<>();
             for (ChromaApi.Collection col : collections) {
-                retrieveEmbeddingCount(chromaApi, tenantName, databaseName, result, col);
+                long chunkCount = 0;
+                try {
+                    Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
+                    if (c != null) {
+                        chunkCount = c;
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to count embeddings for collection: {}", col.name(), e);
+                }
+                result.add(new TurStoreCollectionInfo(col.name(), col.id(), -1L, chunkCount));
             }
             return result;
         } catch (Exception e) {
@@ -171,18 +191,43 @@ public class TurChromaStoreProvider implements TurGenAiStoreProvider {
         }
     }
 
-    private void retrieveEmbeddingCount(ChromaApi chromaApi, String tenantName, String databaseName,
-            List<TurStoreCollectionInfo> result, ChromaApi.Collection col) {
+    /**
+     * On-demand distinct-document count, called lazily per row by the console
+     * after {@link #listCollections} renders. Reuses
+     * {@link #countDistinctDocuments} (the metadata-scan algorithm previously
+     * run inside {@code listCollections}), so the numbers are identical — only
+     * the timing changed.
+     */
+    @Override
+    public long countDocuments(TurStoreInstance turStoreInstance,
+            String decryptedCredential,
+            String collectionName) {
+        Map<String, Object> options = optionsParser.parse(turStoreInstance.getProviderOptionsJson());
+        ChromaApi chromaApi = buildChromaApi(turStoreInstance, decryptedCredential, options);
+        String tenantName = firstNonBlank(optionsParser.stringValue(options, TENANT_NAME_OPTION), DEFAULT_TENANT);
+        String databaseName = firstNonBlank(optionsParser.stringValue(options, DATABASE_NAME_OPTION), DEFAULT_DATABASE);
+
+        ChromaApi.Collection collection;
+        try {
+            collection = chromaApi.getCollection(tenantName, databaseName, collectionName);
+        } catch (Exception e) {
+            log.warn("[Chroma] Failed to resolve collection '{}' for countDocuments: {}",
+                    collectionName, e.getMessage());
+            return -1L;
+        }
+        if (collection == null) {
+            return -1L;
+        }
         long chunkCount = 0;
         try {
-            Long c = chromaApi.countEmbeddings(tenantName, databaseName, col.id());
-            if (c != null)
+            Long c = chromaApi.countEmbeddings(tenantName, databaseName, collection.id());
+            if (c != null) {
                 chunkCount = c;
+            }
         } catch (Exception e) {
-            log.warn("Failed to count embeddings for collection: {}", col.name(), e);
+            log.warn("[Chroma] Failed to count embeddings for '{}': {}", collectionName, e.getMessage());
         }
-        long documentCount = countDistinctDocuments(chromaApi, tenantName, databaseName, col, chunkCount);
-        result.add(new TurStoreCollectionInfo(col.name(), col.id(), documentCount, chunkCount));
+        return countDistinctDocuments(chromaApi, tenantName, databaseName, collection, chunkCount);
     }
 
     /**

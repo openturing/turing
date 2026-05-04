@@ -44,6 +44,27 @@ public interface TurGenAiStoreProvider {
     }
 
     /**
+     * Returns the number of distinct logical documents in {@code collectionName}.
+     * This is a deliberately separate call from {@link #listCollections} because
+     * some backends (notably Chroma) compute it by paginating through chunk
+     * metadata, which is too expensive to run for every collection on every
+     * admin page-load. The console fetches it lazily per row, after the table
+     * has rendered, so the listing stays snappy.
+     * <p>
+     * Default returns {@code -1L} ("unknown / not computed"); the console
+     * treats {@code -1} as "fall back to chunk count". Providers that already
+     * compute the value cheaply during {@link #listCollections} (PGVector,
+     * Lucene) need not override this method.
+     *
+     * @since 2026.2.6
+     */
+    default long countDocuments(TurStoreInstance turStoreInstance,
+                                 String decryptedCredential,
+                                 String collectionName) {
+        return -1L;
+    }
+
+    /**
      * Creates an empty collection in the vector store.
      */
     default void createCollection(TurStoreInstance turStoreInstance,

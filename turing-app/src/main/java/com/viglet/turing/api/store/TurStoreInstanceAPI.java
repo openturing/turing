@@ -177,6 +177,28 @@ public class TurStoreInstanceAPI {
         }).orElse(List.of());
     }
 
+    /**
+     * On-demand distinct-document count for a single collection. Split out
+     * from the listing endpoint because some backends (Chroma) compute it by
+     * paginating chunk metadata, which is too expensive to run on every
+     * page-load. The console fetches it lazily per row, so the table renders
+     * immediately and document counts fill in afterwards.
+     *
+     * @since 2026.2.6
+     */
+    @Operation(summary = "Distinct document count for a single collection")
+    @GetMapping("/{id}/collections/{collectionName}/document-count")
+    @Secured({"ROLE_ADMIN", "STORE_VIEW"})
+    public Map<String, Long> turStoreInstanceCollectionDocumentCount(@PathVariable String id,
+            @PathVariable String collectionName) {
+        return turStoreInstanceRepository.findById(id).map(instance -> {
+            var provider = storeProviderFactory.getProvider(instance);
+            String credential = turSecretCryptoService.decrypt(instance.getCredentialEncrypted());
+            long count = provider.countDocuments(instance, credential, collectionName);
+            return Map.of("documentCount", count);
+        }).orElse(Map.of("documentCount", -1L));
+    }
+
     @Operation(summary = "Create a collection")
     @PostMapping("/{id}/collections/{collectionName}")
     @Secured({"ROLE_ADMIN", "STORE_CREATE"})

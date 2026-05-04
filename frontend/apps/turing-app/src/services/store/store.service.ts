@@ -50,6 +50,13 @@ export class TurStoreInstanceService {
     return response.data;
   }
 
+  async collectionDocumentCount(id: string, collectionName: string): Promise<number> {
+    const response = await axios.get<{ documentCount: number }>(
+      `/store/${id}/collections/${encodeURIComponent(collectionName)}/document-count`,
+    );
+    return response.data.documentCount;
+  }
+
   async createCollection(id: string, collectionName: string): Promise<void> {
     await axios.post(`/store/${id}/collections/${encodeURIComponent(collectionName)}`);
   }

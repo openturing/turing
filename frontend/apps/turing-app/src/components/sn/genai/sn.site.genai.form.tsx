@@ -99,6 +99,17 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
 
     const selectedAgent = form.watch("turAIAgent");
     const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true;
+    // Reindex is gated on the *persisted* agent, not the form preview: the
+    // backend rejects (403) until the chosen agent is saved on this site.
+    // We also block while the form is dirty so the user can't click reindex
+    // immediately after picking a different agent without saving it first.
+    const savedAgent = snSite.turSNSiteGenAi?.turAIAgent;
+    const savedRagEnabled =
+        !!savedAgent && savedAgent.enabled === 1 && savedAgent.ragEnabled === true;
+    const canReindex = savedRagEnabled && !form.formState.isDirty;
+    const reindexTitleHint = canReindex
+        ? undefined
+        : t("forms.snGenai.reindexRequiresSave");
 
     function handleAgentChange(val: string) {
         if (val === NONE_VALUE) {
@@ -391,9 +402,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                         <GradientButton
                                             type="button"
                                             variant="outline"
-                                            disabled={isReindexing}
+                                            disabled={isReindexing || !canReindex}
                                             onClick={handleReindexClick}
                                             className="min-w-[320px] justify-center tabular-nums"
+                                            title={reindexTitleHint}
                                         >
                                             {isReindexing ? (
                                                 <IconLoader2 className="size-4 animate-spin shrink-0" />

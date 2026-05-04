@@ -27,9 +27,10 @@ import {
   useClearStoreCollection,
   useCreateStoreCollection,
   useDeleteStoreCollection,
+  useStoreCollectionDocumentCount,
   useStoreCollections,
 } from "@/api/queries/store-collection.queries"
-import { IconDatabase, IconDownload, IconEraser, IconLayersSubtract, IconPackageImport, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconDatabase, IconDownload, IconEraser, IconLayersSubtract, IconLoader2, IconPackageImport, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
@@ -45,6 +46,13 @@ function CollectionRow({ col, storeId }: Readonly<{ col: TurStoreCollectionInfo;
   const [exporting, setExporting] = useState(false)
   const clearMutation = useClearStoreCollection()
   const deleteMutation = useDeleteStoreCollection()
+
+  // Backend returns -1 when computing the count is expensive (Chroma scans
+  // chunk metadata) — fetch it lazily so the table renders immediately.
+  const needsLazyCount = col.documentCount < 0
+  const lazyCount = useStoreCollectionDocumentCount(storeId, col.name, needsLazyCount)
+  const resolvedDocumentCount = needsLazyCount ? lazyCount.data : col.documentCount
+  const showDocumentSpinner = needsLazyCount && lazyCount.isPending
 
   const handleClear = () => {
     setClearOpen(false)
@@ -98,7 +106,15 @@ function CollectionRow({ col, storeId }: Readonly<{ col: TurStoreCollectionInfo;
         </div>
       </TableCell>
       <TableCell className="text-muted-foreground text-xs font-mono">{col.id}</TableCell>
-      <TableCell className="text-right font-medium tabular-nums">{col.documentCount.toLocaleString()}</TableCell>
+      <TableCell className="text-right font-medium tabular-nums">
+        {showDocumentSpinner ? (
+          <IconLoader2 className="size-4 animate-spin inline-block text-muted-foreground" />
+        ) : resolvedDocumentCount != null && resolvedDocumentCount >= 0 ? (
+          resolvedDocumentCount.toLocaleString()
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </TableCell>
       <TableCell className="text-right font-medium tabular-nums">{col.chunkCount.toLocaleString()}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
@@ -220,7 +236,12 @@ export default function StoreInstanceCollectionsPage() {
   const { data: collections, isError } = useStoreCollections(id)
   const error = isError ? t("store.collections.loadFailed") : null
 
-  const totalDocuments = collections?.reduce((sum, c) => sum + c.documentCount, 0) ?? 0
+  // Skip rows where documentCount is the -1 sentinel (lazy-loaded per row).
+  // The total stays accurate for backends that compute it eagerly (PG, Lucene)
+  // and is omitted when any Chroma row hasn't resolved its count yet.
+  const knownDocumentCounts = collections?.filter((c) => c.documentCount >= 0) ?? []
+  const hasUnknownDocumentCounts = (collections?.length ?? 0) > knownDocumentCounts.length
+  const totalDocuments = knownDocumentCounts.reduce((sum, c) => sum + c.documentCount, 0)
   const totalChunks = collections?.reduce((sum, c) => sum + c.chunkCount, 0) ?? 0
 
   return (
@@ -239,7 +260,13 @@ export default function StoreInstanceCollectionsPage() {
                 </div>
                 <div className="rounded-lg bg-muted/40 px-4 py-3">
                   <span className="text-xs text-muted-foreground">{t("store.collections.totalDocs")}</span>
-                  <p className="text-lg font-semibold">{totalDocuments.toLocaleString()}</p>
+                  <p className="text-lg font-semibold">
+                    {hasUnknownDocumentCounts ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      totalDocuments.toLocaleString()
+                    )}
+                  </p>
                 </div>
                 <div className="rounded-lg bg-muted/40 px-4 py-3">
                   <span className="text-xs text-muted-foreground">{t("store.collections.totalChunks")}</span>

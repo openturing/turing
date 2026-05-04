@@ -24,6 +24,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexNotFoundException;
+import org.apache.lucene.store.FSDirectory;
+
 import com.viglet.turing.solr.bean.TurSECoreInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -124,9 +128,10 @@ public final class TurLuceneUtils {
     }
 
     /**
-     * Lists all direct sub-directories of {@code basePath} as cores.
-     * Returns basic info: name and approximate doc count (not exact without opening
-     * the index).
+     * Lists all direct sub-directories of {@code basePath} as cores. Opens each
+     * index briefly with a {@link DirectoryReader} to read the live document
+     * count; cores that haven't been written yet (no segments) report 0
+     * without raising the missing-index error.
      */
     public static List<TurSECoreInfo> listCores(String basePath) {
         Path base = resolveBasePath(basePath);
@@ -136,11 +141,30 @@ public final class TurLuceneUtils {
         try (Stream<Path> dirs = Files.list(base)) {
             return dirs.filter(Files::isDirectory)
                     .sorted()
-                    .map(p -> new TurSECoreInfo(p.getFileName().toString(), 0L, Collections.emptyList()))
+                    .map(p -> new TurSECoreInfo(p.getFileName().toString(), readNumDocs(p), Collections.emptyList()))
                     .toList();
         } catch (IOException e) {
             log.error("Failed to list Lucene cores at {}: {}", basePath, e.getMessage(), e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Best-effort live document count for a Lucene core directory. Returns 0
+     * when the directory has no segments yet ({@link IndexNotFoundException})
+     * or when the reader can't open the directory for any reason — listing the
+     * core is more important than failing the whole request over a single
+     * unreadable index.
+     */
+    private static long readNumDocs(Path corePath) {
+        try (FSDirectory dir = FSDirectory.open(corePath);
+                DirectoryReader reader = DirectoryReader.open(dir)) {
+            return reader.numDocs();
+        } catch (IndexNotFoundException e) {
+            return 0L;
+        } catch (IOException e) {
+            log.warn("Failed to read Lucene numDocs at {}: {}", corePath, e.getMessage());
+            return 0L;
         }
     }
 
