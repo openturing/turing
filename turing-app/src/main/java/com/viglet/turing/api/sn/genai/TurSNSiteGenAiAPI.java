@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +45,7 @@ import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
+import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.intent.TurIntentDto;
 import com.viglet.turing.persistence.mapper.intent.TurIntentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -71,6 +74,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurSNSiteSearchService turSNSiteSearchService;
 	private final TurIntentRepository turIntentRepository;
 	private final TurIntentMapper turIntentMapper;
+	private final TurChatFlowEngineService chatFlowEngineService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -78,7 +82,8 @@ public class TurSNSiteGenAiAPI {
 			TurSNSiteLocaleRepository turSNSiteLocaleRepository,
 			TurSNSiteSearchService turSNSiteSearchService,
 			TurIntentRepository turIntentRepository,
-			TurIntentMapper turIntentMapper) {
+			TurIntentMapper turIntentMapper,
+			TurChatFlowEngineService chatFlowEngineService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -86,6 +91,7 @@ public class TurSNSiteGenAiAPI {
 		this.turSNSiteSearchService = turSNSiteSearchService;
 		this.turIntentRepository = turIntentRepository;
 		this.turIntentMapper = turIntentMapper;
+		this.chatFlowEngineService = chatFlowEngineService;
 	}
 
 	/**
@@ -210,11 +216,39 @@ public class TurSNSiteGenAiAPI {
 					siteName, locale, collectionName, agent.getTitle(), llmInstance.getTitle());
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			return turGenAi.assistantConversationStreaming(
-					context, agent, llmInstance, request.messages(), request.filters());
+					context, agent, llmInstance, request.messages(), request.filters(),
+					request.conversationId(), request.flowId());
 		}).orElseGet(() -> {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, "Couldn't find site name."));
 		});
+	}
+
+	/**
+	 * Drops every chat-flow runtime state attached to {@code conversationId}
+	 * for this site's agent. Public consumers (search "AI Mode") don't know
+	 * which flow the auto-router picked, so resetting by flow id would be
+	 * awkward — clearing all flows for the conversation is the cleanest way
+	 * to wire a "New chat" button on the public UI.
+	 *
+	 * @return number of flow state rows deleted (0 when the conversation has
+	 *         no active flows or the site has no agent).
+	 *
+	 * @since 2026.2.16
+	 */
+	@Transactional
+	@DeleteMapping("/conversation-state")
+	public int resetConversationState(@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null) return 0;
+					TurAIAgent agent = genAi.getTurAIAgent();
+					if (agent == null) return 0;
+					return chatFlowEngineService.resetAllStatesForAgent(conversationId, agent.getId());
+				})
+				.orElse(0);
 	}
 
 	/**
@@ -246,6 +280,7 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,
-			java.util.Map<String, List<String>> filters) {
+			java.util.Map<String, List<String>> filters,
+			String conversationId, String flowId) {
 	}
 }

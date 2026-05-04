@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { type ChatSession, saveSession, getSession, getAllSessions, deleteSession } from "@/services/chat/chat-session.service"
 import { TurChatService } from "@/services/chat/chat.service"
 import { type ChatMessage, generateId, generateFallbackTitle, TITLE_TIMEOUT_MS } from "../chat.types"
@@ -6,6 +6,14 @@ import { type ChatMessage, generateId, generateFallbackTitle, TITLE_TIMEOUT_MS }
 export function useChatSession(turChatService: TurChatService, getLlmTitle: (llmId: string) => { title?: string; modelName?: string } | undefined) {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  // Synchronous mirrors so `ensureSessionId` and `saveAfterResponse` can read
+  // the latest values without depending on a re-render cycle.
+  const activeSessionIdRef = useRef<string | null>(null)
+  const pendingFirstSaveRef = useRef(false)
+
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId
+  }, [activeSessionId])
 
   const loadSessions = useCallback(async () => {
     try {
@@ -14,6 +22,19 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
     } catch (err) {
       console.warn("Failed to load sessions:", err)
     }
+  }, [])
+
+  // Returns the active session id, generating one synchronously when none
+  // exists. The caller must invoke this *before* the first request of a new
+  // chat so the backend receives a stable `conversationId` from turn 1 — the
+  // chat-flow router skips the turn entirely without it.
+  const ensureSessionId = useCallback((): string => {
+    if (activeSessionIdRef.current) return activeSessionIdRef.current
+    const id = generateId()
+    activeSessionIdRef.current = id
+    pendingFirstSaveRef.current = true
+    setActiveSessionId(id)
+    return id
   }, [])
 
   const generateAITitle = useCallback(async (msgs: ChatMessage[], llmId: string): Promise<string> => {
@@ -43,8 +64,14 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
     if (msgs.length === 0) return
 
     const instance = getLlmTitle(llmId)
-    const isNewSession = !activeSessionId
-    const sessionId = activeSessionId ?? generateId()
+    // The session id may have been minted up-front by `ensureSessionId` (so the
+    // backend got it from turn 1). Read from the ref to bypass stale closures
+    // and consume `pendingFirstSaveRef` to know whether this save is the first
+    // one for the session — that branch persists initial metadata and kicks
+    // off async title generation.
+    const sessionId = activeSessionIdRef.current ?? generateId()
+    const isNewSession = pendingFirstSaveRef.current || activeSessionIdRef.current !== sessionId
+    pendingFirstSaveRef.current = false
 
     if (isNewSession) {
       const session: ChatSession = {
@@ -59,7 +86,10 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
         updatedAt: Date.now(),
       }
       await saveSession(session)
-      setActiveSessionId(sessionId)
+      if (activeSessionIdRef.current !== sessionId) {
+        activeSessionIdRef.current = sessionId
+        setActiveSessionId(sessionId)
+      }
       await loadSessions()
 
       generateAITitle(msgs, llmId).then(async (aiTitle) => {
@@ -83,16 +113,22 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
       await saveSession(session)
       await loadSessions()
     }
-  }, [activeSessionId, generateAITitle, loadSessions, getLlmTitle])
+  }, [generateAITitle, loadSessions, getLlmTitle])
 
   const handleDeleteSession = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     await deleteSession(id)
-    if (activeSessionId === id) setActiveSessionId(null)
+    if (activeSessionId === id) {
+      activeSessionIdRef.current = null
+      pendingFirstSaveRef.current = false
+      setActiveSessionId(null)
+    }
     await loadSessions()
   }, [activeSessionId, loadSessions])
 
   const resetSession = useCallback(() => {
+    activeSessionIdRef.current = null
+    pendingFirstSaveRef.current = false
     setActiveSessionId(null)
   }, [])
 
@@ -100,6 +136,7 @@ export function useChatSession(turChatService: TurChatService, getLlmTitle: (llm
     sessions,
     activeSessionId,
     setActiveSessionId,
+    ensureSessionId,
     loadSessions,
     saveAfterResponse,
     handleDeleteSession,

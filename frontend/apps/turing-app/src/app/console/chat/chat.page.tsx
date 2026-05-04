@@ -166,7 +166,7 @@ export default function ChatPage() {
     return inst ? { title: inst.title, modelName: inst.modelName } : undefined
   }, [llmInstances])
 
-  const { sessions, activeSessionId, setActiveSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(turChatService, getLlmTitle)
+  const { sessions, activeSessionId, setActiveSessionId, ensureSessionId, loadSessions, saveAfterResponse, handleDeleteSession, resetSession } = useChatSession(turChatService, getLlmTitle)
 
   // Reset the runtime state of the currently selected flow for this
   // conversation. Only meaningful when a *specific* flow is forced (not Auto)
@@ -250,6 +250,10 @@ export default function ChatPage() {
     //   uuid  → forced selection
     const flowSelection = selectedFlowByAgent[agentId] ?? FLOW_AUTO
     const flowIdForSend = flowSelection === FLOW_AUTO ? undefined : flowSelection
+    // Mint the session id BEFORE the request — the chat-flow router on the
+    // backend skips the turn entirely without a conversationId, so deferring
+    // generation to `saveAfterResponse` would lose flow routing on turn 1.
+    const conversationId = ensureSessionId()
 
     await turChatService.sendAgentStream(
       agentId,
@@ -295,9 +299,9 @@ export default function ChatPage() {
           }
         })
       },
-      { conversationId: activeSessionId ?? undefined, flowId: flowIdForSend },
+      { conversationId, flowId: flowIdForSend },
     )
-  }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState, selectedFlowByAgent, activeSessionId])
+  }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState, selectedFlowByAgent, ensureSessionId])
 
   const handleAgentSend = () => {
     if (!activeAgentId) return

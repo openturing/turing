@@ -193,7 +193,9 @@ public class TurSNGenAi {
             com.viglet.turing.persistence.model.agent.TurAIAgent agent,
             com.viglet.turing.persistence.model.llm.TurLLMInstance llmInstance,
             List<ConversationMessage> history,
-            java.util.Map<String, List<String>> filters) {
+            java.util.Map<String, List<String>> filters,
+            String conversationId,
+            String flowId) {
         if (!context.isEnabled()) {
             log.warn("RAG chat streaming context disabled — check agent RAG configuration");
             return reactor.core.publisher.Flux.just(
@@ -218,7 +220,8 @@ public class TurSNGenAi {
                 .map(m -> new TurAgentChatExecutor.ChatMessageItem(
                         m.role(), m.content() == null ? "" : m.content()))
                 .toList();
-        return agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt);
+        return agentChatExecutor.execute(agent, llmInstance, mapped, augmentedSystemPrompt,
+                conversationId, flowId);
     }
 
     /**

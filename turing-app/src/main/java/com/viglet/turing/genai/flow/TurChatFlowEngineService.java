@@ -278,6 +278,30 @@ public class TurChatFlowEngineService {
         return true;
     }
 
+    /**
+     * Drops every persisted flow state attached to {@code conversationId} that
+     * belongs to {@code agentId}. Used by public consumers (search "AI Mode")
+     * that don't know which flow the auto-router picked but want a clean slate
+     * on "New chat" — far simpler than asking the client to enumerate flows.
+     *
+     * @return number of state rows deleted.
+     */
+    public int resetAllStatesForAgent(String conversationId, String agentId) {
+        if (conversationId == null || conversationId.isBlank()
+                || agentId == null || agentId.isBlank()) {
+            return 0;
+        }
+        List<TurChatFlowState> states = stateRepository
+                .findByConversationIdAndFlow_TurAIAgent_Id(conversationId, agentId);
+        if (states.isEmpty()) {
+            return 0;
+        }
+        stateRepository.deleteAll(states);
+        log.info("[FlowEngine] Reset {} flow state(s) for conversation '{}' on agent '{}'",
+                states.size(), conversationId, agentId);
+        return states.size();
+    }
+
     // ─────────────────────────── Auto-trigger router ───────────────────────────
 
     /**

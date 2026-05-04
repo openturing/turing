@@ -95,6 +95,74 @@ export interface PostChatConversationOptions {
   readonly onToken?: (token: string) => void;
   /** Aborts the in-flight SSE request when triggered. */
   readonly signal?: AbortSignal;
+  /**
+   * Stable id that groups all turns of the same conversation. Required for
+   * the chat-flow router to fire from turn 1 — without it, the backend
+   * skips flow selection entirely and the agent answers from its base
+   * system prompt only. Generate once per conversation on the client and
+   * reuse for every send until the user resets.
+   *
+   * @since 2026.2.16
+   */
+  readonly conversationId?: string;
+  /**
+   * Forces a specific chat flow to govern the turn instead of letting the
+   * router auto-pick. Used by admin/preview UIs that need to simulate a
+   * particular path. Most callers should leave this unset.
+   *
+   * @since 2026.2.16
+   */
+  readonly flowId?: string;
+}
+
+/**
+ * Drains a Spring `Flux<ChatResponse>` SSE stream into a single concatenated
+ * string. Each `data:` line is parsed as {@link TurChatStreamEvent}; the
+ * chunks are aggregated and forwarded one-by-one to {@code onToken} when
+ * provided. Shared between the site RAG chat and the agent chat — both
+ * endpoints emit the same shape.
+ */
+async function consumeAssistantStream(
+  response: Response,
+  onToken?: (token: string) => void,
+): Promise<string> {
+  if (!response.body) {
+    throw new Error("Chat response has no body");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let aggregated = "";
+
+  function consumeLine(line: string) {
+    if (!line.startsWith("data:")) return;
+    const jsonStr = line.slice(5).trim();
+    if (!jsonStr) return;
+    try {
+      const parsed = JSON.parse(jsonStr) as TurChatStreamEvent;
+      if (parsed.content) {
+        aggregated += parsed.content;
+        onToken?.(parsed.content);
+      }
+    } catch {
+      // Skip malformed JSON chunks (e.g. heartbeat comments)
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) consumeLine(line);
+    }
+    if (buffer) consumeLine(buffer);
+  } finally {
+    reader.releaseLock();
+  }
+  return aggregated;
 }
 
 /**
@@ -129,52 +197,120 @@ export async function postChatConversation(
     method: "POST",
     headers,
     credentials: "include",
-    body: JSON.stringify({ messages, locale }),
+    body: JSON.stringify({
+      messages,
+      locale,
+      conversationId: options?.conversationId,
+      flowId: options?.flowId,
+    }),
     signal: options?.signal,
   });
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
-  if (!response.body) {
-    throw new Error("Chat conversation response has no body");
-  }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let aggregated = "";
-
-  function consumeLine(line: string) {
-    if (!line.startsWith("data:")) return;
-    const jsonStr = line.slice(5).trim();
-    if (!jsonStr) return;
-    try {
-      const parsed = JSON.parse(jsonStr) as TurChatStreamEvent;
-      if (parsed.content) {
-        aggregated += parsed.content;
-        options?.onToken?.(parsed.content);
-      }
-    } catch {
-      // Skip malformed JSON chunks (e.g. heartbeat comments)
-    }
-  }
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) consumeLine(line);
-    }
-    if (buffer) consumeLine(buffer);
-  } finally {
-    reader.releaseLock();
-  }
-
+  const aggregated = await consumeAssistantStream(response, options?.onToken);
   return { role: "assistant", content: aggregated };
+}
+
+/**
+ * Options for {@link postAgentChat}. Mirrors {@link PostChatConversationOptions}
+ * — the agent endpoint speaks the same SSE shape as the SN site RAG endpoint.
+ *
+ * @since 2026.2.16
+ */
+export interface PostAgentChatOptions {
+  readonly onToken?: (token: string) => void;
+  readonly signal?: AbortSignal;
+  readonly conversationId?: string;
+  readonly flowId?: string;
+}
+
+/**
+ * Streams a turn through an explicit AI Agent (`POST /v2/ai-agent/{agentId}/chat`).
+ * Use this when the consumer knows the exact agent + LLM to invoke (e.g. an
+ * authenticated console UI). For anonymous site search, use
+ * {@link postChatConversation} instead — it resolves the agent from the site
+ * configuration server-side.
+ *
+ * @since 2026.2.16
+ */
+export async function postAgentChat(
+  agentId: string,
+  llmInstanceId: string,
+  messages: TurChatConversationMessage[],
+  options?: PostAgentChatOptions,
+): Promise<TurChatConversationResponse> {
+  const baseURL = axios.defaults.baseURL ?? "";
+  const url = `${baseURL}/v2/ai-agent/${agentId}/chat`;
+
+  const headers: Record<string, string> = {
+    Accept: "text/event-stream",
+    "Content-Type": "application/json",
+  };
+  const xsrf = readXsrfCookie();
+  if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({
+      llmInstanceId,
+      messages,
+      conversationId: options?.conversationId,
+      flowId: options?.flowId,
+    }),
+    signal: options?.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const aggregated = await consumeAssistantStream(response, options?.onToken);
+  return { role: "assistant", content: aggregated };
+}
+
+/**
+ * Drops every chat-flow runtime state for {@code conversationId} on the
+ * site's agent. Use to wire a "New chat" button on public search UIs —
+ * client-side `reset()` only clears local state; this clears the server-side
+ * mirror so a forced flow doesn't resume on the next conversation that
+ * reuses an old id.
+ *
+ * @returns number of state rows the server deleted (0 when nothing matched).
+ * @since 2026.2.16
+ */
+export async function deleteSiteConversationState(
+  site: string,
+  conversationId: string,
+): Promise<number> {
+  const params = new URLSearchParams({ conversationId });
+  const { data } = await axios.delete<number>(
+    `/sn/${site}/chat/conversation-state?${params}`,
+  );
+  return typeof data === "number" ? data : 0;
+}
+
+/**
+ * Drops the runtime state of {@code (conversationId, flowId)} on the agent
+ * endpoint. Mirror of {@link deleteSiteConversationState} for the explicit
+ * agent path.
+ *
+ * @since 2026.2.16
+ */
+export async function deleteAgentFlowState(
+  agentId: string,
+  flowId: string,
+  conversationId: string,
+): Promise<boolean> {
+  const params = new URLSearchParams({ flowId, conversationId });
+  const { data } = await axios.delete<boolean>(
+    `/v2/ai-agent/${agentId}/chat-flow-state?${params}`,
+  );
+  return data === true;
 }
 
 /**

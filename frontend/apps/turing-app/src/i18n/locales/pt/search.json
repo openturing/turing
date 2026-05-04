@@ -17,6 +17,7 @@
     "aiModeTyping": "Pensando...",
     "aiModeYou": "Você",
     "aiModeAssistant": "Assistente IA",
+    "aiModeNewChat": "Nova conversa",
     "noResults": "Nenhum resultado para \u201c{{query}}\u201d",
     "didYouMean": "Você quis dizer",
     "tryDifferent": "Tente palavras-chave diferentes ou navegue por todo o conteúdo.",
