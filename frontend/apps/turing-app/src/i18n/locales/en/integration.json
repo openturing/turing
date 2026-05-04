@@ -10,6 +10,7 @@
     "notDeleted": "The {{name}} Integration Instance was not deleted",
     "nav": {
       "settings": "Settings",
+      "queue": "Queue",
       "sources": "AEM Sources",
       "dbSources": "Database Sources",
       "wcSources": "Web Crawler Sources",

@@ -9,6 +9,7 @@ import type { TurIntegrationInstance } from "@/models/integration/integration-in
 import { TurIntegrationInstanceService } from "@/services/integration/integration.service";
 import { loadRemote, registerRemotes } from "@module-federation/runtime";
 import {
+    IconInbox,
     IconPlugConnectedX,
     IconSettings,
 } from "@tabler/icons-react";
@@ -51,6 +52,7 @@ export default function IntegrationInstancePage() {
     const { t } = useTranslation();
     const [integration, setIntegration] = useState<TurIntegrationInstance>();
     const [dumontNavItems, setDumontNavItems] = useState<{ title: string; url: string; icon: React.ElementType }[]>([]);
+    const [queueSize, setQueueSize] = useState<number | undefined>(undefined);
     const [isNew, setIsNew] = useState<boolean>(true);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -70,7 +72,14 @@ export default function IntegrationInstancePage() {
             },
             ...dumontNavItems,
         ],
-    }), [t, dumontNavItems]);
+        counts: [
+            {
+                title: t("integration.nav.queue"),
+                icon: IconInbox,
+                count: queueSize ?? 0,
+            },
+        ],
+    }), [t, dumontNavItems, queueSize]);
 
     useEffect(() => {
         if (id === "new") {
@@ -122,6 +131,27 @@ export default function IntegrationInstancePage() {
             setIsNew(false);
         }
     }, []);
+
+    useEffect(() => {
+        if (id === "new") return;
+        let cancelled = false;
+
+        const fetchQueue = () => {
+            axios
+                .get<{ queue: number }>(`/v2/integration/${id}/connector/queue/status`)
+                .then(({ data }) => {
+                    if (!cancelled) setQueueSize(data.queue);
+                })
+                .catch(() => { /* keep last known value on transient errors */ });
+        };
+
+        fetchQueue();
+        const intervalId = window.setInterval(fetchQueue, 10_000);
+        return () => {
+            cancelled = true;
+            window.clearInterval(intervalId);
+        };
+    }, [id]);
 
     useSubPageBreadcrumb(breadcrumb);
 

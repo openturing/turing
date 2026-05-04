@@ -10,6 +10,7 @@
     "notDeleted": "A Instância de Integração {{name}} não foi excluída",
     "nav": {
       "settings": "Configurações",
+      "queue": "Fila",
       "sources": "Fontes AEM",
       "dbSources": "Fontes de Banco de Dados",
       "wcSources": "Fontes Web Crawler",
