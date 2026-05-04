@@ -70,6 +70,9 @@ class TurSEInstanceAPITest {
     private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
     @Mock
+    private com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
+
+    @Mock
     private TurSearchEnginePluginFactory pluginFactory;
 
     @Spy
@@ -340,7 +343,7 @@ class TurSEInstanceAPITest {
         TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
         when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
-        when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of());
+        when(turSNSiteLocaleRepositoryPort.existsByCore("core1")).thenReturn(false);
 
         mockMvc.perform(delete("/api/se/1/cores/core1"))
                 .andExpect(status().isNoContent());
@@ -352,8 +355,7 @@ class TurSEInstanceAPITest {
         instance.setId("1");
 
         when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
-        var locale = mock(com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale.class);
-        when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of(locale));
+        when(turSNSiteLocaleRepositoryPort.existsByCore("core1")).thenReturn(true);
 
         mockMvc.perform(delete("/api/se/1/cores/core1"))
                 .andExpect(status().isConflict());

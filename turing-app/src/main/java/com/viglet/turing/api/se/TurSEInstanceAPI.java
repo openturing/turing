@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
 import com.viglet.turing.persistence.dto.se.TurSEInstanceDto;
 import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
@@ -60,18 +61,21 @@ public class TurSEInstanceAPI {
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSolr turSolr;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+        private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
         private final TurSearchEnginePluginFactory pluginFactory;
 
         public TurSEInstanceAPI(TurSolrInstanceSource seInstanceSource,
                         TurSEInstanceMapper turSEInstanceMapper,
                         TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort,
                         TurSearchEnginePluginFactory pluginFactory) {
                 this.seInstanceSource = seInstanceSource;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+                this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
                 this.pluginFactory = pluginFactory;
         }
 
@@ -194,7 +198,7 @@ public class TurSEInstanceAPI {
         @Secured({"ROLE_ADMIN", "SE_DELETE"})
         public ResponseEntity<Void> turSEInstanceDeleteCore(@PathVariable String id, @PathVariable String core) {
                 return seInstanceSource.findById(id).map(turSEInstance -> {
-                        if (!turSNSiteLocaleRepository.findByCore(core).isEmpty()) {
+                        if (turSNSiteLocaleRepositoryPort.existsByCore(core)) {
                                 return ResponseEntity.status(HttpStatus.CONFLICT).<Void>build();
                         }
                         pluginFactory.getPluginForInstance(turSEInstance).deleteIndex(turSEInstance, core);
