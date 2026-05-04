@@ -127,6 +127,15 @@ class TurSNSearchProcessTest {
                 return new TurSNFacetDefinitionFactory(turSNSiteCustomFacetRepository);
         }
 
+        private com.viglet.turing.sn.pagination.TurSNPaginationBuilder turSNPaginationBuilder() {
+                return new com.viglet.turing.sn.pagination.TurSNPaginationBuilder();
+        }
+
+        private com.viglet.turing.sn.document.TurSNDocumentResponse turSNDocumentResponse() {
+                return new com.viglet.turing.sn.document.TurSNDocumentResponse(
+                                turSNSiteFieldExtRepository, turSNSpotlightProcess);
+        }
+
         private TurSNSearchProcess process(boolean metricsEnabled) {
                 return new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
@@ -135,7 +144,8 @@ class TurSNSearchProcessTest {
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer(),
+                                turSNPaginationBuilder(), turSNDocumentResponse());
         }
 
         private TurSNSiteSearchContext context(String query) {
@@ -301,7 +311,8 @@ class TurSNSearchProcessTest {
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 false, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer(),
+                                turSNPaginationBuilder(), turSNDocumentResponse());
 
                 TurSNSearchParams searchParamsWildcard = new TurSNSearchParams();
                 searchParamsWildcard.setQ("*");
@@ -320,7 +331,8 @@ class TurSNSearchProcessTest {
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 true, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory(), turSNFacetRenderer());
+                                turSNFacetDefinitionFactory(), turSNFacetRenderer(),
+                                turSNPaginationBuilder(), turSNDocumentResponse());
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setQ("java");
