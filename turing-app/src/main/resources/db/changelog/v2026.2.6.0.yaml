@@ -1,0 +1,39 @@
+databaseChangeLog:
+  # Undo the orphan LUCENE insert from v2026.2.4.9 so that
+  # TurStoreVendorOnStartup.createDefaultRows() can do its job.
+  #
+  # Background:
+  #   - The Java seed bails out when store_vendor is non-empty.
+  #   - Changeset v2026.2.4.9 (insert-store-vendor-lucene) ran *before* that
+  #     seed and inserted the LUCENE row, leaving the table non-empty when
+  #     the seed tried to populate it. As a result Chroma, Milvus and
+  #     PGVector were never written.
+  #
+  # Strategy:
+  #   - Delete LUCENE only when it's the *single* row in store_vendor and no
+  #     store_instance references it. That fingerprint matches the broken
+  #     state introduced by v2026.2.4.9 and avoids touching environments
+  #     where an operator added or removed vendors deliberately.
+  #   - On the next application start, the Java seed sees an empty table and
+  #     inserts all four vendors (Chroma, Milvus, PGVector, Lucene).
+  - changeSet:
+      id: drop-orphan-lucene-store-vendor
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - tableExists:
+                tableName: store_vendor
+            - sqlCheck:
+                expectedResult: 1
+                sql: SELECT COUNT(*) FROM store_vendor
+            - sqlCheck:
+                expectedResult: 1
+                sql: SELECT COUNT(*) FROM store_vendor WHERE id = 'LUCENE'
+            - sqlCheck:
+                expectedResult: 0
+                sql: SELECT COUNT(*) FROM store_instance WHERE store_vendor_id = 'LUCENE'
+      changes:
+        - delete:
+            tableName: store_vendor
+            where: id = 'LUCENE'

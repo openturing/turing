@@ -30,15 +30,15 @@ import com.viglet.turing.properties.TurStorageProperty;
  * service against a real MinIO container. Runs under {@code mvn verify} via the
  * Failsafe plugin; {@code mvn test} skips it because of the {@code IT} suffix.
  *
- * <p>Requires Docker to be available locally. Testcontainers fails fast with a
- * clear message when Docker is missing — the project's Failsafe configuration
- * has {@code testFailureIgnore=true} so missing Docker doesn't break the
- * overall build, but the IT will be reported as failed in surefire-reports.
+ * <p>Requires Docker to be available locally. The {@code disabledWithoutDocker
+ * = true} flag tells Testcontainers to skip the whole class (reported as
+ * disabled in surefire-reports) when Docker isn't running — useful in CI
+ * runners and developer machines where Docker may be absent.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class TurMinioStorageServiceIT {
 
     private static final String BUCKET = "turing-it";
