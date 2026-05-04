@@ -154,7 +154,10 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
       setMaxTokensInput("256")
     }
     if (vendorId === "OPENAI") {
-      form.setValue("url", "https://api.openai.com", { shouldDirty: true });
+      // The OpenAI Java SDK appends `/chat/completions` to the base URL, so the
+      // version segment must be part of what we store. `https://api.openai.com`
+      // alone yields a 404 because the SDK never inserts `/v1` itself.
+      form.setValue("url", "https://api.openai.com/v1", { shouldDirty: true });
       form.setValue("modelName", "gpt-4o-mini", { shouldDirty: true });
       form.setValue("temperature", 0.7, { shouldDirty: true });
       form.setValue("topP", 0.9, { shouldDirty: true });
