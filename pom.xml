@@ -47,6 +47,7 @@
         <lucene.version>10.4.0</lucene.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <minio.version>9.0.0</minio.version>
+        <mongodb.version>5.7.0</mongodb.version>
         <okhttp.version>5.3.2</okhttp.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.7.0</shedlock.version>
@@ -338,22 +339,22 @@
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>bson</artifactId>
-                <version>5.7.0</version>
+                <version>${mongodb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>bson-record-codec</artifactId>
-                <version>5.7.0</version>
+                <version>${mongodb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-core</artifactId>
-                <version>5.7.0</version>
+                <version>${mongodb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
-                <version>5.7.0</version>
+                <version>${mongodb.version}</version>
             </dependency>
             <dependency>
                 <groupId>redis.clients</groupId>

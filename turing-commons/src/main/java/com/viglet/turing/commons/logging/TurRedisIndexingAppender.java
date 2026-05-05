@@ -25,7 +25,6 @@ import java.util.Arrays;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import redis.clients.jedis.Jedis;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -47,13 +46,13 @@ public class TurRedisIndexingAppender extends TurRedisAppenderBase {
         if (!enabled || pool == null) {
             return;
         }
-        try (Jedis jedis = pool.getResource()) {
+        try {
             Arrays.stream(eventObject.getArgumentArray())
                     .forEach(object -> {
                         String json = MAPPER.writeValueAsString(object);
-                        jedis.lpush(key, json);
+                        pool.lpush(key, json);
                         if (maxEntries > 0) {
-                            jedis.ltrim(key, 0, maxEntries - 1L);
+                            pool.ltrim(key, 0, maxEntries - 1L);
                         }
                     });
         } catch (Exception e) {

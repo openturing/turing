@@ -36,7 +36,6 @@ import ch.qos.logback.classic.spi.ThrowableProxyUtil;
 import ch.qos.logback.core.CoreConstants;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import redis.clients.jedis.Jedis;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.datatype.joda.JodaModule;
@@ -92,11 +91,11 @@ public class TurRedisAppender extends TurRedisAppenderBase {
                 .build();
 
         executor.submit(() -> {
-            try (Jedis jedis = pool.getResource()) {
+            try {
                 String json = MAPPER.writeValueAsString(logEntry);
-                jedis.lpush(key, json);
+                pool.lpush(key, json);
                 if (maxEntries > 0) {
-                    jedis.ltrim(key, 0, maxEntries - 1L);
+                    pool.ltrim(key, 0, maxEntries - 1L);
                 }
             } catch (Exception e) {
                 log.info("Failed to log to Redis: {}", e.getMessage());

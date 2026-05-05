@@ -27,12 +27,15 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.RedisClient;
+import redis.clients.jedis.util.JedisURIHelper;
 
 /**
- * Base class for Redis-backed Logback appenders. Manages a {@link JedisPool}
- * life cycle (start / stop) and exposes configuration knobs for subclasses.
+ * Base class for Redis-backed Logback appenders. Manages a {@link RedisClient}
+ * life cycle (start / stop) backed by a pooled connection provider and
+ * exposes configuration knobs for subclasses.
  *
  * <p>Entries are stored in a Redis LIST keyed by {@link #key}. Subclasses are
  * responsible for the actual push ({@code LPUSH}) and, optionally, for
@@ -55,15 +58,20 @@ public class TurRedisAppenderBase extends AppenderBase<ILoggingEvent> {
      * entries. Zero disables trimming (unbounded growth).
      */
     protected int maxEntries;
-    protected JedisPool pool;
+    protected RedisClient pool;
 
     @Override
     public void start() {
         try {
-            JedisPoolConfig cfg = new JedisPoolConfig();
+            URI uri = URI.create(connectionString);
+            ConnectionPoolConfig cfg = new ConnectionPoolConfig();
             cfg.setMaxTotal(50);
             cfg.setMaxWait(Duration.ofSeconds(2));
-            this.pool = new JedisPool(cfg, URI.create(connectionString));
+            this.pool = RedisClient.builder()
+                    .hostAndPort(JedisURIHelper.getHostAndPort(uri))
+                    .clientConfig(DefaultJedisClientConfig.builder(uri).build())
+                    .poolConfig(cfg)
+                    .build();
             super.start();
         } catch (Exception e) {
             addError("Failed to initialize Redis Appender", e);
