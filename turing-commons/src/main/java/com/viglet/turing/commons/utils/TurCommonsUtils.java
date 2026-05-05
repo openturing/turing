@@ -157,11 +157,16 @@ public class TurCommonsUtils {
     }
 
     public static URI modifiedURI(URI uri, StringBuilder sbQueryString) {
+        String query = removeAmpersand(sbQueryString);
         try {
-            return new URI(uri.getRawPath() + "?" + removeAmpersand(sbQueryString)
-                    .replaceAll("[\\t\\n\\r]+", "%20").replace(" ", "%20").replace("\"", "%22"));
+            // Use the multi-argument URI constructor so any character that needs
+            // quoting (non-ASCII like 'é', whitespace, '"', etc.) is percent-encoded.
+            // All callers pass decoded values from URIBuilder.getQueryParams(), so we
+            // don't risk double-encoding pre-existing pct-encoded sequences.
+            return new URI(null, null, uri.getRawPath(), query.isEmpty() ? null : query, null);
         } catch (URISyntaxException e) {
-            log.error(e.getMessage(), e);
+            log.error("Failed to build URI from path '{}' with query '{}': {}",
+                    uri.getRawPath(), query, e.getMessage(), e);
         }
         return uri;
     }

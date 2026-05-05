@@ -184,6 +184,31 @@ class TurCommonsUtilsTest {
     }
 
     @Test
+    void testAddOrReplaceParameterNonAsciiValueIsPercentEncoded() throws URISyntaxException {
+        // Reproduces the URISyntaxException reported when a query value contained
+        // raw non-ASCII characters (e.g. "economia é"). The fix uses the multi-arg
+        // URI constructor so 'é' is percent-encoded instead of failing.
+        URI uri = new URI("/api/sn/insper-dev-author/search?q=foo&p=1&_setlocale=pt&sort=relevance");
+        URI result = TurCommonsUtils.addOrReplaceParameter(uri, "q", "economia é", true);
+
+        // The path must remain intact and the value must be percent-encoded.
+        assertThat(result.getRawPath()).isEqualTo("/api/sn/insper-dev-author/search");
+        assertThat(result.toASCIIString())
+                .contains("q=economia%20%C3%A9")
+                .contains("p=1")
+                .contains("_setlocale=pt")
+                .contains("sort=relevance");
+    }
+
+    @Test
+    void testAddOrReplaceParameterValueWithSpaceAndQuoteIsEncoded() throws URISyntaxException {
+        URI uri = new URI("/api/search?p=1");
+        URI result = TurCommonsUtils.addOrReplaceParameter(uri, "q", "hello \"world\"", false);
+
+        assertThat(result.toASCIIString()).contains("q=hello%20%22world%22");
+    }
+
+    @Test
     void testCleanTextContent() {
         String dirtyText = " \t\n Text  with   multiple\r\n   spaces \t ";
         String result = TurCommonsUtils.cleanTextContent(dirtyText);
