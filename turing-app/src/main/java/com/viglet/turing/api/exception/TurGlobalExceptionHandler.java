@@ -37,6 +37,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.viglet.turing.resilience.TurResilienceTimeoutException;
 
@@ -135,6 +136,19 @@ public class TurGlobalExceptionHandler {
         ProblemDetail problem = build(HttpStatus.CONTENT_TOO_LARGE, TurErrorTypes.FILE_TOO_LARGE,
                 "Uploaded file exceeds the configured size limit.");
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(problem);
+    }
+
+    /**
+     * Missing static resources are plain 404s — log at DEBUG without the stack
+     * trace so noisy hashed-asset probes (e.g. stale module-federation chunks)
+     * don't pollute ERROR logs.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNoResource(NoResourceFoundException ex) {
+        ProblemDetail problem = build(HttpStatus.NOT_FOUND, TurErrorTypes.NOT_FOUND,
+                "Resource not found.");
+        log.debug("[GlobalEx] Static resource not found: {}", ex.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
     }
 
     /**
