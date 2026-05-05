@@ -156,17 +156,17 @@ public class TurSNImportAPI {
                             var siteGenAi = turSNSite.getTurSNSiteGenAi();
                             var agent = siteGenAi == null ? null : siteGenAi.getTurAIAgent();
                             if (siteGenAi == null) {
-                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': TurSNSiteGenAi is null",
+                                log.debug("RAG skipped for Object ID '{}' of SN Site '{}': TurSNSiteGenAi is null",
                                         objectId, siteName);
                             } else if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
-                                log.info("RAG skipped for Object ID '{}' of SN Site '{}': agent not configured for RAG",
+                                log.debug("RAG skipped for Object ID '{}' of SN Site '{}': agent not configured for RAG",
                                         objectId, siteName);
                             } else {
-                                log.info("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
+                                log.debug("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
                                         objectId, siteName);
                                 turGenAi.addDocuments(turSNJobItems);
                             }
-                        }, () -> log.info("RAG skipped for Object ID '{}': SN Site '{}' not found",
+                        }, () -> log.debug("RAG skipped for Object ID '{}': SN Site '{}' not found",
                                 objectId, siteName)));
             }
         });

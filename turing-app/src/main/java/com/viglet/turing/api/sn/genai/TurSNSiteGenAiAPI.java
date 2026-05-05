@@ -133,14 +133,14 @@ public class TurSNSiteGenAiAPI {
 	public TurChatMessage chatMessage(@PathVariable String siteName,
 			@RequestParam(name = TurSNParamType.QUERY) String q,
 			@RequestParam(required = false, name = TurSNParamType.LOCALE) String localeRequest) {
-		log.info("RAG chat (single-turn) received for SN Site '{}': locale='{}', query='{}'",
+		log.debug("RAG chat (single-turn) received for SN Site '{}': locale='{}', query='{}'",
 				siteName, localeRequest, q);
 		Locale locale = resolveLocale(localeRequest, siteName);
 		if (turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
 			return turSNSearchProcess.getSNSite(siteName).map(site -> {
 				var turSNSiteGenAI = site.getTurSNSiteGenAi();
 				if (!isAgentRagReady(turSNSiteGenAI)) {
-					log.info("RAG chat (single-turn) skipped for SN Site '{}': agent not ready", siteName);
+					log.debug("RAG chat (single-turn) skipped for SN Site '{}': agent not ready", siteName);
 					return TurChatMessage.builder()
 							.text(NOT_ENABLED_MESSAGE)
 							.build();
@@ -151,7 +151,7 @@ public class TurSNSiteGenAiAPI {
 				if (siteLocale != null) {
 					collectionName = siteLocale.getCore();
 				}
-				log.info("RAG chat (single-turn) building context for SN Site '{}': locale='{}', collection='{}'",
+				log.debug("RAG chat (single-turn) building context for SN Site '{}': locale='{}', collection='{}'",
 						siteName, locale, collectionName);
 				TurGenAiContext turGenAiContext = turGenAiContextFactory
 						.build(turSNSiteGenAI, collectionName);
@@ -161,7 +161,7 @@ public class TurSNSiteGenAiAPI {
 				return TurChatMessage.builder().text("Couldn't find site name.").build();
 			});
 		}
-		log.info("RAG chat (single-turn) skipped for SN Site '{}': locale '{}' not available", siteName, locale);
+		log.debug("RAG chat (single-turn) skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 		return TurChatMessage.builder().build();
 	}
 
@@ -198,17 +198,17 @@ public class TurSNSiteGenAiAPI {
 	public Flux<TurAgentChatExecutor.ChatResponse> conversation(@PathVariable String siteName,
 			@RequestBody ConversationRequest request) {
 		int historySize = request.messages() == null ? 0 : request.messages().size();
-		log.info("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
+		log.debug("RAG chat conversation received for SN Site '{}': locale='{}', historySize={}",
 				siteName, request.locale(), historySize);
 		Locale locale = resolveLocale(request.locale(), siteName);
 		if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, locale)) {
-			log.info("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
+			log.debug("RAG chat skipped for SN Site '{}': locale '{}' not available", siteName, locale);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
 		}
 		return turSNSearchProcess.getSNSite(siteName).map(site -> {
 			TurSNSiteGenAi turSNSiteGenAI = site.getTurSNSiteGenAi();
 			if (!isAgentRagReady(turSNSiteGenAI)) {
-				log.info("RAG chat skipped for SN Site '{}': agent not ready", siteName);
+				log.debug("RAG chat skipped for SN Site '{}': agent not ready", siteName);
 				return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, NOT_ENABLED_MESSAGE));
 			}
 			TurAIAgent agent = turSNSiteGenAI.getTurAIAgent();
@@ -221,7 +221,7 @@ public class TurSNSiteGenAiAPI {
 			if (siteLocale != null) {
 				collectionName = siteLocale.getCore();
 			}
-			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}', agent='{}', llm='{}'",
+			log.debug("RAG chat building context for SN Site '{}': locale='{}', collection='{}', agent='{}', llm='{}'",
 					siteName, locale, collectionName, agent.getTitle(), llmInstance.getTitle());
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
 			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(

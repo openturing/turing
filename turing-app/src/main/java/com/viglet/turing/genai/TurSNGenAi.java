@@ -147,15 +147,15 @@ public class TurSNGenAi {
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
         }
         int tokenCounter = new StringTokenizer(q).countTokens();
-        log.info("RAG chat (single-turn) assistant query='{}' tokenCount={}", q, tokenCounter);
+        log.debug("RAG chat (single-turn) assistant query='{}' tokenCount={}", q, tokenCounter);
         if (tokenCounter > 1) {
             return getTurChatMessage(context, q);
         } else if (tokenCounter == 1 && !q.contains("*")) {
             String rewritten = "what is %s?".formatted(q);
-            log.info("RAG chat (single-turn) rewriting single-token query to '{}'", rewritten);
+            log.debug("RAG chat (single-turn) rewriting single-token query to '{}'", rewritten);
             return getTurChatMessage(context, rewritten);
         } else {
-            log.info("RAG chat (single-turn) skipping (wildcard or empty) — no retrieval performed");
+            log.debug("RAG chat (single-turn) skipping (wildcard or empty) — no retrieval performed");
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
     }
@@ -202,7 +202,7 @@ public class TurSNGenAi {
                     new TurAgentChatExecutor.ChatResponse("assistant", "AI configuration is not enabled"));
         }
         if (history == null || history.isEmpty()) {
-            log.info("RAG chat streaming called with empty history");
+            log.debug("RAG chat streaming called with empty history");
             return reactor.core.publisher.Flux.empty();
         }
         String latestUserQuery = history.stream()
@@ -247,7 +247,7 @@ public class TurSNGenAi {
                     if (!extracted.isEmpty()) {
                         effectiveFilters = extracted;
                         autoExtracted = true;
-                        log.info("RAG chat auto-extracted filters from query '{}': {}",
+                        log.debug("RAG chat auto-extracted filters from query '{}': {}",
                                 latestUserQuery, extracted);
                     }
                 }
@@ -269,12 +269,12 @@ public class TurSNGenAi {
             reqBuilder.filterExpression(filterExpr);
         }
         SearchRequest embeddingSearchRequest = reqBuilder.build();
-        log.info("RAG chat similaritySearch: topK={}, threshold={}, filters={}{}, query='{}'",
+        log.debug("RAG chat similaritySearch: topK={}, threshold={}, filters={}{}, query='{}'",
                 topK, similarityThreshold, effectiveFilters,
                 autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
         List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
         List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.info("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
+        log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
@@ -288,7 +288,7 @@ public class TurSNGenAi {
             return TurChatMessage.builder().text("AI configuration is not enabled").enabled(false).build();
         }
         if (history == null || history.isEmpty()) {
-            log.info("RAG chat called with empty history — nothing to answer");
+            log.debug("RAG chat called with empty history — nothing to answer");
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
@@ -298,7 +298,7 @@ public class TurSNGenAi {
                 .reduce((first, second) -> second)
                 .orElse("");
         if (latestUserQuery.isBlank()) {
-            log.info("RAG chat latest user message is blank — nothing to retrieve");
+            log.debug("RAG chat latest user message is blank — nothing to retrieve");
             return TurChatMessage.builder().text(null).enabled(true).build();
         }
 
@@ -319,7 +319,7 @@ public class TurSNGenAi {
                     if (!extracted.isEmpty()) {
                         effectiveFilters = extracted;
                         autoExtracted = true;
-                        log.info("RAG chat auto-extracted filters from query '{}': {}",
+                        log.debug("RAG chat auto-extracted filters from query '{}': {}",
                                 latestUserQuery, extracted);
                     }
                 }
@@ -345,12 +345,12 @@ public class TurSNGenAi {
         }
         SearchRequest embeddingSearchRequest = reqBuilder.build();
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.info("RAG chat similaritySearch: store='{}', topK={}, threshold={}, filters={}{}, query='{}'",
+        log.debug("RAG chat similaritySearch: store='{}', topK={}, threshold={}, filters={}{}, query='{}'",
                 vectorStoreType, topK, similarityThreshold, effectiveFilters,
                 autoExtracted ? " (auto-extracted)" : "", latestUserQuery);
         List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
         List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.info("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
+        log.debug("RAG chat similaritySearch returned {} document(s)", relevantDocuments.size());
         if (relevantDocuments.isEmpty()) {
             log.warn("RAG chat retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
                     vectorStoreType);
@@ -358,16 +358,16 @@ public class TurSNGenAi {
             for (int i = 0; i < relevantDocuments.size(); i++) {
                 Document d = relevantDocuments.get(i);
                 String text = d.getText() == null ? "" : d.getText();
-                log.info("  RAG chat doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
+                log.debug("  RAG chat doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
             }
         }
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
 
-        log.info("RAG chat raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
+        log.debug("RAG chat raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
         String systemContent = buildSystemPrompt(context.getSystemPrompt(), information);
-        log.info("RAG chat final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
+        log.debug("RAG chat final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(systemContent));
@@ -386,10 +386,10 @@ public class TurSNGenAi {
                 dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
                         .append(m.getText() == null ? "" : m.getText());
             }
-            log.info("RAG chat full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
+            log.debug("RAG chat full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
         }
         String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
-        log.info("RAG chat LLM answer=<<<\n{}\n>>>", answer);
+        log.debug("RAG chat LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder().text(answer).enabled(true).build();
     }
 
@@ -422,11 +422,11 @@ public class TurSNGenAi {
                 .similarityThreshold(similarityThreshold)
                 .build();
         String vectorStoreType = context.getVectorStore().getClass().getSimpleName();
-        log.info("RAG chat (single-turn) similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
+        log.debug("RAG chat (single-turn) similaritySearch: store='{}', topK={}, threshold={}, query='{}'",
                 vectorStoreType, topK, similarityThreshold, q);
         List<Document> searchResult = context.getVectorStore().similaritySearch(embeddingSearchRequest);
         List<Document> relevantDocuments = searchResult == null ? Collections.emptyList() : searchResult;
-        log.info("RAG chat (single-turn) similaritySearch returned {} document(s)", relevantDocuments.size());
+        log.debug("RAG chat (single-turn) similaritySearch returned {} document(s)", relevantDocuments.size());
         if (relevantDocuments.isEmpty()) {
             log.warn("RAG chat (single-turn) retrieved 0 documents — check that indexing populated the store '{}' with the collection matching this site/locale",
                     vectorStoreType);
@@ -434,16 +434,16 @@ public class TurSNGenAi {
             for (int i = 0; i < relevantDocuments.size(); i++) {
                 Document d = relevantDocuments.get(i);
                 String text = d.getText() == null ? "" : d.getText();
-                log.info("  RAG chat (single-turn) doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
+                log.debug("  RAG chat (single-turn) doc[{}] metadata={} text=<<<\n{}\n>>>", i, d.getMetadata(), text);
             }
         }
 
         String information = relevantDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n\n"));
-        log.info("RAG chat (single-turn) raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
+        log.debug("RAG chat (single-turn) raw system prompt template=<<<\n{}\n>>>", context.getSystemPrompt());
         String systemContent = buildSystemPrompt(context.getSystemPrompt(), information);
-        log.info("RAG chat (single-turn) final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
+        log.debug("RAG chat (single-turn) final system prompt sent to LLM=<<<\n{}\n>>>", systemContent);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(systemContent));
@@ -455,10 +455,10 @@ public class TurSNGenAi {
                 dump.append("\n---- ").append(m.getMessageType()).append(" ----\n")
                         .append(m.getText() == null ? "" : m.getText());
             }
-            log.info("RAG chat (single-turn) full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
+            log.debug("RAG chat (single-turn) full prompt (system + turns) sent to LLM=<<<{}\n>>>", dump);
         }
         String answer = context.getChatModel().call(prompt).getResult().getOutput().getText();
-        log.info("RAG chat (single-turn) LLM answer=<<<\n{}\n>>>", answer);
+        log.debug("RAG chat (single-turn) LLM answer=<<<\n{}\n>>>", answer);
         return TurChatMessage.builder()
                 .text(answer)
                 .enabled(true)
@@ -723,7 +723,7 @@ public class TurSNGenAi {
         // documents actually landed in the vector store. If reindexByMetadata
         // throws, the caller sees a WARN/ERROR instead of a misleading
         // "indexing" log followed by silent failure.
-        log.info("RAG indexed Object ID '{}' ({} chunk{}) into vector store '{}'",
+        log.debug("RAG indexed Object ID '{}' ({} chunk{}) into vector store '{}'",
                 sourceId, documents.size(), documents.size() == 1 ? "" : "s", vectorStoreType);
     }
 

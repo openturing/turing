@@ -70,7 +70,7 @@ public class TurRagSearchToolService {
                     .build();
 
             List<Document> results = vectorStore.similaritySearch(searchRequest);
-            log.info("[RAG] Search '{}' returned {} results (topK={})", query, results.size(), topK);
+            log.debug("[RAG] Search '{}' returned {} results (topK={})", query, results.size(), topK);
 
             if (results.isEmpty()) {
                 return "No relevant documents found in the knowledge base for: " + query;

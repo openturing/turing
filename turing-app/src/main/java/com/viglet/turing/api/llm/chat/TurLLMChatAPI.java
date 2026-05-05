@@ -237,7 +237,7 @@ public class TurLLMChatAPI {
                             .build()
                             .getToolCallbacks());
 
-            log.info("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
+            log.debug("[Chat] Registered {} tool callbacks for LLM instance {} (RAG={})",
                     toolCallbacks.length, id, ragSearchToolService.isAvailable());
 
             var chatOptions = DefaultToolCallingChatOptions.builder()

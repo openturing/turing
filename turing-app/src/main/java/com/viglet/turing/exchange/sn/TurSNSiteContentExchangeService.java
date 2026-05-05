@@ -334,7 +334,7 @@ public class TurSNSiteContentExchangeService {
         for (TurSNSiteLocale locale : locales) {
             totalDocs += plugin.getDocumentTotal(locale);
         }
-        log.info("RAG reindex starting for site '{}': locales={}, totalDocuments={}",
+        log.debug("RAG reindex starting for site '{}': locales={}, totalDocuments={}",
                 turSNSite.getName(), locales.size(), totalDocs);
 
         long startTime = System.currentTimeMillis();
@@ -357,7 +357,7 @@ public class TurSNSiteContentExchangeService {
         });
         AtomicInteger processedCounter = new AtomicInteger(0);
         AtomicInteger reindexedCounter = new AtomicInteger(0);
-        log.info("RAG reindex worker pool: site='{}' parallelism={}", turSNSite.getName(), parallelism);
+        log.debug("RAG reindex worker pool: site='{}' parallelism={}", turSNSite.getName(), parallelism);
 
         try {
             for (TurSNSiteLocale siteLocale : locales) {
@@ -426,7 +426,7 @@ public class TurSNSiteContentExchangeService {
         int reindexed = reindexedCounter.get();
         progressMap.put(taskId, new ContentExchangeProgress(
                 (int) totalDocs, processedCounter.get(), "", "completed", startTime));
-        log.info("RAG reindex finished for site '{}': {}/{} documents re-embedded (parallelism={})",
+        log.debug("RAG reindex finished for site '{}': {}/{} documents re-embedded (parallelism={})",
                 turSNSite.getName(), reindexed, totalDocs, parallelism);
         return reindexed;
     }

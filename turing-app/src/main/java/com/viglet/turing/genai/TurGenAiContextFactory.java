@@ -64,7 +64,7 @@ public class TurGenAiContextFactory {
             return TurGenAiContext.disabled();
         }
 
-        log.info("RAG resolved from agent: agentId={}, llmInstanceId={}, embeddingModelId={}, storeInstanceId={}, collection={}",
+        log.debug("RAG resolved from agent: agentId={}, llmInstanceId={}, embeddingModelId={}, storeInstanceId={}, collection={}",
                 agent.getId(), llmInstance.getId(), embeddingModel.getId(), storeInstance.getId(), collectionNameOverride);
 
         var ragInfra = turRagContextBuilder.build(embeddingModel.getId(), storeInstance.getId(), collectionNameOverride);
