@@ -358,6 +358,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
 
         <ChatFlowDiagramTab
           wrapperRef={wrapperRef}
+          agentId={agentId}
+          currentFlowId={flow.id}
           nodes={nodes}
           edges={edges}
           zoomPercent={zoomPercent}

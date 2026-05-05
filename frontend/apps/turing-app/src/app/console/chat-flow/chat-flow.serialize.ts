@@ -8,6 +8,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   aiQuestion: "AI QUESTION",
   condition: "CONDITION",
   functionCall: "FUNCTION CALL",
+  subFlow: "SUB FLOW",
 };
 
 /**

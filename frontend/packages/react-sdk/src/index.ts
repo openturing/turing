@@ -18,7 +18,22 @@ export {
   fetchSortOptions,
   parseHrefToParams,
 } from "./core/api";
-export type { SearchParams, PostChatConversationOptions, PostAgentChatOptions } from "./core/api";
+export type {
+  SearchParams,
+  PostChatConversationOptions,
+  PostAgentChatOptions,
+  ChatEnabledResponse,
+} from "./core/api";
+
+// ── Session ──
+export {
+  getOrCreateTurSession,
+  readTurSession,
+  clearTurSession,
+  TUR_SESSION_DEFAULT_COOKIE_NAME,
+  TUR_SESSION_DEFAULT_TTL_SECONDS,
+} from "./core/session";
+export type { TurSessionOptions } from "./core/session";
 
 // ── Resolve utilities ──
 export { resolveDocuments, resolveGroups } from "./core/resolve";

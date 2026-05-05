@@ -66,13 +66,27 @@ export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlo
 }
 
 /**
+ * Response of {@link fetchChatEnabled}. {@code sessionCookieName} and
+ * {@code sessionTtlSeconds} drive the {@code TUR_SESSION} cookie minted by
+ * the SDK — both come from {@code turing.chat.session.*} server config so
+ * a deployment can override them without rebuilding the frontend.
+ *
+ * @since 2026.2.4 (extended in 2026.2.17 with session config)
+ */
+export interface ChatEnabledResponse {
+  readonly enabled: boolean;
+  readonly sessionCookieName?: string;
+  readonly sessionTtlSeconds?: number;
+}
+
+/**
  * Lightweight check whether the site has RAG (Generative AI) enabled.
  * Used by the search UI to conditionally expose the "AI Mode" toggle.
  *
  * @since 2026.2.4
  */
-export function fetchChatEnabled(site: string): Promise<{ enabled: boolean }> {
-  return get<{ enabled: boolean }>(`/sn/${site}/chat/enabled`);
+export function fetchChatEnabled(site: string): Promise<ChatEnabledResponse> {
+  return get<ChatEnabledResponse>(`/sn/${site}/chat/enabled`);
 }
 
 /**

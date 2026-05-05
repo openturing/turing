@@ -872,7 +872,17 @@
       "ragDesc": "Combine o conhecimento do agente com resultados de busca vetorial.",
       "enableRag": "Ativar RAG",
       "enableRagDesc": "Quando ativado, o agente usará o modelo de embedding e o vector store acima para fundamentar suas respostas em conteúdo indexado.",
-      "enableRagBlocked": "Configure um modelo de embedding e um vector store (ou defina-os em RAG Global) antes de ativar."
+      "enableRagBlocked": "Configure um modelo de embedding e um vector store (ou defina-os em RAG Global) antes de ativar.",
+      "chatMemory": "Memória de Conversa",
+      "chatMemoryDesc": "Persiste as interações de cada conversa indexadas pelo conversationId, permitindo que o agente retome o contexto entre sessões e auditar conversas passadas.",
+      "chatMemoryEnable": "Ativar memória de conversa",
+      "chatMemoryEnableDesc": "Cada turno é enfileirado e gravado de forma assíncrona no engine de logging configurado — sem impacto no tempo de resposta do streaming.",
+      "chatMemoryEnableBlocked": "Defina turing.logging.engine como mongodb ou redis para ativar a memória de conversa.",
+      "chatMemoryFlushInterval": "Intervalo de gravação (minutos)",
+      "chatMemoryFlushIntervalDesc": "Frequência com que a fila em memória é gravada no engine de logging. Valores menores aumentam a durabilidade; valores maiores reduzem I/O em ambientes com muitas conversas.",
+      "chatMemoryMaxMessages": "Máximo de mensagens por conversa",
+      "chatMemoryMaxMessagesDesc": "Limite de turnos persistidos por conversationId — mensagens mais antigas são descartadas para evitar crescimento ilimitado dos documentos.",
+      "chatMemoryMinValue": "Deve ser pelo menos 1."
     },
     "agentTools": {
       "available": "Ferramentas Nativas Disponíveis",

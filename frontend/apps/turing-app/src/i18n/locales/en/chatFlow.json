@@ -89,7 +89,8 @@
       "end": "End",
       "aiQuestion": "AI Question",
       "condition": "Condition",
-      "functionCall": "Function Call"
+      "functionCall": "Function Call",
+      "subFlow": "Sub Flow"
     },
     "properties": {
       "header": "Node Properties",
@@ -114,6 +115,10 @@
       "mcpServerPlaceholder": "Pick an MCP server",
       "mcpServerHint": "All tools exposed by the selected MCP server will be available to the LLM.",
       "condition": "Condition Expression",
+      "subFlow": "Sub Flow",
+      "subFlowPlaceholder": "Pick a chat flow",
+      "subFlowEmpty": "No other chat flows are available for this agent.",
+      "subFlowHint": "When this step runs, control is handed off to the selected chat flow within the same AI agent.",
       "validationRule": "Validation Rules",
       "validationNone": "None",
       "validation": {

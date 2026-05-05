@@ -872,7 +872,17 @@
       "ragDesc": "Combine the agent's knowledge with vector search results.",
       "enableRag": "Enable RAG",
       "enableRagDesc": "When enabled, the agent will use the embedding model and store above to ground its answers in indexed content.",
-      "enableRagBlocked": "Configure both an embedding model and an embedding store (or set them in Global RAG) before enabling."
+      "enableRagBlocked": "Configure both an embedding model and an embedding store (or set them in Global RAG) before enabling.",
+      "chatMemory": "Chat Memory",
+      "chatMemoryDesc": "Persist conversation turns keyed by conversationId so the agent can recall context across sessions and audit past interactions.",
+      "chatMemoryEnable": "Enable chat memory",
+      "chatMemoryEnableDesc": "Each turn is queued and asynchronously written to the configured logging engine — no impact on the streaming response time.",
+      "chatMemoryEnableBlocked": "Set turing.logging.engine to mongodb or redis to enable persistent chat memory.",
+      "chatMemoryFlushInterval": "Flush interval (minutes)",
+      "chatMemoryFlushIntervalDesc": "How often the in-memory queue is drained to the logging engine. Lower values give more durability; higher values reduce I/O for chatty deployments.",
+      "chatMemoryMaxMessages": "Max messages per conversation",
+      "chatMemoryMaxMessagesDesc": "Hard cap on persisted turns per conversationId — older messages are dropped to keep documents from growing unbounded.",
+      "chatMemoryMinValue": "Must be at least 1."
     },
     "agentTools": {
       "available": "Available Native Tools",

@@ -61,6 +61,39 @@ public class TurAIAgent implements Serializable {
     @Column(name = "rag_enabled", nullable = false)
     private boolean ragEnabled = false;
 
+    /**
+     * When {@code true}, the agent enqueues every chat turn into the chat
+     * memory pipeline so it can be persisted by {@code turing.logging.engine}
+     * (mongodb / redis) keyed by {@code conversationId}. Has no effect when
+     * the logging engine is set to {@code none}.
+     *
+     * @since 2026.2.6
+     */
+    @Column(name = "chat_memory_enabled", nullable = false)
+    private boolean chatMemoryEnabled = false;
+
+    /**
+     * How often the in-memory chat-memory queue is flushed to the configured
+     * logging engine. The worker buffers turns and writes them in batches
+     * every {@code N} minutes so high-frequency conversations don't generate
+     * one I/O round-trip per token. Default: 5 minutes.
+     *
+     * @since 2026.2.6
+     */
+    @Column(name = "chat_memory_flush_interval_minutes", nullable = false)
+    private int chatMemoryFlushIntervalMinutes = 5;
+
+    /**
+     * Hard cap on how many messages are kept in the persisted chat memory
+     * document for a single conversation — older turns are dropped via
+     * {@code $slice} (Mongo) or list trimming (Redis). Prevents unbounded
+     * growth on long-running conversations. Default: 100.
+     *
+     * @since 2026.2.6
+     */
+    @Column(name = "chat_memory_max_messages", nullable = false)
+    private int chatMemoryMaxMessages = 100;
+
     @Column(length = 2000)
     private String nativeTools;
 

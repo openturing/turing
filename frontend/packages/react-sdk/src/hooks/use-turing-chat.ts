@@ -7,6 +7,11 @@ import {
   postChatConversation,
 } from "../core/api";
 import { useTuringContext } from "../core/use-turing-context";
+import {
+  TUR_SESSION_DEFAULT_COOKIE_NAME,
+  TUR_SESSION_DEFAULT_TTL_SECONDS,
+  getOrCreateTurSession,
+} from "../core/session";
 import type { TurChatConversationMessage } from "../core/types";
 
 export type ChatStatus = "idle" | "loading" | "success" | "error";
@@ -210,6 +215,11 @@ export function useTuringChat(
   const [conversationId, setConversationId] = useState<string | null>(initialPersisted.conversationId);
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Server-driven cookie config (`turing.chat.session.*`). Default values are
+  // applied immediately so a `send` before the enabled-fetch resolves still
+  // gets a TUR_SESSION cookie.
+  const sessionCookieNameRef = useRef<string>(TUR_SESSION_DEFAULT_COOKIE_NAME);
+  const sessionTtlSecondsRef = useRef<number>(TUR_SESSION_DEFAULT_TTL_SECONDS);
 
   const requestRef = useRef(0);
   const abortedRef = useRef(false);
@@ -222,7 +232,9 @@ export function useTuringChat(
   // lets us read the value back synchronously without a re-render.
   const conversationIdRef = useRef<string | null>(conversationId);
 
-  // Resolve enabled flag once per site (skipped in agent mode)
+  // Resolve enabled flag once per site (skipped in agent mode). Also captures
+  // the server-driven session cookie name + TTL so the SDK can mint
+  // TUR_SESSION with the deployment's overrides.
   useEffect(() => {
     if (isAgentMode) {
       setEnabled(true);
@@ -231,7 +243,12 @@ export function useTuringChat(
     let alive = true;
     fetchChatEnabled(config.site)
       .then((res) => {
-        if (alive) setEnabled(Boolean(res?.enabled));
+        if (!alive) return;
+        setEnabled(Boolean(res?.enabled));
+        if (res?.sessionCookieName) sessionCookieNameRef.current = res.sessionCookieName;
+        if (typeof res?.sessionTtlSeconds === "number" && res.sessionTtlSeconds > 0) {
+          sessionTtlSecondsRef.current = res.sessionTtlSeconds;
+        }
       })
       .catch(() => {
         if (alive) setEnabled(false);
@@ -273,12 +290,18 @@ export function useTuringChat(
       messagesRef.current = nextMessages;
       setMessages(nextMessages);
 
-      // Mint the conversation id lazily on the first send. Without this the
+      // The conversation id is the cross-domain TUR_SESSION cookie minted
+      // by the SDK — same value across reloads, ties future personalization
+      // lookups to the visitor. Falls back to an in-memory id only when the
+      // cookie API is unavailable (SSR, cookies disabled). Without an id the
       // backend skips chat-flow routing for turn 1 entirely (the executor
       // early-returns when `conversationId` is blank).
-      let activeConversationId = conversationIdRef.current;
-      if (!activeConversationId) {
-        activeConversationId = newId();
+      let activeConversationId =
+        getOrCreateTurSession({
+          name: sessionCookieNameRef.current,
+          ttlSeconds: sessionTtlSecondsRef.current,
+        }) ?? conversationIdRef.current ?? newId();
+      if (activeConversationId !== conversationIdRef.current) {
         conversationIdRef.current = activeConversationId;
         setConversationId(activeConversationId);
       }
@@ -335,11 +358,12 @@ export function useTuringChat(
     abortedRef.current = true;
     requestRef.current++;
     messagesRef.current = [];
-    conversationIdRef.current = null;
     setMessages([]);
-    setConversationId(null);
     setError(null);
     setStatus("idle");
+    // Reset clears local history but never touches TUR_SESSION — the cookie
+    // identifies the visitor across reloads, so the conversationId stays the
+    // same. Server-side flow state should be cleared via `resetFlow()`.
   }, []);
 
   // Drop server-side flow state. Site mode clears every flow attached to

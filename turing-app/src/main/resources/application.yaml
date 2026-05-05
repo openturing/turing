@@ -58,6 +58,14 @@ turing:
       # the embedding API without saturating typical rate limits. Set to 1 to
       # force sequential indexing (useful for debugging or rate-limited APIs).
       parallel: 4
+  chat:
+    session:
+      # Cookie name minted by the React SDK to identify a returning visitor.
+      # Reused as the chat conversationId so the value also bounds how long a
+      # conversation can be resumed without resetting flow state.
+      cookie-name: TUR_SESSION
+      # Cookie lifetime in seconds. Default: 30 days (2592000).
+      ttl-seconds: 2592000
   # ---------------------------------------------------------------------------
   # Resilience for outbound calls (LLM providers + search engines)
   # ---------------------------------------------------------------------------
@@ -131,6 +139,10 @@ turing:
       server: server
       aem: aem
       indexing: indexing
+      # Chat memory documents (one per conversationId) written by
+      # TurChatMemoryService when the agent has chatMemoryEnabled=true.
+      # Mongo: collection name. Redis: key prefix → "<chat>:<conversationId>".
+      chat: chat
     purge:
       days: 30
   mongodb:

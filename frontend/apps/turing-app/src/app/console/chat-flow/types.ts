@@ -5,7 +5,13 @@
  * @since 2026.2.4
  */
 
-export type FlowNodeType = "start" | "end" | "aiQuestion" | "condition" | "functionCall";
+export type FlowNodeType =
+  | "start"
+  | "end"
+  | "aiQuestion"
+  | "condition"
+  | "functionCall"
+  | "subFlow";
 
 export type FlowToolSource = "NATIVE" | "MCP";
 
@@ -26,6 +32,10 @@ export interface FlowNodeData extends Record<string, unknown> {
   toolSource?: FlowToolSource;
   /** MCP server id to expose as the tool source when toolSource=MCP. */
   mcpServerId?: string;
+  /** Id of another chat flow within the same AI agent to chain into when this Sub Flow node runs. */
+  subFlowId?: string;
+  /** Cached display name of the linked sub-flow — kept on the node so the canvas reads well even before the flow list loads. */
+  subFlowName?: string;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
@@ -53,5 +63,10 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-orange-50 dark:bg-orange-950/40",
     border: "border-orange-500",
     text: "text-orange-900 dark:text-orange-100",
+  },
+  subFlow: {
+    bg: "bg-violet-50 dark:bg-violet-950/40",
+    border: "border-violet-500",
+    text: "text-violet-900 dark:text-violet-100",
   },
 };

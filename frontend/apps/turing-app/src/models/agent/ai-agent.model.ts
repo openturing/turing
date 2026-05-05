@@ -13,6 +13,12 @@ export interface TurAIAgent {
   systemPromptMetaPrompt?: string | null;
   enabled: number;
   ragEnabled: boolean;
+  /** Persists every chat turn to the configured logging engine (mongodb/redis), keyed by conversationId. No-op when turing.logging.engine == none. */
+  chatMemoryEnabled: boolean;
+  /** Worker flush cadence in minutes. */
+  chatMemoryFlushIntervalMinutes: number;
+  /** Hard cap on persisted messages per conversation. */
+  chatMemoryMaxMessages: number;
   nativeTools?: string | null;
   llmInstances: TurLLMInstance[];
   mcpServers: TurMcpServer[];

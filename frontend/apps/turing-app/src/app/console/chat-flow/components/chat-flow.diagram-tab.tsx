@@ -23,6 +23,8 @@ import { INITIAL_VIEWPORT, INITIAL_ZOOM } from "../chat-flow.serialize";
 
 interface DiagramTabProps {
   wrapperRef: React.RefObject<HTMLDivElement | null>;
+  agentId: string;
+  currentFlowId?: string;
   nodes: Node<FlowNodeData>[];
   edges: Edge[];
   zoomPercent: number;
@@ -49,6 +51,8 @@ interface DiagramTabProps {
  */
 export function ChatFlowDiagramTab({
   wrapperRef,
+  agentId,
+  currentFlowId,
   nodes,
   edges,
   zoomPercent,
@@ -110,6 +114,8 @@ export function ChatFlowDiagramTab({
           node={selectedNode}
           onChange={updateNodeData}
           onClose={() => setSelectedNodeId(null)}
+          agentId={agentId}
+          currentFlowId={currentFlowId}
         />
 
         {previewOpen && (

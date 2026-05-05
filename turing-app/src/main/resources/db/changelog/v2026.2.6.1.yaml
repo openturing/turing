@@ -1,0 +1,70 @@
+databaseChangeLog:
+  # Per-agent chat memory configuration:
+  #   - chat_memory_enabled         : opt-in toggle; ignored when
+  #                                   turing.logging.engine == none
+  #   - chat_memory_flush_interval_minutes : flush cadence for the in-memory
+  #                                          queue worker (default 5 min)
+  #   - chat_memory_max_messages    : cap on persisted messages per
+  #                                    conversationId (default 100)
+  #
+  # Idempotent: each addColumn is gated by columnExists so re-running the
+  # changeset on databases that already have any of the columns is a no-op.
+  - changeSet:
+      id: add-chat-memory-enabled-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_enabled
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: add-chat-memory-flush-interval-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_flush_interval_minutes
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_flush_interval_minutes
+                  type: INT
+                  defaultValueNumeric: 5
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: add-chat-memory-max-messages-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chat_memory_max_messages
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chat_memory_max_messages
+                  type: INT
+                  defaultValueNumeric: 100
+                  constraints:
+                    nullable: false

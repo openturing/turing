@@ -1,8 +1,9 @@
 import { IconX } from "@tabler/icons-react";
 import type { Node } from "@xyflow/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useChatFlows } from "@/api/queries/chat-flow.queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,15 +30,23 @@ interface FlowPropertiesProps {
   readonly node: Node<FlowNodeData> | null;
   readonly onChange: (nodeId: string, patch: Partial<FlowNodeData>) => void;
   readonly onClose: () => void;
+  readonly agentId: string;
+  /** Id of the chat flow currently being edited — excluded from the Sub Flow picker to prevent self-reference. */
+  readonly currentFlowId?: string;
 }
 
 const VALIDATION_OPTIONS = ["none", "email", "phone", "url", "number", "date"];
 const TOOL_SOURCE_OPTIONS: FlowToolSource[] = ["NATIVE", "MCP"];
 
-export function FlowProperties({ node, onChange, onClose }: FlowPropertiesProps) {
+export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
   const { t } = useTranslation();
   const [nativeToolGroups, setNativeToolGroups] = useState<NativeToolGroup[]>([]);
   const [mcpServers, setMcpServers] = useState<TurMcpServer[]>([]);
+  const { data: chatFlows } = useChatFlows(agentId);
+  const subFlowOptions = useMemo(
+    () => (chatFlows ?? []).filter((f) => f.id && f.id !== currentFlowId),
+    [chatFlows, currentFlowId],
+  );
 
   useEffect(() => {
     nativeToolService.query().then(setNativeToolGroups).catch(() => setNativeToolGroups([]));
@@ -225,6 +234,42 @@ export function FlowProperties({ node, onChange, onClose }: FlowPropertiesProps)
             />
           </div>
         )}
+
+        {type === "subFlow" && (
+          <div className="flex flex-col gap-1">
+            <Label>{t("chatFlow.properties.subFlow")}</Label>
+            <Select
+              value={data.subFlowId ?? ""}
+              onValueChange={(value) => {
+                const selected = subFlowOptions.find((f) => f.id === value);
+                update({
+                  subFlowId: value || undefined,
+                  subFlowName: selected?.name ?? undefined,
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("chatFlow.properties.subFlowPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {subFlowOptions.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {t("chatFlow.properties.subFlowEmpty")}
+                  </div>
+                ) : (
+                  subFlowOptions.map((flow) => (
+                    <SelectItem key={flow.id} value={flow.id as string}>
+                      {flow.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <span className="text-[11px] text-muted-foreground">
+              {t("chatFlow.properties.subFlowHint")}
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -242,5 +287,7 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.condition";
     case "functionCall":
       return "chatFlow.palette.functionCall";
+    case "subFlow":
+      return "chatFlow.palette.subFlow";
   }
 }

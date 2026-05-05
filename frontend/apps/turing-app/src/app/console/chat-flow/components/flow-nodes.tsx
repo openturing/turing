@@ -5,6 +5,7 @@ import {
   IconFlag3,
   IconPlayerPlayFilled,
   IconBell,
+  IconSubtask,
 } from "@tabler/icons-react";
 
 import type { FlowNodeData } from "../types";
@@ -108,10 +109,39 @@ export function FunctionCallNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function SubFlowNode({ data }: ChatFlowNodeProps) {
+  const subFlowName =
+    typeof data.subFlowName === "string" && data.subFlowName.trim().length > 0
+      ? data.subFlowName
+      : null;
+  const target = subFlowName ?? data.subFlowId ?? null;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-violet-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-violet-500 px-3 py-2 text-white">
+        <IconSubtask className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Sub Flow"}</div>
+      </div>
+      <div className="bg-violet-50 p-3 text-xs leading-relaxed text-violet-900 dark:bg-violet-950/40 dark:text-violet-100">
+        <span className="font-semibold">Sub Flow: </span>
+        {target ? (
+          <code className="rounded bg-violet-200/60 px-1 py-0.5 text-[11px] dark:bg-violet-900/50">
+            {target}
+          </code>
+        ) : (
+          <span className="italic opacity-60">not selected</span>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-violet-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-violet-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
   aiQuestion: AIQuestionNode,
   condition: ConditionNode,
   functionCall: FunctionCallNode,
+  subFlow: SubFlowNode,
 };

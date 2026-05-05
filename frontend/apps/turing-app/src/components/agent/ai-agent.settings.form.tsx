@@ -24,8 +24,9 @@ import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model
 import type { TurStoreInstance } from "@/models/store/store-instance.model"
 import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
+import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { IconBrain, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -43,6 +44,7 @@ import { SmartDescription } from "../ui/smart-description"
 const turEmbeddingModelService = new TurEmbeddingModelService();
 const turStoreInstanceService = new TurStoreInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
+const turFeaturesService = new TurFeaturesService();
 const urlBase = ROUTES.AI_AGENT_INSTANCE
 
 const DEFAULT_VALUE = "__default__";
@@ -101,6 +103,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const [globalRagEnabled, setGlobalRagEnabled] = useState(false);
   const [globalDefaultEmbeddingModelId, setGlobalDefaultEmbeddingModelId] = useState<string>("");
   const [globalDefaultEmbeddingStoreId, setGlobalDefaultEmbeddingStoreId] = useState<string>("");
+  const [loggingEngine, setLoggingEngine] = useState<LoggingEngine>("none");
 
   const createMutation = useCreateAiAgent();
   const updateMutation = useUpdateAiAgent();
@@ -108,6 +111,8 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
   const ragEnabled = form.watch("ragEnabled");
   const embeddingModelValue = form.watch("turEmbeddingModelInstance");
   const storeInstanceValue = form.watch("turStoreInstance");
+  const chatMemoryEnabled = form.watch("chatMemoryEnabled");
+  const loggingActive = loggingEngine !== "none";
 
   // RAG can only be ON if both an embedding model AND a store are resolvable
   // (either explicitly set on the agent, or via global RAG defaults).
@@ -134,6 +139,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       llmInstances: value.llmInstances ?? [],
       mcpServers: value.mcpServers ?? [],
       ragEnabled: value.ragEnabled ?? false,
+      chatMemoryEnabled: value.chatMemoryEnabled ?? false,
+      chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
+      chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -147,6 +155,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       setGlobalDefaultEmbeddingModelId(settings.defaultEmbeddingModelId ?? "");
       setGlobalDefaultEmbeddingStoreId(settings.defaultEmbeddingStoreId ?? "");
     });
+    turFeaturesService.getFeatures()
+      .then((features) => setLoggingEngine(features.loggingEngine ?? "none"))
+      .catch(() => setLoggingEngine("none"));
   }, []);
 
   // If the user changes embedding model/store and RAG is no longer resolvable,
@@ -459,6 +470,105 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                           onCheckedChange={(checked) => field.onChange(checked)}
                         />
                       </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="violet">
+            <SectionCard.Header
+              icon={IconDatabase}
+              title={t("forms.agentSettings.chatMemory")}
+              description={t("forms.agentSettings.chatMemoryDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="chatMemoryEnabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryEnable")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {loggingActive
+                          ? t("forms.agentSettings.chatMemoryEnableDesc")
+                          : t("forms.agentSettings.chatMemoryEnableBlocked")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={!!field.value}
+                          disabled={!loggingActive}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryFlushIntervalMinutes"
+                rules={{
+                  min: { value: 1, message: t("forms.agentSettings.chatMemoryMinValue") },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryFlushInterval")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryFlushIntervalDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={field.value ?? 5}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!loggingActive || !chatMemoryEnabled}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="chatMemoryMaxMessages"
+                rules={{
+                  min: { value: 1, message: t("forms.agentSettings.chatMemoryMinValue") },
+                }}
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMemoryMaxMessages")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.chatMemoryMaxMessagesDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={field.value ?? 100}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          name={field.name}
+                          disabled={!loggingActive || !chatMemoryEnabled}
+                        />
+                      </FormControl>
+                      <FormMessage />
                     </FormItemTwoColumns.Right>
                   </FormItemTwoColumns>
                 )}

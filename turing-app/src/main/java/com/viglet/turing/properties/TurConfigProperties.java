@@ -21,5 +21,6 @@ public class TurConfigProperties {
 	private TurMarketplaceProperty marketplace;
 	private TurAuthenticationProperty authentication;
 	private TurGenAiProperty genai = new TurGenAiProperty();
+	private TurChatProperty chat = new TurChatProperty();
 
 }

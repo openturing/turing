@@ -53,6 +53,8 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.properties.TurConfigProperties;
+import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -75,6 +77,8 @@ public class TurSNSiteGenAiAPI {
 	private final TurIntentRepository turIntentRepository;
 	private final TurIntentMapper turIntentMapper;
 	private final TurChatFlowEngineService chatFlowEngineService;
+	private final TurConfigProperties configProperties;
+	private final TurChatMemoryService chatMemoryService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -83,7 +87,9 @@ public class TurSNSiteGenAiAPI {
 			TurSNSiteSearchService turSNSiteSearchService,
 			TurIntentRepository turIntentRepository,
 			TurIntentMapper turIntentMapper,
-			TurChatFlowEngineService chatFlowEngineService) {
+			TurChatFlowEngineService chatFlowEngineService,
+			TurConfigProperties configProperties,
+			TurChatMemoryService chatMemoryService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -92,6 +98,8 @@ public class TurSNSiteGenAiAPI {
 		this.turIntentRepository = turIntentRepository;
 		this.turIntentMapper = turIntentMapper;
 		this.chatFlowEngineService = chatFlowEngineService;
+		this.configProperties = configProperties;
+		this.chatMemoryService = chatMemoryService;
 	}
 
 	/**
@@ -172,7 +180,8 @@ public class TurSNSiteGenAiAPI {
 		boolean enabled = turSNSearchProcess.getSNSite(siteName)
 				.map(site -> isAgentRagReady(site.getTurSNSiteGenAi()))
 				.orElse(false);
-		return new ChatEnabledResponse(enabled);
+		var session = configProperties.getChat().getSession();
+		return new ChatEnabledResponse(enabled, session.getCookieName(), session.getTtlSeconds());
 	}
 
 	/**
@@ -215,9 +224,32 @@ public class TurSNSiteGenAiAPI {
 			log.info("RAG chat building context for SN Site '{}': locale='{}', collection='{}', agent='{}', llm='{}'",
 					siteName, locale, collectionName, agent.getTitle(), llmInstance.getTitle());
 			TurGenAiContext context = turGenAiContextFactory.build(turSNSiteGenAI, collectionName);
-			return turGenAi.assistantConversationStreaming(
+			Flux<TurAgentChatExecutor.ChatResponse> stream = turGenAi.assistantConversationStreaming(
 					context, agent, llmInstance, request.messages(), request.filters(),
 					request.conversationId(), request.flowId());
+			// Capture the turn for chat memory: accumulate the streamed assistant
+			// chunks and enqueue once the stream finishes. The service is a no-op
+			// when the agent has chatMemoryEnabled=false or the logging engine is
+			// disabled, so guarding here would be redundant.
+			String latestUserMessage = request.messages() == null ? null : request.messages().stream()
+					.filter(m -> "user".equals(m.role()))
+					.map(ConversationMessage::content)
+					.reduce((first, second) -> second)
+					.orElse(null);
+			StringBuilder assistantBuffer = new StringBuilder();
+			return stream
+					.doOnNext(chunk -> {
+						if (chunk != null && chunk.content() != null) {
+							assistantBuffer.append(chunk.content());
+						}
+					})
+					.doOnComplete(() -> chatMemoryService.recordTurn(
+							siteName,
+							agent,
+							request.conversationId(),
+							request.locale(),
+							latestUserMessage,
+							assistantBuffer.toString()));
 		}).orElseGet(() -> {
 			log.warn("RAG chat skipped: SN Site '{}' not found", siteName);
 			return Flux.just(new TurAgentChatExecutor.ChatResponse(ASSISTANT_ROLE, "Couldn't find site name."));
@@ -276,7 +308,7 @@ public class TurSNSiteGenAiAPI {
 				.orElseGet(List::of);
 	}
 
-	public record ChatEnabledResponse(boolean enabled) {
+	public record ChatEnabledResponse(boolean enabled, String sessionCookieName, long sessionTtlSeconds) {
 	}
 
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,

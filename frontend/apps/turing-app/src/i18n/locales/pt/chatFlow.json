@@ -89,7 +89,8 @@
       "end": "Fim",
       "aiQuestion": "Pergunta (IA)",
       "condition": "Condição",
-      "functionCall": "Chamada de Função"
+      "functionCall": "Chamada de Função",
+      "subFlow": "Sub Fluxo"
     },
     "properties": {
       "header": "Propriedades do Nó",
@@ -114,6 +115,10 @@
       "mcpServerPlaceholder": "Escolha um servidor MCP",
       "mcpServerHint": "Todas as ferramentas expostas pelo servidor MCP selecionado ficarão disponíveis para a LLM.",
       "condition": "Expressão da Condição",
+      "subFlow": "Sub Fluxo",
+      "subFlowPlaceholder": "Escolha um chat flow",
+      "subFlowEmpty": "Não há outros chat flows disponíveis para este agente.",
+      "subFlowHint": "Quando este passo executar, o controle é passado para o chat flow selecionado dentro do mesmo agente de IA.",
       "validationRule": "Regras de Validação",
       "validationNone": "Nenhuma",
       "validation": {

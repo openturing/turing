@@ -28,6 +28,8 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import com.viglet.turing.client.sn.TurSNServer;
@@ -91,18 +93,37 @@ public class TurSNJobUtils {
     }
 
     private static int importItemsLog(ClassicHttpResponse response, HttpPost httpPost, String jsonResult) {
-        if (log.isDebugEnabled()) {
-            try {
-                log.debug("Viglet Turing indexer response HTTP result is: {}, for request uri: {}",
-                        response.getCode(), httpPost.getUri());
-            } catch (URISyntaxException e) {
-                log.error(e.getMessage(), e);
-            }
+        int statusCode = response.getCode();
+        String requestUri = safeUri(httpPost);
 
+        if (statusCode != 200) {
+            log.error("Turing returned status {} for {}. Response body: {}",
+                    statusCode, requestUri, readResponseBody(response));
+        } else if (log.isDebugEnabled()) {
+            log.debug("Viglet Turing indexer response HTTP result is: {}, for request uri: {}",
+                    statusCode, requestUri);
         }
-        log.trace("JSON: {}", jsonResult);
-        log.trace("Viglet Turing indexer response HTTP result is: {}", httpPost.getEntity().toString());
-        return response.getCode();
+        log.trace("JSON request payload: {}", jsonResult);
+        return statusCode;
+    }
+
+    private static String readResponseBody(ClassicHttpResponse response) {
+        if (response.getEntity() == null) {
+            return "<no body>";
+        }
+        try {
+            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        } catch (IOException | ParseException e) {
+            return "<failed to read body: " + e.getMessage() + ">";
+        }
+    }
+
+    private static String safeUri(HttpPost httpPost) {
+        try {
+            return httpPost.getUri().toString();
+        } catch (URISyntaxException e) {
+            return "<unknown>";
+        }
     }
 
     public static void deleteItemsByType(TurSNServer turSNServer, String typeName) {
