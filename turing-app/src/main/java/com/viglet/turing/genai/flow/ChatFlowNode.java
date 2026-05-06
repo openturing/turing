@@ -23,7 +23,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
-        data = data == null ? new NodeData(null, null, null, null, null, null, null, null, null) : data;
+        data = data == null
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null)
+                : data;
     }
 
     public String label() {
@@ -58,6 +60,14 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.mcpServerId();
     }
 
+    public String subFlowId() {
+        return data.subFlowId();
+    }
+
+    public String subFlowName() {
+        return data.subFlowName();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -68,6 +78,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String functionName,
             String conditionExpression,
             String toolSource,
-            String mcpServerId) {
+            String mcpServerId,
+            String subFlowId,
+            String subFlowName) {
     }
 }

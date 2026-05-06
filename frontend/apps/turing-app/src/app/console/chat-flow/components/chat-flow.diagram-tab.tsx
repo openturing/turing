@@ -33,6 +33,7 @@ interface DiagramTabProps {
   onNodesChange: (changes: NodeChange<Node<FlowNodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
   onConnect: (params: Connection) => void;
+  onReconnect: (oldEdge: Edge, newConnection: Connection) => void;
   onNodeClick: NodeMouseHandler;
   onPaneClick: () => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -61,6 +62,7 @@ export function ChatFlowDiagramTab({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onReconnect,
   onNodeClick,
   onPaneClick,
   onDragOver,
@@ -94,11 +96,13 @@ export function ChatFlowDiagramTab({
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onReconnect={onReconnect}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             defaultEdgeOptions={{ type: "smoothstep" }}
             defaultViewport={INITIAL_VIEWPORT}
             fitViewOptions={{ minZoom: INITIAL_ZOOM, maxZoom: INITIAL_ZOOM }}
+            deleteKeyCode={["Backspace", "Delete"]}
             proOptions={{ hideAttribution: true }}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1} />

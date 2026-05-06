@@ -328,7 +328,16 @@ public class TurAgentChatExecutor {
                     conversationId, flowId);
             return null;
         }
-        return new FlowContext(flow, graphOpt.get(), stateOpt.get());
+        // The state may have descended into a sub-flow (the forced flow's
+        // first interactive node was a Sub Flow node, or a previous turn
+        // already pushed onto the chain). Align FlowContext with the leaf
+        // so the addendum and strategy run against the correct graph.
+        TurChatFlowState activeState = stateOpt.get();
+        TurChatFlow activeFlow = activeState.getFlow();
+        ChatFlowGraph activeGraph = activeFlow.getId().equals(flow.getId())
+                ? graphOpt.get()
+                : chatFlowEngineService.parseGraph(activeFlow).orElse(graphOpt.get());
+        return new FlowContext(activeFlow, activeGraph, activeState);
     }
 
     private static String lastMessageOfRole(List<ChatMessageItem> history, String role) {

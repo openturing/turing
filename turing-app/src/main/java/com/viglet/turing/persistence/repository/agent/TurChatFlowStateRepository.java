@@ -40,4 +40,13 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      * reached an end node.
      */
     List<TurChatFlowState> findByFlow_IdOrderByUpdatedAtDesc(String flowId);
+
+    /**
+     * Child states that point at a given parent state. Used by the engine
+     * to detect the active leaf in a sub-flow chain (a state with no
+     * descendant) and to clean up orphans when the conversation is reset.
+     *
+     * @since 2026.2.6
+     */
+    List<TurChatFlowState> findByParentStateId(String parentStateId);
 }

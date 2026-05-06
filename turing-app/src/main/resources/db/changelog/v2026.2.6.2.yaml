@@ -1,0 +1,26 @@
+databaseChangeLog:
+  # Sub-flow runtime support: a state row may now point at a parent state
+  # (the row of the chat flow that invoked this one via a Sub Flow node).
+  # When this state reaches an end node the engine pops the frame, deletes
+  # this row, and advances the parent past the Sub Flow node.
+  #
+  # Idempotent: gated by columnExists so re-running on databases that
+  # already have the column is a no-op.
+  - changeSet:
+      id: add-parent-state-id-to-chat-flow-state
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: chat_flow_state
+                columnName: parentStateId
+      changes:
+        - addColumn:
+            tableName: chat_flow_state
+            columns:
+              - column:
+                  name: parentStateId
+                  type: varchar(36)
+                  constraints:
+                    nullable: true

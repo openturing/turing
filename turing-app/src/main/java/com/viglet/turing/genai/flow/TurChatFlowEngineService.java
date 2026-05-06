@@ -12,8 +12,10 @@ package com.viglet.turing.genai.flow;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -123,7 +125,10 @@ public class TurChatFlowEngineService {
 
     /**
      * Loads the runtime state for {@code (conversationId, flow)} or creates
-     * a fresh one anchored at the graph's first interactive node.
+     * a fresh one anchored at the graph's first interactive node. When the
+     * conversation already has a sub-flow chain on the requested flow, the
+     * deepest active leaf is returned so the caller resumes where the user
+     * left off.
      */
     public Optional<TurChatFlowState> loadOrInitState(String conversationId,
             TurChatFlow flow,
@@ -134,7 +139,9 @@ public class TurChatFlowEngineService {
         Optional<TurChatFlowState> existing = stateRepository
                 .findByConversationIdAndFlow_Id(conversationId, flow.getId());
         if (existing.isPresent()) {
-            return existing;
+            // Resume at the deepest active leaf — the user may already be
+            // inside a sub-flow invoked from this flow.
+            return Optional.of(resolveActiveLeaf(existing.get()));
         }
         Optional<ChatFlowNode> startNode = graph.startNode();
         if (startNode.isEmpty()) {
@@ -152,7 +159,11 @@ public class TurChatFlowEngineService {
         // a flow that branches immediately on context the user already
         // provided), evaluate it before the user sends their next turn.
         ChatFlowOps.walkThroughConditions(created, graph, null);
-        return Optional.of(stateRepository.save(created));
+        TurChatFlowState saved = stateRepository.save(created);
+        // First interactive node could itself be a Sub Flow (or jump to one
+        // through a chain of conditions): descend immediately so the next
+        // turn lands on the sub-flow's prompt.
+        return Optional.of(walkTransparentNodes(saved, null));
     }
 
     /** Returns the node currently active in the conversation, if resolvable. */
@@ -178,8 +189,10 @@ public class TurChatFlowEngineService {
      * Runs one chat turn through the strategy bound to {@code flow}. The
      * strategy may mutate {@code state} (current node, variables) and may
      * return an override string the executor should display in place of the
-     * raw LLM reply. The engine then persists the state and, when the turn
-     * landed on a terminal node, records an immutable submission row.
+     * raw LLM reply. The engine then walks any transparent transitions
+     * (condition chains, Sub Flow descent / ascent), persists every touched
+     * state, and — when the turn landed on the root flow's terminal node —
+     * records an immutable submission row.
      */
     public AdvanceResult advance(TurChatFlow flow,
             TurChatFlowState state,
@@ -207,13 +220,28 @@ public class TurChatFlowEngineService {
         // conditions in the same turn so the next chat round lands on the next
         // interactive node.
         ChatFlowOps.walkThroughConditions(state, graph, auxiliaryModel);
-        if (!java.util.Objects.equals(previousNodeId, state.getCurrentNodeId())) {
+        if (!Objects.equals(previousNodeId, state.getCurrentNodeId())) {
             log.info("[FlowEngine] advance: '{}' → '{}' vars={}",
                     previousNodeId, state.getCurrentNodeId(),
                     state.getVariablesJson());
         }
-        TurChatFlowState saved = saveAndMaybeRecord(flow, state, graph, previousNodeId);
-        return new AdvanceResult(saved, override);
+        // Persist the strategy's mutations on the active state before we
+        // potentially descend into a sub-flow (descent reads state.id as the
+        // child's parentStateId, so the parent must already have an id).
+        state = stateRepository.save(state);
+        // Walk any Sub Flow boundaries: descend on a SubFlow node, ascend on
+        // an end node that has a parent state. Returns the new active leaf.
+        TurChatFlowState leaf = walkTransparentNodes(state, auxiliaryModel);
+        if (leaf != state) {
+            leaf = stateRepository.save(leaf);
+        }
+        // Record a submission only when the ROOT flow has just terminated —
+        // sub-flow ends pop instead of recording.
+        if (leaf.getParentStateId() == null) {
+            ChatFlowGraph leafGraph = parseGraph(leaf.getFlow()).orElse(graph);
+            recordSubmissionIfTerminal(leaf.getFlow(), leaf, leafGraph, previousNodeId);
+        }
+        return new AdvanceResult(leaf, override);
     }
 
     private static String truncate(String s, int max) {
@@ -338,16 +366,20 @@ public class TurChatFlowEngineService {
         List<TurChatFlowState> existingStates = stateRepository
                 .findByConversationIdAndFlow_TurAIAgent_Id(conversationId, agent.getId());
 
-        // 1) Continuation. Any non-terminal state for this conversation wins —
-        // the user is in the middle of a flow and we must keep them there until
-        // they reach an `end` node (or hit the abandon path). Earlier we tried
-        // to drop "fresh ALWAYS" states with no variables to avoid zombies from
-        // dev-test sessions, but that signal also matches a legitimately new
-        // flow that just started and hasn't captured anything yet (turn 1 of
-        // ask-name, etc.) — dropping it bounced the user out of the flow on
-        // their next message. If a stale state actually needs clearing, the
-        // user resets via the explicit "Restart flow" action.
+        // 1) Continuation. Any non-terminal LEAF state for this conversation
+        // wins — the user is in the middle of a flow and we must keep them
+        // there until they reach an `end` node (or hit the abandon path).
+        // With Sub Flow nodes a conversation may have multiple state rows in
+        // a parent→child chain; the leaf (the row no other row points at as
+        // a parent) is the one currently driving the chat.
+        Set<String> hasDescendant = existingStates.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
         for (TurChatFlowState state : existingStates) {
+            if (hasDescendant.contains(state.getId())) {
+                continue;
+            }
             Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
             if (graphOpt.isEmpty()) {
                 continue;
@@ -361,9 +393,15 @@ public class TurChatFlowEngineService {
             return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state));
         }
 
-        // 2) Build candidate list
+        // 2) Build candidate list. A flow counts as "completed" only when its
+        // ROOT row has reached an end node — child sub-flow rows are popped
+        // (deleted) on completion, so any lingering child end node is a stale
+        // artifact and should not gate the parent flow's eligibility.
         Set<String> completedFlowIds = new HashSet<>();
         for (TurChatFlowState state : existingStates) {
+            if (state.getParentStateId() != null) {
+                continue;
+            }
             Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
             graphOpt.flatMap(g -> g.nodeById(state.getCurrentNodeId()))
                     .filter(n -> "end".equals(n.type()))
@@ -417,7 +455,17 @@ public class TurChatFlowEngineService {
         }
 
         Optional<TurChatFlowState> newState = loadOrInitState(conversationId, flow, picked.get().graph());
-        return newState.map(s -> new FlowSelection(flow, picked.get().graph(), s));
+        // loadOrInitState walks transparent nodes; the leaf may belong to a
+        // sub-flow rather than the picked root flow. Align the FlowSelection
+        // with the leaf so the prompt addendum and strategy run against the
+        // correct graph.
+        return newState.map(s -> {
+            TurChatFlow activeFlow = s.getFlow();
+            ChatFlowGraph activeGraph = activeFlow.getId().equals(flow.getId())
+                    ? picked.get().graph()
+                    : parseGraph(activeFlow).orElse(picked.get().graph());
+            return new FlowSelection(activeFlow, activeGraph, s);
+        });
     }
 
     private record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
@@ -484,21 +532,13 @@ public class TurChatFlowEngineService {
         }
     }
 
-    // ─────────────────────────── State + submission lifecycle ───────────────────────────
+    // ─────────────────────────── Submission recording ───────────────────────────
 
     /**
-     * Saves the (mutated) state and emits a submission row when the strategy
-     * just transitioned the conversation onto a terminal node.
+     * Emits a submission row when the strategy just transitioned the
+     * conversation onto a terminal node. Caller must ensure {@code state}
+     * is the ROOT state — sub-flow ends are popped without recording.
      */
-    private TurChatFlowState saveAndMaybeRecord(TurChatFlow flow,
-            TurChatFlowState state,
-            ChatFlowGraph graph,
-            String previousNodeId) {
-        TurChatFlowState saved = stateRepository.save(state);
-        recordSubmissionIfTerminal(flow, saved, graph, previousNodeId);
-        return saved;
-    }
-
     private void recordSubmissionIfTerminal(TurChatFlow flow,
             TurChatFlowState state,
             ChatFlowGraph graph,
@@ -525,5 +565,224 @@ public class TurChatFlowEngineService {
     private static String resolveUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null ? auth.getName() : null;
+    }
+
+    // ─────────────────────────── Sub Flow walking ───────────────────────────
+
+    /**
+     * Hard cap on consecutive transparent transitions in
+     * {@link #walkTransparentNodes}. A flow that stacks more than this many
+     * sub-flows in one turn is almost certainly cyclic; the cap keeps a
+     * pathological author error non-fatal.
+     */
+    private static final int TRANSPARENT_WALK_MAX = 16;
+
+    /**
+     * Walks the active state past every transparent node — condition chains,
+     * Sub Flow descents (a {@code subFlow} node creates a child state
+     * pointing at its parent), and Sub Flow ascents (an {@code end} node on
+     * a child state pops back to the parent's next node). Mutates state and
+     * persists every touched row; returns the new active leaf.
+     * <p>
+     * Variables are propagated through the chain so a sub-flow sees and
+     * writes to the same variable map as its parent.
+     */
+    private TurChatFlowState walkTransparentNodes(TurChatFlowState state, ChatModel auxModel) {
+        for (int i = 0; i < TRANSPARENT_WALK_MAX; i++) {
+            Optional<ChatFlowGraph> graphOpt = parseGraph(state.getFlow());
+            if (graphOpt.isEmpty()) {
+                return state;
+            }
+            ChatFlowGraph graph = graphOpt.get();
+            // Conditions are a no-LLM transition: re-walk every iteration to
+            // collapse `condition → condition → …` chains created by descent.
+            ChatFlowOps.walkThroughConditions(state, graph, auxModel);
+            Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
+            if (currentOpt.isEmpty()) {
+                return state;
+            }
+            ChatFlowNode current = currentOpt.get();
+
+            if ("subFlow".equals(current.type())) {
+                Optional<TurChatFlowState> child = enterSubFlow(state, current);
+                if (child.isPresent()) {
+                    state = child.get();
+                    continue;
+                }
+                // Sub-flow not configured / not found / would be recursive:
+                // skip the node like a no-op so the parent flow doesn't stall.
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                continue;
+            }
+
+            if ("end".equals(current.type()) && state.getParentStateId() != null) {
+                TurChatFlowState parent = ascendFromSubFlow(state);
+                if (parent == null) {
+                    return state;
+                }
+                state = parent;
+                continue;
+            }
+
+            return state;
+        }
+        log.warn("[FlowEngine] walkTransparentNodes hit the {}-hop safety cap on conversation '{}'",
+                TRANSPARENT_WALK_MAX, state.getConversationId());
+        return state;
+    }
+
+    /**
+     * Creates a child state for the sub-flow referenced by {@code subFlowNode}
+     * and links it to {@code parent}. Returns empty when the sub-flow id is
+     * missing, the target flow can't be loaded / parsed, or descending would
+     * introduce a cycle (the target flow already appears in the parent
+     * chain). The parent state stays put on the Sub Flow node so we know
+     * where to resume on ascent.
+     */
+    private Optional<TurChatFlowState> enterSubFlow(TurChatFlowState parent, ChatFlowNode subFlowNode) {
+        String subFlowId = subFlowNode.subFlowId();
+        if (subFlowId == null || subFlowId.isBlank()) {
+            log.warn("[FlowEngine] Sub Flow node '{}' has no subFlowId — skipping",
+                    subFlowNode.id());
+            return Optional.empty();
+        }
+        if (chainContainsFlow(parent, subFlowId)) {
+            log.warn("[FlowEngine] Refusing recursive Sub Flow '{}' on conversation '{}' — already in chain",
+                    subFlowId, parent.getConversationId());
+            return Optional.empty();
+        }
+        Optional<TurChatFlow> subFlowOpt = chatFlowRepository.findById(subFlowId);
+        if (subFlowOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow '{}' referenced by node '{}' not found",
+                    subFlowId, subFlowNode.id());
+            return Optional.empty();
+        }
+        TurChatFlow subFlow = subFlowOpt.get();
+        if (subFlow.getEnabled() != 1) {
+            log.warn("[FlowEngine] Sub Flow '{}' is disabled — skipping", subFlowId);
+            return Optional.empty();
+        }
+        Optional<ChatFlowGraph> subGraphOpt = parseGraph(subFlow);
+        if (subGraphOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow '{}' has no parseable graph — skipping", subFlowId);
+            return Optional.empty();
+        }
+        ChatFlowGraph subGraph = subGraphOpt.get();
+        Optional<ChatFlowNode> startOpt = subGraph.startNode();
+        if (startOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow '{}' has no start node — skipping", subFlowId);
+            return Optional.empty();
+        }
+        ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(subGraph, startOpt.get())
+                .orElse(startOpt.get());
+        TurChatFlowState child = new TurChatFlowState();
+        child.setConversationId(parent.getConversationId());
+        child.setFlow(subFlow);
+        child.setCurrentNodeId(anchor.id());
+        child.setParentStateId(parent.getId());
+        // Variables are SHARED across the chain — copy parent's snapshot so
+        // the sub-flow's strategy sees what's already been collected. On
+        // ascent we copy back any new captures.
+        child.setVariablesJson(parent.getVariablesJson() == null ? "{}" : parent.getVariablesJson());
+        TurChatFlowState saved = stateRepository.save(child);
+        log.info("[FlowEngine] Sub Flow descend: parent='{}' (flow '{}', node '{}') → child='{}' (flow '{}', node '{}')",
+                parent.getId(), parent.getFlow().getId(), parent.getCurrentNodeId(),
+                saved.getId(), subFlow.getId(), anchor.id());
+        return Optional.of(saved);
+    }
+
+    /**
+     * Pops {@code child} back to its parent state: copies the (possibly
+     * mutated) variables back up, advances the parent past its Sub Flow
+     * node, deletes the child row. Returns the parent state, or null when
+     * the parent can't be loaded.
+     */
+    private TurChatFlowState ascendFromSubFlow(TurChatFlowState child) {
+        Optional<TurChatFlowState> parentOpt = stateRepository.findById(child.getParentStateId());
+        if (parentOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow ascend: parent state '{}' missing for child '{}' — orphan",
+                    child.getParentStateId(), child.getId());
+            return null;
+        }
+        TurChatFlowState parent = parentOpt.get();
+        Optional<ChatFlowGraph> parentGraphOpt = parseGraph(parent.getFlow());
+        if (parentGraphOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow ascend: parent flow '{}' unparseable", parent.getFlow().getId());
+            return null;
+        }
+        ChatFlowGraph parentGraph = parentGraphOpt.get();
+        Optional<ChatFlowNode> subFlowNodeOpt = parentGraph.nodeById(parent.getCurrentNodeId());
+        if (subFlowNodeOpt.isEmpty()) {
+            log.warn("[FlowEngine] Sub Flow ascend: parent's current node '{}' missing in flow '{}'",
+                    parent.getCurrentNodeId(), parent.getFlow().getId());
+            return null;
+        }
+        // Propagate any variables captured by the sub-flow back to the parent.
+        parent.setVariablesJson(child.getVariablesJson() == null ? "{}" : child.getVariablesJson());
+        String previousParentNode = parent.getCurrentNodeId();
+        ChatFlowOps.advanceToFirstEdge(parent, parentGraph, subFlowNodeOpt.get());
+        log.info("[FlowEngine] Sub Flow ascend: child='{}' (flow '{}') → parent='{}' (flow '{}', '{}' → '{}')",
+                child.getId(), child.getFlow().getId(),
+                parent.getId(), parent.getFlow().getId(),
+                previousParentNode, parent.getCurrentNodeId());
+        stateRepository.delete(child);
+        return stateRepository.save(parent);
+    }
+
+    /**
+     * Walks {@code state}'s parent chain and returns true if any ancestor
+     * (including {@code state} itself) already runs the flow identified by
+     * {@code flowId}. Prevents direct or indirect recursion.
+     */
+    private boolean chainContainsFlow(TurChatFlowState state, String flowId) {
+        Set<String> visited = new LinkedHashSet<>();
+        TurChatFlowState cursor = state;
+        while (cursor != null) {
+            if (!visited.add(cursor.getId())) {
+                // Defensive: parentStateId pointing into a cycle — bail out.
+                return true;
+            }
+            if (cursor.getFlow() != null && flowId.equals(cursor.getFlow().getId())) {
+                return true;
+            }
+            String parentId = cursor.getParentStateId();
+            if (parentId == null) {
+                return false;
+            }
+            cursor = stateRepository.findById(parentId).orElse(null);
+        }
+        return false;
+    }
+
+    /**
+     * Resolves the deepest active leaf of the chain rooted at {@code root}.
+     * When the conversation already descended into one or more sub-flows,
+     * the leaf is what {@link TurAgentChatExecutor} should resume on.
+     */
+    private TurChatFlowState resolveActiveLeaf(TurChatFlowState root) {
+        TurChatFlowState cursor = root;
+        Set<String> visited = new HashSet<>();
+        while (visited.add(cursor.getId())) {
+            List<TurChatFlowState> children = stateRepository.findByParentStateId(cursor.getId());
+            if (children.isEmpty()) {
+                return cursor;
+            }
+            // Prefer non-terminal children; if every child is terminal, just
+            // pick the first — the caller will treat it as a regular leaf.
+            TurChatFlowState next = children.get(0);
+            for (TurChatFlowState candidate : children) {
+                Optional<ChatFlowGraph> g = parseGraph(candidate.getFlow());
+                if (g.isPresent()) {
+                    Optional<ChatFlowNode> n = g.get().nodeById(candidate.getCurrentNodeId());
+                    if (n.isPresent() && !"end".equals(n.get().type())) {
+                        next = candidate;
+                        break;
+                    }
+                }
+            }
+            cursor = next;
+        }
+        return cursor;
     }
 }

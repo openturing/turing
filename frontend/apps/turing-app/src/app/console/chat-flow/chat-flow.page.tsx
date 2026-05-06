@@ -3,6 +3,7 @@ import "@xyflow/react/dist/style.css";
 import {
   ReactFlowProvider,
   addEdge,
+  reconnectEdge,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -115,6 +116,12 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const onConnect = useCallback(
     (params: Connection) =>
       setEdges((eds) => addEdge({ ...params, type: "smoothstep", animated: false }, eds)),
+    [setEdges],
+  );
+
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) =>
+      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds)),
     [setEdges],
   );
 
@@ -368,6 +375,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onReconnect={onReconnect}
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
           onDragOver={onDragOver}

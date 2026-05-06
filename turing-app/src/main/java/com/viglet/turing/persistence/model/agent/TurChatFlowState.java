@@ -72,6 +72,17 @@ public class TurChatFlowState implements Serializable {
     @Column(name = "currentNodeId", nullable = false, length = 100)
     private String currentNodeId;
 
+    /**
+     * Id of the parent state row when this state is running a sub-flow
+     * (Sub Flow node in the parent's graph). {@code null} for the root state.
+     * The engine uses this to walk back up the call stack — when this state
+     * reaches its end node, the parent is advanced past its Sub Flow node.
+     *
+     * @since 2026.2.6
+     */
+    @Column(name = "parentStateId", length = 36)
+    private String parentStateId;
+
     @Lob
     @Column(name = "variablesJson", columnDefinition = "longtext")
     private String variablesJson;

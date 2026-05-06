@@ -109,6 +109,11 @@ function appendFromNode(entries: TranscriptEntry[], data: FlowNodeData) {
     case "condition":
       entries.push({ actor: "bot", text: `[${data.label}] ${data.conditionExpression ?? ""}` });
       break;
+    case "subFlow": {
+      const target = data.subFlowName ?? data.subFlowId ?? "(not set)";
+      entries.push({ actor: "bot", text: `↳ ${data.label}: ${target}` });
+      break;
+    }
     case "start":
     case "end":
       break;
