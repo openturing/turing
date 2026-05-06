@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -65,9 +64,6 @@ class TurSEInstanceAPITest {
 
     @Mock
     private TurSolr turSolr;
-
-    @Mock
-    private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
     @Mock
     private com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
@@ -274,7 +270,7 @@ class TurSEInstanceAPITest {
         when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
         when(plugin.listIndexes(instance)).thenReturn(
                 List.of(new TurSECoreInfo("core1", 100, List.of())));
-        when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of());
+        when(turSNSiteLocaleRepositoryPort.findCoreUsage("core1")).thenReturn(List.of());
 
         mockMvc.perform(get("/api/se/1/cores"))
                 .andExpect(status().isOk())
@@ -288,6 +284,34 @@ class TurSEInstanceAPITest {
 
         mockMvc.perform(get("/api/se/missing/cores"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testTurSEInstanceCores_PopulatesSiteUsageFromPort() throws Exception {
+        TurSEInstance instance = new TurSEInstance();
+        instance.setId("1");
+
+        TurSearchEnginePlugin plugin = mock(TurSearchEnginePlugin.class);
+        when(seInstanceSource.findById("1")).thenReturn(Optional.of(instance));
+        when(pluginFactory.getPluginForInstance(instance)).thenReturn(plugin);
+        when(plugin.listIndexes(instance)).thenReturn(
+                List.of(new TurSECoreInfo("core1", 7, List.of())));
+        when(turSNSiteLocaleRepositoryPort.findCoreUsage("core1")).thenReturn(List.of(
+                new com.viglet.turing.domain.sn.TurSNSiteCoreUsageDomain(
+                        "locale-1", java.util.Locale.US, "site-1", "MarketingSite"),
+                new com.viglet.turing.domain.sn.TurSNSiteCoreUsageDomain(
+                        "locale-2", java.util.Locale.of("pt", "BR"), "site-2", "BlogPT")));
+
+        mockMvc.perform(get("/api/se/1/cores"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("core1"))
+                .andExpect(jsonPath("$[0].numDocs").value(7))
+                .andExpect(jsonPath("$[0].usedBySites[0].siteId").value("site-1"))
+                .andExpect(jsonPath("$[0].usedBySites[0].siteName").value("MarketingSite"))
+                .andExpect(jsonPath("$[0].usedBySites[0].localeId").value("locale-1"))
+                .andExpect(jsonPath("$[0].usedBySites[0].language").value("en_US"))
+                .andExpect(jsonPath("$[0].usedBySites[1].siteId").value("site-2"))
+                .andExpect(jsonPath("$[0].usedBySites[1].siteName").value("BlogPT"));
     }
 
     // --- Create core tests ---

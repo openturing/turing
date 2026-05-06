@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.domain.sn.TurSNSiteCoreUsageDomain;
 import com.viglet.turing.domain.sn.TurSNSiteLocaleDomain;
 import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
@@ -60,5 +61,16 @@ public class TurSNSiteLocaleRepositoryAdapter implements TurSNSiteLocaleReposito
         TurSNSite stub = new TurSNSite();
         stub.setId(snSiteId);
         return turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(stub, language);
+    }
+
+    @Override
+    public List<TurSNSiteCoreUsageDomain> findCoreUsage(String core) {
+        return turSNSiteLocaleRepository.findByCore(core).stream()
+                .map(locale -> new TurSNSiteCoreUsageDomain(
+                        locale.getId(),
+                        locale.getLanguage(),
+                        locale.getTurSNSite().getId(),
+                        locale.getTurSNSite().getName()))
+                .toList();
     }
 }

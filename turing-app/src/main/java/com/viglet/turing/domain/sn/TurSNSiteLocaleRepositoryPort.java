@@ -41,4 +41,10 @@ public interface TurSNSiteLocaleRepositoryPort {
      * cached check the JPA repo exposes.
      */
     boolean existsBySnSiteIdAndLanguage(String snSiteId, Locale language);
+
+    /**
+     * Locales bound to the given core, denormalised with their parent site's
+     * display name. Used by the search-engine cores listing in the admin UI.
+     */
+    List<TurSNSiteCoreUsageDomain> findCoreUsage(String core);
 }

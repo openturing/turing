@@ -20,6 +20,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.viglet.turing.domain.sn.TurSNSiteCoreUsageDomain;
 import com.viglet.turing.domain.sn.TurSNSiteLocaleDomain;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
@@ -97,6 +98,33 @@ class TurSNSiteLocaleRepositoryAdapterTest {
                 .thenReturn(false);
 
         assertThat(adapter.existsBySnSiteIdAndLanguage("site-1", Locale.GERMAN)).isFalse();
+    }
+
+    @Test
+    void findCoreUsageDenormalisesParentSiteIdAndName() {
+        TurSNSiteLocale en = buildLocale("locale-1", "site-1", Locale.US, 0);
+        en.getTurSNSite().setName("MarketingSite");
+        TurSNSiteLocale ptBr = buildLocale("locale-2", "site-2", Locale.of("pt", "BR"), 1);
+        ptBr.getTurSNSite().setName("BlogPT");
+        when(turSNSiteLocaleRepository.findByCore("core1")).thenReturn(List.of(en, ptBr));
+
+        List<TurSNSiteCoreUsageDomain> usage = adapter.findCoreUsage("core1");
+
+        assertThat(usage).hasSize(2);
+        assertThat(usage.get(0).localeId()).isEqualTo("locale-1");
+        assertThat(usage.get(0).language()).isEqualTo(Locale.US);
+        assertThat(usage.get(0).snSiteId()).isEqualTo("site-1");
+        assertThat(usage.get(0).snSiteName()).isEqualTo("MarketingSite");
+        assertThat(usage.get(1).snSiteId()).isEqualTo("site-2");
+        assertThat(usage.get(1).snSiteName()).isEqualTo("BlogPT");
+        assertThat(usage.get(1).language()).isEqualTo(Locale.of("pt", "BR"));
+    }
+
+    @Test
+    void findCoreUsageEmptyWhenNoLocalesBound() {
+        when(turSNSiteLocaleRepository.findByCore("free")).thenReturn(List.of());
+
+        assertThat(adapter.findCoreUsage("free")).isEmpty();
     }
 
     private static TurSNSiteLocale buildLocale(String id, String snSiteId, Locale language,
