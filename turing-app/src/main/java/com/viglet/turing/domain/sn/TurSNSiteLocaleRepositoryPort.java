@@ -17,6 +17,7 @@
 package com.viglet.turing.domain.sn;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Domain-side port for retrieving {@link TurSNSiteLocaleDomain} aggregates.
@@ -32,4 +33,18 @@ public interface TurSNSiteLocaleRepositoryPort {
 
     /** True when at least one locale is registered against the given core. */
     boolean existsByCore(String core);
+
+    /**
+     * True when the given language is registered for the given SN site.
+     * Delegates to the repository's {@code existsByTurSNSiteAndLanguage}
+     * cache, so callers in the search hot path stay backed by the same
+     * cached check the JPA repo exposes.
+     */
+    boolean existsBySnSiteIdAndLanguage(String snSiteId, Locale language);
+
+    /**
+     * Locales bound to the given core, denormalised with their parent site's
+     * display name. Used by the search-engine cores listing in the admin UI.
+     */
+    List<TurSNSiteCoreUsageDomain> findCoreUsage(String core);
 }

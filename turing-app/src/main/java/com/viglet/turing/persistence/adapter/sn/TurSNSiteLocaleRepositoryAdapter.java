@@ -17,11 +17,14 @@
 package com.viglet.turing.persistence.adapter.sn;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.domain.sn.TurSNSiteCoreUsageDomain;
 import com.viglet.turing.domain.sn.TurSNSiteLocaleDomain;
 import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 
 /**
@@ -51,5 +54,23 @@ public class TurSNSiteLocaleRepositoryAdapter implements TurSNSiteLocaleReposito
     @Override
     public boolean existsByCore(String core) {
         return !turSNSiteLocaleRepository.findByCore(core).isEmpty();
+    }
+
+    @Override
+    public boolean existsBySnSiteIdAndLanguage(String snSiteId, Locale language) {
+        TurSNSite stub = new TurSNSite();
+        stub.setId(snSiteId);
+        return turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(stub, language);
+    }
+
+    @Override
+    public List<TurSNSiteCoreUsageDomain> findCoreUsage(String core) {
+        return turSNSiteLocaleRepository.findByCore(core).stream()
+                .map(locale -> new TurSNSiteCoreUsageDomain(
+                        locale.getId(),
+                        locale.getLanguage(),
+                        locale.getTurSNSite().getId(),
+                        locale.getTurSNSite().getName()))
+                .toList();
     }
 }

@@ -40,7 +40,6 @@ import com.viglet.turing.persistence.dto.se.TurSEInstanceDto;
 import com.viglet.turing.persistence.mapper.se.TurSEInstanceMapper;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.se.TurSEVendor;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.solr.TurSolr;
@@ -60,21 +59,18 @@ public class TurSEInstanceAPI {
         private final TurSEInstanceMapper turSEInstanceMapper;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSolr turSolr;
-        private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
         private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
         private final TurSearchEnginePluginFactory pluginFactory;
 
         public TurSEInstanceAPI(TurSolrInstanceSource seInstanceSource,
                         TurSEInstanceMapper turSEInstanceMapper,
                         TurSolrInstanceProcess turSolrInstanceProcess, TurSolr turSolr,
-                        TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                         TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort,
                         TurSearchEnginePluginFactory pluginFactory) {
                 this.seInstanceSource = seInstanceSource;
                 this.turSEInstanceMapper = turSEInstanceMapper;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSolr = turSolr;
-                this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
                 this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
                 this.pluginFactory = pluginFactory;
         }
@@ -160,12 +156,12 @@ public class TurSEInstanceAPI {
                 return seInstanceSource.findById(id).map(turSEInstance -> {
                         List<TurSECoreInfo> cores = pluginFactory.getPluginForInstance(turSEInstance).listIndexes(turSEInstance).stream()
                                         .map(core -> new TurSECoreInfo(core.name(), core.numDocs(),
-                                                        turSNSiteLocaleRepository.findByCore(core.name()).stream()
-                                                                        .map(locale -> new TurSECoreSiteUsage(
-                                                                                        locale.getTurSNSite().getId(),
-                                                                                        locale.getTurSNSite().getName(),
-                                                                                        locale.getId(),
-                                                                                        locale.getLanguage().toString()))
+                                                        turSNSiteLocaleRepositoryPort.findCoreUsage(core.name()).stream()
+                                                                        .map(usage -> new TurSECoreSiteUsage(
+                                                                                        usage.snSiteId(),
+                                                                                        usage.snSiteName(),
+                                                                                        usage.localeId(),
+                                                                                        usage.language().toString()))
                                                                         .toList()))
                                         .toList();
                         return ResponseEntity.ok(cores);
