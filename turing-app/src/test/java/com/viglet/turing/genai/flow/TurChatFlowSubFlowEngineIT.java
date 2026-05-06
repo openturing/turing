@@ -27,7 +27,6 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
@@ -43,6 +42,7 @@ import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowSubmissionRepository;
+import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -62,8 +62,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
-@SpringBootTest(properties = "spring.jmx.enabled=true")
-class TurChatFlowSubFlowEngineIT {
+class TurChatFlowSubFlowEngineIT extends AbstractTuringSpringIT {
 
     private static final String OPENAI_BASE_URL = "https://api.openai.com/v1";
     private static final String CHAT_MODEL = "gpt-4o-mini";

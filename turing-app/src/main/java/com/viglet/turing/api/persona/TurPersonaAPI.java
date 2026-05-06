@@ -67,7 +67,7 @@ public class TurPersonaAPI {
     @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
     public List<TurPersonaDto> turPersonaList() {
         return turPersonaMapper.toDtoList(
-                turPersonaRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+                turPersonaRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase()));
     }
 
     @Operation(summary = "Persona structure")
