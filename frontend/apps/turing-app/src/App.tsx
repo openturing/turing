@@ -12,6 +12,7 @@ import {
   AdminRoutes,
   AIAgentRoutes,
   AssetRoutes,
+  BentoRoutes,
   GitRoutes,
   PageRoutes,
   ChatRoutes,
@@ -54,6 +55,7 @@ function App() {
               <Route path={ROUTES.SETUP} element={<SetupPage />} />
               <Route path={`${ROUTES.SN_SEARCH}/:siteName`} element={<SearchPage />} />
               <Route path={`${ROUTES.ANN_SEARCH}/:siteName`} element={<AnnSearchPage />} />
+              {BentoRoutes}
               <Route path={ROUTES.CONSOLE} element={<ConsoleRootPage />}>
                 <Route index element={<Navigate to={ROUTES.HOME} replace />} />
                 <Route path="home" element={<HomePage />} />

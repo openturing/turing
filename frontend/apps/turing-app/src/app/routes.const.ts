@@ -53,4 +53,8 @@ export const ROUTES = {
   GIT_INSTANCE: `${consolePath}/git/instance`,
   MARKETPLACE_ROOT: `${consolePath}/marketplace`,
   REGISTER: "/register",
+  BENTO_ROOT: "/bento",
+  BENTO_HOME: "/bento/home",
+  BENTO_AI_AGENT: "/bento/ai-agent",
+  BENTO_AI_AGENT_INSTANCE: "/bento/ai-agent/instance",
 };

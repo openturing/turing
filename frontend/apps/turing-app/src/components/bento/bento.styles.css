@@ -1,0 +1,147 @@
+/*
+ * Bento UI — iOS-flavored motion language.
+ *
+ * Easing curve `--bento-spring` matches Apple's preferred 'spring' feel
+ * (the same curve used by SF Symbols and SwiftUI's default animation).
+ * Every tile uses it so press, hover, and route transitions all share
+ * the same physical sensation.
+ */
+
+@layer base {
+  :root {
+    --bento-spring: cubic-bezier(0.32, 0.72, 0, 1);
+    --bento-soft:   cubic-bezier(0.22, 1, 0.36, 1);
+    --bento-radius: 1.5rem;
+  }
+}
+
+@keyframes bento-tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes bento-shell-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bento-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.0); }
+  50%      { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0.15); }
+}
+
+.bento-tile {
+  position: relative;
+  border-radius: var(--bento-radius);
+  transition:
+    transform     420ms var(--bento-spring),
+    box-shadow    420ms var(--bento-spring),
+    border-color  300ms var(--bento-soft),
+    background    300ms var(--bento-soft);
+  will-change: transform, box-shadow;
+  animation: bento-tile-in 600ms var(--bento-spring) both;
+}
+
+.bento-tile:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 40px -18px color-mix(in oklab, var(--primary) 40%, transparent),
+    0 4px 12px -4px rgba(0,0,0,0.08);
+}
+
+/* iOS press: tile compresses then springs back when released */
+.bento-tile:active { transform: translateY(0) scale(0.985); }
+
+.bento-tile-clickable { cursor: pointer; }
+
+/* Stagger entry: nth-child gives each tile a tiny delay */
+.bento-grid > .bento-tile:nth-child(1) { animation-delay:  20ms; }
+.bento-grid > .bento-tile:nth-child(2) { animation-delay:  60ms; }
+.bento-grid > .bento-tile:nth-child(3) { animation-delay: 100ms; }
+.bento-grid > .bento-tile:nth-child(4) { animation-delay: 140ms; }
+.bento-grid > .bento-tile:nth-child(5) { animation-delay: 180ms; }
+.bento-grid > .bento-tile:nth-child(6) { animation-delay: 220ms; }
+.bento-grid > .bento-tile:nth-child(7) { animation-delay: 260ms; }
+.bento-grid > .bento-tile:nth-child(8) { animation-delay: 300ms; }
+.bento-grid > .bento-tile:nth-child(9) { animation-delay: 340ms; }
+.bento-grid > .bento-tile:nth-child(n+10) { animation-delay: 380ms; }
+
+.bento-shell-header {
+  animation: bento-shell-in 380ms var(--bento-soft) both;
+}
+
+.bento-pulse {
+  animation: bento-pulse-glow 2.4s var(--bento-soft) infinite;
+}
+
+/* Ambient gradient blobs that drift into view behind the tiles. */
+.bento-blob   { animation: bento-shell-in 1200ms var(--bento-spring) both; }
+.bento-blob-2 { animation: bento-shell-in 1400ms var(--bento-spring) 120ms both; }
+.bento-blob-3 { animation: bento-shell-in 1600ms var(--bento-spring) 240ms both; }
+
+/* ---------------------------------------------------------------------------
+ * Bento dropdown surface — used by BentoUserMenu and any future popover that
+ * should match the frosted-glass tile aesthetic.
+ * ------------------------------------------------------------------------- */
+.bento-dropdown {
+  border-radius: calc(var(--bento-radius) - 0.25rem);
+  background: color-mix(in oklab, var(--popover) 78%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow:
+    0 24px 60px -24px rgba(0, 0, 0, 0.35),
+    0 4px 14px -4px rgba(0, 0, 0, 0.12);
+}
+
+.bento-dropdown-item {
+  border-radius: 0.75rem;
+  transition:
+    background 200ms var(--bento-soft),
+    transform  200ms var(--bento-spring);
+}
+
+.bento-dropdown-item:active { transform: scale(0.98); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-dropdown-item { transition: none !important; }
+  .bento-dropdown-item:active { transform: none; }
+}
+
+/* Frosted-glass surface — works in light and dark via the design tokens */
+.bento-glass {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+/* View-Transitions API: smooth tile-to-detail morph when navigating */
+@supports (view-transition-name: bento-hero) {
+  .bento-vt-hero { view-transition-name: bento-hero; }
+}
+
+::view-transition-old(bento-hero),
+::view-transition-new(bento-hero) {
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  .bento-tile,
+  .bento-shell-header,
+  .bento-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+  .bento-tile:hover { transform: none; }
+}

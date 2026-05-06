@@ -24,8 +24,10 @@ export default function PersonaPage() {
 
   useEffect(() => {
     if (id === "new") {
+      // Don't pre-set `id` — TurUuidGenerator only assigns a UUID when the
+      // value is null; an empty string is treated as a pre-assigned id and
+      // gets persisted as-is, breaking the detail-page link afterwards.
       setPersona({
-        id: "",
         name: "",
         verbosity: 3,
         enabled: 1,

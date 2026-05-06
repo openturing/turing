@@ -12,6 +12,14 @@ export function useAiAgents() {
   });
 }
 
+export function useAiAgent(id: string | undefined) {
+  return useQuery<TurAIAgent>({
+    queryKey: id ? queryKeys.aiAgents.detail(id) : ['ai-agents', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id) && id !== 'new',
+  });
+}
+
 function invalidateAiAgents(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.aiAgents.all() });
 }
