@@ -49,6 +49,9 @@ import com.viglet.turing.commons.sn.bean.spellcheck.TurSNSiteSpellCheckBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteMetricAccessRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteMetricAccessTermDomain;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -60,7 +63,6 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
-import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.result.TurSEResults;
@@ -89,9 +91,11 @@ public class TurSNSearchProcess {
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
         private final TurSNSiteRepository turSNSiteRepository;
         private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+        private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSNSpotlightProcess turSNSpotlightProcess;
         private final TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
+        private final TurSNSiteMetricAccessRepositoryPort turSNSiteMetricAccessRepositoryPort;
         private final boolean metricsEnabled;
         private final TurSearchEnginePluginFactory searchEnginePluginFactory;
         private final TurSolrQueryBuilder turSolrQueryBuilder;
@@ -106,9 +110,11 @@ public class TurSNSearchProcess {
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                         TurSNSiteRepository turSNSiteRepository,
                         TurSNSiteLocaleRepository turSNSiteLocaleRepository,
+                        TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort,
                         TurSolrInstanceProcess turSolrInstanceProcess,
                         TurSNSpotlightProcess turSNSpotlightProcess,
                         TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository,
+                        TurSNSiteMetricAccessRepositoryPort turSNSiteMetricAccessRepositoryPort,
                         @Value("${turing.search.metrics.enabled:false}") boolean metricsEnabled,
                         TurSearchEnginePluginFactory searchEnginePluginFactory,
                         TurSolrQueryBuilder turSolrQueryBuilder,
@@ -122,9 +128,11 @@ public class TurSNSearchProcess {
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteRepository = turSNSiteRepository;
                 this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+                this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSNSpotlightProcess = turSNSpotlightProcess;
                 this.turSNSiteMetricAccessRepository = turSNSiteMetricAccessRepository;
+                this.turSNSiteMetricAccessRepositoryPort = turSNSiteMetricAccessRepositoryPort;
                 this.metricsEnabled = metricsEnabled;
                 this.searchEnginePluginFactory = searchEnginePluginFactory;
                 this.turSolrQueryBuilder = turSolrQueryBuilder;
@@ -142,8 +150,9 @@ public class TurSNSearchProcess {
 
         public boolean existsByTurSNSiteAndLanguage(String siteName, Locale locale) {
                 return turSNSiteRepository.findByNameIgnoreCase(siteName)
-                                .map(turSNSite -> turSNSiteLocaleRepository
-                                                .existsByTurSNSiteAndLanguage(turSNSite, locale))
+                                .map(turSNSite -> turSNSiteLocaleRepositoryPort
+                                                .existsBySnSiteIdAndLanguage(turSNSite.getId(),
+                                                                locale))
                                 .orElse(false);
         }
 
@@ -156,10 +165,11 @@ public class TurSNSearchProcess {
         public List<String> latestSearches(String siteName, String locale, String userId,
                         int rows) {
                 return turSNSiteRepository.findByNameIgnoreCase(siteName)
-                                .map(turSNSite -> turSNSiteMetricAccessRepository
-                                                .findLatestSearches(turSNSite, locale, userId,
-                                                                PageRequest.of(0, rows))
-                                                .stream().map(TurSNSiteMetricAccessTerm::getTerm)
+                                .map(turSNSite -> turSNSiteMetricAccessRepositoryPort
+                                                .findLatestSearches(turSNSite.getId(), locale,
+                                                                userId, PageRequest.of(0, rows))
+                                                .stream()
+                                                .map(TurSNSiteMetricAccessTermDomain::term)
                                                 .toList())
                                 .orElse(Collections.emptyList());
         }

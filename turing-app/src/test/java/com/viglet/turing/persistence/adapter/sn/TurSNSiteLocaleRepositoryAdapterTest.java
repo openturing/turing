@@ -6,6 +6,8 @@
 package com.viglet.turing.persistence.adapter.sn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -77,6 +79,24 @@ class TurSNSiteLocaleRepositoryAdapterTest {
                 .thenReturn(List.of(buildLocale("locale-1", "site-1", Locale.US, 0)));
 
         assertThat(adapter.existsByCore("used")).isTrue();
+    }
+
+    @Test
+    void existsBySnSiteIdAndLanguageDelegatesViaStubParent() {
+        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(
+                argThat(stub -> "site-1".equals(stub.getId())), eq(Locale.US)))
+                .thenReturn(true);
+
+        assertThat(adapter.existsBySnSiteIdAndLanguage("site-1", Locale.US)).isTrue();
+    }
+
+    @Test
+    void existsBySnSiteIdAndLanguageReturnsFalseWhenRepoSaysSo() {
+        when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(
+                argThat(stub -> "site-1".equals(stub.getId())), eq(Locale.GERMAN)))
+                .thenReturn(false);
+
+        assertThat(adapter.existsBySnSiteIdAndLanguage("site-1", Locale.GERMAN)).isFalse();
     }
 
     private static TurSNSiteLocale buildLocale(String id, String snSiteId, Locale language,

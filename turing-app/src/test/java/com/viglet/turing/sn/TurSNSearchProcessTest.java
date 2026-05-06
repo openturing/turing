@@ -50,6 +50,9 @@ import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteMetricAccessRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteMetricAccessTermDomain;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -61,7 +64,6 @@ import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetR
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
-import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessTerm;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.se.facet.TurSEFacetResult;
@@ -98,6 +100,9 @@ class TurSNSearchProcessTest {
         private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
         @Mock
+        private TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
+
+        @Mock
         private TurSolrInstanceProcess turSolrInstanceProcess;
 
         @Mock
@@ -105,6 +110,9 @@ class TurSNSearchProcessTest {
 
         @Mock
         private TurSNSiteMetricAccessRepository turSNSiteMetricAccessRepository;
+
+        @Mock
+        private TurSNSiteMetricAccessRepositoryPort turSNSiteMetricAccessRepositoryPort;
 
         @Mock
         private TurSearchEnginePluginFactory searchEnginePluginFactory;
@@ -145,8 +153,10 @@ class TurSNSearchProcessTest {
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository,
                                 turSNSiteLocaleRepository,
+                                turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
+                                turSNSiteMetricAccessRepositoryPort,
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
                                 turSNPaginationBuilder(), turSNDocumentResponse(),
@@ -182,8 +192,9 @@ class TurSNSearchProcessTest {
         @Test
         void testExistsByTurSNSiteAndLanguage() {
                 TurSNSite site = new TurSNSite();
+                site.setId("site-id");
                 when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteLocaleRepository.existsByTurSNSiteAndLanguage(site, Locale.US))
+                when(turSNSiteLocaleRepositoryPort.existsBySnSiteIdAndLanguage("site-id", Locale.US))
                                 .thenReturn(true);
 
                 assertThat(process(false).existsByTurSNSiteAndLanguage("site", Locale.US)).isTrue();
@@ -199,11 +210,15 @@ class TurSNSearchProcessTest {
         @Test
         void testLatestSearchesReturnsTerms() {
                 TurSNSite site = new TurSNSite();
+                site.setId("site-id");
                 when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                TurSNSiteMetricAccessTerm term1 = new TurSNSiteMetricAccessTerm("one", Instant.now());
-                TurSNSiteMetricAccessTerm term2 = new TurSNSiteMetricAccessTerm("two", Instant.now());
-                when(turSNSiteMetricAccessRepository.findLatestSearches(eq(site), eq("en"), eq("user"),
-                                any(PageRequest.class))).thenReturn(List.of(term1, term2));
+                TurSNSiteMetricAccessTermDomain term1 = TurSNSiteMetricAccessTermDomain
+                                .latest("one", Instant.now());
+                TurSNSiteMetricAccessTermDomain term2 = TurSNSiteMetricAccessTermDomain
+                                .latest("two", Instant.now());
+                when(turSNSiteMetricAccessRepositoryPort.findLatestSearches(eq("site-id"), eq("en"),
+                                eq("user"), any(PageRequest.class)))
+                                .thenReturn(List.of(term1, term2));
 
                 List<String> results = process(false).latestSearches("site", "en", "user", 10);
 
@@ -314,7 +329,9 @@ class TurSNSearchProcessTest {
                 TurSNSearchProcess processDisabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
+                                turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
+                                turSNSiteMetricAccessRepositoryPort,
                                 false, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
                                 turSNPaginationBuilder(), turSNDocumentResponse(),
@@ -335,7 +352,9 @@ class TurSNSearchProcessTest {
                 TurSNSearchProcess processEnabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
+                                turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
+                                turSNSiteMetricAccessRepositoryPort,
                                 true, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
                                 turSNPaginationBuilder(), turSNDocumentResponse(),
