@@ -86,9 +86,10 @@ public class TurIntegrationAPI {
                 return;
             }
 
+            ContentType requestContentType = resolveRequestContentType(request);
             ClassicHttpRequest proxyRequest = ClassicRequestBuilder.create(request.getMethod())
                     .setUri(fullUri)
-                    .setEntity(new InputStreamEntity(request.getInputStream(), ContentType.APPLICATION_JSON))
+                    .setEntity(new InputStreamEntity(request.getInputStream(), requestContentType))
                     .build();
 
             copyRequestHeaders(request, proxyRequest);
@@ -128,10 +129,27 @@ public class TurIntegrationAPI {
 
     private void copyRequestHeaders(HttpServletRequest request, ClassicHttpRequest proxyRequest) {
         request.getHeaderNames().asIterator().forEachRemaining(h -> {
-            if (!h.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH)) {
+            // Content-Length and Content-Type come from the entity itself; copying them
+            // here would either mismatch the body length or duplicate the multipart
+            // boundary, breaking uploads.
+            if (!h.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH)
+                    && !h.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE)) {
                 proxyRequest.addHeader(h, request.getHeader(h));
             }
         });
+    }
+
+    private ContentType resolveRequestContentType(HttpServletRequest request) {
+        String raw = request.getContentType();
+        if (raw == null || raw.isBlank()) {
+            return ContentType.APPLICATION_OCTET_STREAM;
+        }
+        try {
+            return ContentType.parse(raw);
+        } catch (RuntimeException e) {
+            log.warn("Unparseable request Content-Type '{}', falling back to octet-stream", raw);
+            return ContentType.APPLICATION_OCTET_STREAM;
+        }
     }
 
     private void copyResponseHeaders(org.apache.hc.core5.http.ClassicHttpResponse proxyResponse,

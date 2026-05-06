@@ -216,6 +216,11 @@ spring:
     multipart:
       max-file-size: 1024MB
       max-request-size: 1024MB
+      # Skip eager parsing so the integration proxy ({id}/** catch-all)
+      # can forward multipart bodies via getInputStream() to Dumont without
+      # the parts having been consumed. Endpoints that use @RequestPart still
+      # work — Spring parses on demand at parameter binding time.
+      resolve-lazily: true
   mvc:
     async:
       request-timeout: 3600000
