@@ -1,7 +1,9 @@
 import { useAiAgents } from "@/api/queries/ai-agent.queries";
 import { ROUTES } from "@/app/routes.const";
+import { BentoHero } from "@/components/bento";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
+import { Icon } from "@iconify/react";
 import { IconPlus, IconRobot, IconSparkles } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -13,15 +15,16 @@ export default function BentoAIAgentListPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={agents} error={error} tryAgainUrl={ROUTES.BENTO_AI_AGENT_INSTANCE}>
-      <div className="bento-shell-header mb-6 flex flex-col gap-1 md:mb-8">
-        <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Bento</span>
-        <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-          {t("aiAgent.title")}
-        </h1>
-        <p className="max-w-xl text-sm text-muted-foreground">
-          {t("aiAgent.blankDescription")}
-        </p>
-      </div>
+      <BentoHero
+        eyebrow={t("home.sections.generativeAi.label")}
+        leading={
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
+            <IconRobot size={24} />
+          </span>
+        }
+        title={t("aiAgent.title")}
+        subtitle={t("aiAgent.blankDescription")}
+      />
 
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         <NewAgentTile />
@@ -36,22 +39,25 @@ export default function BentoAIAgentListPage() {
 
 function NewAgentTile() {
   return (
+    /*
+     * Distinguished from content tiles by halved span (2x1) and a
+     * dashed-border / no-ornament treatment that reads as a clear
+     * "create" affordance rather than another agent card.
+     */
     <Link
       to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/new`}
-      className="bento-tile bento-tile-clickable bento-glass relative col-span-2 row-span-1 flex flex-col justify-between p-5 md:col-span-2 md:row-span-2 lg:col-span-2 lg:row-span-2"
+      className="bento-tile bento-tile-clickable col-span-2 row-span-1 flex flex-col gap-3 rounded-3xl border-2 border-dashed border-border/60 bg-card/30 p-5 backdrop-blur-md hover:border-indigo-500/60 hover:bg-card/50 md:col-span-2 md:row-span-1 lg:col-span-2 lg:row-span-1"
     >
-      <div className="flex items-center gap-2">
-        <span className="bento-pulse grid h-9 w-9 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
-          <IconPlus size={18} />
+      <div className="flex items-center gap-3">
+        <span className="bento-pulse grid h-10 w-10 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
+          <IconPlus size={20} />
         </span>
-        <span className="text-xs uppercase tracking-wider text-muted-foreground">New</span>
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground">New</span>
       </div>
       <div>
-        <div className="text-xl font-semibold tracking-tight md:text-2xl">
-          {/* Reuses existing translation key */}
-          <span>+ </span>
+        <div className="text-base font-semibold tracking-tight md:text-lg">
           <span className="bg-linear-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            AI Agent
+            + AI Agent
           </span>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -67,16 +73,30 @@ function AgentTile({ agent, featured }: Readonly<{ agent: TurAIAgent; featured: 
     ? "col-span-2 row-span-2 md:col-span-2 md:row-span-2 lg:col-span-2 lg:row-span-2"
     : "col-span-2 row-span-1 md:col-span-2 md:row-span-1 lg:col-span-2 lg:row-span-1";
   const enabled = agent.enabled === 1;
+  const padding = featured ? "p-6 md:p-7" : "p-5";
+  const iconChip = featured ? "h-14 w-14" : "h-9 w-9";
+  const iconSize = featured ? 28 : 18;
+  const titleSize = featured ? "text-xl md:text-2xl" : "text-base md:text-lg";
 
   return (
     <Link
       to={`${ROUTES.BENTO_AI_AGENT_INSTANCE}/${agent.id}`}
-      className={`bento-tile bento-tile-clickable bento-glass group relative flex flex-col justify-between p-5 ${span}`}
+      className={`bento-tile bento-tile-clickable bento-glass group relative flex flex-col ${featured ? "gap-5" : "gap-4"} overflow-hidden ${padding} ${span}`}
       style={{ viewTransitionName: `bento-agent-${agent.id}` } as React.CSSProperties}
     >
-      <div className="flex items-center justify-between">
-        <span className="grid h-9 w-9 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
-          <IconRobot size={18} />
+      {featured && (
+        <>
+          <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 h-64 w-64 rounded-full bg-linear-to-br from-blue-600 to-indigo-600 opacity-40 blur-2xl dark:opacity-50" />
+          <div aria-hidden className="pointer-events-none absolute right-12 top-1/3 h-32 w-32 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 opacity-20 blur-2xl dark:opacity-30" />
+        </>
+      )}
+
+      <div className="relative z-1 flex items-center justify-between">
+        <span className={`grid place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md ${iconChip}`}>
+          {/* Render the user-selected Iconify icon when set, otherwise the default. */}
+          {agent.icon
+            ? <Icon icon={agent.icon} className={featured ? "size-7 text-white" : "size-4.5 text-white"} />
+            : <IconRobot size={iconSize} />}
         </span>
         <span className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${
           enabled
@@ -87,12 +107,12 @@ function AgentTile({ agent, featured }: Readonly<{ agent: TurAIAgent; featured: 
           {enabled ? "Active" : "Idle"}
         </span>
       </div>
-      <div>
-        <div className="text-base font-semibold tracking-tight md:text-lg">
+      <div className="relative z-1">
+        <div className={`font-semibold tracking-tight ${titleSize}`}>
           {agent.title}
         </div>
         {agent.description && (
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {agent.description}
           </p>
         )}

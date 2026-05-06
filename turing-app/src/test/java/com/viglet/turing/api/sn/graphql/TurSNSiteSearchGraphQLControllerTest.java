@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +35,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -45,11 +45,10 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtDomain;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 /**
@@ -61,38 +60,51 @@ import com.viglet.turing.sn.TurSNSearchProcess;
 
 class TurSNSiteSearchGraphQLControllerTest {
 
+    /** Minimal site domain record for tests that pass a site to siteSearch. */
+    private static com.viglet.turing.domain.sn.TurSNSiteDomain siteDomain(String name, Integer hl) {
+        return new com.viglet.turing.domain.sn.TurSNSiteDomain(name + "-id", name, null, null,
+                null, null, null, null, null, null, hl, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null);
+    }
+
+    /** Minimal field-ext domain record carrying the two values the controller projects. */
+    private static TurSNSiteFieldExtDomain fieldDomain(String name, String externalId) {
+        return new TurSNSiteFieldExtDomain(
+                "id-" + name, externalId, name, null, null, null, null, null, null,
+                null, null, null, null, null, 0, 0, 0, 0, 1, 0, null, "site-id",
+                java.util.Set.of(), java.util.Set.of());
+    }
+
     @Test
     void testSiteNamesListsAllSitesFromRepository() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site1 = new TurSNSite();
-        site1.setName("insper-stage-publish");
-        TurSNSite site2 = new TurSNSite();
-        site2.setName("demo-site");
-        TurSNSite site3 = new TurSNSite();
-        site3.setName(" ");
-
-        when(siteRepository.findAll(any(Sort.class))).thenReturn(List.of(site1, site2, site3));
+        // Names list (with the blank-name filter) is now resolved by the
+        // port — adapter test pins the projection / filtering. Controller
+        // test just asserts the controller delegates and forwards the list.
+        when(siteRepositoryPort.findAllNamesOrderedByNameIgnoreCase())
+                .thenReturn(List.of("insper-stage-publish", "demo-site"));
 
         List<String> result = controller.siteNames();
 
         assertEquals(List.of("insper-stage-publish", "demo-site"), result);
-        verify(siteRepository).findAll(any(Sort.class));
+        verify(siteRepositoryPort).findAllNamesOrderedByNameIgnoreCase();
     }
 
     @Test
     void testSiteSearchReturnsEmptyWhenLocaleNotSupported() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(false);
 
@@ -104,14 +116,14 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchReturnsEmptyWhenSiteNotFound() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.empty());
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.empty());
 
         TurSNSiteSearchBean result = controller.siteSearch("demo", new TurSNSearchParamsInput(), "en");
 
@@ -121,22 +133,18 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchBuildsDefaultContextAndCallsSearch() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
-        site.setHl(1);
-
-        TurSNSiteFieldExt hlField = TurSNSiteFieldExt.builder().name("content").enabled(1).hl(1).build();
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 1);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of(hlField));
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
+        when(fieldExtRepository.existsBySnSiteIdAndHlAndEnabled(any(), eq(1), eq(1)))
+                .thenReturn(true);
 
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(expected);
@@ -169,23 +177,20 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchUsesLocaleArgumentOverInputLocale() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
         TurSNSearchParamsInput input = new TurSNSearchParamsInput();
         input.setQ("java");
         input.setLocale("pt_BR");
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.US)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
         controller.siteSearch("demo", input, "en_US");
@@ -199,15 +204,13 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchInvalidOperatorsFallbackToNone() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
         TurSNSearchParamsInput input = new TurSNSearchParamsInput();
         input.setQ("java");
@@ -215,8 +218,7 @@ class TurSNSiteSearchGraphQLControllerTest {
         input.setFqiOp("WRONG");
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
         controller.siteSearch("demo", input, "en");
@@ -233,19 +235,16 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchUsesCurrentRequestContextWhenAvailable() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/sn/search");
@@ -269,31 +268,17 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchNormalizesDynamicFieldsBySite() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
-        TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
-                .name("title")
-                .externalId("title_i")
-                .enabled(1)
-                .build();
-        TurSNSiteFieldExt priceField = TurSNSiteFieldExt.builder()
-                .name("price")
-                .externalId("price_d")
-                .enabled(0)
-                .build();
-        TurSNSiteFieldExt tagsField = TurSNSiteFieldExt.builder()
-                .name("tags")
-                .externalId("tags_ss")
-                .enabled(1)
-                .build();
+        TurSNSiteFieldExtDomain titleField = fieldDomain("title", "title_i");
+        TurSNSiteFieldExtDomain priceField = fieldDomain("price", "price_d");
+        TurSNSiteFieldExtDomain tagsField = fieldDomain("tags", "tags_ss");
 
         TurSNSiteSearchDocumentBean mainDocument = TurSNSiteSearchDocumentBean.builder()
                 .fields(Map.of(
@@ -320,9 +305,8 @@ class TurSNSiteSearchGraphQLControllerTest {
                 .setGroups(List.of(group));
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
-        when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(titleField, priceField, tagsField));
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
+        when(fieldExtRepository.findBySnSiteId(any())).thenReturn(List.of(titleField, priceField, tagsField));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
 
         TurSNSiteSearchBean result = controller.siteSearch("demo", new TurSNSearchParamsInput(), "en");
@@ -343,26 +327,16 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchFiltersFieldsWhenFlIsProvided() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
-        TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
-                .name("title")
-                .externalId("title_i")
-                .enabled(1)
-                .build();
-        TurSNSiteFieldExt urlField = TurSNSiteFieldExt.builder()
-                .name("url")
-                .externalId("url_s")
-                .enabled(1)
-                .build();
+        TurSNSiteFieldExtDomain titleField = fieldDomain("title", "title_i");
+        TurSNSiteFieldExtDomain urlField = fieldDomain("url", "url_s");
 
         TurSNSiteSearchDocumentBean document = TurSNSiteSearchDocumentBean.builder()
                 .fields(Map.of(
@@ -376,9 +350,8 @@ class TurSNSiteSearchGraphQLControllerTest {
         input.setFl(List.of("title"));
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
-        when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(titleField, urlField));
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
+        when(fieldExtRepository.findBySnSiteId(any())).thenReturn(List.of(titleField, urlField));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
 
         TurSNSiteSearchBean result = controller.siteSearch("demo", input, "en");
@@ -391,54 +364,45 @@ class TurSNSiteSearchGraphQLControllerTest {
     @Test
     void testSiteSearchResolvesEnumSiteNameToHyphenatedSiteName() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("insper-stage-publish");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("insper-stage-publish", 0);
 
-        when(siteRepository.findByNameIgnoreCase("INSPER_STAGE_PUBLISH")).thenReturn(Optional.empty());
-        when(siteRepository.findAll(any(Sort.class))).thenReturn(List.of(site));
-        when(siteRepository.findByNameIgnoreCase("insper-stage-publish")).thenReturn(Optional.of(site));
+        // resolveSiteName now goes through the port: enum-style → hyphenated.
+        when(siteRepositoryPort.findByNameIgnoreCase("INSPER_STAGE_PUBLISH"))
+                .thenReturn(Optional.empty());
+        when(siteRepositoryPort.findAllNamesOrderedByNameIgnoreCase())
+                .thenReturn(List.of("insper-stage-publish"));
+        // The siteSearch lookup also goes through the port now.
+        when(siteRepositoryPort.findByNameIgnoreCase("insper-stage-publish")).thenReturn(Optional.of(site));
         when(searchProcess.existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH))
                 .thenReturn(true);
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
-        when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of());
+        when(fieldExtRepository.findBySnSiteId(any())).thenReturn(List.of());
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
         controller.siteSearch("INSPER_STAGE_PUBLISH", new TurSNSearchParamsInput(), "en");
 
         verify(searchProcess).existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH);
-        verify(siteRepository).findByNameIgnoreCase("insper-stage-publish");
+        verify(siteRepositoryPort).findByNameIgnoreCase("insper-stage-publish");
     }
 
     @Test
     void testSiteSearchConvertsHyphenatedFieldNamesToDoubleUnderscore() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteFieldExtRepository fieldExtRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteFieldExtRepositoryPort fieldExtRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
-                searchProcess, siteRepository, fieldExtRepository, localeRepository);
+                searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        TurSNSite site = new TurSNSite();
-        site.setName("demo");
-        site.setHl(0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("demo", 0);
 
-        TurSNSiteFieldExt hyphenField = TurSNSiteFieldExt.builder()
-                .name("content-type")
-                .externalId("content-type_s")
-                .enabled(1)
-                .build();
-        TurSNSiteFieldExt normalField = TurSNSiteFieldExt.builder()
-                .name("author")
-                .externalId("author_s")
-                .enabled(1)
-                .build();
+        TurSNSiteFieldExtDomain hyphenField = fieldDomain("content-type", "content-type_s");
+        TurSNSiteFieldExtDomain normalField = fieldDomain("author", "author_s");
 
         TurSNSiteSearchDocumentBean document = TurSNSiteSearchDocumentBean.builder()
                 .fields(Map.of(
@@ -449,9 +413,8 @@ class TurSNSiteSearchGraphQLControllerTest {
                 .setResults(new TurSNSiteSearchResultsBean().setDocument(List.of(document)));
 
         when(searchProcess.existsByTurSNSiteAndLanguage("demo", Locale.ENGLISH)).thenReturn(true);
-        when(siteRepository.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
-        when(fieldExtRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1)).thenReturn(List.of());
-        when(fieldExtRepository.findByTurSNSite(any(), any())).thenReturn(List.of(hyphenField, normalField));
+        when(siteRepositoryPort.findByNameIgnoreCase("demo")).thenReturn(Optional.of(site));
+        when(fieldExtRepository.findBySnSiteId(any())).thenReturn(List.of(hyphenField, normalField));
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(response);
 
         TurSNSiteSearchBean result = controller.siteSearch("demo", new TurSNSearchParamsInput(), "en");

@@ -1,8 +1,10 @@
-import { useAiAgent } from "@/api/queries/ai-agent.queries";
+import { useAiAgent, useDeleteAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries";
 import { ROUTES } from "@/app/routes.const";
-import { BentoCountTile, BentoTile } from "@/components/bento";
+import { BentoActionsMenu, BentoCountTile, BentoHero, BentoHeroIconPicker, BentoInlineEdit, BentoTile } from "@/components/bento";
+import { DialogDelete } from "@/components/dialog.delete";
 import { LoadProvider } from "@/components/loading-provider";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
+import { toast } from "@viglet/viglet-design-system";
 import {
   IconBraces,
   IconBulb,
@@ -14,10 +16,11 @@ import {
   IconSitemap,
   IconSparkles,
   IconTool,
+  IconTrash,
 } from "@tabler/icons-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 const ADMIN_INSTANCE = ROUTES.AI_AGENT_INSTANCE;
 
@@ -42,8 +45,52 @@ export default function BentoAIAgentPage() {
 
 function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const enabled = agent.enabled === 1;
   const adminBase = `${ADMIN_INSTANCE}/${agent.id}`;
+
+  const updateMutation = useUpdateAiAgent();
+  const deleteMutation = useDeleteAiAgent();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  /*
+   * Dashboard pages have no save bar to host destructive actions, and
+   * the legacy SubPage's sidebar trash button doesn't exist in bento
+   * either. Surface delete via a `⋮` menu in the hero trailing slot —
+   * the standard "more options" location, hidden by default so it
+   * doesn't visually compete with the primary content.
+   */
+  async function onDelete() {
+    try {
+      if (await deleteMutation.mutateAsync(agent)) {
+        toast.success(t("aiAgent.deleted", { name: agent.title }));
+        navigate(ROUTES.BENTO_AI_AGENT_INSTANCE);
+      } else {
+        toast.error(t("aiAgent.notDeleted", { name: agent.title }));
+      }
+    } catch (err) {
+      console.error("Failed to delete AI agent", err);
+      toast.error(t("aiAgent.notDeleted", { name: agent.title }));
+    }
+    setDeleteOpen(false);
+  }
+
+  /*
+   * Dashboard pages aren't backed by a form, so inline edits in the
+   * header (icon, title, description, status) can't "stage" changes
+   * waiting for a Save button. Each field commits immediately via the
+   * shared update mutation — the payload is a partial update merged
+   * into the loaded agent. iOS-style: change it, it's saved.
+   */
+  async function persistField(patch: Partial<TurAIAgent>) {
+    try {
+      await updateMutation.mutateAsync({ ...agent, ...patch });
+      toast.success(t("forms.common.updated", { name: agent.title, feature: t("aiAgent.title") }));
+    } catch (err) {
+      console.error("Failed to update AI agent field", err);
+      toast.error(t("forms.common.notUpdated", { name: agent.title, feature: t("aiAgent.title") }));
+    }
+  }
 
   const counts = useMemo(() => ({
     llm: agent.llmInstances?.length ?? 0,
@@ -54,30 +101,85 @@ function AgentBento({ agent }: Readonly<{ agent: TurAIAgent }>) {
 
   return (
     <>
-      <div className="bento-shell-header mb-6 flex flex-col gap-1 md:mb-8">
-        <Link to={ROUTES.BENTO_AI_AGENT_INSTANCE} className="text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground">
-          {t("aiAgent.title")}
-        </Link>
-        <div className="flex items-center gap-3" style={{ viewTransitionName: `bento-agent-${agent.id}` } as React.CSSProperties}>
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
-            <IconRobot size={22} />
-          </span>
-          <h1 className="truncate text-3xl font-semibold tracking-tight md:text-4xl">
-            {agent.title}
-          </h1>
-          <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider ${
-            enabled
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : "border-border bg-muted text-muted-foreground"
-          }`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
-            {enabled ? "Active" : "Idle"}
-          </span>
-        </div>
-        {agent.description && (
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{agent.description}</p>
-        )}
-      </div>
+      <BentoHero
+        eyebrow={
+          <Link to={ROUTES.BENTO_AI_AGENT_INSTANCE} className="hover:text-foreground">
+            {t("aiAgent.title")}
+          </Link>
+        }
+        leading={
+          <BentoHeroIconPicker
+            value={agent.icon}
+            onChange={(icon) => persistField({ icon })}
+            onClear={() => persistField({ icon: null })}
+            defaultIcon={IconRobot}
+            tone="blue"
+            title={agent.title}
+            description={agent.description}
+          />
+        }
+        title={
+          <BentoInlineEdit
+            value={agent.title}
+            onSave={(title) => persistField({ title })}
+            placeholder={t("aiAgent.title")}
+            className="text-3xl font-semibold tracking-tight md:text-4xl"
+            ariaLabel={t("forms.common.title")}
+          />
+        }
+        subtitle={
+          <BentoInlineEdit
+            value={agent.description ?? ""}
+            onSave={(description) => persistField({ description })}
+            multiline
+            placeholder={t("forms.common.description")}
+            className="max-w-2xl text-sm text-muted-foreground"
+            ariaLabel={t("forms.common.description")}
+          />
+        }
+        trailing={
+          <>
+            <button
+              type="button"
+              onClick={() => persistField({ enabled: enabled ? 0 : 1 })}
+              aria-label={t("forms.common.enabled")}
+              title={enabled ? "Active — click to disable" : "Idle — click to enable"}
+              className={`bento-tile-clickable flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wider transition-colors duration-200 ${
+                enabled
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                  : "border-border bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${enabled ? "bg-emerald-500 bento-pulse" : "bg-muted-foreground/60"}`} />
+              {enabled ? "Active" : "Idle"}
+            </button>
+            <BentoActionsMenu
+              actions={[
+                {
+                  label: t("forms.formActions.delete"),
+                  icon: IconTrash,
+                  tone: "destructive",
+                  onSelect: () => setDeleteOpen(true),
+                },
+              ]}
+            />
+          </>
+        }
+      />
+
+      {/*
+       * Controlled DialogDelete — its built-in trigger is hidden so the
+       * dropdown's "Delete" item is the only entry point. `open`/`setOpen`
+       * drive the modal externally.
+       */}
+      <DialogDelete
+        feature={t("aiAgent.title")}
+        name={agent.title}
+        onDelete={onDelete}
+        open={deleteOpen}
+        setOpen={setDeleteOpen}
+        trigger={<span className="hidden" aria-hidden />}
+      />
 
       <div className="bento-grid grid auto-rows-[minmax(140px,auto)] grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
         {/* HERO: System prompt — large 2x2 frosted tile */}

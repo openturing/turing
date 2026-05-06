@@ -69,7 +69,7 @@ const SECTIONS: FeatureSection[] = [
     items: [
       // AI Agent is the gateway to the bento experience itself — featured.
       { titleKey: "home.features.aiAgent.title",       descriptionKey: "home.features.aiAgent.description",       url: ROUTES.BENTO_AI_AGENT_INSTANCE, icon: IconRobot,           tone: "blue",    span: SPAN_FEATURED, privilege: "AI_AGENT_VIEW" },
-      { titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", url: "/admin/llm/instance",          icon: IconCpu2,            tone: "indigo",  span: SPAN_WIDE,     privilege: "LLM_VIEW" },
+      { titleKey: "home.features.languageModel.title", descriptionKey: "home.features.languageModel.description", url: ROUTES.BENTO_LLM_INSTANCE,      icon: IconCpu2,            tone: "indigo",  span: SPAN_WIDE,     privilege: "LLM_VIEW" },
       { titleKey: "home.features.embeddingModel.title", descriptionKey: "home.features.embeddingModel.description", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube,         tone: "violet",  span: SPAN_SQUARE,   privilege: "EMBEDDING_VIEW" },
       { titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", url: "/admin/store/instance",       icon: IconDatabase,        tone: "violet",  span: SPAN_SQUARE,   privilege: "STORE_VIEW" },
       { titleKey: "home.features.mcpServer.title",     descriptionKey: "home.features.mcpServer.description",     url: "/admin/mcp/instance",          icon: IconServer2,         tone: "amber",   span: SPAN_SQUARE },
@@ -167,8 +167,12 @@ export default function BentoHomePage() {
 
   return (
     <>
+      {/*
+       * No eyebrow on home — this is the root of the bento tree, so
+       * there's no parent section to breadcrumb back to. The greeting
+       * itself is the headline.
+       */}
       <BentoHero
-        eyebrow="Bento"
         leading={<TurLogo className="size-12" />}
         title={<>{t(getGreetingKey())}, {firstName}.</>}
         subtitle={t("home.welcome")}

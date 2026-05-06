@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
@@ -28,6 +30,7 @@ public class TurLlmSummaryService {
 
     private final TurGlobalSettingsService globalSettingsService;
     private final TurLLMInstanceRepository llmInstanceRepository;
+    private final TurLLMInstanceRepositoryPort llmInstanceRepositoryPort;
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService secretCryptoService;
     private final TurLlmCacheService llmCacheService;
@@ -92,8 +95,8 @@ public class TurLlmSummaryService {
         if (!StringUtils.hasText(llmId)) {
             return false;
         }
-        return llmInstanceRepository.findById(llmId)
-                .map(instance -> instance.getEnabled() == 1)
+        return llmInstanceRepositoryPort.findById(llmId)
+                .map(TurLLMInstanceDomain::isEnabled)
                 .orElse(false);
     }
 }

@@ -16,12 +16,15 @@
  */
 package com.viglet.turing.persistence.adapter.sn;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import com.viglet.turing.domain.sn.TurSNSiteDomain;
 import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
+import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 /**
@@ -58,5 +61,34 @@ public class TurSNSiteRepositoryAdapter implements TurSNSiteRepositoryPort {
     @Override
     public Optional<TurSNSiteDomain> findById(String id) {
         return turSNSiteRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<String> findAllNamesOrderedByNameIgnoreCase() {
+        return turSNSiteRepository
+                .findAll(Sort.by(Sort.Order.asc("name").ignoreCase()))
+                .stream()
+                .map(TurSNSite::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .toList();
+    }
+
+    @Override
+    public boolean hasRagEnabledForSiteName(String siteName) {
+        // Walks site → genAi config → agent in one call so consumers can
+        // gate UI/route paths on RAG availability with a single round-trip
+        // instead of three port hops. ManyToOne fetch defaults to EAGER
+        // so the navigation stays inside the same transaction without
+        // triggering lazy-init.
+        return turSNSiteRepository.findByName(siteName)
+                .map(site -> {
+                    var genAi = site.getTurSNSiteGenAi();
+                    if (genAi == null) {
+                        return false;
+                    }
+                    var agent = genAi.getTurAIAgent();
+                    return agent != null && agent.getEnabled() == 1 && agent.isRagEnabled();
+                })
+                .orElse(false);
     }
 }

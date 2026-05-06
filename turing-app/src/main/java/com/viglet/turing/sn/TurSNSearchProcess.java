@@ -61,7 +61,6 @@ import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -90,7 +89,6 @@ public class TurSNSearchProcess {
         private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
         private final TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
         private final TurSNSiteRepository turSNSiteRepository;
-        private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
         private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
         private final TurSolrInstanceProcess turSolrInstanceProcess;
         private final TurSNSpotlightProcess turSNSpotlightProcess;
@@ -109,7 +107,6 @@ public class TurSNSearchProcess {
                         TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
                         TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
                         TurSNSiteRepository turSNSiteRepository,
-                        TurSNSiteLocaleRepository turSNSiteLocaleRepository,
                         TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort,
                         TurSolrInstanceProcess turSolrInstanceProcess,
                         TurSNSpotlightProcess turSNSpotlightProcess,
@@ -127,7 +124,6 @@ public class TurSNSearchProcess {
                 this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
                 this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
                 this.turSNSiteRepository = turSNSiteRepository;
-                this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
                 this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSNSpotlightProcess = turSNSpotlightProcess;
@@ -462,18 +458,32 @@ public class TurSNSearchProcess {
         }
 
         public List<TurSNSiteLocaleBean> responseLocales(TurSNSite turSNSite, URI uri) {
+                return responseLocalesById(turSNSite.getId(), uri);
+        }
+
+        /**
+         * Domain-friendly overload — controllers that already hold a
+         * {@link com.viglet.turing.domain.sn.TurSNSiteDomain} from the port
+         * can call this directly without re-loading the JPA entity.
+         */
+        public List<TurSNSiteLocaleBean> responseLocales(
+                        com.viglet.turing.domain.sn.TurSNSiteDomain site, URI uri) {
+                return responseLocalesById(site.id(), uri);
+        }
+
+        private List<TurSNSiteLocaleBean> responseLocalesById(String snSiteId, URI uri) {
                 List<TurSNSiteLocaleBean> turSNSiteLocaleBeans = new ArrayList<>();
-                turSNSiteLocaleRepository
-                                .findByTurSNSiteOrderByPositionAsc(turSNSite)
+                turSNSiteLocaleRepositoryPort
+                                .findBySnSiteIdOrderedByPosition(snSiteId)
                                 .forEach(turSNSiteLocale -> turSNSiteLocaleBeans
                                                 .add(new TurSNSiteLocaleBean()
                                                                 .setLocale(turSNSiteLocale
-                                                                                .getLanguage())
+                                                                                .language())
                                                                 .setLink(TurCommonsUtils
                                                                                 .addOrReplaceParameter(
                                                                                                 uri,
                                                                                                 TurSNParamType.LOCALE,
-                                                                                                turSNSiteLocale.getLanguage(),
+                                                                                                turSNSiteLocale.language(),
                                                                                                 true)
                                                                                 .toString())));
 

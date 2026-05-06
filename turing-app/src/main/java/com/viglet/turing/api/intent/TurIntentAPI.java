@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.springframework.ai.tool.ToolCallback;
 
+import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
 import com.viglet.turing.genai.authoring.AiAuthoringRequest;
 import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.TurAiAuthoringService;
@@ -52,6 +53,7 @@ public class TurIntentAPI {
     private final TurIntentRepository turIntentRepository;
     private final TurIntentMapper turIntentMapper;
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurAIAgentRepositoryPort turAIAgentRepositoryPort;
     private final TurAiAuthoringService aiAuthoringService;
     private final TurNativeToolService nativeToolService;
     private final TurToolCallbackPipeline toolCallbackPipeline;
@@ -59,12 +61,14 @@ public class TurIntentAPI {
     public TurIntentAPI(TurIntentRepository turIntentRepository,
                         TurIntentMapper turIntentMapper,
                         TurAIAgentRepository turAIAgentRepository,
+                        TurAIAgentRepositoryPort turAIAgentRepositoryPort,
                         TurAiAuthoringService aiAuthoringService,
                         TurNativeToolService nativeToolService,
                         TurToolCallbackPipeline toolCallbackPipeline) {
         this.turIntentRepository = turIntentRepository;
         this.turIntentMapper = turIntentMapper;
         this.turAIAgentRepository = turAIAgentRepository;
+        this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.aiAuthoringService = aiAuthoringService;
         this.nativeToolService = nativeToolService;
         this.toolCallbackPipeline = toolCallbackPipeline;
@@ -116,9 +120,17 @@ public class TurIntentAPI {
             - Default enabled=1 unless the user asks for the intent disabled.
             """;
 
+    /** Load the agent entity — only for write paths that need the JPA-managed reference. */
     private TurAIAgent loadAgent(String agentId) {
         return turAIAgentRepository.findById(agentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "AI Agent not found"));
+    }
+
+    /** Validate the agent exists via the port — for read-only paths that don't need the entity. */
+    private void requireAgentExists(String agentId) {
+        if (turAIAgentRepositoryPort.findById(agentId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "AI Agent not found");
+        }
     }
 
     @Operation(summary = "Intent List for an Agent")
@@ -206,7 +218,7 @@ public class TurIntentAPI {
             @PathVariable String agentId,
             @RequestBody AiAuthoringRequest<IntentGeneration> request) {
         // Verify agent exists (also enforces auth scope at row level later if needed).
-        loadAgent(agentId);
+        requireAgentExists(agentId);
 
         // Expose the Iconify search tool so the LLM can pick a real icon
         // identifier instead of inventing one. The pipeline applies the

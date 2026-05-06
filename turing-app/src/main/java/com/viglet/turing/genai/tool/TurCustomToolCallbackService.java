@@ -29,8 +29,9 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.viglet.turing.domain.customtool.TurCustomToolDomain;
+import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
-import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
@@ -39,9 +40,10 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Builds Spring AI {@link ToolCallback} instances backed by user-defined
- * Groovy scripts. Each {@link TurCustomTool} becomes one callback whose
- * {@code call(String)} parses the LLM JSON arguments, binds them into the
- * Groovy script, evaluates, and returns the script result as a string.
+ * Groovy scripts. Each {@link TurCustomToolDomain} becomes one callback
+ * whose {@code call(String)} parses the LLM JSON arguments, binds them
+ * into the Groovy script, evaluates, and returns the script result as a
+ * string.
  *
  * <p>Compiled scripts are cached per tool id and invalidated when the
  * source changes.
@@ -53,15 +55,21 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurCustomToolCallbackService {
 
-    private final TurCustomToolRepository repository;
+    private final TurCustomToolRepositoryPort repositoryPort;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
-    public TurCustomToolCallbackService(TurCustomToolRepository repository) {
-        this.repository = repository;
+    public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort) {
+        this.repositoryPort = repositoryPort;
     }
 
-    /** Get tool callbacks only for the specified custom tools (filtered by agent configuration). */
+    /**
+     * Get tool callbacks only for the specified custom tools (filtered by
+     * agent configuration). The argument keeps its JPA-entity shape so
+     * callers that already hold {@code agent.getCustomTools()} need not
+     * project — internally we collapse the set to ids and resolve through
+     * the port.
+     */
     public ToolCallback[] getToolCallbacks(Set<TurCustomTool> customTools) {
         if (customTools == null || customTools.isEmpty()) {
             return new ToolCallback[0];
@@ -70,27 +78,26 @@ public class TurCustomToolCallbackService {
                 .map(TurCustomTool::getId)
                 .collect(Collectors.toSet());
 
-        return repository.findAll().stream()
-                .filter(t -> t.getEnabled() == 1 && allowedIds.contains(t.getId()))
+        return repositoryPort.findAllEnabled().stream()
+                .filter(t -> allowedIds.contains(t.id()))
                 .map(this::buildCallback)
                 .toArray(ToolCallback[]::new);
     }
 
     /** All enabled custom tool callbacks across the platform. */
     public ToolCallback[] getToolCallbacks() {
-        return repository.findAll().stream()
-                .filter(t -> t.getEnabled() == 1)
+        return repositoryPort.findAllEnabled().stream()
                 .map(this::buildCallback)
                 .toArray(ToolCallback[]::new);
     }
 
-    private ToolCallback buildCallback(TurCustomTool tool) {
+    private ToolCallback buildCallback(TurCustomToolDomain tool) {
         return new GroovyToolCallback(tool);
     }
 
     /* ---------- JSON Schema construction ---------- */
 
-    private String buildInputSchema(TurCustomTool tool) {
+    private String buildInputSchema(TurCustomToolDomain tool) {
         List<ParameterDef> params = readParameters(tool);
         Map<String, Object> properties = new LinkedHashMap<>();
         List<String> required = new ArrayList<>();
@@ -107,20 +114,20 @@ public class TurCustomToolCallbackService {
         try {
             return objectMapper.writeValueAsString(schema);
         } catch (Exception e) {
-            log.warn("[CustomTool] Failed to build input schema for tool '{}'", tool.getTitle(), e);
+            log.warn("[CustomTool] Failed to build input schema for tool '{}'", tool.title(), e);
             return "{\"type\":\"object\",\"properties\":{}}";
         }
     }
 
-    private List<ParameterDef> readParameters(TurCustomTool tool) {
-        if (tool.getParametersJson() == null || tool.getParametersJson().isBlank()) {
+    private List<ParameterDef> readParameters(TurCustomToolDomain tool) {
+        if (tool.parametersJson() == null || tool.parametersJson().isBlank()) {
             return Collections.emptyList();
         }
         try {
-            return objectMapper.readValue(tool.getParametersJson(), new TypeReference<>() {
+            return objectMapper.readValue(tool.parametersJson(), new TypeReference<>() {
             });
         } catch (Exception e) {
-            log.warn("[CustomTool] Could not parse parametersJson for '{}': {}", tool.getTitle(), e.getMessage());
+            log.warn("[CustomTool] Could not parse parametersJson for '{}': {}", tool.title(), e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -140,23 +147,23 @@ public class TurCustomToolCallbackService {
     /* ---------- Groovy execution ---------- */
 
     @SuppressWarnings("unchecked")
-    private CachedScript scriptFor(TurCustomTool tool) {
-        String id = tool.getId();
-        int hash = tool.getGroovyScript() == null ? 0 : tool.getGroovyScript().hashCode();
+    private CachedScript scriptFor(TurCustomToolDomain tool) {
+        String id = tool.id();
+        int hash = tool.groovyScript() == null ? 0 : tool.groovyScript().hashCode();
         CachedScript cached = scriptCache.get(id);
         if (cached != null && cached.scriptHash == hash) {
             return cached;
         }
         GroovyShell shell = new GroovyShell();
         Class<? extends Script> clazz = (Class<? extends Script>) shell.getClassLoader().parseClass(
-                tool.getGroovyScript() == null ? "" : tool.getGroovyScript(),
+                tool.groovyScript() == null ? "" : tool.groovyScript(),
                 "TurCustomTool_" + id + ".groovy");
         CachedScript fresh = new CachedScript(clazz, hash);
         scriptCache.put(id, fresh);
         return fresh;
     }
 
-    String executeGroovy(TurCustomTool tool, String toolInput) throws ReflectiveOperationException {
+    String executeGroovy(TurCustomToolDomain tool, String toolInput) throws ReflectiveOperationException {
         Map<String, Object> args = parseArgs(toolInput);
         CachedScript cached = scriptFor(tool);
         Binding binding = new Binding(new HashMap<>(args));
@@ -248,23 +255,23 @@ public class TurCustomToolCallbackService {
     }
 
     /**
-     * Spring AI ToolCallback adapter for a single TurCustomTool. Outer
-     * service is captured so we can reuse parser/cache logic.
+     * Spring AI ToolCallback adapter for a single TurCustomToolDomain.
+     * Outer service is captured so we can reuse parser/cache logic.
      */
     final class GroovyToolCallback implements ToolCallback {
-        private final TurCustomTool tool;
+        private final TurCustomToolDomain tool;
         private final ToolDefinition definition;
         private final RichReturn richReturn;
 
-        GroovyToolCallback(TurCustomTool tool) {
+        GroovyToolCallback(TurCustomToolDomain tool) {
             this.tool = tool;
-            this.richReturn = RichReturn.from(tool.getReturnType());
-            String description = tool.getLlmDescription() == null ? "" : tool.getLlmDescription();
+            this.richReturn = RichReturn.from(tool.returnType());
+            String description = tool.llmDescription() == null ? "" : tool.llmDescription();
             if (richReturn != null) {
                 description = description + richReturn.descriptionHint;
             }
             this.definition = new DefaultToolDefinition(
-                    sanitizeName(tool.getTitle()),
+                    sanitizeName(tool.title()),
                     description,
                     buildInputSchema(tool));
         }
@@ -285,7 +292,7 @@ public class TurCustomToolCallbackService {
                 String result = executeGroovy(tool, toolInput);
                 return richReturn != null ? richReturn.wrap(result) : result;
             } catch (Exception e) {
-                log.error("[CustomTool] '{}' failed: {}", tool.getTitle(), e.getMessage(), e);
+                log.error("[CustomTool] '{}' failed: {}", tool.title(), e.getMessage(), e);
                 return "Error executing tool: " + e.getMessage();
             }
         }

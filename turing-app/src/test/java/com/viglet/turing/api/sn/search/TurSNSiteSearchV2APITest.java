@@ -42,8 +42,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteDomain;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,7 +61,7 @@ class TurSNSiteSearchV2APITest {
     void testSearchPostReturnsUnauthorizedWhenPrincipalMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectPost("site",
@@ -76,7 +76,7 @@ class TurSNSiteSearchV2APITest {
     void testSearchGetReturnsNotFoundWhenLanguageMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -94,11 +94,11 @@ class TurSNSiteSearchV2APITest {
     void testSearchListReturnsOkWhenSiteExists() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
         TurSNSearchParams params = new TurSNSearchParams();
         HttpServletRequest request = mock(HttpServletRequest.class);
-        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteDomain site = mock(TurSNSiteDomain.class);
         TurSNSiteSearchContext context = mock(TurSNSiteSearchContext.class);
         List<Object> expected = List.of("one");
 
@@ -117,7 +117,7 @@ class TurSNSiteSearchV2APITest {
     void testSearchGetReturnsNotFoundWhenSiteMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -136,7 +136,7 @@ class TurSNSiteSearchV2APITest {
     void testSearchListReturnsNotFoundWhenSiteMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
         TurSNSearchParams params = new TurSNSearchParams();
         ResponseEntity<TurSNSiteSearchBean> notFound = ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -155,11 +155,11 @@ class TurSNSiteSearchV2APITest {
     void testSearchPostReturnsOkWhenPrincipalPresent() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
         TurSNSearchParams params = new TurSNSearchParams();
         TurSNSitePostParamsBean postParams = new TurSNSitePostParamsBean();
-        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteDomain site = mock(TurSNSiteDomain.class);
         Principal principal = () -> "user";
         HttpServletRequest request = mock(HttpServletRequest.class);
         ResponseEntity<TurSNSiteSearchBean> expected = new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK);
@@ -178,7 +178,7 @@ class TurSNSiteSearchV2APITest {
     void testLatestReturnsUnauthorizedWhenPrincipalMissing() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
 
         ResponseEntity<List<String>> response = api.turSNSiteSearchLatestImpersonate("site", 5, "en_US",
@@ -191,13 +191,13 @@ class TurSNSiteSearchV2APITest {
     void testLocalesReturnsResponseWhenSiteExists() {
         TurSNSiteSearchService service = mock(TurSNSiteSearchService.class);
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
-        TurSNSiteRepository repository = mock(TurSNSiteRepository.class);
+        TurSNSiteRepositoryPort repository = mock(TurSNSiteRepositoryPort.class);
         TurSNSiteSearchV2API api = new TurSNSiteSearchV2API(service, searchProcess, repository);
-        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteDomain site = mock(TurSNSiteDomain.class);
         List<TurSNSiteLocaleBean> locales = List.of(new TurSNSiteLocaleBean());
 
         when(repository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-        when(searchProcess.responseLocales(any(TurSNSite.class), any())).thenReturn(locales);
+        when(searchProcess.responseLocales(any(TurSNSiteDomain.class), any())).thenReturn(locales);
 
         List<TurSNSiteLocaleBean> response = api.turSNSiteSearchLocale("site");
 

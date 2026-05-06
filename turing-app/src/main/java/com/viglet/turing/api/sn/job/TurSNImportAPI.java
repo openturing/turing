@@ -46,7 +46,7 @@ import com.viglet.turing.commons.sn.field.TurSNFieldName;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.genai.TurSNGenAi;
 import com.viglet.turing.logging.TurLoggingUtils;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNConstants;
 import com.viglet.turing.spring.utils.TurSpringUtils;
 import com.viglet.turing.utils.TurFileUtils;
@@ -62,13 +62,14 @@ import tools.jackson.databind.json.JsonMapper;
 @Tag(name = "Semantic Navigation Import", description = "Semantic Navigation Import API")
 public class TurSNImportAPI {
     private final JmsMessagingTemplate jmsMessagingTemplate;
-    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
     private final TurSNGenAi turGenAi;
 
-    public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate, TurSNSiteRepository turSNSiteRepository,
+    public TurSNImportAPI(JmsMessagingTemplate jmsMessagingTemplate,
+            TurSNSiteRepositoryPort turSNSiteRepositoryPort,
             TurSNGenAi turGenAi) {
         this.jmsMessagingTemplate = jmsMessagingTemplate;
-        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
         this.turGenAi = turGenAi;
     }
 
@@ -151,23 +152,16 @@ public class TurSNImportAPI {
         turSNJobItems.forEach(turJobItem -> {
             if (isValidJobItem(turJobItem)) {
                 Object objectId = turJobItem.getAttributes().get(TurSNFieldName.ID);
-                turJobItem.getSiteNames().forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName)
-                        .ifPresentOrElse(turSNSite -> {
-                            var siteGenAi = turSNSite.getTurSNSiteGenAi();
-                            var agent = siteGenAi == null ? null : siteGenAi.getTurAIAgent();
-                            if (siteGenAi == null) {
-                                log.debug("RAG skipped for Object ID '{}' of SN Site '{}': TurSNSiteGenAi is null",
-                                        objectId, siteName);
-                            } else if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) {
-                                log.debug("RAG skipped for Object ID '{}' of SN Site '{}': agent not configured for RAG",
-                                        objectId, siteName);
-                            } else {
-                                log.debug("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
-                                        objectId, siteName);
-                                turGenAi.addDocuments(turSNJobItems);
-                            }
-                        }, () -> log.debug("RAG skipped for Object ID '{}': SN Site '{}' not found",
-                                objectId, siteName)));
+                turJobItem.getSiteNames().forEach(siteName -> {
+                    if (turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
+                        log.debug("RAG enabled for Object ID '{}' of SN Site '{}': routing to vector store",
+                                objectId, siteName);
+                        turGenAi.addDocuments(turSNJobItems);
+                    } else {
+                        log.debug("RAG skipped for Object ID '{}' of SN Site '{}': site missing or agent not configured",
+                                objectId, siteName);
+                    }
+                });
             }
         });
     }
@@ -176,11 +170,11 @@ public class TurSNImportAPI {
         turSNJobItems.forEach(turSNJobItem -> {
             if (isValidJobItem(turSNJobItem)) {
                 turSNJobItem.getSiteNames()
-                        .forEach(siteName -> turSNSiteRepository.findByNameIgnoreCase(siteName).ifPresentOrElse(turSNSite -> {
+                        .forEach(siteName -> turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).ifPresentOrElse(turSNSite -> {
                             log.info("Sent to queue to {} the Object ID '{}' of '{}' SN Site ({}).",
                                     actionType(turSNJobItem),
                                     turSNJobItem.getAttributes().get(TurSNFieldName.ID),
-                                    turSNSite.getName(),
+                                    turSNSite.name(),
                                     turSNJobItem.getLocale());
                             TurLoggingUtils.setSuccessStatus(turSNJobItem, TurIndexingStatus.SENT_TO_QUEUE);
                         },

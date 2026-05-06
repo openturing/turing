@@ -18,6 +18,7 @@ package com.viglet.turing.persistence.adapter.sn;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -72,5 +73,23 @@ public class TurSNSiteLocaleRepositoryAdapter implements TurSNSiteLocaleReposito
                         locale.getTurSNSite().getId(),
                         locale.getTurSNSite().getName()))
                 .toList();
+    }
+
+    @Override
+    public List<TurSNSiteLocaleDomain> findBySnSiteIdOrderedByPosition(String snSiteId) {
+        TurSNSite stub = new TurSNSite();
+        stub.setId(snSiteId);
+        return mapper.toDomainList(
+                turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(stub));
+    }
+
+    @Override
+    public Optional<TurSNSiteLocaleDomain> findFirstLocaleBySnSiteIdOrderByPosition(
+            String snSiteId) {
+        TurSNSite stub = new TurSNSite();
+        stub.setId(snSiteId);
+        return Optional.ofNullable(
+                turSNSiteLocaleRepository.findFirstByTurSNSiteOrderByPositionAsc(stub))
+                .map(mapper::toDomain);
     }
 }

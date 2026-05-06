@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,23 +54,15 @@ public class TurAnnSearchController {
 
     private static final ClassPathResource DEFAULT_INDEX = new ClassPathResource("/public/index.html");
 
-    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
 
-    public TurAnnSearchController(TurSNSiteRepository turSNSiteRepository) {
-        this.turSNSiteRepository = turSNSiteRepository;
+    public TurAnnSearchController(TurSNSiteRepositoryPort turSNSiteRepositoryPort) {
+        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
     }
 
     @GetMapping("/{siteName}")
     public ResponseEntity<?> serve(@PathVariable String siteName) {
-        boolean enabled = turSNSiteRepository.findByName(siteName)
-                .map(site -> {
-                    var genAi = site.getTurSNSiteGenAi();
-                    if (genAi == null) return false;
-                    var agent = genAi.getTurAIAgent();
-                    return agent != null && agent.getEnabled() == 1 && agent.isRagEnabled();
-                })
-                .orElse(false);
-        if (!enabled) {
+        if (!turSNSiteRepositoryPort.hasRagEnabledForSiteName(siteName)) {
             log.debug("ANN page requested for site '{}' but RAG is not enabled", siteName);
             return ResponseEntity.notFound().build();
         }

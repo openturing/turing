@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
-import org.springframework.data.domain.Sort;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -45,12 +44,11 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteSearchGroupBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchResultsBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.domain.sn.TurSNSiteDomain;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtDomain;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
 
@@ -68,18 +66,18 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteSearchGraphQLController {
 
     private final TurSNSearchProcess turSNSearchProcess;
-    private final TurSNSiteRepository turSNSiteRepository;
-    private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-    private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
+    private final TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort;
+    private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
 
     public TurSNSiteSearchGraphQLController(TurSNSearchProcess turSNSearchProcess,
-            TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-            TurSNSiteLocaleRepository turSNSiteLocaleRepository) {
+            TurSNSiteRepositoryPort turSNSiteRepositoryPort,
+            TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort,
+            TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort) {
         this.turSNSearchProcess = turSNSearchProcess;
-        this.turSNSiteRepository = turSNSiteRepository;
-        this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
-        this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
+        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
+        this.turSNSiteFieldExtRepositoryPort = turSNSiteFieldExtRepositoryPort;
+        this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
     }
 
     @QueryMapping
@@ -107,7 +105,7 @@ public class TurSNSiteSearchGraphQLController {
             return new TurSNSiteSearchBean();
         }
 
-        return turSNSiteRepository.findByNameIgnoreCase(resolvedSiteName)
+        return turSNSiteRepositoryPort.findByNameIgnoreCase(resolvedSiteName)
                 .map(site -> {
                     // Get the current HTTP request to create proper search context
                     ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder
@@ -133,26 +131,18 @@ public class TurSNSiteSearchGraphQLController {
 
     @QueryMapping
     public List<String> siteNames() {
-        return turSNSiteRepository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase())).stream()
-                .map(TurSNSite::getName)
-                .filter(StringUtils::isNotBlank)
-                .toList();
+        return turSNSiteRepositoryPort.findAllNamesOrderedByNameIgnoreCase();
     }
 
     private String resolveSiteName(String siteName) {
         if (StringUtils.isBlank(siteName)) {
             return siteName;
         }
-        if (turSNSiteRepository.findByNameIgnoreCase(siteName).isPresent()) {
+        if (turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).isPresent()) {
             return siteName;
         }
 
-        List<String> siteNames = turSNSiteRepository
-                .findAll(Sort.by(Sort.Order.asc("name").ignoreCase()))
-                .stream()
-                .map(TurSNSite::getName)
-                .filter(StringUtils::isNotBlank)
-                .toList();
+        List<String> siteNames = turSNSiteRepositoryPort.findAllNamesOrderedByNameIgnoreCase();
         Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
                 .buildEnumToSiteNameMap(siteNames);
         String resolved = TurSNSiteGraphQLNameUtils.resolveGraphQLSiteArgument(siteName,
@@ -162,7 +152,7 @@ public class TurSNSiteSearchGraphQLController {
         }
 
         String hyphenCandidate = siteName.toLowerCase(Locale.ROOT).replace('_', '-');
-        if (turSNSiteRepository.findByNameIgnoreCase(hyphenCandidate).isPresent()) {
+        if (turSNSiteRepositoryPort.findByNameIgnoreCase(hyphenCandidate).isPresent()) {
             return hyphenCandidate;
         }
 
@@ -174,31 +164,28 @@ public class TurSNSiteSearchGraphQLController {
                 .orElse(siteName);
     }
 
-    private void enrichDynamicFieldsBySite(TurSNSiteSearchBean searchResponse, TurSNSite site,
+    private void enrichDynamicFieldsBySite(TurSNSiteSearchBean searchResponse, TurSNSiteDomain site,
             List<String> selectedFields) {
         if (searchResponse == null || site == null) {
             return;
         }
 
-        List<TurSNSiteFieldExt> siteFieldExtList = turSNSiteFieldExtRepository.findByTurSNSite(
-                Sort.by(Sort.Order.asc("name").ignoreCase()), site);
-        if (siteFieldExtList == null) {
-            siteFieldExtList = List.of();
-        }
+        List<TurSNSiteFieldExtDomain> siteFieldExtList = turSNSiteFieldExtRepositoryPort
+                .findBySnSiteId(site.id());
 
         LinkedHashSet<String> fieldNames = new LinkedHashSet<>();
         Map<String, String> externalIdToName = new LinkedHashMap<>();
         siteFieldExtList.forEach(siteFieldExt -> {
-            if (StringUtils.isNotBlank(siteFieldExt.getName())) {
+            if (StringUtils.isNotBlank(siteFieldExt.name())) {
                 String graphQLName = TurSNSiteGraphQLNameUtils
-                        .toGraphQLFieldName(siteFieldExt.getName());
+                        .toGraphQLFieldName(siteFieldExt.name());
                 fieldNames.add(graphQLName);
             }
-            if (StringUtils.isNotBlank(siteFieldExt.getExternalId())
-                    && StringUtils.isNotBlank(siteFieldExt.getName())) {
+            if (StringUtils.isNotBlank(siteFieldExt.externalId())
+                    && StringUtils.isNotBlank(siteFieldExt.name())) {
                 String graphQLName = TurSNSiteGraphQLNameUtils
-                        .toGraphQLFieldName(siteFieldExt.getName());
-                externalIdToName.putIfAbsent(siteFieldExt.getExternalId(), graphQLName);
+                        .toGraphQLFieldName(siteFieldExt.name());
+                externalIdToName.putIfAbsent(siteFieldExt.externalId(), graphQLName);
             }
         });
 
@@ -298,9 +285,10 @@ public class TurSNSiteSearchGraphQLController {
             localeToUse = turSNSearchParams.getLocale().toString();
         }
         if (StringUtils.isBlank(localeToUse)) {
-            localeToUse = turSNSiteRepository.findByNameIgnoreCase(siteName)
-                    .map(turSNSiteLocaleRepository::findFirstByTurSNSiteOrderByPositionAsc)
-                    .map(siteLocale -> siteLocale.getLanguage().toString())
+            localeToUse = turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
+                    .flatMap(site -> turSNSiteLocaleRepositoryPort
+                            .findFirstLocaleBySnSiteIdOrderByPosition(site.id()))
+                    .map(siteLocale -> siteLocale.language().toString())
                     .orElse("en");
         }
         return localeToUse;
@@ -386,21 +374,22 @@ public class TurSNSiteSearchGraphQLController {
     }
 
     private TurSNSiteSearchContext getTurSNSiteSearchContext(String siteName,
-            TurSNSearchParams turSNSearchParams, HttpServletRequest request, TurSNSite site) {
+            TurSNSearchParams turSNSearchParams, HttpServletRequest request, TurSNSiteDomain site) {
 
         TurSNConfig turSNConfig = getTurSNConfig(site);
         return TurSNUtils.getTurSNSiteSearchContext(turSNConfig, siteName,
                 turSNSearchParams, request);
     }
 
-    private TurSNConfig getTurSNConfig(TurSNSite turSNSite) {
+    private TurSNConfig getTurSNConfig(TurSNSiteDomain turSNSite) {
         TurSNConfig turSNConfig = new TurSNConfig();
-        turSNConfig.setHlEnabled(turSNSite.getHl() == 1 && hasSiteHLFields(turSNSite));
+        turSNConfig.setHlEnabled(turSNSite.hl() != null && turSNSite.hl() == 1
+                && hasSiteHLFields(turSNSite));
         return turSNConfig;
     }
 
-    private boolean hasSiteHLFields(TurSNSite turSNSite) {
-        return !CollectionUtils.isEmpty(turSNSiteFieldExtRepository
-                .findByTurSNSiteAndHlAndEnabled(turSNSite, 1, 1));
+    private boolean hasSiteHLFields(TurSNSiteDomain turSNSite) {
+        return turSNSiteFieldExtRepositoryPort
+                .existsBySnSiteIdAndHlAndEnabled(turSNSite.id(), 1, 1);
     }
 }

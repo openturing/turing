@@ -37,10 +37,9 @@ import com.viglet.turing.client.sn.job.TurSNJobAction;
 import com.viglet.turing.client.sn.job.TurSNJobItem;
 import com.viglet.turing.client.sn.job.TurSNJobItems;
 import com.viglet.turing.commons.sn.field.TurSNFieldName;
+import com.viglet.turing.domain.sn.TurSNSiteDomain;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.genai.TurSNGenAi;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 
 @ExtendWith(MockitoExtension.class)
 class TurSNImportAPITest {
@@ -51,7 +50,7 @@ class TurSNImportAPITest {
     private JmsMessagingTemplate jmsMessagingTemplate;
 
     @Mock
-    private TurSNSiteRepository turSNSiteRepository;
+    private TurSNSiteRepositoryPort turSNSiteRepositoryPort;
 
     @Mock
     private TurSNGenAi turGenAi;
@@ -64,6 +63,12 @@ class TurSNImportAPITest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(api).build();
+    }
+
+    private static TurSNSiteDomain siteDomain(String name) {
+        return new TurSNSiteDomain(name + "-id", name, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test
@@ -79,18 +84,12 @@ class TurSNImportAPITest {
         item.setAttributes(attributes);
         jobItems.add(item);
 
-        TurSNSite site = new TurSNSite();
-        // Site GenAI now requires an enabled agent with RAG enabled in order
-        // to route documents to the vector store.
-        com.viglet.turing.persistence.model.agent.TurAIAgent agent =
-                new com.viglet.turing.persistence.model.agent.TurAIAgent();
-        agent.setEnabled(1);
-        agent.setRagEnabled(true);
-        TurSNSiteGenAi genAi = new TurSNSiteGenAi();
-        genAi.setTurAIAgent(agent);
-        site.setTurSNSiteGenAi(genAi);
-
-        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.of(site));
+        // The RAG-availability gate now lives behind the port — adapter test
+        // covers the entity-navigation branches; the controller test just
+        // pins the boolean contract.
+        when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(true);
+        when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1"))
+                .thenReturn(Optional.of(siteDomain("site1")));
 
         mockMvc.perform(post("/api/sn/import")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +114,8 @@ class TurSNImportAPITest {
         item.setAttributes(attributes);
         jobItems.add(item);
 
-        when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
+        when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(false);
+        when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/sn/import")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -145,7 +145,8 @@ class TurSNImportAPITest {
             item.setAttributes(attributes);
             jobItems.add(item);
 
-            when(turSNSiteRepository.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
+            when(turSNSiteRepositoryPort.hasRagEnabledForSiteName("site1")).thenReturn(false);
+            when(turSNSiteRepositoryPort.findByNameIgnoreCase("site1")).thenReturn(Optional.empty());
 
             zos.write(objectMapper.writeValueAsBytes(jobItems));
             zos.closeEntry();

@@ -40,6 +40,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
@@ -104,6 +106,7 @@ public class TurLLMChatAPI {
     }
 
     private final TurLLMInstanceRepository turLLMInstanceRepository;
+    private final TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurLlmModelFactory llmModelFactory;
     private final TurSecretCryptoService turSecretCryptoService;
@@ -122,6 +125,7 @@ public class TurLLMChatAPI {
     private final TurIconifyToolService iconifyToolService;
 
     public TurLLMChatAPI(TurLLMInstanceRepository turLLMInstanceRepository,
+            TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -139,6 +143,7 @@ public class TurLLMChatAPI {
             TurSystemInfoToolService systemInfoToolService,
             TurIconifyToolService iconifyToolService) {
         this.turLLMInstanceRepository = turLLMInstanceRepository;
+        this.turLLMInstanceRepositoryPort = turLLMInstanceRepositoryPort;
         this.llmProviderFactory = llmProviderFactory;
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
@@ -186,9 +191,20 @@ public class TurLLMChatAPI {
 
     @GetMapping("/context-info")
     public ContextInfoResponse contextInfo(@PathVariable String id) {
-        TurLLMInstance turLLMInstance = turLLMInstanceRepository.findById(id)
+        // LLM existence + non-secret read via the port. The configured
+        // contextWindow is part of the public domain projection and is
+        // used for the fall-back "config" branch below.
+        TurLLMInstanceDomain llmDomain = turLLMInstanceRepositoryPort.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("LLM instance not found: " + id));
 
+        // Provider call still needs the JPA entity — the encrypted API key
+        // and provider-specific options live on the entity per the secrets
+        // policy, and the provider factory keys off the entity. Both
+        // lookups hit the same Spring cache, so this is not an extra
+        // round-trip.
+        TurLLMInstance turLLMInstance = turLLMInstanceRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException(
+                        "LLM instance vanished between port and entity load: " + id));
         TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
 
@@ -197,9 +213,7 @@ public class TurLLMChatAPI {
             return new ContextInfoResponse(fetched.getAsInt(), "provider");
         }
 
-        int stored = turLLMInstance.getContextWindow() != null
-                ? turLLMInstance.getContextWindow()
-                : 128000;
+        int stored = llmDomain.contextWindow() != null ? llmDomain.contextWindow() : 128000;
         return new ContextInfoResponse(stored, "config");
     }
 

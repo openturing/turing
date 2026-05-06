@@ -18,6 +18,8 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurCodeInterpreterToolService;
@@ -43,6 +45,8 @@ class TurLLMChatAPITest {
 
     @Mock
     private TurLLMInstanceRepository turLLMInstanceRepository;
+    @Mock
+    private TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort;
     @Mock
     private TurGenAiLlmProviderFactory llmProviderFactory;
     @Mock
@@ -83,13 +87,20 @@ class TurLLMChatAPITest {
     @BeforeEach
     void setUp() {
         api = new TurLLMChatAPI(
-                turLLMInstanceRepository, llmProviderFactory, llmModelFactory, turSecretCryptoService,
+                turLLMInstanceRepository, turLLMInstanceRepositoryPort,
+                llmProviderFactory, llmModelFactory, turSecretCryptoService,
                 webCrawlerToolService, weatherToolService, financeToolService,
                 codeInterpreterToolService, imageSearchToolService,
                 dateTimeToolService, ragSearchToolService,
                 tokenUsageService, toolCallbackPipeline,
                 loggingToolService, integrationMonitoringToolService,
                 systemInfoToolService, iconifyToolService);
+    }
+
+    private static TurLLMInstanceDomain llmDomain(String id, Integer contextWindow) {
+        return new TurLLMInstanceDomain(id, "LLM " + id, null, null, 1, null,
+                "openai", "gpt-4o-mini", null, null, null, null, null, null, null,
+                null, null, null, null, contextWindow, null, false);
     }
 
     // --- Record Tests ---
@@ -175,6 +186,8 @@ class TurLLMChatAPITest {
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("encrypted");
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", null)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
@@ -191,8 +204,9 @@ class TurLLMChatAPITest {
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("encrypted");
-        instance.setContextWindow(64000);
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", 64000)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
@@ -209,8 +223,9 @@ class TurLLMChatAPITest {
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("encrypted");
-        instance.setContextWindow(null);
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", null)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("encrypted")).thenReturn("key");
@@ -224,7 +239,7 @@ class TurLLMChatAPITest {
 
     @Test
     void shouldThrowWhenInstanceNotFoundInContextInfo() {
-        when(turLLMInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(turLLMInstanceRepositoryPort.findById("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> api.contextInfo("missing"))
                 .isInstanceOf(IllegalArgumentException.class)

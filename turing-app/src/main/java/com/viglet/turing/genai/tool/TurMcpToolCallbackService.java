@@ -11,9 +11,10 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.domain.mcp.TurMcpServerDomain;
+import com.viglet.turing.domain.mcp.TurMcpServerRepositoryPort;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.mcp.TurMcpServerConnectionType;
-import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
 
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
@@ -30,15 +31,18 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurMcpToolCallbackService {
 
-    private final TurMcpServerRepository mcpServerRepository;
+    private final TurMcpServerRepositoryPort mcpServerRepositoryPort;
     private final ConcurrentHashMap<String, McpSyncClient> clientCache = new ConcurrentHashMap<>();
 
-    public TurMcpToolCallbackService(TurMcpServerRepository mcpServerRepository) {
-        this.mcpServerRepository = mcpServerRepository;
+    public TurMcpToolCallbackService(TurMcpServerRepositoryPort mcpServerRepositoryPort) {
+        this.mcpServerRepositoryPort = mcpServerRepositoryPort;
     }
 
     /**
-     * Get tool callbacks only for the specified MCP servers (filtered by agent configuration).
+     * Get tool callbacks only for the specified MCP servers (filtered by agent
+     * configuration). The argument keeps its JPA-entity shape so callers that
+     * already hold {@code agent.getMcpServers()} need not project — internally
+     * we collapse the set to ids and resolve through the port.
      */
     public ToolCallback[] getToolCallbacks(Set<TurMcpServer> mcpServers) {
         if (mcpServers == null || mcpServers.isEmpty()) {
@@ -48,29 +52,25 @@ public class TurMcpToolCallbackService {
                 .map(TurMcpServer::getId)
                 .collect(Collectors.toSet());
 
-        List<TurMcpServer> enabledServers = mcpServerRepository.findAll().stream()
-                .filter(s -> s.getEnabled() == 1 && allowedIds.contains(s.getId()))
+        List<TurMcpServerDomain> enabledServers = mcpServerRepositoryPort.findAllEnabled().stream()
+                .filter(s -> allowedIds.contains(s.id()))
                 .toList();
 
         return getToolCallbacksForServers(enabledServers);
     }
 
     public ToolCallback[] getToolCallbacks() {
-        List<TurMcpServer> enabledServers = mcpServerRepository.findAll().stream()
-                .filter(s -> s.getEnabled() == 1)
-                .toList();
-
-        return getToolCallbacksForServers(enabledServers);
+        return getToolCallbacksForServers(mcpServerRepositoryPort.findAllEnabled());
     }
 
-    private ToolCallback[] getToolCallbacksForServers(List<TurMcpServer> enabledServers) {
+    private ToolCallback[] getToolCallbacksForServers(List<TurMcpServerDomain> enabledServers) {
         if (enabledServers.isEmpty()) {
             return new ToolCallback[0];
         }
 
         // Remove stale clients
         Set<String> enabledIds = enabledServers.stream()
-                .map(TurMcpServer::getId)
+                .map(TurMcpServerDomain::id)
                 .collect(Collectors.toSet());
         clientCache.keySet().stream()
                 .filter(id -> !enabledIds.contains(id))
@@ -83,14 +83,14 @@ public class TurMcpToolCallbackService {
                 });
 
         List<McpSyncClient> activeClients = new ArrayList<>();
-        for (TurMcpServer server : enabledServers) {
+        for (TurMcpServerDomain server : enabledServers) {
             try {
-                McpSyncClient client = clientCache.computeIfAbsent(server.getId(),
+                McpSyncClient client = clientCache.computeIfAbsent(server.id(),
                         id -> createAndInitClient(server));
                 activeClients.add(client);
             } catch (Exception e) {
-                log.warn("[MCP] Failed to connect to MCP server '{}': {}", server.getTitle(), e.getMessage());
-                clientCache.remove(server.getId());
+                log.warn("[MCP] Failed to connect to MCP server '{}': {}", server.title(), e.getMessage());
+                clientCache.remove(server.id());
             }
         }
 
@@ -109,25 +109,25 @@ public class TurMcpToolCallbackService {
         }
     }
 
-    private McpSyncClient createAndInitClient(TurMcpServer server) {
+    private McpSyncClient createAndInitClient(TurMcpServerDomain server) {
         McpClientTransport transport = createTransport(server);
         McpSyncClient client = McpClient.sync(transport)
                 .clientInfo(new McpSchema.Implementation("turing", "2026.1"))
                 .requestTimeout(Duration.ofSeconds(30))
                 .build();
         client.initialize();
-        log.info("[MCP] Connected to MCP server '{}' ({})", server.getTitle(), server.getConnectionType());
+        log.info("[MCP] Connected to MCP server '{}' ({})", server.title(), server.connectionType());
         return client;
     }
 
-    private McpClientTransport createTransport(TurMcpServer server) {
-        if (server.getConnectionType() == TurMcpServerConnectionType.HTTP) {
-            return HttpClientSseClientTransport.builder(server.getUrl()).build();
+    private McpClientTransport createTransport(TurMcpServerDomain server) {
+        if (server.connectionType() == TurMcpServerConnectionType.HTTP) {
+            return HttpClientSseClientTransport.builder(server.url()).build();
         } else {
-            String[] args = server.getArgs() != null && !server.getArgs().isBlank()
-                    ? server.getArgs().split("\\s+")
+            String[] args = server.args() != null && !server.args().isBlank()
+                    ? server.args().split("\\s+")
                     : new String[0];
-            ServerParameters params = ServerParameters.builder(server.getCommand())
+            ServerParameters params = ServerParameters.builder(server.command())
                     .args(args)
                     .build();
             return new StdioClientTransport(params, McpJsonDefaults.getMapper());

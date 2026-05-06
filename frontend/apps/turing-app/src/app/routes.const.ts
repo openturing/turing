@@ -57,4 +57,6 @@ export const ROUTES = {
   BENTO_HOME: "/bento/home",
   BENTO_AI_AGENT: "/bento/ai-agent",
   BENTO_AI_AGENT_INSTANCE: "/bento/ai-agent/instance",
+  BENTO_LLM: "/bento/llm",
+  BENTO_LLM_INSTANCE: "/bento/llm/instance",
 };

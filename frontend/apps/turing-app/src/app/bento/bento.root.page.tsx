@@ -1,8 +1,9 @@
 import { ROUTES } from "@/app/routes.const";
 import { BentoBackToTop, BentoUserMenu } from "@/components/bento";
+import { TurLogo } from "@/components/logo/tur-logo";
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserProvider } from "@/contexts/user.context";
-import { IconArrowLeft, IconRobot } from "@tabler/icons-react";
+import { IconArrowLeft } from "@tabler/icons-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 /**
@@ -22,6 +23,13 @@ function resolveBentoParent(pathname: string): string | null {
   }
   if (pathname === ROUTES.BENTO_AI_AGENT_INSTANCE
       || pathname === `${ROUTES.BENTO_AI_AGENT_INSTANCE}/`) {
+    return ROUTES.BENTO_HOME;
+  }
+  if (pathname.startsWith(`${ROUTES.BENTO_LLM_INSTANCE}/`)) {
+    return ROUTES.BENTO_LLM_INSTANCE;
+  }
+  if (pathname === ROUTES.BENTO_LLM_INSTANCE
+      || pathname === `${ROUTES.BENTO_LLM_INSTANCE}/`) {
     return ROUTES.BENTO_HOME;
   }
   // /bento/home and /bento — top of the bento tree, no parent.
@@ -56,10 +64,8 @@ export default function BentoRootPage() {
               </Link>
             )}
             <Link to={ROUTES.BENTO_HOME} className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-md">
-                <IconRobot size={16} />
-              </span>
-              <span className="text-sm font-medium tracking-tight md:text-base">Bento</span>
+              <TurLogo className="size-8" />
+              <span className="text-sm font-medium tracking-tight md:text-base">Turing ES</span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                 Preview
               </span>

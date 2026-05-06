@@ -18,6 +18,7 @@ package com.viglet.turing.domain.sn;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Domain-side port for retrieving {@link TurSNSiteLocaleDomain} aggregates.
@@ -47,4 +48,18 @@ public interface TurSNSiteLocaleRepositoryPort {
      * display name. Used by the search-engine cores listing in the admin UI.
      */
     List<TurSNSiteCoreUsageDomain> findCoreUsage(String core);
+
+    /**
+     * Locales registered for the given SN site, ordered by their configured
+     * position ascending. Used by the search response to render the locale
+     * switcher in the order the admin laid out.
+     */
+    List<TurSNSiteLocaleDomain> findBySnSiteIdOrderedByPosition(String snSiteId);
+
+    /**
+     * The first locale registered for the given SN site by position
+     * ascending — i.e., the site's configured default locale. Used by the
+     * search service to fall back when no explicit locale is supplied.
+     */
+    Optional<TurSNSiteLocaleDomain> findFirstLocaleBySnSiteIdOrderByPosition(String snSiteId);
 }

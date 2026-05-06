@@ -21,9 +21,7 @@
 
 package com.viglet.turing.api.sn.console;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.spring.utils.TurPersistenceUtils;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -44,14 +42,11 @@ import java.util.List;
 @Tag(name = "Semantic Navigation Site Names", description = "Public endpoint for SN site names")
 @RequiredArgsConstructor
 public class TurSNSiteNamesAPI {
-    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
 
     @Operation(summary = "List Semantic Navigation Site Names")
     @GetMapping
     public List<String> turSNSiteNames() {
-        return turSNSiteRepository.findAll(TurPersistenceUtils.orderByNameIgnoreCase())
-                .stream()
-                .map(TurSNSite::getName)
-                .toList();
+        return turSNSiteRepositoryPort.findAllNamesOrderedByNameIgnoreCase();
     }
 }

@@ -87,6 +87,60 @@
 .bento-blob-2 { animation: bento-shell-in 1400ms var(--bento-spring) 120ms both; }
 .bento-blob-3 { animation: bento-shell-in 1600ms var(--bento-spring) 240ms both; }
 
+/* Save bar entrance — used when a form becomes dirty and the bar
+   slides in. Shorter + subtler than `.bento-shell-header` so it
+   doesn't compete with content already on the page. */
+.bento-save-bar-enter {
+  animation: bento-shell-in 280ms var(--bento-spring) both;
+}
+
+/*
+ * Scroll-linked "header → sticky bar" handoff.
+ *
+ * The page Shell sets `--bento-fade` (0..1) on `<html>` via JS in
+ * a requestAnimationFrame loop — CSS inheritance distributes it
+ * everywhere. Consumers just opt into one of these classes.
+ *
+ *   - 0 = at top of page (hero in full force)
+ *   - 1 = scrolled past the morph range (sticky bar fully settled)
+ *
+ * `bento-fade-out`: hero-anchored elements that fade away as scroll
+ * advances. `bento-fade-in`: the fixed sticky-bar wrapper that fades
+ * in as scroll advances.
+ *
+ * `bento-fade-half` is also toggled on `<html>` when progress > 0.5 —
+ * we use it to swap pointer-events so the fading-out elements stop
+ * catching clicks meant for the fading-in ones once they've crossed
+ * past the visual midpoint.
+ */
+.bento-fade-out {
+  opacity: calc(1 - var(--bento-fade, 0));
+  transform: translateY(calc(var(--bento-fade, 0) * -8px));
+}
+
+.bento-fade-in {
+  opacity: var(--bento-fade, 0);
+  transform: translateY(calc((1 - var(--bento-fade, 0)) * -8px));
+  pointer-events: none;
+}
+
+.bento-fade-half .bento-fade-out { pointer-events: none; }
+.bento-fade-half .bento-fade-in  { pointer-events: auto; }
+
+/* Layout spacer that grows with scroll progress. Reserves space in
+   form flow for the fixed save bar so the form content slides down
+   gradually as the bar materializes. */
+.bento-save-bar-spacer {
+  height: calc(var(--bento-fade, 0) * 4rem); /* 0 to 64px */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-fade-out,
+  .bento-fade-in {
+    transform: none !important;
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * Bento dropdown surface — used by BentoUserMenu and any future popover that
  * should match the frosted-glass tile aesthetic.

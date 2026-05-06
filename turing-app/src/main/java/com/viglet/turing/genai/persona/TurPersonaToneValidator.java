@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * can log them — regenerating the response is intentionally out of scope
  * (latency / cost) and can be layered on later.
  *
- * <p>Forbidden terms are pipe-separated in {@link TurPersona#getForbiddenTerms()}
+ * <p>Forbidden terms are pipe-separated in {@code TurPersona#getForbiddenTerms()}
  * because individual terms may legitimately contain commas.
  *
  * @author Alexandre Oliveira

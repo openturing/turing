@@ -12,6 +12,14 @@ export function useLlmInstances() {
   });
 }
 
+export function useLlmInstance(id: string | undefined) {
+  return useQuery<TurLLMInstance>({
+    queryKey: id ? queryKeys.llmInstances.detail(id) : ['llm-instances', 'pending'],
+    queryFn: () => service.get(id as string),
+    enabled: Boolean(id) && id !== 'new',
+  });
+}
+
 function invalidateLlmInstances(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: queryKeys.llmInstances.all() });
 }

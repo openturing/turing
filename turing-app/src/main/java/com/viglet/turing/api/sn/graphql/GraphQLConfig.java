@@ -30,12 +30,10 @@ import org.springframework.boot.graphql.autoconfigure.GraphQlSourceBuilderCustom
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.data.domain.Sort;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 
-import com.viglet.turing.persistence.model.sn.TurSNSite;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 
 import graphql.scalars.ExtendedScalars;
@@ -56,12 +54,12 @@ public class GraphQLConfig implements RuntimeWiringConfigurer {
     private static final Set<String> STATIC_FIELDS = Set.of(
             "id", "title", "text", "url", "date", "description", "image");
 
-    private final TurSNSiteRepository turSNSiteRepository;
+    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
-    public GraphQLConfig(TurSNSiteRepository turSNSiteRepository,
+    public GraphQLConfig(TurSNSiteRepositoryPort turSNSiteRepositoryPort,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
-        this.turSNSiteRepository = turSNSiteRepository;
+        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
     }
 
@@ -90,9 +88,7 @@ public class GraphQLConfig implements RuntimeWiringConfigurer {
     }
 
     private void appendDynamicSiteNamesEnum(StringBuilder schemaBuilder) {
-        List<TurSNSite> sites = turSNSiteRepository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase()));
-        List<String> siteNames = sites.stream().map(TurSNSite::getName)
-                .filter(StringUtils::isNotBlank).toList();
+        List<String> siteNames = turSNSiteRepositoryPort.findAllNamesOrderedByNameIgnoreCase();
         Map<String, String> enumToSiteName = TurSNSiteGraphQLNameUtils
                 .buildEnumToSiteNameMap(siteNames);
 

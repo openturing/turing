@@ -31,7 +31,7 @@ public interface TurSNSiteFieldExtRepositoryPort {
 
     Optional<TurSNSiteFieldExtDomain> findById(String id);
 
-    /** All field extensions for the given site, in the JPA repository's natural order. */
+    /** All field extensions for the given site, ordered by name (case-insensitive ascending). */
     List<TurSNSiteFieldExtDomain> findBySnSiteId(String snSiteId);
 
     /** All enabled field extensions for the given site — the canonical search-time read. */
@@ -43,4 +43,13 @@ public interface TurSNSiteFieldExtRepositoryPort {
 
     /** True when a field with the given case-sensitive name already exists on the site. */
     boolean existsBySnSiteIdAndName(String snSiteId, String name);
+
+    /**
+     * True when the site has at least one field flagged for highlighting and
+     * enabled. Single-call denormalised gate that spares callers from
+     * materialising a list of fields just to read its emptiness — used by
+     * search services to decide whether to enable highlighting at request
+     * time.
+     */
+    boolean existsBySnSiteIdAndHlAndEnabled(String snSiteId, int hl, int enabled);
 }

@@ -44,7 +44,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
@@ -60,16 +60,16 @@ public class TurSNSiteSearchAPI {
         private static final String NONE = "NONE";
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
-        private final TurSNSiteRepository turSNSiteRepository;
+        private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
         private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteRepository turSNSiteRepository,
+                        TurSNSiteRepositoryPort turSNSiteRepositoryPort,
                         TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
-                this.turSNSiteRepository = turSNSiteRepository;
+                this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
                 this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
         }
 
@@ -93,7 +93,7 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(site -> {
+                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).map(site -> {
 
                         List<Object> termList = turSNSearchProcess
                                         .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
@@ -121,7 +121,7 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
                                 .map(site -> turSNSiteSearchService.executeGetSearch(turSNSearchParams,
                                                 request, site))
                                 .orElse(turSNSiteSearchService.notFoundResponse());
@@ -153,7 +153,7 @@ public class TurSNSiteSearchAPI {
                         return turSNSiteSearchService.notFoundResponse();
                 }
 
-                return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
                                 .map(site -> turSNSiteSearchService.executePostSearch(turSNSearchParams,
                                                 turSNSitePostParamsBean, request,
                                                 site))
@@ -162,7 +162,7 @@ public class TurSNSiteSearchAPI {
 
         @GetMapping("locales")
         public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
-                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(turSNSite -> {
+                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).map(turSNSite -> {
                         try {
                                 return turSNSearchProcess.responseLocales(turSNSite, new URI(
                                                 String.format("/api/sn/%s/search", siteName)));
@@ -182,13 +182,18 @@ public class TurSNSiteSearchAPI {
         @GetMapping("sort-options")
         public ResponseEntity<List<TurSNSiteSortOptionBean>> turSNSiteSearchSortOptions(
                         @PathVariable String siteName) {
-                return turSNSiteRepository.findByNameIgnoreCase(siteName)
+                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
                                 .map(site -> {
                                         List<TurSNSiteSortOptionBean> options = new java.util.ArrayList<>();
                                         options.add(new TurSNSiteSortOptionBean("relevance", "Relevance"));
                                         options.add(new TurSNSiteSortOptionBean("newest", "Newest"));
                                         options.add(new TurSNSiteSortOptionBean("oldest", "Oldest"));
-                                        turSNSiteCustomSortRepository.findByTurSNSiteWithItems(site)
+                                        // Custom sort listing still goes through the JPA repo
+                                        // pending its own port; stub the parent for the lookup.
+                                        com.viglet.turing.persistence.model.sn.TurSNSite stub =
+                                                        new com.viglet.turing.persistence.model.sn.TurSNSite();
+                                        stub.setId(site.id());
+                                        turSNSiteCustomSortRepository.findByTurSNSiteWithItems(stub)
                                                         .forEach(cs -> options.add(new TurSNSiteSortOptionBean(
                                                                         cs.getName(), cs.getDescription() != null
                                                                                         ? cs.getDescription()

@@ -57,12 +57,10 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
-import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
 import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
@@ -95,9 +93,6 @@ class TurSNSearchProcessTest {
 
         @Mock
         private TurSNSiteRepository turSNSiteRepository;
-
-        @Mock
-        private TurSNSiteLocaleRepository turSNSiteLocaleRepository;
 
         @Mock
         private TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
@@ -152,7 +147,6 @@ class TurSNSearchProcessTest {
                 return new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteFieldExtFacetRepository, turSNSiteRepository,
-                                turSNSiteLocaleRepository,
                                 turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
@@ -289,14 +283,16 @@ class TurSNSearchProcessTest {
         @Test
         void testResponseLocalesBuildsLocaleLinks() {
                 TurSNSite site = new TurSNSite();
+                site.setId("site-id");
 
-                TurSNSiteLocale localeEn = new TurSNSiteLocale();
-                localeEn.setLanguage(Locale.US);
-                TurSNSiteLocale localePt = new TurSNSiteLocale();
-                localePt.setLanguage(Locale.of("pt", "BR"));
-
-                when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(site))
-                                .thenReturn(List.of(localeEn, localePt));
+                when(turSNSiteLocaleRepositoryPort.findBySnSiteIdOrderedByPosition("site-id"))
+                                .thenReturn(List.of(
+                                                new com.viglet.turing.domain.sn.TurSNSiteLocaleDomain(
+                                                                "loc-en", Locale.US, "core-en", 0,
+                                                                "site-id"),
+                                                new com.viglet.turing.domain.sn.TurSNSiteLocaleDomain(
+                                                                "loc-pt", Locale.of("pt", "BR"),
+                                                                "core-pt", 1, "site-id")));
 
                 var locales = process(true).responseLocales(site, URI.create("http://localhost/search?q=test"));
 
@@ -328,7 +324,7 @@ class TurSNSearchProcessTest {
         void testPopulateMetricsSkipsWhenDisabledOrWildcard() {
                 TurSNSearchProcess processDisabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
-                                turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
+                                turSNSiteFieldExtFacetRepository, turSNSiteRepository,
                                 turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 turSNSiteMetricAccessRepositoryPort,
@@ -351,7 +347,7 @@ class TurSNSearchProcessTest {
 
                 TurSNSearchProcess processEnabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
-                                turSNSiteFieldExtFacetRepository, turSNSiteRepository, turSNSiteLocaleRepository,
+                                turSNSiteFieldExtFacetRepository, turSNSiteRepository,
                                 turSNSiteLocaleRepositoryPort,
                                 turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
                                 turSNSiteMetricAccessRepositoryPort,
@@ -407,7 +403,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of(facetLocale));
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -469,7 +464,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of());
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
                                 .thenReturn(List.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(true);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of());
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -591,7 +585,6 @@ class TurSNSearchProcessTest {
                 when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1)).thenReturn(List.of());
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of());
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -662,7 +655,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrQueryBuilder.getFqFields(any())).thenReturn(List.of("category"));
@@ -737,7 +729,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -807,7 +798,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("entity"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -875,7 +865,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("entity"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -942,7 +931,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -1005,7 +993,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrQueryBuilder.getFqFields(any())).thenReturn(List.of());
@@ -1074,7 +1061,6 @@ class TurSNSearchProcessTest {
                                 .thenReturn(List.of(facetField));
                 when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
                                 .thenReturn(Set.of());
-                when(turSNSiteLocaleRepository.findByTurSNSite(any(), eq(site))).thenReturn(List.of());
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))

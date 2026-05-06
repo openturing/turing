@@ -59,8 +59,11 @@ public class TurSNSiteFieldExtRepositoryAdapter implements TurSNSiteFieldExtRepo
 
     @Override
     public List<TurSNSiteFieldExtDomain> findBySnSiteId(String snSiteId) {
-        return mapper.toDomainList(
-                turSNSiteFieldExtRepository.findByTurSNSite(Sort.by("name"), stub(snSiteId)));
+        // Case-insensitive ascending name sort — matches the order the
+        // GraphQL controller wants for its dynamic schema fields and is the
+        // natural admin-facing order.
+        return mapper.toDomainList(turSNSiteFieldExtRepository.findByTurSNSite(
+                Sort.by(Sort.Order.asc("name").ignoreCase()), stub(snSiteId)));
     }
 
     @Override
@@ -80,6 +83,16 @@ public class TurSNSiteFieldExtRepositoryAdapter implements TurSNSiteFieldExtRepo
     @Override
     public boolean existsBySnSiteIdAndName(String snSiteId, String name) {
         return turSNSiteFieldExtRepository.existsByTurSNSiteAndName(stub(snSiteId), name);
+    }
+
+    @Override
+    public boolean existsBySnSiteIdAndHlAndEnabled(String snSiteId, int hl, int enabled) {
+        // Routes through the repository's @Cacheable findByTurSNSiteAndHlAndEnabled
+        // so the search hot path stays backed by the same field-extension cache
+        // the JPA repo exposes; emptiness check at the boundary keeps the port
+        // contract a pure boolean.
+        return !turSNSiteFieldExtRepository
+                .findByTurSNSiteAndHlAndEnabled(stub(snSiteId), hl, enabled).isEmpty();
     }
 
     private static TurSNSite stub(String id) {

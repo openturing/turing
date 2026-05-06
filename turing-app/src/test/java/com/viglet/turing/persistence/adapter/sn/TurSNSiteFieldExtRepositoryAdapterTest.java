@@ -119,6 +119,24 @@ class TurSNSiteFieldExtRepositoryAdapterTest {
     }
 
     @Test
+    void existsBySnSiteIdAndHlAndEnabledIsTrueWhenAtLeastOneRow() {
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(any(), anyInt(), anyInt()))
+                .thenReturn(List.of(buildField("f-1", "title", "site-1")));
+
+        assertThat(adapter.existsBySnSiteIdAndHlAndEnabled("site-1", 1, 1)).isTrue();
+        verify(turSNSiteFieldExtRepository).findByTurSNSiteAndHlAndEnabled(
+                argThat(s -> "site-1".equals(s.getId())), eq(1), eq(1));
+    }
+
+    @Test
+    void existsBySnSiteIdAndHlAndEnabledIsFalseWhenEmpty() {
+        when(turSNSiteFieldExtRepository.findByTurSNSiteAndHlAndEnabled(any(), anyInt(), anyInt()))
+                .thenReturn(List.of());
+
+        assertThat(adapter.existsBySnSiteIdAndHlAndEnabled("site-1", 1, 1)).isFalse();
+    }
+
+    @Test
     void facetLocaleIdsAndCustomFacetIdsAreUnmodifiable() {
         TurSNSiteFieldExt entity = buildField("f-1", "title", "site-1");
         entity.setFacetLocales(setOfFacetLocales("fl-1"));

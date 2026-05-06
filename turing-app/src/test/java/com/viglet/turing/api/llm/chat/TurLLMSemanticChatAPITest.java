@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
@@ -31,6 +33,8 @@ class TurLLMSemanticChatAPITest {
 
     @Mock
     private TurLLMInstanceRepository turLLMInstanceRepository;
+    @Mock
+    private TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort;
     @Mock
     private TurGenAiLlmProviderFactory llmProviderFactory;
     @Mock
@@ -53,8 +57,15 @@ class TurLLMSemanticChatAPITest {
     @BeforeEach
     void setUp() {
         api = new TurLLMSemanticChatAPI(
-                turLLMInstanceRepository, llmProviderFactory, llmModelFactory, turSecretCryptoService,
+                turLLMInstanceRepository, turLLMInstanceRepositoryPort,
+                llmProviderFactory, llmModelFactory, turSecretCryptoService,
                 dslToolService, mcpToolCallbackService, toolCallbackPipeline, tokenUsageService);
+    }
+
+    private static TurLLMInstanceDomain llmDomain(String id, Integer contextWindow) {
+        return new TurLLMInstanceDomain(id, "LLM " + id, null, null, 1, null,
+                "openai", "gpt-4o-mini", null, null, null, null, null, null, null,
+                null, null, null, null, contextWindow, null, false);
     }
 
     // --- Record Tests ---
@@ -92,6 +103,8 @@ class TurLLMSemanticChatAPITest {
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("enc-key");
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", null)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc-key")).thenReturn("key");
@@ -108,8 +121,9 @@ class TurLLMSemanticChatAPITest {
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("enc-key");
-        instance.setContextWindow(50000);
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", 50000)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc-key")).thenReturn("key");
@@ -126,8 +140,9 @@ class TurLLMSemanticChatAPITest {
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("inst-1");
         instance.setApiKeyEncrypted("enc-key");
-        instance.setContextWindow(null);
 
+        when(turLLMInstanceRepositoryPort.findById("inst-1"))
+                .thenReturn(Optional.of(llmDomain("inst-1", null)));
         when(turLLMInstanceRepository.findById("inst-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc-key")).thenReturn("key");
@@ -140,7 +155,7 @@ class TurLLMSemanticChatAPITest {
 
     @Test
     void shouldThrowWhenInstanceNotFound() {
-        when(turLLMInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(turLLMInstanceRepositoryPort.findById("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> api.contextInfo("missing"))
                 .isInstanceOf(IllegalArgumentException.class)

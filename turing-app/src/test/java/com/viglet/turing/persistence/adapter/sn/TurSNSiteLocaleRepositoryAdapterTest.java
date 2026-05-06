@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -125,6 +126,62 @@ class TurSNSiteLocaleRepositoryAdapterTest {
         when(turSNSiteLocaleRepository.findByCore("free")).thenReturn(List.of());
 
         assertThat(adapter.findCoreUsage("free")).isEmpty();
+    }
+
+    @Test
+    void findBySnSiteIdOrderedByPositionDelegatesViaStubParent() {
+        when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(
+                argThat(stub -> "site-1".equals(stub.getId()))))
+                .thenReturn(List.of(
+                        buildLocale("locale-1", "site-1", Locale.US, 0),
+                        buildLocale("locale-2", "site-1", Locale.of("pt", "BR"), 1)));
+
+        List<TurSNSiteLocaleDomain> domains =
+                adapter.findBySnSiteIdOrderedByPosition("site-1");
+
+        assertThat(domains).hasSize(2);
+        assertThat(domains.get(0).id()).isEqualTo("locale-1");
+        assertThat(domains.get(0).position()).isEqualTo(0);
+        assertThat(domains.get(0).language()).isEqualTo(Locale.US);
+        assertThat(domains.get(1).id()).isEqualTo("locale-2");
+        assertThat(domains.get(1).position()).isEqualTo(1);
+        assertThat(domains.get(1).language()).isEqualTo(Locale.of("pt", "BR"));
+    }
+
+    @Test
+    void findBySnSiteIdOrderedByPositionEmptyWhenNoLocales() {
+        when(turSNSiteLocaleRepository.findByTurSNSiteOrderByPositionAsc(
+                argThat(stub -> "no-such-site".equals(stub.getId()))))
+                .thenReturn(List.of());
+
+        assertThat(adapter.findBySnSiteIdOrderedByPosition("no-such-site")).isEmpty();
+    }
+
+    @Test
+    void findFirstLocaleBySnSiteIdOrderByPositionReturnsMappedDomain() {
+        when(turSNSiteLocaleRepository.findFirstByTurSNSiteOrderByPositionAsc(
+                argThat(stub -> "site-1".equals(stub.getId()))))
+                .thenReturn(buildLocale("locale-1", "site-1", Locale.US, 0));
+
+        Optional<TurSNSiteLocaleDomain> first =
+                adapter.findFirstLocaleBySnSiteIdOrderByPosition("site-1");
+
+        assertThat(first).isPresent();
+        assertThat(first.get().id()).isEqualTo("locale-1");
+        assertThat(first.get().language()).isEqualTo(Locale.US);
+        assertThat(first.get().snSiteId()).isEqualTo("site-1");
+    }
+
+    @Test
+    void findFirstLocaleBySnSiteIdOrderByPositionEmptyWhenJpaReturnsNull() {
+        // The JPA method's signature returns the entity directly (nullable) —
+        // not an Optional. The adapter wraps the nullable result so callers
+        // see Optional.empty() instead of NPE-prone null.
+        when(turSNSiteLocaleRepository.findFirstByTurSNSiteOrderByPositionAsc(
+                argThat(stub -> "no-such-site".equals(stub.getId()))))
+                .thenReturn(null);
+
+        assertThat(adapter.findFirstLocaleBySnSiteIdOrderByPosition("no-such-site")).isEmpty();
     }
 
     private static TurSNSiteLocale buildLocale(String id, String snSiteId, Locale language,

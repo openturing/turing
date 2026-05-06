@@ -26,7 +26,7 @@ import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.s
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { IconBrain, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -576,35 +576,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
             </SectionCard.Content>
           </SectionCard>
 
-          <SectionCard variant="slate">
-            <SectionCard.Header icon={IconToggleLeft} title={t("forms.common.status")} description={t("forms.agentSettings.statusDesc")} />
-            <SectionCard.Content>
-              <FormField
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
-                  <FormItemTwoColumns>
-                    <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description>
-                        {t("forms.agentSettings.enabledDesc")}
-                      </FormItemTwoColumns.Description>
-                    </FormItemTwoColumns.Left>
-                    <FormItemTwoColumns.Right>
-                      <FormControl>
-                        <GradientSwitch
-                          checked={field.value === 1}
-                          onCheckedChange={(checked) => {
-                            field.onChange(checked ? 1 : 0);
-                          }}
-                        />
-                      </FormControl>
-                    </FormItemTwoColumns.Right>
-                  </FormItemTwoColumns>
-                )}
-              />
-            </SectionCard.Content>
-          </SectionCard>
+          {/*
+           * Status (enabled/disabled) lives in the bento dashboard hero
+           * (clickable Active/Idle pill that toggles via mutation).
+           * Removed from this form to keep one canonical place to edit.
+           */}
 
         </form>
     </Form>

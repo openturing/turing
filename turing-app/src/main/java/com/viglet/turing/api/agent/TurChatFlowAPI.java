@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
 import com.viglet.turing.genai.authoring.AiAuthoringRequest;
 import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
@@ -59,24 +60,35 @@ public class TurChatFlowAPI {
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowMapper turChatFlowMapper;
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurAIAgentRepositoryPort turAIAgentRepositoryPort;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final ChatFlowAuthoringSkill chatFlowAuthoringSkill;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
             TurAIAgentRepository turAIAgentRepository,
+            TurAIAgentRepositoryPort turAIAgentRepositoryPort,
             TurChatFlowEngineService chatFlowEngineService,
             ChatFlowAuthoringSkill chatFlowAuthoringSkill) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
+        this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowAuthoringSkill = chatFlowAuthoringSkill;
     }
 
+    /** Load the agent entity — only for write paths that need the JPA-managed reference. */
     private TurAIAgent loadAgent(String agentId) {
         return turAIAgentRepository.findById(agentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "AI Agent not found"));
+    }
+
+    /** Validate the agent exists via the port — for read-only paths that don't need the entity. */
+    private void requireAgentExists(String agentId) {
+        if (turAIAgentRepositoryPort.findById(agentId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "AI Agent not found");
+        }
     }
 
     @Operation(summary = "Chat Flow List for an Agent")
@@ -192,7 +204,7 @@ public class TurChatFlowAPI {
     public AiAuthoringResponse<ChatFlowGeneration> turChatFlowChat(
             @PathVariable String agentId,
             @RequestBody AiAuthoringRequest<ChatFlowGeneration> request) {
-        loadAgent(agentId);
+        requireAgentExists(agentId);
         return ChatFlowAuthoringSkill.isFirstTurn(request)
                 ? chatFlowAuthoringSkill.create(request)
                 : chatFlowAuthoringSkill.revise(request);

@@ -42,7 +42,7 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,11 +56,11 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteSearchV2API {
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
-        private final TurSNSiteRepository turSNSiteRepository;
+        private final TurSNSiteRepositoryPort turSNSiteRepository;
 
         public TurSNSiteSearchV2API(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteRepository turSNSiteRepository) {
+                        TurSNSiteRepositoryPort turSNSiteRepository) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
                 this.turSNSiteRepository = turSNSiteRepository;

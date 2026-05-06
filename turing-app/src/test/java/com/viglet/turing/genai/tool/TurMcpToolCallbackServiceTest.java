@@ -16,8 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.tool.ToolCallback;
 
+import com.viglet.turing.domain.mcp.TurMcpServerDomain;
+import com.viglet.turing.domain.mcp.TurMcpServerRepositoryPort;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
-import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
 
 /**
  * Tests for TurMcpToolCallbackService.
@@ -29,13 +30,18 @@ import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
 class TurMcpToolCallbackServiceTest {
 
     @Mock
-    private TurMcpServerRepository mcpServerRepository;
+    private TurMcpServerRepositoryPort mcpServerRepositoryPort;
 
     private TurMcpToolCallbackService service;
 
     @BeforeEach
     void setUp() {
-        service = new TurMcpToolCallbackService(mcpServerRepository);
+        service = new TurMcpToolCallbackService(mcpServerRepositoryPort);
+    }
+
+    private static TurMcpServerDomain serverDomain(String id, String title) {
+        return new TurMcpServerDomain(id, title, null, null, null, null, null,
+                null, null, 1);
     }
 
     @Test
@@ -52,44 +58,25 @@ class TurMcpToolCallbackServiceTest {
 
     @Test
     void getToolCallbacksNoArgShouldReturnEmptyWhenNoEnabledServers() {
-        when(mcpServerRepository.findAll()).thenReturn(Collections.emptyList());
-        ToolCallback[] callbacks = service.getToolCallbacks();
-        assertThat(callbacks).isEmpty();
-    }
-
-    @Test
-    void getToolCallbacksNoArgShouldReturnEmptyWhenAllDisabled() {
-        TurMcpServer disabledServer = new TurMcpServer();
-        disabledServer.setId("mcp-1");
-        disabledServer.setEnabled(0);
-
-        when(mcpServerRepository.findAll()).thenReturn(List.of(disabledServer));
+        when(mcpServerRepositoryPort.findAllEnabled()).thenReturn(Collections.emptyList());
         ToolCallback[] callbacks = service.getToolCallbacks();
         assertThat(callbacks).isEmpty();
     }
 
     @Test
     void getToolCallbacksWithFilterShouldFilterByAllowedIds() {
-        TurMcpServer server1 = new TurMcpServer();
-        server1.setId("mcp-1");
-        server1.setEnabled(1);
-        server1.setTitle("Server 1");
-
-        TurMcpServer server2 = new TurMcpServer();
-        server2.setId("mcp-2");
-        server2.setEnabled(1);
-        server2.setTitle("Server 2");
-
-        // Only include mcp-1 in the filter
+        // Only include mcp-1 in the filter set; mcp-2 must be excluded.
         TurMcpServer filterServer = new TurMcpServer();
         filterServer.setId("mcp-1");
 
-        when(mcpServerRepository.findAll()).thenReturn(List.of(server1, server2));
+        when(mcpServerRepositoryPort.findAllEnabled())
+                .thenReturn(List.of(serverDomain("mcp-1", "Server 1"),
+                        serverDomain("mcp-2", "Server 2")));
 
-        // This will attempt to connect to an actual MCP server which won't exist in tests,
-        // so it should gracefully return empty callbacks
+        // The transport setup will fail to connect to a real MCP server in
+        // unit-test context — exercising the no-callbacks fall-back path.
         ToolCallback[] callbacks = service.getToolCallbacks(Set.of(filterServer));
-        assertThat(callbacks).isEmpty(); // Can't connect to real servers in unit tests
+        assertThat(callbacks).isEmpty();
     }
 
     @Test

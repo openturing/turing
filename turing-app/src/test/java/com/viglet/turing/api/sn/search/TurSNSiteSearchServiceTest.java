@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -52,10 +51,10 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.persistence.model.sn.TurSNSite;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
-import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
+import com.viglet.turing.domain.sn.TurSNSiteDomain;
+import com.viglet.turing.domain.sn.TurSNSiteFieldExtRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
+import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -69,14 +68,21 @@ import jakarta.servlet.http.HttpServletRequest;
 @ExtendWith(MockitoExtension.class)
 class TurSNSiteSearchServiceTest {
 
+    /** Minimal site domain record for tests that pass a site to the service. */
+    private static TurSNSiteDomain siteDomain(String id, String name) {
+        return new TurSNSiteDomain(id, name, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
     @Test
     void testExecuteSearchReturnsOkResponse() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         TurSNSiteSearchContext context = mock(TurSNSiteSearchContext.class);
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
 
@@ -93,10 +99,10 @@ class TurSNSiteSearchServiceTest {
     void testExecuteSearchWithCacheUsesCacheKey() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getQueryString()).thenReturn("q=java");
 
@@ -120,10 +126,10 @@ class TurSNSiteSearchServiceTest {
     void testSetSearchParamsAppliesNonNullValues() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         TurSNSearchParams params = new TurSNSearchParams();
 
         service.setSearchParams(params, List.of("fq"), List.of("fqAnd"), List.of("fqOr"),
@@ -141,10 +147,10 @@ class TurSNSiteSearchServiceTest {
     void testDetermineLocalePrefersPostLocale() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         TurSNSitePostParamsBean postParams = new TurSNSitePostParamsBean();
         postParams.setLocale("pt_BR");
 
@@ -157,10 +163,10 @@ class TurSNSiteSearchServiceTest {
     void testDetermineLocaleFallsBackToRequestLocale() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         TurSNSitePostParamsBean postParams = new TurSNSitePostParamsBean();
 
         Locale locale = service.determineLocale(postParams, Locale.UK);
@@ -172,10 +178,10 @@ class TurSNSiteSearchServiceTest {
     void testIsLatestImpersonateReturnsRequestUserId() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         TurSNSearchLatestRequestBean bean = new TurSNSearchLatestRequestBean();
         bean.setUserId("impersonated");
         Principal principal = () -> "principal";
@@ -189,10 +195,10 @@ class TurSNSiteSearchServiceTest {
     void testIsLatestImpersonateFallsBackToPrincipal() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         Principal principal = () -> "principal";
 
         String result = service.isLatestImpersonate(Optional.empty(), principal);
@@ -204,10 +210,10 @@ class TurSNSiteSearchServiceTest {
     void testExecuteGetSearchUsesCacheWhenEnabled() throws Exception {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         Field field = TurSNSiteSearchService.class.getDeclaredField("searchCacheEnabled");
         field.setAccessible(true);
         field.set(service, true);
@@ -218,8 +224,7 @@ class TurSNSiteSearchServiceTest {
 
         TurSNSearchParams params = new TurSNSearchParams();
         params.setLocale(Locale.US);
-        TurSNSite site = mock(TurSNSite.class);
-        when(site.getName()).thenReturn("site");
+        TurSNSiteDomain site = siteDomain("site-id", "site");
         TurSNSiteSearchBean expected = new TurSNSiteSearchBean();
         when(cacheApi.searchCached(eq("site_q=hello"), any(TurSNSiteSearchContext.class)))
                 .thenReturn(expected);
@@ -235,10 +240,10 @@ class TurSNSiteSearchServiceTest {
     void testNotFoundResponseReturns404() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
 
         ResponseEntity<Object> response = service.notFoundResponse();
 
@@ -250,14 +255,13 @@ class TurSNSiteSearchServiceTest {
     void testHasSiteHLFieldsReturnsTrueWhenRepositoryHasEntries() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
-        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
+        TurSNSiteDomain site = siteDomain("site-id", "site");
 
-        when(fieldRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1))
-                .thenReturn(List.of(mock(com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt.class)));
+        when(fieldRepository.existsBySnSiteIdAndHlAndEnabled("site-id", 1, 1)).thenReturn(true);
 
         assertThat(service.hasSiteHLFields(site)).isTrue();
     }
@@ -266,14 +270,13 @@ class TurSNSiteSearchServiceTest {
     void testHasSiteHLFieldsReturnsFalseWhenRepositoryEmpty() {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
-        TurSNSite site = mock(TurSNSite.class);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
+        TurSNSiteDomain site = siteDomain("site-id", "site");
 
-        when(fieldRepository.findByTurSNSiteAndHlAndEnabled(site, 1, 1))
-                .thenReturn(Collections.emptyList());
+        when(fieldRepository.existsBySnSiteIdAndHlAndEnabled("site-id", 1, 1)).thenReturn(false);
 
         assertThat(service.hasSiteHLFields(site)).isFalse();
     }
@@ -282,10 +285,10 @@ class TurSNSiteSearchServiceTest {
     void testExecutePostSearchUsesCacheAndUpdatesLocale() throws Exception {
         TurSNSearchProcess searchProcess = mock(TurSNSearchProcess.class);
         TurSNSiteSearchCachedAPI cacheApi = mock(TurSNSiteSearchCachedAPI.class);
-        TurSNSiteFieldExtRepository fieldRepository = mock(TurSNSiteFieldExtRepository.class);
-        TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
-        TurSNSiteLocaleRepository localeRepository = mock(TurSNSiteLocaleRepository.class);
-        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepository, localeRepository);
+        TurSNSiteFieldExtRepositoryPort fieldRepository = mock(TurSNSiteFieldExtRepositoryPort.class);
+        TurSNSiteRepositoryPort siteRepositoryPort = mock(TurSNSiteRepositoryPort.class);
+        TurSNSiteLocaleRepositoryPort localeRepositoryPort = mock(TurSNSiteLocaleRepositoryPort.class);
+        TurSNSiteSearchService service = new TurSNSiteSearchService(searchProcess, cacheApi, fieldRepository, siteRepositoryPort, localeRepositoryPort);
         Field field = TurSNSiteSearchService.class.getDeclaredField("searchCacheEnabled");
         field.setAccessible(true);
         field.set(service, true);
@@ -295,7 +298,7 @@ class TurSNSiteSearchServiceTest {
         postParams.setLocale("pt_BR");
         postParams.setTargetingRules(List.of("role:admin"));
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/sn/site/search");
-        TurSNSite site = new TurSNSite();
+        TurSNSiteDomain site = siteDomain("site-id", "site");
         ResponseEntity<TurSNSiteSearchBean> expected = new ResponseEntity<>(new TurSNSiteSearchBean(), HttpStatus.OK);
 
         when(searchProcess.requestTargetingRules(postParams.getTargetingRules()))

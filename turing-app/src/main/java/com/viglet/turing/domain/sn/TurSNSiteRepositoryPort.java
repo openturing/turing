@@ -16,6 +16,7 @@
  */
 package com.viglet.turing.domain.sn;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -42,4 +43,19 @@ public interface TurSNSiteRepositoryPort {
 
     /** Find a site by its primary key. */
     Optional<TurSNSiteDomain> findById(String id);
+
+    /**
+     * True when the site has a GenAI configuration whose AI agent is both
+     * enabled and has RAG turned on. Single-call denormalised gate that
+     * spares callers from threading three separate port lookups
+     * (site → genAi → agent) just to render a boolean.
+     */
+    boolean hasRagEnabledForSiteName(String siteName);
+
+    /**
+     * All non-blank site names ordered case-insensitively by name. Lean
+     * projection for listings (admin name pickers, GraphQL site-name enum
+     * derivation) that don't need any other site fields.
+     */
+    List<String> findAllNamesOrderedByNameIgnoreCase();
 }
