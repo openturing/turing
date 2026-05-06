@@ -22,6 +22,7 @@ import {
   IconRobot,
   IconServer2,
   IconShieldCog,
+  IconUserCircle,
   IconZoomCode,
 } from "@tabler/icons-react";
 import type { ComponentType } from "react";
@@ -72,8 +73,13 @@ const SECTIONS: FeatureSection[] = [
       { titleKey: "home.features.embeddingModel.title", descriptionKey: "home.features.embeddingModel.description", url: ROUTES.EMBEDDING_MODEL_INSTANCE, icon: IconCube,         tone: "violet",  span: SPAN_SQUARE,   privilege: "EMBEDDING_VIEW" },
       { titleKey: "home.features.embeddingStore.title", descriptionKey: "home.features.embeddingStore.description", url: "/admin/store/instance",       icon: IconDatabase,        tone: "violet",  span: SPAN_SQUARE,   privilege: "STORE_VIEW" },
       { titleKey: "home.features.mcpServer.title",     descriptionKey: "home.features.mcpServer.description",     url: "/admin/mcp/instance",          icon: IconServer2,         tone: "amber",   span: SPAN_SQUARE },
+      // Personas are voice profiles applied to AI agents — sit alongside the
+      // other agent-adjacent configs (MCP, tokens) in the same row.
+      { titleKey: "home.features.persona.title",       descriptionKey: "home.features.persona.description",       url: ROUTES.PERSONA_INSTANCE,        icon: IconUserCircle,      tone: "rose",    span: SPAN_SQUARE },
       { titleKey: "home.features.tokenUsage.title",    descriptionKey: "home.features.tokenUsage.description",    url: ROUTES.TOKEN_USAGE,             icon: IconChartBar,        tone: "emerald", span: SPAN_SQUARE },
-      { titleKey: "home.features.chat.title",          descriptionKey: "home.features.chat.description",          url: ROUTES.CHAT_ROOT,               icon: IconMessageChatbot,  tone: "indigo",  span: SPAN_WIDE },
+      // Chat lives at the top of the page already (QuickChat tile), so the
+      // grid entry stays as a 1x1 navigation shortcut rather than a 2x1 hero.
+      { titleKey: "home.features.chat.title",          descriptionKey: "home.features.chat.description",          url: ROUTES.CHAT_ROOT,               icon: IconMessageChatbot,  tone: "indigo",  span: SPAN_SQUARE },
     ],
   },
   {
