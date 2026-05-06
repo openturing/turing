@@ -1,0 +1,111 @@
+databaseChangeLog:
+  # Persona module — reusable voice profiles for AI Agents.
+  #
+  # Two changesets:
+  #   1. Create the ai_persona table.
+  #   2. Add a nullable persona_id FK to ai_agent (existing agents stay
+  #      persona-less; turning a persona on for an agent is opt-in via the
+  #      admin UI).
+  #
+  # Both gate on existence so reruns on databases that already migrated
+  # are no-ops.
+
+  - changeSet:
+      id: v2026.2.6.3-create-ai-persona-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_persona
+      changes:
+        - createTable:
+            tableName: ai_persona
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: system_instruction
+                  type: longtext
+              - column:
+                  name: tone
+                  type: VARCHAR(16)
+              - column:
+                  name: verbosity
+                  type: INT
+                  defaultValueNumeric: 3
+                  constraints:
+                    nullable: false
+              - column:
+                  name: language_style
+                  type: VARCHAR(16)
+              - column:
+                  name: mandatory_terms
+                  type: longtext
+              - column:
+                  name: forbidden_terms
+                  type: longtext
+              - column:
+                  name: enabled
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: few_shot_store_id
+                  type: VARCHAR(40)
+              - column:
+                  name: brand_context_mcp_server_id
+                  type: VARCHAR(40)
+        - addForeignKeyConstraint:
+            baseTableName: ai_persona
+            baseColumnNames: few_shot_store_id
+            referencedTableName: store_instance
+            referencedColumnNames: id
+            constraintName: fk_persona_few_shot_store
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            baseTableName: ai_persona
+            baseColumnNames: brand_context_mcp_server_id
+            referencedTableName: mcp_server
+            referencedColumnNames: id
+            constraintName: fk_persona_brand_context_mcp
+            onDelete: SET NULL
+
+  - changeSet:
+      id: v2026.2.6.3-add-persona-id-to-ai-agent
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: persona_id
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: persona_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent
+            baseColumnNames: persona_id
+            referencedTableName: ai_persona
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_persona
+            onDelete: SET NULL

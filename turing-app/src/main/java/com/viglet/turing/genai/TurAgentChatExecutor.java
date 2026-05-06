@@ -35,6 +35,10 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
+import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
+import com.viglet.turing.genai.persona.TurPersonaToneValidator;
+import com.viglet.turing.genai.persona.TurPersonaValidationResult;
 import com.viglet.turing.resilience.llm.TurLlmModelFactory;
 import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
@@ -97,6 +101,9 @@ public class TurAgentChatExecutor {
     private final TurLLMTokenUsageService tokenUsageService;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
+    private final TurPersonaPromptComposer personaPromptComposer;
+    private final TurPersonaToneValidator personaToneValidator;
+    private final TurPersonaBrandContextProvider personaBrandContextProvider;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -106,7 +113,10 @@ public class TurAgentChatExecutor {
             TurToolCallbackPipeline toolCallbackPipeline,
             TurLLMTokenUsageService tokenUsageService,
             TurChatFlowRepository chatFlowRepository,
-            TurChatFlowEngineService chatFlowEngineService) {
+            TurChatFlowEngineService chatFlowEngineService,
+            TurPersonaPromptComposer personaPromptComposer,
+            TurPersonaToneValidator personaToneValidator,
+            TurPersonaBrandContextProvider personaBrandContextProvider) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
@@ -116,6 +126,9 @@ public class TurAgentChatExecutor {
         this.tokenUsageService = tokenUsageService;
         this.chatFlowRepository = chatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
+        this.personaPromptComposer = personaPromptComposer;
+        this.personaToneValidator = personaToneValidator;
+        this.personaBrandContextProvider = personaBrandContextProvider;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -136,8 +149,10 @@ public class TurAgentChatExecutor {
         ToolCallback[] customCallbacks = agent.getCustomTools() == null || agent.getCustomTools().isEmpty()
                 ? new ToolCallback[0]
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
+        ToolCallback[] personaBrandCallbacks =
+                personaBrandContextProvider.getToolCallbacks(agent.getPersona());
         return toolCallbackPipeline.decorate(
-                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks)
+                Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks)
                         .flatMap(Arrays::stream)
                         .toArray(ToolCallback[]::new));
     }
@@ -196,10 +211,19 @@ public class TurAgentChatExecutor {
         String lastUserMessageEarly = lastMessageOfRole(history, "user");
         FlowContext flowContext = resolveFlowContext(agent, conversationId, flowId,
                 lastUserMessageEarly, chatModel);
-        String resolvedSystemPrompt = flowContext == null
+        String flowAugmented = flowContext == null
                 ? baseSystemPrompt
                 : baseSystemPrompt + chatFlowEngineService.buildSystemPromptAddendum(
                         flowContext.flow(), flowContext.state(), flowContext.graph());
+        // Fuse the persona on top of everything: its instruction + style
+        // guidelines + vocabulary constraints + brand-context hint +
+        // few-shot examples wrap the (already RAG-augmented) base prompt.
+        // No-op when agent.persona is null.
+        String resolvedSystemPrompt = personaPromptComposer.compose(
+                agent.getPersona(),
+                agent.getTurEmbeddingModelInstance(),
+                lastUserMessageEarly,
+                flowAugmented);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));
@@ -243,6 +267,12 @@ public class TurAgentChatExecutor {
                     text = advance.assistantOverride();
                 }
             }
+
+            // Persona's negative-constraint check runs LAST so it also
+            // catches forbidden terms reintroduced by the flow override.
+            TurPersonaValidationResult validation =
+                    personaToneValidator.validate(agent.getPersona(), text);
+            text = validation.sanitizedText();
 
             return new ChatResponse("assistant", text);
         })

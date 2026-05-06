@@ -1,0 +1,57 @@
+{
+  "persona": {
+    "title": "Persona",
+    "blankTitle": "Você ainda não tem nenhuma persona.",
+    "blankDescription": "Crie um perfil de voz reutilizável para aplicar tom, vocabulário e contexto de marca consistentes nos seus agentes de IA.",
+    "newInstance": "Nova Persona",
+    "deleted": "A persona {{name}} foi removida",
+    "notDeleted": "A persona {{name}} não foi removida",
+    "tones": {
+      "FORMAL": "Formal",
+      "CASUAL": "Casual",
+      "TECHNICAL": "Técnico",
+      "EXECUTIVE": "Executivo"
+    },
+    "languageStyles": {
+      "NEUTRAL": "Neutro",
+      "DIRECT": "Direto",
+      "NARRATIVE": "Narrativo",
+      "PERSUASIVE": "Persuasivo",
+      "INSTRUCTIONAL": "Instrucional"
+    }
+  },
+  "forms": {
+    "persona": {
+      "settings": "Informações gerais, voz e contexto de marca.",
+      "generalDesc": "Um nome descritivo e o status de ativação em runtime.",
+      "nameRequired": "É necessário um nome para esta persona.",
+      "descriptionPlaceholder": "Resumo curto de quem esta persona representa.",
+      "systemInstruction": "Instrução de Sistema",
+      "systemInstructionDesc": "A personalidade base que o LLM adota. Descreva papel, público, perspectiva e regras específicas da persona.",
+      "systemInstructionPlaceholder": "Você é um analista sênior de produto numa empresa SaaS de médio porte...",
+      "styleGuidelines": "Diretrizes de Estilo",
+      "styleGuidelinesDesc": "Como a persona modula a voz nas respostas.",
+      "tone": "Tom",
+      "tonePlaceholder": "Sem preferência de tom",
+      "verbosity": "Verbosidade (1=conciso, 5=expansivo)",
+      "verbosityRange": "A verbosidade deve estar entre 1 e 5.",
+      "languageStyle": "Estilo de Linguagem",
+      "languageStylePlaceholder": "Sem preferência de estilo",
+      "vocabulary": "Vocabulário",
+      "vocabularyDesc": "Termos que a persona deve incluir ou nunca usar. Um termo por linha.",
+      "mandatoryTerms": "Termos Obrigatórios",
+      "mandatoryTermsPlaceholder": "plataforma\ncamada de inteligência",
+      "forbiddenTerms": "Termos Proibidos",
+      "forbiddenTermsPlaceholder": "feature matadora\nciência de foguetes",
+      "termsDesc": "Um termo por linha. Termos proibidos também são mascarados após a resposta do LLM.",
+      "fewShot": "Exemplos Few-Shot",
+      "fewShotDesc": "Banco vetorial com exemplos de Pergunta/Resposta. Os top-K mais similares à mensagem do usuário são injetados no prompt.",
+      "fewShotStore": "Banco Vetorial",
+      "fewShotStorePlaceholder": "Sem exemplos few-shot",
+      "brandContext": "Contexto de Marca",
+      "brandContextDesc": "Servidor MCP expondo manuais de marca, diretrizes de voz ou frameworks de mensagem.",
+      "brandContextMcp": "Servidor MCP",
+      "brandContextMcpPlaceholder": "Sem contexto de marca"
+    }
+  }
+}

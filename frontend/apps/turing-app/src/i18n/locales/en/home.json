@@ -48,6 +48,10 @@
         "title": "AI Agent",
         "description": "Create AI agents that orchestrate LLMs, tools, and MCP servers for complex tasks."
       },
+      "persona": {
+        "title": "Persona",
+        "description": "Define reusable voice profiles — tone, vocabulary, brand context — applied to AI agents."
+      },
       "intent": {
         "title": "Intent",
         "description": "Define prompt categories and actions shown as quick suggestions in the chat."

@@ -12,6 +12,7 @@ export { LLMRoutes } from "./llm.routes";
 export { LoggingRoutes } from "./logging.routes";
 export { MarketplaceRoutes } from "./marketplace.routes";
 export { McpServerRoutes } from "./mcp-server.routes";
+export { PersonaRoutes } from "./persona.routes";
 export { CustomToolRoutes } from "./custom-tool.routes";
 export { SERoutes } from "./se.routes";
 export { SNRoutes } from "./sn.routes";

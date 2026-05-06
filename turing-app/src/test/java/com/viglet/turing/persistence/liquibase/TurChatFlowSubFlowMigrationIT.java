@@ -56,9 +56,9 @@ class TurChatFlowSubFlowMigrationIT {
 
     @Test
     void parentStateIdColumnExistsAfterMasterChangelogApplies() throws Exception {
-        try (Connection connection = openConnection()) {
-            applyMasterChangelog(connection);
+        applyMasterChangelog();
 
+        try (Connection connection = openConnection()) {
             ColumnInfo column = readColumnMetadata(connection, "chat_flow_state", "parentStateId");
             assertThat(column).as("parentStateId column should exist after migration").isNotNull();
             assertThat(column.dataType()).isEqualToIgnoringCase("varchar");
@@ -69,9 +69,9 @@ class TurChatFlowSubFlowMigrationIT {
 
     @Test
     void preExistingChatFlowStateColumnsRemainIntact() throws Exception {
-        try (Connection connection = openConnection()) {
-            applyMasterChangelog(connection);
+        applyMasterChangelog();
 
+        try (Connection connection = openConnection()) {
             assertThat(readColumnMetadata(connection, "chat_flow_state", "currentNodeId"))
                     .as("currentNodeId must still exist").isNotNull();
             assertThat(readColumnMetadata(connection, "chat_flow_state", "variablesJson"))
@@ -83,13 +83,13 @@ class TurChatFlowSubFlowMigrationIT {
 
     @Test
     void migrationIsIdempotent_secondApplyIsNoOp() throws Exception {
-        try (Connection connection = openConnection()) {
-            applyMasterChangelog(connection);
-            // Second apply should not throw — the parentStateId changeset is
-            // gated by columnExists with onFail: MARK_RAN, so re-running on
-            // an already-migrated database is a no-op.
-            applyMasterChangelog(connection);
+        applyMasterChangelog();
+        // Second apply should not throw — the parentStateId changeset is
+        // gated by columnExists with onFail: MARK_RAN, so re-running on
+        // an already-migrated database is a no-op.
+        applyMasterChangelog();
 
+        try (Connection connection = openConnection()) {
             assertThat(readColumnMetadata(connection, "chat_flow_state", "parentStateId"))
                     .isNotNull();
         }
@@ -101,7 +101,13 @@ class TurChatFlowSubFlowMigrationIT {
         return DriverManager.getConnection(MYSQL.getJdbcUrl(), DB_USER, DB_PASSWORD);
     }
 
-    private static void applyMasterChangelog(Connection connection) throws Exception {
+    /**
+     * Applies the master changelog using its own connection that Liquibase
+     * owns and closes. The metadata-reading tests then open a fresh
+     * connection to query the migrated schema.
+     */
+    private static void applyMasterChangelog() throws Exception {
+        Connection connection = openConnection();
         Database database = DatabaseFactory.getInstance()
                 .findCorrectDatabaseImplementation(new JdbcConnection(connection));
         try (Liquibase liquibase = new Liquibase(CHANGELOG,

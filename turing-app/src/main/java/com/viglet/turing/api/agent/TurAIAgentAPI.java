@@ -26,6 +26,7 @@ import com.viglet.turing.persistence.repository.customtool.TurCustomToolReposito
 import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
+import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import com.viglet.turing.system.TurGlobalSettingsService;
@@ -46,6 +47,7 @@ public class TurAIAgentAPI {
     private final TurCustomToolRepository turCustomToolRepository;
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurStoreInstanceRepository turStoreInstanceRepository;
+    private final TurPersonaRepository turPersonaRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
 
     public TurAIAgentAPI(TurAIAgentRepository turAIAgentRepository,
@@ -55,6 +57,7 @@ public class TurAIAgentAPI {
             TurCustomToolRepository turCustomToolRepository,
             TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurStoreInstanceRepository turStoreInstanceRepository,
+            TurPersonaRepository turPersonaRepository,
             TurGlobalSettingsService turGlobalSettingsService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentMapper = turAIAgentMapper;
@@ -63,6 +66,7 @@ public class TurAIAgentAPI {
         this.turCustomToolRepository = turCustomToolRepository;
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
+        this.turPersonaRepository = turPersonaRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
     }
 
@@ -113,6 +117,8 @@ public class TurAIAgentAPI {
                     turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
             agentEdit.setTurStoreInstance(resolveSingleRelation(
                     turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+            agentEdit.setPersona(resolveSingleRelation(
+                    turAIAgent.getPersona(), turPersonaRepository));
             agentEdit.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
                     agentEdit.getTurEmbeddingModelInstance(),
                     agentEdit.getTurStoreInstance()));
@@ -145,6 +151,8 @@ public class TurAIAgentAPI {
                 turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
         turAIAgent.setTurStoreInstance(resolveSingleRelation(
                 turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
+        turAIAgent.setPersona(resolveSingleRelation(
+                turAIAgent.getPersona(), turPersonaRepository));
         turAIAgent.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
                 turAIAgent.getTurEmbeddingModelInstance(),
                 turAIAgent.getTurStoreInstance()));

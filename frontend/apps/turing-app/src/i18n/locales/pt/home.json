@@ -48,6 +48,10 @@
         "title": "Agente de IA",
         "description": "Crie agentes de IA que orquestram LLMs, ferramentas e servidores MCP para tarefas complexas."
       },
+      "persona": {
+        "title": "Persona",
+        "description": "Defina perfis de voz reutilizáveis — tom, vocabulário, contexto de marca — aplicados aos agentes de IA."
+      },
       "intent": {
         "title": "Intenção",
         "description": "Defina categorias de prompts e ações exibidas como sugestões rápidas no chat."

@@ -1,0 +1,57 @@
+{
+  "persona": {
+    "title": "Persona",
+    "blankTitle": "You don't seem to have any persona.",
+    "blankDescription": "Create a reusable voice profile to apply consistent tone, vocabulary and brand context across your AI agents.",
+    "newInstance": "New Persona",
+    "deleted": "The {{name}} persona was deleted",
+    "notDeleted": "The {{name}} persona was not deleted",
+    "tones": {
+      "FORMAL": "Formal",
+      "CASUAL": "Casual",
+      "TECHNICAL": "Technical",
+      "EXECUTIVE": "Executive"
+    },
+    "languageStyles": {
+      "NEUTRAL": "Neutral",
+      "DIRECT": "Direct",
+      "NARRATIVE": "Narrative",
+      "PERSUASIVE": "Persuasive",
+      "INSTRUCTIONAL": "Instructional"
+    }
+  },
+  "forms": {
+    "persona": {
+      "settings": "General information, voice and brand context.",
+      "generalDesc": "A descriptive name and toggle for runtime use.",
+      "nameRequired": "A name is required for this persona.",
+      "descriptionPlaceholder": "Short summary of who this persona represents.",
+      "systemInstruction": "System Instruction",
+      "systemInstructionDesc": "The core personality the LLM adopts. Describe role, audience, perspective and any persona-specific rules.",
+      "systemInstructionPlaceholder": "You are a senior product analyst at a mid-market SaaS company...",
+      "styleGuidelines": "Style Guidelines",
+      "styleGuidelinesDesc": "How the persona modulates voice when responding.",
+      "tone": "Tone",
+      "tonePlaceholder": "No tone preference",
+      "verbosity": "Verbosity (1=terse, 5=expansive)",
+      "verbosityRange": "Verbosity must be between 1 and 5.",
+      "languageStyle": "Language Style",
+      "languageStylePlaceholder": "No language style preference",
+      "vocabulary": "Vocabulary",
+      "vocabularyDesc": "Terms the persona must include or never use. One term per line.",
+      "mandatoryTerms": "Required Terms",
+      "mandatoryTermsPlaceholder": "platform\nintelligence layer",
+      "forbiddenTerms": "Forbidden Terms",
+      "forbiddenTermsPlaceholder": "killer feature\nrocket science",
+      "termsDesc": "One term per line. Forbidden terms are also masked post-LLM.",
+      "fewShot": "Few-Shot Examples",
+      "fewShotDesc": "Embedding store containing Q/A examples. Top-K hits by similarity to the user message are injected into the prompt.",
+      "fewShotStore": "Embedding Store",
+      "fewShotStorePlaceholder": "No few-shot examples",
+      "brandContext": "Brand Context",
+      "brandContextDesc": "MCP server exposing brand manuals, voice guidelines or messaging frameworks.",
+      "brandContextMcp": "MCP Server",
+      "brandContextMcpPlaceholder": "No brand context"
+    }
+  }
+}

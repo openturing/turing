@@ -27,6 +27,11 @@ export const queryKeys = {
     list: () => [...queryKeys.aiAgents.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.aiAgents.all(), 'detail', id] as const,
   },
+  personas: {
+    all: () => ['personas'] as const,
+    list: () => [...queryKeys.personas.all(), 'list'] as const,
+    detail: (id: string) => [...queryKeys.personas.all(), 'detail', id] as const,
+  },
   seInstances: {
     all: () => ['se-instances'] as const,
     list: () => [...queryKeys.seInstances.all(), 'list'] as const,

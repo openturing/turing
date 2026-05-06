@@ -9,6 +9,7 @@ import com.viglet.turing.persistence.model.customtool.TurCustomTool;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
+import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
@@ -122,4 +123,17 @@ public class TurAIAgent implements Serializable {
     @ManyToOne
     @JoinColumn(name = "store_instance_id")
     private TurStoreInstance turStoreInstance;
+
+    /**
+     * Optional voice profile applied at chat time. When set, the
+     * persona's system instruction, style guidelines, vocabulary
+     * constraints, brand context, and few-shot examples are fused into
+     * the system prompt before the LLM is called, and the persona's
+     * forbidden-term validator runs over the response.
+     *
+     * @since 2026.2.6
+     */
+    @ManyToOne
+    @JoinColumn(name = "persona_id")
+    private TurPersona persona;
 }

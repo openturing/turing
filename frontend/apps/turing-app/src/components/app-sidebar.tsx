@@ -19,6 +19,7 @@ import {
   IconRobot,
   IconServer2,
   IconShieldCog,
+  IconUserCircle,
   IconZoomCode
 } from "@tabler/icons-react"
 import type { Icon } from "@tabler/icons-react"
@@ -58,6 +59,7 @@ const ITEM_PRIVILEGE: Record<string, string> = {
   embeddingModel: "EMBEDDING_VIEW",
   embeddingStore: "STORE_VIEW",
   aiAgent: "AI_AGENT_VIEW",
+  persona: "AI_AGENT_VIEW",
   searchEngine: "SE_VIEW",
   semanticNavigation: "SN_VIEW",
 }
@@ -69,6 +71,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "mcpServer", titleKey: "home.features.mcpServer.title", url: "/admin/mcp/instance", icon: IconServer2 },
   { key: "customTool", titleKey: "home.features.customTool.title", url: ROUTES.CUSTOM_TOOL_INSTANCE, icon: IconBraces },
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
+  { key: "persona", titleKey: "home.features.persona.title", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
