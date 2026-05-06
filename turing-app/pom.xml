@@ -358,6 +358,18 @@
             <artifactId>testcontainers-minio</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Testcontainers MySQL + driver — used by Liquibase migration ITs
+             that validate new changesets against a real MySQL engine. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
