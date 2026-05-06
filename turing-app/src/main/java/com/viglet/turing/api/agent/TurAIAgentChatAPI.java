@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.api.llm.chat.TurLLMChatAPI;
+import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
@@ -43,7 +46,9 @@ import reactor.core.publisher.Flux;
 public class TurAIAgentChatAPI {
 
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurAIAgentRepositoryPort turAIAgentRepositoryPort;
     private final TurLLMInstanceRepository turLLMInstanceRepository;
+    private final TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort;
     private final TurGenAiLlmProviderFactory llmProviderFactory;
     private final TurSecretCryptoService turSecretCryptoService;
     private final TurAgentChatExecutor agentChatExecutor;
@@ -51,14 +56,18 @@ public class TurAIAgentChatAPI {
     private final TurChatFlowEngineService chatFlowEngineService;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
+            TurAIAgentRepositoryPort turAIAgentRepositoryPort,
             TurLLMInstanceRepository turLLMInstanceRepository,
+            TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort,
             TurGenAiLlmProviderFactory llmProviderFactory,
             TurSecretCryptoService turSecretCryptoService,
             TurAgentChatExecutor agentChatExecutor,
             TurChatFlowRepository turChatFlowRepository,
             TurChatFlowEngineService chatFlowEngineService) {
         this.turAIAgentRepository = turAIAgentRepository;
+        this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
+        this.turLLMInstanceRepositoryPort = turLLMInstanceRepositoryPort;
         this.llmProviderFactory = llmProviderFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.agentChatExecutor = agentChatExecutor;
@@ -146,12 +155,25 @@ public class TurAIAgentChatAPI {
             @PathVariable String agentId,
             @org.springframework.web.bind.annotation.RequestParam String llmInstanceId) {
 
-        turAIAgentRepository.findById(agentId)
+        // Agent existence check via the port — no agent entity is needed
+        // downstream in the contextInfo flow (only the LLM is consulted).
+        turAIAgentRepositoryPort.findById(agentId)
                 .orElseThrow(() -> new IllegalArgumentException("AI Agent not found: " + agentId));
 
-        TurLLMInstance turLLMInstance = turLLMInstanceRepository.findById(llmInstanceId)
+        // LLM existence + non-secret read via the port. The configured
+        // contextWindow is part of the public domain projection and is
+        // used for the fall-back "config" branch below.
+        TurLLMInstanceDomain llmDomain = turLLMInstanceRepositoryPort.findById(llmInstanceId)
                 .orElseThrow(() -> new IllegalArgumentException("LLM instance not found: " + llmInstanceId));
 
+        // Provider call still needs the JPA entity — the encrypted API key
+        // and provider-specific options live on the entity per the secrets
+        // policy, and the provider factory keys off the entity.
+        // Both the port adapter and findById hit the same Spring cache,
+        // so this is not an extra round-trip.
+        TurLLMInstance turLLMInstance = turLLMInstanceRepository.findById(llmInstanceId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "LLM instance vanished between port and entity load: " + llmInstanceId));
         TurGenAiLlmProvider provider = llmProviderFactory.getProvider(turLLMInstance);
         String decryptedApiKey = turSecretCryptoService.decrypt(turLLMInstance.getApiKeyEncrypted());
 
@@ -160,9 +182,7 @@ public class TurAIAgentChatAPI {
             return new TurLLMChatAPI.ContextInfoResponse(fetched.getAsInt(), "provider");
         }
 
-        int stored = turLLMInstance.getContextWindow() != null
-                ? turLLMInstance.getContextWindow()
-                : 128000;
+        int stored = llmDomain.contextWindow() != null ? llmDomain.contextWindow() : 128000;
         return new TurLLMChatAPI.ContextInfoResponse(stored, "config");
     }
 

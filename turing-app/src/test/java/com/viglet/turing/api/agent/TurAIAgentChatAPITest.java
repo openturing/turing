@@ -17,6 +17,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.viglet.turing.domain.agent.TurAIAgentDomain;
+import com.viglet.turing.domain.agent.TurAIAgentRepositoryPort;
+import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
+import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
@@ -42,7 +46,11 @@ class TurAIAgentChatAPITest {
     @Mock
     private TurAIAgentRepository turAIAgentRepository;
     @Mock
+    private TurAIAgentRepositoryPort turAIAgentRepositoryPort;
+    @Mock
     private TurLLMInstanceRepository turLLMInstanceRepository;
+    @Mock
+    private TurLLMInstanceRepositoryPort turLLMInstanceRepositoryPort;
     @Mock
     private TurGenAiLlmProviderFactory llmProviderFactory;
     @Mock
@@ -67,9 +75,22 @@ class TurAIAgentChatAPITest {
     @BeforeEach
     void setUp() {
         api = new TurAIAgentChatAPI(
-                turAIAgentRepository, turLLMInstanceRepository, llmProviderFactory,
-                turSecretCryptoService, agentChatExecutor,
+                turAIAgentRepository, turAIAgentRepositoryPort,
+                turLLMInstanceRepository, turLLMInstanceRepositoryPort,
+                llmProviderFactory, turSecretCryptoService, agentChatExecutor,
                 turChatFlowRepository, chatFlowEngineService);
+    }
+
+    private static TurAIAgentDomain agentDomain(String id) {
+        return new TurAIAgentDomain(id, "Agent " + id, null, null, null, null, 1,
+                false, null, java.util.Set.of(), java.util.Set.of(), java.util.Set.of(),
+                null, null);
+    }
+
+    private static TurLLMInstanceDomain llmDomain(String id, Integer contextWindow) {
+        return new TurLLMInstanceDomain(id, "LLM " + id, null, null, 1, null,
+                "openai", "gpt-4o-mini", null, null, null, null, null, null, null,
+                null, null, null, null, contextWindow, null, false);
     }
 
     @AfterEach
@@ -181,13 +202,13 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldReturnProviderContextWindow() {
-        TurAIAgent agent = new TurAIAgent();
-        agent.setId("agent-1");
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("llm-1");
         instance.setApiKeyEncrypted("enc");
 
-        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(turAIAgentRepositoryPort.findById("agent-1")).thenReturn(Optional.of(agentDomain("agent-1")));
+        when(turLLMInstanceRepositoryPort.findById("llm-1"))
+                .thenReturn(Optional.of(llmDomain("llm-1", null)));
         when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc")).thenReturn("key");
@@ -201,14 +222,13 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldFallbackToStoredContextWindow() {
-        TurAIAgent agent = new TurAIAgent();
-        agent.setId("agent-1");
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("llm-1");
         instance.setApiKeyEncrypted("enc");
-        instance.setContextWindow(64000);
 
-        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(turAIAgentRepositoryPort.findById("agent-1")).thenReturn(Optional.of(agentDomain("agent-1")));
+        when(turLLMInstanceRepositoryPort.findById("llm-1"))
+                .thenReturn(Optional.of(llmDomain("llm-1", 64000)));
         when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc")).thenReturn("key");
@@ -222,14 +242,13 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldReturnDefaultWhenNullContextWindow() {
-        TurAIAgent agent = new TurAIAgent();
-        agent.setId("agent-1");
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("llm-1");
         instance.setApiKeyEncrypted("enc");
-        instance.setContextWindow(null);
 
-        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(turAIAgentRepositoryPort.findById("agent-1")).thenReturn(Optional.of(agentDomain("agent-1")));
+        when(turLLMInstanceRepositoryPort.findById("llm-1"))
+                .thenReturn(Optional.of(llmDomain("llm-1", null)));
         when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt("enc")).thenReturn("key");
@@ -243,7 +262,7 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldThrowWhenAgentNotFound() {
-        when(turAIAgentRepository.findById("missing")).thenReturn(Optional.empty());
+        when(turAIAgentRepositoryPort.findById("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> api.contextInfo("missing", "llm-1"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -252,10 +271,8 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldThrowWhenLlmNotFound() {
-        TurAIAgent agent = new TurAIAgent();
-        agent.setId("agent-1");
-        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
-        when(turLLMInstanceRepository.findById("missing")).thenReturn(Optional.empty());
+        when(turAIAgentRepositoryPort.findById("agent-1")).thenReturn(Optional.of(agentDomain("agent-1")));
+        when(turLLMInstanceRepositoryPort.findById("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> api.contextInfo("agent-1", "missing"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -271,14 +288,13 @@ class TurAIAgentChatAPITest {
 
     @Test
     void contextInfoShouldWorkWithNullApiKeyEncrypted() {
-        TurAIAgent agent = new TurAIAgent();
-        agent.setId("agent-1");
         TurLLMInstance instance = new TurLLMInstance();
         instance.setId("llm-1");
         instance.setApiKeyEncrypted(null);
-        instance.setContextWindow(32000);
 
-        when(turAIAgentRepository.findById("agent-1")).thenReturn(Optional.of(agent));
+        when(turAIAgentRepositoryPort.findById("agent-1")).thenReturn(Optional.of(agentDomain("agent-1")));
+        when(turLLMInstanceRepositoryPort.findById("llm-1"))
+                .thenReturn(Optional.of(llmDomain("llm-1", 32000)));
         when(turLLMInstanceRepository.findById("llm-1")).thenReturn(Optional.of(instance));
         when(llmProviderFactory.getProvider(instance)).thenReturn(provider);
         when(turSecretCryptoService.decrypt(null)).thenReturn(null);
