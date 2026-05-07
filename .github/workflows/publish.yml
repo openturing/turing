@@ -64,15 +64,6 @@ jobs:
               "username": "${{ secrets.OSSRH_USERNAME }}",
               "password": "${{ secrets.OSSRH_TOKEN }}"
             }]
-      - name: Publish package
-        run: |
-          mvn --batch-mode -pl turing-commons,turing-java-sdk -P release -am deploy -DskipTests -Dturing.open-browser=false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       - name: Install NSIS
         run: sudo apt-get update && sudo apt-get install -y nsis nsis-pluginapi
       - name: Deploy Version
@@ -91,3 +82,12 @@ jobs:
           gh release upload ${TAG_NAME} target/turing-install.zip --repo ${RELEASE_REPO} --clobber
           gh release upload ${TAG_NAME} target/turing-install.exe --repo ${RELEASE_REPO} --clobber
           gh release upload ${TAG_NAME} target/Turing-ES-x86_64.AppImage --repo ${RELEASE_REPO} --clobber
+      - name: Publish package
+        run: |
+          mvn --batch-mode -pl turing-commons,turing-java-sdk -P release -am deploy -DskipTests -Dturing.open-browser=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

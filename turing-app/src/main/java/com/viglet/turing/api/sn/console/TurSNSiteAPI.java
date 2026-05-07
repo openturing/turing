@@ -196,7 +196,7 @@ public class TurSNSiteAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "SN_DELETE"})
     public boolean turSNSiteDelete(@PathVariable String id) {
-        Optional<TurSNSite> turSNSite = turSNSiteRepository.findById(id);
+        Optional<TurSNSite> turSNSite = turSNSiteRepository.findByIdNoCache(id);
         turSNSite.ifPresent(site -> {
             TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
             site.getTurSNSiteFields().clear();
