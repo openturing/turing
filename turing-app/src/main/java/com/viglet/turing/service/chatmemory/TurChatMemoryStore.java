@@ -30,4 +30,15 @@ public interface TurChatMemoryStore {
      * event in the batch shares the same {@code conversationId}.
      */
     void appendBatch(String conversationId, List<TurChatMemoryEvent> batch);
+
+    /**
+     * Returns the chronological list of role-tagged messages persisted for
+     * the given conversation, capped at {@code limit} most-recent items.
+     * Each entry is a flat map ({@code role}, {@code content},
+     * {@code timestamp}) — keeps the read API engine-agnostic.
+     *
+     * <p>Used by the analytics enricher when classifying a finished session;
+     * implementations that don't store messages return an empty list.
+     */
+    List<java.util.Map<String, Object>> findMessages(String conversationId, int limit);
 }

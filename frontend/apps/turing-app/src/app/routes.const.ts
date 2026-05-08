@@ -30,6 +30,7 @@ export const ROUTES = {
   GRAPHQL_ROOT: `${consolePath}/graphql`,
   USER_ACCOUNT: `${consolePath}/user/account`,
   TOKEN_USAGE: `${consolePath}/token-usage`,
+  CHAT_ANALYTICS: `${consolePath}/chat-analytics`,
   MCP_ROOT: `${consolePath}/mcp`,
   MCP_INSTANCE: `${consolePath}/mcp/instance`,
   CUSTOM_TOOL_ROOT: `${consolePath}/custom-tool`,

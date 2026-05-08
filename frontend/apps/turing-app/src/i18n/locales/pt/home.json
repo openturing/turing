@@ -60,6 +60,10 @@
         "title": "Uso de Tokens",
         "description": "Monitore o consumo de tokens em todas as instâncias e modelos de LLM."
       },
+      "chatAnalytics": {
+        "title": "Análise de Chat",
+        "description": "Investigue sessões de chat recentes, classificação de intenção e sentimento, e transcrições completas."
+      },
       "chat": {
         "title": "Chat",
         "description": "Inicie conversas com seus LLMs, agentes e busca semântica configurados."

@@ -49,6 +49,33 @@ public final class TurMeterNames {
     /** Counter for SN search snapshot cache outcomes. Tags: outcome (hit|miss|evict). */
     public static final String SEARCH_SNAPSHOT_CACHE = "turing.search.snapshot.cache";
 
+    /**
+     * Timer for the AI-on-AI chat analytics enricher's full processing cycle.
+     * Tags: status (success|empty|skipped). One sample per scheduled tick.
+     */
+    public static final String CHAT_ANALYTICS_ENRICH_CYCLE = "turing.chat.analytics.enrich.cycle";
+
+    /**
+     * Timer for a single session classification. Tags: outcome (classified|
+     * unclassified|error). Lets us separate LLM latency from JSON-parsing
+     * fallbacks without re-deriving from log lines.
+     */
+    public static final String CHAT_ANALYTICS_CLASSIFY = "turing.chat.analytics.classify";
+
+    /**
+     * Counter for classifier outcomes. Tags: outcome (classified|unclassified|
+     * error|skipped|empty_transcript). The enricher's "are we keeping up?" KPI.
+     */
+    public static final String CHAT_ANALYTICS_CLASSIFICATIONS = "turing.chat.analytics.classifications";
+
+    /**
+     * Gauge for the size of the in-memory in-flight session map. Slow growth
+     * indicates a leak (sessions started but never closed); a periodic sweep
+     * trims entries whose {@code startedAt} is older than
+     * {@code turing.chat.analytics.inflight.max-age-hours}.
+     */
+    public static final String CHAT_ANALYTICS_INFLIGHT_SIZE = "turing.chat.analytics.inflight.size";
+
     // ---- Tag keys --------------------------------------------------------
 
     public static final String TAG_PROVIDER = "provider";

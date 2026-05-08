@@ -106,4 +106,12 @@ export const queryKeys = {
     all: () => ['admin-roles'] as const,
     list: () => [...queryKeys.adminRoles.all(), 'list'] as const,
   },
+  chatAnalytics: {
+    all: () => ['chat-analytics'] as const,
+    health: () => [...queryKeys.chatAnalytics.all(), 'health'] as const,
+    sessions: (params: Record<string, unknown>) =>
+      [...queryKeys.chatAnalytics.all(), 'sessions', params] as const,
+    session: (id: string) => [...queryKeys.chatAnalytics.all(), 'session', id] as const,
+    transcript: (id: string) => [...queryKeys.chatAnalytics.all(), 'transcript', id] as const,
+  },
 } as const;

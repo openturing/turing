@@ -2,7 +2,9 @@ package com.viglet.turing.service.chatmemory;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -102,6 +104,41 @@ public class TurMongoChatMemoryStore implements TurChatMemoryStore {
                 .append("role", role)
                 .append("content", content == null ? "" : content)
                 .append("timestamp", ts);
+    }
+
+    @Override
+    public List<Map<String, Object>> findMessages(String conversationId, int limit) {
+        if (conversationId == null || conversationId.isBlank()) return List.of();
+        int cap = Math.max(1, Math.min(limit, 1000));
+        try {
+            Document doc = client.getDatabase(databaseName)
+                    .getCollection(collectionName)
+                    .find(com.mongodb.client.model.Filters.eq("_id", conversationId))
+                    .projection(new Document("messages", 1))
+                    .first();
+            if (doc == null) return List.of();
+            @SuppressWarnings("unchecked")
+            List<Document> messages = (List<Document>) doc.get("messages");
+            if (messages == null || messages.isEmpty()) return List.of();
+            // The capped $push.$slice already keeps only the most-recent entries;
+            // here we just take the tail (in chronological order).
+            int from = Math.max(0, messages.size() - cap);
+            List<Map<String, Object>> result = new ArrayList<>(messages.size() - from);
+            for (int i = from; i < messages.size(); i++) {
+                Document m = messages.get(i);
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("role", m.getString("role"));
+                row.put("content", m.getString("content"));
+                Date ts = m.getDate("timestamp");
+                row.put("timestamp", ts == null ? null : ts.toInstant().toString());
+                result.add(row);
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Failed to read chat memory messages for conversation {}: {}",
+                    conversationId, e.getMessage());
+            return List.of();
+        }
     }
 
     public void close() {

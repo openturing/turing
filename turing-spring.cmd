@@ -13,13 +13,16 @@ set MONGO_ENABLED=false
 set MINIO_ENABLED=false
 set GIT_ENABLED=false
 set STORAGE_TYPE=FILESYSTEM
-
+set LOGGING_ENGINE=none
 set LOG_LEVEL=INFO
 
 for %%A in (%*) do (
-    if /i "%%A"=="mongo" set MONGO_ENABLED=true
-    if /i "%%A"=="minio" set STORAGE_TYPE=MINIO 
-    if /i "%%A"=="git" set GIT_ENABLED=true 
+    if /i "%%A"=="mongo" (
+        set MONGO_ENABLED=true
+        set LOGGING_ENGINE=mongodb
+    )
+    if /i "%%A"=="minio" set STORAGE_TYPE=MINIO
+    if /i "%%A"=="git" set GIT_ENABLED=true
     if /i "%%A"=="debug" set LOG_LEVEL=DEBUG
 )
 
@@ -29,6 +32,7 @@ echo Starting Turing...
 echo   MongoDB: %MONGO_ENABLED%
 echo   Log level ^(com.viglet^): %LOG_LEVEL%
 echo   Storage: %STORAGE_TYPE%
+echo   Logging Engine: %LOGGING_ENGINE%
 echo.
 
 call mvn spring-boot:run -pl turing-app -Dskip.npm -DskipTests -Dmaven.test.skip=true ^
@@ -36,6 +40,7 @@ call mvn spring-boot:run -pl turing-app -Dskip.npm -DskipTests -Dmaven.test.skip
 -Dspring-boot.run.arguments=--spring.h2.console.enabled=true ^
 --turing.storage.type=%STORAGE_TYPE% ^
 --logging.config=%LOGGING_CONFIG% ^
+--turing.logging.engine=%LOGGING_ENGINE% ^
 --turing.mongodb.enabled=%MONGO_ENABLED% ^
 --turing.git.server=%GIT_ENABLED% ^
 --logging.level.com.viglet=%LOG_LEVEL% ^

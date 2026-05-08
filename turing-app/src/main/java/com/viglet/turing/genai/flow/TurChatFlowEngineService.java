@@ -42,6 +42,8 @@ import com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowSubmissionRepository;
+import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
+import com.viglet.turing.service.chatanalytics.TurChatSessionOutcome;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.core.JacksonException;
@@ -70,15 +72,18 @@ public class TurChatFlowEngineService {
     private final TurChatFlowStateRepository stateRepository;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowSubmissionRepository submissionRepository;
+    private final TurChatAnalyticsService chatAnalyticsService;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowSubmissionRepository submissionRepository,
+            TurChatAnalyticsService chatAnalyticsService,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.submissionRepository = submissionRepository;
+        this.chatAnalyticsService = chatAnalyticsService;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -560,6 +565,20 @@ public class TurChatFlowEngineService {
         submissionRepository.save(submission);
         log.info("[FlowEngine] Submission recorded for flow '{}', conversation '{}', endNode '{}'",
                 flow.getId(), state.getConversationId(), currentNodeId);
+        // Mirror the terminal event into the analytics store. Marker
+        // {@code "__abandoned__"} (set by the explicit reset endpoint) maps
+        // to ABANDONED; everything else counts as COMPLETED.
+        if (chatAnalyticsService != null && chatAnalyticsService.isEnabled()) {
+            try {
+                TurChatSessionOutcome outcome = "__abandoned__".equals(currentNodeId)
+                        ? TurChatSessionOutcome.ABANDONED
+                        : TurChatSessionOutcome.COMPLETED;
+                chatAnalyticsService.recordSessionEnd(state.getConversationId(), outcome);
+            } catch (RuntimeException e) {
+                log.debug("[FlowEngine] analytics end failed for conversation {}: {}",
+                        state.getConversationId(), e.getMessage());
+            }
+        }
     }
 
     private static String resolveUsername() {

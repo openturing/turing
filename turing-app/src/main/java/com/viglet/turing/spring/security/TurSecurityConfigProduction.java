@@ -152,6 +152,10 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/actuator/prometheus"),
                                                 mvc.matcher("/actuator/health"),
                                                 mvc.matcher("/actuator/health/**"),
+                                                // Read-only chat analytics API consumed by Grafana
+                                                // via the Infinity datasource. Restrict at network
+                                                // level in prod (same model as /actuator/prometheus).
+                                                mvc.matcher("/api/system/chat-analytics/**"),
                                                 mvc.matcher("/assets/**"),
                                                 mvc.matcher("/favicon.ico"),
                                                 mvc.matcher("/*.png"),

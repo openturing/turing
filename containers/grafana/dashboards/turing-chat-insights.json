@@ -1,0 +1,998 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "datasource", "uid": "grafana" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Customer-facing AI chat behavior — who's talking, what they're trying to accomplish, where the agent succeeds, where it abandons. Reads from the engine-agnostic /api/system/chat-analytics endpoints (backed by Mongo or Redis depending on turing.logging.engine).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Total chat sessions started in the period (each conversation = one row in the analytics store).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["sum"], "fields": "/^count$/", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "outcome", "type": "string" },
+            { "selector": "count",  "text": "count",   "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "outcome" },
+            { "key": "limit", "value": "20" }
+          ]
+        }
+      ],
+      "title": "Total chat sessions",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "How conversations end. COMPLETED = flow reached an end node. ABANDONED = user reset the conversation mid-flow. IN_PROGRESS = still open. ERROR = server-side failure.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "COMPLETED" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ABANDONED" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "IN_PROGRESS" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ERROR" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "outcome", "type": "string" },
+            { "selector": "count",  "text": "count",   "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "outcome" }
+          ]
+        }
+      ],
+      "title": "Outcome distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Sessions split by AI agent. Reveals which agents are getting traffic and which are dormant.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 0 },
+      "id": 3,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "agent", "type": "string" },
+            { "selector": "count",  "text": "count", "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "agentId" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      ],
+      "title": "Sessions by agent",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Health of the chat analytics pipeline — engine in use and whether writes are landing. If this shows engine=none the dashboard panels above will be empty until turing.logging.engine is set to mongodb or redis.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "false": { "color": "red",   "index": 1, "text": "DISABLED" } }, "type": "value" },
+            { "options": { "true":  { "color": "green", "index": 0, "text": "ENABLED" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^enabled$/", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/health",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "engine",  "text": "engine",  "type": "string" },
+            { "selector": "enabled", "text": "enabled", "type": "boolean" }
+          ],
+          "filters": [],
+          "parser": "backend"
+        }
+      ],
+      "title": "Analytics store",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Sessions split by persona. Combine with the outcome panel to see which personas drive completion (e.g. friendly persona may complete onboarding flows better than formal).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 5,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.7, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "persona",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "persona", "type": "string" },
+            { "selector": "count",  "text": "count",   "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "personaId" },
+            { "key": "limit", "value": "15" }
+          ]
+        }
+      ],
+      "title": "Sessions by persona",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Locale distribution — where investment in translation/content matters. Empty/unknown buckets often indicate clients calling without setting Accept-Language.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 6,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "locale", "type": "string" },
+            { "selector": "count",  "text": "count",  "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "locale" }
+          ]
+        }
+      ],
+      "title": "Sessions by locale",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Distribution of user intent across sessions, classified post-hoc by TurChatIntentClassifier. UNCLASSIFIED rows are sessions the LLM couldn't categorise (no transcript available, default LLM offline at the time).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "SUPPORT" },             "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue"   } }] },
+          { "matcher": { "id": "byName", "options": "ONBOARDING" },          "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green"  } }] },
+          { "matcher": { "id": "byName", "options": "EXPLORATION" },        "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
+          { "matcher": { "id": "byName", "options": "COMPLAINT" },           "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red"    } }] },
+          { "matcher": { "id": "byName", "options": "INFORMATION_SEEKING" },"properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "CONVERSION_INTENT" },  "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 16 },
+      "id": 8,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "intent", "type": "string" },
+            { "selector": "count",  "text": "count",  "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "intentLabel" },
+            { "key": "limit", "value": "20" }
+          ]
+        }
+      ],
+      "title": "Sessions by intent",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Did the user accomplish what they came for? YES = goal met. PARTIAL = some helpful info but the core ask was missed. NO = goal not met (high-leverage signal — pair with intentLabel to know what people are NOT getting). UNKNOWN = classifier couldn't tell.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 90,
+            "gradientMode": "opacity", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "YES" },     "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green"  } }] },
+          { "matcher": { "id": "byName", "options": "PARTIAL" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "NO" },      "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red"    } }] },
+          { "matcher": { "id": "byName", "options": "UNKNOWN" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "text"   } }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 16 },
+      "id": 9,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.85, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "achieved",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "achieved", "type": "string" },
+            { "selector": "count",  "text": "count",    "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "goalAchieved" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      ],
+      "title": "Goal achievement",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Emotional tone classified from the transcript. FRUSTRATED is reserved for repeated rephrasing or escalating tone — separate from one-off NEGATIVE because it points to a different fix (improve agent / handoff to human).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "POSITIVE" },   "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green"  } }] },
+          { "matcher": { "id": "byName", "options": "NEUTRAL" },    "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "text"   } }] },
+          { "matcher": { "id": "byName", "options": "NEGATIVE" },   "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red"    } }] },
+          { "matcher": { "id": "byName", "options": "FRUSTRATED" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] },
+          { "matcher": { "id": "byName", "options": "UNKNOWN" },    "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "text"   } }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 16 },
+      "id": 10,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/aggregate",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "sentiment", "type": "string" },
+            { "selector": "count",  "text": "count",     "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from", "value": "${__from:date:iso}" },
+            { "key": "to",   "value": "${__to:date:iso}" },
+            { "key": "by",   "value": "sentiment" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      ],
+      "title": "Sentiment distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Most recent chat sessions with all aggregates. The first user message gives you the gist of what each conversation was about — useful for spot-checking the analytics pipeline and for quick UX investigation.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "filterable": true,
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "outcome" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "COMPLETED":   { "color": "green",  "index": 0, "text": "✓ COMPLETED" } }, "type": "value" },
+                  { "options": { "ABANDONED":   { "color": "red",    "index": 1, "text": "⨯ ABANDONED" } }, "type": "value" },
+                  { "options": { "IN_PROGRESS": { "color": "yellow", "index": 2, "text": "… IN_PROGRESS" } }, "type": "value" },
+                  { "options": { "ERROR":       { "color": "purple", "index": 3, "text": "⚠ ERROR" } }, "type": "value" },
+                  { "options": { "HANDOFF":     { "color": "blue",   "index": 4, "text": "→ HANDOFF" } }, "type": "value" }
+                ]
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "totalTokensIn" },
+            "properties": [{ "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "totalTokensOut" },
+            "properties": [{ "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "durationMs" },
+            "properties": [{ "id": "unit", "value": "ms" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "intentLabel" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "SUPPORT":             { "color": "blue",   "index": 0 } }, "type": "value" },
+                  { "options": { "ONBOARDING":          { "color": "green",  "index": 1 } }, "type": "value" },
+                  { "options": { "EXPLORATION":         { "color": "purple", "index": 2 } }, "type": "value" },
+                  { "options": { "COMPLAINT":           { "color": "red",    "index": 3 } }, "type": "value" },
+                  { "options": { "INFORMATION_SEEKING": { "color": "orange", "index": 4 } }, "type": "value" },
+                  { "options": { "CONVERSION_INTENT":   { "color": "yellow", "index": 5 } }, "type": "value" },
+                  { "options": { "OTHER":               { "color": "text",   "index": 6 } }, "type": "value" },
+                  { "options": { "UNCLASSIFIED":        { "color": "text",   "index": 7 } }, "type": "value" }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "goalAchieved" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "YES":     { "color": "green",  "index": 0, "text": "✓ YES"     } }, "type": "value" },
+                  { "options": { "PARTIAL": { "color": "yellow", "index": 1, "text": "~ PARTIAL" } }, "type": "value" },
+                  { "options": { "NO":      { "color": "red",    "index": 2, "text": "⨯ NO"      } }, "type": "value" },
+                  { "options": { "UNKNOWN": { "color": "text",   "index": 3, "text": "?"         } }, "type": "value" }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "sentiment" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "POSITIVE":   { "color": "green",      "index": 0 } }, "type": "value" },
+                  { "options": { "NEUTRAL":    { "color": "text",       "index": 1 } }, "type": "value" },
+                  { "options": { "NEGATIVE":   { "color": "red",        "index": 2 } }, "type": "value" },
+                  { "options": { "FRUSTRATED": { "color": "purple",     "index": 3 } }, "type": "value" },
+                  { "options": { "UNKNOWN":    { "color": "text",       "index": 4 } }, "type": "value" }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "intentConfidence" },
+            "properties": [{ "id": "unit", "value": "percentunit" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 26 },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "startedAt" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/sessions",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "startedAt",        "text": "startedAt",        "type": "timestamp" },
+            { "selector": "completedAt",      "text": "completedAt",      "type": "timestamp" },
+            { "selector": "outcome",          "text": "outcome",          "type": "string" },
+            { "selector": "intentLabel",      "text": "intentLabel",      "type": "string" },
+            { "selector": "goalAchieved",     "text": "goalAchieved",     "type": "string" },
+            { "selector": "sentiment",        "text": "sentiment",        "type": "string" },
+            { "selector": "intentConfidence", "text": "intentConfidence", "type": "number" },
+            { "selector": "goalSummary",      "text": "goalSummary",      "type": "string" },
+            { "selector": "agentId",          "text": "agentId",          "type": "string" },
+            { "selector": "personaId",        "text": "personaId",        "type": "string" },
+            { "selector": "llmInstanceId",    "text": "llmInstanceId",    "type": "string" },
+            { "selector": "locale",           "text": "locale",           "type": "string" },
+            { "selector": "totalTurns",       "text": "totalTurns",       "type": "number" },
+            { "selector": "totalTokensIn",    "text": "totalTokensIn",    "type": "number" },
+            { "selector": "totalTokensOut",   "text": "totalTokensOut",   "type": "number" },
+            { "selector": "durationMs",       "text": "durationMs",       "type": "number" },
+            { "selector": "userId",           "text": "userId",           "type": "string" },
+            { "selector": "firstUserMessage", "text": "firstUserMessage", "type": "string" },
+            { "selector": "conversationId",   "text": "conversationId",   "type": "string" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",  "value": "${__from:date:iso}" },
+            { "key": "to",    "value": "${__to:date:iso}" },
+            { "key": "limit", "value": "100" }
+          ]
+        }
+      ],
+      "title": "Recent 100 chat sessions",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Goal-achievement rate over time. YES = 1, PARTIAL = 0.5, NO = 0; computed only over sessions the AI enricher has classified.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red",    "value": null },
+            { "color": "orange", "value": 0.5 },
+            { "color": "green",  "value": 0.75 }
+          ]},
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20,
+            "showPoints": "auto",
+            "spanNulls": true
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 11,
+      "options": {
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/timeseries",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "timeseries",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "time",  "type": "timestamp" },
+            { "selector": "value",  "text": "goal_achievement_rate", "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",     "value": "${__from:date:iso}" },
+            { "key": "to",       "value": "${__to:date:iso}" },
+            { "key": "metric",   "value": "goal_achievement_rate" },
+            { "key": "interval", "value": "hour" }
+          ]
+        }
+      ],
+      "title": "Goal-achievement rate over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Share of enriched sessions where users came away NEGATIVE or FRUSTRATED. Spikes = something hurts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green",  "value": null },
+            { "color": "orange", "value": 0.15 },
+            { "color": "red",    "value": 0.30 }
+          ]},
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20,
+            "showPoints": "auto",
+            "spanNulls": true
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 12,
+      "options": {
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/timeseries",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "timeseries",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "time",  "type": "timestamp" },
+            { "selector": "value",  "text": "negative_sentiment_rate", "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",     "value": "${__from:date:iso}" },
+            { "key": "to",       "value": "${__to:date:iso}" },
+            { "key": "metric",   "value": "negative_sentiment_rate" },
+            { "key": "interval", "value": "hour" }
+          ]
+        }
+      ],
+      "title": "Negative + frustrated sentiment over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Sessions started per hour — traffic shape over the period.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short",
+          "min": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 48 },
+      "id": 13,
+      "options": {
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/timeseries",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "timeseries",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket", "text": "time",     "type": "timestamp" },
+            { "selector": "value",  "text": "sessions", "type": "number" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",     "value": "${__from:date:iso}" },
+            { "key": "to",       "value": "${__to:date:iso}" },
+            { "key": "metric",   "value": "sessions" },
+            { "key": "interval", "value": "hour" }
+          ]
+        }
+      ],
+      "title": "Sessions per hour",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Per-agent scorecard: sessions, goal-achievement rate, negative sentiment rate, avg duration, and top intent. Sortable to find the agent dragging the mean.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "goalAchievedRate" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null },
+                { "color": "orange", "value": 0.5 },
+                { "color": "green", "value": 0.75 }
+              ]}},
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "negativeRate" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 0.15 },
+                { "color": "red", "value": 0.30 }
+              ]}},
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avgDurationMs" },
+            "properties": [{ "id": "unit", "value": "ms" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 56 },
+      "id": 14,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "sessions" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/scorecard",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket",           "text": "agent",            "type": "string" },
+            { "selector": "sessions",         "text": "sessions",         "type": "number" },
+            { "selector": "goalAchievedRate", "text": "goalAchievedRate", "type": "number" },
+            { "selector": "negativeRate",     "text": "negativeRate",     "type": "number" },
+            { "selector": "avgDurationMs",    "text": "avgDurationMs",    "type": "number" },
+            { "selector": "topIntent",        "text": "topIntent",        "type": "string" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",      "value": "${__from:date:iso}" },
+            { "key": "to",        "value": "${__to:date:iso}" },
+            { "key": "dimension", "value": "agentId" },
+            { "key": "limit",     "value": "20" }
+          ]
+        }
+      ],
+      "title": "Scorecard by agent",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+      "description": "Per-persona scorecard. Helps tease apart whether a persona configuration (system prompt + tools) is the lever, independent of the agent identity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "goalAchievedRate" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null },
+                { "color": "orange", "value": 0.5 },
+                { "color": "green", "value": 0.75 }
+              ]}},
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "negativeRate" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 0.15 },
+                { "color": "red", "value": 0.30 }
+              ]}},
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avgDurationMs" },
+            "properties": [{ "id": "unit", "value": "ms" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 56 },
+      "id": 15,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "sessions" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "turing-chat-analytics" },
+          "type": "json",
+          "source": "url",
+          "url": "http://turing:2700/api/system/chat-analytics/scorecard",
+          "url_options": { "method": "GET", "data": "" },
+          "refId": "A",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            { "selector": "bucket",           "text": "persona",          "type": "string" },
+            { "selector": "sessions",         "text": "sessions",         "type": "number" },
+            { "selector": "goalAchievedRate", "text": "goalAchievedRate", "type": "number" },
+            { "selector": "negativeRate",     "text": "negativeRate",     "type": "number" },
+            { "selector": "avgDurationMs",    "text": "avgDurationMs",    "type": "number" },
+            { "selector": "topIntent",        "text": "topIntent",        "type": "string" }
+          ],
+          "filters": [],
+          "parser": "backend",
+          "url_query_params": [
+            { "key": "from",      "value": "${__from:date:iso}" },
+            { "key": "to",        "value": "${__to:date:iso}" },
+            { "key": "dimension", "value": "personaId" },
+            { "key": "limit",     "value": "20" }
+          ]
+        }
+      ],
+      "title": "Scorecard by persona",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["turing", "chat", "ai", "insights"],
+  "templating": { "list": [] },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Turing Chat Insights",
+  "uid": "turing-chat-insights",
+  "version": 1,
+  "weekStart": ""
+}

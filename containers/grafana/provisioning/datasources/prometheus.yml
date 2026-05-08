@@ -31,3 +31,20 @@ datasources:
       connMaxLifetime: 14400
     secureJsonData:
       password: turing
+
+  # Infinity (yesoreyeram-infinity-datasource) — generic JSON over HTTP. Used
+  # by the Chat Analytics dashboard to pull aggregated and per-session data
+  # from the Turing backend. Engine-agnostic: the same dashboard works whether
+  # the backing store is MongoDB or Redis (turing.logging.engine).
+  - name: TuringChatAnalytics
+    uid: turing-chat-analytics
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      global_queries: []
+      auth_method: "none"
+      allowedHosts:
+        - "http://turing:2700"
+      tlsSkipVerify: true

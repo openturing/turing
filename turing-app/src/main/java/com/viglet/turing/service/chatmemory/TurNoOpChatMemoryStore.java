@@ -1,6 +1,8 @@
 package com.viglet.turing.service.chatmemory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Default implementation when {@code turing.logging.engine == none} or the
@@ -26,5 +28,10 @@ public class TurNoOpChatMemoryStore implements TurChatMemoryStore {
     @Override
     public void appendBatch(String conversationId, List<TurChatMemoryEvent> batch) {
         // intentionally empty
+    }
+
+    @Override
+    public List<Map<String, Object>> findMessages(String conversationId, int limit) {
+        return Collections.emptyList();
     }
 }

@@ -49,6 +49,8 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
+import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
+import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.llm.tokenusage.TurLLMTokenUsageService;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
@@ -104,6 +106,8 @@ public class TurAgentChatExecutor {
     private final TurPersonaPromptComposer personaPromptComposer;
     private final TurPersonaToneValidator personaToneValidator;
     private final TurPersonaBrandContextProvider personaBrandContextProvider;
+    private final TurChatAnalyticsService chatAnalyticsService;
+    private final TurChatMemoryService chatMemoryService;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -116,7 +120,9 @@ public class TurAgentChatExecutor {
             TurChatFlowEngineService chatFlowEngineService,
             TurPersonaPromptComposer personaPromptComposer,
             TurPersonaToneValidator personaToneValidator,
-            TurPersonaBrandContextProvider personaBrandContextProvider) {
+            TurPersonaBrandContextProvider personaBrandContextProvider,
+            TurChatAnalyticsService chatAnalyticsService,
+            TurChatMemoryService chatMemoryService) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
@@ -129,6 +135,8 @@ public class TurAgentChatExecutor {
         this.personaPromptComposer = personaPromptComposer;
         this.personaToneValidator = personaToneValidator;
         this.personaBrandContextProvider = personaBrandContextProvider;
+        this.chatAnalyticsService = chatAnalyticsService;
+        this.chatMemoryService = chatMemoryService;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -241,6 +249,10 @@ public class TurAgentChatExecutor {
         // Reuse the value already computed for the router; both paths need it.
         final String lastUserMessage = lastUserMessageEarly;
 
+        // Open the analytics session record on the first turn. Idempotent —
+        // subsequent turns of the same conversation no-op past the upsert.
+        recordSessionStartSafely(agent, llmInstance, conversationId, lastUserMessage, username);
+
         return Mono.fromCallable(() -> {
             log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
                     agent.getTitle(), llmInstance.getTitle());
@@ -274,6 +286,11 @@ public class TurAgentChatExecutor {
                     personaToneValidator.validate(agent.getPersona(), text);
             text = validation.sanitizedText();
 
+            // Telemetry: increment turn count + accumulate tokens for the
+            // session, and append the turn to chat memory (NoOp when either
+            // is disabled; safe to call unconditionally).
+            recordTurnTelemetry(agent, conversationId, lastUserMessage, text, response);
+
             return new ChatResponse("assistant", text);
         })
                 .subscribeOn(Schedulers.boundedElastic())
@@ -281,6 +298,68 @@ public class TurAgentChatExecutor {
                         agent.getTitle(), err.getMessage(), err))
                 .filter(response -> !response.content().isEmpty())
                 .flux();
+    }
+
+    /**
+     * Best-effort open of the analytics session. Anything that throws here
+     * is swallowed — telemetry must never break the chat itself.
+     */
+    private void recordSessionStartSafely(TurAIAgent agent, TurLLMInstance llmInstance,
+            String conversationId, String firstUserMessage, String username) {
+        if (conversationId == null || conversationId.isBlank()) return;
+        if (chatAnalyticsService == null || !chatAnalyticsService.isEnabled()) return;
+        try {
+            chatAnalyticsService.recordSessionStart(
+                    conversationId,
+                    agent.getId(),
+                    agent.getPersona() == null ? null : agent.getPersona().getId(),
+                    llmInstance == null ? null : llmInstance.getId(),
+                    agent.getTurEmbeddingModelInstance() == null
+                            ? null : agent.getTurEmbeddingModelInstance().getId(),
+                    agent.getTurStoreInstance() == null
+                            ? null : agent.getTurStoreInstance().getId(),
+                    username,
+                    null,
+                    firstUserMessage);
+        } catch (RuntimeException e) {
+            log.debug("[AgentExec] analytics start failed: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Records token + turn counters and appends the user/assistant pair to
+     * chat memory. Token counts come from {@code response.getMetadata()} when
+     * available; otherwise we record zeros so dashboards still get the turn
+     * tick.
+     */
+    private void recordTurnTelemetry(TurAIAgent agent, String conversationId,
+            String userMessage, String assistantMessage,
+            org.springframework.ai.chat.model.ChatResponse response) {
+        if (conversationId == null || conversationId.isBlank()) return;
+        long tokensIn = 0L;
+        long tokensOut = 0L;
+        try {
+            if (response != null && response.getMetadata() != null
+                    && response.getMetadata().getUsage() != null) {
+                Integer inT  = response.getMetadata().getUsage().getPromptTokens();
+                Integer outT = response.getMetadata().getUsage().getCompletionTokens();
+                if (inT  != null) tokensIn  = inT.longValue();
+                if (outT != null) tokensOut = outT.longValue();
+            }
+        } catch (RuntimeException e) {
+            log.debug("[AgentExec] could not read token usage from response: {}", e.getMessage());
+        }
+        try {
+            if (chatAnalyticsService != null && chatAnalyticsService.isEnabled()) {
+                chatAnalyticsService.recordTurn(conversationId, tokensIn, tokensOut);
+            }
+            if (chatMemoryService != null) {
+                chatMemoryService.recordTurn(null, agent, conversationId, null,
+                        userMessage, assistantMessage);
+            }
+        } catch (RuntimeException e) {
+            log.debug("[AgentExec] turn telemetry failed: {}", e.getMessage());
+        }
     }
 
     private static String resolveSystemPrompt(TurAIAgent agent, String systemPromptOverride) {

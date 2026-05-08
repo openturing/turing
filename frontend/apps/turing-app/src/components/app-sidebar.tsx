@@ -14,6 +14,7 @@ import {
   IconHome,
   IconLayoutDashboard,
   IconMessageChatbot,
+  IconMessageCircle2,
   IconPlugConnectedX,
   IconReceiptRupee,
   IconRobot,
@@ -73,6 +74,7 @@ const generativeAiItems: SidebarNavItem[] = [
   { key: "aiAgent", titleKey: "home.features.aiAgent.title", url: "/admin/ai-agent/instance", icon: IconRobot },
   { key: "persona", titleKey: "home.features.persona.title", url: ROUTES.PERSONA_INSTANCE, icon: IconUserCircle },
   { key: "tokenUsage", titleKey: "home.features.tokenUsage.title", url: ROUTES.TOKEN_USAGE, icon: IconChartBar },
+  { key: "chatAnalytics", titleKey: "home.features.chatAnalytics.title", url: ROUTES.CHAT_ANALYTICS, icon: IconMessageCircle2 },
   { key: "chat", titleKey: "home.features.chat.title", url: ROUTES.CHAT_ROOT, icon: IconMessageChatbot },
 ]
 

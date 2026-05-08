@@ -4,6 +4,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -88,6 +89,37 @@ public class TurRedisChatMemoryStore implements TurChatMemoryStore {
         } catch (Exception e) {
             log.warn("Failed to persist chat memory batch to Redis for conversation {}: {}",
                     conversationId, e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> findMessages(String conversationId, int limit) {
+        if (conversationId == null || conversationId.isBlank()) return List.of();
+        int cap = Math.max(1, Math.min(limit, 1000));
+        String listKey = keyPrefix + ":" + conversationId + ":messages";
+        try (Jedis jedis = pool.getResource()) {
+            // LRANGE returns oldest → newest; -cap to -1 captures the tail.
+            List<String> raw = jedis.lrange(listKey, -cap, -1);
+            if (raw == null || raw.isEmpty()) return List.of();
+            List<Map<String, Object>> result = new ArrayList<>(raw.size());
+            for (String json : raw) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> parsed = MAPPER.readValue(json, Map.class);
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("role", String.valueOf(parsed.get("role")));
+                    row.put("content", String.valueOf(parsed.getOrDefault("content", "")));
+                    row.put("timestamp", parsed.get("timestamp"));
+                    result.add(row);
+                } catch (Exception parseEx) {
+                    log.debug("Skipping malformed memory entry in {}: {}", listKey, parseEx.getMessage());
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Failed to read chat memory messages for conversation {}: {}",
+                    conversationId, e.getMessage());
+            return List.of();
         }
     }
 
