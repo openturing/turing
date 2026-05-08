@@ -33,10 +33,12 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -64,6 +66,7 @@ import lombok.Setter;
 @Getter
 @Table(name = "sn_site_custom_sort")
 @JsonIgnoreProperties({ "turSNSite" })
+@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
 public class TurSNSiteCustomSort implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

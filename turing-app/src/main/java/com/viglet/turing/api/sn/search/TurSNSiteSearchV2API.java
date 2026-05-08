@@ -42,8 +42,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSiteLocaleBean;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,14 +56,14 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteSearchV2API {
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
-        private final TurSNSiteRepositoryPort turSNSiteRepository;
+        private final TurSNSiteSearchSnapshotService snapshotService;
 
         public TurSNSiteSearchV2API(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteRepositoryPort turSNSiteRepository) {
+                        TurSNSiteSearchSnapshotService snapshotService) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
-                this.turSNSiteRepository = turSNSiteRepository;
+                this.snapshotService = snapshotService;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -77,13 +77,10 @@ public class TurSNSiteSearchV2API {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(site -> {
-
-                        List<Object> termList = turSNSearchProcess
-                                        .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
-                                                        request, site));
-                        return new ResponseEntity<>(termList, HttpStatus.OK);
-                }).orElse(turSNSiteSearchService.notFoundResponse());
+                List<Object> termList = turSNSearchProcess
+                                .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
+                                                request, siteName));
+                return new ResponseEntity<>(termList, HttpStatus.OK);
         }
 
         @GetMapping
@@ -97,10 +94,7 @@ public class TurSNSiteSearchV2API {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepository.findByNameIgnoreCase(siteName)
-                                .map(site -> turSNSiteSearchService.executeGetSearch(turSNSearchParams,
-                                                request, site))
-                                .orElse(turSNSiteSearchService.notFoundResponse());
+                return turSNSiteSearchService.executeGetSearch(turSNSearchParams, request, siteName);
         }
 
         @PostMapping
@@ -119,19 +113,15 @@ public class TurSNSiteSearchV2API {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-
-                return turSNSiteRepository.findByNameIgnoreCase(siteName)
-                                .map(site -> turSNSiteSearchService.executePostSearch(turSNSearchParams,
-                                                turSNSitePostParamsBean, request,
-                                                site))
-                                .orElse(turSNSiteSearchService.notFoundResponse());
+                return turSNSiteSearchService.executePostSearch(turSNSearchParams,
+                                turSNSitePostParamsBean, request, siteName);
         }
 
         @GetMapping("locales")
         public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
-                return turSNSiteRepository.findByNameIgnoreCase(siteName).map(turSNSite -> {
+                return snapshotService.getSnapshot(siteName, null).map(snap -> {
                         try {
-                                return turSNSearchProcess.responseLocales(turSNSite, new URI(
+                                return turSNSearchProcess.responseLocales(snap, new URI(
                                                 String.format("/api/v2/sn/%s/search", siteName)));
                         } catch (URISyntaxException e) {
                                 log.error(e.getMessage(), e);

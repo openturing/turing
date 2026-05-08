@@ -190,7 +190,7 @@ class TurSNSiteAPITest {
                 instance.setEndpointUrl("http://localhost:8983/solr");
                 site.setTurSEInstance(instance);
 
-                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
 
                 boolean result = api.turSNSiteDelete("site");
 
@@ -227,7 +227,7 @@ class TurSNSiteAPITest {
                 site.getTurSNSiteMergeProviders().add(mergeProvider1);
                 site.getTurSNSiteMergeProviders().add(mergeProvider2);
 
-                when(siteRepository.findById("site")).thenReturn(Optional.of(site));
+                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(site));
 
                 boolean result = api.turSNSiteDelete("site");
 

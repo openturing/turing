@@ -20,6 +20,7 @@ package com.viglet.turing.api.sn.search;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -44,9 +45,8 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNParamType;
-import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
-import com.viglet.turing.persistence.repository.sn.sort.TurSNSiteCustomSortRepository;
 import com.viglet.turing.sn.TurSNSearchProcess;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,17 +60,14 @@ public class TurSNSiteSearchAPI {
         private static final String NONE = "NONE";
         private final TurSNSiteSearchService turSNSiteSearchService;
         private final TurSNSearchProcess turSNSearchProcess;
-        private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
-        private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+        private final TurSNSiteSearchSnapshotService snapshotService;
 
         public TurSNSiteSearchAPI(TurSNSiteSearchService turSNSiteSearchService,
                         TurSNSearchProcess turSNSearchProcess,
-                        TurSNSiteRepositoryPort turSNSiteRepositoryPort,
-                        TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
+                        TurSNSiteSearchSnapshotService snapshotService) {
                 this.turSNSiteSearchService = turSNSiteSearchService;
                 this.turSNSearchProcess = turSNSearchProcess;
-                this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
-                this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
+                this.snapshotService = snapshotService;
         }
 
         @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -93,13 +90,10 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).map(site -> {
-
-                        List<Object> termList = turSNSearchProcess
-                                        .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
-                                                        request, site));
-                        return new ResponseEntity<>(termList, HttpStatus.OK);
-                }).orElse(turSNSiteSearchService.notFoundResponse());
+                List<Object> termList = turSNSearchProcess
+                                .searchList(turSNSiteSearchService.getTurSNSiteSearchContext(turSNSearchParams,
+                                                request, siteName));
+                return new ResponseEntity<>(termList, HttpStatus.OK);
         }
 
         @GetMapping
@@ -121,10 +115,7 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
-                                .map(site -> turSNSiteSearchService.executeGetSearch(turSNSearchParams,
-                                                request, site))
-                                .orElse(turSNSiteSearchService.notFoundResponse());
+                return turSNSiteSearchService.executeGetSearch(turSNSearchParams, request, siteName);
         }
 
         @PostMapping
@@ -152,19 +143,15 @@ public class TurSNSiteSearchAPI {
                 if (!turSNSearchProcess.existsByTurSNSiteAndLanguage(siteName, turSNSearchParams.getLocale())) {
                         return turSNSiteSearchService.notFoundResponse();
                 }
-
-                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
-                                .map(site -> turSNSiteSearchService.executePostSearch(turSNSearchParams,
-                                                turSNSitePostParamsBean, request,
-                                                site))
-                                .orElse(turSNSiteSearchService.notFoundResponse());
+                return turSNSiteSearchService.executePostSearch(turSNSearchParams,
+                                turSNSitePostParamsBean, request, siteName);
         }
 
         @GetMapping("locales")
         public List<TurSNSiteLocaleBean> turSNSiteSearchLocale(@PathVariable String siteName) {
-                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName).map(turSNSite -> {
+                return snapshotService.getSnapshot(siteName, null).map(snap -> {
                         try {
-                                return turSNSearchProcess.responseLocales(turSNSite, new URI(
+                                return turSNSearchProcess.responseLocales(snap, new URI(
                                                 String.format("/api/sn/%s/search", siteName)));
                         } catch (URISyntaxException e) {
                                 log.error(e.getMessage(), e);
@@ -182,18 +169,13 @@ public class TurSNSiteSearchAPI {
         @GetMapping("sort-options")
         public ResponseEntity<List<TurSNSiteSortOptionBean>> turSNSiteSearchSortOptions(
                         @PathVariable String siteName) {
-                return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
-                                .map(site -> {
-                                        List<TurSNSiteSortOptionBean> options = new java.util.ArrayList<>();
+                return snapshotService.getSnapshot(siteName, null)
+                                .map(snap -> {
+                                        List<TurSNSiteSortOptionBean> options = new ArrayList<>();
                                         options.add(new TurSNSiteSortOptionBean("relevance", "Relevance"));
                                         options.add(new TurSNSiteSortOptionBean("newest", "Newest"));
                                         options.add(new TurSNSiteSortOptionBean("oldest", "Oldest"));
-                                        // Custom sort listing still goes through the JPA repo
-                                        // pending its own port; stub the parent for the lookup.
-                                        com.viglet.turing.persistence.model.sn.TurSNSite stub =
-                                                        new com.viglet.turing.persistence.model.sn.TurSNSite();
-                                        stub.setId(site.id());
-                                        turSNSiteCustomSortRepository.findByTurSNSiteWithItems(stub)
+                                        snap.customSorts()
                                                         .forEach(cs -> options.add(new TurSNSiteSortOptionBean(
                                                                         cs.getName(), cs.getDescription() != null
                                                                                         ? cs.getDescription()

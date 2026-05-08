@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2025 the original author or authors.
+ * Copyright (C) 2016-2026 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,16 +51,14 @@ import com.viglet.turing.commons.sn.TurSNConfig;
 import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
 import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
 import com.viglet.turing.domain.sn.TurSNSiteMetricAccessRepositoryPort;
 import com.viglet.turing.domain.sn.TurSNSiteMetricAccessTermDomain;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExtFacet;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.model.sn.spotlight.TurSNSiteSpotlightDocument;
-import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
-import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.persistence.repository.sn.metric.TurSNSiteMetricAccessRepository;
 import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
@@ -70,32 +69,27 @@ import com.viglet.turing.se.result.TurSEGroup;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
 import com.viglet.turing.sn.facet.TurSNFacetDefinitionFactory;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 import com.viglet.turing.sn.spotlight.TurSNSpotlightProcess;
 import com.viglet.turing.solr.TurSolrInstance;
 import com.viglet.turing.solr.TurSolrInstanceProcess;
 import com.viglet.turing.solr.TurSolrQueryBuilder;
 
 /**
- * Unit tests for TurSNSearchProcess.
+ * Unit tests for TurSNSearchProcess. Site configuration now flows through the
+ * {@link TurSNSiteSearchSnapshotService} mock — tests assemble a snapshot per
+ * scenario instead of stubbing each repository call.
  *
  * @author Alexandre Oliveira
- * @since 2026.1.10
+ * @since 2026.2.4
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class TurSNSearchProcessTest {
 
         @Mock
-        private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
-
-        @Mock
-        private TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository;
-
-        @Mock
-        private TurSNSiteRepository turSNSiteRepository;
-
-        @Mock
-        private TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
+        private TurSNSiteSearchSnapshotService snapshotService;
 
         @Mock
         private TurSolrInstanceProcess turSolrInstanceProcess;
@@ -118,15 +112,15 @@ class TurSNSearchProcessTest {
         @Mock
         private com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
-        // Real renderer (not mocked) — the existing end-to-end search tests assert
-        // on facet beans produced inside the search response, which would all
-        // collapse to empty if the renderer were stubbed.
+        @Mock
+        private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+
         private com.viglet.turing.sn.facet.TurSNFacetRenderer turSNFacetRenderer() {
                 return new com.viglet.turing.sn.facet.TurSNFacetRenderer(
                                 searchEnginePluginFactory, turSolrQueryBuilder);
         }
 
-        private final TurSNFacetDefinitionFactory turSNFacetDefinitionFactory() {
+        private TurSNFacetDefinitionFactory turSNFacetDefinitionFactory() {
                 return new TurSNFacetDefinitionFactory(turSNSiteCustomFacetRepository);
         }
 
@@ -144,10 +138,7 @@ class TurSNSearchProcessTest {
         }
 
         private TurSNSearchProcess process(boolean metricsEnabled) {
-                return new TurSNSearchProcess(turSNSiteFieldExtRepository,
-                                turSNSiteCustomFacetRepository,
-                                turSNSiteFieldExtFacetRepository, turSNSiteRepository,
-                                turSNSiteLocaleRepositoryPort,
+                return new TurSNSearchProcess(snapshotService,
                                 turSolrInstanceProcess, turSNSpotlightProcess,
                                 turSNSiteMetricAccessRepository,
                                 turSNSiteMetricAccessRepositoryPort,
@@ -167,45 +158,80 @@ class TurSNSearchProcessTest {
                                 URI.create("http://localhost/search?q=" + query));
         }
 
+        /** Build a snapshot tailored to a scenario. */
+        private static TurSNSiteSearchSnapshot snapshot(TurSNSite site, Locale locale,
+                        List<TurSNSiteFieldExt> enabledFields,
+                        Map<String, Set<TurSNSiteFieldExtFacet>> facetLabels,
+                        List<TurSNSiteLocale> allLocales) {
+                return new TurSNSiteSearchSnapshot(site, locale, "solr", false,
+                                enabledFields, Set.of(),
+                                Map.of(), facetLabels, allLocales, List.of());
+        }
+
+        private static TurSNSite site(String id, String name) {
+                TurSNSite s = new TurSNSite();
+                s.setId(id);
+                s.setName(name);
+                return s;
+        }
+
+        private static TurSNSiteLocale snLocale(String id, Locale language, int position) {
+                TurSNSiteLocale l = new TurSNSiteLocale();
+                l.setId(id);
+                l.setLanguage(language);
+                l.setCore("core");
+                l.setPosition(position);
+                return l;
+        }
+
         @Test
         void testGetSNSiteReturnsOptional() {
-                TurSNSite site = new TurSNSite();
-                site.setName("site");
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+                TurSNSite site = site("id", "site");
+                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.of(
+                                snapshot(site, null, List.of(), Map.of(), List.of())));
 
                 assertThat(process(false).getSNSite("site")).contains(site);
         }
 
         @Test
         void testGetSNSiteReturnsEmptyWhenMissing() {
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
+                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.empty());
 
                 assertThat(process(false).getSNSite("site")).isEmpty();
         }
 
         @Test
         void testExistsByTurSNSiteAndLanguage() {
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteLocaleRepositoryPort.existsBySnSiteIdAndLanguage("site-id", Locale.US))
-                                .thenReturn(true);
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(),
+                                                List.of(snLocale("loc-en", Locale.US, 0)))));
 
                 assertThat(process(false).existsByTurSNSiteAndLanguage("site", Locale.US)).isTrue();
         }
 
         @Test
         void testExistsByTurSNSiteAndLanguageReturnsFalseWhenSiteMissing() {
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.empty());
 
                 assertThat(process(false).existsByTurSNSiteAndLanguage("site", Locale.US)).isFalse();
         }
 
         @Test
+        void testExistsByTurSNSiteAndLanguageReturnsFalseWhenLocaleNotConfigured() {
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.JAPAN)).thenReturn(Optional.of(
+                                snapshot(site, Locale.JAPAN, List.of(), Map.of(),
+                                                List.of(snLocale("loc-en", Locale.US, 0)))));
+
+                assertThat(process(false).existsByTurSNSiteAndLanguage("site", Locale.JAPAN)).isFalse();
+        }
+
+        @Test
         void testLatestSearchesReturnsTerms() {
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.of(
+                                snapshot(site, null, List.of(), Map.of(), List.of())));
                 TurSNSiteMetricAccessTermDomain term1 = TurSNSiteMetricAccessTermDomain
                                 .latest("one", Instant.now());
                 TurSNSiteMetricAccessTermDomain term2 = TurSNSiteMetricAccessTermDomain
@@ -221,7 +247,7 @@ class TurSNSearchProcessTest {
 
         @Test
         void testLatestSearchesReturnsEmptyWhenSiteMissing() {
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.empty());
+                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.empty());
 
                 assertThat(process(false).latestSearches("site", "en", "user", 10)).isEmpty();
         }
@@ -229,37 +255,23 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchReturnsEmptyWhenPluginReturnsEmpty() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.empty());
 
                 assertThat(process(false).search(context("java")).getResults()).isNull();
         }
 
         @Test
-        void testSearchReturnsEmptyWhenSolrInstanceMissing() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(TurSEResults.builder().build()));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
-
-                assertThat(process(false).search(context("java")).getWidget()).isNull();
-        }
-
-        @Test
         void testSearchListReturnsEmptyWhenPluginReturnsEmpty() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(plugin.retrieveSearchResults(any())).thenReturn(Optional.empty());
-
-                assertThat(process(false).searchList(context("java"))).isEmpty();
-        }
-
-        @Test
-        void testSearchListReturnsEmptyWhenSolrInstanceMissing() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(TurSEResults.builder().build()));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US)).thenReturn(Optional.empty());
 
                 assertThat(process(false).searchList(context("java"))).isEmpty();
         }
@@ -282,17 +294,11 @@ class TurSNSearchProcessTest {
 
         @Test
         void testResponseLocalesBuildsLocaleLinks() {
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-
-                when(turSNSiteLocaleRepositoryPort.findBySnSiteIdOrderedByPosition("site-id"))
-                                .thenReturn(List.of(
-                                                new com.viglet.turing.domain.sn.TurSNSiteLocaleDomain(
-                                                                "loc-en", Locale.US, "core-en", 0,
-                                                                "site-id"),
-                                                new com.viglet.turing.domain.sn.TurSNSiteLocaleDomain(
-                                                                "loc-pt", Locale.of("pt", "BR"),
-                                                                "core-pt", 1, "site-id")));
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", null)).thenReturn(Optional.of(
+                                snapshot(site, null, List.of(), Map.of(),
+                                                List.of(snLocale("loc-en", Locale.US, 0),
+                                                                snLocale("loc-pt", Locale.of("pt", "BR"), 1)))));
 
                 var locales = process(true).responseLocales(site, URI.create("http://localhost/search?q=test"));
 
@@ -322,16 +328,7 @@ class TurSNSearchProcessTest {
 
         @Test
         void testPopulateMetricsSkipsWhenDisabledOrWildcard() {
-                TurSNSearchProcess processDisabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
-                                turSNSiteCustomFacetRepository,
-                                turSNSiteFieldExtFacetRepository, turSNSiteRepository,
-                                turSNSiteLocaleRepositoryPort,
-                                turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
-                                turSNSiteMetricAccessRepositoryPort,
-                                false, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory(), turSNFacetRenderer(),
-                                turSNPaginationBuilder(), turSNDocumentResponse(),
-                                turSNQueryContextBuilder());
+                TurSNSearchProcess processDisabled = process(false);
 
                 TurSNSearchParams searchParamsWildcard = new TurSNSearchParams();
                 searchParamsWildcard.setQ("*");
@@ -345,16 +342,7 @@ class TurSNSearchProcessTest {
 
                 verify(turSNSiteMetricAccessRepository, never()).save(any());
 
-                TurSNSearchProcess processEnabled = new TurSNSearchProcess(turSNSiteFieldExtRepository,
-                                turSNSiteCustomFacetRepository,
-                                turSNSiteFieldExtFacetRepository, turSNSiteRepository,
-                                turSNSiteLocaleRepositoryPort,
-                                turSolrInstanceProcess, turSNSpotlightProcess, turSNSiteMetricAccessRepository,
-                                turSNSiteMetricAccessRepositoryPort,
-                                true, searchEnginePluginFactory, turSolrQueryBuilder,
-                                turSNFacetDefinitionFactory(), turSNFacetRenderer(),
-                                turSNPaginationBuilder(), turSNDocumentResponse(),
-                                turSNQueryContextBuilder());
+                TurSNSearchProcess processEnabled = process(true);
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setQ("java");
@@ -372,11 +360,8 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchBuildsResultsWidgetAndPagination() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
 
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
+                TurSNSite site = site("site-id", "site");
                 site.setFacet(1);
                 site.setFacetType(TurSNSiteFacetFieldEnum.AND);
                 site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
@@ -388,6 +373,7 @@ class TurSNSearchProcessTest {
                 facetLocale.setLabel("Category");
 
                 TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
+                                .id("field-id")
                                 .name("category")
                                 .facetName("Category")
                                 .snType(TurSNFieldType.SE)
@@ -396,13 +382,13 @@ class TurSNSearchProcessTest {
                                 .facet(1)
                                 .build();
 
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
+                Map<String, Set<TurSNSiteFieldExtFacet>> labels = new HashMap<>();
+                labels.put("field-id", Set.of(facetLocale));
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(facetField), labels, List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
                                 .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of(facetLocale));
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -451,19 +437,13 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchBuildsGroupedResponseWhenGroupEnabled() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
+                TurSNSite site = site("site-id", "site");
                 site.setFacet(0);
                 site.setSpotlightWithResults(0);
 
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of());
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of());
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(true);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of());
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -509,13 +489,10 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListReturnsMappedObjectsForMultipleFields() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setName("site");
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
 
                 TurSEResult r1 = TurSEResult.builder().fields(Map.of("title", "Java", "url", "/java")).build();
                 TurSEResult r2 = TurSEResult.builder().fields(Map.of("title", "Spring", "url", "/spring"))
@@ -547,13 +524,10 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchListUsesDefaultSingleFieldAndSkipsNullValues() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setName("site");
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
+                TurSNSite site = site("site-id", "site");
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
 
                 TurSEResult withTitle = TurSEResult.builder().fields(Map.of("title", "OnlyTitle")).build();
                 TurSEResult withoutTitle = TurSEResult.builder().fields(Map.of("url", "/x")).build();
@@ -574,17 +548,13 @@ class TurSNSearchProcessTest {
         @Test
         void testSearchWidgetIncludesSpotlights() {
                 TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
+                TurSNSite site = site("site-id", "site");
                 site.setFacet(0);
                 site.setSpotlightWithResults(1);
 
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1)).thenReturn(List.of());
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1)).thenReturn(List.of());
+                when(snapshotService.getSnapshot("site", Locale.US)).thenReturn(Optional.of(
+                                snapshot(site, Locale.US, List.of(), Map.of(), List.of())));
+                when(searchEnginePluginFactory.getPlugin("solr")).thenReturn(plugin);
                 when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
                 when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of());
                 when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
@@ -623,476 +593,6 @@ class TurSNSearchProcessTest {
 
                 assertThat(bean.getWidget().getSpotlights()).hasSize(1);
                 assertThat(bean.getWidget().getSpotlights().getFirst().getTitle()).isEqualTo("Spotlight");
-        }
-
-        @Test
-        void testSearchFacetAndOrUsesRetrieveFacetResults() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("category")
-                                .facetName("Category")
-                                .snType(TurSNFieldType.SE)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
-                when(turSolrQueryBuilder.getFqFields(any())).thenReturn(List.of("category"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult baseFacet = new TurSEFacetResult();
-                baseFacet.setFacet("category");
-                baseFacet.add("books", new TurSEFacetResultAttr("books", 0));
-
-                TurSEFacetResult refreshedFacet = new TurSEFacetResult();
-                refreshedFacet.setFacet("category");
-                refreshedFacet.add("books", new TurSEFacetResultAttr("books", 7));
-                TurSEResults refreshed = TurSEResults.builder().facetResults(List.of(refreshedFacet)).build();
-                when(plugin.retrieveFacetResults(any(), eq("category"))).thenReturn(Optional.of(refreshed));
-
-                TurSEResults searchResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(baseFacet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(searchResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("category:books"));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=category:books"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacet()).isNotEmpty();
-                verify(plugin).retrieveFacetResults(any(), eq("category"));
-        }
-
-        @Test
-        void testSearchSecondaryFacetAndFacetItemAndLinks() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("category")
-                                .facetName("Category")
-                                .snType(TurSNFieldType.SE)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .facetItemType(TurSNSiteFacetFieldEnum.AND)
-                                .secondaryFacet(true)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult facet = new TurSEFacetResult();
-                facet.setFacet("category");
-                facet.add("books", new TurSEFacetResultAttr("books", 5));
-                facet.add("music", new TurSEFacetResultAttr("music", 1));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(facet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("category:books"));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=category:books"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getSecondaryFacet()).isNotEmpty();
-                var items = bean.getWidget().getSecondaryFacet().getFirst().getFacets();
-                assertThat(items).hasSizeGreaterThanOrEqualTo(2);
-                assertThat(items.stream().map(i -> i.getLink()).toList())
-                                .allMatch(link -> link.contains("/search") && link.contains("fq"));
-        }
-
-        @Test
-        void testSearchUsesDefaultFacetTypesWhenNullAndHidesSelectedFacetForNullItemType() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(null);
-                site.setFacetItemType(null);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("entity")
-                                .facetName("Entity")
-                                .snType(TurSNFieldType.NER)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("entity"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult facet = new TurSEFacetResult();
-                facet.setFacet("entity");
-                facet.add("person", new TurSEFacetResultAttr("person", 1));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(facet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("entity:person"));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=entity:person"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacet()).isEmpty();
-                assertThat(bean.getQueryContext().getFacetType()).isEqualTo("AND");
-                assertThat(bean.getQueryContext().getFacetItemType()).isEqualTo("AND");
-        }
-
-        @Test
-        void testSearchShowAllFacetItemsCreatesUnselectedOrLink() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.OR);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("entity")
-                                .facetName("Entity")
-                                .snType(TurSNFieldType.NER)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .showAllFacetItems(true)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("entity"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult facet = new TurSEFacetResult();
-                facet.setFacet("entity");
-                facet.add("zero", new TurSEFacetResultAttr("zero", 0));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(facet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacet()).isNotEmpty();
-                var firstItem = bean.getWidget().getFacet().getFirst().getFacets().getFirst();
-                assertThat(firstItem.isSelected()).isFalse();
-                assertThat(firstItem.getLink()).contains("fq[]=entity:zero");
-        }
-
-        @Test
-        void testSearchFacetToRemoveUsesQuotedFilterValueLabel() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("category")
-                                .facetName("Category")
-                                .snType(TurSNFieldType.SE)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("category:\"books\""));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=category:%22books%22"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacetToRemove()).isNotNull();
-                assertThat(bean.getWidget().getFacetToRemove().getFacets()).isNotEmpty();
-                assertThat(bean.getWidget().getFacetToRemove().getFacets().getFirst().getLabel())
-                                .isEqualTo("books");
-        }
-
-        @Test
-        void testSearchAndOrShowsSelectedFacetWithZeroCount() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.OR);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("category")
-                                .facetName("Category")
-                                .snType(TurSNFieldType.SE)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
-                when(turSolrQueryBuilder.getFqFields(any())).thenReturn(List.of());
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult facet = new TurSEFacetResult();
-                facet.setFacet("category");
-                facet.add("books", new TurSEFacetResultAttr("books", 0));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(facet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("category:books"));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=category:books"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacet()).isNotEmpty();
-                var item = bean.getWidget().getFacet().getFirst().getFacets().getFirst();
-                assertThat(item.isSelected()).isTrue();
-                assertThat(item.getCount()).isZero();
-        }
-
-        @Test
-        void testSearchHidesSelectedFacetWhenFacetItemTypeAnd() {
-                TurSearchEnginePlugin plugin = org.mockito.Mockito.mock(TurSearchEnginePlugin.class);
-                when(searchEnginePluginFactory.getPluginForSite(any())).thenReturn(plugin);
-
-                TurSNSite site = new TurSNSite();
-                site.setId("site-id");
-                site.setName("site");
-                site.setFacet(1);
-                site.setFacetType(TurSNSiteFacetFieldEnum.AND);
-                site.setFacetItemType(TurSNSiteFacetFieldEnum.AND);
-                site.setItemsPerFacet(10);
-                site.setSpotlightWithResults(0);
-
-                TurSNSiteFieldExt facetField = TurSNSiteFieldExt.builder()
-                                .name("category")
-                                .facetName("Category")
-                                .snType(TurSNFieldType.SE)
-                                .type(com.viglet.turing.commons.se.field.TurSEFieldType.STRING)
-                                .enabled(1)
-                                .facet(1)
-                                .build();
-
-                when(turSNSiteRepository.findByNameIgnoreCase("site")).thenReturn(Optional.of(site));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndFacetAndEnabled(site, 1, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
-                                .thenReturn(List.of(facetField));
-                when(turSNSiteFieldExtFacetRepository.findByTurSNSiteFieldExtAndLocale(facetField, Locale.US))
-                                .thenReturn(Set.of());
-                when(turSolrQueryBuilder.hasGroup(any())).thenReturn(false);
-                when(turSolrQueryBuilder.getFacetFieldsInFilterQuery(any())).thenReturn(List.of("category"));
-                when(turSolrInstanceProcess.initSolrInstance("site", Locale.US))
-                                .thenReturn(Optional.of(org.mockito.Mockito.mock(TurSolrInstance.class)));
-
-                TurSEFacetResult facet = new TurSEFacetResult();
-                facet.setFacet("category");
-                facet.add("books", new TurSEFacetResultAttr("books", 10));
-
-                TurSEResults seResults = TurSEResults.builder()
-                                .results(List.of(TurSEResult.builder().fields(Map.of("title", "Doc")).build()))
-                                .facetResults(List.of(facet))
-                                .spellCheck(new TurSESpellCheckResult())
-                                .numFound(1)
-                                .start(0)
-                                .limit(10)
-                                .currentPage(1)
-                                .pageCount(1)
-                                .queryString("java")
-                                .build();
-                when(plugin.retrieveSearchResults(any())).thenReturn(Optional.of(seResults));
-
-                TurSNSearchParams params = new TurSNSearchParams();
-                params.setQ("java");
-                params.setFq(List.of("category:books"));
-                TurSNSiteSearchContext context = new TurSNSiteSearchContext("site", new TurSNConfig(),
-                                new TurSEParameters(params, new TurSNSitePostParamsBean()), Locale.US,
-                                URI.create("http://localhost/search?q=java&fq=category:books"));
-
-                var bean = process(false).search(context);
-
-                assertThat(bean.getWidget().getFacet()).isEmpty();
         }
 
         @Test

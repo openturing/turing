@@ -27,9 +27,11 @@ import java.util.Locale;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -49,6 +51,7 @@ import lombok.experimental.Tolerate;
 @Entity
 @Table(name = "sn_site_field_ext_facet")
 @JsonIgnoreProperties({ "turSNSiteFieldExt" })
+@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
 public class TurSNSiteFieldExtFacet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

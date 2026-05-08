@@ -21,13 +21,11 @@ import com.viglet.turing.commons.sn.bean.TurSNSitePostParamsBean;
 import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
 import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
 import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
-import com.viglet.turing.domain.sn.TurSNSiteDomain;
-import com.viglet.turing.domain.sn.TurSNSiteFieldExtRepositoryPort;
-import com.viglet.turing.domain.sn.TurSNSiteLocaleDomain;
-import com.viglet.turing.domain.sn.TurSNSiteLocaleRepositoryPort;
-import com.viglet.turing.domain.sn.TurSNSiteRepositoryPort;
+import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.sn.TurSNSearchProcess;
 import com.viglet.turing.sn.TurSNUtils;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -38,20 +36,14 @@ public class TurSNSiteSearchService {
     private boolean searchCacheEnabled;
     private final TurSNSearchProcess turSNSearchProcess;
     private final TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI;
-    private final TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort;
-    private final TurSNSiteRepositoryPort turSNSiteRepositoryPort;
-    private final TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort;
+    private final TurSNSiteSearchSnapshotService snapshotService;
 
     public TurSNSiteSearchService(TurSNSearchProcess turSNSearchProcess,
             TurSNSiteSearchCachedAPI turSNSiteSearchCachedAPI,
-            TurSNSiteFieldExtRepositoryPort turSNSiteFieldExtRepositoryPort,
-            TurSNSiteRepositoryPort turSNSiteRepositoryPort,
-            TurSNSiteLocaleRepositoryPort turSNSiteLocaleRepositoryPort) {
+            TurSNSiteSearchSnapshotService snapshotService) {
         this.turSNSearchProcess = turSNSearchProcess;
         this.turSNSiteSearchCachedAPI = turSNSiteSearchCachedAPI;
-        this.turSNSiteFieldExtRepositoryPort = turSNSiteFieldExtRepositoryPort;
-        this.turSNSiteRepositoryPort = turSNSiteRepositoryPort;
-        this.turSNSiteLocaleRepositoryPort = turSNSiteLocaleRepositoryPort;
+        this.snapshotService = snapshotService;
     }
 
     public Locale convertToLocale(String localeRequest) {
@@ -59,18 +51,18 @@ public class TurSNSiteSearchService {
     }
 
     public TurSNSiteSearchContext getTurSNSiteSearchContext(
-            TurSNSearchParams turSNSearchParams, HttpServletRequest request, TurSNSiteDomain site) {
-        TurSNConfig turSNConfig = getTurSNConfig(site);
+            TurSNSearchParams turSNSearchParams, HttpServletRequest request, String siteName) {
+        TurSNConfig turSNConfig = getTurSNConfig(siteName);
         return TurSNUtils.getTurSNSiteSearchContext(turSNConfig,
-                site.name(), turSNSearchParams, request);
+                siteName, turSNSearchParams, request);
     }
 
     public ResponseEntity<TurSNSiteSearchBean> executeGetSearch(
             TurSNSearchParams turSNSearchParams,
             HttpServletRequest request,
-            TurSNSiteDomain site) {
+            String siteName) {
 
-        TurSNSiteSearchContext searchContext = getTurSNSiteSearchContext(turSNSearchParams, request, site);
+        TurSNSiteSearchContext searchContext = getTurSNSiteSearchContext(turSNSearchParams, request, siteName);
         return searchCacheEnabled
                 ? executeSearchWithCache(request, searchContext)
                 : executeSearch(searchContext);
@@ -98,7 +90,7 @@ public class TurSNSiteSearchService {
             TurSNSearchParams turSNSearchParams,
             TurSNSitePostParamsBean turSNSitePostParamsBean,
             HttpServletRequest request,
-            TurSNSiteDomain site) {
+            String siteName) {
         if (StringUtils.isNotBlank(turSNSitePostParamsBean.getLocale())) {
             turSNSearchParams.setLocale(
                     convertToLocale(turSNSitePostParamsBean.getLocale()));
@@ -107,7 +99,7 @@ public class TurSNSiteSearchService {
         turSNSitePostParamsBean.setTargetingRules(
                 turSNSearchProcess.requestTargetingRules(turSNSitePostParamsBean.getTargetingRules()));
         TurSNSiteSearchContext searchContext = TurSNUtils.getTurSNSiteSearchContext(
-                getTurSNConfig(site), site.name(), turSNSearchParams,
+                getTurSNConfig(siteName), siteName, turSNSearchParams,
                 turSNSitePostParamsBean, request);
         if (searchCacheEnabled) {
             return executeSearchWithCache(request, searchContext);
@@ -116,15 +108,26 @@ public class TurSNSiteSearchService {
         }
     }
 
-    public TurSNConfig getTurSNConfig(TurSNSiteDomain turSNSite) {
+    public TurSNConfig getTurSNConfig(String siteName) {
         TurSNConfig turSNConfig = new TurSNConfig();
-        turSNConfig.setHlEnabled(TurSNUtils.isTrue(turSNSite.hl()) && hasSiteHLFields(turSNSite));
+        turSNConfig.setHlEnabled(snapshotService.getSnapshot(siteName, null)
+                .map(snap -> TurSNUtils.isTrue(snap.site().getHl()) && snap.hasHlFields())
+                .orElse(false));
         return turSNConfig;
     }
 
-    public boolean hasSiteHLFields(TurSNSiteDomain turSNSite) {
-        return turSNSiteFieldExtRepositoryPort
-                .existsBySnSiteIdAndHlAndEnabled(turSNSite.id(), 1, 1);
+    public boolean hasSiteHLFields(String siteName) {
+        return snapshotService.getSnapshot(siteName, null)
+                .map(TurSNSiteSearchSnapshot::hasHlFields)
+                .orElse(false);
+    }
+
+    /**
+     * Returns true when the site exists. Uses the snapshot so the lookup costs
+     * one cache hit instead of a DB roundtrip.
+     */
+    public boolean siteExists(String siteName) {
+        return snapshotService.getSnapshot(siteName, null).isPresent();
     }
 
     public String isLatestImpersonate(
@@ -167,10 +170,9 @@ public class TurSNSiteSearchService {
     }
 
     public Locale resolveDefaultLocale(String siteName) {
-        return turSNSiteRepositoryPort.findByNameIgnoreCase(siteName)
-                .flatMap(site -> turSNSiteLocaleRepositoryPort
-                        .findFirstLocaleBySnSiteIdOrderByPosition(site.id()))
-                .map(TurSNSiteLocaleDomain::language)
+        return snapshotService.getSnapshot(siteName, null)
+                .flatMap(snap -> snap.allLocales().stream().findFirst())
+                .map(TurSNSiteLocale::getLanguage)
                 .orElse(null);
     }
 

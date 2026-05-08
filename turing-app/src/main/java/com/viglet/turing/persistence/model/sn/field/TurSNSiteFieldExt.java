@@ -35,10 +35,12 @@ import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.TurSNSiteFacetRangeEnum;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 import com.viglet.turing.sn.TurSNFieldType;
+import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -64,6 +66,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Table(name = "sn_site_field_ext")
+@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
 public class TurSNSiteFieldExt implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

@@ -34,12 +34,14 @@ import org.hibernate.annotations.OnDeleteAction;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -61,6 +63,7 @@ import lombok.Setter;
 @Getter
 @Table(name = "sn_site_custom_facet")
 @JsonIgnoreProperties({ "turSNSiteFieldExt" })
+@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
 public class TurSNSiteCustomFacet implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
