@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +22,7 @@ import com.viglet.turing.persistence.dto.agent.TurAIAgentDto;
 import com.viglet.turing.persistence.mapper.agent.TurAIAgentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
+import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.customtool.TurCustomToolRepository;
@@ -117,11 +120,41 @@ public class TurAIAgentAPI {
                     turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
             agentEdit.setTurStoreInstance(resolveSingleRelation(
                     turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
-            agentEdit.setPersona(resolveSingleRelation(
-                    turAIAgent.getPersona(), turPersonaRepository));
+            // Personas: catalog (M2M) + default (M2O). The default, when set,
+            // must belong to the catalog — otherwise the runtime resolver
+            // would silently fall back to null on every turn. We enforce it
+            // here once instead of every chat request.
+            //
+            // We resolve the default by id directly from the repo (rather than
+            // through resolveSingleRelation) because TurPersona doesn't
+            // implement Persistable, and the generic helper falls through to
+            // returning the detached DTO — Hibernate's M2O FK update is
+            // sensitive enough that a managed entity is the safe path.
+            Set<TurPersona> personaCatalog = resolveRelations(
+                    turAIAgent.getPersonas(), turPersonaRepository);
+            agentEdit.setPersonas(personaCatalog);
+            TurPersona defaultPersona = null;
+            if (turAIAgent.getDefaultPersona() != null
+                    && turAIAgent.getDefaultPersona().getId() != null) {
+                defaultPersona = turPersonaRepository
+                        .findById(turAIAgent.getDefaultPersona().getId())
+                        .orElse(null);
+            }
+            if (defaultPersona != null && !containsById(personaCatalog, defaultPersona.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Default persona must be one of the agent's allowed personas");
+            }
+            agentEdit.setDefaultPersona(defaultPersona);
             agentEdit.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
                     agentEdit.getTurEmbeddingModelInstance(),
                     agentEdit.getTurStoreInstance()));
+            // Chat memory configuration — silently dropped before this fix,
+            // which is why toggling the UI switch had no effect after save.
+            agentEdit.setChatMemoryEnabled(turAIAgent.isChatMemoryEnabled());
+            agentEdit.setChatMemoryFlushIntervalMinutes(
+                    Math.max(1, turAIAgent.getChatMemoryFlushIntervalMinutes()));
+            agentEdit.setChatMemoryMaxMessages(
+                    Math.max(1, turAIAgent.getChatMemoryMaxMessages()));
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());
@@ -151,13 +184,36 @@ public class TurAIAgentAPI {
                 turAIAgent.getTurEmbeddingModelInstance(), turEmbeddingModelRepository));
         turAIAgent.setTurStoreInstance(resolveSingleRelation(
                 turAIAgent.getTurStoreInstance(), turStoreInstanceRepository));
-        turAIAgent.setPersona(resolveSingleRelation(
-                turAIAgent.getPersona(), turPersonaRepository));
+        Set<TurPersona> personaCatalog = resolveRelations(
+                turAIAgent.getPersonas(), turPersonaRepository);
+        turAIAgent.setPersonas(personaCatalog);
+        TurPersona defaultPersona = null;
+        if (turAIAgent.getDefaultPersona() != null
+                && turAIAgent.getDefaultPersona().getId() != null) {
+            defaultPersona = turPersonaRepository
+                    .findById(turAIAgent.getDefaultPersona().getId())
+                    .orElse(null);
+        }
+        if (defaultPersona != null && !containsById(personaCatalog, defaultPersona.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Default persona must be one of the agent's allowed personas");
+        }
+        turAIAgent.setDefaultPersona(defaultPersona);
         turAIAgent.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
                 turAIAgent.getTurEmbeddingModelInstance(),
                 turAIAgent.getTurStoreInstance()));
         this.turAIAgentRepository.save(turAIAgent);
         return turAIAgentMapper.toDto(turAIAgent);
+    }
+
+    /**
+     * True when {@code catalog} contains a persona with the given id.
+     * Defensive against null entries (in case the resolver returns a
+     * managed entity with a null id from a partial relation).
+     */
+    private static boolean containsById(Set<TurPersona> catalog, String id) {
+        if (catalog == null || id == null) return false;
+        return catalog.stream().anyMatch(p -> p != null && id.equals(p.getId()));
     }
 
     /**

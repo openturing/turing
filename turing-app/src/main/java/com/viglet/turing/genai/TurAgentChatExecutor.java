@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
 import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
 import com.viglet.turing.genai.persona.TurPersonaToneValidator;
@@ -48,6 +49,7 @@ import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
@@ -106,6 +108,7 @@ public class TurAgentChatExecutor {
     private final TurPersonaPromptComposer personaPromptComposer;
     private final TurPersonaToneValidator personaToneValidator;
     private final TurPersonaBrandContextProvider personaBrandContextProvider;
+    private final TurAgentPersonaResolver personaResolver;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatMemoryService chatMemoryService;
 
@@ -121,6 +124,7 @@ public class TurAgentChatExecutor {
             TurPersonaPromptComposer personaPromptComposer,
             TurPersonaToneValidator personaToneValidator,
             TurPersonaBrandContextProvider personaBrandContextProvider,
+            TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatMemoryService chatMemoryService) {
         this.llmModelFactory = llmModelFactory;
@@ -135,6 +139,7 @@ public class TurAgentChatExecutor {
         this.personaPromptComposer = personaPromptComposer;
         this.personaToneValidator = personaToneValidator;
         this.personaBrandContextProvider = personaBrandContextProvider;
+        this.personaResolver = personaResolver;
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatMemoryService = chatMemoryService;
     }
@@ -145,8 +150,14 @@ public class TurAgentChatExecutor {
     public record ChatResponse(String role, String content) {
     }
 
-    /** Resolve the union of native + MCP + custom tool callbacks attached to the agent. */
-    public ToolCallback[] resolveToolCallbacks(TurAIAgent agent) {
+    /**
+     * Resolve the union of native + MCP + custom tool callbacks attached to
+     * the agent. The {@code activePersona} parameter is the
+     * runtime-resolved persona (which may differ from
+     * {@code agent.getDefaultPersona()} when a chat flow has overridden it)
+     * — used to decide which brand-context MCP tool, if any, to attach.
+     */
+    public ToolCallback[] resolveToolCallbacks(TurAIAgent agent, TurPersona activePersona) {
         Set<String> selectedNativeTools = parseNativeTools(agent.getNativeTools());
         ToolCallback[] nativeCallbacks = selectedNativeTools.isEmpty()
                 ? new ToolCallback[0]
@@ -158,7 +169,7 @@ public class TurAgentChatExecutor {
                 ? new ToolCallback[0]
                 : customToolCallbackService.getToolCallbacks(agent.getCustomTools());
         ToolCallback[] personaBrandCallbacks =
-                personaBrandContextProvider.getToolCallbacks(agent.getPersona());
+                personaBrandContextProvider.getToolCallbacks(activePersona);
         return toolCallbackPipeline.decorate(
                 Stream.of(nativeCallbacks, mcpCallbacks, customCallbacks, personaBrandCallbacks)
                         .flatMap(Arrays::stream)
@@ -202,7 +213,13 @@ public class TurAgentChatExecutor {
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
 
-        ToolCallback[] callbacks = resolveToolCallbacks(agent);
+        // Resolve the active persona ONCE per turn — flow overrides may
+        // already be in the conversation's flow state. Passed to every
+        // downstream consumer (tool callbacks, prompt composer, tone
+        // validator, analytics) so the same voice governs the whole turn.
+        final TurPersona activePersona = personaResolver.resolve(agent, conversationId);
+
+        ToolCallback[] callbacks = resolveToolCallbacks(agent, activePersona);
         log.info("[AgentExec] Agent '{}': {} tool callbacks", agent.getTitle(), callbacks.length);
         if (log.isDebugEnabled()) {
             for (ToolCallback cb : callbacks) {
@@ -226,9 +243,9 @@ public class TurAgentChatExecutor {
         // Fuse the persona on top of everything: its instruction + style
         // guidelines + vocabulary constraints + brand-context hint +
         // few-shot examples wrap the (already RAG-augmented) base prompt.
-        // No-op when agent.persona is null.
+        // No-op when activePersona is null.
         String resolvedSystemPrompt = personaPromptComposer.compose(
-                agent.getPersona(),
+                activePersona,
                 agent.getTurEmbeddingModelInstance(),
                 lastUserMessageEarly,
                 flowAugmented);
@@ -251,7 +268,8 @@ public class TurAgentChatExecutor {
 
         // Open the analytics session record on the first turn. Idempotent —
         // subsequent turns of the same conversation no-op past the upsert.
-        recordSessionStartSafely(agent, llmInstance, conversationId, lastUserMessage, username);
+        recordSessionStartSafely(agent, activePersona, llmInstance,
+                conversationId, lastUserMessage, username);
 
         return Mono.fromCallable(() -> {
             log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
@@ -283,7 +301,7 @@ public class TurAgentChatExecutor {
             // Persona's negative-constraint check runs LAST so it also
             // catches forbidden terms reintroduced by the flow override.
             TurPersonaValidationResult validation =
-                    personaToneValidator.validate(agent.getPersona(), text);
+                    personaToneValidator.validate(activePersona, text);
             text = validation.sanitizedText();
 
             // Telemetry: increment turn count + accumulate tokens for the
@@ -304,7 +322,8 @@ public class TurAgentChatExecutor {
      * Best-effort open of the analytics session. Anything that throws here
      * is swallowed — telemetry must never break the chat itself.
      */
-    private void recordSessionStartSafely(TurAIAgent agent, TurLLMInstance llmInstance,
+    private void recordSessionStartSafely(TurAIAgent agent, TurPersona activePersona,
+            TurLLMInstance llmInstance,
             String conversationId, String firstUserMessage, String username) {
         if (conversationId == null || conversationId.isBlank()) return;
         if (chatAnalyticsService == null || !chatAnalyticsService.isEnabled()) return;
@@ -312,7 +331,7 @@ public class TurAgentChatExecutor {
             chatAnalyticsService.recordSessionStart(
                     conversationId,
                     agent.getId(),
-                    agent.getPersona() == null ? null : agent.getPersona().getId(),
+                    activePersona == null ? null : activePersona.getId(),
                     llmInstance == null ? null : llmInstance.getId(),
                     agent.getTurEmbeddingModelInstance() == null
                             ? null : agent.getTurEmbeddingModelInstance().getId(),

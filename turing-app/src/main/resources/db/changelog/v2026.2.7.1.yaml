@@ -1,0 +1,133 @@
+databaseChangeLog:
+  # AI Agent personas — broaden from a single voice per agent to a *catalog*
+  # plus a default. Why this matters: chat flows can now switch the active
+  # persona mid-conversation (a new Persona node in the flow editor sets it),
+  # so an agent needs to allow more than one voice and pick one as the
+  # fallback. The schema change:
+  #   1. rename ai_agent.persona_id  →  ai_agent.default_persona_id
+  #   2. create the join table ai_agent_persona  (catalog of allowed personas)
+  #   3. backfill: every agent that already had a persona keeps it as default
+  #      AND gets it inserted into the catalog.
+  # Idempotent: each changeset gates on existence so re-runs are safe.
+
+  - changeSet:
+      id: v2026.2.7.1-drop-old-fk-ai-agent-persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_ai_agent_persona
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: ai_agent
+            constraintName: fk_ai_agent_persona
+
+  - changeSet:
+      id: v2026.2.7.1-rename-persona-to-default-persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - columnExists:
+                tableName: ai_agent
+                columnName: persona_id
+            - not:
+                - columnExists:
+                    tableName: ai_agent
+                    columnName: default_persona_id
+      changes:
+        - renameColumn:
+            tableName: ai_agent
+            oldColumnName: persona_id
+            newColumnName: default_persona_id
+            columnDataType: VARCHAR(40)
+
+  - changeSet:
+      id: v2026.2.7.1-readd-fk-ai-agent-default-persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - columnExists:
+                tableName: ai_agent
+                columnName: default_persona_id
+            - not:
+                - foreignKeyConstraintExists:
+                    foreignKeyName: fk_ai_agent_default_persona
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent
+            baseColumnNames: default_persona_id
+            referencedTableName: ai_persona
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_default_persona
+            onDelete: SET NULL
+
+  - changeSet:
+      id: v2026.2.7.1-create-ai-agent-persona-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_agent_persona
+      changes:
+        - createTable:
+            tableName: ai_agent_persona
+            columns:
+              - column:
+                  name: agent_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: persona_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: ai_agent_persona
+            columnNames: agent_id, persona_id
+            constraintName: pk_ai_agent_persona
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_persona
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_persona_agent
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_persona
+            baseColumnNames: persona_id
+            referencedTableName: ai_persona
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_persona_persona
+            onDelete: CASCADE
+
+  # Backfill: every agent that already had a default persona gets it
+  # inserted into the join table so the existing voice keeps working
+  # without any manual reconfiguration.
+  - changeSet:
+      id: v2026.2.7.1-backfill-ai-agent-persona
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - tableExists:
+                tableName: ai_agent_persona
+            - columnExists:
+                tableName: ai_agent
+                columnName: default_persona_id
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO ai_agent_persona (agent_id, persona_id)
+              SELECT a.id, a.default_persona_id
+                FROM ai_agent a
+               WHERE a.default_persona_id IS NOT NULL
+                 AND NOT EXISTS (
+                       SELECT 1
+                         FROM ai_agent_persona p
+                        WHERE p.agent_id = a.id
+                          AND p.persona_id = a.default_persona_id
+                     )

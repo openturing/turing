@@ -770,6 +770,16 @@
       "updated": "Modelos de linguagem atualizados",
       "updateFailed": "Falha ao atualizar modelos de linguagem"
     },
+    "agentPersona": {
+      "available": "Personas Disponíveis",
+      "availableDesc": "Catálogo de vozes que este agente pode usar. Escolha uma como padrão — chat flows podem trocar a persona ativa durante a conversa atravessando um nó Persona.",
+      "noPersonas": "Nenhuma persona cadastrada ainda.",
+      "createFirst": "Cadastre uma Persona primeiro para dar voz a este agent.",
+      "default": "Padrão",
+      "setAsDefault": "Definir como padrão",
+      "updated": "Personas atualizadas",
+      "updateFailed": "Falha ao atualizar personas"
+    },
     "agentMcp": {
       "available": "Servidores MCP Disponíveis",
       "availableDesc": "Selecione quais servidores MCP fornecem ferramentas para este agente.",

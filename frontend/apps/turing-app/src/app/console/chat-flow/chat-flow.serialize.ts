@@ -9,6 +9,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   condition: "CONDITION",
   functionCall: "FUNCTION CALL",
   subFlow: "SUB FLOW",
+  persona: "PERSONA SWITCH",
 };
 
 /**

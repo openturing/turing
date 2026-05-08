@@ -29,3 +29,22 @@ export interface TurPersona {
   fewShotStore?: TurStoreInstance | null;
   brandContextMcpServer?: TurMcpServer | null;
 }
+
+/**
+ * LLM-shape used by the AI Authoring chat. Strips the id and the heavy
+ * relations (`fewShotStore`, `brandContextMcpServer`) — the operator wires
+ * those after save. Mirrors the backend `PersonaGeneration` record.
+ *
+ * @since 2026.2.7
+ */
+export interface PersonaGeneration {
+  name: string;
+  description?: string | null;
+  systemInstruction?: string | null;
+  tone?: TurPersonaTone | null;
+  verbosity: number;
+  languageStyle?: TurPersonaLanguageStyle | null;
+  mandatoryTerms?: string | null;
+  forbiddenTerms?: string | null;
+  enabled: number;
+}

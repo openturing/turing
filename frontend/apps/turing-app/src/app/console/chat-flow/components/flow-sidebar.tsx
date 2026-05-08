@@ -4,6 +4,7 @@ import {
   IconDatabase,
   IconFlag3,
   IconPlayerPlayFilled,
+  IconSparkles,
   IconSubtask,
   type Icon,
 } from "@tabler/icons-react";
@@ -31,6 +32,7 @@ const PALETTE: PaletteItem[] = [
   { type: "condition", labelKey: "chatFlow.palette.condition", icon: IconDatabase, accent: "text-amber-600" },
   { type: "functionCall", labelKey: "chatFlow.palette.functionCall", icon: IconBell, accent: "text-orange-600" },
   { type: "subFlow", labelKey: "chatFlow.palette.subFlow", icon: IconSubtask, accent: "text-violet-600" },
+  { type: "persona", labelKey: "chatFlow.palette.persona", icon: IconSparkles, accent: "text-fuchsia-600" },
   { type: "end", labelKey: "chatFlow.palette.end", icon: IconFlag3, accent: "text-rose-600" },
 ];
 

@@ -6,6 +6,13 @@
     "newInstance": "New Persona",
     "deleted": "The {{name}} persona was deleted",
     "notDeleted": "The {{name}} persona was not deleted",
+    "aiChat": {
+      "breadcrumb": "Create with AI",
+      "panelTitle": "AI Authoring",
+      "panelSubtitle": "Describe the voice and I'll draft the persona",
+      "placeholder": "e.g. A senior account executive voice for top-of-funnel demo prospects — concise, persuasive, asks one qualifying question at a time, never quotes prices in the first three turns.",
+      "empty": "Tell me who this persona should sound like — funnel stage, audience, tone — and I'll fill the form on the left."
+    },
     "tones": {
       "FORMAL": "Formal",
       "CASUAL": "Casual",

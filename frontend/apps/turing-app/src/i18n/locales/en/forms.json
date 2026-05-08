@@ -770,6 +770,16 @@
       "updated": "Language models updated",
       "updateFailed": "Failed to update language models"
     },
+    "agentPersona": {
+      "available": "Available Personas",
+      "availableDesc": "Catalog of voices this agent can speak with. Pick one as the default — chat flows can switch the active persona mid-conversation by stepping through a Persona node.",
+      "noPersonas": "No personas registered yet.",
+      "createFirst": "Create a Persona first to give this agent a voice.",
+      "default": "Default",
+      "setAsDefault": "Set as default",
+      "updated": "Personas updated",
+      "updateFailed": "Failed to update personas"
+    },
     "agentMcp": {
       "available": "Available MCP Servers",
       "availableDesc": "Select which MCP servers provide tools to this agent.",

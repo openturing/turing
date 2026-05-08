@@ -11,7 +11,8 @@ export type FlowNodeType =
   | "aiQuestion"
   | "condition"
   | "functionCall"
-  | "subFlow";
+  | "subFlow"
+  | "persona";
 
 export type FlowToolSource = "NATIVE" | "MCP";
 
@@ -36,6 +37,8 @@ export interface FlowNodeData extends Record<string, unknown> {
   subFlowId?: string;
   /** Cached display name of the linked sub-flow — kept on the node so the canvas reads well even before the flow list loads. */
   subFlowName?: string;
+  /** Persona id this node should switch the conversation's active voice to. Only used by `persona` nodes. @since 2026.2.7 */
+  personaId?: string;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
@@ -68,5 +71,10 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-violet-50 dark:bg-violet-950/40",
     border: "border-violet-500",
     text: "text-violet-900 dark:text-violet-100",
+  },
+  persona: {
+    bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+    border: "border-fuchsia-500",
+    text: "text-fuchsia-900 dark:text-fuchsia-100",
   },
 };

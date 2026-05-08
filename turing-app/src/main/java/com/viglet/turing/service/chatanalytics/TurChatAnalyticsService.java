@@ -66,12 +66,15 @@ public class TurChatAnalyticsService {
     private final Map<String, InFlight> inFlight = new ConcurrentHashMap<>();
 
     private final long inFlightMaxAgeMillis;
+    private final long inFlightIdleTimeoutMillis;
 
     public TurChatAnalyticsService(TurChatAnalyticsStore store,
             @Autowired(required = false) MeterRegistry meterRegistry,
-            @Value("${turing.chat.analytics.inflight.max-age-hours:4}") int inFlightMaxAgeHours) {
+            @Value("${turing.chat.analytics.inflight.max-age-hours:4}") int inFlightMaxAgeHours,
+            @Value("${turing.chat.analytics.inflight.idle-timeout-min:30}") int inFlightIdleTimeoutMin) {
         this.store = store;
         this.inFlightMaxAgeMillis = Duration.ofHours(Math.max(1, inFlightMaxAgeHours)).toMillis();
+        this.inFlightIdleTimeoutMillis = Duration.ofMinutes(Math.max(1, inFlightIdleTimeoutMin)).toMillis();
         // Idempotent — safe to call on every boot. NoOp implementations
         // override to nothing; Mongo creates secondary indexes here so the
         // first dashboard load doesn't pay the index-build cost.
@@ -129,6 +132,67 @@ public class TurChatAnalyticsService {
     }
 
     /**
+     * Idle-aware sweep that converts silent in-flight sessions into
+     * {@code ABANDONED} rows in the store before evicting them. Two thresholds:
+     *
+     * <ul>
+     *   <li><b>idle-timeout-min</b> (default 30) — entries whose
+     *       {@code lastTouchedAt} hasn't moved within this window are flushed
+     *       as {@link TurChatSessionOutcome#ABANDONED} via the normal
+     *       {@link #recordSessionEnd} path. Their accumulated turns + tokens
+     *       reach the store; the row's outcome stops being {@code IN_PROGRESS}.
+     *       This is the threshold that turns silent conversations into
+     *       analyzable rows.</li>
+     *   <li><b>max-age-hours</b> (default 4) — absolute hard ceiling. Anything
+     *       still in-flight past this is force-removed without a final flush
+     *       (defends against bugs in idle tracking — should never trigger in
+     *       normal operation).</li>
+     * </ul>
+     *
+     * <p>Not cluster-locked: the in-flight map is per-process, so each node
+     * trims its own state.
+     */
+    @Scheduled(fixedDelayString = "${turing.chat.analytics.inflight.sweep-ms:300000}")
+    public void sweepStaleInFlight() {
+        if (inFlight.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        long idleCutoff   = now - inFlightIdleTimeoutMillis;
+        long maxAgeCutoff = now - inFlightMaxAgeMillis;
+
+        int flushed = 0;
+        int forced  = 0;
+        // Snapshot ids before iterating — recordSessionEnd mutates the map.
+        var ids = new java.util.ArrayList<>(inFlight.keySet());
+        for (String conversationId : ids) {
+            InFlight entry = inFlight.get(conversationId);
+            if (entry == null) continue;
+            long lastTouched = entry.lastTouchedAt.toEpochMilli();
+            long startedAt   = entry.startedAt.toEpochMilli();
+
+            if (startedAt < maxAgeCutoff) {
+                // Hard ceiling — drop without flushing. Should be rare.
+                inFlight.remove(conversationId);
+                forced++;
+                continue;
+            }
+            if (lastTouched < idleCutoff) {
+                try {
+                    recordSessionEnd(conversationId, TurChatSessionOutcome.ABANDONED);
+                    flushed++;
+                } catch (RuntimeException e) {
+                    log.warn("[ChatAnalytics] failed to flush idle session {}: {}",
+                            conversationId, e.getMessage());
+                    inFlight.remove(conversationId); // remove anyway so we don't retry forever
+                }
+            }
+        }
+        if (flushed > 0 || forced > 0) {
+            log.info("[ChatAnalytics] sweep: flushed={} (ABANDONED), forced={} (max-age), remaining={}",
+                    flushed, forced, inFlight.size());
+        }
+    }
+
+    /**
      * Persists the final session record with all aggregates and removes the
      * in-flight entry. Safe to call when no start was recorded — the store
      * upserts and the timestamps degrade gracefully (startedAt absent ↦ stays
@@ -172,42 +236,18 @@ public class TurChatAnalyticsService {
     }
 
     /**
-     * Hourly sweep that removes in-flight entries whose worker died before
-     * calling {@link #recordSessionEnd}. Without this, the map grows
-     * monotonically: every crashed/aborted worker leaves an entry behind that
-     * is never picked up by the normal end-of-session path.
-     *
-     * <p>Threshold defaults to 4 hours
-     * ({@code turing.chat.analytics.inflight.max-age-hours}) — comfortably
-     * longer than any realistic conversation, well below the kind of timeline
-     * that would be confused with active traffic.
-     *
-     * <p>Not cluster-locked: the in-flight map is per-process, so each node
-     * trims its own state.
-     */
-    @Scheduled(fixedDelayString = "${turing.chat.analytics.inflight.sweep-ms:3600000}")
-    public void sweepStaleInFlight() {
-        if (inFlight.isEmpty()) return;
-        long cutoffMillis = System.currentTimeMillis() - inFlightMaxAgeMillis;
-        int before = inFlight.size();
-        inFlight.entrySet().removeIf(entry -> {
-            Instant startedAt = entry.getValue().startedAt;
-            return startedAt != null && startedAt.toEpochMilli() < cutoffMillis;
-        });
-        int removed = before - inFlight.size();
-        if (removed > 0) {
-            log.info("[ChatAnalytics] swept {} stale in-flight session(s); {} remaining",
-                    removed, inFlight.size());
-        }
-    }
-
-    /**
      * Mutable in-flight bag held only while the session is open. Synchronized
      * on increments so concurrent turns from the same conversation (rare —
      * usually serialized by the chat executor) don't corrupt counters.
+     *
+     * <p>{@code lastTouchedAt} drives the idle-timeout in
+     * {@link #sweepStaleInFlight}: a session that hasn't recorded a turn
+     * within the configured idle window is considered abandoned by the user
+     * and gets flushed to the store as {@code ABANDONED}.
      */
     private static final class InFlight {
         final Instant startedAt;
+        volatile Instant lastTouchedAt;
         final String agentId;
         final String personaId;
         final String llmInstanceId;
@@ -222,6 +262,7 @@ public class TurChatAnalyticsService {
         InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
                 String embeddingModelId, String storeInstanceId, String userId, String locale) {
             this.startedAt = startedAt;
+            this.lastTouchedAt = startedAt;
             this.agentId = agentId;
             this.personaId = personaId;
             this.llmInstanceId = llmInstanceId;
@@ -235,6 +276,7 @@ public class TurChatAnalyticsService {
             this.turns += 1;
             this.tokensIn += Math.max(0, in);
             this.tokensOut += Math.max(0, out);
+            this.lastTouchedAt = Instant.now();
         }
     }
 }

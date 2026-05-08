@@ -9,6 +9,7 @@
     "nav": {
       "settings": "Configurações",
       "languageModels": "Modelos de Linguagem",
+      "personas": "Personas",
       "nativeTools": "Ferramentas Nativas",
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
@@ -16,6 +17,10 @@
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "history": "Histórico"
+    },
+    "persona": {
+      "title": "Personas",
+      "description": "Vozes permitidas para este agent. Escolha o catálogo e uma padrão; chat flows podem trocar a persona ativa durante a conversa."
     },
     "history": {
       "title": "Histórico",

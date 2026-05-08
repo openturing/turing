@@ -24,7 +24,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -68,6 +68,16 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.subFlowName();
     }
 
+    /**
+     * Persona id this node should switch the conversation's active voice to.
+     * Only meaningful when the node's type is {@code persona}; ignored otherwise.
+     *
+     * @since 2026.2.7
+     */
+    public String personaId() {
+        return data.personaId();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -80,6 +90,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String toolSource,
             String mcpServerId,
             String subFlowId,
-            String subFlowName) {
+            String subFlowName,
+            String personaId) {
     }
 }

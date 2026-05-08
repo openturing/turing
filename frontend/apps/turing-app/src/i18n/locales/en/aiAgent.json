@@ -9,6 +9,7 @@
     "nav": {
       "settings": "Settings",
       "languageModels": "Language Models",
+      "personas": "Personas",
       "nativeTools": "Native Tools",
       "mcpServers": "MCP Servers",
       "customTools": "Custom Tools",
@@ -16,6 +17,10 @@
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "history": "History"
+    },
+    "persona": {
+      "title": "Personas",
+      "description": "Allowed voices for this agent. Pick the catalog and one default; chat flows can switch the active persona mid-conversation."
     },
     "history": {
       "title": "History",

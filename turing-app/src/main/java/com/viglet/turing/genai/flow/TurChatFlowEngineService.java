@@ -635,6 +635,21 @@ public class TurChatFlowEngineService {
                 continue;
             }
 
+            // Persona node: write the active-persona override into the state's
+            // variables and immediately advance — no LLM round-trip. The
+            // resolver (TurAgentPersonaResolver) reads __activePersonaId from
+            // the most recent flow state for the conversation, so the next
+            // turn already speaks in the new voice.
+            if ("persona".equals(current.type())) {
+                String personaId = current.personaId();
+                if (personaId != null && !personaId.isBlank()) {
+                    setActivePersonaVariable(state, personaId);
+                }
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                continue;
+            }
+
             if ("end".equals(current.type()) && state.getParentStateId() != null) {
                 TurChatFlowState parent = ascendFromSubFlow(state);
                 if (parent == null) {
@@ -754,6 +769,38 @@ public class TurChatFlowEngineService {
      * (including {@code state} itself) already runs the flow identified by
      * {@code flowId}. Prevents direct or indirect recursion.
      */
+    /**
+     * Writes (or overwrites) the reserved {@code __activePersonaId} entry in
+     * the state's {@code variablesJson} so the persona resolver picks up the
+     * new active voice on the next turn. Preserves any user-collected
+     * variables already in the document.
+     *
+     * <p>The reserved key matches
+     * {@link com.viglet.turing.genai.persona.TurAgentPersonaResolver#ACTIVE_PERSONA_VAR}
+     * — kept as a literal here to avoid a circular dependency between the
+     * engine and the resolver.
+     *
+     * @since 2026.2.7
+     */
+    private void setActivePersonaVariable(TurChatFlowState state, String personaId) {
+        try {
+            java.util.Map<String, Object> vars;
+            String json = state.getVariablesJson();
+            if (json == null || json.isBlank()) {
+                vars = new java.util.LinkedHashMap<>();
+            } else {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> parsed = OBJECT_MAPPER.readValue(json, java.util.Map.class);
+                vars = parsed == null ? new java.util.LinkedHashMap<>() : parsed;
+            }
+            vars.put("__activePersonaId", personaId);
+            state.setVariablesJson(OBJECT_MAPPER.writeValueAsString(vars));
+        } catch (JacksonException e) {
+            log.warn("[FlowEngine] could not update __activePersonaId on state {}: {}",
+                    state.getId(), e.getMessage());
+        }
+    }
+
     private boolean chainContainsFlow(TurChatFlowState state, String flowId) {
         Set<String> visited = new LinkedHashSet<>();
         TurChatFlowState cursor = state;

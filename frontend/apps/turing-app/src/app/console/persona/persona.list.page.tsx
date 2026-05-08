@@ -1,5 +1,6 @@
 import { usePersonas } from "@/api/queries/persona.queries";
 import { ROUTES } from "@/app/routes.const";
+import { AiAuthoringTrigger } from "@/components/ai-authoring/ai-authoring-trigger";
 import { BlankSlate } from "@/components/blank-slate";
 import { GridList } from "@/components/grid.list";
 import { LoadProvider } from "@/components/loading-provider";
@@ -16,6 +17,7 @@ export default function PersonaListPage() {
     description: "description",
     url: (item) => `${ROUTES.PERSONA_INSTANCE}/${item.id}`,
   });
+  const aiChatUrl = `${ROUTES.PERSONA_INSTANCE}/new/ai-chat`;
   return (
     <LoadProvider checkIsNotUndefined={personas} error={error} tryAgainUrl={`${ROUTES.PERSONA_INSTANCE}`}>
       {gridItemList.length > 0 ? (
@@ -30,6 +32,7 @@ export default function PersonaListPage() {
           buttonText={t("persona.newInstance")}
           urlNew={`${ROUTES.PERSONA_INSTANCE}/new`} />
       )}
+      <AiAuthoringTrigger to={aiChatUrl} />
     </LoadProvider>
   )
 }

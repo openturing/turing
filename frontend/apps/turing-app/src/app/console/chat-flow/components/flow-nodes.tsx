@@ -5,6 +5,7 @@ import {
   IconFlag3,
   IconPlayerPlayFilled,
   IconBell,
+  IconSparkles,
   IconSubtask,
 } from "@tabler/icons-react";
 
@@ -137,6 +138,33 @@ export function SubFlowNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function PersonaNode({ data }: ChatFlowNodeProps) {
+  // Persona id is just a uuid in the data — without a personas list lookup
+  // we can only show "set / not set". The properties panel renders the full
+  // dropdown with the human-readable persona name.
+  const hasPersona = typeof data.personaId === "string" && data.personaId.trim().length > 0;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-fuchsia-500 bg-background shadow-md">
+      <div className="flex items-center gap-2 bg-fuchsia-500 px-3 py-2 text-white">
+        <IconSparkles className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Persona Switch"}</div>
+      </div>
+      <div className="bg-fuchsia-50 p-3 text-xs leading-relaxed text-fuchsia-900 dark:bg-fuchsia-950/40 dark:text-fuchsia-100">
+        <span className="font-semibold">Switches voice to: </span>
+        {hasPersona ? (
+          <code className="rounded bg-fuchsia-200/60 px-1 py-0.5 text-[11px] dark:bg-fuchsia-900/50">
+            {data.personaId}
+          </code>
+        ) : (
+          <span className="italic opacity-60">not selected</span>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-fuchsia-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-fuchsia-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -144,4 +172,5 @@ export const nodeTypes = {
   condition: ConditionNode,
   functionCall: FunctionCallNode,
   subFlow: SubFlowNode,
+  persona: PersonaNode,
 };

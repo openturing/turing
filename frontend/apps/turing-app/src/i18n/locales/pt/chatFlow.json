@@ -90,7 +90,8 @@
       "aiQuestion": "Pergunta (IA)",
       "condition": "Condição",
       "functionCall": "Chamada de Função",
-      "subFlow": "Sub Fluxo"
+      "subFlow": "Sub Fluxo",
+      "persona": "Trocar Persona"
     },
     "properties": {
       "header": "Propriedades do Nó",
@@ -119,6 +120,10 @@
       "subFlowPlaceholder": "Escolha um chat flow",
       "subFlowEmpty": "Não há outros chat flows disponíveis para este agente.",
       "subFlowHint": "Quando este passo executar, o controle é passado para o chat flow selecionado dentro do mesmo agente de IA.",
+      "persona": "Persona Ativa",
+      "personaPlaceholder": "Escolha uma persona do catálogo do agent",
+      "personaEmpty": "Este agent não tem nenhuma persona no catálogo. Cadastre na página Personas do agent.",
+      "personaHint": "Quando este passo executar, a conversa muda imediatamente para a voz desta persona. A troca persiste até atravessar outro nó Persona ou até o fim da conversa.",
       "validationRule": "Regras de Validação",
       "validationNone": "Nenhuma",
       "validation": {

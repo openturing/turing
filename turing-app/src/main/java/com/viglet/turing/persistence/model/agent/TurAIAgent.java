@@ -125,15 +125,35 @@ public class TurAIAgent implements Serializable {
     private TurStoreInstance turStoreInstance;
 
     /**
-     * Optional voice profile applied at chat time. When set, the
-     * persona's system instruction, style guidelines, vocabulary
-     * constraints, brand context, and few-shot examples are fused into
-     * the system prompt before the LLM is called, and the persona's
-     * forbidden-term validator runs over the response.
+     * Catalogue of personas this agent is allowed to speak with. The agent
+     * runs with one persona at a time at runtime, but a chat flow can switch
+     * the active voice mid-conversation by setting the special variable
+     * {@code __activePersonaId} on the flow state — the resolver picks the
+     * matching entry from this set before each turn. {@link #defaultPersona}
+     * is the fallback when no override is active.
      *
-     * @since 2026.2.6
+     * <p>Constraint enforced at save time: {@link #defaultPersona}, when
+     * present, must be a member of this set.
+     *
+     * @since 2026.2.7
+     */
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "ai_agent_persona",
+            joinColumns = @JoinColumn(name = "agent_id"),
+            inverseJoinColumns = @JoinColumn(name = "persona_id"))
+    private Set<TurPersona> personas = new HashSet<>();
+
+    /**
+     * The persona used when no chat flow has overridden the active voice.
+     * Optional — when null, the agent speaks in the LLM's default voice.
+     *
+     * <p>Mapped to the (renamed) column {@code default_persona_id}; the
+     * column kept its FK contract from the v2026.2.6.3 migration but was
+     * renamed in v2026.2.7.1.
+     *
+     * @since 2026.2.7
      */
     @ManyToOne
-    @JoinColumn(name = "persona_id")
-    private TurPersona persona;
+    @JoinColumn(name = "default_persona_id")
+    private TurPersona defaultPersona;
 }

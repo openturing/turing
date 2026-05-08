@@ -3,6 +3,7 @@ import type { Node } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAiAgent } from "@/api/queries/ai-agent.queries";
 import { useChatFlows } from "@/api/queries/chat-flow.queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,11 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
     () => (chatFlows ?? []).filter((f) => f.id && f.id !== currentFlowId),
     [chatFlows, currentFlowId],
   );
+  // Persona-switch nodes can only target a persona that is in the agent's
+  // catalog — same allow-list the backend enforces. Loading the agent here
+  // is cached by react-query, no extra round-trips per selected node.
+  const { data: agent } = useAiAgent(agentId);
+  const personaOptions = useMemo(() => agent?.personas ?? [], [agent]);
 
   useEffect(() => {
     nativeToolService.query().then(setNativeToolGroups).catch(() => setNativeToolGroups([]));
@@ -270,6 +276,36 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             </span>
           </div>
         )}
+
+        {type === "persona" && (
+          <div className="flex flex-col gap-1">
+            <Label>{t("chatFlow.properties.persona")}</Label>
+            <Select
+              value={data.personaId ?? ""}
+              onValueChange={(value) => update({ personaId: value || undefined })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("chatFlow.properties.personaPlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {personaOptions.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {t("chatFlow.properties.personaEmpty")}
+                  </div>
+                ) : (
+                  personaOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <span className="text-[11px] text-muted-foreground">
+              {t("chatFlow.properties.personaHint")}
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -289,5 +325,7 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.functionCall";
     case "subFlow":
       return "chatFlow.palette.subFlow";
+    case "persona":
+      return "chatFlow.palette.persona";
   }
 }

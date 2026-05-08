@@ -45,6 +45,10 @@ datasources:
     jsonData:
       global_queries: []
       auth_method: "none"
+      # host.docker.internal resolves to the Docker host on Windows/macOS, so
+      # this works whether Turing runs via `mvn spring-boot:run` on the host or
+      # inside docker-compose (compose can alias `turing` → host via
+      # extra_hosts on Linux). Keep this in sync with prometheus.yml.
       allowedHosts:
-        - "http://turing:2700"
+        - "http://host.docker.internal:2700"
       tlsSkipVerify: true

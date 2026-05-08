@@ -9,6 +9,7 @@ const AIAgentPage = lazy(() => import("../console/ai-agent/ai-agent.page"))
 const AIAgentRootPage = lazy(() => import("../console/ai-agent/ai-agent.root.page"))
 const AIAgentSettingsPage = lazy(() => import("../console/ai-agent/settings/ai-agent.settings.page"))
 const AIAgentLlmPage = lazy(() => import("../console/ai-agent/llm/ai-agent.llm.page"))
+const AIAgentPersonaPage = lazy(() => import("../console/ai-agent/persona/ai-agent.persona.page"))
 const AIAgentMcpPage = lazy(() => import("../console/ai-agent/mcp/ai-agent.mcp.page"))
 const AIAgentCustomToolPage = lazy(() => import("../console/ai-agent/custom-tool/ai-agent.custom-tool.page"))
 const AIAgentToolsPage = lazy(() => import("../console/ai-agent/tools/ai-agent.tools.page"))
@@ -38,6 +39,7 @@ export const AIAgentRoutes = (
             <Route index element={<RedirectToAIAgentSettings />} />
             <Route path="settings" element={<AIAgentSettingsPage />} />
             <Route path="llm" element={<AIAgentLlmPage />} />
+            <Route path="persona" element={<AIAgentPersonaPage />} />
             <Route path="mcp" element={<AIAgentMcpPage />} />
             <Route path="custom-tool" element={<AIAgentCustomToolPage />} />
             <Route path="tools" element={<AIAgentToolsPage />} />

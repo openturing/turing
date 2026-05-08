@@ -6,6 +6,13 @@
     "newInstance": "Nova Persona",
     "deleted": "A persona {{name}} foi removida",
     "notDeleted": "A persona {{name}} não foi removida",
+    "aiChat": {
+      "breadcrumb": "Criar com IA",
+      "panelTitle": "Autoria com IA",
+      "panelSubtitle": "Descreva a voz e eu rascunho a persona",
+      "placeholder": "ex.: Voz de executivo sênior para prospects no topo do funil — direto, persuasivo, faz uma pergunta de qualificação por turn, nunca cota preço nos três primeiros turns.",
+      "empty": "Me conta como esta persona deve soar — estágio do funil, público, tom — e eu preencho o formulário ao lado."
+    },
     "tones": {
       "FORMAL": "Formal",
       "CASUAL": "Casual",
