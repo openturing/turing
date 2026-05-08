@@ -17,12 +17,14 @@ export {
   fetchIntents,
   fetchSortOptions,
   parseHrefToParams,
+  postClick,
 } from "./core/api";
 export type {
   SearchParams,
   PostChatConversationOptions,
   PostAgentChatOptions,
   ChatEnabledResponse,
+  ClickTrackParams,
 } from "./core/api";
 
 // ── Session ──
@@ -63,6 +65,8 @@ export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus } from "./hooks/use-turing-chat";
 export { useTuringIntents } from "./hooks/use-turing-intents";
 export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
+export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
+export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 
 // ── UI Components ──
 export { TuringSearchBar } from "./ui/TuringSearchBar";

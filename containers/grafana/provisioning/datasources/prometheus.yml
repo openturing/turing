@@ -13,3 +13,21 @@ datasources:
     editable: true
     jsonData:
       timeInterval: 5s
+
+  # Direct read access to the Turing database for usage analytics dashboards
+  # (TurSNSiteMetricAccess entries). Credentials match docker-compose.yaml;
+  # change for any non-dev deployment.
+  - name: MariaDB
+    uid: turing-mariadb
+    type: mysql
+    url: turing-mariadb:3306
+    user: turing
+    isDefault: false
+    editable: true
+    jsonData:
+      database: turing
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: turing

@@ -8,6 +8,7 @@ import {
   TuringProvider,
   TuringSearchField,
   useSearchStore,
+  useTuringClickTracking,
   useTuringFacets,
   useTuringPagination,
   type ResolvedDocument,
@@ -319,17 +320,24 @@ function Pagination() {
   );
 }
 
+function resolveDocumentId(doc: ResolvedDocument): string {
+  const fieldId = doc.raw.fields?.id;
+  return doc.url || (fieldId != null ? String(fieldId) : "") || doc.title || "";
+}
+
 /* ── Main search content ── */
 function SearchContent() {
   const navigate = useNavigate();
   const store = useSearchStore();
   const { totalCount } = useTuringPagination();
+  const { trackClick } = useTuringClickTracking();
   const query = store.params.q ?? "*";
   const isLanding = query === "*" && store.status !== "loading";
   const hasResults = store.documents.length > 0;
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  function goToDetail(doc: ResolvedDocument) {
+  function goToDetail(doc: ResolvedDocument, position: number) {
+    trackClick(resolveDocumentId(doc), position);
     navigate("/detail", { state: { document: doc } });
   }
 
@@ -549,7 +557,7 @@ function SearchContent() {
                     <AlbumCard
                       key={doc.raw.fields.id ?? `doc-${i}`}
                       doc={doc}
-                      onClick={() => goToDetail(doc)}
+                      onClick={() => goToDetail(doc, i + 1)}
                     />
                   ))}
                 </div>

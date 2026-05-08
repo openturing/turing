@@ -1,0 +1,852 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "datasource", "uid": "grafana" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "User-facing search behavior: what people search for, how often, in what language, and what they fail to find. Reads directly from sn_site_metric_access (TurSNSiteMetricAccess).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Total search events recorded in the selected time range. Each row in sn_site_metric_access is one user-issued query.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS total\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Total searches",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distinct sanitized terms (case-insensitive, accent-stripped). Tells you the breadth of what users are looking for.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT `sanatizedTerm`) AS unique_terms\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique terms",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Share of searches that returned zero results. High values point to demand the catalog isn't covering — every percentage point is a content opportunity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.25 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  SUM(CASE WHEN `numFound` = 0 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0) AS zero_result_rate\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Zero-result rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distinct user IDs that searched in the period. Empty userId rows count as anonymous and are merged.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT COALESCE(NULLIF(`userId`, ''), 'anonymous')) AS users\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Active users",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Search volume over time. Look for peaks (campaigns, news cycles) and drops (broken nav, downtime).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0,
+            "drawStyle": "bars", "fillOpacity": 80, "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1,
+            "pointSize": 5, "scaleDistribution": { "type": "linear" },
+            "showPoints": "never", "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 4 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(`accessDate`, $__interval) AS time,\n  CASE WHEN m.`numFound` = 0 THEN 'no results' ELSE 'with results' END AS metric,\n  COUNT(*) AS value\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Search volume over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Searches grouped by SN site. Helps see which corners of the catalog get the most attention.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 4 },
+      "id": 6,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.`name` AS site, COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY s.`name`\nORDER BY searches DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Searches by site",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Funnel proxy from search-engine signals only (no click tracking yet). Drop between stages reveals where users hit a wall:\n\n• Search issued — every query received\n• Got any results — numFound > 0\n• Got focused results — numFound between 1 and 50 (browsable, not overwhelming)\n• Likely good answer — numFound between 1 and 10 (top page is probably enough)\n\nA cliff between Stage 1 and Stage 2 is content gap. A cliff between Stage 3 and Stage 4 is a relevance/ranking issue (results exist but the user has to wade through hundreds).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-GrYlRd" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 90,
+            "gradientMode": "opacity", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 14,
+      "options": {
+        "barRadius": 0.05,
+        "barWidth": 0.85,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xField": "stage",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT stage, count FROM (\n  SELECT '1. Search issued'        AS stage, 1 AS ord, COUNT(*) AS count FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site')\n  UNION ALL\n  SELECT '2. Got any results'      AS stage, 2 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` > 0\n  UNION ALL\n  SELECT '3. Got focused results'  AS stage, 3 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 1 AND 50\n  UNION ALL\n  SELECT '4. Likely good answer'   AS stage, 4 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 1 AND 10\n) t\nORDER BY ord",
+          "refId": "A"
+        }
+      ],
+      "title": "Search funnel (proxy from numFound)",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Terms with the largest jump in volume between the most recent half of the time range and the half before it. Surfaces emerging interests, viral content, and recent campaigns. New terms (no prior occurrences) are highlighted with prev=0.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "delta" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "color", "value": { "mode": "continuous-RdYlGr" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "growth" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "blue", "value": null },
+                    { "color": "yellow", "value": 1 },
+                    { "color": "orange", "value": 2 },
+                    { "color": "red", "value": 5 }
+                  ]
+                }
+              },
+              { "id": "color", "value": { "mode": "thresholds" } },
+              { "id": "unit", "value": "percentunit" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 15,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "delta" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH bounds AS (\n  SELECT FROM_UNIXTIME($__unixEpochFrom()) AS lo,\n         FROM_UNIXTIME($__unixEpochTo())   AS hi\n),\nwindowed AS (\n  SELECT b.lo, b.hi,\n         FROM_UNIXTIME(($__unixEpochFrom() + $__unixEpochTo()) DIV 2) AS mid\n  FROM bounds b\n)\nSELECT\n  m.`sanatizedTerm` AS term,\n  SUM(CASE WHEN m.`accessDate` >= w.mid THEN 1 ELSE 0 END) AS recent,\n  SUM(CASE WHEN m.`accessDate` <  w.mid THEN 1 ELSE 0 END) AS prev,\n  SUM(CASE WHEN m.`accessDate` >= w.mid THEN 1 ELSE 0 END)\n  - SUM(CASE WHEN m.`accessDate` <  w.mid THEN 1 ELSE 0 END) AS delta,\n  CASE WHEN SUM(CASE WHEN m.`accessDate` <  w.mid THEN 1 ELSE 0 END) = 0 THEN NULL\n       ELSE (SUM(CASE WHEN m.`accessDate` >= w.mid THEN 1 ELSE 0 END)\n            - SUM(CASE WHEN m.`accessDate` <  w.mid THEN 1 ELSE 0 END))\n          / SUM(CASE WHEN m.`accessDate` <  w.mid THEN 1 ELSE 0 END)\n  END AS growth\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nCROSS JOIN windowed w\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\n  AND m.`sanatizedTerm` IS NOT NULL AND m.`sanatizedTerm` <> ''\nGROUP BY m.`sanatizedTerm`\nHAVING delta > 0\nORDER BY delta DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "title": "Trending terms (recent half vs prior half)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Top 25 most popular search terms. Includes count, distinct users, and average results returned. Low avg results on a popular term = high-impact content gap. Click a term to drill down into its detailed timeline.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false,
+            "filterable": true
+          },
+          "links": [
+            {
+              "title": "Drill down: term timeline",
+              "url": "/d/turing-search-term-detail/turing-search-term-detail?var-term=${__data.fields.term}&var-site=${site}&${__url_time_range}",
+              "targetBlank": false
+            }
+          ],
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "searches" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_results" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "yellow", "value": 1 },
+                    { "color": "green", "value": 10 }
+                  ]
+                }
+              },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "ctr" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "yellow", "value": 0.05 },
+                    { "color": "green", "value": 0.2 }
+                  ]
+                }
+              },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_click_pos" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 5 },
+                    { "color": "red", "value": 10 }
+                  ]
+                }
+              },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "clicks" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "color", "value": { "mode": "continuous-BlPu" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 20 },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "searches" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  m.`sanatizedTerm` AS term,\n  COUNT(*) AS searches,\n  COUNT(DISTINCT COALESCE(NULLIF(m.`userId`, ''), CONCAT('anon-', m.id))) AS users,\n  ROUND(AVG(m.`numFound`), 1) AS avg_results,\n  COALESCE(c.clicks, 0) AS clicks,\n  COALESCE(c.clicks, 0) / NULLIF(COUNT(*), 0) AS ctr,\n  ROUND(c.avg_pos, 1) AS avg_click_pos\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nLEFT JOIN (\n  SELECT cc.`sanatizedTerm` AS term, COUNT(*) AS clicks, AVG(cc.`position`) AS avg_pos\n  FROM sn_site_metric_click cc\n  JOIN sn_site ss ON ss.id = cc.sn_site_id\n  WHERE $__timeFilter(cc.`accessDate`)\n    AND ('$site' = 'All' OR ss.`name` = '$site')\n    AND cc.`sanatizedTerm` IS NOT NULL AND cc.`sanatizedTerm` <> ''\n  GROUP BY cc.`sanatizedTerm`\n) c ON c.term = m.`sanatizedTerm`\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\n  AND m.`sanatizedTerm` IS NOT NULL AND m.`sanatizedTerm` <> ''\nGROUP BY m.`sanatizedTerm`, c.clicks, c.avg_pos\nORDER BY searches DESC\nLIMIT 25",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 25 search terms",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Terms that returned zero results, ranked by frequency. This is the highest-leverage list — every entry is a user looking for something the site doesn't surface. Click a term to drill down.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false,
+            "filterable": true
+          },
+          "links": [
+            {
+              "title": "Drill down: term timeline",
+              "url": "/d/turing-search-term-detail/turing-search-term-detail?var-term=${__data.fields.term}&var-site=${site}&${__url_time_range}",
+              "targetBlank": false
+            }
+          ],
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "miss_count" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "color", "value": { "mode": "continuous-RdYlGr" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 20 },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "miss_count" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  m.`sanatizedTerm` AS term,\n  COUNT(*) AS miss_count,\n  COUNT(DISTINCT COALESCE(NULLIF(m.`userId`, ''), CONCAT('anon-', m.id))) AS distinct_users,\n  MAX(m.`accessDate`) AS last_seen\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\n  AND m.`numFound` = 0\n  AND m.`sanatizedTerm` IS NOT NULL AND m.`sanatizedTerm` <> ''\nGROUP BY m.`sanatizedTerm`\nORDER BY miss_count DESC\nLIMIT 25",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 25 zero-result terms (content gap)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distribution of result-set sizes. A bulge at the 0 bucket means the catalog is leaving demand on the table; a long tail past 100 means the user often gets 'too many' and may need better facets.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 9,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.85, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "bucket",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT bucket, searches FROM (\n  SELECT '0 (zero)' AS bucket, 1 AS ord, COUNT(*) AS searches FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` = 0\n  UNION ALL\n  SELECT '1' AS bucket, 2 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` = 1\n  UNION ALL\n  SELECT '2-10' AS bucket, 3 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 2 AND 10\n  UNION ALL\n  SELECT '11-100' AS bucket, 4 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 11 AND 100\n  UNION ALL\n  SELECT '101-1000' AS bucket, 5 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 101 AND 1000\n  UNION ALL\n  SELECT '1000+' AS bucket, 6 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` > 1000\n) t\nORDER BY ord",
+          "refId": "A"
+        }
+      ],
+      "title": "Result-size distribution",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distribution of searches by language tag (Locale). Reveals where translation/content investment matters most.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 10,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(NULLIF(m.`language`, ''), 'unknown') AS lang, COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY m.`language`\nORDER BY searches DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Searches by language",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Hour of the day vs day of the week. Bright cells are peak demand windows — useful for capacity planning, content rollout timing, and notification scheduling.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "scaleDistribution": { "type": "linear" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 40 },
+      "id": 11,
+      "options": {
+        "calculate": false, "cellGap": 1,
+        "color": {
+          "exponent": 0.5, "fill": "dark-orange", "mode": "scheme",
+          "reverse": false, "scale": "exponential", "scheme": "Inferno", "steps": 64
+        },
+        "exemplars": { "color": "rgba(255,0,255,0.7)" },
+        "filterValues": { "le": 1e-9 },
+        "legend": { "show": true },
+        "rowsFrame": { "layout": "auto" },
+        "showValue": "never",
+        "tooltip": { "mode": "single", "showColorScale": false, "yHistogram": false },
+        "yAxis": { "axisPlacement": "left", "reverse": false }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  ELT(DAYOFWEEK(m.`accessDate`), 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat') AS dow,\n  HOUR(m.`accessDate`) AS hour,\n  COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY dow, hour\nORDER BY FIELD(dow, 'Mon','Tue','Wed','Thu','Fri','Sat','Sun'), hour",
+          "refId": "A"
+        }
+      ],
+      "title": "Search activity heatmap (hour × day-of-week)",
+      "type": "heatmap"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Most active known users. Useful for spotting power users, automated scripts, or single-user spikes that distort aggregates.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 49 },
+      "id": 12,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.7, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "user",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT m.`userId` AS user, COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\n  AND m.`userId` IS NOT NULL AND m.`userId` <> ''\nGROUP BY m.`userId`\nORDER BY searches DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "title": "Top users by search volume",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Average term length per day. A rising trend often signals frustration (users adding more keywords because they aren't finding what they want).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "characters", "axisPlacement": "auto", "barAlignment": 0,
+            "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "lineInterpolation": "smooth", "lineWidth": 2,
+            "pointSize": 5, "scaleDistribution": { "type": "linear" },
+            "showPoints": "never", "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 49 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(m.`accessDate`, '1d') AS time,\n  AVG(CHAR_LENGTH(m.`sanatizedTerm`)) AS avg_length,\n  MAX(CHAR_LENGTH(m.`sanatizedTerm`)) AS max_length\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND ('$site' = 'All' OR s.`name` = '$site')\n  AND m.`sanatizedTerm` IS NOT NULL\nGROUP BY 1\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Term length over time (proxy for user frustration)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Where in the result page users actually click. A heavy bias toward positions 1-3 means the top results are doing their job; clicks deep in the tail (positions 10+) suggest ranking is off — relevant content is buried. Compare to {turing.search.calls} latency to ensure the cost of fetching extra pages is justified.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-GrYlRd" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "clicks", "axisPlacement": "auto", "fillOpacity": 90,
+            "gradientMode": "opacity", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 58 },
+      "id": 16,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.85, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "vertical", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "bucket",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT bucket, clicks FROM (\n  SELECT '1'      AS bucket, 1 AS ord, COUNT(*) AS clicks FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` = 1\n  UNION ALL\n  SELECT '2'      AS bucket, 2 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` = 2\n  UNION ALL\n  SELECT '3'      AS bucket, 3 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` = 3\n  UNION ALL\n  SELECT '4-5'    AS bucket, 4 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` BETWEEN 4 AND 5\n  UNION ALL\n  SELECT '6-10'   AS bucket, 5 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` BETWEEN 6 AND 10\n  UNION ALL\n  SELECT '11-25'  AS bucket, 6 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` BETWEEN 11 AND 25\n  UNION ALL\n  SELECT '25+'    AS bucket, 7 AS ord, COUNT(*) FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site') AND c.`position` > 25\n) t\nORDER BY ord",
+          "refId": "A"
+        }
+      ],
+      "title": "Click position distribution (scroll fatigue)",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Searches and clicks per day side-by-side, with the resulting CTR. CTR is clicks ÷ searches in the same day — useful for spotting periods where the catalog stopped serving demand even though traffic kept coming.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0,
+            "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2,
+            "pointSize": 5, "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto", "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "ctr" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.fillOpacity", "value": 30 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 58 },
+      "id": 17,
+      "options": {
+        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT day AS time, label AS metric, value FROM (\n  SELECT $__timeGroup(m.`accessDate`, '1d') AS day, 'searches' AS label, CAST(COUNT(*) AS DOUBLE) AS value\n  FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id\n  WHERE $__timeFilter(m.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site')\n  GROUP BY day\n  UNION ALL\n  SELECT $__timeGroup(c.`accessDate`, '1d') AS day, 'clicks' AS label, CAST(COUNT(*) AS DOUBLE) AS value\n  FROM sn_site_metric_click c JOIN sn_site s ON s.id = c.sn_site_id\n  WHERE $__timeFilter(c.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site')\n  GROUP BY day\n  UNION ALL\n  SELECT day, 'ctr' AS label, COALESCE(clicks_count / NULLIF(searches_count, 0), 0) AS value\n  FROM (\n    SELECT $__timeGroup(m.`accessDate`, '1d') AS day, COUNT(*) AS searches_count,\n           (SELECT COUNT(*) FROM sn_site_metric_click c2\n            JOIN sn_site s2 ON s2.id = c2.sn_site_id\n            WHERE $__timeGroup(c2.`accessDate`, '1d') = $__timeGroup(m.`accessDate`, '1d')\n              AND ('$site' = 'All' OR s2.`name` = '$site')) AS clicks_count\n    FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id\n    WHERE $__timeFilter(m.`accessDate`) AND ('$site' = 'All' OR s.`name` = '$site')\n    GROUP BY day\n  ) sub\n) all_metrics\nORDER BY time, metric",
+          "refId": "A"
+        }
+      ],
+      "title": "Searches vs clicks vs CTR (daily)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["turing", "search", "insights", "ux"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "All" },
+        "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT `name`, `name` FROM sn_site ORDER BY 1",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Site",
+        "multi": false,
+        "name": "site",
+        "options": [],
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT `name`, `name` FROM sn_site ORDER BY 1",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Turing Search Insights",
+  "uid": "turing-search-insights",
+  "version": 2,
+  "weekStart": ""
+}

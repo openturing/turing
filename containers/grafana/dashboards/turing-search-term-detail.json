@@ -1,0 +1,491 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "datasource", "uid": "grafana" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Drill-down view for a single search term (sanatizedTerm). Reached from the term tables on the Search Insights dashboard. Type a term in the variable to inspect any term ad-hoc.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "← Back to Search Insights",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/turing-search-insights/turing-search-insights"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Total searches that match the selected term in the time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS total\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Searches for '$term'",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distinct users (or anonymous buckets) who searched this term.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT COALESCE(NULLIF(m.`userId`, ''), CONCAT('anon-', m.id))) AS users\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Distinct users",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Average number of results returned for this term — high values mean common (possibly too generic), low values mean specific or content-gap.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(AVG(m.`numFound`), 1) AS avg_results\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg results returned",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Share of searches for this term that came back empty. Strong signal for content prioritisation when both this and total volume are high.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.25 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(CASE WHEN m.`numFound` = 0 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0) AS zero_rate\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')",
+          "refId": "A"
+        }
+      ],
+      "title": "Zero-result rate for term",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "How searches for this term are distributed over time. Spikes correlate with campaigns, news, or seasonal interest.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0,
+            "drawStyle": "bars", "fillOpacity": 80, "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1,
+            "pointSize": 5, "scaleDistribution": { "type": "linear" },
+            "showPoints": "never", "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(m.`accessDate`, $__interval) AS time,\n  CASE WHEN m.`numFound` = 0 THEN 'no results' ELSE 'with results' END AS metric,\n  COUNT(*) AS value\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY 1, 2\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Searches over time for '$term'",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Which sites the term appears on. A term that's hot on one site but absent from another can indicate cross-promotion or facet-mapping opportunities.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "id": 6,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.`name` AS site, COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\nGROUP BY s.`name`\nORDER BY searches DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Sites where '$term' was searched",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Languages used to search for this term. May reveal that the term is searched mostly in a specific locale even on multilingual sites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "id": 7,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(NULLIF(m.`language`, ''), 'unknown') AS lang, COUNT(*) AS searches\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY m.`language`\nORDER BY searches DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Languages",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Distribution of result-set sizes specifically for this term. Useful to see if a term oscillates between zero and many results (catalog churn) or is consistently bad.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text",
+            "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80,
+            "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1, "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "id": 8,
+      "options": {
+        "barRadius": 0.05, "barWidth": 0.85, "fullHighlight": false, "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal", "showValue": "auto", "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" }, "xField": "bucket",
+        "xTickLabelRotation": 0, "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT bucket, searches FROM (\n  SELECT '0 (zero)' AS bucket, 1 AS ord, COUNT(*) AS searches FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(m.`accessDate`) AND m.`sanatizedTerm` = '$term' AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` = 0\n  UNION ALL\n  SELECT '1' AS bucket, 2 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(m.`accessDate`) AND m.`sanatizedTerm` = '$term' AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` = 1\n  UNION ALL\n  SELECT '2-10' AS bucket, 3 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(m.`accessDate`) AND m.`sanatizedTerm` = '$term' AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 2 AND 10\n  UNION ALL\n  SELECT '11-100' AS bucket, 4 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(m.`accessDate`) AND m.`sanatizedTerm` = '$term' AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` BETWEEN 11 AND 100\n  UNION ALL\n  SELECT '100+' AS bucket, 5 AS ord, COUNT(*) FROM sn_site_metric_access m JOIN sn_site s ON s.id = m.sn_site_id WHERE $__timeFilter(m.`accessDate`) AND m.`sanatizedTerm` = '$term' AND ('$site' = 'All' OR s.`name` = '$site') AND m.`numFound` > 100\n) t\nORDER BY ord",
+          "refId": "A"
+        }
+      ],
+      "title": "Result-size distribution for '$term'",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Other terms searched by users who also searched for this term, in the same time window. A simple co-occurrence proxy — useful for synonym discovery and 'related searches' suggestions.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false,
+            "filterable": true
+          },
+          "links": [
+            {
+              "title": "Drill down: this related term",
+              "url": "/d/turing-search-term-detail/turing-search-term-detail?var-term=${__data.fields.related_term}&var-site=${site}&${__url_time_range}",
+              "targetBlank": false
+            }
+          ],
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "shared_users" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "color", "value": { "mode": "continuous-GrYlRd" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 20 },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "shared_users" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  other.`sanatizedTerm` AS related_term,\n  COUNT(DISTINCT other.`userId`) AS shared_users,\n  COUNT(*) AS co_searches\nFROM sn_site_metric_access seed\nJOIN sn_site_metric_access other\n  ON other.`userId` = seed.`userId`\n  AND other.`userId` IS NOT NULL\n  AND other.`userId` <> ''\n  AND other.`sanatizedTerm` <> seed.`sanatizedTerm`\n  AND other.`sanatizedTerm` IS NOT NULL\n  AND other.`sanatizedTerm` <> ''\nJOIN sn_site s ON s.id = seed.sn_site_id\nWHERE $__timeFilter(seed.`accessDate`)\n  AND $__timeFilter(other.`accessDate`)\n  AND seed.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')\nGROUP BY other.`sanatizedTerm`\nORDER BY shared_users DESC, co_searches DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "title": "Related terms (co-searched by same users)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+      "description": "Most recent searches for this term — useful as forensic evidence (when did the spike start, who was involved).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "numFound" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "yellow", "value": 1 },
+                    { "color": "green", "value": 10 }
+                  ]
+                }
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              { "id": "color", "value": { "mode": "thresholds" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 20 },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "accessDate" }]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  m.`accessDate`,\n  COALESCE(NULLIF(m.`userId`, ''), 'anonymous') AS user,\n  s.`name` AS site,\n  m.`language` AS lang,\n  m.`numFound`,\n  m.`term` AS raw_term\nFROM sn_site_metric_access m\nJOIN sn_site s ON s.id = m.sn_site_id\nWHERE $__timeFilter(m.`accessDate`)\n  AND m.`sanatizedTerm` = '$term'\n  AND ('$site' = 'All' OR s.`name` = '$site')\nORDER BY m.`accessDate` DESC\nLIMIT 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent 100 raw searches",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["turing", "search", "insights", "drill-down"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "", "value": "" },
+        "hide": 0,
+        "label": "Term",
+        "name": "term",
+        "options": [{ "selected": true, "text": "", "value": "" }],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "All" },
+        "datasource": { "type": "mysql", "uid": "turing-mariadb" },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT `name`, `name` FROM sn_site ORDER BY 1",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Site",
+        "multi": false,
+        "name": "site",
+        "options": [],
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT `name`, `name` FROM sn_site ORDER BY 1",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Turing Search — Term Detail",
+  "uid": "turing-search-term-detail",
+  "version": 1,
+  "weekStart": ""
+}

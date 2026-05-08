@@ -58,6 +58,49 @@ export function fetchSearch(site: string, params: SearchParams): Promise<TurSear
   return get<TurSearchResponse>(`/sn/${site}/search?${buildQueryString(params)}`);
 }
 
+/**
+ * Payload for {@link postClick}. The minimum needed to reconstruct CTR is the
+ * query that produced the result (`term`) and the document the user opened
+ * (`documentId`). `position` is the 1-based rank within the page (used to
+ * study scroll fatigue). `userId` and `locale` are optional but, when
+ * provided, let dashboards split CTR by user cohort or locale.
+ *
+ * @since 2026.2.7
+ */
+export interface ClickTrackParams {
+  /** Query that produced the result the user clicked. */
+  readonly term: string;
+  /** Identifier of the clicked document (URL/UUID/business id, free-form). */
+  readonly documentId: string;
+  /** 1-based rank of the clicked result within the page. */
+  readonly position: number;
+  /** Optional opaque user identifier. Defaults to anonymous on the server. */
+  readonly userId?: string;
+  /** BCP-47 or POSIX locale string ("en-US" / "en_US"). */
+  readonly locale?: string;
+}
+
+/**
+ * Records a click-through on a search result. Fire-and-forget by design — the
+ * SDK never blocks UX waiting for this to land. Errors are swallowed and
+ * surfaced via {@code console.warn}.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/click}. Toggled by
+ * {@code turing.search.metrics.enabled} on the backend.
+ *
+ * @since 2026.2.7
+ */
+export async function postClick(site: string, params: ClickTrackParams): Promise<void> {
+  try {
+    await axios.post(`/sn/${site}/click`, params);
+  } catch (error) {
+    if (typeof console !== "undefined") {
+      // eslint-disable-next-line no-console
+      console.warn("[Turing] click tracking failed", error);
+    }
+  }
+}
+
 export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlocale">): Promise<TurChatResponse> {
   const qs = new URLSearchParams();
   qs.append("q", params.q);

@@ -147,6 +147,11 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/discovery"),
                                                 mvc.matcher("/api/csrf"),
                                                 mvc.matcher("/api/v2/ping"),
+                                                // Observability endpoints scraped by Prometheus and used by
+                                                // health checks. Restrict at network/firewall level in prod.
+                                                mvc.matcher("/actuator/prometheus"),
+                                                mvc.matcher("/actuator/health"),
+                                                mvc.matcher("/actuator/health/**"),
                                                 mvc.matcher("/assets/**"),
                                                 mvc.matcher("/favicon.ico"),
                                                 mvc.matcher("/*.png"),
@@ -158,6 +163,7 @@ public class TurSecurityConfigProduction {
                                                 mvc.matcher("/api/sn/*/search"),
                                                 mvc.matcher("/api/sn/*/search/**"),
                                                 mvc.matcher("/api/sn/*/_search"),
+                                                mvc.matcher("/api/sn/*/click"),
                                                 mvc.matcher("/api/sn/*/query"),
                                                 mvc.matcher("/api/sn/*/query/**"),
                                                 mvc.matcher("/api/sn/*/chat"),
@@ -190,6 +196,12 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/discovery"),
                                                                 mvc.matcher("/api/csrf"),
                                                                 mvc.matcher("/api/v2/ping"),
+                                                                // Observability endpoints scraped by Prometheus
+                                                                // and used by health checks. Restrict at
+                                                                // network/firewall level in prod.
+                                                                mvc.matcher("/actuator/prometheus"),
+                                                                mvc.matcher("/actuator/health"),
+                                                                mvc.matcher("/actuator/health/**"),
                                                                 mvc.matcher(LOGOUT_PATH),
                                                                 mvc.matcher("/index.html"),
                                                                 mvc.matcher("/welcome/**"),
@@ -206,6 +218,7 @@ public class TurSecurityConfigProduction {
                                                                 mvc.matcher("/api/sn/*/search"),
                                                                 mvc.matcher("/api/sn/*/search/**"),
                                                                 mvc.matcher("/api/sn/*/_search"),
+                                                mvc.matcher("/api/sn/*/click"),
                                                                 mvc.matcher("/api/sn/*/query"),
                                                                 mvc.matcher("/api/sn/*/query/**"),
                                                                 mvc.matcher("/api/sn/*/chat"),

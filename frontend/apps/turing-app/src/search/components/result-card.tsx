@@ -1,6 +1,7 @@
 import { BadgeColorful } from "@/components/badge-colorful";
 import { Button } from "@/components/ui/button";
 import type { ResolvedDocument, TurDocument } from "@viglet/turing-react-sdk";
+import { useTuringClickTracking } from "@viglet/turing-react-sdk";
 import { IconBraces, IconCalendar, IconExternalLink, IconPhoto } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,16 +11,28 @@ interface ResultCardProps {
   document: ResolvedDocument;
   raw: TurDocument;
   siteName: string;
+  /** 1-based rank of the result within the page; powers click-position metrics. */
+  position: number;
   defaultImageField?: string;
   onNavigate: (href: string) => void;
   onViewJson: (doc: Record<string, unknown>) => void;
 }
 
-export function ResultCard({ document: doc, raw, siteName, defaultImageField, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
+function resolveDocumentId(doc: ResolvedDocument, raw: TurDocument): string {
+  const fieldId = raw.fields?.id;
+  return doc.url || (fieldId != null ? String(fieldId) : "") || doc.title || "";
+}
+
+export function ResultCard({ document: doc, raw, siteName, position, defaultImageField, onNavigate, onViewJson }: Readonly<ResultCardProps>) {
   const { t, i18n } = useTranslation();
+  const { trackClick } = useTuringClickTracking();
   const [imgError, setImgError] = useState(false);
 
   if (!doc.url) return null;
+
+  const handleResultClick = () => {
+    trackClick(resolveDocumentId(doc, raw), position);
+  };
 
   const isInternal = doc.url.startsWith("/") && !doc.url.startsWith("//");
   const rawImage = doc.image || (defaultImageField && raw.fields?.[defaultImageField] as string) || "";
@@ -61,12 +74,14 @@ export function ResultCard({ document: doc, raw, siteName, defaultImageField, on
             {isInternal ? (
               <NavLink
                 to={doc.url}
+                onClick={handleResultClick}
                 className="text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 dangerouslySetInnerHTML={{ __html: doc.title || doc.url }}
               />
             ) : (
               <a
                 href={doc.url}
+                onClick={handleResultClick}
                 className="text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1"
                 target="_blank"
                 rel="noopener noreferrer"

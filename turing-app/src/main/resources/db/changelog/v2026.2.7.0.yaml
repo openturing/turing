@@ -1,0 +1,74 @@
+databaseChangeLog:
+  # Click telemetry — companion to sn_site_metric_access. Each row records that
+  # a user, after issuing a search, opened a specific result. Combined with the
+  # access table this enables CTR analysis per term/site/locale and surfaces
+  # relevance gaps (terms with results that nobody clicks).
+  #
+  # Idempotent: gates on table existence so re-runs against databases that
+  # already migrated are no-ops.
+
+  - changeSet:
+      id: v2026.2.7.0-create-sn-site-metric-click-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_metric_click
+      changes:
+        - createTable:
+            tableName: sn_site_metric_click
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: accessDate
+                  type: timestamp
+              - column:
+                  name: userId
+                  type: VARCHAR(50)
+              - column:
+                  name: term
+                  type: VARCHAR(255)
+              - column:
+                  name: sanatizedTerm
+                  type: VARCHAR(255)
+              - column:
+                  name: language
+                  type: VARCHAR(20)
+              - column:
+                  name: documentId
+                  type: VARCHAR(255)
+              - column:
+                  name: position
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sn_site_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_metric_click
+            baseColumnNames: sn_site_id
+            referencedTableName: sn_site
+            referencedColumnNames: id
+            constraintName: fk_sn_site_metric_click_site
+        - createIndex:
+            indexName: idx_sn_site_metric_click_term
+            tableName: sn_site_metric_click
+            columns:
+              - column:
+                  name: sanatizedTerm
+        - createIndex:
+            indexName: idx_sn_site_metric_click_access_date
+            tableName: sn_site_metric_click
+            columns:
+              - column:
+                  name: accessDate
