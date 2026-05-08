@@ -50,6 +50,8 @@ import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.commons.utils.TurCommonsUtils;
 import com.viglet.turing.domain.sn.TurSNSiteMetricAccessRepositoryPort;
 import com.viglet.turing.domain.sn.TurSNSiteMetricAccessTermDomain;
+import com.viglet.turing.observability.TurMeterNames;
+import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.dto.sn.field.TurSNSiteFieldExtDto;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -95,6 +97,7 @@ public class TurSNSearchProcess {
         private final TurSNPaginationBuilder paginationBuilder;
         private final TurSNDocumentResponse documentResponse;
         private final TurSNQueryContextBuilder queryContextBuilder;
+        private final TurSearchPipelineObservation pipelineObservation;
 
         public TurSNSearchProcess(TurSNSiteSearchSnapshotService snapshotService,
                         TurSolrInstanceProcess turSolrInstanceProcess,
@@ -108,7 +111,8 @@ public class TurSNSearchProcess {
                         TurSNFacetRenderer facetRenderer,
                         TurSNPaginationBuilder paginationBuilder,
                         TurSNDocumentResponse documentResponse,
-                        TurSNQueryContextBuilder queryContextBuilder) {
+                        TurSNQueryContextBuilder queryContextBuilder,
+                        TurSearchPipelineObservation pipelineObservation) {
                 this.snapshotService = snapshotService;
                 this.turSolrInstanceProcess = turSolrInstanceProcess;
                 this.turSNSpotlightProcess = turSNSpotlightProcess;
@@ -122,6 +126,7 @@ public class TurSNSearchProcess {
                 this.paginationBuilder = paginationBuilder;
                 this.documentResponse = documentResponse;
                 this.queryContextBuilder = queryContextBuilder;
+                this.pipelineObservation = pipelineObservation;
         }
 
         public Optional<TurSNSite> getSNSite(String siteName) {
@@ -156,23 +161,28 @@ public class TurSNSearchProcess {
         }
 
         public TurSNSiteSearchBean search(TurSNSiteSearchContext context) {
-                return snapshotService.getSnapshot(context.getSiteName(), context.getLocale())
-                                .map(snap -> {
-                                        TurSearchEnginePlugin plugin = searchEnginePluginFactory
-                                                        .getPlugin(snap.pluginType());
-                                        return plugin.retrieveSearchResults(context)
-                                                        .map(turSEResults -> {
-                                                                TurSolrInstance solrInstance = turSolrInstanceProcess
-                                                                                .initSolrInstance(
-                                                                                                context.getSiteName(),
-                                                                                                context.getLocale())
-                                                                                .orElse(null);
-                                                                return searchResponse(context, snap,
-                                                                                solrInstance, turSEResults);
-                                                        })
-                                                        .orElse(new TurSNSiteSearchBean());
-                                })
-                                .orElse(new TurSNSiteSearchBean());
+                return pipelineObservation.record(TurMeterNames.STAGE_SEARCH_TOTAL,
+                                () -> searchInternal(context));
+        }
+
+        private TurSNSiteSearchBean searchInternal(TurSNSiteSearchContext context) {
+                Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotService
+                                .getSnapshot(context.getSiteName(), context.getLocale());
+                if (snapOpt.isEmpty()) {
+                        return new TurSNSiteSearchBean();
+                }
+                TurSNSiteSearchSnapshot snap = snapOpt.get();
+                TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPlugin(snap.pluginType());
+                Optional<TurSEResults> resultsOpt = plugin.retrieveSearchResults(context);
+                if (resultsOpt.isEmpty()) {
+                        return new TurSNSiteSearchBean();
+                }
+                TurSEResults turSEResults = resultsOpt.get();
+                TurSolrInstance solrInstance = turSolrInstanceProcess
+                                .initSolrInstance(context.getSiteName(), context.getLocale())
+                                .orElse(null);
+                return pipelineObservation.record(TurMeterNames.STAGE_SEARCH_RESPONSE,
+                                () -> searchResponse(context, snap, solrInstance, turSEResults));
         }
 
         public List<Object> searchList(TurSNSiteSearchContext context) {
@@ -214,10 +224,9 @@ public class TurSNSearchProcess {
                 if (turSolrQueryBuilder.hasGroup(context.getTurSEParameters())) {
                         return getSearchBeanForGroup(context, snap, turSolrInstance, turSEResults,
                                         facetMap);
-                } else {
-                        return getSearchBeanForResults(context, snap, turSolrInstance, turSEResults,
-                                        facetMap);
                 }
+                return getSearchBeanForResults(context, snap, turSolrInstance, turSEResults,
+                                facetMap);
         }
 
         @NotNull
@@ -381,16 +390,23 @@ public class TurSNSearchProcess {
         private TurSNSiteSearchWidgetBean responseWidget(TurSNSiteSearchContext context,
                         TurSNSiteSearchSnapshot snap,
                         Map<String, TurSNSiteFieldExtDto> facetMap, TurSEResults turSEResults) {
+                return pipelineObservation.record(TurMeterNames.STAGE_WIDGET_BUILD,
+                                () -> buildWidget(context, snap, facetMap, turSEResults));
+        }
+
+        private TurSNSiteSearchWidgetBean buildWidget(TurSNSiteSearchContext context,
+                        TurSNSiteSearchSnapshot snap,
+                        Map<String, TurSNSiteFieldExtDto> facetMap, TurSEResults turSEResults) {
                 TurSNSite turSNSite = snap.site();
                 List<String> facetsInFilterQueries = requestFilterQuery(context.getTurSEParameters()
                                 .getTurSNFilterParams().getDefaultValues())
                                 .getFacetsInFilterQueries();
+                List<String> facetFieldsInFilterQuery = getFacetFieldsInFilterQuery(context, turSNSite);
                 return new TurSNSiteSearchWidgetBean()
                                 .setFacet(facetRenderer.responseFacet(context, turSNSite,
                                                 facetsInFilterQueries, facetMap, turSEResults))
                                 .setSecondaryFacet(facetRenderer.responseSecondaryFacet(context,
-                                                turSNSite, facetsInFilterQueries, facetMap,
-                                                turSEResults))
+                                                turSNSite, facetsInFilterQueries, facetMap, turSEResults))
                                 .setFacetToRemove(facetRenderer.responseFacetToRemove(context, turSNSite))
                                 .setSimilar(responseMLT(turSNSite, turSEResults))
                                 .setSpellCheck(turSEResults.getSpellCheck() != null
@@ -399,9 +415,10 @@ public class TurSNSearchProcess {
                                 .setIcon(turSNSite.getIcon())
                                 .setLocales(responseLocales(snap, context.getUri()))
                                 .setSpotlights(responseSpotlights(context, turSNSite))
-                                .setCleanUpFacets(responseCleanUpFacet(context, turSNSite))
-                                .setSelectedFilterQueries(
-                                                responseFieldQueriesFromFacets(context, turSNSite));
+                                .setCleanUpFacets(TurSNUtils.removeFilterQueryByFieldNames(context.getUri(),
+                                                facetFieldsInFilterQuery).toString())
+                                .setSelectedFilterQueries(TurSNUtils.filterQueryByFieldNames(context.getUri(),
+                                                facetFieldsInFilterQuery));
         }
 
         private List<TurSNSiteSpotlightDocumentBean> responseSpotlights(
@@ -474,23 +491,10 @@ public class TurSNSearchProcess {
                                 && !turSEResults.getSimilarResults().isEmpty();
         }
 
-        private String responseCleanUpFacet(TurSNSiteSearchContext context, TurSNSite turSNSite) {
-                return TurSNUtils
-                                .removeFilterQueryByFieldNames(context.getUri(),
-                                                getFacetFieldsInFilterQuery(context, turSNSite))
-                                .toString();
-        }
-
         private List<String> getFacetFieldsInFilterQuery(TurSNSiteSearchContext context,
                         TurSNSite turSNSite) {
                 return turSolrQueryBuilder.getFacetFieldsInFilterQuery(new TurSNFacetTypeContext(null,
                                 turSNSite, context.getTurSEParameters().getTurSNFilterParams()));
-        }
-
-        private List<String> responseFieldQueriesFromFacets(TurSNSiteSearchContext context,
-                        TurSNSite turSNSite) {
-                return TurSNUtils.filterQueryByFieldNames(context.getUri(),
-                                getFacetFieldsInFilterQuery(context, turSNSite));
         }
 
         private URI changeGroupURIForPagination(URI uri, String fieldName) {

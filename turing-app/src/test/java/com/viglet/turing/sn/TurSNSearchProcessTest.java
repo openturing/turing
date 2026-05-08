@@ -145,7 +145,8 @@ class TurSNSearchProcessTest {
                                 metricsEnabled, searchEnginePluginFactory, turSolrQueryBuilder,
                                 turSNFacetDefinitionFactory(), turSNFacetRenderer(),
                                 turSNPaginationBuilder(), turSNDocumentResponse(),
-                                turSNQueryContextBuilder());
+                                turSNQueryContextBuilder(),
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
         }
 
         private TurSNSiteSearchContext context(String query) {

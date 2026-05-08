@@ -83,6 +83,8 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressio
 import com.viglet.turing.sn.TurSNFieldType;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshot;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 import com.viglet.turing.sn.facet.TurSNCustomFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetDefinition;
 import com.viglet.turing.sn.facet.TurSNFacetMapForFilterQuery;
@@ -105,6 +107,7 @@ public class TurSolrQueryBuilder {
     private final TurSNRankingConditionRepository turSNRankingConditionRepository;
     private final TurSNTargetingRules turSNTargetingRules;
     private final TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
+    private final TurSNSiteSearchSnapshotService snapshotService;
 
     public TurSolrQueryBuilder(TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
@@ -112,7 +115,8 @@ public class TurSolrQueryBuilder {
             TurSNRankingExpressionRepository turSNRankingExpressionRepository,
             TurSNRankingConditionRepository turSNRankingConditionRepository,
             TurSNTargetingRules turSNTargetingRules,
-            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator) {
+            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator,
+            TurSNSiteSearchSnapshotService snapshotService) {
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
@@ -120,6 +124,7 @@ public class TurSolrQueryBuilder {
         this.turSNRankingConditionRepository = turSNRankingConditionRepository;
         this.turSNTargetingRules = turSNTargetingRules;
         this.turSNSearchRuleEvaluator = turSNSearchRuleEvaluator;
+        this.snapshotService = snapshotService;
     }
 
     @NotNull
@@ -660,17 +665,37 @@ public class TurSolrQueryBuilder {
     }
 
     public List<String> getFacetFieldsInFilterQuery(TurSNFacetTypeContext context) {
-        List<TurSNSiteFieldExt> enabledFacets = getEnabledFacets(context.getTurSNSite());
-        Set<String> enabledFacetNames = new HashSet<>(enabledFacets.stream()
-                .map(TurSNSiteFieldExt::getName).toList());
+        TurSNSite turSNSite = context.getTurSNSite();
+        Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
+        List<TurSNSiteFieldExt> enabledFacets = snapOpt
+                .map(snap -> getEnabledFacetsFromSnapshot(snap))
+                .orElseGet(() -> getEnabledFacets(turSNSite));
+        Set<String> enabledFacetNames = enabledFacets.stream()
+                .map(TurSNSiteFieldExt::getName)
+                .collect(Collectors.toCollection(HashSet::new));
 
-        List<TurSNSiteFieldExt> enabledFields = getEnabledFields(context.getTurSNSite());
-        turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(enabledFields).stream()
-                .map(TurSNSiteCustomFacet::getName)
-                .filter(StringUtils::hasText)
-                .forEach(enabledFacetNames::add);
+        if (snapOpt.isPresent()) {
+            snapOpt.get().customFacetsByFieldId().values().stream()
+                    .flatMap(List::stream)
+                    .map(TurSNSiteCustomFacet::getName)
+                    .filter(StringUtils::hasText)
+                    .forEach(enabledFacetNames::add);
+        } else {
+            List<TurSNSiteFieldExt> enabledFields = getEnabledFields(turSNSite);
+            turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(enabledFields).stream()
+                    .map(TurSNSiteCustomFacet::getName)
+                    .filter(StringUtils::hasText)
+                    .forEach(enabledFacetNames::add);
+        }
         return getFqFields(context.getTurSNFilterParams()).stream()
                 .filter(enabledFacetNames::contains).distinct().toList();
+    }
+
+    private List<TurSNSiteFieldExt> getEnabledFacetsFromSnapshot(TurSNSiteSearchSnapshot snap) {
+        return snap.enabledFields().stream()
+                .filter(field -> field.getFacet() == 1
+                        || snap.fieldIdsWithCustomFacets().contains(field.getId()))
+                .toList();
     }
 
     @NotNull
@@ -762,15 +787,31 @@ public class TurSolrQueryBuilder {
     }
 
     private List<TurSNSiteFieldExt> getEnabledFields(TurSNSite turSNSite) {
-        return turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(turSNSite, 1);
+        return snapshotForSite(turSNSite)
+                .map(TurSNSiteSearchSnapshot::enabledFields)
+                .orElseGet(() -> turSNSiteFieldExtRepository
+                        .findByTurSNSiteAndEnabled(turSNSite, 1));
+    }
+
+    private Optional<TurSNSiteSearchSnapshot> snapshotForSite(TurSNSite turSNSite) {
+        if (snapshotService == null || turSNSite == null || turSNSite.getName() == null) {
+            return Optional.empty();
+        }
+        return snapshotService.getSnapshot(turSNSite.getName(), null);
     }
 
     private List<TurSNSiteFieldExt> getEnabledFacets(TurSNSite turSNSite) {
-        List<TurSNSiteFieldExt> enabledFields = getEnabledFields(turSNSite);
-        Set<String> fieldIdsWithCustomFacets = turSNSiteCustomFacetRepository
-                .findByFieldExtsWithDetails(enabledFields).stream()
-                .map(cf -> cf.getTurSNSiteFieldExt().getId())
-                .collect(Collectors.toSet());
+        Optional<TurSNSiteSearchSnapshot> snapOpt = snapshotForSite(turSNSite);
+        List<TurSNSiteFieldExt> enabledFields = snapOpt
+                .map(TurSNSiteSearchSnapshot::enabledFields)
+                .orElseGet(() -> turSNSiteFieldExtRepository
+                        .findByTurSNSiteAndEnabled(turSNSite, 1));
+        Set<String> fieldIdsWithCustomFacets = snapOpt
+                .map(TurSNSiteSearchSnapshot::fieldIdsWithCustomFacets)
+                .orElseGet(() -> turSNSiteCustomFacetRepository
+                        .findByFieldExtsWithDetails(enabledFields).stream()
+                        .map(cf -> cf.getTurSNSiteFieldExt().getId())
+                        .collect(Collectors.toSet()));
         return enabledFields.stream()
                 .filter(field -> isFacetEnabled(field)
                         || fieldIdsWithCustomFacets.contains(field.getId()))

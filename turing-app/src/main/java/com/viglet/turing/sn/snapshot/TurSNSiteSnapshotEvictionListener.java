@@ -21,6 +21,9 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
+import com.viglet.turing.observability.TurMeterNames;
+import com.viglet.turing.observability.TurSearchPipelineObservation;
+
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
@@ -52,17 +55,23 @@ import jakarta.persistence.PostUpdate;
 public class TurSNSiteSnapshotEvictionListener {
 
     private static volatile CacheManager cacheManagerStatic;
+    private static volatile TurSearchPipelineObservation pipelineObservationStatic;
 
     private final CacheManager cacheManager;
+    private final TurSearchPipelineObservation pipelineObservation;
 
     public TurSNSiteSnapshotEvictionListener() {
         this.cacheManager = null;
+        this.pipelineObservation = null;
     }
 
     @Autowired
-    public TurSNSiteSnapshotEvictionListener(CacheManager cacheManager) {
+    public TurSNSiteSnapshotEvictionListener(CacheManager cacheManager,
+            TurSearchPipelineObservation pipelineObservation) {
         this.cacheManager = cacheManager;
+        this.pipelineObservation = pipelineObservation;
         TurSNSiteSnapshotEvictionListener.cacheManagerStatic = cacheManager;
+        TurSNSiteSnapshotEvictionListener.pipelineObservationStatic = pipelineObservation;
     }
 
     @PostPersist
@@ -76,6 +85,12 @@ public class TurSNSiteSnapshotEvictionListener {
         Cache cache = cm.getCache(TurSNSiteSearchSnapshotService.CACHE_NAME);
         if (cache != null) {
             cache.clear();
+            TurSearchPipelineObservation observation = pipelineObservation != null
+                    ? pipelineObservation
+                    : pipelineObservationStatic;
+            if (observation != null) {
+                observation.recordSnapshotOutcome(TurMeterNames.OUTCOME_EVICT);
+            }
         }
     }
 }

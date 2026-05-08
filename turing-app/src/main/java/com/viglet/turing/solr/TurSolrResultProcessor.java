@@ -35,6 +35,8 @@ import org.springframework.util.CollectionUtils;
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.field.TurSEFieldType;
 import com.viglet.turing.commons.se.similar.TurSESimilarResult;
+import com.viglet.turing.observability.TurMeterNames;
+import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -56,24 +58,35 @@ public class TurSolrResultProcessor {
         private final TurSNFieldProcess turSNFieldProcess;
         private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
         private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+        private final TurSearchPipelineObservation pipelineObservation;
 
         public TurSolrResultProcessor(TurSNFieldProcess turSNFieldProcess,
                         TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
-                        TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository) {
+                        TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
+                        TurSearchPipelineObservation pipelineObservation) {
                 this.turSNFieldProcess = turSNFieldProcess;
                 this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
                 this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
+                this.pipelineObservation = pipelineObservation;
         }
 
         public TurSEResults getResults(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
                         SolrQuery query, TurSolrQueryContext queryContext,
                         QueryResponse queryResponse,
                         TurSolrQueryBuilder turSolrQueryBuilder) {
+                return pipelineObservation.record(TurMeterNames.STAGE_RESULT_PROCESS,
+                                () -> buildResults(turSolrInstance, turSNSite, query, queryContext,
+                                                queryResponse, turSolrQueryBuilder));
+        }
+
+        private TurSEResults buildResults(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+                        SolrQuery query, TurSolrQueryContext queryContext,
+                        QueryResponse queryResponse,
+                        TurSolrQueryBuilder turSolrQueryBuilder) {
                 TurSEResults turSEResults = TurSEResults.builder().build();
                 turSEResultsParameters(queryContext.getTurSEParameters(), query, turSEResults, queryResponse);
                 processSEResultsFacet(turSNSite, turSEResults, queryResponse, queryContext.getFacetFieldExtList());
-                processResults(turSNSite, queryContext, turSEResults,
-                                queryResponse);
+                processResults(turSNSite, queryContext, turSEResults, queryResponse);
                 processGroups(query, turSolrInstance, turSNSite, queryContext, turSEResults, queryResponse,
                                 turSolrQueryBuilder);
                 turSEResults.setSpellCheck(queryContext.getSpellCheckResult());
@@ -256,13 +269,17 @@ public class TurSolrResultProcessor {
                         TurSNSite turSNSite, TurSolrQueryContext queryContext,
                         QueryResponse queryResponse, List<TurSESimilarResult> similarResults) {
                 List<TurSEResult> results = new ArrayList<>();
-                Optional.ofNullable(solrDocumentList).ifPresent(documents -> documents.forEach(document -> {
+                if (solrDocumentList == null || solrDocumentList.isEmpty()) {
+                        return results;
+                }
+                Map<String, TurSNSiteFieldExt> fieldExtMap = getFieldExtMap(turSNSite);
+                Map<String, Object> requiredFields = getRequiredFields(turSNSite);
+                solrDocumentList.forEach(document -> {
                         processSEResultsMLT(turSNSite, queryContext.getMltFieldExtList(), similarResults, document,
                                         queryResponse);
-                        results.add(createTurSEResult(getFieldExtMap(turSNSite), getRequiredFields(turSNSite),
-                                        document,
+                        results.add(createTurSEResult(fieldExtMap, requiredFields, document,
                                         getHL(turSNSite, queryContext.getHlFieldExtList(), queryResponse, document)));
-                }));
+                });
                 return results;
         }
 
@@ -291,29 +308,35 @@ public class TurSolrResultProcessor {
 
         private void processSEResultsFacet(TurSNSite turSNSite, TurSEResults turSEResults,
                         QueryResponse queryResponse, List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
-                if (wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
-                        List<TurSEFacetResult> facetQueryResults = setFacetQueries(turSNSite,
-                                        queryResponse);
-                        List<TurSEFacetResult> facetRangeResults = setFacetRanges(queryResponse);
-                        List<TurSEFacetResult> facetResults = new ArrayList<>(facetQueryResults);
-                        facetResults.addAll(facetRangeResults);
-                        facetResults.addAll(setFacetFields(queryResponse, facetRangeResults));
-                        facetResults.forEach(facet -> {
-                                turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId())
-                                                .ifPresent(fields -> fields.forEach(fieldExtension -> facetResults
-                                                                .stream()
-                                                                .filter(facetResult -> fieldExtension
-                                                                                .getFacetPosition() != null
-                                                                                && facetResult.getFacet().equals(
-                                                                                                fieldExtension.getName()))
-                                                                .findFirst().ifPresent(facetResult -> facetResult
-                                                                                .setFacetPosition(fieldExtension
-                                                                                                .getFacetPosition()))));
-                                turSEResults.setFacetResults(facetResults.stream()
-                                                .sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition))
-                                                .toList());
-                        });
+                if (!wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
+                        return;
                 }
+                List<TurSEFacetResult> facetQueryResults = setFacetQueries(turSNSite, queryResponse);
+                List<TurSEFacetResult> facetRangeResults = setFacetRanges(queryResponse);
+                List<TurSEFacetResult> facetResults = new ArrayList<>(facetQueryResults);
+                facetResults.addAll(facetRangeResults);
+                facetResults.addAll(setFacetFields(queryResponse, facetRangeResults));
+                if (facetResults.isEmpty()) {
+                        return;
+                }
+                turSNFieldProcess.getTurSNSiteFieldOrdering(turSNSite.getId()).ifPresent(fields -> {
+                        Map<String, Integer> positionByName = fields.stream()
+                                        .filter(f -> f.getFacetPosition() != null)
+                                        .collect(Collectors.toMap(
+                                                        TurSNSiteFieldExt::getName,
+                                                        TurSNSiteFieldExt::getFacetPosition,
+                                                        (a, b) -> a));
+                        facetResults.forEach(fr -> {
+                                Integer pos = positionByName.get(fr.getFacet());
+                                if (pos != null) {
+                                        fr.setFacetPosition(pos);
+                                }
+                        });
+                });
+                turSEResults.setFacetResults(facetResults.stream()
+                                .sorted(Comparator.comparing(TurSEFacetResult::getFacetPosition,
+                                                Comparator.nullsLast(Comparator.naturalOrder())))
+                                .toList());
         }
 
         private List<TurSEFacetResult> setFacetQueries(TurSNSite turSNSite,

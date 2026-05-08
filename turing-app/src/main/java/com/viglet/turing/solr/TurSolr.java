@@ -45,10 +45,12 @@ import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingCondition
 import com.viglet.turing.persistence.repository.sn.ranking.TurSNRankingExpressionRepository;
 import com.viglet.turing.se.result.TurSEResult;
 import com.viglet.turing.se.result.TurSEResults;
+import com.viglet.turing.observability.TurSearchPipelineObservation;
 import com.viglet.turing.sn.TurSNFieldProcess;
 import com.viglet.turing.sn.TurSNUtils;
 import com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator;
 import com.viglet.turing.sn.field.TurSNSiteFieldService;
+import com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService;
 import com.viglet.turing.sn.tr.TurSNTargetingRules;
 
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +76,9 @@ public class TurSolr {
             TurSNRankingConditionRepository turSNRankingConditionRepository,
             TurSNSiteRepository turSNSiteRepository, TurSNFieldProcess turSNFieldProcess,
             TurDecimalFieldNormalizer turDecimalFieldNormalizer,
-            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator) {
+            TurSNSearchRuleEvaluator turSNSearchRuleEvaluator,
+            TurSNSiteSearchSnapshotService snapshotService,
+            TurSearchPipelineObservation pipelineObservation) {
         this.isCommitEnabled = isCommitEnabled;
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSolrDocumentHandler = new TurSolrDocumentHandler(commitWithin, turSNSiteFieldUtils,
@@ -82,9 +86,9 @@ public class TurSolr {
         this.turSolrQueryBuilder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                 turSNSiteCustomFacetRepository, turSNSiteCustomSortRepository,
                 turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules,
-                turSNSearchRuleEvaluator);
+                turSNSearchRuleEvaluator, snapshotService);
         this.turSolrResultProcessor = new TurSolrResultProcessor(turSNFieldProcess,
-                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository, pipelineObservation);
     }
 
     public String dslQuery(TurSolrInstance turSolrInstance, String jsonQuery) {
@@ -243,8 +247,8 @@ public class TurSolr {
 
         return executeSolrQuery(turSolrInstance, query)
                 .map(queryResponse -> turSolrResultProcessor.getResults(turSolrInstance, turSNSite,
-                        query, queryContext, getQueryResponseModified(turSolrInstance, turSNSite, query, queryResponse,
-                                isQueryToRenderFacet),
+                        query, queryContext, getQueryResponseModified(turSolrInstance, turSNSite, query,
+                                queryResponse, isQueryToRenderFacet),
                         turSolrQueryBuilder));
     }
 

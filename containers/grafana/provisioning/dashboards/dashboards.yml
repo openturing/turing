@@ -1,0 +1,16 @@
+# Dashboard provider — loads any *.json from /var/lib/grafana/dashboards
+# at startup and keeps them in sync (5s refresh) so dashboard edits in the
+# image rebuild reflect immediately on container restart.
+apiVersion: 1
+
+providers:
+  - name: turing
+    orgId: 1
+    folder: Turing
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 5
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

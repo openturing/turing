@@ -1,0 +1,41 @@
+# Prometheus scrape configuration for local development.
+#
+# Scrapes the Turing ES Spring Boot Actuator endpoint at /actuator/prometheus.
+# The Turing process is expected to be running on the host machine (typical
+# `mvn spring-boot:run` workflow) — `host.docker.internal` resolves to the
+# Docker Desktop host on Windows/macOS. On Linux, ensure docker-compose adds
+# `extra_hosts: ["host.docker.internal:host-gateway"]` to the prometheus service.
+#
+# Useful queries once metrics are flowing:
+#   histogram_quantile(0.95,
+#     sum by (le, stage) (rate(turing_search_pipeline_seconds_bucket[5m])))
+#   rate(turing_search_snapshot_cache_total{outcome="hit"}[5m])
+#     / on() rate(turing_search_snapshot_cache_total{outcome=~"hit|miss"}[5m])
+#   rate(turing_search_calls_seconds_count[5m]) by (engine, status)
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels:
+    env: dev
+    cluster: turing-local
+
+scrape_configs:
+  - job_name: turing-es
+    metrics_path: /actuator/prometheus
+    scheme: http
+    static_configs:
+      - targets:
+          - host.docker.internal:2700
+        labels:
+          application: turing-es
+          instance: turing-dev
+
+  # Prometheus self-scrape — handy for sanity checking the container itself.
+  - job_name: prometheus
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - localhost:9090
+        labels:
+          application: prometheus

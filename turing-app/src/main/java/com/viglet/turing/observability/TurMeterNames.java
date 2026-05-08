@@ -38,6 +38,17 @@ public final class TurMeterNames {
     /** Timer for search engine plugin invocations. Tags: engine, operation, status. */
     public static final String SEARCH_CALLS = "turing.search.calls";
 
+    /**
+     * Timer for SN search pipeline stages — instruments the Java work around the
+     * Solr/SE call (snapshot lookup, query building, result processing, widget
+     * assembly). Tags: stage, status. Combined with {@link #SEARCH_CALLS} this
+     * splits a request into the parts that can drive different optimizations.
+     */
+    public static final String SEARCH_PIPELINE = "turing.search.pipeline";
+
+    /** Counter for SN search snapshot cache outcomes. Tags: outcome (hit|miss|evict). */
+    public static final String SEARCH_SNAPSHOT_CACHE = "turing.search.snapshot.cache";
+
     // ---- Tag keys --------------------------------------------------------
 
     public static final String TAG_PROVIDER = "provider";
@@ -46,6 +57,8 @@ public final class TurMeterNames {
     public static final String TAG_STATUS = "status";
     public static final String TAG_DIRECTION = "direction";
     public static final String TAG_ENGINE = "engine";
+    public static final String TAG_STAGE = "stage";
+    public static final String TAG_OUTCOME = "outcome";
 
     // ---- Tag values ------------------------------------------------------
 
@@ -56,6 +69,18 @@ public final class TurMeterNames {
     public static final String STATUS_ERROR = "error";
     public static final String DIRECTION_IN = "in";
     public static final String DIRECTION_OUT = "out";
+
+    /** Pipeline stages — names appear as the {@code stage} tag value. */
+    public static final String STAGE_SEARCH_TOTAL = "search.total";
+    public static final String STAGE_SNAPSHOT_BUILD = "snapshot.build";
+    public static final String STAGE_SEARCH_RESPONSE = "search.response";
+    public static final String STAGE_RESULT_PROCESS = "result.process";
+    public static final String STAGE_WIDGET_BUILD = "widget.build";
+
+    /** Snapshot cache outcomes — appear as {@code outcome} tag values. */
+    public static final String OUTCOME_HIT = "hit";
+    public static final String OUTCOME_MISS = "miss";
+    public static final String OUTCOME_EVICT = "evict";
 
     private TurMeterNames() {}
 }

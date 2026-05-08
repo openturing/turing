@@ -100,12 +100,15 @@ class TurSolrQueryBuilderTest {
         @Mock
         private com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
 
+        @Mock
+        private com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService snapshotService;
+
         private TurSolrQueryBuilder builder() {
                 return new TurSolrQueryBuilder(turSNSiteFieldExtRepository,
                                 turSNSiteCustomFacetRepository,
                                 turSNSiteCustomSortRepository,
                                 turSNRankingExpressionRepository, turSNRankingConditionRepository,
-                                turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
         }
 
         private TurSNSiteSearchContext contextFrom(TurSEParameters parameters,
@@ -119,7 +122,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsPresent() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setGroup("group");
                 TurSEParameters parameters = new TurSEParameters(
@@ -131,7 +134,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testHasGroupWhenGroupIsMissing() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 TurSEParameters parameters = new TurSEParameters(
                                 searchParams);
@@ -142,7 +145,7 @@ class TurSolrQueryBuilderTest {
         @Test
         void testGetFqFieldsExtractsKeys() {
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
                 TurSNFilterParams params = TurSNFilterParams.builder()
                                 .defaultValues(List.of("category:books", "type:article"))
                                 .and(List.of("author:john"))
@@ -184,7 +187,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(categoryFacet, typeFacet));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
                 TurSNFacetTypeContext context = new TurSNFacetTypeContext(site, params);
 
                 List<String> fields = builder.getFacetFieldsInFilterQuery(context);
@@ -251,7 +254,7 @@ class TurSolrQueryBuilderTest {
                                 .thenReturn(List.of(mltField));
 
                 TurSolrQueryBuilder builder = new TurSolrQueryBuilder(turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
-                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator);
+                                turSNSiteCustomSortRepository, turSNRankingExpressionRepository, turSNRankingConditionRepository, turSNTargetingRules, turSNSearchRuleEvaluator, snapshotService);
                 SolrQuery query = new SolrQuery();
 
                 List<TurSNSiteFieldExt> result = builder.prepareQueryMLT(site, query);

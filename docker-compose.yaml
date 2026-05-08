@@ -57,7 +57,6 @@ services:
     volumes:
       - vol-turing-models:/turing/models
       - vol-turing-store:/turing/store
-      - vol-turing-gradle:/root/.gradle
     depends_on:
       - turing-nginx
       - turing-mariadb
@@ -74,10 +73,36 @@ services:
 #     SERVER_SSL_KEY_STORE_TYPE: PKCS12
 #     SERVER_SSL_KEY_ALIAS: turing
 #     SERVER_SSL_ENABLED: true
+  turing-prometheus:
+    container_name: turing-prometheus
+    build: ./containers/prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - vol-prometheus:/prometheus
+    extra_hosts:
+      # Resolves to the Docker host so Prometheus can scrape a Turing process
+      # running on the host (e.g. `mvn spring-boot:run`). Docker Desktop maps
+      # host.docker.internal automatically; this line is required on Linux.
+      # If you scrape the `turing` service in this same compose, edit
+      # containers/prometheus/prometheus.yml to target `turing:2700` instead.
+      - "host.docker.internal:host-gateway"
+  turing-grafana:
+    container_name: turing-grafana
+    build: ./containers/grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - vol-grafana:/var/lib/grafana
+    depends_on:
+      - turing-prometheus
 volumes:
   vol-solr:
   vol-zk:
   vol-turing-models:
   vol-turing-store:
-  vol-turing-gradle:
   vol-mariadb:
+  vol-prometheus:
+  vol-grafana:

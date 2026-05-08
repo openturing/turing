@@ -86,7 +86,8 @@ class TurSolrResultProcessorTest {
         @SuppressWarnings("unchecked")
         void testSetFacetQueriesOrdersCustomFacetItemsByPosition() throws Exception {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 TurSNSiteCustomFacetItem itemPosition3 = TurSNSiteCustomFacetItem.builder()
@@ -143,7 +144,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultAppliesHighlightAndRequiredFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
                                 .name("title")
                                 .type(TurSEFieldType.TEXT)
@@ -168,7 +170,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersFromResults() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(10);
@@ -200,7 +203,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersFromGroupResponse() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(5);
@@ -231,7 +235,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetFieldExtMapAndRequiredFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 TurSNSiteFieldExt f1 = TurSNSiteFieldExt.builder().name("title").required(0).build();
@@ -257,7 +262,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetHLAndIsHLBranches() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSite site = new TurSNSite();
                 site.setHl(1);
@@ -284,7 +290,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetResultsProcessesMltAndGroups() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
                 site.setMlt(1);
                 site.setFacet(0);
@@ -351,7 +358,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultWithNullHighlightDoesNotFail() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
                                 .name("title")
                                 .type(TurSEFieldType.TEXT)
@@ -372,7 +380,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultWithEmptyHighlightDoesNotReplace() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt titleField = TurSNSiteFieldExt.builder()
                                 .name("title")
                                 .type(TurSEFieldType.TEXT)
@@ -393,7 +402,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultDoesNotHighlightNonTextFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt intField = TurSNSiteFieldExt.builder()
                                 .name("count")
                                 .type(TurSEFieldType.INT)
@@ -445,7 +455,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersWithZeroResults() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(10);
@@ -473,7 +484,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetFieldExtMapHandlesDuplicateFieldNames() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 TurSNSiteFieldExt f1 = TurSNSiteFieldExt.builder().name("title").type(TurSEFieldType.TEXT).build();
@@ -492,7 +504,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetRequiredFieldsReturnsEmptyMapWhenNoneRequired() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndRequiredAndEnabled(site, 1, 1))
@@ -505,7 +518,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetHLReturnsNullWhenHighlightingMapIsNull() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSite site = new TurSNSite();
                 site.setHl(1);
@@ -524,7 +538,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultHighlightsStringField() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt nameField = TurSNSiteFieldExt.builder()
                                 .name("name")
                                 .type(TurSEFieldType.STRING)
@@ -543,7 +558,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultDoesNotHighlightBoolField() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt boolField = TurSNSiteFieldExt.builder()
                                 .name("active")
                                 .type(TurSEFieldType.BOOL)
@@ -561,7 +577,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultDoesNotHighlightDateField() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSiteFieldExt dateField = TurSNSiteFieldExt.builder()
                                 .name("published")
                                 .type(TurSEFieldType.DATE)
@@ -579,7 +596,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultAddsMultipleRequiredFields() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 Map<String, TurSNSiteFieldExt> fieldExtMap = Collections.emptyMap();
                 Map<String, Object> requiredFields = new HashMap<>();
@@ -598,7 +616,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testCreateTurSEResultDoesNotOverrideExistingWithRequired() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 Map<String, Object> requiredFields = Map.of("type", "default-type");
                 SolrDocument document = new SolrDocument();
@@ -611,7 +630,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testTurSEResultsParametersWithNullResultsAndNullGroups() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 TurSNSearchParams searchParams = new TurSNSearchParams();
                 searchParams.setRows(10);
@@ -637,7 +657,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetResultsWithNoMltAndNoFacet() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
                 site.setMlt(0);
                 site.setFacet(0);
@@ -747,7 +768,8 @@ class TurSolrResultProcessorTest {
 
                 boolean result = (boolean) method.invoke(
                                 new TurSolrResultProcessor(turSNFieldProcess,
-                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                                new com.viglet.turing.observability.TurSearchPipelineObservation(null)),
                                 site, List.of(field));
 
                 assertThat(result).isFalse();
@@ -766,7 +788,8 @@ class TurSolrResultProcessorTest {
 
                 boolean result = (boolean) method.invoke(
                                 new TurSolrResultProcessor(turSNFieldProcess,
-                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                                new com.viglet.turing.observability.TurSearchPipelineObservation(null)),
                                 site, List.of(field));
 
                 assertThat(result).isFalse();
@@ -784,7 +807,8 @@ class TurSolrResultProcessorTest {
 
                 boolean result = (boolean) method.invoke(
                                 new TurSolrResultProcessor(turSNFieldProcess,
-                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                                new com.viglet.turing.observability.TurSearchPipelineObservation(null)),
                                 site, Collections.emptyList());
 
                 assertThat(result).isFalse();
@@ -803,7 +827,8 @@ class TurSolrResultProcessorTest {
 
                 boolean result = (boolean) method.invoke(
                                 new TurSolrResultProcessor(turSNFieldProcess,
-                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository),
+                                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                                new com.viglet.turing.observability.TurSearchPipelineObservation(null)),
                                 site, List.of(field));
 
                 assertThat(result).isTrue();
@@ -816,7 +841,8 @@ class TurSolrResultProcessorTest {
                 method.setAccessible(true);
 
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
 
                 assertThat((int) method.invoke(processor, 0L, 10)).isZero();
                 assertThat((int) method.invoke(processor, 1L, 10)).isEqualTo(1);
@@ -831,7 +857,8 @@ class TurSolrResultProcessorTest {
         @SuppressWarnings("unchecked")
         void testSetFacetQueriesReturnsEmptyWhenFacetQueryIsNull() throws Exception {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 QueryResponse queryResponse = mock(QueryResponse.class);
@@ -850,7 +877,8 @@ class TurSolrResultProcessorTest {
         @SuppressWarnings("unchecked")
         void testSetFacetQueriesReturnsEmptyWhenFacetQueryMapIsEmpty() throws Exception {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 QueryResponse queryResponse = mock(QueryResponse.class);
@@ -869,7 +897,8 @@ class TurSolrResultProcessorTest {
         @SuppressWarnings("unchecked")
         void testSetFacetQueriesHandlesUnmatchedCustomFacetsAsFallback() throws Exception {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
 
                 when(turSNSiteFieldExtRepository.findByTurSNSiteAndEnabled(site, 1))
@@ -1000,7 +1029,8 @@ class TurSolrResultProcessorTest {
         @Test
         void testGetResultsEnrichesGroupsWithWildcardResponse() {
                 TurSolrResultProcessor processor = new TurSolrResultProcessor(turSNFieldProcess,
-                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository);
+                                turSNSiteFieldExtRepository, turSNSiteCustomFacetRepository,
+                                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
                 TurSNSite site = new TurSNSite();
                 site.setMlt(0);
                 site.setFacet(0);

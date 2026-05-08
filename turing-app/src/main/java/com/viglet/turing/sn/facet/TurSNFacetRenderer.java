@@ -140,12 +140,13 @@ public class TurSNFacetRenderer {
         }
         TurSNFacetTypeContext typeContext = new TurSNFacetTypeContext(null, turSNSite,
                 context.getTurSEParameters().getTurSNFilterParams());
+        List<String> facetFieldsInFilterQuery = turSolrQueryBuilder
+                .getFacetFieldsInFilterQuery(typeContext);
         List<TurSNSiteSearchFacetItemBean> removeItems = new ArrayList<>();
         context.getTurSEParameters().getTurSNFilterParams().getDefaultValues()
                 .forEach(facetToRemove -> TurCommonsUtils.getKeyValueFromColon(facetToRemove)
                         .ifPresent(f -> {
-                            if (turSolrQueryBuilder.getFacetFieldsInFilterQuery(typeContext)
-                                    .contains(f.getKey())) {
+                            if (facetFieldsInFilterQuery.contains(f.getKey())) {
                                 removeItems.add(new TurSNSiteSearchFacetItemBean()
                                         .setLabel(f.getValue().replace("\"", ""))
                                         .setLink(TurSNUtils.removeFilterQuery(context.getUri(),

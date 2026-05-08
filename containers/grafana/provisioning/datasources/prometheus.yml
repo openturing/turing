@@ -1,0 +1,15 @@
+# Datasource provisioning loaded by Grafana on startup. Targets the Prometheus
+# instance defined in docker-compose (service name `turing-prometheus`).
+# Adjust the URL if running Grafana standalone outside compose.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: turing-prometheus
+    type: prometheus
+    access: proxy
+    url: http://turing-prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 5s

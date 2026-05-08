@@ -30,6 +30,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.observability.TurMeterNames;
+import com.viglet.turing.observability.TurSearchPipelineObservation;
+
 import com.viglet.turing.persistence.model.sn.TurSNSite;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacet;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
@@ -69,19 +72,22 @@ public class TurSNSiteSearchSnapshotService {
     private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteCustomSortRepository turSNSiteCustomSortRepository;
+    private final TurSearchPipelineObservation pipelineObservation;
 
     public TurSNSiteSearchSnapshotService(TurSNSiteRepository turSNSiteRepository,
             TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
             TurSNSiteFieldExtFacetRepository turSNSiteFieldExtFacetRepository,
             TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository,
             TurSNSiteLocaleRepository turSNSiteLocaleRepository,
-            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository) {
+            TurSNSiteCustomSortRepository turSNSiteCustomSortRepository,
+            TurSearchPipelineObservation pipelineObservation) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
         this.turSNSiteFieldExtFacetRepository = turSNSiteFieldExtFacetRepository;
         this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
         this.turSNSiteLocaleRepository = turSNSiteLocaleRepository;
         this.turSNSiteCustomSortRepository = turSNSiteCustomSortRepository;
+        this.pipelineObservation = pipelineObservation;
     }
 
     /**
@@ -92,8 +98,12 @@ public class TurSNSiteSearchSnapshotService {
     @Cacheable(value = CACHE_NAME,
             key = "T(com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService).cacheKey(#siteName, #locale)")
     public Optional<TurSNSiteSearchSnapshot> getSnapshot(String siteName, Locale locale) {
-        return turSNSiteRepository.findByNameIgnoreCase(siteName)
-                .map(site -> build(site, locale));
+        // Reaching this method means the cache lookup missed — Spring's @Cacheable
+        // proxy short-circuits hits before invoking the method.
+        pipelineObservation.recordSnapshotOutcome(TurMeterNames.OUTCOME_MISS);
+        return pipelineObservation.record(TurMeterNames.STAGE_SNAPSHOT_BUILD,
+                () -> turSNSiteRepository.findByNameIgnoreCase(siteName)
+                        .map(site -> build(site, locale)));
     }
 
     /**

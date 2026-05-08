@@ -109,6 +109,9 @@ class TurSolrTest {
     private com.viglet.turing.sn.searchrule.TurSNSearchRuleEvaluator turSNSearchRuleEvaluator;
 
     @Mock
+    private com.viglet.turing.sn.snapshot.TurSNSiteSearchSnapshotService snapshotService;
+
+    @Mock
     private HttpJdkSolrClient httpJdkSolrClient;
 
     @Mock
@@ -640,6 +643,8 @@ class TurSolrTest {
                 turSNSiteRepository,
                 turSNFieldProcess,
                 turDecimalFieldNormalizer,
-                turSNSearchRuleEvaluator);
+                turSNSearchRuleEvaluator,
+                snapshotService,
+                new com.viglet.turing.observability.TurSearchPipelineObservation(null));
     }
 }
