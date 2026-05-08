@@ -165,8 +165,8 @@
           "format": "table",
           "root_selector": "",
           "columns": [
-            { "selector": "bucket", "text": "agent", "type": "string" },
-            { "selector": "count",  "text": "count", "type": "number" }
+            { "selector": "bucketLabel", "text": "agent", "type": "string" },
+            { "selector": "count",       "text": "count", "type": "number" }
           ],
           "filters": [],
           "parser": "backend",
@@ -267,8 +267,8 @@
           "format": "table",
           "root_selector": "",
           "columns": [
-            { "selector": "bucket", "text": "persona", "type": "string" },
-            { "selector": "count",  "text": "count",   "type": "number" }
+            { "selector": "bucketLabel", "text": "persona", "type": "string" },
+            { "selector": "count",       "text": "count",   "type": "number" }
           ],
           "filters": [],
           "parser": "backend",
@@ -628,8 +628,8 @@
             { "selector": "sentiment",        "text": "sentiment",        "type": "string" },
             { "selector": "intentConfidence", "text": "intentConfidence", "type": "number" },
             { "selector": "goalSummary",      "text": "goalSummary",      "type": "string" },
-            { "selector": "agentId",          "text": "agentId",          "type": "string" },
-            { "selector": "personaId",        "text": "personaId",        "type": "string" },
+            { "selector": "agentTitle",       "text": "agent",            "type": "string" },
+            { "selector": "personaName",      "text": "persona",          "type": "string" },
             { "selector": "llmInstanceId",    "text": "llmInstanceId",    "type": "string" },
             { "selector": "locale",           "text": "locale",           "type": "string" },
             { "selector": "totalTurns",       "text": "totalTurns",       "type": "number" },
@@ -880,7 +880,7 @@
           "format": "table",
           "root_selector": "",
           "columns": [
-            { "selector": "bucket",           "text": "agent",            "type": "string" },
+            { "selector": "bucketLabel",      "text": "agent",            "type": "string" },
             { "selector": "sessions",         "text": "sessions",         "type": "number" },
             { "selector": "goalAchievedRate", "text": "goalAchievedRate", "type": "number" },
             { "selector": "negativeRate",     "text": "negativeRate",     "type": "number" },
@@ -963,7 +963,7 @@
           "format": "table",
           "root_selector": "",
           "columns": [
-            { "selector": "bucket",           "text": "persona",          "type": "string" },
+            { "selector": "bucketLabel",      "text": "persona",          "type": "string" },
             { "selector": "sessions",         "text": "sessions",         "type": "number" },
             { "selector": "goalAchievedRate", "text": "goalAchievedRate", "type": "number" },
             { "selector": "negativeRate",     "text": "negativeRate",     "type": "number" },

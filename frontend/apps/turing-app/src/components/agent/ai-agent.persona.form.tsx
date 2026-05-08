@@ -113,43 +113,48 @@ export const AIAgentPersonaForm: React.FC<Props> = ({ value }) => {
                   const isSelected = selectedIds.has(persona.id);
                   const isDefault = defaultId === persona.id;
                   return (
-                    <label
+                    // Outer container is a plain div, NOT a label — having
+                    // the "Set as default" button inside a label causes the
+                    // click to bubble and toggle the checkbox, which then
+                    // resets defaultId to null. The label only wraps the
+                    // checkbox + persona info (the things meant to toggle
+                    // selection); the default button stays a sibling.
+                    <div
                       key={persona.id}
-                      className={`flex items-center gap-4 rounded-lg border p-4 cursor-pointer transition-all ${isSelected
+                      className={`flex items-center gap-4 rounded-lg border p-4 transition-all ${isSelected
                         ? "border-violet-500/40 bg-violet-500/5 dark:border-violet-400/30 dark:bg-violet-500/10"
                         : "border-border hover:border-violet-500/20 hover:bg-accent/30"
                         }`}
                     >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) => toggle(persona.id, !!checked)}
-                      />
-                      <div className="flex flex-1 items-center gap-3 min-w-0">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${isSelected
-                          ? "bg-violet-500/15 dark:bg-violet-500/25"
-                          : "bg-muted"
-                          }`}>
-                          <IconSparkles className={`size-5 ${isSelected
-                            ? "text-violet-600 dark:text-violet-400"
-                            : "text-muted-foreground"
-                            }`} />
+                      <label className="flex flex-1 items-center gap-4 cursor-pointer min-w-0">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => toggle(persona.id, !!checked)}
+                        />
+                        <div className="flex flex-1 items-center gap-3 min-w-0">
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${isSelected
+                            ? "bg-violet-500/15 dark:bg-violet-500/25"
+                            : "bg-muted"
+                            }`}>
+                            <IconSparkles className={`size-5 ${isSelected
+                              ? "text-violet-600 dark:text-violet-400"
+                              : "text-muted-foreground"
+                              }`} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium truncate">{persona.name}</span>
+                            {persona.description && (
+                              <span className="text-xs text-muted-foreground truncate">{persona.description}</span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground/70 mt-0.5">
+                              {persona.tone ?? "—"} · v{persona.verbosity ?? 3} · {persona.languageStyle ?? "NEUTRAL"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium truncate">{persona.name}</span>
-                          {persona.description && (
-                            <span className="text-xs text-muted-foreground truncate">{persona.description}</span>
-                          )}
-                          <span className="text-[10px] text-muted-foreground/70 mt-0.5">
-                            {persona.tone ?? "—"} · v{persona.verbosity ?? 3} · {persona.languageStyle ?? "NEUTRAL"}
-                          </span>
-                        </div>
-                      </div>
+                      </label>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          pickDefault(persona.id);
-                        }}
+                        onClick={() => pickDefault(persona.id)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-semibold shrink-0 transition-all cursor-pointer ${isDefault
                           ? "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300"
                           : "bg-transparent text-muted-foreground border-border hover:border-amber-500/30 hover:text-amber-600"
@@ -164,7 +169,7 @@ export const AIAgentPersonaForm: React.FC<Props> = ({ value }) => {
                       {isSelected && !isDefault && (
                         <IconCheck className="size-4 text-violet-600 dark:text-violet-400 shrink-0" />
                       )}
-                    </label>
+                    </div>
                   );
                 })}
               </div>

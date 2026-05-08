@@ -11,7 +11,11 @@
 export interface TurChatAnalyticsSession {
   conversationId: string;
   agentId?: string | null;
+  /** Resolved agent display name — falls back to agentId when the agent was deleted. @since 2026.2.7 */
+  agentTitle?: string | null;
   personaId?: string | null;
+  /** Resolved persona display name — falls back to personaId when the persona was deleted. @since 2026.2.7 */
+  personaName?: string | null;
   llmInstanceId?: string | null;
   embeddingModelId?: string | null;
   storeInstanceId?: string | null;

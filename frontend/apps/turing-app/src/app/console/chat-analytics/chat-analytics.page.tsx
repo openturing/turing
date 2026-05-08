@@ -137,8 +137,8 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 <MetaRow label="Completed" value={formatTimestamp(data.session.completedAt)} />
                 <MetaRow label="Duration"  value={formatDuration(data.session.durationMs)} />
                 <MetaRow label="Outcome"   value={data.session.outcome} />
-                <MetaRow label="Agent"     value={data.session.agentId} />
-                <MetaRow label="Persona"   value={data.session.personaId} />
+                <MetaRow label="Agent"     value={data.session.agentTitle ?? data.session.agentId} />
+                <MetaRow label="Persona"   value={data.session.personaName ?? data.session.personaId} />
                 <MetaRow label="LLM"       value={data.session.llmInstanceId} />
                 <MetaRow label="Locale"    value={data.session.locale} />
                 <MetaRow label="User"      value={data.session.userId} />
@@ -264,8 +264,18 @@ function SessionRow({
           "—"
         )}
       </TableCell>
-      <TableCell className="font-mono text-xs">{row.agentId ?? "—"}</TableCell>
-      <TableCell className="font-mono text-xs">{row.personaId ?? "—"}</TableCell>
+      <TableCell
+        className="text-xs"
+        title={row.agentId ?? undefined}
+      >
+        {row.agentTitle ?? row.agentId ?? "—"}
+      </TableCell>
+      <TableCell
+        className="text-xs"
+        title={row.personaId ?? undefined}
+      >
+        {row.personaName ?? row.personaId ?? "—"}
+      </TableCell>
       <TableCell className="text-right">{formatDuration(row.durationMs)}</TableCell>
     </TableRow>
   );

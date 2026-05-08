@@ -18,9 +18,12 @@ package com.viglet.turing.api.system.chatanalytics;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +33,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsStore;
 import com.viglet.turing.service.chatmemory.TurChatMemoryStore;
@@ -56,11 +61,102 @@ public class TurChatAnalyticsAPI {
 
     private final TurChatAnalyticsService analyticsService;
     private final TurChatMemoryStore chatMemoryStore;
+    private final TurAIAgentRepository agentRepository;
+    private final TurPersonaRepository personaRepository;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
-            TurChatMemoryStore chatMemoryStore) {
+            TurChatMemoryStore chatMemoryStore,
+            TurAIAgentRepository agentRepository,
+            TurPersonaRepository personaRepository) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
+        this.agentRepository = agentRepository;
+        this.personaRepository = personaRepository;
+    }
+
+    /**
+     * Decorates each row with {@code agentTitle} and {@code personaName}
+     * resolved from the JPA repositories. Both lookups go through the
+     * existing {@code @Cacheable} repos, so even a 100-row response only
+     * costs distinct lookups (one per unique id). Names that no longer exist
+     * in the catalog (deleted agent/persona) collapse to {@code null} —
+     * the UI falls back to showing the id in that case.
+     */
+    private void enrichWithNames(List<Map<String, Object>> rows) {
+        if (rows == null || rows.isEmpty()) return;
+        Set<String> agentIds = new HashSet<>();
+        Set<String> personaIds = new HashSet<>();
+        for (Map<String, Object> row : rows) {
+            collectId(row, "agentId", agentIds);
+            collectId(row, "personaId", personaIds);
+        }
+        Map<String, String> agentNames = new HashMap<>();
+        for (String id : agentIds) {
+            agentRepository.findById(id).ifPresent(a -> agentNames.put(id, a.getTitle()));
+        }
+        Map<String, String> personaNames = new HashMap<>();
+        for (String id : personaIds) {
+            personaRepository.findById(id).ifPresent(p -> personaNames.put(id, p.getName()));
+        }
+        for (Map<String, Object> row : rows) {
+            String agentId = stringValue(row.get("agentId"));
+            String personaId = stringValue(row.get("personaId"));
+            row.put("agentTitle",  agentId   == null ? null : agentNames.get(agentId));
+            row.put("personaName", personaId == null ? null : personaNames.get(personaId));
+        }
+    }
+
+    private void enrichWithNames(Map<String, Object> row) {
+        if (row != null) enrichWithNames(List.of(row));
+    }
+
+    /**
+     * Adds a {@code bucketLabel} field to each row when the aggregation /
+     * scorecard dimension is {@code agentId} or {@code personaId} — so the
+     * Grafana donut and bar charts can render human-readable names instead
+     * of raw UUIDs while still keeping {@code bucket} (the id) for
+     * filtering. Other dimensions (outcome, locale, intentLabel) leave the
+     * label equal to the bucket itself.
+     */
+    private void enrichBucketLabels(List<Map<String, Object>> rows, String dimension) {
+        if (rows == null || rows.isEmpty()) return;
+        boolean isAgent   = "agentId".equals(dimension);
+        boolean isPersona = "personaId".equals(dimension);
+        if (!isAgent && !isPersona) {
+            for (Map<String, Object> row : rows) {
+                Object bucket = row.get("bucket");
+                row.put("bucketLabel", bucket == null ? "unknown" : bucket.toString());
+            }
+            return;
+        }
+        Set<String> ids = new HashSet<>();
+        for (Map<String, Object> row : rows) collectId(row, "bucket", ids);
+        Map<String, String> names = new HashMap<>();
+        if (isAgent) {
+            for (String id : ids) {
+                agentRepository.findById(id).ifPresent(a -> names.put(id, a.getTitle()));
+            }
+        } else {
+            for (String id : ids) {
+                personaRepository.findById(id).ifPresent(p -> names.put(id, p.getName()));
+            }
+        }
+        for (Map<String, Object> row : rows) {
+            String id = stringValue(row.get("bucket"));
+            String name = id == null ? null : names.get(id);
+            row.put("bucketLabel", name != null ? name : (id == null ? "unknown" : id));
+        }
+    }
+
+    private static void collectId(Map<String, Object> row, String key, Set<String> sink) {
+        String value = stringValue(row.get(key));
+        if (value != null) sink.add(value);
+    }
+
+    private static String stringValue(Object raw) {
+        if (raw == null) return null;
+        String s = raw.toString().trim();
+        return s.isEmpty() ? null : s;
     }
 
     /**
@@ -98,9 +194,11 @@ public class TurChatAnalyticsAPI {
             @RequestParam(defaultValue = "100") int limit) {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
-        return analyticsService.getStore().findRecentSessions(
+        List<Map<String, Object>> rows = analyticsService.getStore().findRecentSessions(
                 fromInstant, toInstant, agentId, personaId, outcome,
                 intentLabel, goalAchieved, sentiment, limit);
+        enrichWithNames(rows);
+        return rows;
     }
 
     /**
@@ -116,7 +214,10 @@ public class TurChatAnalyticsAPI {
             @RequestParam(defaultValue = "20") int limit) {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
-        return analyticsService.getStore().aggregate(fromInstant, toInstant, by, limit);
+        List<Map<String, Object>> rows = analyticsService.getStore().aggregate(
+                fromInstant, toInstant, by, limit);
+        enrichBucketLabels(rows, by);
+        return rows;
     }
 
     /**
@@ -149,7 +250,10 @@ public class TurChatAnalyticsAPI {
             @RequestParam(defaultValue = "20") int limit) {
         Instant fromInstant = parseInstant(from, defaultFrom());
         Instant toInstant   = parseInstant(to,   defaultTo());
-        return analyticsService.getStore().scorecard(fromInstant, toInstant, dimension, limit);
+        List<Map<String, Object>> rows = analyticsService.getStore().scorecard(
+                fromInstant, toInstant, dimension, limit);
+        enrichBucketLabels(rows, dimension);
+        return rows;
     }
 
     /**
@@ -161,9 +265,9 @@ public class TurChatAnalyticsAPI {
     @GetMapping(value = "/sessions/{conversationId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> session(@PathVariable String conversationId) {
         Map<String, Object> session = analyticsService.getStore().findSessionById(conversationId);
-        return session == null
-                ? ResponseEntity.notFound().build()
-                : ResponseEntity.ok(session);
+        if (session == null) return ResponseEntity.notFound().build();
+        enrichWithNames(session);
+        return ResponseEntity.ok(session);
     }
 
     /**
@@ -179,6 +283,7 @@ public class TurChatAnalyticsAPI {
             @RequestParam(defaultValue = "200") int limit) {
         Map<String, Object> session = analyticsService.getStore().findSessionById(conversationId);
         if (session == null) return ResponseEntity.notFound().build();
+        enrichWithNames(session);
         List<Map<String, Object>> messages = chatMemoryStore.findMessages(conversationId,
                 Math.max(1, Math.min(limit, 1000)));
         Map<String, Object> body = new LinkedHashMap<>();

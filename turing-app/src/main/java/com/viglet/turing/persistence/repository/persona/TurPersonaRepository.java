@@ -21,11 +21,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.viglet.turing.persistence.model.persona.TurPersona;
+import org.springframework.cache.annotation.Caching;
 
 /**
  * Repository for {@link TurPersona}. Mirrors the {@code TurAIAgentRepository}
  * caching convention — every read is cached, every write evicts every
  * persona cache.
+ *
+ * <p>Writes also nuke the agent caches ({@code turAIAgentfindAll} and
+ * {@code turAIAgentfindById}) because cached agent entities EAGER-fetch
+ * their persona references — without this, an updated persona's
+ * {@code systemInstruction} would still be served from the agent's
+ * cached entity tree, and chats would keep speaking in the old voice.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6
@@ -43,15 +50,23 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     @NotNull
     Optional<TurPersona> findById(@NotNull String id);
 
-    @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-            "turPersonafindById" }, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
+                    "turPersonafindById" }, allEntries = true),
+            @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
+                    allEntries = true)
+    })
     @NotNull
     @Override
     <S extends TurPersona> S save(@NotNull S entity);
 
     @Modifying
     @Query("delete from TurPersona p where p.id = ?1")
-    @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-            "turPersonafindById" }, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
+                    "turPersonafindById" }, allEntries = true),
+            @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
+                    allEntries = true)
+    })
     void delete(String id);
 }
