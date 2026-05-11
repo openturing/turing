@@ -1,4 +1,4 @@
-import { IconX } from "@tabler/icons-react";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import type { Node } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,8 @@ import type { TurMcpServer } from "@/models/mcp/mcp-server.model";
 import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
-import type { FlowNodeData, FlowNodeType, FlowToolSource } from "../types";
+import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
+import type { FlowNodeData, FlowNodeType, FlowSwitchOption, FlowToolSource } from "../types";
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
@@ -277,12 +278,65 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
           </div>
         )}
 
+        {type === "switch" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-switch-variable">
+                {t("chatFlow.properties.switchVariable")}
+              </Label>
+              <Input
+                id="flow-node-switch-variable"
+                value={data.switchVariable ?? ""}
+                onChange={(e) => update({ switchVariable: e.target.value || undefined })}
+                placeholder="course_level"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.switchVariableHint")}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label>{t("chatFlow.properties.switchOptions")}</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const next = [
+                      ...ensureSwitchOptions(data),
+                      { id: newSwitchOptionId(), label: "" },
+                    ];
+                    update({ switchOptions: next });
+                  }}
+                >
+                  <IconPlus className="size-4" />
+                  {t("chatFlow.properties.switchAddOption")}
+                </Button>
+              </div>
+              <SwitchOptionsEditor
+                options={ensureSwitchOptions(data)}
+                onChange={(next) => update({ switchOptions: next })}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.switchOptionsHint")}
+              </span>
+            </div>
+          </>
+        )}
+
         {type === "persona" && (
           <div className="flex flex-col gap-1">
             <Label>{t("chatFlow.properties.persona")}</Label>
             <Select
               value={data.personaId ?? ""}
-              onValueChange={(value) => update({ personaId: value || undefined })}
+              onValueChange={(value) => {
+                const selected = personaOptions.find((p) => p.id === value);
+                update({
+                  personaId: value || undefined,
+                  personaName: selected?.name ?? undefined,
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t("chatFlow.properties.personaPlaceholder")} />
@@ -327,5 +381,50 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.subFlow";
     case "persona":
       return "chatFlow.palette.persona";
+    case "switch":
+      return "chatFlow.palette.switch";
   }
+}
+
+interface SwitchOptionsEditorProps {
+  readonly options: FlowSwitchOption[];
+  readonly onChange: (options: FlowSwitchOption[]) => void;
+}
+
+function SwitchOptionsEditor({ options, onChange }: SwitchOptionsEditorProps) {
+  const { t } = useTranslation();
+  if (options.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-center text-xs text-muted-foreground">
+        {t("chatFlow.properties.switchOptionsEmpty")}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {options.map((option, idx) => (
+        <div key={option.id} className="flex items-center gap-2">
+          <Input
+            value={option.label}
+            placeholder={t("chatFlow.properties.switchOptionPlaceholder", { index: idx + 1 })}
+            onChange={(e) => {
+              const next = options.map((o) =>
+                o.id === option.id ? { ...o, label: e.target.value } : o,
+              );
+              onChange(next);
+            }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("chatFlow.properties.switchRemoveOption")}
+            onClick={() => onChange(options.filter((o) => o.id !== option.id))}
+          >
+            <IconTrash className="size-4 text-destructive" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
 }

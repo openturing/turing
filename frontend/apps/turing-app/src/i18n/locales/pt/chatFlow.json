@@ -35,6 +35,12 @@
       "triggerDescription": "Condição de Disparo",
       "triggerDescriptionPlaceholder": "ex.: Use este fluxo quando o usuário quiser agendar uma reunião ou perguntar sobre disponibilidade.",
       "triggerDescriptionHint": "Descrição em linguagem natural que o roteador LLM usa para decidir se uma mensagem do usuário deve ativar este fluxo. Deixe em branco para desativar o disparo automático.",
+      "helpWriteTrigger": "Me ajude a escrever",
+      "helpWriteTriggerTitle": "Me ajude a escrever a condição de disparo",
+      "helpWriteTriggerDescription": "Descreva em suas palavras quando este fluxo deve ser ativado — intenções de exemplo, frases que o usuário pode dizer e quando ele NÃO deve disparar. A LLM gera uma condição concisa para o roteador usar.",
+      "helpWriteTriggerPlaceholder": "ex.: Ativar quando o usuário quiser pedir pizza, mencionar sabores, tamanhos, entrega ou retirada. NÃO disparar para perguntas gerais sobre o cardápio ou reclamações.",
+      "helpWriteTriggerHint": "Dica: descreva também o que NÃO deve ativar este fluxo, não só o que deve.",
+      "helpWriteTriggerGenerate": "Gerar condição",
       "triggerMode": "Modo de Disparo"
     },
     "triggerModes": {
@@ -91,7 +97,8 @@
       "condition": "Condição",
       "functionCall": "Chamada de Função",
       "subFlow": "Sub Fluxo",
-      "persona": "Trocar Persona"
+      "persona": "Trocar Persona",
+      "switch": "Seletor"
     },
     "properties": {
       "header": "Propriedades do Nó",
@@ -124,6 +131,14 @@
       "personaPlaceholder": "Escolha uma persona do catálogo do agent",
       "personaEmpty": "Este agent não tem nenhuma persona no catálogo. Cadastre na página Personas do agent.",
       "personaHint": "Quando este passo executar, a conversa muda imediatamente para a voz desta persona. A troca persiste até atravessar outro nó Persona ou até o fim da conversa.",
+      "switchVariable": "Variável do Seletor",
+      "switchVariableHint": "Nome opcional da variável de contexto do fluxo onde o rótulo da opção escolhida será armazenado.",
+      "switchOptions": "Opções do Seletor",
+      "switchOptionsHint": "Cada opção vira um handle separado à direita do nó — conecte cada um a um fluxo distinto.",
+      "switchOptionsEmpty": "Nenhuma opção ainda — adicione uma para expor uma ramificação.",
+      "switchOptionPlaceholder": "ex.: Opção {{index}}",
+      "switchAddOption": "Adicionar opção",
+      "switchRemoveOption": "Remover opção",
       "validationRule": "Regras de Validação",
       "validationNone": "Nenhuma",
       "validation": {

@@ -6,7 +6,7 @@ import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
-import { IconBraces, IconBulb, IconCpu2, IconHistory, IconRobot, IconServer2, IconSettings, IconSitemap, IconSparkles, IconTool } from "@tabler/icons-react";
+import { IconBraces, IconBulb, IconCpu2, IconHistory, IconRobot, IconServer2, IconSettings, IconSitemap, IconTool, IconUserCircle } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -41,7 +41,7 @@ export default function AIAgentPage() {
       navMain: [
         { title: t("aiAgent.nav.settings"), url: "/settings", icon: IconSettings },
         { title: t("aiAgent.nav.languageModels"), url: "/llm", icon: IconCpu2 },
-        { title: t("aiAgent.nav.personas"), url: "/persona", icon: IconSparkles },
+        { title: t("aiAgent.nav.personas"), url: "/persona", icon: IconUserCircle },
         { title: t("aiAgent.nav.nativeTools"), url: "/tools", icon: IconTool },
         { title: t("aiAgent.nav.mcpServers"), url: "/mcp", icon: IconServer2 },
         { title: t("aiAgent.nav.customTools"), url: "/custom-tool", icon: IconBraces },

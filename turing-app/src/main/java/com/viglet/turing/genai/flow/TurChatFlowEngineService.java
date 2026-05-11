@@ -613,9 +613,13 @@ public class TurChatFlowEngineService {
                 return state;
             }
             ChatFlowGraph graph = graphOpt.get();
-            // Conditions are a no-LLM transition: re-walk every iteration to
-            // collapse `condition → condition → …` chains created by descent.
+            // Conditions and switches are transparent transitions (no LLM round-trip in the chat
+            // path — the aux model is only consulted to evaluate the rule). Re-walk both every
+            // iteration to collapse `condition → switch → condition → …` chains created by
+            // descent. Order is irrelevant: each walker no-ops when the current node isn't its
+            // type, so calling both is cheap and order-independent.
             ChatFlowOps.walkThroughConditions(state, graph, auxModel);
+            ChatFlowOps.walkThroughSwitches(state, graph, auxModel);
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) {
                 return state;

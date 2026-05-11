@@ -41,6 +41,7 @@ import { Button } from "../ui/button"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
+import { PromptEditor } from "../ui/prompt-editor"
 import { SectionCard } from "../ui/section-card"
 import { SmartDescription } from "../ui/smart-description"
 import { StickySaveBar } from "../ui/sticky-save-bar"
@@ -319,29 +320,35 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                     rules={{ required: t("forms.customTool.llmDescriptionRequired") }}
                     render={({ field }) => (
                       <FormItem>
+                        <FormLabel>{t("forms.customTool.llmDescriptionLabel")}</FormLabel>
+                        <FormDescription>
+                          {t("forms.customTool.llmDescriptionHint")}
+                        </FormDescription>
                         <FormControl>
-                          <SmartDescription
+                          <PromptEditor
                             value={field.value ?? ""}
                             onChange={field.onChange}
+                            fieldRef={field.ref}
                             placeholder={t("forms.customTool.llmDescriptionPlaceholder")}
-                            maxLength={2000}
                             rows={4}
-                            title={form.watch("title")}
-                            entityType={t("customTool.title")}
-                            fieldInstruction={
-                              "This text is the description of a Spring AI tool calling — it is sent to the LLM as the @Tool description so the model can decide WHEN to invoke this tool and WHAT arguments to pass. " +
-                              "MUST be written in English regardless of any other instruction. " +
-                              "MUST clearly state the tool's purpose, the trigger conditions (when the LLM should call it), the input parameters and their meaning, and the format of the returned value. " +
-                              "Be concise but specific; avoid filler. Do not include preamble, quotes, markdown, or commentary — return only the description text."
-                            }
-                            metaPrompt={form.watch("llmDescriptionMetaPrompt") ?? ""}
-                            onMetaPromptChange={(v) =>
-                              form.setValue("llmDescriptionMetaPrompt", v, { shouldDirty: true })
-                            }
-                          >
-                            <SmartDescription.Label>{t("forms.customTool.llmDescriptionLabel")}</SmartDescription.Label>
-                            <SmartDescription.Description>{t("forms.customTool.llmDescriptionHint")}</SmartDescription.Description>
-                          </SmartDescription>
+                            metaPrompt={{
+                              brief: form.watch("llmDescriptionMetaPrompt") ?? "",
+                              onBriefChange: (v) =>
+                                form.setValue("llmDescriptionMetaPrompt", v, { shouldDirty: true }),
+                              fieldInstruction:
+                                "This text is the description of a Spring AI tool calling — it is sent to the LLM as the @Tool description so the model can decide WHEN to invoke this tool and WHAT arguments to pass. " +
+                                "MUST be written in English regardless of any other instruction. " +
+                                "MUST clearly state the tool's purpose, the trigger conditions (when the LLM should call it), the input parameters and their meaning, and the format of the returned value. " +
+                                "Be concise but specific; avoid filler. Do not include preamble, quotes, markdown, or commentary — return only the description text.",
+                              tone: "violet",
+                              triggerLabel: t("forms.customTool.helpWriteLlmDescription"),
+                              title: t("forms.customTool.helpWriteLlmDescriptionTitle"),
+                              description: t("forms.customTool.helpWriteLlmDescriptionDescription"),
+                              placeholder: t("forms.customTool.helpWriteLlmDescriptionPlaceholder"),
+                              hint: t("forms.customTool.helpWriteLlmDescriptionHint"),
+                              generateLabel: t("forms.customTool.helpWriteLlmDescriptionGenerate"),
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

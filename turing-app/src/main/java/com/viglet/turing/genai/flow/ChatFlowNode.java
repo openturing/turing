@@ -9,6 +9,8 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -24,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -78,6 +80,28 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.personaId();
     }
 
+    /**
+     * Variable name read from the flow's collected variables to drive a {@code switch} node's
+     * multi-way branch. Typically the {@code outputVariable} of an upstream AI Question so the
+     * switch routes on what the user just said.
+     *
+     * @since 2026.2.7
+     */
+    public String switchVariable() {
+        return data.switchVariable();
+    }
+
+    /**
+     * Branches exposed by a {@code switch} node. Each entry's {@code id} matches an outgoing
+     * edge's {@code sourceHandle}; the {@code label} is the human-readable text the engine
+     * matches against the resolved switch variable.
+     *
+     * @since 2026.2.7
+     */
+    public List<SwitchOption> switchOptions() {
+        return data.switchOptions() == null ? List.of() : data.switchOptions();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -91,6 +115,18 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String mcpServerId,
             String subFlowId,
             String subFlowName,
-            String personaId) {
+            String personaId,
+            String switchVariable,
+            List<SwitchOption> switchOptions) {
+    }
+
+    /**
+     * A single branch on a {@code switch} node. {@code id} is the edge's {@code sourceHandle};
+     * {@code label} is the human-readable text the engine classifies against.
+     *
+     * @since 2026.2.7
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SwitchOption(String id, String label) {
     }
 }

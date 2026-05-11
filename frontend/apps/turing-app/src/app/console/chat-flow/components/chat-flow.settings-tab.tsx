@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { PromptEditor } from "@/components/ui/prompt-editor";
 import { SectionCard } from "@/components/ui/section-card";
 import {
   Select,
@@ -8,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { IconBolt, IconSettings } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +20,41 @@ import {
 } from "@/models/agent/chat-flow.model";
 
 import { FormRow } from "./form-row";
+
+/**
+ * System message used by the trigger-description "Help me write" sheet.
+ * Tells the LLM that the field is a natural-language hint for the router
+ * (not a user-facing reply), so the generated text is shaped accordingly.
+ */
+function buildTriggerDescriptionFieldInstruction(spec: {
+  name?: string;
+  description?: string;
+}): string {
+  return [
+    "You are helping a user write the TRIGGER DESCRIPTION of a chat flow inside the Turing Enterprise Search platform.",
+    "",
+    "FIELD SEMANTICS:",
+    "- This text is used by an LLM router to decide whether an incoming user message should activate this chat flow.",
+    "- It is NOT shown to the end user — it is a contract written FOR the router LLM.",
+    "- It should describe when the flow SHOULD fire and (importantly) when it should NOT.",
+    "",
+    "FLOW CONTEXT (current form state):",
+    `- Flow name: ${spec.name?.trim() || "(unset)"}`,
+    `- Flow description: ${spec.description?.trim() || "(unset)"}`,
+    "",
+    "WRITING RULES:",
+    "- One short paragraph or a small bullet list. Routers read this on every turn — keep it tight.",
+    "- Mention example user intents/phrasings that should activate the flow.",
+    "- Mention near-miss cases that look related but should NOT activate the flow.",
+    "- Match the language the user wrote the brief in (Portuguese brief → Portuguese; English brief → English).",
+    "",
+    "OUTPUT RULES:",
+    "- Return ONLY the resulting trigger description.",
+    "- Do NOT wrap in quotes, code fences, or markdown.",
+    "- Do NOT include a preamble, headers, commentary, or examples of conversations.",
+    "- If a current trigger description exists, prefer the smallest change that satisfies the user's instructions.",
+  ].join("\n");
+}
 
 interface SettingsTabProps {
   name: string;
@@ -124,12 +159,24 @@ export function ChatFlowSettingsTab({
                 label={t("chatFlow.fields.triggerDescription")}
                 description={t("chatFlow.fields.triggerDescriptionHint")}
               >
-                <Textarea
-                  id="chat-flow-trigger-description"
+                <PromptEditor
                   value={triggerDescription}
-                  onChange={(event) => setTriggerDescription(event.target.value)}
+                  onChange={setTriggerDescription}
                   placeholder={t("chatFlow.fields.triggerDescriptionPlaceholder")}
                   rows={4}
+                  metaPrompt={{
+                    fieldInstruction: buildTriggerDescriptionFieldInstruction({
+                      name,
+                      description,
+                    }),
+                    tone: "violet",
+                    triggerLabel: t("chatFlow.fields.helpWriteTrigger"),
+                    title: t("chatFlow.fields.helpWriteTriggerTitle"),
+                    description: t("chatFlow.fields.helpWriteTriggerDescription"),
+                    placeholder: t("chatFlow.fields.helpWriteTriggerPlaceholder"),
+                    hint: t("chatFlow.fields.helpWriteTriggerHint"),
+                    generateLabel: t("chatFlow.fields.helpWriteTriggerGenerate"),
+                  }}
                 />
               </FormRow>
 

@@ -30,6 +30,8 @@ import {
   useStoreCollectionDocumentCount,
   useStoreCollections,
 } from "@/api/queries/store-collection.queries"
+import { queryKeys } from "@/api/queries/keys"
+import { useQueries } from "@tanstack/react-query"
 import { IconDatabase, IconDownload, IconEraser, IconLayersSubtract, IconLoader2, IconPackageImport, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -236,12 +238,30 @@ export default function StoreInstanceCollectionsPage() {
   const { data: collections, isError } = useStoreCollections(id)
   const error = isError ? t("store.collections.loadFailed") : null
 
-  // Skip rows where documentCount is the -1 sentinel (lazy-loaded per row).
-  // The total stays accurate for backends that compute it eagerly (PG, Lucene)
-  // and is omitted when any Chroma row hasn't resolved its count yet.
-  const knownDocumentCounts = collections?.filter((c) => c.documentCount >= 0) ?? []
-  const hasUnknownDocumentCounts = (collections?.length ?? 0) > knownDocumentCounts.length
-  const totalDocuments = knownDocumentCounts.reduce((sum, c) => sum + c.documentCount, 0)
+  // Backends like Chroma return -1 for documentCount; rows resolve those lazily
+  // via useStoreCollectionDocumentCount. Mirror the same fetches at this level
+  // (react-query dedupes by key) so the header total can include them once
+  // they land — otherwise it would stay as `—` forever.
+  const lazyCollections = (collections ?? []).filter((c) => c.documentCount < 0)
+  const lazyCountResults = useQueries({
+    queries: lazyCollections.map((c) => ({
+      queryKey: queryKeys.storeCollections.documentCount(id, c.name),
+      queryFn: () => turStoreInstanceService.collectionDocumentCount(id, c.name),
+      staleTime: 60_000,
+    })),
+  })
+
+  const eagerDocumentTotal = (collections ?? [])
+    .filter((c) => c.documentCount >= 0)
+    .reduce((sum, c) => sum + c.documentCount, 0)
+  const lazyDocumentTotal = lazyCountResults.reduce(
+    (sum, r) => sum + (typeof r.data === "number" && r.data >= 0 ? r.data : 0),
+    0,
+  )
+  const hasUnknownDocumentCounts = lazyCountResults.some(
+    (r) => !(typeof r.data === "number" && r.data >= 0),
+  )
+  const totalDocuments = eagerDocumentTotal + lazyDocumentTotal
   const totalChunks = collections?.reduce((sum, c) => sum + c.chunkCount, 0) ?? 0
 
   return (

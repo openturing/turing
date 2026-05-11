@@ -13,7 +13,11 @@
  */
 package com.viglet.turing.api.agent;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
@@ -35,15 +39,21 @@ import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
+import com.viglet.turing.persistence.dto.agent.TurChatFlowImportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
+import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
+import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
+import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Agent-scoped REST API for chat flows. Each AI agent owns its own set of
@@ -57,25 +67,30 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/ai-agent/{agentId}/chat-flow")
 @Tag(name = "Chat Flow", description = "AI Agent Chat Flow API")
 public class TurChatFlowAPI {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowMapper turChatFlowMapper;
     private final TurAIAgentRepository turAIAgentRepository;
     private final TurAIAgentRepositoryPort turAIAgentRepositoryPort;
     private final TurChatFlowEngineService chatFlowEngineService;
     private final ChatFlowAuthoringSkill chatFlowAuthoringSkill;
+    private final TurPersonaRepository turPersonaRepository;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
             TurAIAgentRepository turAIAgentRepository,
             TurAIAgentRepositoryPort turAIAgentRepositoryPort,
             TurChatFlowEngineService chatFlowEngineService,
-            ChatFlowAuthoringSkill chatFlowAuthoringSkill) {
+            ChatFlowAuthoringSkill chatFlowAuthoringSkill,
+            TurPersonaRepository turPersonaRepository) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowAuthoringSkill = chatFlowAuthoringSkill;
+        this.turPersonaRepository = turPersonaRepository;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -131,6 +146,249 @@ public class TurChatFlowAPI {
         entity.setTurAIAgent(agent);
         turChatFlowRepository.save(entity);
         return turChatFlowMapper.toDto(entity);
+    }
+
+    /**
+     * Imports a Chat Flow exported via the editor's "Export JSON" action. The
+     * payload may bundle a {@code personas} array — each persona whose name
+     * is not already in the catalog is auto-created and attached to the
+     * target AI agent. {@code personaId} references inside the graph's
+     * {@code definitionJson} are rewritten to point at the resolved (existing
+     * or freshly persisted) persona UUIDs before the flow itself is saved,
+     * so the editor opens to a fully wired graph with no manual rebinding.
+     *
+     * @since 2026.2.7
+     */
+    @Operation(summary = "Import a Chat Flow (and any missing personas) from an export JSON")
+    @PostMapping("/import")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE" })
+    public TurChatFlowDto turChatFlowImport(@PathVariable String agentId,
+            @RequestBody TurChatFlowImportDto payload) {
+        if (payload == null || payload.getChatFlow() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "chatFlow is required");
+        }
+        TurAIAgent agent = loadAgent(agentId);
+
+        // Resolve every embedded persona — reuse the catalog entry when the name
+        // already exists (case-insensitive), otherwise create a fresh one. The
+        // remap below lets us translate the export's transient persona ids into
+        // the real persisted ids before saving the flow's graph, and the
+        // {@code personaNameById} map caches the human-readable label so the
+        // diagram opens with "Switches voice to: Captain Nova" instead of a uuid.
+        Map<String, String> personaIdRemap = new HashMap<>();
+        Map<String, String> personaNameById = new HashMap<>();
+        List<TurPersonaDto> incomingPersonas = payload.getPersonas();
+        if (incomingPersonas != null) {
+            for (TurPersonaDto incoming : incomingPersonas) {
+                if (incoming == null || incoming.getName() == null
+                        || incoming.getName().isBlank()) {
+                    continue;
+                }
+                TurPersona resolved = turPersonaRepository
+                        .findByNameIgnoreCase(incoming.getName())
+                        .orElseGet(() -> createPersonaFromImport(incoming));
+                if (incoming.getId() != null && !incoming.getId().isBlank()) {
+                    personaIdRemap.put(incoming.getId(), resolved.getId());
+                }
+                personaNameById.put(resolved.getId(), resolved.getName());
+                agent.getPersonas().add(resolved);
+            }
+            // Persist the agent once — even when every persona already existed,
+            // this guarantees the EAGER personas Set is the same fetched on the
+            // next read (avoids a stale agent cache hiding newly-attached voices).
+            turAIAgentRepository.save(agent);
+        }
+
+        TurChatFlowDto incomingFlow = payload.getChatFlow();
+        // No sub-flow remap on the single-flow path — the bundle endpoint is the one that wires
+        // multiple flows together. Empty maps are no-ops inside rewriteGraph.
+        String rewrittenJson = rewriteGraph(incomingFlow.getDefinitionJson(),
+                personaIdRemap, personaNameById, Map.of(), Map.of());
+        incomingFlow.setDefinitionJson(rewrittenJson);
+
+        TurChatFlow entity = turChatFlowMapper.toEntity(incomingFlow);
+        entity.setId(null);
+        entity.setTurAIAgent(agent);
+        turChatFlowRepository.save(entity);
+        return turChatFlowMapper.toDto(entity);
+    }
+
+    /**
+     * Imports a bundle of chat flows in a single transaction. Each item in the list mirrors the
+     * single-flow import shape ({@link TurChatFlowImportDto} = chat-flow + embedded personas), but
+     * sub-flow references across items are auto-wired: when item A's graph contains a
+     * {@code subFlowId} that matches item B's transient {@code id}, the import rewrites the
+     * reference to point at the real UUID assigned to B. Personas are de-duplicated by name across
+     * the whole bundle (case-insensitive) and attached to the target agent once.
+     *
+     * @since 2026.2.7
+     */
+    @Operation(summary = "Import a bundle of Chat Flows (with auto-wiring of sub-flow references)")
+    @PostMapping("/import-bundle")
+    @Secured({ "ROLE_ADMIN", "AI_AGENT_CREATE" })
+    public List<TurChatFlowDto> turChatFlowImportBundle(@PathVariable String agentId,
+            @RequestBody List<TurChatFlowImportDto> bundle) {
+        if (bundle == null || bundle.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bundle is required");
+        }
+        TurAIAgent agent = loadAgent(agentId);
+
+        // 1) De-duplicate personas across the whole bundle (by name, case-insensitive) and attach
+        //    every resolved persona to the agent. Same lookup-or-create policy as the single-flow
+        //    import — we never overwrite an existing persona's settings.
+        Map<String, String> personaIdRemap = new HashMap<>();
+        Map<String, String> personaNameById = new HashMap<>();
+        boolean anyPersonaTouched = false;
+        for (TurChatFlowImportDto item : bundle) {
+            if (item == null || item.getPersonas() == null) {
+                continue;
+            }
+            for (TurPersonaDto incoming : item.getPersonas()) {
+                if (incoming == null || incoming.getName() == null
+                        || incoming.getName().isBlank()) {
+                    continue;
+                }
+                TurPersona resolved = turPersonaRepository
+                        .findByNameIgnoreCase(incoming.getName())
+                        .orElseGet(() -> createPersonaFromImport(incoming));
+                if (incoming.getId() != null && !incoming.getId().isBlank()) {
+                    personaIdRemap.put(incoming.getId(), resolved.getId());
+                }
+                personaNameById.put(resolved.getId(), resolved.getName());
+                agent.getPersonas().add(resolved);
+                anyPersonaTouched = true;
+            }
+        }
+        if (anyPersonaTouched) {
+            turAIAgentRepository.save(agent);
+        }
+
+        // 2) Pre-assign a real UUID to each flow so the sub-flow remap is complete before any
+        //    graph is rewritten. Doing this BEFORE saving (rather than insert-then-update) lets us
+        //    save each entity exactly once with its final, rewritten graph.
+        Map<String, String> subFlowIdRemap = new HashMap<>();
+        Map<String, String> subFlowNameById = new HashMap<>();
+        List<TurChatFlow> entities = new ArrayList<>();
+        for (TurChatFlowImportDto item : bundle) {
+            if (item == null || item.getChatFlow() == null) {
+                entities.add(null);
+                continue;
+            }
+            TurChatFlowDto flow = item.getChatFlow();
+            String placeholderId = flow.getId();
+            String newId = UUID.randomUUID().toString();
+            TurChatFlow entity = turChatFlowMapper.toEntity(flow);
+            entity.setId(newId);
+            entity.setTurAIAgent(agent);
+            if (placeholderId != null && !placeholderId.isBlank()) {
+                subFlowIdRemap.put(placeholderId, newId);
+            }
+            if (entity.getName() != null) {
+                subFlowNameById.put(newId, entity.getName());
+            }
+            entities.add(entity);
+        }
+
+        // 3) Rewrite each flow's graph with the now-complete persona + sub-flow remaps, then save.
+        List<TurChatFlowDto> results = new ArrayList<>();
+        for (int i = 0; i < entities.size(); i++) {
+            TurChatFlow entity = entities.get(i);
+            if (entity == null) {
+                continue;
+            }
+            String rewrittenJson = rewriteGraph(entity.getDefinitionJson(),
+                    personaIdRemap, personaNameById,
+                    subFlowIdRemap, subFlowNameById);
+            entity.setDefinitionJson(rewrittenJson);
+            turChatFlowRepository.save(entity);
+            results.add(turChatFlowMapper.toDto(entity));
+        }
+        return results;
+    }
+
+    /** Copies the editable fields from an imported persona DTO into a fresh entity. */
+    private TurPersona createPersonaFromImport(TurPersonaDto dto) {
+        TurPersona entity = new TurPersona();
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+        entity.setSystemInstruction(dto.getSystemInstruction());
+        entity.setTone(dto.getTone());
+        // Default verbosity matches TurPersonaAPI's authoring contract — 3 is
+        // the safe middle of the 1-5 scale when the export omitted the field.
+        entity.setVerbosity(dto.getVerbosity() == 0 ? 3 : dto.getVerbosity());
+        entity.setLanguageStyle(dto.getLanguageStyle());
+        entity.setMandatoryTerms(dto.getMandatoryTerms());
+        entity.setForbiddenTerms(dto.getForbiddenTerms());
+        // 0 in the export usually means "absent field" (int default), not
+        // "disabled" — coerce to enabled so newly-imported personas show up.
+        entity.setEnabled(dto.getEnabled() == 0 ? 1 : dto.getEnabled());
+        return turPersonaRepository.save(entity);
+    }
+
+    /**
+     * Walks the chat-flow graph's persona-switch and sub-flow nodes and remaps each
+     * {@code personaId} / {@code subFlowId} via the supplied lookup tables, also writing the
+     * resolved display name into {@code personaName} / {@code subFlowName} so the canvas opens
+     * with "Switches voice to: Captain Nova" and "Sub Flow: Venusian Resort Booking" right after
+     * import. Done with a Map round-trip (instead of
+     * {@link tools.jackson.databind.node.ObjectNode} mutations) so the implementation is resilient
+     * to small shape differences in older exports — unrelated fields are preserved as-is.
+     */
+    @SuppressWarnings("unchecked")
+    private static String rewriteGraph(String definitionJson,
+            Map<String, String> personaRemap, Map<String, String> personaNameById,
+            Map<String, String> subFlowRemap, Map<String, String> subFlowNameById) {
+        if (definitionJson == null || definitionJson.isBlank()
+                || (personaRemap.isEmpty() && personaNameById.isEmpty()
+                        && subFlowRemap.isEmpty() && subFlowNameById.isEmpty())) {
+            return definitionJson;
+        }
+        try {
+            Map<String, Object> root = OBJECT_MAPPER.readValue(definitionJson, Map.class);
+            Object nodesObj = root.get("nodes");
+            if (nodesObj instanceof List<?> nodes) {
+                for (Object n : nodes) {
+                    if (!(n instanceof Map<?, ?> nodeRaw)) {
+                        continue;
+                    }
+                    Object dataObj = nodeRaw.get("data");
+                    if (!(dataObj instanceof Map<?, ?> dataRaw)) {
+                        continue;
+                    }
+                    Map<String, Object> data = (Map<String, Object>) dataRaw;
+                    rewriteIdField(data, "personaId", "personaName", personaRemap, personaNameById);
+                    rewriteIdField(data, "subFlowId", "subFlowName", subFlowRemap, subFlowNameById);
+                }
+            }
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (JacksonException e) {
+            // Don't fail import if the graph is unparseable — fall back to the
+            // original. The user can re-bind references manually in the editor.
+            return definitionJson;
+        }
+    }
+
+    /**
+     * Remap a single reference field on a node's data map, and cache its resolved display name in
+     * the sibling {@code …Name} field. Translates {@code data[idField]} via {@code remap} (no-op
+     * when the id isn't in the remap — the import's id was already real) and writes
+     * {@code nameById[resolvedId]} into {@code data[nameField]} when known.
+     */
+    private static void rewriteIdField(Map<String, Object> data,
+            String idField, String nameField,
+            Map<String, String> remap, Map<String, String> nameById) {
+        Object idValue = data.get(idField);
+        if (!(idValue instanceof String oldId) || oldId.isBlank()) {
+            return;
+        }
+        String resolvedId = remap.getOrDefault(oldId, oldId);
+        if (!resolvedId.equals(oldId)) {
+            data.put(idField, resolvedId);
+        }
+        String resolvedName = nameById.get(resolvedId);
+        if (resolvedName != null && !resolvedName.isBlank()) {
+            data.put(nameField, resolvedName);
+        }
     }
 
     @Operation(summary = "Update a Chat Flow of an Agent")

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TurChatFlow } from '@/models/agent/chat-flow.model';
-import { TurChatFlowService } from '@/services/agent/chat-flow.service';
+import { TurChatFlowService, type TurChatFlowImportPayload } from '@/services/agent/chat-flow.service';
 import { queryKeys } from './keys';
 
 const service = new TurChatFlowService();
@@ -37,6 +37,45 @@ export function useUpdateChatFlow() {
         queryClient.setQueryData(queryKeys.chatFlows.detail(saved.id), saved);
       }
       invalidateChatFlows(queryClient);
+    },
+  });
+}
+
+type ChatFlowImportVars = { agentId: string; payload: TurChatFlowImportPayload };
+
+/**
+ * Backend-side chat-flow import. The backend creates any embedded personas
+ * the agent does not yet have, attaches them to the agent, rewrites
+ * personaId references in the graph, and saves the flow — all in one
+ * round-trip. The mutation invalidates personas + agent caches so the
+ * editor's persona dropdown picks up the new voices on the next render.
+ */
+export function useImportChatFlow() {
+  const queryClient = useQueryClient();
+  return useMutation<TurChatFlow, Error, ChatFlowImportVars>({
+    mutationFn: ({ agentId, payload }) => service.import(agentId, payload),
+    onSuccess: () => {
+      invalidateChatFlows(queryClient);
+      queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiAgents.all() });
+    },
+  });
+}
+
+type ChatFlowImportBundleVars = { agentId: string; bundle: TurChatFlowImportPayload[] };
+
+/**
+ * Bundle import: same as {@link useImportChatFlow} but accepts a list of flows that the backend
+ * persists in one transaction, auto-wiring sub-flow references across items in the bundle.
+ */
+export function useImportChatFlowBundle() {
+  const queryClient = useQueryClient();
+  return useMutation<TurChatFlow[], Error, ChatFlowImportBundleVars>({
+    mutationFn: ({ agentId, bundle }) => service.importBundle(agentId, bundle),
+    onSuccess: () => {
+      invalidateChatFlows(queryClient);
+      queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiAgents.all() });
     },
   });
 }

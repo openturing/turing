@@ -1,5 +1,7 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
+  IconArrowRight,
+  IconArrowsSplit2,
   IconBook2,
   IconDatabase,
   IconFlag3,
@@ -10,6 +12,7 @@ import {
 } from "@tabler/icons-react";
 
 import type { FlowNodeData } from "../types";
+import { ensureSwitchOptions } from "../chat-flow.serialize";
 
 /**
  * Custom React Flow node renderers for the Chat Flow builder. Each node type has a distinct
@@ -139,10 +142,13 @@ export function SubFlowNode({ data }: ChatFlowNodeProps) {
 }
 
 export function PersonaNode({ data }: ChatFlowNodeProps) {
-  // Persona id is just a uuid in the data — without a personas list lookup
-  // we can only show "set / not set". The properties panel renders the full
-  // dropdown with the human-readable persona name.
-  const hasPersona = typeof data.personaId === "string" && data.personaId.trim().length > 0;
+  // Prefer the cached display name — same pattern as SubFlowNode. Falls back to the raw uuid only
+  // when the node was wired without going through the properties panel (e.g. legacy imports).
+  const personaName =
+    typeof data.personaName === "string" && data.personaName.trim().length > 0
+      ? data.personaName
+      : null;
+  const display = personaName ?? (typeof data.personaId === "string" ? data.personaId : null);
   return (
     <div className="w-64 overflow-hidden rounded-lg border-2 border-fuchsia-500 bg-background shadow-md">
       <div className="flex items-center gap-2 bg-fuchsia-500 px-3 py-2 text-white">
@@ -151,9 +157,9 @@ export function PersonaNode({ data }: ChatFlowNodeProps) {
       </div>
       <div className="bg-fuchsia-50 p-3 text-xs leading-relaxed text-fuchsia-900 dark:bg-fuchsia-950/40 dark:text-fuchsia-100">
         <span className="font-semibold">Switches voice to: </span>
-        {hasPersona ? (
+        {display ? (
           <code className="rounded bg-fuchsia-200/60 px-1 py-0.5 text-[11px] dark:bg-fuchsia-900/50">
-            {data.personaId}
+            {display}
           </code>
         ) : (
           <span className="italic opacity-60">not selected</span>
@@ -161,6 +167,70 @@ export function PersonaNode({ data }: ChatFlowNodeProps) {
       </div>
       <Handle type="target" position={Position.Left} className="size-2.5! bg-fuchsia-600!" />
       <Handle type="source" position={Position.Right} className="size-2.5! bg-fuchsia-600!" />
+    </div>
+  );
+}
+
+export function SwitchNode({ data }: ChatFlowNodeProps) {
+  const options = ensureSwitchOptions(data);
+  // We make the wrapper itself the positioned ancestor so each handle's `top: Npx` is measured
+  // from the wrapper's padding-box (inside the border) — that anchors `right: 0` at the wrapper's
+  // content edge, so the default `translate(50%, -50%)` lands the disc half-inside / half-outside
+  // the cyan border (5px in, 5px out — same look as AIQuestion / Persona handles).
+  //
+  // The trade-off: overflow-hidden would clip the half-outside disc once the wrapper is the
+  // containing block, so the rows' rectangular corners can't ride on it — `rounded-t-md` on the
+  // header and `rounded-b-md` on the last row fill in for the wrapper's rounded border instead.
+  // (rounded-md = 6px = rounded-lg 8px − 2px border, matching the inner curve.)
+  //
+  // Header (h-9, 36px) + each option row (h-9). Handle N centre = 36 + N*36 + 18 from the
+  // wrapper's padding-box top — i.e. on the vertical centre of row N.
+  const handleTop = (idx: number) => 36 + idx * 36 + 18;
+  return (
+    <div className="relative w-64 rounded-lg border-2 border-cyan-500 bg-background shadow-md">
+      <div className="flex h-9 items-center gap-2 rounded-t-md bg-cyan-500 px-3 text-white">
+        <IconArrowsSplit2 className="size-4" />
+        <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Switch"}</div>
+      </div>
+      {options.length === 0 ? (
+        <div className="rounded-b-md bg-cyan-50 px-3 py-2 text-xs italic text-cyan-900/70 dark:bg-cyan-950/40 dark:text-cyan-100/70">
+          No options yet
+        </div>
+      ) : (
+        options.map((option, idx) => {
+          const isLast = idx === options.length - 1;
+          const optionLabel = option.label || `Option ${idx + 1}`;
+          return (
+            <div
+              key={option.id}
+              className={`flex h-9 items-center justify-between gap-2 border-t border-cyan-200/70 bg-cyan-50 pl-3 pr-3 text-xs text-cyan-900 dark:border-cyan-900/50 dark:bg-cyan-950/40 dark:text-cyan-100${isLast ? " rounded-b-md" : ""}`}
+            >
+              <span className="truncate">{optionLabel}</span>
+              <IconArrowRight
+                className="pointer-events-none size-4 shrink-0 text-cyan-600 dark:text-cyan-400"
+                aria-hidden
+              />
+            </div>
+          );
+        })
+      )}
+      {/* Handles live alongside the rows (not inside them) so the row's box-sizing math doesn't
+          drift their positions; explicit pixel `top` lands each disc on its row's vertical centre. */}
+      {options.map((option, idx) => {
+        const optionLabel = option.label || `Option ${idx + 1}`;
+        return (
+          <Handle
+            key={option.id}
+            type="source"
+            id={option.id}
+            position={Position.Right}
+            style={{ top: `${handleTop(idx)}px` }}
+            className="size-2.5! bg-cyan-600! transition-transform hover:scale-150"
+            aria-label={`Drag to connect: ${optionLabel}`}
+          />
+        );
+      })}
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-cyan-600!" />
     </div>
   );
 }
@@ -173,4 +243,5 @@ export const nodeTypes = {
   functionCall: FunctionCallNode,
   subFlow: SubFlowNode,
   persona: PersonaNode,
+  switch: SwitchNode,
 };

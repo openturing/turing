@@ -1,6 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
 
-import type { FlowNodeData, FlowNodeType } from "./types";
+import type { FlowNodeData, FlowNodeType, FlowSwitchOption } from "./types";
 
 export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   start: "START",
@@ -10,7 +10,33 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   functionCall: "FUNCTION CALL",
   subFlow: "SUB FLOW",
   persona: "PERSONA SWITCH",
+  switch: "SWITCH",
 };
+
+/**
+ * Generates the initial `FlowNodeData` for a freshly dropped node. Switch nodes seed two empty
+ * options so the user sees the multi-handle shape immediately and can rename in place.
+ *
+ * @since 2026.2.7
+ */
+export function buildDefaultNodeData(type: FlowNodeType): FlowNodeData {
+  const base: FlowNodeData = { label: DEFAULT_LABEL[type], type };
+  if (type === "switch") {
+    base.switchOptions = [
+      { id: newSwitchOptionId(), label: "Option 1" },
+      { id: newSwitchOptionId(), label: "Option 2" },
+    ];
+  }
+  return base;
+}
+
+export function newSwitchOptionId(): string {
+  return `opt-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+export function ensureSwitchOptions(data: FlowNodeData): FlowSwitchOption[] {
+  return Array.isArray(data.switchOptions) ? data.switchOptions : [];
+}
 
 /**
  * Starting zoom level for the canvas. We surface this value to the user as

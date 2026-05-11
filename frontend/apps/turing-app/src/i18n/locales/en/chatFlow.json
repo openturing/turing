@@ -35,6 +35,12 @@
       "triggerDescription": "Trigger Description",
       "triggerDescriptionPlaceholder": "e.g. Use this flow when the user wants to schedule a meeting or asks about appointment availability.",
       "triggerDescriptionHint": "Natural-language hint the LLM router uses to decide whether a user message should activate this flow. Leave blank to disable auto-trigger.",
+      "helpWriteTrigger": "Help me write",
+      "helpWriteTriggerTitle": "Help me write the trigger description",
+      "helpWriteTriggerDescription": "Describe in your own words when this flow should kick in — example intents, user phrasings, when it should NOT fire. The LLM will rewrite a concise trigger description the router can use.",
+      "helpWriteTriggerPlaceholder": "e.g. Activate when the user wants to order pizza, mentions toppings, sizes, delivery or pickup. Do NOT trigger on general menu questions or complaints.",
+      "helpWriteTriggerHint": "Tip: also describe what should NOT trigger this flow, not only what should.",
+      "helpWriteTriggerGenerate": "Generate description",
       "triggerMode": "Trigger Mode"
     },
     "triggerModes": {
@@ -91,7 +97,8 @@
       "condition": "Condition",
       "functionCall": "Function Call",
       "subFlow": "Sub Flow",
-      "persona": "Persona Switch"
+      "persona": "Persona Switch",
+      "switch": "Switch"
     },
     "properties": {
       "header": "Node Properties",
@@ -124,6 +131,14 @@
       "personaPlaceholder": "Pick a persona from the agent's catalog",
       "personaEmpty": "This agent has no personas in its catalog. Add some on the agent's Personas page.",
       "personaHint": "When this step runs, the conversation immediately switches to this persona's voice. The change persists until another Persona node is reached or the conversation ends.",
+      "switchVariable": "Switch Variable",
+      "switchVariableHint": "Optional flow-context variable name where the matched option label is stored.",
+      "switchOptions": "Switch Options",
+      "switchOptionsHint": "Each option becomes a separate handle on the right of the node — wire it to a different downstream flow.",
+      "switchOptionsEmpty": "No options yet — add one to expose a branch.",
+      "switchOptionPlaceholder": "e.g. Option {{index}}",
+      "switchAddOption": "Add option",
+      "switchRemoveOption": "Remove option",
       "validationRule": "Validation Rules",
       "validationNone": "None",
       "validation": {

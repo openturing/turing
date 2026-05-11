@@ -4,7 +4,7 @@ import { LoadProvider } from "@/components/loading-provider";
 import { SubPageHeader } from "@/components/sub.page.header";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
-import { IconSparkles } from "@tabler/icons-react";
+import { IconUserCircle } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
@@ -25,7 +25,7 @@ export default function AIAgentPersonaPage() {
 
   return (
     <LoadProvider checkIsNotUndefined={agent} error={error} tryAgainUrl={`${ROUTES.AI_AGENT_INSTANCE}/${id}/persona`}>
-      <SubPageHeader icon={IconSparkles} name={t("aiAgent.persona.title")} feature={t("aiAgent.persona.title")}
+      <SubPageHeader icon={IconUserCircle} name={t("aiAgent.persona.title")} feature={t("aiAgent.persona.title")}
         description={t("aiAgent.persona.description")} />
       {agent && <AIAgentPersonaForm value={agent} />}
     </LoadProvider>

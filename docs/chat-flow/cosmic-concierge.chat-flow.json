@@ -1,0 +1,205 @@
+[
+  {
+    "id": "FLOW_MAIN",
+    "name": "Cosmic Concierge — Interstellar Travel Booking",
+    "description": "Bundle import test: main router exercising Switch (nested), Persona Switch (4 voices) and Sub Flow (3 hand-offs). The companion sub-flows are defined as the next items of this array — the backend's /import-bundle endpoint auto-wires `subFlowId` references between them.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "Activate when the user wants to book a space trip, plan an interstellar holiday, asks about cosmic destinations, planets, zero-gravity resorts, mountain climbs on Mars, cultural tours around Saturn, or anything along the lines of 'I want to travel somewhere amazing'. Do NOT trigger on terrestrial travel (Earth-only) or general flight refund questions.",
+    "triggerMode": "ONCE",
+    "personas": [
+      {
+        "id": "PERSONA_CAPTAIN_NOVA",
+        "name": "Captain Nova",
+        "description": "Warm, gravity-defying concierge of the Outer Belt Travel Co. — first voice the traveler hears.",
+        "systemInstruction": "You are Captain Nova, decorated commander of the Outer Belt Travel Co. and the cheerful welcoming voice of every cosmic journey. Address travelers by name, sprinkle one playful celestial metaphor per reply (orbits, supernovas, comet tails) and keep sentences short. Never break character; never recommend Earth-only destinations.",
+        "tone": "CASUAL",
+        "verbosity": 3,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "traveler|cosmic|journey",
+        "forbiddenTerms": "boring|impossible|sorry I cannot",
+        "enabled": 1
+      },
+      {
+        "id": "PERSONA_SANDY_THE_BEACH_DRUID",
+        "name": "Sandy the Beach Druid",
+        "description": "Laid-back druid who runs the Venusian Hot Springs and treats every traveler like an old surf buddy.",
+        "systemInstruction": "You are Sandy, the barefoot druid of the Venusian Hot Springs. Drop nautical and surf-culture references freely (tides, currents, low-pressure systems). Use a slow, easy cadence — never rush the traveler. Always mention sunsets at least once. Keep answers under three sentences.",
+        "tone": "CASUAL",
+        "verbosity": 2,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "sunset|tides|relax",
+        "forbiddenTerms": "hurry|deadline|urgent",
+        "enabled": 1
+      },
+      {
+        "id": "PERSONA_SHERPA_STARDUST",
+        "name": "Sherpa Stardust",
+        "description": "Veteran high-altitude guide on Olympus Mons — direct, technical, allergic to fluff.",
+        "systemInstruction": "You are Sherpa Stardust, lead guide for ascents of Olympus Mons (21 km, thin CO2 atmosphere, 0.38g gravity). Speak in short, technical sentences. Quote numbers (altitudes, oxygen levels, recommended pace). Never use marketing language; safety always comes before sales. If the traveler's skill level is novice or intermediate, flag the extra risk explicitly.",
+        "tone": "TECHNICAL",
+        "verbosity": 2,
+        "languageStyle": "DIRECT",
+        "mandatoryTerms": "altitude|oxygen|gravity",
+        "forbiddenTerms": "easy|simple|no problem",
+        "enabled": 1
+      },
+      {
+        "id": "PERSONA_CURATOR_CASSIOPEIA",
+        "name": "Curator Cassiopeia",
+        "description": "Erudite curator of the Saturnian Ring Cities — speaks in cultivated, lyrical prose.",
+        "systemInstruction": "You are Curator Cassiopeia, lifelong scholar of the Saturnian Ring Cities. Speak in lyrical, slightly formal English. Weave in references to galactic composers, post-orbital artists, or ring-era historians whenever you describe a tour option. Politely decline any vulgar or hurried framing — restate the question with elegance instead.",
+        "tone": "FORMAL",
+        "verbosity": 4,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "rings|heritage|composition",
+        "forbiddenTerms": "cheap|tacky|whatever",
+        "enabled": 1
+      }
+    ],
+    "graph": {
+      "nodes": [
+        { "id": "start-1", "type": "start", "position": { "x": 40, "y": 320 }, "data": { "label": "START", "type": "start" } },
+        { "id": "persona-greeter", "type": "persona", "position": { "x": 180, "y": 300 }, "data": { "label": "VOICE: Captain Nova", "type": "persona", "personaId": "PERSONA_CAPTAIN_NOVA" } },
+        { "id": "ai-name", "type": "aiQuestion", "position": { "x": 380, "y": 290 }, "data": { "label": "ASK NAME", "type": "aiQuestion", "aiInstruction": "Greet the traveler warmly as Captain Nova, the gravity-defying concierge of the Outer Belt Travel Co. Ask them what name shall be etched in the stars for this journey. Keep it under two short sentences and one playful celestial metaphor.", "outputVariable": "traveler_name" } },
+        { "id": "ai-vibe", "type": "aiQuestion", "position": { "x": 620, "y": 290 }, "data": { "label": "ASK ADVENTURE TYPE", "type": "aiQuestion", "aiInstruction": "Address {{traveler_name}} by name. Ask what kind of cosmic adventure calls to them today — a beach getaway, a mountain expedition, a cultural tour, or a mystery destination. List the four options as bullets, each with a single fun teaser line.", "outputVariable": "adventure_type" } },
+        { "id": "switch-main", "type": "switch", "position": { "x": 880, "y": 270 }, "data": { "label": "ADVENTURE TYPE", "type": "switch", "switchVariable": "adventure_type", "switchOptions": [
+          { "id": "opt-beach", "label": "Beach Getaway" },
+          { "id": "opt-mountain", "label": "Mountain Expedition" },
+          { "id": "opt-cultural", "label": "Cultural Tour" },
+          { "id": "opt-mystery", "label": "Mystery Destination" }
+        ] } },
+
+        { "id": "persona-beach", "type": "persona", "position": { "x": 1140, "y": 60 }, "data": { "label": "VOICE: Sandy the Beach Druid", "type": "persona", "personaId": "PERSONA_SANDY_THE_BEACH_DRUID" } },
+        { "id": "sub-beach", "type": "subFlow", "position": { "x": 1380, "y": 60 }, "data": { "label": "BOOK VENUSIAN RESORT", "type": "subFlow", "subFlowId": "FLOW_VENUSIAN_RESORT", "subFlowName": "Venusian Resort Booking" } },
+        { "id": "end-beach", "type": "end", "position": { "x": 1620, "y": 80 }, "data": { "label": "END", "type": "end" } },
+
+        { "id": "persona-mountain", "type": "persona", "position": { "x": 1140, "y": 260 }, "data": { "label": "VOICE: Sherpa Stardust", "type": "persona", "personaId": "PERSONA_SHERPA_STARDUST" } },
+        { "id": "sub-mountain", "type": "subFlow", "position": { "x": 1380, "y": 260 }, "data": { "label": "BOOK MARTIAN GUIDE", "type": "subFlow", "subFlowId": "FLOW_MARTIAN_GUIDE", "subFlowName": "Martian Guide Booking" } },
+        { "id": "end-mountain", "type": "end", "position": { "x": 1620, "y": 280 }, "data": { "label": "END", "type": "end" } },
+
+        { "id": "persona-cultural", "type": "persona", "position": { "x": 1140, "y": 460 }, "data": { "label": "VOICE: Curator Cassiopeia", "type": "persona", "personaId": "PERSONA_CURATOR_CASSIOPEIA" } },
+        { "id": "sub-cultural", "type": "subFlow", "position": { "x": 1380, "y": 460 }, "data": { "label": "BOOK SATURNIAN RING TOUR", "type": "subFlow", "subFlowId": "FLOW_SATURNIAN_RING_TOUR", "subFlowName": "Saturnian Ring Tour Booking" } },
+        { "id": "end-cultural", "type": "end", "position": { "x": 1620, "y": 480 }, "data": { "label": "END", "type": "end" } },
+
+        { "id": "ai-mystery-budget", "type": "aiQuestion", "position": { "x": 1140, "y": 680 }, "data": { "label": "MYSTERY — BUDGET", "type": "aiQuestion", "aiInstruction": "Drop the polite tone and become a low-voiced cosmic smuggler whispering through a comm channel. Ask {{traveler_name}} for their budget in galactic credits. Number only. Hint that anything above 50,000 unlocks 'the really interesting destinations'.", "outputVariable": "budget", "validationRule": "number" } },
+        { "id": "func-mystery", "type": "functionCall", "position": { "x": 1380, "y": 680 }, "data": { "label": "PICK MYSTERY DEST", "type": "functionCall", "toolSource": "NATIVE", "functionName": "list_sites", "aiInstruction": "Call list_sites to fetch the available destinations, then pretend to roll cosmic dice and pick one that fits the {{budget}}. Reveal the destination with dramatic flair, then warn that the coordinates auto-destruct in 60 seconds." } },
+        { "id": "end-mystery", "type": "end", "position": { "x": 1620, "y": 700 }, "data": { "label": "END", "type": "end" } }
+      ],
+      "edges": [
+        { "id": "e-start-persona", "source": "start-1", "target": "persona-greeter", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-persona-ainame", "source": "persona-greeter", "target": "ai-name", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-ainame-aivibe", "source": "ai-name", "target": "ai-vibe", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-aivibe-switch", "source": "ai-vibe", "target": "switch-main", "sourceHandle": null, "targetHandle": null, "label": null },
+
+        { "id": "e-switch-beach", "source": "switch-main", "target": "persona-beach", "sourceHandle": "opt-beach", "targetHandle": null, "label": "Beach" },
+        { "id": "e-switch-mountain", "source": "switch-main", "target": "persona-mountain", "sourceHandle": "opt-mountain", "targetHandle": null, "label": "Mountain" },
+        { "id": "e-switch-cultural", "source": "switch-main", "target": "persona-cultural", "sourceHandle": "opt-cultural", "targetHandle": null, "label": "Cultural" },
+        { "id": "e-switch-mystery", "source": "switch-main", "target": "ai-mystery-budget", "sourceHandle": "opt-mystery", "targetHandle": null, "label": "Mystery" },
+
+        { "id": "e-beach-1", "source": "persona-beach", "target": "sub-beach", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-beach-2", "source": "sub-beach", "target": "end-beach", "sourceHandle": null, "targetHandle": null, "label": null },
+
+        { "id": "e-mountain-1", "source": "persona-mountain", "target": "sub-mountain", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-mountain-2", "source": "sub-mountain", "target": "end-mountain", "sourceHandle": null, "targetHandle": null, "label": null },
+
+        { "id": "e-cultural-1", "source": "persona-cultural", "target": "sub-cultural", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-cultural-2", "source": "sub-cultural", "target": "end-cultural", "sourceHandle": null, "targetHandle": null, "label": null },
+
+        { "id": "e-mystery-1", "source": "ai-mystery-budget", "target": "func-mystery", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-mystery-2", "source": "func-mystery", "target": "end-mystery", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  },
+
+  {
+    "id": "FLOW_VENUSIAN_RESORT",
+    "name": "Venusian Resort Booking",
+    "description": "Sub-flow invoked from the main Cosmic Concierge router when the traveler picks the Beach Getaway branch. Captures lodging, stay length, and dining tier on the Venusian Hot Springs.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "",
+    "triggerMode": "ONCE",
+    "graph": {
+      "nodes": [
+        { "id": "start", "type": "start", "position": { "x": 40, "y": 220 }, "data": { "label": "START", "type": "start" } },
+        { "id": "ai-lodging", "type": "aiQuestion", "position": { "x": 220, "y": 200 }, "data": { "label": "LODGING", "type": "aiQuestion", "aiInstruction": "As Sandy, ask {{traveler_name}} where they'd like to lay their head: a cabana on the cliffs, a glass dome over the hot springs, or a houseboat on the Venusian sea. One sunset reference required.", "outputVariable": "venusian_lodging" } },
+        { "id": "ai-stay-length", "type": "aiQuestion", "position": { "x": 480, "y": 200 }, "data": { "label": "STAY LENGTH", "type": "aiQuestion", "aiInstruction": "Ask how many Venusian sunsets the traveler wants to enjoy (1–30). Capture a number.", "outputVariable": "beach_days", "validationRule": "number" } },
+        { "id": "ai-dining", "type": "aiQuestion", "position": { "x": 740, "y": 200 }, "data": { "label": "DINING TIER", "type": "aiQuestion", "aiInstruction": "Offer three dining tiers: gravity-light brunches (half board), full board (3 meals + tide-side dessert), or all-inclusive (full board + after-sunset bar). Capture the choice.", "outputVariable": "dining_tier" } },
+        { "id": "func-confirm", "type": "functionCall", "position": { "x": 1000, "y": 200 }, "data": { "label": "CONFIRM AVAILABILITY", "type": "functionCall", "toolSource": "NATIVE", "functionName": "list_sites", "aiInstruction": "Call list_sites to look up Venusian Hot Springs availability for {{venusian_lodging}} over {{beach_days}} days at the {{dining_tier}} tier. Summarise the booking back as Sandy would — slow, beachy, sunset-aware." } },
+        { "id": "end", "type": "end", "position": { "x": 1240, "y": 220 }, "data": { "label": "END", "type": "end" } }
+      ],
+      "edges": [
+        { "id": "e1", "source": "start", "target": "ai-lodging", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e2", "source": "ai-lodging", "target": "ai-stay-length", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e3", "source": "ai-stay-length", "target": "ai-dining", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e4", "source": "ai-dining", "target": "func-confirm", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e5", "source": "func-confirm", "target": "end", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  },
+
+  {
+    "id": "FLOW_MARTIAN_GUIDE",
+    "name": "Martian Guide Booking",
+    "description": "Sub-flow invoked from the main Cosmic Concierge router for the Mountain Expedition branch. Pairs the traveler with a Sherpa Stardust-vetted guide for Olympus Mons.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "",
+    "triggerMode": "ONCE",
+    "graph": {
+      "nodes": [
+        { "id": "start", "type": "start", "position": { "x": 40, "y": 220 }, "data": { "label": "START", "type": "start" } },
+        { "id": "ai-skill", "type": "aiQuestion", "position": { "x": 220, "y": 200 }, "data": { "label": "CLIMBING SKILL", "type": "aiQuestion", "aiInstruction": "Speaking as Sherpa Stardust, ask {{traveler_name}} about their climbing experience. Capture one of: novice, intermediate, expert. Quote the 21 km altitude and 0.38g gravity so they take the question seriously.", "outputVariable": "skill_level" } },
+        { "id": "ai-route", "type": "aiQuestion", "position": { "x": 480, "y": 200 }, "data": { "label": "PREFERRED ROUTE", "type": "aiQuestion", "aiInstruction": "Offer three routes: base camp acclimation start, mid-altitude drop-in, or summit-only fly-in. Warn that novices and intermediates should not attempt the summit fly-in. Capture the choice.", "outputVariable": "preferred_route" } },
+        { "id": "ai-duration", "type": "aiQuestion", "position": { "x": 740, "y": 200 }, "data": { "label": "DURATION (SOLS)", "type": "aiQuestion", "aiInstruction": "Ask how many Martian sols the traveler wants on the mountain. Validate as a number between 1 and 14. Quote the recommended pace.", "outputVariable": "expedition_sols", "validationRule": "number" } },
+        { "id": "func-gravity", "type": "functionCall", "position": { "x": 1000, "y": 200 }, "data": { "label": "CHECK GRAVITY + WEATHER", "type": "functionCall", "toolSource": "NATIVE", "functionName": "search_site", "aiInstruction": "Call search_site to look up the current gravity reading and weather on Olympus Mons. If {{skill_level}} is novice or intermediate, flag the extra risk explicitly. Return a short briefing in Sherpa Stardust's voice." } },
+        { "id": "func-match", "type": "functionCall", "position": { "x": 1260, "y": 200 }, "data": { "label": "MATCH GUIDE", "type": "functionCall", "toolSource": "NATIVE", "functionName": "list_sites", "aiInstruction": "Call list_sites to find an available Martian guide whose specialty matches the {{preferred_route}} and {{skill_level}}. Quote oxygen reserves and recommended summit windows." } },
+        { "id": "end", "type": "end", "position": { "x": 1500, "y": 220 }, "data": { "label": "END", "type": "end" } }
+      ],
+      "edges": [
+        { "id": "e1", "source": "start", "target": "ai-skill", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e2", "source": "ai-skill", "target": "ai-route", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e3", "source": "ai-route", "target": "ai-duration", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e4", "source": "ai-duration", "target": "func-gravity", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e5", "source": "func-gravity", "target": "func-match", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e6", "source": "func-match", "target": "end", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  },
+
+  {
+    "id": "FLOW_SATURNIAN_RING_TOUR",
+    "name": "Saturnian Ring Tour Booking",
+    "description": "Sub-flow invoked from the main Cosmic Concierge router for the Cultural Tour branch. Curator Cassiopeia escorts the traveler through Music, Art, or History tracks across the Ring Cities.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "",
+    "triggerMode": "ONCE",
+    "graph": {
+      "nodes": [
+        { "id": "start", "type": "start", "position": { "x": 40, "y": 320 }, "data": { "label": "START", "type": "start" } },
+        { "id": "ai-tour-style", "type": "aiQuestion", "position": { "x": 220, "y": 300 }, "data": { "label": "TOUR STYLE", "type": "aiQuestion", "aiInstruction": "As Curator Cassiopeia, ask {{traveler_name}} which track of culture calls to them: Music of the Spheres, Galactic Art Galleries, or Cosmic History. Capture as `tour_style`. Use one lyrical reference to a galactic composer or historian.", "outputVariable": "tour_style" } },
+        { "id": "switch-track", "type": "switch", "position": { "x": 500, "y": 290 }, "data": { "label": "TRACK", "type": "switch", "switchVariable": "tour_style", "switchOptions": [
+          { "id": "opt-music", "label": "Music of the Spheres" },
+          { "id": "opt-art", "label": "Galactic Art Galleries" },
+          { "id": "opt-history", "label": "Cosmic History" }
+        ] } },
+        { "id": "ai-music", "type": "aiQuestion", "position": { "x": 760, "y": 100 }, "data": { "label": "MUSIC — RING CHOICE", "type": "aiQuestion", "aiInstruction": "Ask which ring's concert season the traveler wants to attend (A, B, C, or the elusive G). Mention one composer who's currently in residence on that ring.", "outputVariable": "music_ring" } },
+        { "id": "ai-art", "type": "aiQuestion", "position": { "x": 760, "y": 290 }, "data": { "label": "ART — GALLERY ERA", "type": "aiQuestion", "aiInstruction": "Ask which gallery era the traveler wants to focus on: pre-orbital classics, transit-era modernism, or post-orbital contemporary. Drop one painter or sculptor name per era.", "outputVariable": "art_era" } },
+        { "id": "ai-history", "type": "aiQuestion", "position": { "x": 760, "y": 500 }, "data": { "label": "HISTORY — EPOCH", "type": "aiQuestion", "aiInstruction": "Ask which epoch of Saturnian history fascinates the traveler: the first colony cycles, the Great Ring Wars, or the modern Confederation era. Name one historian per epoch.", "outputVariable": "history_epoch" } },
+        { "id": "ai-duration", "type": "aiQuestion", "position": { "x": 1080, "y": 300 }, "data": { "label": "TOUR DURATION", "type": "aiQuestion", "aiInstruction": "Ask how many light-cycles the traveler wants for the tour. Validate as a number. Recommend the canonical 3-cycle minimum and explain why with reference to ring transit times.", "outputVariable": "tour_cycles", "validationRule": "number" } },
+        { "id": "func-schedule", "type": "functionCall", "position": { "x": 1340, "y": 300 }, "data": { "label": "BUILD SCHEDULE", "type": "functionCall", "toolSource": "NATIVE", "functionName": "search_site", "aiInstruction": "Call search_site to build a {{tour_cycles}}-cycle itinerary for the {{tour_style}} track. Pull whichever sub-variable is set (`music_ring`, `art_era`, or `history_epoch`). Narrate the schedule back in Curator Cassiopeia's voice." } },
+        { "id": "end", "type": "end", "position": { "x": 1580, "y": 320 }, "data": { "label": "END", "type": "end" } }
+      ],
+      "edges": [
+        { "id": "e1", "source": "start", "target": "ai-tour-style", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e2", "source": "ai-tour-style", "target": "switch-track", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e3", "source": "switch-track", "target": "ai-music", "sourceHandle": "opt-music", "targetHandle": null, "label": "Music" },
+        { "id": "e4", "source": "switch-track", "target": "ai-art", "sourceHandle": "opt-art", "targetHandle": null, "label": "Art" },
+        { "id": "e5", "source": "switch-track", "target": "ai-history", "sourceHandle": "opt-history", "targetHandle": null, "label": "History" },
+        { "id": "e6", "source": "ai-music", "target": "ai-duration", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e7", "source": "ai-art", "target": "ai-duration", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e8", "source": "ai-history", "target": "ai-duration", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e9", "source": "ai-duration", "target": "func-schedule", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e10", "source": "func-schedule", "target": "end", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  }
+]

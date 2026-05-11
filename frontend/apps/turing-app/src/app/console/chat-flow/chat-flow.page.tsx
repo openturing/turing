@@ -31,8 +31,6 @@ import { SubPageHeader } from "@/components/sub.page.header";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  CHAT_FLOW_GUARDRAIL_METHODS,
-  CHAT_FLOW_TRIGGER_MODES,
   type TurChatFlow,
   type TurChatFlowGuardrailMethod,
   type TurChatFlowTriggerMode,
@@ -40,15 +38,18 @@ import {
 import {
   useCreateChatFlow,
   useDeleteChatFlow,
+  useImportChatFlow,
+  useImportChatFlowBundle,
   useUpdateChatFlow,
 } from "@/api/queries/chat-flow.queries";
 import { TurChatFlowService } from "@/services/agent/chat-flow.service";
 
+import { buildImportPayloadFromExport } from "./chat-flow.import";
 import { ChatFlowDiagramTab } from "./components/chat-flow.diagram-tab";
 import { ChatFlowSettingsTab } from "./components/chat-flow.settings-tab";
 import {
-  DEFAULT_LABEL,
   INITIAL_ZOOM,
+  buildDefaultNodeData,
   deserializeGraph,
   serializeGraph,
 } from "./chat-flow.serialize";
@@ -85,6 +86,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const createMutation = useCreateChatFlow();
   const updateMutation = useUpdateChatFlow();
   const deleteMutation = useDeleteChatFlow();
+  const importMutation = useImportChatFlow();
+  const importBundleMutation = useImportChatFlowBundle();
 
   /* Auto-collapse the AI Agent's internal sidebar on first render only: the canvas needs the
      extra horizontal space. The ref guard prevents re-collapsing after the user reopens the
@@ -141,7 +144,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
         id,
         type,
         position,
-        data: { label: DEFAULT_LABEL[type], type },
+        data: buildDefaultNodeData(type),
       };
       setNodes((nds) => nds.concat(newNode));
     },
@@ -237,40 +240,37 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     async (file: File) => {
       try {
         const text = await file.text();
-        const parsed = JSON.parse(text) as {
-          name?: string;
-          description?: string | null;
-          guardrailMethod?: TurChatFlowGuardrailMethod;
-          triggerDescription?: string | null;
-          triggerMode?: TurChatFlowTriggerMode;
-          graph?: { nodes?: unknown; edges?: unknown };
-          // Back-compat: pre-Phase-B exports stored nodes/edges at the top level.
-          nodes?: unknown;
-          edges?: unknown;
-        };
-        const graphSource =
-          parsed.graph && (parsed.graph.nodes || parsed.graph.edges)
-            ? parsed.graph
-            : { nodes: parsed.nodes, edges: parsed.edges };
-        const reHydrated = deserializeGraph(JSON.stringify(graphSource));
-        setNodes(reHydrated.nodes);
-        setEdges(reHydrated.edges);
-        if (typeof parsed.name === "string") setName(parsed.name);
-        if (typeof parsed.description === "string") setDescription(parsed.description);
-        if (parsed.guardrailMethod && CHAT_FLOW_GUARDRAIL_METHODS.includes(parsed.guardrailMethod)) {
-          setGuardrailMethod(parsed.guardrailMethod);
+        const parsed = JSON.parse(text) as unknown;
+        // Importing always creates a brand new flow (the current draft, persisted or not, is left
+        // untouched). Two file shapes are accepted: a single flow object (legacy single-import) or
+        // an array bundle whose items the backend auto-wires by sub-flow id.
+        if (Array.isArray(parsed)) {
+          const bundle = parsed.map(buildImportPayloadFromExport);
+          const created = await importBundleMutation.mutateAsync({ agentId, bundle });
+          if (created.length === 0) {
+            throw new Error("Empty bundle");
+          }
+          toast.success(
+            t("chatFlow.bundleImported", {
+              count: created.length,
+              defaultValue: `Imported ${created.length} chat flow(s).`,
+            }),
+          );
+          navigate(`${listUrl}/${created[0].id}`);
+        } else {
+          const payload = buildImportPayloadFromExport(
+            parsed as Parameters<typeof buildImportPayloadFromExport>[0],
+          );
+          const created = await importMutation.mutateAsync({ agentId, payload });
+          toast.success(t("chatFlow.imported", { name: created.name ?? file.name }));
+          navigate(`${listUrl}/${created.id}`);
         }
-        if (typeof parsed.triggerDescription === "string") setTriggerDescription(parsed.triggerDescription);
-        if (parsed.triggerMode && CHAT_FLOW_TRIGGER_MODES.includes(parsed.triggerMode)) {
-          setTriggerMode(parsed.triggerMode);
-        }
-        toast.success(t("chatFlow.imported", { name: parsed.name ?? file.name }));
       } catch (error) {
         console.error("Chat flow import failed", error);
         toast.error(t("chatFlow.importFailed"));
       }
     },
-    [setNodes, setEdges, t],
+    [agentId, importBundleMutation, importMutation, listUrl, navigate, t],
   );
 
   const onImportClick = useCallback(() => {
@@ -407,7 +407,7 @@ export default function ChatFlowPage() {
         description: "",
         definitionJson: "",
         enabled: 1,
-        guardrailMethod: "HEURISTIC",
+        guardrailMethod: "LLM_JUDGE",
         triggerDescription: "",
         triggerMode: "ONCE",
       });

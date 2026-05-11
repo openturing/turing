@@ -148,12 +148,69 @@ public final class ChatFlowOps {
             appendConditionalNextSteps(sb, graph, target);
             return;
         }
+        if ("switch".equals(type)) {
+            appendSwitchNextSteps(sb, graph, target);
+            return;
+        }
         if (target.aiInstruction() == null || target.aiInstruction().isBlank()) {
             return;
         }
         sb.append("Next step preview (for chaining your reply): ")
                 .append(target.aiInstruction().trim())
                 .append("\n");
+    }
+
+    /**
+     * For switch targets, expands each option's downstream so the bot knows what to ask after the
+     * user's answer routes the flow. Handles are option ids (semantically opaque), so we look up
+     * each edge's matching {@code SwitchOption} on the source node and surface the human-readable
+     * label instead — that's what the model can sensibly reason about when chaining.
+     */
+    private static void appendSwitchNextSteps(StringBuilder sb, ChatFlowGraph graph, ChatFlowNode switchNode) {
+        List<ChatFlowEdge> branches = graph.outgoingEdges(switchNode.id());
+        if (branches.isEmpty()) {
+            return;
+        }
+        Map<String, String> labelByHandle = new LinkedHashMap<>();
+        for (ChatFlowNode.SwitchOption option : switchNode.switchOptions()) {
+            if (option != null && option.id() != null && option.label() != null) {
+                labelByHandle.put(option.id(), option.label());
+            }
+        }
+        StringBuilder hint = new StringBuilder();
+        boolean any = false;
+        for (ChatFlowEdge edge : branches) {
+            Optional<ChatFlowNode> branchOpt = graph.nodeById(edge.target());
+            if (branchOpt.isEmpty()) {
+                continue;
+            }
+            ChatFlowNode branch = branchOpt.get();
+            if ("end".equals(branch.type())) {
+                continue;
+            }
+            String instruction = branch.aiInstruction();
+            if (instruction == null || instruction.isBlank()) {
+                continue;
+            }
+            String handle = edge.sourceHandle();
+            String label = handle == null ? null : labelByHandle.get(handle);
+            String displayBranch = label != null && !label.isBlank()
+                    ? label
+                    : handle == null || handle.isBlank() ? "default" : handle;
+            hint.append("  - If '").append(displayBranch).append("' branch: ")
+                    .append(instruction.trim()).append("\n");
+            any = true;
+        }
+        if (!any) {
+            return;
+        }
+        String varName = switchNode.switchVariable() == null || switchNode.switchVariable().isBlank()
+                ? "the user's answer"
+                : switchNode.switchVariable().trim();
+        sb.append("Next step preview (the flow branches on `")
+                .append(varName)
+                .append("` — pick the matching question):\n")
+                .append(hint);
     }
 
     /**
@@ -371,6 +428,221 @@ public final class ChatFlowOps {
             }
         }
         return wildcard;
+    }
+
+    // ─────────────────────────── Switch walker ───────────────────────────
+
+    /**
+     * Hard cap on consecutive switch hops in {@link #walkThroughSwitches}. As with
+     * {@link #CONDITION_WALK_MAX}, authored flows never need this many; the cap
+     * just keeps pathological cycles non-fatal.
+     */
+    private static final int SWITCH_WALK_MAX = 8;
+
+    /**
+     * Walks the state through any chain of {@code switch} nodes, classifying the configured
+     * {@code switchVariable} against each node's {@code switchOptions} and following the matching
+     * edge ({@code sourceHandle} = option id). Returns when the state lands on a non-switch node,
+     * the chain dead-ends, or the safety cap is hit. Mutates {@code state.currentNodeId}.
+     *
+     * <p>Like conditions, switch nodes are transparent to the chat — the LLM never sees them as a
+     * "Goal". The engine resolves them between turns: it reads the variable, picks the matching
+     * option, and advances.
+     *
+     * @since 2026.2.7
+     */
+    public static void walkThroughSwitches(TurChatFlowState state,
+            ChatFlowGraph graph,
+            ChatModel auxModel) {
+        if (state == null || graph == null) {
+            return;
+        }
+        for (int i = 0; i < SWITCH_WALK_MAX; i++) {
+            Optional<ChatFlowNode> currentOpt = currentNode(state, graph);
+            if (currentOpt.isEmpty()) {
+                return;
+            }
+            ChatFlowNode current = currentOpt.get();
+            if (!"switch".equals(current.type())) {
+                return;
+            }
+            Map<String, String> variables = readVariables(state);
+            String resolvedHandle = resolveSwitchHandle(auxModel, current, variables);
+            ChatFlowEdge edge = pickConditionEdge(graph, current.id(), resolvedHandle);
+            if (edge == null) {
+                log.warn("[FlowOps] Switch '{}' has no edge for handle '{}' and no wildcard — staying",
+                        current.id(), resolvedHandle);
+                return;
+            }
+            Optional<ChatFlowNode> target = graph.nodeById(edge.target());
+            if (target.isEmpty()) {
+                log.warn("[FlowOps] Switch edge '{}' points at missing node '{}'",
+                        edge.id(), edge.target());
+                return;
+            }
+            log.info("[FlowOps] Switch '{}' (var='{}') → option '{}' → node '{}'",
+                    current.id(), current.switchVariable(), resolvedHandle, target.get().id());
+            state.setCurrentNodeId(target.get().id());
+        }
+        log.warn("[FlowOps] walkThroughSwitches hit the {}-hop safety cap", SWITCH_WALK_MAX);
+    }
+
+    /**
+     * Picks the {@code switchOptions} entry that best matches the variable value, returning its
+     * {@code id} so the caller can find the matching outgoing edge by {@code sourceHandle}.
+     *
+     * <p>Resolution strategy, biased toward zero-cost classification first:
+     * <ol>
+     *   <li><b>Exact match</b>: variable value equals an option label (case-insensitive, trimmed).</li>
+     *   <li><b>Substring match</b>: the value contains an option label, or the label contains the
+     *       value. Picks the option with the longest matching segment (so "Beach Getaway"
+     *       beats "Beach" when both labels start with "Beach").</li>
+     *   <li><b>LLM classifier</b>: when the cheap matches don't find anything and {@code auxModel}
+     *       is available, ask the LLM to pick the best option id. Returns the literal
+     *       {@code NONE} when no option fits — that falls through to the wildcard edge.</li>
+     * </ol>
+     *
+     * <p>When the variable is missing, the options list is empty, or every strategy gives up,
+     * returns {@code null} so {@link #pickConditionEdge} resolves to the wildcard fallback (an
+     * edge with no {@code sourceHandle}). Authors who care about coverage should keep one such
+     * fallback wired on every switch.
+     */
+    private static String resolveSwitchHandle(ChatModel auxModel,
+            ChatFlowNode switchNode,
+            Map<String, String> variables) {
+        List<ChatFlowNode.SwitchOption> options = switchNode.switchOptions();
+        if (options == null || options.isEmpty()) {
+            log.warn("[FlowOps] Switch '{}' has no options configured", switchNode.id());
+            return null;
+        }
+        String variableName = switchNode.switchVariable();
+        String rawValue = variableName == null || variableName.isBlank()
+                ? null
+                : variables.get(variableName);
+        if (rawValue == null || rawValue.isBlank()) {
+            log.info("[FlowOps] Switch '{}' has no usable value (var='{}') — falling back to wildcard",
+                    switchNode.id(), variableName);
+            return null;
+        }
+        String value = rawValue.trim();
+        String lowerValue = value.toLowerCase();
+
+        // 1) Exact label match.
+        for (ChatFlowNode.SwitchOption option : options) {
+            if (option == null || option.label() == null) {
+                continue;
+            }
+            if (option.label().trim().equalsIgnoreCase(value)) {
+                log.info("[FlowOps] Switch '{}' exact match: '{}' → option '{}'",
+                        switchNode.id(), value, option.id());
+                return option.id();
+            }
+        }
+
+        // 2) Substring match — prefer the longest option label that fits, so multi-word labels
+        //    take precedence over their own prefixes ("Beach Getaway" > "Beach").
+        ChatFlowNode.SwitchOption best = null;
+        int bestLen = 0;
+        for (ChatFlowNode.SwitchOption option : options) {
+            if (option == null || option.label() == null || option.label().isBlank()) {
+                continue;
+            }
+            String lowerLabel = option.label().trim().toLowerCase();
+            if (lowerValue.contains(lowerLabel) || lowerLabel.contains(lowerValue)) {
+                int len = Math.min(lowerLabel.length(), lowerValue.length());
+                if (len > bestLen) {
+                    best = option;
+                    bestLen = len;
+                }
+            }
+        }
+        if (best != null) {
+            log.info("[FlowOps] Switch '{}' substring match: '{}' → option '{}' (label='{}')",
+                    switchNode.id(), value, best.id(), best.label());
+            return best.id();
+        }
+
+        // 3) LLM classifier — the user phrased their answer in a way the cheap matches missed
+        //    ("I want to climb something" vs "Mountain Expedition"). Ask the aux model to pick.
+        if (auxModel == null) {
+            log.info("[FlowOps] Switch '{}' has no aux model for classification — falling back to wildcard",
+                    switchNode.id());
+            return null;
+        }
+        return classifySwitchWithLlm(auxModel, switchNode, options, variableName, value);
+    }
+
+    /**
+     * Asks {@code auxModel} to classify {@code value} into one of the supplied option ids. Returns
+     * the chosen id (when valid) or {@code null} when the model can't decide, returns a malformed
+     * answer, or replies with the sentinel {@code NONE}.
+     */
+    private static String classifySwitchWithLlm(ChatModel auxModel,
+            ChatFlowNode switchNode,
+            List<ChatFlowNode.SwitchOption> options,
+            String variableName,
+            String value) {
+        StringBuilder optionList = new StringBuilder();
+        Map<String, ChatFlowNode.SwitchOption> byId = new LinkedHashMap<>();
+        for (ChatFlowNode.SwitchOption option : options) {
+            if (option == null || option.id() == null || option.id().isBlank()) {
+                continue;
+            }
+            byId.put(option.id(), option);
+            optionList.append("  - ").append(option.id());
+            if (option.label() != null && !option.label().isBlank()) {
+                optionList.append(": ").append(option.label().trim());
+            }
+            optionList.append('\n');
+        }
+        if (byId.isEmpty()) {
+            return null;
+        }
+        String sys = """
+                You classify a user's answer into one of several chat-flow branches.
+
+                Reply with EXACTLY one option id from the list below — no quotes, no JSON, no
+                explanation. If no option fits, reply with the literal word: NONE.
+
+                Match liberally: free-text answers like "I want a beach holiday" should map to a
+                "Beach Getaway" option. Honour the user's language; treat translations and
+                synonyms as matches when they're clearly equivalent.
+                """;
+        String user = "Variable name: " + safe(variableName) + "\n"
+                + "Variable value: \"" + value + "\"\n"
+                + "Options (id: label):\n" + optionList
+                + "Answer (one id or NONE):";
+        try {
+            Prompt prompt = new Prompt(List.of(new SystemMessage(sys), new UserMessage(user)));
+            var response = auxModel.call(prompt);
+            String reply = response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null
+                            ? response.getResult().getOutput().getText().trim()
+                            : "";
+            // The model occasionally wraps the answer in backticks or quotes; strip them before
+            // the lookup. We also accept the id case-insensitively to be lenient.
+            String cleaned = reply.replaceAll("^[`\"']+|[`\"']+$", "").trim();
+            if (cleaned.isEmpty() || "NONE".equalsIgnoreCase(cleaned)) {
+                log.info("[FlowOps] Switch '{}' LLM classifier returned NONE for '{}'",
+                        switchNode.id(), value);
+                return null;
+            }
+            for (Map.Entry<String, ChatFlowNode.SwitchOption> entry : byId.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(cleaned)) {
+                    log.info("[FlowOps] Switch '{}' LLM classifier: '{}' → option '{}'",
+                            switchNode.id(), value, entry.getKey());
+                    return entry.getKey();
+                }
+            }
+            log.warn("[FlowOps] Switch '{}' LLM classifier returned unknown id '{}' (reply='{}')",
+                    switchNode.id(), cleaned, reply);
+            return null;
+        } catch (Exception e) {
+            log.warn("[FlowOps] Switch '{}' LLM classifier failed: {} — falling back to wildcard",
+                    switchNode.id(), e.getMessage());
+            return null;
+        }
     }
 
     /**

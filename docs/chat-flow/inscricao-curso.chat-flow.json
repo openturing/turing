@@ -1,0 +1,250 @@
+[
+  {
+    "id": "FLOW_PRINCIPAL",
+    "name": "Inscrição em Curso",
+    "description": "Fluxo principal de inscrição de novos alunos. Pergunta o nome e o tipo de curso (Graduação ou Educação Executiva) e delega para o sub-fluxo correspondente. A persona principal fala português; cada sub-fluxo troca a voz para o idioma do programa (italiano para Graduação, espanhol para Educação Executiva).",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "Ativar quando o usuário quiser se inscrever em um curso novo, perguntar sobre programas, vestibular, MBA, pós-graduação ou educação executiva. NÃO disparar para dúvidas sobre boleto, segunda via, atestado de matrícula ou suporte técnico do portal.",
+    "triggerMode": "ONCE",
+    "personas": [
+      {
+        "id": "PERSONA_ATENDENTE_BR",
+        "name": "Atendente Brasileiro",
+        "description": "Atendente brasileiro acolhedor da secretaria acadêmica — primeira voz que o aluno escuta.",
+        "systemInstruction": "Você é um atendente brasileiro da secretaria acadêmica. Fale SEMPRE em português brasileiro, em tom acolhedor e direto. Use frases curtas. Trate o aluno pelo primeiro nome assim que ele se apresentar. Nunca improvise informações que não foram pedidas no Goal da etapa atual.",
+        "tone": "CASUAL",
+        "verbosity": 3,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "matrícula|curso|atendimento",
+        "forbiddenTerms": "impossível|não posso ajudar",
+        "enabled": 1
+      },
+      {
+        "id": "PERSONA_PROFESSORE_IT",
+        "name": "Professore Italiano",
+        "description": "Professor italiano que apresenta os cursos de graduação na língua original do programa.",
+        "systemInstruction": "Sei un professore italiano dell'università. Rispondi SEMPRE in italiano, anche se l'utente scrive in altre lingue. Tono cortese e accademico, frasi medie. Presenta i corsi di laurea con un breve dettaglio per ciascuno. Non usare il portoghese o lo spagnolo, neppure per una parola.",
+        "tone": "FORMAL",
+        "verbosity": 4,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "corso|laurea|università",
+        "forbiddenTerms": "portoghese|inglese|economico",
+        "enabled": 1
+      },
+      {
+        "id": "PERSONA_PROFESOR_ES",
+        "name": "Profesor Ejecutivo",
+        "description": "Profesor que presenta los programas de educación ejecutiva en español, con tono empresarial.",
+        "systemInstruction": "Eres un profesor de educación ejecutiva. Responde SIEMPRE en español, aunque el usuario escriba en otro idioma. Tono ejecutivo, conciso y orientado a resultados. Presenta los programas señalando el valor para la carrera del alumno. No uses portugués ni italiano en ninguna palabra.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "PERSUASIVE",
+        "mandatoryTerms": "programa|liderazgo|carrera",
+        "forbiddenTerms": "barato|aburrido",
+        "enabled": 1
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start-1",
+          "type": "start",
+          "position": { "x": 40, "y": 240 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "persona-pt",
+          "type": "persona",
+          "position": { "x": 200, "y": 220 },
+          "data": {
+            "label": "VOZ: Atendente BR",
+            "type": "persona",
+            "personaId": "PERSONA_ATENDENTE_BR"
+          }
+        },
+        {
+          "id": "ai-saudacao",
+          "type": "aiQuestion",
+          "position": { "x": 400, "y": 220 },
+          "data": {
+            "label": "PERGUNTAR NOME",
+            "type": "aiQuestion",
+            "aiInstruction": "Cumprimente o aluno em português brasileiro e pergunte o primeiro nome dele para abrir a inscrição. Uma frase curta de boas-vindas + a pergunta.",
+            "outputVariable": "aluno_nome"
+          }
+        },
+        {
+          "id": "ai-tipo-curso",
+          "type": "aiQuestion",
+          "position": { "x": 620, "y": 220 },
+          "data": {
+            "label": "TIPO DE CURSO",
+            "type": "aiQuestion",
+            "aiInstruction": "Cumprimente {{aluno_nome}} pelo nome e pergunte qual modalidade ele(a) está procurando: Graduação ou Educação Executiva. Liste as duas opções como bullets curtos, sem detalhar os cursos ainda.",
+            "outputVariable": "tipo_curso"
+          }
+        },
+        {
+          "id": "switch-tipo",
+          "type": "switch",
+          "position": { "x": 860, "y": 200 },
+          "data": {
+            "label": "MODALIDADE",
+            "type": "switch",
+            "switchVariable": "tipo_curso",
+            "switchOptions": [
+              { "id": "opt-graduacao", "label": "Graduação" },
+              { "id": "opt-executiva", "label": "Educação Executiva" }
+            ]
+          }
+        },
+        {
+          "id": "sub-graduacao",
+          "type": "subFlow",
+          "position": { "x": 1100, "y": 80 },
+          "data": {
+            "label": "CURSOS DE GRADUAÇÃO",
+            "type": "subFlow",
+            "subFlowId": "SUBFLOW_GRADUACAO",
+            "subFlowName": "Cursos de Graduação (italiano)"
+          }
+        },
+        {
+          "id": "end-graduacao",
+          "type": "end",
+          "position": { "x": 1320, "y": 100 },
+          "data": { "label": "FIM", "type": "end" }
+        },
+        {
+          "id": "sub-executiva",
+          "type": "subFlow",
+          "position": { "x": 1100, "y": 360 },
+          "data": {
+            "label": "CURSOS EXECUTIVOS",
+            "type": "subFlow",
+            "subFlowId": "SUBFLOW_EXECUTIVA",
+            "subFlowName": "Cursos de Educação Executiva (espanhol)"
+          }
+        },
+        {
+          "id": "end-executiva",
+          "type": "end",
+          "position": { "x": 1320, "y": 380 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "start-1", "target": "persona-pt", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e2", "source": "persona-pt", "target": "ai-saudacao", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e3", "source": "ai-saudacao", "target": "ai-tipo-curso", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e4", "source": "ai-tipo-curso", "target": "switch-tipo", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e5", "source": "switch-tipo", "target": "sub-graduacao", "sourceHandle": "opt-graduacao", "targetHandle": null, "label": "Graduação" },
+        { "id": "e6", "source": "switch-tipo", "target": "sub-executiva", "sourceHandle": "opt-executiva", "targetHandle": null, "label": "Executiva" },
+        { "id": "e7", "source": "sub-graduacao", "target": "end-graduacao", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e8", "source": "sub-executiva", "target": "end-executiva", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  },
+
+  {
+    "id": "SUBFLOW_GRADUACAO",
+    "name": "Cursos de Graduação (italiano)",
+    "description": "Sub-fluxo invocado quando o aluno escolhe Graduação. A persona Professore Italiano apresenta uma lista de cursos de graduação em italiano e pergunta qual deles interessa ao aluno.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "",
+    "triggerMode": "ONCE",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": { "x": 40, "y": 220 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "persona-it",
+          "type": "persona",
+          "position": { "x": 200, "y": 200 },
+          "data": {
+            "label": "VOZ: Professore Italiano",
+            "type": "persona",
+            "personaId": "PERSONA_PROFESSORE_IT"
+          }
+        },
+        {
+          "id": "ai-lista-graduacao",
+          "type": "aiQuestion",
+          "position": { "x": 440, "y": 200 },
+          "data": {
+            "label": "MOSTRAR CURSOS DE GRADUAÇÃO",
+            "type": "aiQuestion",
+            "aiInstruction": "Falando italiano, apresente os 4 cursi di laurea abaixo (um por linha, formato '• Nome — descrição curta de uma frase'), e ao final pergunte ao aluno qual deles interessa mais. Capture a resposta na variável curso_graduacao_escolhido. Cursos disponíveis: 'Ingegneria Informatica' (sviluppo software, intelligenza artificiale, sistemi distribuiti), 'Architettura' (progettazione, restauro, urbanistica sostenibile), 'Medicina e Chirurgia' (sei anni, formazione clinica integrata), 'Economia e Commercio' (mercati globali, finanza, gestione aziendale).",
+            "outputVariable": "curso_graduacao_escolhido"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "position": { "x": 720, "y": 220 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "g1", "source": "start", "target": "persona-it", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "g2", "source": "persona-it", "target": "ai-lista-graduacao", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "g3", "source": "ai-lista-graduacao", "target": "end", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  },
+
+  {
+    "id": "SUBFLOW_EXECUTIVA",
+    "name": "Cursos de Educação Executiva (espanhol)",
+    "description": "Sub-fluxo invocado quando o aluno escolhe Educação Executiva. A persona Profesor Ejecutivo apresenta uma lista de programas executivos em espanhol e pergunta qual deles interessa.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "",
+    "triggerMode": "ONCE",
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": { "x": 40, "y": 220 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "persona-es",
+          "type": "persona",
+          "position": { "x": 200, "y": 200 },
+          "data": {
+            "label": "VOZ: Profesor Ejecutivo",
+            "type": "persona",
+            "personaId": "PERSONA_PROFESOR_ES"
+          }
+        },
+        {
+          "id": "ai-lista-executiva",
+          "type": "aiQuestion",
+          "position": { "x": 440, "y": 200 },
+          "data": {
+            "label": "MOSTRAR PROGRAMAS EXECUTIVOS",
+            "type": "aiQuestion",
+            "aiInstruction": "Hablando en español, presenta los 4 programas a continuación (uno por línea, formato '• Nombre — beneficio principal en una frase') y al final pregunta cuál interesa más al alumno. Captura la respuesta en la variable curso_executiva_escolhido. Programas disponibles: 'MBA en Liderazgo' (gestión de equipos de alto desempeño y toma de decisiones estratégicas), 'Programa de Innovación y Transformación Digital' (metodologías ágiles, IA aplicada al negocio), 'Estrategia Corporativa Global' (expansión internacional, M&A, gobierno corporativo), 'Finanzas para Ejecutivos' (valoración de empresas, riesgo, instrumentos financieros avanzados).",
+            "outputVariable": "curso_executiva_escolhido"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "position": { "x": 720, "y": 220 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "x1", "source": "start", "target": "persona-es", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "x2", "source": "persona-es", "target": "ai-lista-executiva", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "x3", "source": "ai-lista-executiva", "target": "end", "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  }
+]

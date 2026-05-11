@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import { MetaPromptSheet, type MetaPromptTone } from "./meta-prompt-sheet";
 import { Textarea } from "./textarea";
 
 // ---------------------------------------------------------------------------
@@ -20,7 +21,35 @@ export interface PromptVariable {
 // Props
 // ---------------------------------------------------------------------------
 
-interface SystemPromptEditorProps {
+/**
+ * Optional "Help me write" affordance rendered inside the editor toolbar.
+ * When provided, a button appears next to the Write/Preview toggle that
+ * opens a {@link MetaPromptSheet} streaming directly into the editor's value.
+ * Omit to render the editor without the AI helper.
+ */
+export interface PromptEditorMetaPrompt {
+  /** Persisted user brief; null/empty starts the sheet blank. */
+  brief?: string | null;
+  /** When provided, the brief is saved each time Generate runs. */
+  onBriefChange?: (value: string) => void;
+  /** System message describing the field's purpose to the helper LLM. */
+  fieldInstruction: string;
+  /** Trigger button copy. */
+  triggerLabel: string;
+  /** Sheet header copy. */
+  title: string;
+  description: string;
+  /** Brief textarea copy. */
+  placeholder: string;
+  hint?: string;
+  /** Generate-button copy. */
+  generateLabel: string;
+  /** Pre-bundled color tone for the trigger and sheet accent. */
+  tone?: MetaPromptTone;
+  disabled?: boolean;
+}
+
+interface PromptEditorProps {
   /** Current prompt text (controlled) */
   value: string;
   /** Called when the prompt text changes */
@@ -37,6 +66,8 @@ interface SystemPromptEditorProps {
   hint?: string;
   /** Whether variables are required (shows validation badges) */
   requireVariables?: boolean;
+  /** When set, renders an inline "Help me write" button + MetaPromptSheet. */
+  metaPrompt?: PromptEditorMetaPrompt;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,10 +87,10 @@ function StatusBadge({ label, active }: Readonly<{ label: string; active: boolea
 }
 
 // ---------------------------------------------------------------------------
-// SystemPromptEditor
+// PromptEditor
 // ---------------------------------------------------------------------------
 
-export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
+export const PromptEditor: React.FC<PromptEditorProps> = ({
   value,
   onChange,
   fieldRef,
@@ -68,6 +99,7 @@ export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
   variables,
   hint,
   requireVariables = false,
+  metaPrompt,
 }) => {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"write" | "preview">("write");
@@ -127,29 +159,50 @@ export const SystemPromptEditor: React.FC<SystemPromptEditorProps> = ({
           </div>
         ) : <div />}
 
-        <div className="flex items-center rounded-md border bg-muted/50 p-0.5 gap-0.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setMode("write")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "write"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <IconPencil className="size-3.5" />
-            Write
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("preview")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "preview"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <IconEye className="size-3.5" />
-            Preview
-          </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {metaPrompt && (
+            <MetaPromptSheet
+              value={value}
+              onChange={onChange}
+              metaPrompt={metaPrompt.brief ?? ""}
+              onMetaPromptChange={metaPrompt.onBriefChange}
+              fieldInstruction={metaPrompt.fieldInstruction}
+              triggerVariant="button"
+              tone={metaPrompt.tone ?? "violet"}
+              triggerLabel={metaPrompt.triggerLabel}
+              title={metaPrompt.title}
+              description={metaPrompt.description}
+              placeholder={metaPrompt.placeholder}
+              hint={metaPrompt.hint}
+              generateLabel={metaPrompt.generateLabel}
+              disabled={metaPrompt.disabled}
+            />
+          )}
+
+          <div className="flex items-center rounded-md border bg-muted/50 p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => setMode("write")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "write"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <IconPencil className="size-3.5" />
+              Write
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("preview")}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-all ${mode === "preview"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <IconEye className="size-3.5" />
+              Preview
+            </button>
+          </div>
         </div>
       </div>
 

@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { SystemPromptEditor } from "@/components/ui/system-prompt-editor"
+import { PromptEditor } from "@/components/ui/prompt-editor"
 import { useCreateAiAgent, useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model"
@@ -38,7 +38,6 @@ import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { IconPicker } from "../ui/icon-picker"
 import { SectionCard } from "../ui/section-card"
-import { MetaPromptSheet } from "../ui/meta-prompt-sheet"
 import { SmartDescription } from "../ui/smart-description"
 
 const turEmbeddingModelService = new TurEmbeddingModelService();
@@ -138,6 +137,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       nativeTools: value.nativeTools ?? null,
       llmInstances: value.llmInstances ?? [],
       mcpServers: value.mcpServers ?? [],
+      // Status toggle lives in the bento dashboard hero, not in this form.
+      // Default new agents to enabled so they appear in pickers (e.g. the
+      // Global Settings "Default AI Agent" select, which filters by enabled).
+      // `?? 1` preserves an explicit 0 on existing agents.
+      enabled: value.enabled ?? 1,
       ragEnabled: value.ragEnabled ?? false,
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
@@ -320,41 +324,33 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                 name="systemPrompt"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                      <div>
-                        <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
-                        <FormDescription>
-                          {t("forms.agentSettings.instructionDesc")}
-                        </FormDescription>
-                      </div>
-                      <MetaPromptSheet
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        metaPrompt={form.watch("systemPromptMetaPrompt") ?? ""}
-                        onMetaPromptChange={(v) =>
-                          form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true })
-                        }
-                        fieldInstruction={buildSystemPromptFieldInstruction({
-                          title: form.watch("title"),
-                          agentDescription: form.watch("description"),
-                        })}
-                        triggerVariant="button"
-                        tone="violet"
-                        triggerLabel={t("forms.agentSettings.helpWriteSystemPrompt")}
-                        title={t("forms.agentSettings.helpWriteSystemPromptTitle")}
-                        description={t("forms.agentSettings.helpWriteSystemPromptDescription")}
-                        placeholder={t("forms.agentSettings.helpWriteSystemPromptPlaceholder")}
-                        hint={t("forms.agentSettings.helpWriteSystemPromptHint")}
-                        generateLabel={t("forms.agentSettings.helpWriteSystemPromptGenerate")}
-                      />
-                    </div>
+                    <FormLabel>{t("forms.agentSettings.instruction")}</FormLabel>
+                    <FormDescription>
+                      {t("forms.agentSettings.instructionDesc")}
+                    </FormDescription>
                     <FormControl>
-                      <SystemPromptEditor
+                      <PromptEditor
                         value={field.value ?? ""}
                         onChange={field.onChange}
                         fieldRef={field.ref}
                         placeholder={t("forms.agentSettings.instructionPlaceholder")}
                         hint={t("forms.agentSettings.instructionHint")}
+                        metaPrompt={{
+                          brief: form.watch("systemPromptMetaPrompt") ?? "",
+                          onBriefChange: (v) =>
+                            form.setValue("systemPromptMetaPrompt", v, { shouldDirty: true }),
+                          fieldInstruction: buildSystemPromptFieldInstruction({
+                            title: form.watch("title"),
+                            agentDescription: form.watch("description"),
+                          }),
+                          tone: "violet",
+                          triggerLabel: t("forms.agentSettings.helpWriteSystemPrompt"),
+                          title: t("forms.agentSettings.helpWriteSystemPromptTitle"),
+                          description: t("forms.agentSettings.helpWriteSystemPromptDescription"),
+                          placeholder: t("forms.agentSettings.helpWriteSystemPromptPlaceholder"),
+                          hint: t("forms.agentSettings.helpWriteSystemPromptHint"),
+                          generateLabel: t("forms.agentSettings.helpWriteSystemPromptGenerate"),
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -576,11 +572,38 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
             </SectionCard.Content>
           </SectionCard>
 
-          {/*
-           * Status (enabled/disabled) lives in the bento dashboard hero
-           * (clickable Active/Idle pill that toggles via mutation).
-           * Removed from this form to keep one canonical place to edit.
-           */}
+          <SectionCard variant="emerald">
+            <SectionCard.Header
+              icon={IconPower}
+              title={t("forms.common.status")}
+              description={t("forms.agentSettings.statusDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="enabled"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.common.enabled")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description className="text-sm font-normal mt-1">
+                        {t("forms.agentSettings.enabledDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={field.value === 1}
+                          onCheckedChange={(checked) => field.onChange(checked ? 1 : 0)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                    <FormMessage />
+                  </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
 
         </form>
     </Form>

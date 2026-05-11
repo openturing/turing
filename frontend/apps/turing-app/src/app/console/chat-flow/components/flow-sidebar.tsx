@@ -1,4 +1,5 @@
 import {
+  IconArrowsSplit2,
   IconBell,
   IconBook2,
   IconDatabase,
@@ -30,6 +31,7 @@ const PALETTE: PaletteItem[] = [
   { type: "start", labelKey: "chatFlow.palette.start", icon: IconPlayerPlayFilled, accent: "text-emerald-600" },
   { type: "aiQuestion", labelKey: "chatFlow.palette.aiQuestion", icon: IconBook2, accent: "text-blue-600" },
   { type: "condition", labelKey: "chatFlow.palette.condition", icon: IconDatabase, accent: "text-amber-600" },
+  { type: "switch", labelKey: "chatFlow.palette.switch", icon: IconArrowsSplit2, accent: "text-cyan-600" },
   { type: "functionCall", labelKey: "chatFlow.palette.functionCall", icon: IconBell, accent: "text-orange-600" },
   { type: "subFlow", labelKey: "chatFlow.palette.subFlow", icon: IconSubtask, accent: "text-violet-600" },
   { type: "persona", labelKey: "chatFlow.palette.persona", icon: IconSparkles, accent: "text-fuchsia-600" },

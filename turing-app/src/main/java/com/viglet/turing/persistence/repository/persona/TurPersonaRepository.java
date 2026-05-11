@@ -50,9 +50,20 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     @NotNull
     Optional<TurPersona> findById(@NotNull String id);
 
+    /**
+     * Case-insensitive lookup used by the chat-flow import pipeline to de-duplicate
+     * personas embedded in an export file — the operator's catalog stores names
+     * exactly as typed, so matching ignoring case prevents trivial casing
+     * differences ("Captain Nova" vs "captain nova") from creating duplicates.
+     *
+     * @since 2026.2.7
+     */
+    @Cacheable("turPersonafindByNameIgnoreCase")
+    Optional<TurPersona> findByNameIgnoreCase(String name);
+
     @Caching(evict = {
             @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-                    "turPersonafindById" }, allEntries = true),
+                    "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
             @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
                     allEntries = true)
     })
@@ -64,7 +75,7 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     @Query("delete from TurPersona p where p.id = ?1")
     @Caching(evict = {
             @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
-                    "turPersonafindById" }, allEntries = true),
+                    "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),
             @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" },
                     allEntries = true)
     })

@@ -12,9 +12,22 @@ export type FlowNodeType =
   | "condition"
   | "functionCall"
   | "subFlow"
-  | "persona";
+  | "persona"
+  | "switch";
 
 export type FlowToolSource = "NATIVE" | "MCP";
+
+/**
+ * A single branch on a Switch node. The `id` is used as the `sourceHandle` of any outgoing edge,
+ * so it must remain stable across renames (the label can change, but renaming an id would orphan
+ * the wired edges).
+ *
+ * @since 2026.2.7
+ */
+export interface FlowSwitchOption {
+  id: string;
+  label: string;
+}
 
 export interface FlowNodeData extends Record<string, unknown> {
   label: string;
@@ -39,6 +52,12 @@ export interface FlowNodeData extends Record<string, unknown> {
   subFlowName?: string;
   /** Persona id this node should switch the conversation's active voice to. Only used by `persona` nodes. @since 2026.2.7 */
   personaId?: string;
+  /** Cached display name of the linked persona — same pattern as {@link subFlowName}, keeps the canvas readable before the persona catalog finishes loading. @since 2026.2.7 */
+  personaName?: string;
+  /** Branches exposed by a Switch node — each option becomes a labeled source handle. @since 2026.2.7 */
+  switchOptions?: FlowSwitchOption[];
+  /** Optional flow-context variable name where the matched Switch option label is stored. @since 2026.2.7 */
+  switchVariable?: string;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
@@ -76,5 +95,10 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
     border: "border-fuchsia-500",
     text: "text-fuchsia-900 dark:text-fuchsia-100",
+  },
+  switch: {
+    bg: "bg-cyan-50 dark:bg-cyan-950/40",
+    border: "border-cyan-500",
+    text: "text-cyan-900 dark:text-cyan-100",
   },
 };

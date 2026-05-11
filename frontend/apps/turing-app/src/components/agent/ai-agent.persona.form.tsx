@@ -3,7 +3,7 @@ import { useUpdateAiAgent } from "@/api/queries/ai-agent.queries"
 import { usePersonas } from "@/api/queries/persona.queries"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts"
-import { IconCheck, IconSparkles, IconStarFilled } from "@tabler/icons-react"
+import { IconCheck, IconUserCircle, IconStarFilled } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "@viglet/viglet-design-system"
@@ -102,7 +102,7 @@ export const AIAgentPersonaForm: React.FC<Props> = ({ value }) => {
       <div className="space-y-4 py-8">
         <SectionCard variant="violet">
           <SectionCard.Header
-            icon={IconSparkles}
+            icon={IconUserCircle}
             title={t("forms.agentPersona.available")}
             description={t("forms.agentPersona.availableDesc")}
           />
@@ -136,7 +136,7 @@ export const AIAgentPersonaForm: React.FC<Props> = ({ value }) => {
                             ? "bg-violet-500/15 dark:bg-violet-500/25"
                             : "bg-muted"
                             }`}>
-                            <IconSparkles className={`size-5 ${isSelected
+                            <IconUserCircle className={`size-5 ${isSelected
                               ? "text-violet-600 dark:text-violet-400"
                               : "text-muted-foreground"
                               }`} />
@@ -175,7 +175,7 @@ export const AIAgentPersonaForm: React.FC<Props> = ({ value }) => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <IconSparkles className="mx-auto size-10 text-muted-foreground/30 mb-3" />
+                <IconUserCircle className="mx-auto size-10 text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">{t("forms.agentPersona.noPersonas")}</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">{t("forms.agentPersona.createFirst")}</p>
               </div>
