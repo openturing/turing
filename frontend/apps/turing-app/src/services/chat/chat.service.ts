@@ -91,8 +91,6 @@ export class TurChatService {
     onError: (error: Error) => void,
     files?: File[],
   ): Promise<void> {
-    // `sendStream` is the vanilla per-LLM chat — no flow context, so no chip options.
-    const options: { onOptions?: (labels: string[]) => void } | undefined = undefined;
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/llm/${llmInstanceId}/chat`;
     const csrfToken = await ensureCsrfToken();
@@ -155,13 +153,14 @@ export class TurChatService {
 
         for (const line of lines) {
           if (line.startsWith("data:")) {
-            handleSseLine(line.slice(5).trim(), onToken, options?.onOptions);
+            // `sendStream` is the vanilla per-LLM chat — no flow context, so no chip options.
+            handleSseLine(line.slice(5).trim(), onToken);
           }
         }
       }
 
       if (buffer.startsWith("data:")) {
-        handleSseLine(buffer.slice(5).trim(), onToken, options?.onOptions);
+        handleSseLine(buffer.slice(5).trim(), onToken);
       }
 
       onDone();
@@ -189,8 +188,6 @@ export class TurChatService {
     onDone: () => void,
     onError: (error: Error) => void,
   ): Promise<void> {
-    // Semantic chat is unscoped from any flow runtime — no chip options.
-    const options: { onOptions?: (labels: string[]) => void } | undefined = undefined;
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/llm/${llmInstanceId}/semantic-chat`;
     const csrfToken = await ensureCsrfToken();
@@ -233,13 +230,14 @@ export class TurChatService {
 
         for (const line of lines) {
           if (line.startsWith("data:")) {
-            handleSseLine(line.slice(5).trim(), onToken, options?.onOptions);
+            // Semantic chat is unscoped from any flow runtime — no chip options.
+            handleSseLine(line.slice(5).trim(), onToken);
           }
         }
       }
 
       if (buffer.startsWith("data:")) {
-        handleSseLine(buffer.slice(5).trim(), onToken, options?.onOptions);
+        handleSseLine(buffer.slice(5).trim(), onToken);
       }
 
       onDone();
