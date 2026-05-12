@@ -85,7 +85,11 @@ public class TurAIAgentChatAPI {
     public record ChatMessageItem(String role, String content) {
     }
 
-    public record ChatResponse(String role, String content) {
+    public record ChatResponse(String role, String content, String type) {
+        /** Backwards-compatible constructor: defaults {@code type} to {@code "token"}. */
+        public ChatResponse(String role, String content) {
+            this(role, content, "token");
+        }
     }
 
     @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE,
@@ -123,7 +127,7 @@ public class TurAIAgentChatAPI {
                 .toList();
         return agentChatExecutor.execute(agent, turLLMInstance, mapped, null,
                         request.conversationId(), request.flowId())
-                .map(r -> new ChatResponse(r.role(), r.content()));
+                .map(r -> new ChatResponse(r.role(), r.content(), r.type()));
     }
 
     /**

@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -102,6 +102,19 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.switchOptions() == null ? List.of() : data.switchOptions();
     }
 
+    /**
+     * Optional list of suggested answers for an {@code aiQuestion} node — surfaces as
+     * clickable chips in the chat UI so the user can pick instead of typing. Unlike
+     * {@link #switchOptions()}, picking one of these does <em>not</em> branch the flow —
+     * the chosen label is sent as the user message and captured into {@code outputVariable}
+     * exactly as if typed. Free-text input remains available in parallel.
+     *
+     * @since 2026.2.7
+     */
+    public List<String> inlineOptions() {
+        return data.inlineOptions() == null ? List.of() : data.inlineOptions();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -117,7 +130,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String subFlowName,
             String personaId,
             String switchVariable,
-            List<SwitchOption> switchOptions) {
+            List<SwitchOption> switchOptions,
+            List<String> inlineOptions) {
     }
 
     /**

@@ -146,6 +146,33 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-inline-options">
+                {t("chatFlow.properties.inlineOptions", { defaultValue: "Suggested chips (one per line)" })}
+              </Label>
+              <Textarea
+                id="flow-node-inline-options"
+                rows={4}
+                value={(data.inlineOptions ?? []).join("\n")}
+                onChange={(e) => {
+                  // Split on newlines, trim, drop empties. Empty result → clear the field entirely
+                  // so it doesn't get serialised as `[]` in the export JSON.
+                  const labels = e.target.value
+                    .split(/\r?\n/)
+                    .map((l) => l.trim())
+                    .filter((l) => l.length > 0);
+                  update({ inlineOptions: labels.length > 0 ? labels : undefined });
+                }}
+                placeholder={"Sim\nNão\nTalvez"}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.inlineOptionsHint", {
+                  defaultValue:
+                    "Rendered as clickable chips under the assistant message. Clicking sends the label as the user reply — does not branch the flow.",
+                })}
+              </span>
+            </div>
           </>
         )}
 

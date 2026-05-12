@@ -34,7 +34,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.flow.ChatFlowGraph;
+import com.viglet.turing.genai.flow.ChatFlowNode;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.persona.TurPersonaBrandContextProvider;
 import com.viglet.turing.genai.persona.TurPersonaPromptComposer;
@@ -60,6 +62,8 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Shared executor for agent-driven chats. Centralizes:
@@ -82,6 +86,8 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 @Service
 public class TurAgentChatExecutor {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String DEFAULT_SYSTEM_PROMPT = """
             You are an AI assistant. Answer the user's questions using the tools available to you.
@@ -147,7 +153,21 @@ public class TurAgentChatExecutor {
     public record ChatMessageItem(String role, String content) {
     }
 
-    public record ChatResponse(String role, String content) {
+    /**
+     * One emission of the chat SSE stream. {@code type} discriminates the payload:
+     * <ul>
+     *   <li>{@code "token"} (default) — {@code content} is the assistant's text turn,
+     *       sent as a single chunk (the executor does not stream token-by-token).</li>
+     *   <li>{@code "options"} — {@code content} is a JSON array of strings to render as
+     *       clickable chips below the assistant message. Picking one sends that label
+     *       as the next user message; free-text input stays available in parallel.</li>
+     * </ul>
+     */
+    public record ChatResponse(String role, String content, String type) {
+        /** Backwards-compatible constructor: defaults {@code type} to {@code "token"}. */
+        public ChatResponse(String role, String content) {
+            this(role, content, "token");
+        }
     }
 
     /**
@@ -287,6 +307,7 @@ public class TurAgentChatExecutor {
             log.info("[AgentExec] Agent '{}' response: {} chars",
                     agent.getTitle(), text.length());
 
+            TurChatFlowState newState = flowContext == null ? null : flowContext.state();
             if (flowContext != null) {
                 var advance = chatFlowEngineService.advance(flowContext.flow(),
                         flowContext.state(), flowContext.graph(),
@@ -296,6 +317,7 @@ public class TurAgentChatExecutor {
                 if (advance.assistantOverride() != null) {
                     text = advance.assistantOverride();
                 }
+                newState = advance.state();
             }
 
             // Persona's negative-constraint check runs LAST so it also
@@ -309,13 +331,56 @@ public class TurAgentChatExecutor {
             // is disabled; safe to call unconditionally).
             recordTurnTelemetry(agent, conversationId, lastUserMessage, text, response);
 
-            return new ChatResponse("assistant", text);
+            // Suggested chip options for the NEXT user turn. Two sources:
+            //   • the current node's `inlineOptions` (chips that don't branch);
+            //   • the labels of the immediate downstream switch's options
+            //     (chips that route the flow on click via Tier-1 exact match).
+            // Emitted as a separate SSE event AFTER the assistant text so the UI
+            // can render the chips below the freshly-rendered bubble.
+            List<String> suggestedOptions = List.of();
+            if (flowContext != null && newState != null) {
+                ChatFlowGraph graph = flowContext.graph();
+                ChatFlowNode current = graph.nodeById(newState.getCurrentNodeId()).orElse(null);
+                suggestedOptions = ChatFlowOps.suggestedOptions(graph, current);
+            }
+            return new AssistantTurn(text, suggestedOptions);
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(err -> log.error("[AgentExec] Agent '{}' error: {}",
                         agent.getTitle(), err.getMessage(), err))
-                .filter(response -> !response.content().isEmpty())
-                .flux();
+                .flatMapMany(TurAgentChatExecutor::emitTurn);
+    }
+
+    /**
+     * Single assistant turn: the final text plus any chips that should appear underneath.
+     * Internal record — never crosses the controller boundary; {@link #emitTurn(AssistantTurn)}
+     * fans it out into one or two {@link ChatResponse} events.
+     */
+    private record AssistantTurn(String text, List<String> options) {
+    }
+
+    /**
+     * Fans an {@link AssistantTurn} out into the SSE stream: always one {@code "token"} event
+     * with the text (when non-empty), optionally followed by one {@code "options"} event whose
+     * {@code content} is the JSON-encoded chip labels.
+     */
+    private static Flux<ChatResponse> emitTurn(AssistantTurn turn) {
+        Flux<ChatResponse> assistantText = turn.text() == null || turn.text().isEmpty()
+                ? Flux.empty()
+                : Flux.just(new ChatResponse("assistant", turn.text()));
+        if (turn.options() == null || turn.options().isEmpty()) {
+            return assistantText;
+        }
+        String optionsJson;
+        try {
+            optionsJson = OBJECT_MAPPER.writeValueAsString(turn.options());
+        } catch (JacksonException e) {
+            log.warn("[AgentExec] could not serialize {} suggested option(s): {}",
+                    turn.options().size(), e.getMessage());
+            return assistantText;
+        }
+        return assistantText.concatWith(
+                Flux.just(new ChatResponse("assistant", optionsJson, "options")));
     }
 
     /**

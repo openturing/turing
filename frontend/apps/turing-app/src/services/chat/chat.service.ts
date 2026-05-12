@@ -9,6 +9,16 @@ export interface ChatMessageItem {
 export interface ChatResponse {
   role: string;
   content: string;
+  /**
+   * Discriminates the payload:
+   *   - "token" (default, also when omitted by older backends) — content is assistant text.
+   *   - "options" — content is a JSON-encoded array of strings to render as clickable chips
+   *     below the latest assistant message. Picking one sends that label as the next user
+   *     message; free-text input stays available.
+   *
+   * @since 2026.2.7
+   */
+  type?: "token" | "options";
 }
 
 export interface ContextInfoResponse {
@@ -19,6 +29,43 @@ export interface ContextInfoResponse {
 function readCsrfTokenFromCookie(): string | null {
   const match = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie);
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * Parses one SSE `data: ...` JSON line. When the payload carries `type: "options"`, the content
+ * is a JSON-encoded `string[]` of chip labels and is dispatched to {@code onOptions}; otherwise
+ * the content is appended to the assistant message via {@code onToken}. Malformed JSON and
+ * malformed options arrays are silently ignored so a flaky chunk never breaks the stream.
+ *
+ * @since 2026.2.7
+ */
+function handleSseLine(
+  jsonStr: string,
+  onToken: (token: string) => void,
+  onOptions?: (labels: string[]) => void,
+): void {
+  if (!jsonStr) return;
+  let parsed: ChatResponse;
+  try {
+    parsed = JSON.parse(jsonStr) as ChatResponse;
+  } catch {
+    return;
+  }
+  if (parsed.type === "options") {
+    if (!onOptions) return;
+    try {
+      const labels = JSON.parse(parsed.content);
+      if (Array.isArray(labels) && labels.every((l): l is string => typeof l === "string")) {
+        onOptions(labels);
+      }
+    } catch {
+      // skip malformed options payload
+    }
+    return;
+  }
+  if (parsed.content) {
+    onToken(parsed.content);
+  }
 }
 
 async function ensureCsrfToken(): Promise<string | null> {
@@ -44,6 +91,8 @@ export class TurChatService {
     onError: (error: Error) => void,
     files?: File[],
   ): Promise<void> {
+    // `sendStream` is the vanilla per-LLM chat — no flow context, so no chip options.
+    const options: { onOptions?: (labels: string[]) => void } | undefined = undefined;
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/llm/${llmInstanceId}/chat`;
     const csrfToken = await ensureCsrfToken();
@@ -106,32 +155,13 @@ export class TurChatService {
 
         for (const line of lines) {
           if (line.startsWith("data:")) {
-            const jsonStr = line.slice(5).trim();
-            if (!jsonStr) continue;
-            try {
-              const parsed = JSON.parse(jsonStr) as ChatResponse;
-              if (parsed.content) {
-                onToken(parsed.content);
-              }
-            } catch {
-              // skip malformed JSON chunks
-            }
+            handleSseLine(line.slice(5).trim(), onToken, options?.onOptions);
           }
         }
       }
 
       if (buffer.startsWith("data:")) {
-        const jsonStr = buffer.slice(5).trim();
-        if (jsonStr) {
-          try {
-            const parsed = JSON.parse(jsonStr) as ChatResponse;
-            if (parsed.content) {
-              onToken(parsed.content);
-            }
-          } catch {
-            // skip
-          }
-        }
+        handleSseLine(buffer.slice(5).trim(), onToken, options?.onOptions);
       }
 
       onDone();
@@ -159,6 +189,8 @@ export class TurChatService {
     onDone: () => void,
     onError: (error: Error) => void,
   ): Promise<void> {
+    // Semantic chat is unscoped from any flow runtime — no chip options.
+    const options: { onOptions?: (labels: string[]) => void } | undefined = undefined;
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/llm/${llmInstanceId}/semantic-chat`;
     const csrfToken = await ensureCsrfToken();
@@ -201,32 +233,13 @@ export class TurChatService {
 
         for (const line of lines) {
           if (line.startsWith("data:")) {
-            const jsonStr = line.slice(5).trim();
-            if (!jsonStr) continue;
-            try {
-              const parsed = JSON.parse(jsonStr) as ChatResponse;
-              if (parsed.content) {
-                onToken(parsed.content);
-              }
-            } catch {
-              // skip malformed JSON chunks
-            }
+            handleSseLine(line.slice(5).trim(), onToken, options?.onOptions);
           }
         }
       }
 
       if (buffer.startsWith("data:")) {
-        const jsonStr = buffer.slice(5).trim();
-        if (jsonStr) {
-          try {
-            const parsed = JSON.parse(jsonStr) as ChatResponse;
-            if (parsed.content) {
-              onToken(parsed.content);
-            }
-          } catch {
-            // skip
-          }
-        }
+        handleSseLine(buffer.slice(5).trim(), onToken, options?.onOptions);
       }
 
       onDone();
@@ -249,7 +262,17 @@ export class TurChatService {
     onToken: (token: string) => void,
     onDone: () => void,
     onError: (error: Error) => void,
-    options?: { conversationId?: string; flowId?: string },
+    options?: {
+      conversationId?: string;
+      flowId?: string;
+      /**
+       * Invoked when the stream carries an {@code options} event — a list of suggested
+       * chip labels the UI should render below the just-completed assistant message.
+       * Optional: when omitted, the chip event is silently dropped (older callers keep
+       * working).
+       */
+      onOptions?: (labels: string[]) => void;
+    },
   ): Promise<void> {
     const baseURL = axios.defaults.baseURL ?? "";
     const url = `${baseURL}/v2/ai-agent/${agentId}/chat`;
@@ -305,32 +328,13 @@ export class TurChatService {
 
         for (const line of lines) {
           if (line.startsWith("data:")) {
-            const jsonStr = line.slice(5).trim();
-            if (!jsonStr) continue;
-            try {
-              const parsed = JSON.parse(jsonStr) as ChatResponse;
-              if (parsed.content) {
-                onToken(parsed.content);
-              }
-            } catch {
-              // skip malformed JSON chunks
-            }
+            handleSseLine(line.slice(5).trim(), onToken, options?.onOptions);
           }
         }
       }
 
       if (buffer.startsWith("data:")) {
-        const jsonStr = buffer.slice(5).trim();
-        if (jsonStr) {
-          try {
-            const parsed = JSON.parse(jsonStr) as ChatResponse;
-            if (parsed.content) {
-              onToken(parsed.content);
-            }
-          } catch {
-            // skip
-          }
-        }
+        handleSseLine(buffer.slice(5).trim(), onToken, options?.onOptions);
       }
 
       onDone();

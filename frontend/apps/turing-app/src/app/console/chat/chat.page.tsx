@@ -299,7 +299,27 @@ export default function ChatPage() {
           }
         })
       },
-      { conversationId, flowId: flowIdForSend },
+      {
+        conversationId,
+        flowId: flowIdForSend,
+        onOptions: (labels) => {
+          // The backend emits this AFTER the assistant turn; attach to the just-streamed
+          // assistant message so the chip row renders below it.
+          setAgentStates((prev) => {
+            const s = prev[agentId]
+            if (!s) return prev
+            return {
+              ...prev,
+              [agentId]: {
+                ...s,
+                messages: s.messages.map((msg) =>
+                  msg.id === assistantId ? { ...msg, suggestedOptions: labels } : msg
+                ),
+              },
+            }
+          })
+        },
+      },
     )
   }, [agents, llmInstances, selectedLlmId, selectLlm, t, turChatService, saveAfterResponse, updateAgentState, selectedFlowByAgent, ensureSessionId])
 
@@ -443,7 +463,14 @@ export default function ChatPage() {
             <div className="flex-1 overflow-y-auto">
               {currentAgentState.messages.length === 0
                 ? <ChatEmptyState variant="agent" selectedInstance={selectedInstance} agentTitle={activeAgent?.title} agentIcon={activeAgent?.icon} />
-                : <ChatMessageList messages={currentAgentState.messages} loading={currentAgentState.loading} assistantName={activeAgent?.title ?? "Agent"} assistantIcon={activeAgent?.icon} endRef={agentEndRef} />
+                : <ChatMessageList
+                    messages={currentAgentState.messages}
+                    loading={currentAgentState.loading}
+                    assistantName={activeAgent?.title ?? "Agent"}
+                    assistantIcon={activeAgent?.icon}
+                    endRef={agentEndRef}
+                    onOptionClick={(label) => { void sendAgentPrompt(activeAgentId, label) }}
+                  />
               }
             </div>
             <div className="shrink-0 border-t bg-background">

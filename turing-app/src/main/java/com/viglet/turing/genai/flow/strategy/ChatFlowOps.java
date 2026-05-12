@@ -430,6 +430,51 @@ public final class ChatFlowOps {
         return wildcard;
     }
 
+    // ─────────────────────────── Suggested options lookup ───────────────────────────
+
+    /**
+     * Suggested answers to surface as clickable chips below the current AI Question, when
+     * applicable. Two sources, in priority order:
+     * <ol>
+     *   <li>The node's own {@code inlineOptions} — free-form chips that don't branch the
+     *       flow; picking one sends that label as the user message.</li>
+     *   <li>The labels of the immediate downstream {@code switch} node's
+     *       {@code switchOptions} — picking one routes the flow exactly as typing that
+     *       label would (Tier-1 exact match in {@link #walkThroughSwitches}).</li>
+     * </ol>
+     *
+     * <p>Returns an empty list when {@code current} is not an {@code aiQuestion}, when no
+     * options are configured, or when the immediate downstream isn't a switch. Order in
+     * the returned list mirrors the source order — the UI renders the chips in that
+     * order.
+     *
+     * @since 2026.2.7
+     */
+    public static List<String> suggestedOptions(ChatFlowGraph graph, ChatFlowNode current) {
+        if (graph == null || current == null || !"aiQuestion".equals(current.type())) {
+            return List.of();
+        }
+        if (!current.inlineOptions().isEmpty()) {
+            return List.copyOf(current.inlineOptions());
+        }
+        List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
+        if (outgoing.size() != 1) {
+            // Ambiguous downstream — don't guess which switch (if any) to expose.
+            return List.of();
+        }
+        ChatFlowNode downstream = graph.nodeById(outgoing.get(0).target()).orElse(null);
+        if (downstream == null || !"switch".equals(downstream.type())) {
+            return List.of();
+        }
+        List<String> labels = new java.util.ArrayList<>();
+        for (ChatFlowNode.SwitchOption option : downstream.switchOptions()) {
+            if (option != null && option.label() != null && !option.label().isBlank()) {
+                labels.add(option.label());
+            }
+        }
+        return labels;
+    }
+
     // ─────────────────────────── Switch walker ───────────────────────────
 
     /**

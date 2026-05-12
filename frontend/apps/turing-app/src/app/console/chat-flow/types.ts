@@ -38,6 +38,12 @@ export interface FlowNodeData extends Record<string, unknown> {
   outputVariable?: string;
   /** Validation rule for AI question outputs. */
   validationRule?: string;
+  /**
+   * Suggested chip labels surfaced beside an AI Question — picking one sends the label as the
+   * user message (no branching). Unlike {@link switchOptions}, these are pure UX hints and do
+   * not affect routing. @since 2026.2.7
+   */
+  inlineOptions?: string[];
   /** Target function name for Function Call nodes — Spring AI @Tool method when toolSource=NATIVE. */
   functionName?: string;
   /** Condition expression for Condition nodes. */

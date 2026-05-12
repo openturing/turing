@@ -15,6 +15,14 @@ export interface ChatAttachment {
 export interface ChatMessage extends ChatMessageItem {
   id: string
   attachments?: ChatAttachment[]
+  /**
+   * Suggested chip labels surfaced alongside the assistant turn. When present, the message
+   * list renders one button per label below the bubble; clicking sends that label as the
+   * next user message. Free-text input stays available in parallel.
+   *
+   * @since 2026.2.7
+   */
+  suggestedOptions?: string[]
 }
 
 export const generateId = () => crypto.randomUUID()
