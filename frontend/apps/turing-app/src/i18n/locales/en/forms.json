@@ -635,6 +635,7 @@
       "noLabel": "No label",
       "editItem": "Edit Facet Item",
       "addItemTitle": "Add Facet Item",
+      "saveFirstToAddItems": "Save the custom facet first to add or edit items.",
       "itemDesc": "Define how this item filters search results.",
       "start": "Start",
       "end": "End",

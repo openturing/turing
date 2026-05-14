@@ -1,5 +1,6 @@
 import type { TurImportResult } from "@/models/marketplace/import-result.model";
 import {
+    IconAlertTriangle,
     IconBrowserCheck,
     IconCheck,
     IconDatabase,
@@ -26,6 +27,14 @@ export function ImportResultPanel({ result }: Readonly<{ result: TurImportResult
                 <IconCheck className="size-4" />
                 <span className="text-sm font-medium">{t("marketplace.importCompleted")}</span>
             </div>
+            {result.searchEngineAvailable === false && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 text-amber-700 dark:text-amber-400">
+                    <IconAlertTriangle className="size-4 mt-0.5 shrink-0" />
+                    <span className="text-sm font-medium">
+                        {t("marketplace.searchEngineUnavailable")}
+                    </span>
+                </div>
+            )}
             <div className="rounded-lg border border-border/60 divide-y divide-border/60 text-sm">
                 <div className="flex items-center justify-between px-3 py-2">
                     <span className="text-muted-foreground flex items-center gap-1.5">

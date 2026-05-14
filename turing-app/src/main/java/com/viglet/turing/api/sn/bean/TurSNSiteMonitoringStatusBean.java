@@ -35,4 +35,6 @@ import lombok.Setter;
 public class TurSNSiteMonitoringStatusBean {
 	private int queue;
 	private int documents;
+	/** When false, the search engine was unreachable (circuit breaker open or error) and {@code documents} is best-effort/partial. */
+	private boolean searchEngineAvailable = true;
 }

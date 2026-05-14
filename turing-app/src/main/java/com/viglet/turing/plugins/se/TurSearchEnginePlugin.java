@@ -101,6 +101,27 @@ public interface TurSearchEnginePlugin {
 
     boolean indexDocument(TurSNSite turSNSite, Locale locale, Map<String, Object> attributes);
 
+    /**
+     * Indexes a batch of documents in a single round-trip to the search engine
+     * when the implementation supports it (Solr/Elasticsearch). The default
+     * implementation falls back to per-document indexing — engines that don't
+     * support batching get the same behaviour as before, but Solr/ES override
+     * this to coalesce N documents into one HTTP/update request.
+     *
+     * @return number of documents successfully indexed.
+     * @since 2026.2.7
+     */
+    default int indexDocuments(TurSNSite turSNSite, Locale locale,
+            List<Map<String, Object>> documents) {
+        int indexed = 0;
+        for (Map<String, Object> doc : documents) {
+            if (indexDocument(turSNSite, locale, doc)) {
+                indexed++;
+            }
+        }
+        return indexed;
+    }
+
     boolean deIndex(TurSNSite turSNSite, Locale locale, String id);
 
     boolean deIndexByType(TurSNSite turSNSite, Locale locale, String type);

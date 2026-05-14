@@ -215,6 +215,18 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
     }
 
     @Override
+    public int indexDocuments(TurSNSite turSNSite, Locale locale,
+            List<Map<String, Object>> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        return turSolrInstanceProcess
+                .initSolrInstance(turSNSite.getName(), locale)
+                .map(turSolrInstance -> turSolr.indexingBatch(turSolrInstance, turSNSite, documents))
+                .orElse(0);
+    }
+
+    @Override
     public boolean deIndex(TurSNSite turSNSite, Locale locale, String id) {
         return turSolrInstanceProcess
                 .initSolrInstance(turSNSite.getName(), locale)

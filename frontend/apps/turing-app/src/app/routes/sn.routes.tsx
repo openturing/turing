@@ -12,6 +12,7 @@ const SNSiteSearchRuleListPage = lazy(() => import("../console/sn/search-rules/s
 const SNSiteSearchRulePage = lazy(() => import("../console/sn/search-rules/sn.site.search.rule.page"))
 const SNSiteDetailPage = lazy(() => import("../console/sn/detail/sn.site.detail.page"))
 const SNSiteCustomFacetPage = lazy(() => import("../console/sn/facet/sn.site.custom.facet.page"))
+const SNSiteCustomFacetItemPage = lazy(() => import("../console/sn/facet/sn.site.custom.facet.item.page"))
 const SNSiteFacetListPage = lazy(() => import("../console/sn/facet/sn.site.facet.list.page"))
 const SNSiteFacetedFieldPage = lazy(() => import("../console/sn/facet/sn.site.faceted.field.page"))
 const SNSiteFieldListPage = lazy(() => import("../console/sn/fields/sn.site.field.list.page"))
@@ -51,6 +52,7 @@ export const SNRoutes = (
             <Route path={'behavior'} element={<SNSiteBehaviorPage />} />
             <Route path={'facet'} element={<SNSiteFacetListPage />} />
             <Route path={'facet/custom/:customFacetId'} element={<SNSiteCustomFacetPage />} />
+            <Route path={'facet/custom/:customFacetId/item/:itemIndex'} element={<SNSiteCustomFacetItemPage />} />
             <Route path={'facet/field/:facetedFieldId'} element={<SNSiteFacetedFieldPage />} />
             <Route path={'custom-sort'} element={<SNSiteCustomSortListPage />} />
             <Route path={'custom-sort/:customSortId'} element={<SNSiteCustomSortPage />} />

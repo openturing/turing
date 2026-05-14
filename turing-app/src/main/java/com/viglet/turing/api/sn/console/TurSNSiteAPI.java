@@ -401,12 +401,22 @@ public class TurSNSiteAPI {
             TurSNSiteMonitoringStatusBean turSNSiteMonitoringStatusBean = new TurSNSiteMonitoringStatusBean();
             turSNSiteMonitoringStatusBean.setQueue(turSNQueue.getQueueSize());
             long documentTotal = 0L;
+            boolean searchEngineAvailable = true;
             var plugin = pluginFactory.getPluginForSite(turSNSite);
             for (TurSNSiteLocale turSNSiteLocale : turSNSiteLocaleRepository
                     .findByTurSNSite(TurPersistenceUtils.orderByLanguageIgnoreCase(), turSNSite)) {
-                documentTotal += plugin.getDocumentTotal(turSNSiteLocale);
+                try {
+                    documentTotal += plugin.getDocumentTotal(turSNSiteLocale);
+                } catch (RuntimeException e) {
+                    // Search engine is down or circuit breaker is open — degrade gracefully
+                    // so the monitoring page still renders queue size and other DB-backed data.
+                    searchEngineAvailable = false;
+                    log.warn("Search engine unavailable while reading document total for core '{}': {}",
+                            turSNSiteLocale.getCore(), e.getMessage());
+                }
             }
             turSNSiteMonitoringStatusBean.setDocuments((int) documentTotal);
+            turSNSiteMonitoringStatusBean.setSearchEngineAvailable(searchEngineAvailable);
             return turSNSiteMonitoringStatusBean;
         }).orElse(new TurSNSiteMonitoringStatusBean());
     }

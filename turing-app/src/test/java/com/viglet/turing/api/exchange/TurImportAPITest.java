@@ -52,7 +52,7 @@ class TurImportAPITest {
                 "application/zip",
                 "dummy content".getBytes());
 
-        ImportResult importResult = new ImportResult(true, "test", 0, 0, false, null, 0, null, java.util.List.of());
+        ImportResult importResult = new ImportResult(true, "test", 0, 0, false, null, 0, null, java.util.List.of(), true);
         when(turImportExchange.importFromMultipartFile(any(), any(boolean.class), any(boolean.class), any(), any(boolean.class))).thenReturn(importResult);
 
         mockMvc.perform(multipart("/api/import").file(file))

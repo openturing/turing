@@ -109,12 +109,15 @@ turing:
       enabled: true
       defaults:
         retry:
-          max-attempts: 2
-          wait-duration: 250ms
+          max-attempts: 3
+          wait-duration: 500ms
           exponential-backoff-multiplier: 2.0
           retry-on-exceptions:
             - java.io.IOException
             - java.net.SocketTimeoutException
+            - java.net.http.HttpTimeoutException
+            - org.apache.solr.client.solrj.SolrServerException
+            - com.viglet.turing.solr.TurSolrDocumentHandler$TurSolrBatchIndexException
         circuit-breaker:
           failure-rate-threshold: 50
           slow-call-duration-threshold: 5s

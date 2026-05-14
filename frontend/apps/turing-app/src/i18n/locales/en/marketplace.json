@@ -18,6 +18,7 @@
     "importFailed": "Failed to install {{name}}. Please try again.",
     "importCompleted": "Import completed!",
     "importError": "Import failed. Check the server logs for details.",
+    "searchEngineUnavailable": "Site structure imported, but the search engine was unavailable so content was not indexed. Try the import again once Solr is reachable.",
     "resultSite": "Site",
     "resultContent": "Content",
     "resultTemplate": "Template",

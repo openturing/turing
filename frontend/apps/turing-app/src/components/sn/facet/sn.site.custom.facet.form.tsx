@@ -31,8 +31,6 @@ import {
 import type {
   TurSNSiteCustomFacet,
   TurSNSiteCustomFacetFieldOption,
-  TurSNSiteCustomFacetItem,
-  TurSNSiteCustomFacetOperator,
 } from "@/models/sn/sn-site-custom-facet.model"
 import { useSnSiteAvailableLocales } from "@/api/queries/locale.queries"
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service"
@@ -69,7 +67,6 @@ import { toast } from "@viglet/viglet-design-system"
 import { StickyPageHeader } from "../../sticky-page-header"
 import { SectionCard } from "../../ui/section-card"
 import { CustomFacetFieldChangeDialog } from "./sn.site.custom.facet.field-change-dialog"
-import { CustomFacetItemModal } from "./sn.site.custom.facet.item-modal"
 import { CustomFacetItemRow } from "./sn.site.custom.facet.item-row"
 import {
   DEFAULT_OPERATOR,
@@ -111,11 +108,6 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
   const [openFieldChangeDialog, setOpenFieldChangeDialog] = useState(false);
   const [pendingFieldExtId, setPendingFieldExtId] = useState<string | null>(null);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [editingItem, setEditingItem] = useState<TurSNSiteCustomFacetItem>({
-    label: "", labels: {}, operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
-  });
   const navigate = useNavigate();
   const items = watch("items") ?? [];
   const selectedFieldExtId = watch("fieldExtId") ?? value.fieldExtId;
@@ -147,47 +139,19 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
   }, [snSiteId]);
 
   function onOpenAddItem() {
-    setEditingItemIndex(null);
-    setEditingItem({
-      label: "", labels: {}, operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
-    });
-    setItemModalOpen(true);
+    if (isNew) {
+      toast.info(t("forms.snCustomFacet.saveFirstToAddItems"));
+      return;
+    }
+    navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet/custom/${value.id}/item/new`);
   }
 
   function onOpenEditItem(index: number) {
-    setEditingItemIndex(index);
-    setEditingItem({ ...items[index] });
-    setItemModalOpen(true);
-  }
-
-  function onSaveItem() {
-    const updatedItems = [...items];
-    if (editingItemIndex !== null) {
-      updatedItems[editingItemIndex] = editingItem;
-    } else {
-      updatedItems.push(editingItem);
+    if (isNew || !value.id) {
+      toast.info(t("forms.snCustomFacet.saveFirstToAddItems"));
+      return;
     }
-    setValue("items", normalizeItems(updatedItems, selectedFieldType), { shouldDirty: true });
-    setItemModalOpen(false);
-  }
-
-  function onUpdateEditingItem(key: keyof TurSNSiteCustomFacetItem, rawValue: string) {
-    setEditingItem((prev) => {
-      if (key === "rangeStart" || key === "rangeEnd") {
-        return { ...prev, [key]: parseRangeValue(rawValue) };
-      }
-      if (key === "rangeStartDate" || key === "rangeEndDate") {
-        return { ...prev, [key]: parseIsoDateValue(rawValue) };
-      }
-      if (key === "operator") {
-        return { ...prev, operator: rawValue as TurSNSiteCustomFacetOperator };
-      }
-      return { ...prev, [key]: rawValue };
-    });
-  }
-
-  function onUpdateEditingItemLabels(labels: Record<string, string>) {
-    setEditingItem((prev) => ({ ...prev, labels }));
+    navigate(`${ROUTES.SN_INSTANCE}/${snSiteId}/facet/custom/${value.id}/item/${index}`);
   }
 
   function onRemoveItem(index: number) {
@@ -322,18 +286,6 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
         onOpenChange={setOpenFieldChangeDialog}
         onConfirm={onConfirmFieldChange}
         onCancel={onCancelFieldChange}
-      />
-      <CustomFacetItemModal
-        open={itemModalOpen}
-        onOpenChange={setItemModalOpen}
-        editingItem={editingItem}
-        editingIndex={editingItemIndex}
-        isDateField={dateField}
-        fieldName={selectedFieldName}
-        availableLocales={availableLocales}
-        onUpdate={onUpdateEditingItem}
-        onUpdateLabels={onUpdateEditingItemLabels}
-        onSave={onSaveItem}
       />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 lg:px-6 pb-8">

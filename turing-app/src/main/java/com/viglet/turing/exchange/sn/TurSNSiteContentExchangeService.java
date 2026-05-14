@@ -63,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurSNSiteContentExchangeService {
 
     private static final int EXPORT_PAGE_SIZE = 500;
-    public static final int IMPORT_CHUNK_SIZE = 50;
+    public static final int IMPORT_CHUNK_SIZE = 100;
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
@@ -258,15 +258,32 @@ public class TurSNSiteContentExchangeService {
                     int end = Math.min(i + IMPORT_CHUNK_SIZE, documents.size());
                     List<Map<String, Object>> chunk = documents.subList(i, end);
 
-                    for (Map<String, Object> doc : chunk) {
-                        try {
-                            if (plugin.indexDocument(turSNSite, locale, doc)) {
-                                totalIndexed++;
+                    // Batch-send the whole chunk in one update request (Solr/ES
+                    // coalesce). If the batch fails after the resilience layer
+                    // retries are exhausted, fall back to per-document indexing
+                    // so a single bad/slow doc doesn't drop the whole chunk.
+                    int indexedInChunk = 0;
+                    try {
+                        indexedInChunk = plugin.indexDocuments(turSNSite, locale, chunk);
+                    } catch (Exception batchFailure) {
+                        log.warn("Batch indexing of {} document(s) failed after retries; falling back to per-document indexing: {}",
+                                chunk.size(), batchFailure.getMessage());
+                        for (Map<String, Object> doc : chunk) {
+                            try {
+                                if (plugin.indexDocument(turSNSite, locale, doc)) {
+                                    indexedInChunk++;
+                                }
+                            } catch (Exception perDocFailure) {
+                                log.warn("Failed to index document '{}' (fallback): {}",
+                                        doc.getOrDefault("id", "unknown"), perDocFailure.getMessage());
                             }
-                        } catch (Exception e) {
-                            log.warn("Failed to index document '{}': {}",
-                                    doc.getOrDefault("id", "unknown"), e.getMessage());
                         }
+                    }
+                    totalIndexed += indexedInChunk;
+
+                    // RAG vector store stays per-document — embedding generation is
+                    // an external API call per doc and has its own batching semantics.
+                    for (Map<String, Object> doc : chunk) {
                         try {
                             turSNGenAi.addDocument(turSNSite, locale, doc);
                         } catch (Exception e) {

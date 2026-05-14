@@ -9,6 +9,7 @@ import static com.viglet.turing.solr.TurSolrConstants.TUR_SUGGEST;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -115,6 +116,11 @@ public class TurSolr {
     public void indexing(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
             Map<String, Object> attributes) {
         turSolrDocumentHandler.indexing(turSolrInstance, turSNSite, attributes);
+    }
+
+    public int indexingBatch(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+            List<Map<String, Object>> documents) {
+        return turSolrDocumentHandler.indexingBatch(turSolrInstance, turSNSite, documents);
     }
 
     public void deIndexing(TurSolrInstance turSolrInstance, String id) {

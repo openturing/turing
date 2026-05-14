@@ -22,6 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.util.Objects;
 
 import org.apache.commons.io.FileUtils;
@@ -61,14 +63,15 @@ public class TurImportExchange {
 							   int contentDocuments, int contentFiles,
 							   boolean templateImported, String templateName, int templateFiles,
 							   String error,
-							   List<SiteConflict> conflicts) {
+							   List<SiteConflict> conflicts,
+							   boolean searchEngineAvailable) {
 
 		public static ImportResult error(String error) {
-			return new ImportResult(false, null, 0, 0, false, null, 0, error, List.of());
+			return new ImportResult(false, null, 0, 0, false, null, 0, error, List.of(), true);
 		}
 
 		public static ImportResult conflict(List<SiteConflict> conflicts) {
-			return new ImportResult(false, null, 0, 0, false, null, 0, null, conflicts);
+			return new ImportResult(false, null, 0, 0, false, null, 0, null, conflicts, true);
 		}
 	}
 
@@ -79,6 +82,15 @@ public class TurImportExchange {
 	 * @since 2026.2.4
 	 */
 	public record SiteConflict(String id, String name) {
+	}
+
+	/**
+	 * Outcome of {@code importContentFiles}: how many files were processed, how
+	 * many documents were committed, and whether the search engine was reachable.
+	 * {@code searchEngineAvailable=false} indicates the SE circuit breaker
+	 * tripped (or the SE was otherwise down) and content was not indexed.
+	 */
+	private record ContentImportResult(int files, int documents, boolean searchEngineAvailable) {
 	}
 
 	public TurImportExchange(TurSNSiteImport turSNSiteImport,
@@ -150,10 +162,12 @@ public class TurImportExchange {
 		// content is optional
 		int contentDocuments = 0;
 		int contentFiles = 0;
+		boolean searchEngineAvailable = true;
 		if (includeContent) {
-			int[] contentResult = importContentFiles(extractFolder, taskId);
-			contentFiles = contentResult[0];
-			contentDocuments = contentResult[1];
+			ContentImportResult contentResult = importContentFiles(extractFolder, taskId);
+			contentFiles = contentResult.files();
+			contentDocuments = contentResult.documents();
+			searchEngineAvailable = contentResult.searchEngineAvailable();
 		}
 
 		// template is optional
@@ -177,7 +191,7 @@ public class TurImportExchange {
 		return new ImportResult(siteImported, siteName,
 				contentDocuments, contentFiles,
 				templateImported, templateName, templateFileCount,
-				null, conflicts);
+				null, conflicts, searchEngineAvailable);
 	}
 
 	/**
@@ -353,15 +367,16 @@ public class TurImportExchange {
 	}
 
 	/**
-	 * @return {filesProcessed, totalDocuments}
+	 * @return filesProcessed, totalDocuments and whether the search engine was reachable
 	 */
-	private int[] importContentFiles(File extractFolder, String taskId) {
+	private ContentImportResult importContentFiles(File extractFolder, String taskId) {
 		File[] contentFiles = findContentFiles(extractFolder);
 		log.info("Found {} content file(s) in '{}'", contentFiles.length, extractFolder.getAbsolutePath());
 		if (contentFiles.length == 0) {
-			return new int[]{0, 0};
+			return new ContentImportResult(0, 0, true);
 		}
 		int totalDocuments = 0;
+		boolean searchEngineAvailable = true;
 		ObjectMapper mapper = JsonMapper.builder().build();
 		for (File contentFile : contentFiles) {
 			log.info("Processing content file: {}", contentFile.getName());
@@ -383,11 +398,35 @@ public class TurImportExchange {
 					totalDocuments += indexed;
 					log.info("Imported {} documents for site '{}'", indexed, siteEntry.getKey());
 				}
+			} catch (CallNotPermittedException e) {
+				searchEngineAvailable = false;
+				log.warn("Search engine unavailable while importing content from '{}': {}",
+						contentFile.getName(), e.getMessage());
 			} catch (Exception e) {
+				if (isSearchEngineUnavailable(e)) {
+					searchEngineAvailable = false;
+					log.warn("Search engine unavailable while importing content from '{}': {}",
+							contentFile.getName(), e.getMessage());
+					continue;
+				}
 				log.error("Error importing content from '{}': {}", contentFile.getName(), e.getMessage(), e);
 			}
 		}
-		return new int[]{contentFiles.length, totalDocuments};
+		return new ContentImportResult(contentFiles.length, totalDocuments, searchEngineAvailable);
+	}
+
+	/**
+	 * Returns true when {@code e} is — or wraps — a Resilience4j circuit-breaker
+	 * trip. Used to log SE-unavailable cases as WARN (transient/external) rather
+	 * than ERROR (application bug).
+	 */
+	private static boolean isSearchEngineUnavailable(Throwable e) {
+		for (Throwable cursor = e; cursor != null; cursor = cursor.getCause()) {
+			if (cursor instanceof CallNotPermittedException) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

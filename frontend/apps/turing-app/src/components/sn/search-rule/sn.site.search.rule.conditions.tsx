@@ -47,19 +47,28 @@ function SortValueSelector({ value, onChange, fieldOptions, customSorts, t }: {
     customSorts: TurSNSiteCustomSort[];
     t: (key: string) => string;
 }) {
-    const isPreset = SORT_PRESETS.includes(value as typeof SORT_PRESETS[number]);
-    const isCustomSort = !isPreset && !value.includes(":") && value !== "" && customSorts.some(cs => cs.name === value);
     const isFieldSort = value.includes(":");
-    const [mode, setMode] = useState<"preset" | "custom" | "field">(
-        isFieldSort ? "field" : isCustomSort ? "custom" : "preset"
-    );
+    const isPreset = !isFieldSort && SORT_PRESETS.includes(value as typeof SORT_PRESETS[number]);
+    // Any non-empty non-preset non-field value is treated as custom — even when
+    // `customSorts` hasn't loaded yet (edit page race), so the mode dropdown
+    // doesn't flip to "Preset" + "relevance" while the catalogue is in flight.
+    const isCustomSort = !isFieldSort && !isPreset && value !== "";
+    // Track explicit user-driven switches (e.g. clicking "Custom Sort" while
+    // catalogues are empty) so the mode doesn't snap back to preset when the
+    // value becomes "". Derived state takes priority once the value matches.
+    const [explicitMode, setExplicitMode] = useState<"preset" | "custom" | "field" | null>(null);
+    const derivedMode: "preset" | "custom" | "field" =
+        isFieldSort ? "field" : isCustomSort ? "custom" : "preset";
+    const mode = explicitMode && !isFieldSort && !isPreset && !isCustomSort
+        ? explicitMode
+        : derivedMode;
 
     const fieldName = isFieldSort ? value.split(":")[0] : "";
     const fieldDir = isFieldSort ? (value.split(":")[1] || "asc") : "asc";
 
     function handleModeChange(newMode: string) {
         const m = newMode as "preset" | "custom" | "field";
-        setMode(m);
+        setExplicitMode(m);
         if (m === "preset") onChange("relevance");
         else if (m === "custom") onChange(customSorts.length > 0 ? customSorts[0].name : "");
         else onChange(fieldOptions.length > 0 ? `${fieldOptions[0].name}:asc` : ":asc");
@@ -68,7 +77,7 @@ function SortValueSelector({ value, onChange, fieldOptions, customSorts, t }: {
     return (
         <div className="flex items-center gap-2">
             <Select value={mode} onValueChange={handleModeChange}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-40">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -93,6 +102,12 @@ function SortValueSelector({ value, onChange, fieldOptions, customSorts, t }: {
                 <Select value={isCustomSort ? value : ""} onValueChange={onChange}>
                     <SelectTrigger className="flex-1"><SelectValue placeholder={t("sn.searchRule.sortMode.customSort")} /></SelectTrigger>
                     <SelectContent>
+                        {/* Include the current value as a fallback option when the
+                            catalogue hasn't loaded yet, so the saved sort still renders
+                            instead of showing an empty/placeholder Select. */}
+                        {isCustomSort && !customSorts.some((cs) => cs.name === value) && (
+                            <SelectItem key={`__current__${value}`} value={value}>{value}</SelectItem>
+                        )}
                         {customSorts.map((cs) => (
                             <SelectItem key={cs.id ?? cs.name} value={cs.name}>{cs.name}</SelectItem>
                         ))}

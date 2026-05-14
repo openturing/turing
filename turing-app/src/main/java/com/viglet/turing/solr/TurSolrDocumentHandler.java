@@ -49,6 +49,64 @@ public class TurSolrDocumentHandler {
         this.addDocument(turSolrInstance, turSNSite, attributes);
     }
 
+    /**
+     * Indexes a batch of documents in a single Solr update request — drops the
+     * per-doc HTTP overhead during bulk imports.
+     *
+     * <p>Throws on failure so the surrounding Resilience4j retry/circuit-breaker
+     * sees the error and can retry the batch. Callers that need graceful
+     * degradation (e.g. fall back to per-doc indexing) catch
+     * {@link RuntimeException}.
+     *
+     * @return number of documents sent to Solr.
+     */
+    public int indexingBatch(TurSolrInstance turSolrInstance, TurSNSite turSNSite,
+            List<Map<String, Object>> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        log.debug("Executing batch indexing for {} documents ...", documents.size());
+        Map<String, TurSNSiteField> turSNSiteFieldMap = turSNSiteFieldUtils.toMap(turSNSite);
+        List<SolrInputDocument> solrDocs = new ArrayList<>(documents.size());
+        for (Map<String, Object> attributes : documents) {
+            if (attributes == null) {
+                continue;
+            }
+            attributes.remove(SCORE);
+            attributes.remove(VERSION);
+            attributes.remove(BOOST);
+            SolrInputDocument document = new SolrInputDocument();
+            attributes.forEach((key, value) -> processAttribute(turSNSiteFieldMap, document, key, value));
+            solrDocs.add(document);
+        }
+        if (solrDocs.isEmpty()) {
+            return 0;
+        }
+        try {
+            UpdateRequest updateRequest = new UpdateRequest();
+            updateRequest.add(solrDocs);
+            updateRequest.setCommitWithin(commitWithin);
+            updateRequest.process(turSolrInstance.getSolrClient(), turSolrInstance.getCore());
+            return solrDocs.size();
+        } catch (SolrServerException | IOException e) {
+            // Throw so the resilience layer (and the import service's per-doc
+            // fallback) can react; the caller logs the final outcome.
+            throw new TurSolrBatchIndexException(
+                    "Batch indexing of " + solrDocs.size() + " documents failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Marker exception for failed batch indexing. Carries the original Solr/IO
+     * failure as its cause; matched by the Resilience4j retry config and by the
+     * import service's per-doc fallback.
+     */
+    public static class TurSolrBatchIndexException extends RuntimeException {
+        public TurSolrBatchIndexException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     public void deIndexing(TurSolrInstance turSolrInstance, String id) {
         log.debug("Executing deIndexing ...");
         this.deleteDocument(turSolrInstance, id);

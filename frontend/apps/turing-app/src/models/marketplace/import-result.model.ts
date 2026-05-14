@@ -13,4 +13,6 @@ export interface TurImportResult {
   templateFiles: number
   error: string | null
   conflicts: TurSiteConflict[]
+  /** When false the search engine was unreachable (e.g. circuit breaker open) and content was not indexed. */
+  searchEngineAvailable: boolean
 }

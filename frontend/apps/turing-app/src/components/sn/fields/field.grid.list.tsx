@@ -209,7 +209,7 @@ const buildColumns = (
     onToggle: (fieldId: string, key: FieldToggleKey, checked: boolean) => void,
     isSavingField: (fieldId: string) => boolean,
     onRepair: (payload: TurSNFieldRepairPayload) => Promise<void>,
-    isRepairing: boolean,
+    isRepairingField: (fieldId: string) => boolean,
     t: (key: string, opts?: Record<string, unknown>) => string
 ): ColumnDef<TurSNSiteField>[] => [
         {
@@ -234,7 +234,7 @@ const buildColumns = (
                         <StatusFieldDropdown
                             statusField={statusField}
                             onRepair={onRepair}
-                            isRepairing={isRepairing}
+                            isRepairing={isRepairingField(row.original.id)}
                         />
                         <div className="text-left font-medium">{row.getValue("name")}</div>
                     </div>
@@ -391,7 +391,9 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     const [savingFieldIds, setSavingFieldIds] = React.useState<Set<string>>(
         new Set()
     );
-    const [isRepairing, setIsRepairing] = React.useState(false);
+    const [repairingFieldIds, setRepairingFieldIds] = React.useState<Set<string>>(
+        new Set()
+    );
 
     const statusFieldMap = React.useMemo(() => {
         const map = new Map<string, TurSNFieldCheck>();
@@ -454,9 +456,26 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
         [data, id, setFieldSaving]
     );
 
+    const setFieldRepairing = React.useCallback((fieldId: string, repairing: boolean) => {
+        setRepairingFieldIds((prev) => {
+            const next = new Set(prev);
+            if (repairing) {
+                next.add(fieldId);
+            } else {
+                next.delete(fieldId);
+            }
+            return next;
+        });
+    }, []);
+
+    const isRepairingField = React.useCallback(
+        (fieldId: string) => repairingFieldIds.has(fieldId),
+        [repairingFieldIds]
+    );
+
     const handleRepair = React.useCallback(
         async (payload: TurSNFieldRepairPayload) => {
-            setIsRepairing(true);
+            setFieldRepairing(payload.id, true);
             try {
                 await turSNFieldService.repair(id, payload);
                 if (onRefreshStatus) {
@@ -467,15 +486,15 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
                 console.error("Failed to repair SN field", error);
                 toast.error(t("forms.fieldGrid.repairError"));
             } finally {
-                setIsRepairing(false);
+                setFieldRepairing(payload.id, false);
             }
         },
-        [id, onRefreshStatus, t]
+        [id, onRefreshStatus, setFieldRepairing, t]
     );
 
     const columns = React.useMemo(
-        () => buildColumns(statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairing, t),
-        [statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairing, t]
+        () => buildColumns(statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t),
+        [statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairingField, t]
     );
 
     const table = useReactTable({

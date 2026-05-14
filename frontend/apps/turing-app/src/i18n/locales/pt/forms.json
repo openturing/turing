@@ -635,6 +635,7 @@
       "noLabel": "Sem rótulo",
       "editItem": "Editar Item de Faceta",
       "addItemTitle": "Adicionar Item de Faceta",
+      "saveFirstToAddItems": "Salve a faceta personalizada antes de adicionar ou editar itens.",
       "itemDesc": "Defina como este item filtra os resultados de busca.",
       "start": "Início",
       "end": "Fim",
