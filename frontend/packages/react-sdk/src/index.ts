@@ -75,6 +75,8 @@ export type {
   UseTuringSlotsAgent,
   SlotsStatus,
 } from "./hooks/use-turing-slots";
+export { useTuringSlot } from "./hooks/use-turing-slot";
+export type { UseTuringSlotReturn } from "./hooks/use-turing-slot";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 
