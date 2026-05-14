@@ -17,6 +17,14 @@ export const queryKeys = {
     list: () => [...queryKeys.snSites.all(), 'list'] as const,
     detail: (id: string) => [...queryKeys.snSites.all(), 'detail', id] as const,
   },
+  locales: {
+    all: () => ['locales'] as const,
+    list: () => [...queryKeys.locales.all(), 'list'] as const,
+  },
+  snSiteLocales: {
+    all: () => ['sn-site-locales'] as const,
+    listBySite: (siteId: string) => [...queryKeys.snSiteLocales.all(), 'list', 'site', siteId] as const,
+  },
   llmInstances: {
     all: () => ['llm-instances'] as const,
     list: () => [...queryKeys.llmInstances.all(), 'list'] as const,

@@ -22,15 +22,19 @@ export default function SNSiteFieldListPage() {
     const { t } = useTranslation();
     useSubPageBreadcrumb(t("sn.fields.title"));
 
+    const refreshStatus = React.useCallback(async () => {
+        try {
+            const result = await turSNFieldService.getStatusFields(id);
+            setStatusFields(result);
+        } catch {
+            setError("Connection error or timeout while fetching SN field data.");
+        }
+    }, [id]);
+
     React.useEffect(() => {
         turSNFieldService.query(id).then(setSnField).catch(() => setError("Connection error or timeout while fetching SN field data."));
-        turSNFieldService
-            .getStatusFields(id)
-            .then(setStatusFields)
-            .catch(() => {
-                setError("Connection error or timeout while fetching SN field data.");
-            });
-    }, [id]);
+        void refreshStatus();
+    }, [id, refreshStatus]);
     return (
         <LoadProvider checkIsNotUndefined={data && statusFields} error={error} tryAgainUrl={`${ROUTES.SN_INSTANCE}/${id}/field`}>
             {data && statusFields && (
@@ -42,7 +46,7 @@ export default function SNSiteFieldListPage() {
                         description={t("sn.fields.description")}>
                         <SubPageHeader.Action label={t("sn.fields.newField")} href={`${ROUTES.SN_INSTANCE}/${id}/field/new`} />
                     </SubPageHeader>
-                    <SNSiteFieldGridList id={id} statusFields={statusFields} data={data} setSnField={setSnField as React.Dispatch<React.SetStateAction<TurSNSiteField[]>>} />
+                    <SNSiteFieldGridList id={id} statusFields={statusFields} data={data} setSnField={setSnField as React.Dispatch<React.SetStateAction<TurSNSiteField[]>>} onRefreshStatus={refreshStatus} />
                 </>
             )}
         </LoadProvider>

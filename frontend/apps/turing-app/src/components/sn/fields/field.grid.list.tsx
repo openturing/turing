@@ -33,29 +33,76 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import type { TurSNFieldCheck } from "@/models/sn/sn-field-check.model.ts"
+import type {
+    TurSNFieldRepairPayload,
+    TurSNFieldRepairType,
+} from "@/models/sn/sn-field-repair.model"
 import type { TurSNStatusFields } from "@/models/sn/sn-field-status.model"
 import type { TurSNSiteField } from "@/models/sn/sn-site-field.model.ts"
 import { TurSNFieldService } from "@/services/sn/sn.field.service"
-import { IconAlertTriangle, IconArrowsUpDown, IconChevronDown, IconCircleCheck, IconColumns3Filled } from "@tabler/icons-react"
+import { toast } from "@viglet/viglet-design-system"
+import { IconAlertTriangle, IconArrowsUpDown, IconChevronDown, IconCircleCheck, IconColumns3Filled, IconLoader2 } from "@tabler/icons-react"
 import type { PropsWithChildren } from "react"
 import { BadgeFieldType } from "../../badge-field-type"
 
 type StatusFieldDropdownProps = {
     statusField?: TurSNFieldCheck;
+    onRepair: (payload: TurSNFieldRepairPayload) => Promise<void>;
+    isRepairing: boolean;
 };
 
-function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>) {
+type RepairRowProps = {
+    label: React.ReactNode;
+    action: React.ReactNode;
+    disabled: boolean;
+    onSelect: () => void;
+};
+
+/**
+ * Single row inside the status dropdown. Uses Radix' `onSelect` so the click
+ * is captured by the menu primitive (plain <button> children get their click
+ * swallowed by the dropdown's pointer-down dismiss handler). `preventDefault`
+ * keeps the menu open while the async repair runs.
+ */
+function RepairRow({ label, action, disabled, onSelect }: Readonly<RepairRowProps>) {
+    return (
+        <DropdownMenuItem
+            disabled={disabled}
+            onSelect={(event) => {
+                event.preventDefault();
+                if (disabled) return;
+                onSelect();
+            }}
+            className="flex items-center justify-between gap-2 px-2 py-1 text-sm"
+        >
+            {label}
+            <span className="flex items-center gap-1 text-xs text-primary hover:underline">
+                {disabled && <IconLoader2 className="h-3 w-3 animate-spin" />}
+                {action}
+            </span>
+        </DropdownMenuItem>
+    );
+}
+
+function StatusFieldDropdown({ statusField, onRepair, isRepairing }: Readonly<StatusFieldDropdownProps>) {
     const { t } = useTranslation();
     if (!statusField) {
         return null;
     }
+
+    const runRepair = (core: string, repairType: TurSNFieldRepairType) => {
+        if (isRepairing) return;
+        void onRepair({ id: statusField.id, core, repairType });
+    };
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <GradientButton variant="ghost" size="icon" className="h-6 w-6 p-0">
                     <span className="sr-only">{t("forms.fieldGrid.openStatus")}</span>
-                    {statusField.correct ? (
+                    {isRepairing ? (
+                        <IconLoader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : statusField.correct ? (
                         <IconCircleCheck className="h-4 w-4 text-emerald-500" />
                     ) : (
                         <IconAlertTriangle className="h-4 w-4 text-rose-500" />
@@ -82,72 +129,69 @@ function StatusFieldDropdown({ statusField }: Readonly<StatusFieldDropdownProps>
                                 </DropdownMenuItem>
                             ) : (
                                 <>
-                                    <div className="flex items-center justify-between px-2 py-1 text-xs font-semibold text-muted-foreground">
-                                        <span>{core.name}</span>
-                                        <button
-                                            type="button"
-                                            className="text-xs text-primary hover:underline"
-                                        >
-                                            {t("forms.fieldGrid.repairAll")}
-                                        </button>
-                                    </div>
+                                    <RepairRow
+                                        disabled={isRepairing}
+                                        onSelect={() => runRepair(core.name, "REPAIR_ALL")}
+                                        label={
+                                            <span className="text-xs font-semibold text-muted-foreground">
+                                                {core.name}
+                                            </span>
+                                        }
+                                        action={t("forms.fieldGrid.repairAll")}
+                                    />
                                     {!core.exists && (
-                                        <div className="flex items-center justify-between px-2 py-1 text-sm">
-                                            <div className="flex items-center gap-2 text-rose-600">
-                                                <IconAlertTriangle className="h-4 w-4" />
-                                                <span>{t("forms.fieldGrid.missingField")}</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="text-xs text-primary hover:underline"
-                                            >
-                                                {t("forms.fieldGrid.repair")}
-                                            </button>
-                                        </div>
+                                        <RepairRow
+                                            disabled={isRepairing}
+                                            onSelect={() => runRepair(core.name, "SE_CREATE_FIELD")}
+                                            label={
+                                                <span className="flex items-center gap-2 text-rose-600">
+                                                    <IconAlertTriangle className="h-4 w-4" />
+                                                    {t("forms.fieldGrid.missingField")}
+                                                </span>
+                                            }
+                                            action={t("forms.fieldGrid.repair")}
+                                        />
                                     )}
                                     {core.exists && !statusField.facetIsCorrect && (
-                                        <div className="flex items-center justify-between px-2 py-1 text-sm">
-                                            <div className="flex items-center gap-2 text-rose-600">
-                                                <IconAlertTriangle className="h-4 w-4" />
-                                                <span>{t("forms.fieldGrid.facetTypeIncorrect")}</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="text-xs text-primary hover:underline"
-                                            >
-                                                {t("forms.fieldGrid.repair")}
-                                            </button>
-                                        </div>
+                                        <RepairRow
+                                            disabled={isRepairing}
+                                            onSelect={() => runRepair(core.name, "SN_CHANGE_TYPE")}
+                                            label={
+                                                <span className="flex items-center gap-2 text-rose-600">
+                                                    <IconAlertTriangle className="h-4 w-4" />
+                                                    {t("forms.fieldGrid.facetTypeIncorrect")}
+                                                </span>
+                                            }
+                                            action={t("forms.fieldGrid.repair")}
+                                        />
                                     )}
                                     {core.exists && !core.multiValuedIsCorrect && (
-                                        <div className="flex items-center justify-between px-2 py-1 text-sm">
-                                            <div className="flex items-center gap-2 text-rose-600">
-                                                <IconAlertTriangle className="h-4 w-4" />
-                                                <span>{t("forms.fieldGrid.multiValuedNotConfigured")}</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="text-xs text-primary hover:underline"
-                                            >
-                                                {t("forms.fieldGrid.repair")}
-                                            </button>
-                                        </div>
+                                        <RepairRow
+                                            disabled={isRepairing}
+                                            onSelect={() => runRepair(core.name, "SE_ENABLE_MULTI_VALUE")}
+                                            label={
+                                                <span className="flex items-center gap-2 text-rose-600">
+                                                    <IconAlertTriangle className="h-4 w-4" />
+                                                    {t("forms.fieldGrid.multiValuedNotConfigured")}
+                                                </span>
+                                            }
+                                            action={t("forms.fieldGrid.repair")}
+                                        />
                                     )}
                                     {core.exists &&
                                         statusField.facetIsCorrect &&
                                         !core.typeIsCorrect && (
-                                            <div className="flex items-center justify-between px-2 py-1 text-sm">
-                                                <div className="flex items-center gap-2 text-rose-600">
-                                                    <IconAlertTriangle className="h-4 w-4" />
-                                                    <span>{t("forms.fieldGrid.usingType", { type: core.type })}</span>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    className="text-xs text-primary hover:underline"
-                                                >
-                                                    {t("forms.fieldGrid.repair")}
-                                                </button>
-                                            </div>
+                                            <RepairRow
+                                                disabled={isRepairing}
+                                                onSelect={() => runRepair(core.name, "SE_CHANGE_TYPE")}
+                                                label={
+                                                    <span className="flex items-center gap-2 text-rose-600">
+                                                        <IconAlertTriangle className="h-4 w-4" />
+                                                        {t("forms.fieldGrid.usingType", { type: core.type })}
+                                                    </span>
+                                                }
+                                                action={t("forms.fieldGrid.repair")}
+                                            />
                                         )}
                                 </>
                             )}
@@ -164,6 +208,8 @@ const buildColumns = (
     statusFieldMap: Map<string, TurSNFieldCheck>,
     onToggle: (fieldId: string, key: FieldToggleKey, checked: boolean) => void,
     isSavingField: (fieldId: string) => boolean,
+    onRepair: (payload: TurSNFieldRepairPayload) => Promise<void>,
+    isRepairing: boolean,
     t: (key: string, opts?: Record<string, unknown>) => string
 ): ColumnDef<TurSNSiteField>[] => [
         {
@@ -185,7 +231,11 @@ const buildColumns = (
                 const statusField = statusFieldMap.get(row.original.id);
                 return (
                     <div className="flex items-center gap-2 w-full">
-                        <StatusFieldDropdown statusField={statusField} />
+                        <StatusFieldDropdown
+                            statusField={statusField}
+                            onRepair={onRepair}
+                            isRepairing={isRepairing}
+                        />
                         <div className="text-left font-medium">{row.getValue("name")}</div>
                     </div>
                 )
@@ -321,8 +371,9 @@ interface Props {
     id: string;
     data: TurSNSiteField[];
     setSnField: React.Dispatch<React.SetStateAction<TurSNSiteField[]>>;
+    onRefreshStatus?: () => Promise<void> | void;
 }
-export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, children }) => {
+export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ statusFields, id, data, setSnField, onRefreshStatus, children }) => {
     const { t } = useTranslation();
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -340,6 +391,7 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
     const [savingFieldIds, setSavingFieldIds] = React.useState<Set<string>>(
         new Set()
     );
+    const [isRepairing, setIsRepairing] = React.useState(false);
 
     const statusFieldMap = React.useMemo(() => {
         const map = new Map<string, TurSNFieldCheck>();
@@ -402,9 +454,28 @@ export const SNSiteFieldGridList: React.FC<PropsWithChildren<Props>> = ({ status
         [data, id, setFieldSaving]
     );
 
+    const handleRepair = React.useCallback(
+        async (payload: TurSNFieldRepairPayload) => {
+            setIsRepairing(true);
+            try {
+                await turSNFieldService.repair(id, payload);
+                if (onRefreshStatus) {
+                    await onRefreshStatus();
+                }
+                toast.success(t("forms.fieldGrid.repairSuccess"));
+            } catch (error) {
+                console.error("Failed to repair SN field", error);
+                toast.error(t("forms.fieldGrid.repairError"));
+            } finally {
+                setIsRepairing(false);
+            }
+        },
+        [id, onRefreshStatus, t]
+    );
+
     const columns = React.useMemo(
-        () => buildColumns(statusFieldMap, handleToggle, isSavingField, t),
-        [statusFieldMap, handleToggle, isSavingField, t]
+        () => buildColumns(statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairing, t),
+        [statusFieldMap, handleToggle, isSavingField, handleRepair, isRepairing, t]
     );
 
     const table = useReactTable({

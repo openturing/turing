@@ -1092,7 +1092,9 @@
       "repair": "Repair",
       "facetTypeIncorrect": "Facet Type is incorrect",
       "multiValuedNotConfigured": "SE MultiValued isn't configured",
-      "usingType": "Using {{type}}"
+      "usingType": "Using {{type}}",
+      "repairSuccess": "Repair applied to the field.",
+      "repairError": "Failed to apply repair to the field."
     },
     "facetDraggable": {
       "dragToReorder": "Drag to reorder",

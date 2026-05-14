@@ -25,17 +25,22 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,6 +67,13 @@ public class TurSNSiteCustomFacetItem implements Serializable {
 
     @Column(nullable = false, length = 255)
     private String label;
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "sn_site_custom_facet_item_label", joinColumns = @JoinColumn(name = "custom_facet_item_id"))
+    @MapKeyColumn(name = "locale", length = 20)
+    @Column(name = "label", nullable = false, length = 255)
+    private Map<String, String> labels = new HashMap<>();
 
     @Column(name = "facet_item_position")
     private Integer position;

@@ -58,6 +58,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetOperator
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,11 +77,14 @@ public class TurSNSiteCustomFacetAPI {
 
     private final TurSNSiteRepository turSNSiteRepository;
     private final TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
+    private final TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
 
     public TurSNSiteCustomFacetAPI(TurSNSiteRepository turSNSiteRepository,
-            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository) {
+            TurSNSiteFieldExtRepository turSNSiteFieldExtRepository,
+            TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository) {
         this.turSNSiteRepository = turSNSiteRepository;
         this.turSNSiteFieldExtRepository = turSNSiteFieldExtRepository;
+        this.turSNSiteCustomFacetRepository = turSNSiteCustomFacetRepository;
     }
 
     @Operation(summary = "Semantic Navigation Site Custom Facet List")
@@ -243,6 +247,7 @@ public class TurSNSiteCustomFacetAPI {
         TurSNSiteCustomFacetItem item = TurSNSiteCustomFacetItem.builder().build();
         item.setId(dto.getId());
         item.setLabel(dto.getLabel());
+        item.setLabels(new HashMap<>(Optional.ofNullable(dto.getLabels()).orElse(Map.of())));
         item.setPosition(safeItemPositionDto(dto));
         item.setOperator(Optional.ofNullable(dto.getOperator())
                 .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
@@ -273,6 +278,7 @@ public class TurSNSiteCustomFacetAPI {
                     TurSNSiteCustomFacetItemDto dto = new TurSNSiteCustomFacetItemDto();
                     dto.setId(item.getId());
                     dto.setLabel(item.getLabel());
+                    dto.setLabels(new HashMap<>(Optional.ofNullable(item.getLabels()).orElse(Map.of())));
                     dto.setPosition(item.getPosition());
                     dto.setOperator(Optional.ofNullable(item.getOperator())
                             .orElse(TurSNSiteCustomFacetOperatorEnum.BETWEEN_INCLUSIVE));
@@ -334,10 +340,11 @@ public class TurSNSiteCustomFacetAPI {
     }
 
     private List<TurSNSiteCustomFacet> getAllCustomFacets(TurSNSite turSNSite) {
-        return getSiteFields(turSNSite).stream()
-                .flatMap(fieldExt -> Optional.ofNullable(fieldExt.getCustomFacets())
-                        .orElse(Set.of())
-                        .stream())
+        List<TurSNSiteFieldExt> siteFields = getSiteFields(turSNSite);
+        if (siteFields.isEmpty()) {
+            return List.of();
+        }
+        return turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(siteFields).stream()
                 .sorted(Comparator.comparing(this::safeFacetPosition)
                         .thenComparing(TurSNSiteCustomFacet::getName, Comparator.nullsLast(String::compareTo)))
                 .toList();
@@ -351,20 +358,17 @@ public class TurSNSiteCustomFacetAPI {
 
     private Optional<CustomFacetFieldBinding> findCustomFacetBindingById(TurSNSite turSNSite,
             String customFacetId) {
-        for (TurSNSiteFieldExt fieldExt : getSiteFields(turSNSite)) {
-            Optional<TurSNSiteCustomFacet> customFacet = Optional.ofNullable(fieldExt.getCustomFacets())
-                    .orElse(Set.of())
-                    .stream()
-                    .filter(item -> customFacetId.equals(item.getId()))
-                    .findFirst();
-            if (customFacet.isPresent()) {
-                return Optional.of(CustomFacetFieldBinding.builder()
-                        .fieldExt(fieldExt)
-                        .customFacet(customFacet.get())
-                        .build());
-            }
+        List<TurSNSiteFieldExt> siteFields = getSiteFields(turSNSite);
+        if (siteFields.isEmpty()) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        return turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(siteFields).stream()
+                .filter(customFacet -> customFacetId.equals(customFacet.getId()))
+                .findFirst()
+                .map(customFacet -> CustomFacetFieldBinding.builder()
+                        .fieldExt(customFacet.getTurSNSiteFieldExt())
+                        .customFacet(customFacet)
+                        .build());
     }
 
     private TurSNSiteFieldExt getTargetField(TurSNSite turSNSite, String fieldExtId) {
@@ -421,6 +425,7 @@ public class TurSNSiteCustomFacetAPI {
     public static class TurSNSiteCustomFacetItemDto {
         private String id;
         private String label;
+        private Map<String, String> labels;
         private Integer position;
         private TurSNSiteCustomFacetOperatorEnum operator;
         private BigDecimal rangeStart;

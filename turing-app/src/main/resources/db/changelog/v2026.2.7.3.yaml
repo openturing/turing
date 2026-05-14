@@ -1,0 +1,46 @@
+databaseChangeLog:
+  # Per-locale translations for each Custom Facet item. The existing
+  # `label` column on `sn_site_custom_facet_item` keeps acting as the
+  # stable identifier matched against Solr facet keys and filter
+  # queries; this table stores the display label per locale. Resolution
+  # at search time falls back to the item's `label` when no translation
+  # is found for the request locale.
+
+  - changeSet:
+      id: v2026.2.7.3-create-sn-site-custom-facet-item-label-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: sn_site_custom_facet_item_label
+      changes:
+        - createTable:
+            tableName: sn_site_custom_facet_item_label
+            columns:
+              - column:
+                  name: custom_facet_item_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locale
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: sn_site_custom_facet_item_label
+            columnNames: custom_facet_item_id, locale
+            constraintName: pk_sn_site_custom_facet_item_label
+        - addForeignKeyConstraint:
+            baseTableName: sn_site_custom_facet_item_label
+            baseColumnNames: custom_facet_item_id
+            referencedTableName: sn_site_custom_facet_item
+            referencedColumnNames: id
+            constraintName: fk_sn_site_custom_facet_item_label_item
+            onDelete: CASCADE

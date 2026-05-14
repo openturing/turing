@@ -1092,7 +1092,9 @@
       "repair": "Reparar",
       "facetTypeIncorrect": "Tipo de Faceta está incorreto",
       "multiValuedNotConfigured": "Múltiplos Valores do SE não está configurado",
-      "usingType": "Usando {{type}}"
+      "usingType": "Usando {{type}}",
+      "repairSuccess": "Reparação aplicada ao campo.",
+      "repairError": "Falha ao aplicar a reparação ao campo."
     },
     "facetDraggable": {
       "dragToReorder": "Arraste para reordenar",

@@ -28,14 +28,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { TurLocale } from "@/models/locale/locale.model"
 import type {
   TurSNSiteCustomFacet,
   TurSNSiteCustomFacetFieldOption,
   TurSNSiteCustomFacetItem,
   TurSNSiteCustomFacetOperator,
 } from "@/models/sn/sn-site-custom-facet.model"
-import { TurLocaleService } from "@/services/locale/locale.service"
+import { useSnSiteAvailableLocales } from "@/api/queries/locale.queries"
 import { TurSNSiteCustomFacetService } from "@/services/sn/sn.site.custom.facet.service"
 import {
   closestCenter,
@@ -87,7 +86,6 @@ import {
 } from "./sn.site.custom.facet.form.utils"
 
 const turSNSiteCustomFacetService = new TurSNSiteCustomFacetService();
-const turLocaleService = new TurLocaleService();
 
 interface Props {
   snSiteId: string;
@@ -109,14 +107,14 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
   });
   const { control, watch, setValue } = form;
   const [fieldOptions, setFieldOptions] = useState<TurSNSiteCustomFacetFieldOption[]>([]);
-  const [availableLocales, setAvailableLocales] = useState<TurLocale[]>([]);
+  const { data: availableLocales } = useSnSiteAvailableLocales(snSiteId);
   const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>([]);
   const [openFieldChangeDialog, setOpenFieldChangeDialog] = useState(false);
   const [pendingFieldExtId, setPendingFieldExtId] = useState<string | null>(null);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<TurSNSiteCustomFacetItem>({
-    label: "", operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+    label: "", labels: {}, operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
   });
   const navigate = useNavigate();
   const items = watch("items") ?? [];
@@ -148,14 +146,10 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
     turSNSiteCustomFacetService.getFieldOptions(snSiteId).then(setFieldOptions);
   }, [snSiteId]);
 
-  useEffect(() => {
-    turLocaleService.query().then(setAvailableLocales);
-  }, []);
-
   function onOpenAddItem() {
     setEditingItemIndex(null);
     setEditingItem({
-      label: "", operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
+      label: "", labels: {}, operator: DEFAULT_OPERATOR, rangeStart: null, rangeEnd: null, rangeStartDate: null, rangeEndDate: null,
     });
     setItemModalOpen(true);
   }
@@ -190,6 +184,10 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
       }
       return { ...prev, [key]: rawValue };
     });
+  }
+
+  function onUpdateEditingItemLabels(labels: Record<string, string>) {
+    setEditingItem((prev) => ({ ...prev, labels }));
   }
 
   function onRemoveItem(index: number) {
@@ -332,7 +330,9 @@ export const SNSiteCustomFacetForm: React.FC<Props> = ({ snSiteId, value, isNew,
         editingIndex={editingItemIndex}
         isDateField={dateField}
         fieldName={selectedFieldName}
+        availableLocales={availableLocales}
         onUpdate={onUpdateEditingItem}
+        onUpdateLabels={onUpdateEditingItemLabels}
         onSave={onSaveItem}
       />
       <Form {...form}>

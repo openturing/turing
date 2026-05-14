@@ -47,16 +47,18 @@ public interface TurSNSiteCustomFacetRepository extends JpaRepository<TurSNSiteC
 
     @Cacheable(FIND_BY_FIELD_EXTS_WITH_DETAILS)
     @Query("SELECT DISTINCT cf FROM TurSNSiteCustomFacet cf " +
-           "LEFT JOIN FETCH cf.items " +
+           "LEFT JOIN FETCH cf.items i " +
            "LEFT JOIN FETCH cf.label " +
+           "LEFT JOIN FETCH i.labels " +
            "WHERE cf.turSNSiteFieldExt IN :fieldExts")
     List<TurSNSiteCustomFacet> findByFieldExtsWithDetails(
             @Param("fieldExts") Collection<TurSNSiteFieldExt> fieldExts);
 
     @Cacheable(FIND_BY_FIELD_EXT_WITH_DETAILS)
     @Query("SELECT DISTINCT cf FROM TurSNSiteCustomFacet cf " +
-           "LEFT JOIN FETCH cf.items " +
+           "LEFT JOIN FETCH cf.items i " +
            "LEFT JOIN FETCH cf.label " +
+           "LEFT JOIN FETCH i.labels " +
            "WHERE cf.turSNSiteFieldExt = :fieldExt")
     List<TurSNSiteCustomFacet> findByFieldExtWithDetails(
             @Param("fieldExt") TurSNSiteFieldExt fieldExt);

@@ -129,10 +129,11 @@ class TurSolrResultProcessorTest {
                 when(queryResponse.getFacetQuery()).thenReturn(facetQuery);
 
                 Method method = TurSolrResultProcessor.class.getDeclaredMethod(
-                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                                "setFacetQueries", TurSNSite.class, java.util.Locale.class,
+                                QueryResponse.class);
                 method.setAccessible(true);
                 List<TurSEFacetResult> facetResults = (List<TurSEFacetResult>) method.invoke(processor, site,
-                                queryResponse);
+                                null, queryResponse);
 
                 assertThat(facetResults).hasSize(1);
                 TurSEFacetResult priceRangeResult = facetResults.getFirst();
@@ -865,10 +866,11 @@ class TurSolrResultProcessorTest {
                 when(queryResponse.getFacetQuery()).thenReturn(null);
 
                 Method method = TurSolrResultProcessor.class.getDeclaredMethod(
-                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                                "setFacetQueries", TurSNSite.class, java.util.Locale.class,
+                                QueryResponse.class);
                 method.setAccessible(true);
                 List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
-                                site, queryResponse);
+                                site, null, queryResponse);
 
                 assertThat(results).isEmpty();
         }
@@ -885,10 +887,11 @@ class TurSolrResultProcessorTest {
                 when(queryResponse.getFacetQuery()).thenReturn(Collections.emptyMap());
 
                 Method method = TurSolrResultProcessor.class.getDeclaredMethod(
-                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                                "setFacetQueries", TurSNSite.class, java.util.Locale.class,
+                                QueryResponse.class);
                 method.setAccessible(true);
                 List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
-                                site, queryResponse);
+                                site, null, queryResponse);
 
                 assertThat(results).isEmpty();
         }
@@ -913,10 +916,11 @@ class TurSolrResultProcessorTest {
                 when(queryResponse.getFacetQuery()).thenReturn(facetQuery);
 
                 Method method = TurSolrResultProcessor.class.getDeclaredMethod(
-                                "setFacetQueries", TurSNSite.class, QueryResponse.class);
+                                "setFacetQueries", TurSNSite.class, java.util.Locale.class,
+                                QueryResponse.class);
                 method.setAccessible(true);
                 List<TurSEFacetResult> results = (List<TurSEFacetResult>) method.invoke(processor,
-                                site, queryResponse);
+                                site, null, queryResponse);
 
                 assertThat(results).hasSize(1);
                 assertThat(results.getFirst().getFacet()).isEqualTo("unknown_facet");

@@ -207,6 +207,7 @@ public class TurSolr {
                     .hlFieldExtList(turSolrQueryBuilder.prepareQueryHL(turSNSite, query, context))
                     .spellCheckResult(turSESpellCheckResult)
                     .queryToRenderFacet(false)
+                    .locale(context.getLocale())
                     .build();
 
             return executeSolrQueryFromSN(turSolrInstance, turSNSite, queryContext);
@@ -229,6 +230,7 @@ public class TurSolr {
                     .hlFieldExtList(Collections.emptyList())
                     .spellCheckResult(new TurSESpellCheckResult())
                     .queryToRenderFacet(true)
+                    .locale(context.getLocale())
                     .build();
 
             return executeSolrQueryFromSN(turSolrInstance, turSNSite, queryContext);

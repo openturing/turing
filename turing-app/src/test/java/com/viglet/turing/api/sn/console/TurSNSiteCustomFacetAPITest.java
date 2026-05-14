@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteCustomFacetItem;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.field.TurSNSiteFieldExt;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
+import com.viglet.turing.persistence.repository.sn.field.TurSNSiteCustomFacetRepository;
 import com.viglet.turing.persistence.repository.sn.field.TurSNSiteFieldExtRepository;
 import com.viglet.turing.sn.TurSNFieldType;
 
@@ -44,11 +45,15 @@ class TurSNSiteCustomFacetAPITest {
     @Mock
     private TurSNSiteFieldExtRepository turSNSiteFieldExtRepository;
 
+    @Mock
+    private TurSNSiteCustomFacetRepository turSNSiteCustomFacetRepository;
+
     private TurSNSiteCustomFacetAPI api;
 
     @BeforeEach
     void setUp() {
-        api = new TurSNSiteCustomFacetAPI(turSNSiteRepository, turSNSiteFieldExtRepository);
+        api = new TurSNSiteCustomFacetAPI(turSNSiteRepository, turSNSiteFieldExtRepository,
+                turSNSiteCustomFacetRepository);
     }
 
     @Test
@@ -62,6 +67,8 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(fieldA, fieldB));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(facetA, facetB));
 
         List<TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto> result = api.list("site-1");
 
@@ -94,6 +101,8 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(field));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(facet));
 
         TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto dto = api.get("site-1", "facet-1");
 
@@ -131,6 +140,8 @@ class TurSNSiteCustomFacetAPITest {
                 .thenReturn(List.of(field));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(existing));
 
         TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto item = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto();
         item.setId("new-item");
@@ -169,6 +180,8 @@ class TurSNSiteCustomFacetAPITest {
                 .thenReturn(List.of(sourceField, targetField));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(facet));
 
         TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto item = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto();
         item.setLabel("100-200");
@@ -206,6 +219,8 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(field));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of());
 
         TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto payload = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetDto();
         payload.setName("new_name");
@@ -226,6 +241,8 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(sourceField));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(facet));
 
         TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto item = new TurSNSiteCustomFacetAPI.TurSNSiteCustomFacetItemDto();
         item.setLabel("Invalid");
@@ -253,6 +270,8 @@ class TurSNSiteCustomFacetAPITest {
                 .thenReturn(List.of(field));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
+                .thenReturn(List.of(removable, keep));
 
         boolean deleted = api.delete("site-1", "facet-1");
 
@@ -285,6 +304,11 @@ class TurSNSiteCustomFacetAPITest {
                 .turSNSite(site)
                 .build();
         fieldExt.setCustomFacets(customFacets);
+        if (customFacets != null) {
+            for (TurSNSiteCustomFacet customFacet : customFacets) {
+                customFacet.setTurSNSiteFieldExt(fieldExt);
+            }
+        }
         return fieldExt;
     }
 

@@ -37,11 +37,12 @@ class TurSNFieldRepairTypeTest {
     @Test
     void testEnumValues() {
         TurSNFieldRepairType[] values = TurSNFieldRepairType.values();
-        assertThat(values).hasSize(4).contains(
+        assertThat(values).hasSize(5).contains(
                 TurSNFieldRepairType.SE_CREATE_FIELD,
                 TurSNFieldRepairType.SE_CHANGE_TYPE,
                 TurSNFieldRepairType.SE_ENABLE_MULTI_VALUE,
-                TurSNFieldRepairType.SN_CHANGE_TYPE);
+                TurSNFieldRepairType.SN_CHANGE_TYPE,
+                TurSNFieldRepairType.REPAIR_ALL);
     }
 
     @Test
@@ -116,6 +117,7 @@ class TurSNFieldRepairTypeTest {
             case SE_CHANGE_TYPE -> "Change Type";
             case SE_ENABLE_MULTI_VALUE -> "Enable Multi Value";
             case SN_CHANGE_TYPE -> "SN Change Type";
+            case REPAIR_ALL -> "Repair All";
         };
 
         assertThat(result).isEqualTo("Create Field");
@@ -138,6 +140,7 @@ class TurSNFieldRepairTypeTest {
         assertThat(TurSNFieldRepairType.SE_CHANGE_TYPE.ordinal()).isEqualTo(1);
         assertThat(TurSNFieldRepairType.SE_ENABLE_MULTI_VALUE.ordinal()).isEqualTo(2);
         assertThat(TurSNFieldRepairType.SN_CHANGE_TYPE.ordinal()).isEqualTo(3);
+        assertThat(TurSNFieldRepairType.REPAIR_ALL.ordinal()).isEqualTo(4);
     }
 
     @Test

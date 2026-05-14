@@ -29,10 +29,16 @@ import lombok.Setter;
 public class TurSEFacetResultAttr {
 	private String attribute;
 	private int count;
-	
+	private String displayLabel;
+
 	public TurSEFacetResultAttr(String attribute, int count) {
 		this.setAttribute(attribute);
 		this.setCount(count);
+	}
+
+	public TurSEFacetResultAttr(String attribute, int count, String displayLabel) {
+		this(attribute, count);
+		this.setDisplayLabel(displayLabel);
 	}
 
 	@Override
@@ -40,6 +46,7 @@ public class TurSEFacetResultAttr {
 		return "TurSEFacetResultAttr{" +
 				"attribute='" + attribute + '\'' +
 				", count=" + count +
+				", displayLabel='" + displayLabel + '\'' +
 				'}';
 	}
 }

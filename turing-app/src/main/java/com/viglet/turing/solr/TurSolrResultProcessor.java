@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,7 +86,8 @@ public class TurSolrResultProcessor {
                         TurSolrQueryBuilder turSolrQueryBuilder) {
                 TurSEResults turSEResults = TurSEResults.builder().build();
                 turSEResultsParameters(queryContext.getTurSEParameters(), query, turSEResults, queryResponse);
-                processSEResultsFacet(turSNSite, turSEResults, queryResponse, queryContext.getFacetFieldExtList());
+                processSEResultsFacet(turSNSite, queryContext, turSEResults, queryResponse,
+                                queryContext.getFacetFieldExtList());
                 processResults(turSNSite, queryContext, turSEResults, queryResponse);
                 processGroups(query, turSolrInstance, turSNSite, queryContext, turSEResults, queryResponse,
                                 turSolrQueryBuilder);
@@ -306,12 +308,14 @@ public class TurSolrResultProcessor {
                 }
         }
 
-        private void processSEResultsFacet(TurSNSite turSNSite, TurSEResults turSEResults,
+        private void processSEResultsFacet(TurSNSite turSNSite, TurSolrQueryContext queryContext,
+                        TurSEResults turSEResults,
                         QueryResponse queryResponse, List<TurSNSiteFieldExt> turSNSiteFacetFieldExtList) {
                 if (!wasFacetConfigured(turSNSite, turSNSiteFacetFieldExtList)) {
                         return;
                 }
-                List<TurSEFacetResult> facetQueryResults = setFacetQueries(turSNSite, queryResponse);
+                List<TurSEFacetResult> facetQueryResults = setFacetQueries(turSNSite,
+                                queryContext.getLocale(), queryResponse);
                 List<TurSEFacetResult> facetRangeResults = setFacetRanges(queryResponse);
                 List<TurSEFacetResult> facetResults = new ArrayList<>(facetQueryResults);
                 facetResults.addAll(facetRangeResults);
@@ -340,6 +344,7 @@ public class TurSolrResultProcessor {
         }
 
         private List<TurSEFacetResult> setFacetQueries(TurSNSite turSNSite,
+                        Locale requestLocale,
                         QueryResponse queryResponse) {
                 Map<String, Integer> facetQueryValues = Optional.ofNullable(queryResponse.getFacetQuery())
                                 .orElse(Collections.emptyMap());
@@ -391,10 +396,13 @@ public class TurSolrResultProcessor {
                                                         Integer count = itemCounts
                                                                         .get(item.getLabel());
                                                         if (count != null) {
+                                                                String displayLabel = resolveCustomFacetItemLabel(
+                                                                                item, requestLocale);
                                                                 result.add(item.getLabel(),
                                                                                 new TurSEFacetResultAttr(
                                                                                                 item.getLabel(),
-                                                                                                count));
+                                                                                                count,
+                                                                                                displayLabel));
                                                         }
                                                 });
                                 facetResults.add(result);
@@ -422,6 +430,23 @@ public class TurSolrResultProcessor {
                 return Optional.ofNullable(customFacetItem.getPosition())
                                 .filter(position -> position > 0)
                                 .orElse(Integer.MAX_VALUE);
+        }
+
+        private static String resolveCustomFacetItemLabel(TurSNSiteCustomFacetItem item,
+                        Locale requestLocale) {
+                Map<String, String> labels = item.getLabels();
+                if (labels == null || labels.isEmpty() || requestLocale == null) {
+                        return item.getLabel();
+                }
+                String localeKey = requestLocale.toString();
+                String translated = labels.get(localeKey);
+                if (translated == null || translated.isBlank()) {
+                        translated = labels.get(requestLocale.toLanguageTag());
+                }
+                if (translated == null || translated.isBlank()) {
+                        translated = labels.get(requestLocale.getLanguage());
+                }
+                return (translated == null || translated.isBlank()) ? item.getLabel() : translated;
         }
 
         private static List<TurSEFacetResult> setFacetRanges(QueryResponse queryResponse) {

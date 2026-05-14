@@ -12,6 +12,7 @@ export type TurSNSiteCustomFacetOperator =
 export interface TurSNSiteCustomFacetItem {
   id?: string;
   label: string;
+  labels?: Record<string, string>;
   position?: number;
   operator?: TurSNSiteCustomFacetOperator;
   rangeStart?: number | null;

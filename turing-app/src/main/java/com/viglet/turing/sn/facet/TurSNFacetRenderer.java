@@ -277,9 +277,13 @@ public class TurSNFacetRenderer {
                     && facetResult.facetTypeAndFacetItemTypeValues.equals(AND_OR);
             if (showAllFacetItems || facetItem.getCount() > 0 || inUseAndOr) {
                 boolean selected = facetResult.usedFacetItems.contains(fq);
+                String displayLabel = facetItem.getDisplayLabel() != null
+                        && !facetItem.getDisplayLabel().isBlank()
+                                ? facetItem.getDisplayLabel()
+                                : facetItem.getAttribute();
                 items.add(new TurSNSiteSearchFacetItemBean()
                         .setCount(facetItem.getCount())
-                        .setLabel(facetItem.getAttribute())
+                        .setLabel(displayLabel)
                         .setSelected(selected)
                         .setFilterQuery(fq)
                         .setLink(buildLink(context, selected, fq,

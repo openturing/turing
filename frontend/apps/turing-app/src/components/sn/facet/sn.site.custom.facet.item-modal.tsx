@@ -1,4 +1,5 @@
 "use client"
+import { LanguageSelect } from "@/components/language-select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { IconCirclePlus, IconTrash } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { TurLocale } from "@/models/locale/locale.model";
 import type {
   TurSNSiteCustomFacetItem,
   TurSNSiteCustomFacetOperator,
@@ -40,7 +44,9 @@ interface ItemModalProps {
   editingIndex: number | null;
   isDateField: boolean;
   fieldName: string;
+  availableLocales: TurLocale[];
   onUpdate: (key: keyof TurSNSiteCustomFacetItem, rawValue: string) => void;
+  onUpdateLabels: (labels: Record<string, string>) => void;
   onSave: () => void;
 }
 
@@ -56,15 +62,56 @@ export function CustomFacetItemModal({
   editingIndex,
   isDateField,
   fieldName,
+  availableLocales,
   onUpdate,
+  onUpdateLabels,
   onSave,
 }: Readonly<ItemModalProps>) {
   const { t } = useTranslation();
   const operator = editingItem.operator ?? DEFAULT_OPERATOR;
+  const [labelEntries, setLabelEntries] = useState<Array<{ locale: string; label: string }>>(
+    () => Object.entries(editingItem.labels ?? {}).map(([locale, label]) => ({ locale, label })),
+  );
+  const wasOpen = useRef(open);
+
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setLabelEntries(
+        Object.entries(editingItem.labels ?? {}).map(([locale, label]) => ({ locale, label })),
+      );
+    }
+    wasOpen.current = open;
+  }, [open, editingItem]);
+
+  function commitEntries(entries: Array<{ locale: string; label: string }>) {
+    setLabelEntries(entries);
+    const next: Record<string, string> = {};
+    for (const entry of entries) {
+      const localeKey = entry.locale.trim();
+      if (localeKey) {
+        next[localeKey] = entry.label;
+      }
+    }
+    onUpdateLabels(next);
+  }
+
+  function addLabelEntry() {
+    commitEntries([...labelEntries, { locale: "", label: "" }]);
+  }
+
+  function removeLabelEntry(index: number) {
+    commitEntries(labelEntries.filter((_, i) => i !== index));
+  }
+
+  function updateLabelEntry(index: number, key: "locale" | "label", value: string) {
+    commitEntries(
+      labelEntries.map((entry, i) => (i === index ? { ...entry, [key]: value } : entry)),
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {editingIndex !== null
@@ -83,6 +130,49 @@ export function CustomFacetItemModal({
               onChange={(e) => onUpdate("label", e.target.value)}
               placeholder="e.g., Under $100"
             />
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="grid gap-1">
+                  <span className="text-sm font-medium">
+                    {t("forms.snLabelTranslations.addTranslations")}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("forms.snLabelTranslations.addTranslationsDesc")}
+                  </span>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addLabelEntry}>
+                  <IconCirclePlus className="h-4 w-4 mr-2" />
+                  {t("forms.snLabelTranslations.addLabel")}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {labelEntries.map((entry, index) => (
+                  <div key={`${entry.locale}-${index}`} className="flex items-center gap-2">
+                    <LanguageSelect
+                      className="w-1/3"
+                      value={entry.locale}
+                      onValueChange={(value) => updateLabelEntry(index, "locale", value)}
+                      locales={availableLocales}
+                      extraLocaleValues={labelEntries.map((it) => it.locale)}
+                    />
+                    <Input
+                      placeholder={t("forms.snLabelTranslations.enterLabel")}
+                      value={entry.label}
+                      onChange={(event) => updateLabelEntry(index, "label", event.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeLabelEntry(index)}
+                    >
+                      <IconTrash className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">

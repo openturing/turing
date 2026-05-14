@@ -1,6 +1,7 @@
 package com.viglet.turing.solr;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.solr.client.solrj.request.SolrQuery;
 
@@ -40,4 +41,7 @@ public class TurSolrQueryContext {
 
     /** Flag to indicate if query is for rendering facets */
     private boolean queryToRenderFacet;
+
+    /** Locale of the search request, used to resolve localized facet labels. */
+    private Locale locale;
 }
