@@ -43,6 +43,15 @@ public final class TurErrorTypes {
     public static final String METHOD_NOT_ALLOWED = BASE + "method-not-allowed";
     public static final String FILE_TOO_LARGE = BASE + "file-too-large";
     public static final String UPSTREAM_TIMEOUT = BASE + "upstream-timeout";
+    /**
+     * The server tried to reach a downstream HTTP service (LLM, embedding,
+     * vector store, MCP) and the connection was refused, the host was unknown,
+     * or the network was otherwise unreachable. Distinct from
+     * {@link #UPSTREAM_TIMEOUT} (the host answered but too slowly).
+     *
+     * @since 2026.2.17
+     */
+    public static final String UPSTREAM_UNREACHABLE = BASE + "upstream-unreachable";
     public static final String INTERNAL = BASE + "internal";
 
     private TurErrorTypes() {}

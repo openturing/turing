@@ -43,6 +43,13 @@ import com.viglet.turing.resilience.TurResilienceTimeoutException;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.web.client.ResourceAccessException;
+
 /**
  * Central RFC 7807 ProblemDetail handler. Translates business and framework
  * exceptions into a uniform JSON shape so SDK consumers can discriminate error
@@ -171,6 +178,35 @@ public class TurGlobalExceptionHandler {
     }
 
     /**
+     * Downstream HTTP services (LLM provider, embedding model, vector store,
+     * MCP server) refused the connection, returned no route to host, or had
+     * an unknown DNS name. Returns 503 with the unreachable URL extracted from
+     * the wrapped exception so the admin can fix the offline service without
+     * digging into the stack trace (typical case: Ollama not running locally).
+     *
+     * <p>{@link ResourceAccessException} is Spring's wrapper around I/O errors
+     * from {@code RestClient}/{@code RestTemplate}. We also unwrap a few
+     * common root causes ({@link ConnectException}, {@link UnknownHostException})
+     * to set a more specific {@code cause} property the SDK can surface.
+     *
+     * @since 2026.2.17
+     */
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<ProblemDetail> handleUpstreamUnreachable(ResourceAccessException ex) {
+        UpstreamConnectionInfo info = extractUpstreamInfo(ex);
+        String detail = info.endpoint() != null
+                ? "Couldn't reach upstream service at " + info.endpoint() + ". " + info.hint()
+                : "Couldn't reach an upstream service. " + info.hint();
+        ProblemDetail problem = build(HttpStatus.SERVICE_UNAVAILABLE,
+                TurErrorTypes.UPSTREAM_UNREACHABLE, detail);
+        if (info.endpoint() != null) problem.setProperty("endpoint", info.endpoint());
+        problem.setProperty("cause", info.causeKind());
+        log.warn("[GlobalEx] Upstream unreachable: endpoint={} cause={}",
+                info.endpoint(), info.causeKind());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem);
+    }
+
+    /**
      * Last-resort handler. Anything not matched above becomes a 500 with an
      * opaque message — we never echo internal exception details in the
      * payload, only in the correlated server log.
@@ -205,4 +241,46 @@ public class TurGlobalExceptionHandler {
 
     /** Per-field validation entry exposed inside {@code errors[]}. */
     public record ValidationError(String field, String message) {}
+
+    /**
+     * Outcome of unwrapping a {@link ResourceAccessException}: which endpoint
+     * was unreachable (when extractable from the message) and what kind of
+     * I/O failure caused it (connection refused / DNS / generic).
+     */
+    private record UpstreamConnectionInfo(String endpoint, String causeKind, String hint) {}
+
+    /**
+     * Spring's {@link ResourceAccessException} message follows the pattern
+     * {@code "I/O error on <METHOD> request for \"<URL>\": <cause>"}. Parse the
+     * URL out so the SDK can render an actionable error to admins, and inspect
+     * the wrapped cause to set {@code causeKind} ("connection-refused",
+     * "unknown-host", or "io-error"). Best-effort parsing — falls back to a
+     * generic message if the format ever changes.
+     */
+    private static final Pattern UPSTREAM_URL_PATTERN =
+            Pattern.compile("request for \"([^\"]+)\"");
+
+    private UpstreamConnectionInfo extractUpstreamInfo(ResourceAccessException ex) {
+        String endpoint = null;
+        String message = ex.getMessage();
+        if (message != null) {
+            Matcher m = UPSTREAM_URL_PATTERN.matcher(message);
+            if (m.find()) endpoint = m.group(1);
+        }
+        Throwable cause = ex.getCause();
+        while (cause != null && !(cause instanceof ConnectException)
+                && !(cause instanceof UnknownHostException) && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        if (cause instanceof UnknownHostException) {
+            return new UpstreamConnectionInfo(endpoint, "unknown-host",
+                    "DNS could not resolve the host — check the URL or your network.");
+        }
+        if (cause instanceof ConnectException) {
+            return new UpstreamConnectionInfo(endpoint, "connection-refused",
+                    "The service is not running or not listening on that port.");
+        }
+        return new UpstreamConnectionInfo(endpoint, "io-error",
+                "The connection failed before a response was received.");
+    }
 }

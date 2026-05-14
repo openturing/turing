@@ -12,9 +12,11 @@ import com.viglet.turing.persistence.model.mcp.TurMcpServer;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
+import com.viglet.turing.sn.snapshot.TurSNSiteSnapshotEvictionListener;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -30,6 +32,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "ai_agent")
+@EntityListeners(TurSNSiteSnapshotEvictionListener.class)
 public class TurAIAgent implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

@@ -146,6 +146,7 @@ public class TurAIAgentAPI {
             }
             agentEdit.setDefaultPersona(defaultPersona);
             agentEdit.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
+                    agentEdit.getLlmInstances(),
                     agentEdit.getTurEmbeddingModelInstance(),
                     agentEdit.getTurStoreInstance()));
             // Chat memory configuration — silently dropped before this fix,
@@ -200,6 +201,7 @@ public class TurAIAgentAPI {
         }
         turAIAgent.setDefaultPersona(defaultPersona);
         turAIAgent.setRagEnabled(canEnableRag(turAIAgent.isRagEnabled(),
+                turAIAgent.getLlmInstances(),
                 turAIAgent.getTurEmbeddingModelInstance(),
                 turAIAgent.getTurStoreInstance()));
         this.turAIAgentRepository.save(turAIAgent);
@@ -239,21 +241,28 @@ public class TurAIAgentAPI {
     }
 
     /**
-     * RAG can only be enabled on the agent when an embedding model and an
-     * embedding store are resolvable — either set on the agent itself, or via
-     * the global RAG defaults configured in Global Settings.
+     * RAG can only be enabled on the agent when (a) at least one LLM instance
+     * is bound — without an LLM there is nothing to generate the answer; and
+     * (b) an embedding model and an embedding store are resolvable, either
+     * set on the agent itself or via the global RAG defaults configured in
+     * Global Settings. Silently flipping {@code ragEnabled} back to false
+     * here keeps the data model consistent so {@code TurSNSiteGenAiAPI}'s
+     * diagnostic walk never has to backtrack — but the admin frontend should
+     * still block the toggle on its side for a useful error message.
      */
     private boolean canEnableRag(boolean requested,
+            Set<com.viglet.turing.persistence.model.llm.TurLLMInstance> llmInstances,
             TurEmbeddingModel embeddingModel,
             TurStoreInstance storeInstance) {
         if (!requested) {
             return false;
         }
+        boolean hasLlm = llmInstances != null && !llmInstances.isEmpty();
         boolean modelOk = embeddingModel != null
                 || StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingModelId());
         boolean storeOk = storeInstance != null
                 || StringUtils.hasText(turGlobalSettingsService.getDefaultEmbeddingStoreId());
-        return modelOk && storeOk;
+        return hasLlm && modelOk && storeOk;
     }
 
     private <T> Set<T> resolveRelations(

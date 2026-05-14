@@ -148,15 +148,26 @@ export interface TurChatConversationMessage {
 
 /**
  * One Server-Sent Event emitted by `POST /sn/{site}/chat/conversation`.
- * The backend currently flushes a single event with the full content after
- * the LLM tool-calling loop completes; future server changes may stream
- * incremental tokens. Aggregators should append, not replace.
+ * The backend currently flushes a single text event with the full content
+ * after the LLM tool-calling loop completes (future server changes may
+ * stream incremental tokens — aggregators should append, not replace), and
+ * optionally a second event with {@code type === "options"} carrying the
+ * suggested chip labels for the next user turn.
  *
- * @since 2026.2.15
+ * @since 2026.2.15 (extended in 2026.2.17 with {@code type})
  */
 export interface TurChatStreamEvent {
   role: "assistant";
   content: string;
+  /**
+   * Payload discriminator:
+   * - `"token"` (or omitted, for older servers): {@link content} is the
+   *   assistant text. Append to the running buffer.
+   * - `"options"`: {@link content} is a JSON-encoded `string[]` — the chip
+   *   labels to render below the just-finished assistant bubble. Picking
+   *   one sends that label as the next user message.
+   */
+  type?: "token" | "options";
 }
 
 /**
@@ -167,7 +178,16 @@ export interface TurChatStreamEvent {
  */
 export interface TurChatConversationResponse {
   role: "assistant";
+  /** The assistant's text (all `"token"` events concatenated). */
   content: string;
+  /**
+   * Suggested chip labels emitted by the chat-flow engine for the next turn
+   * — empty when the current node has no `switchOptions` or `inlineOptions`.
+   * Picking one is equivalent to typing that label as the user message.
+   *
+   * @since 2026.2.17
+   */
+  options?: string[];
 }
 
 // ── Intents (curated quick prompts) ──

@@ -5,6 +5,7 @@ import {
   fetchChatEnabled,
   postAgentChat,
   postChatConversation,
+  type ChatDisabledReason,
 } from "../core/api";
 import { useTuringContext } from "../core/use-turing-context";
 import {
@@ -76,6 +77,15 @@ export interface UseTuringChatOptions {
 export interface UseTuringChatReturn {
   /** Whether the site has GenAI/RAG enabled. `null` while unknown. */
   enabled: boolean | null;
+  /**
+   * Diagnostic code from the `/chat/enabled` probe explaining why
+   * {@link enabled} is `false`. `null` while loading or in agent mode.
+   * Use {@code CHAT_DISABLED_HINTS} from the SDK root for a
+   * human-readable message.
+   *
+   * @since 2026.2.17
+   */
+  disabledReason: ChatDisabledReason | null;
   /** Current conversation messages (oldest first) */
   messages: ChatMessage[];
   /** Loading status of the most recent send */
@@ -211,6 +221,7 @@ export function useTuringChat(
   // In agent mode the site's RAG flag doesn't gate access — the consumer
   // already chose an agent — so default to enabled and skip the fetch.
   const [enabled, setEnabled] = useState<boolean | null>(isAgentMode ? true : null);
+  const [disabledReason, setDisabledReason] = useState<ChatDisabledReason | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(initialPersisted.messages);
   const [conversationId, setConversationId] = useState<string | null>(initialPersisted.conversationId);
   const [status, setStatus] = useState<ChatStatus>("idle");
@@ -244,14 +255,19 @@ export function useTuringChat(
     fetchChatEnabled(config.site)
       .then((res) => {
         if (!alive) return;
-        setEnabled(Boolean(res?.enabled));
+        const isEnabled = Boolean(res?.enabled);
+        setEnabled(isEnabled);
+        setDisabledReason(isEnabled ? null : (res?.reason ?? null));
         if (res?.sessionCookieName) sessionCookieNameRef.current = res.sessionCookieName;
         if (typeof res?.sessionTtlSeconds === "number" && res.sessionTtlSeconds > 0) {
           sessionTtlSecondsRef.current = res.sessionTtlSeconds;
         }
       })
       .catch(() => {
-        if (alive) setEnabled(false);
+        if (alive) {
+          setEnabled(false);
+          setDisabledReason(null);
+        }
       });
     return () => {
       alive = false;
@@ -388,6 +404,7 @@ export function useTuringChat(
 
   return {
     enabled,
+    disabledReason,
     messages,
     status,
     error,

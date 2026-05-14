@@ -104,19 +104,52 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
-	 * Site GenAI is reachable when an enabled agent with RAG enabled and a
-	 * complete embedding/store/LLM setup is bound to the site. The check is
-	 * config-only — no model is instantiated, so broken credentials do not
-	 * hide the AI Mode button.
+	 * Reasons a site's chat may be disabled. The frontend uses this code to
+	 * show a helpful admin-facing tooltip explaining what to configure.
+	 *
+	 * @since 2026.2.17
 	 */
-	private boolean isAgentRagReady(TurSNSiteGenAi genAi) {
-		if (genAi == null) return false;
+	public enum ChatDisabledReason {
+		/** Chat is fully wired up — the AI Mode button should render. */
+		NONE,
+		/** The SN site has no {@code TurSNSiteGenAi} record bound. */
+		NO_GENAI,
+		/** {@code TurSNSiteGenAi} exists but no AI agent is linked. */
+		NO_AGENT,
+		/** Linked agent has {@code enabled = 0}. */
+		AGENT_DISABLED,
+		/** Linked agent has {@code ragEnabled = false}. */
+		RAG_DISABLED,
+		/** Linked agent has no LLM instance. */
+		MISSING_LLM,
+		/** Linked agent has no embedding model instance. */
+		MISSING_EMBEDDING,
+		/** Linked agent has no vector store instance. */
+		MISSING_STORE
+	}
+
+	/**
+	 * Site GenAI is reachable when an enabled agent with RAG enabled and a
+	 * complete embedding/store/LLM setup is bound to the site. The site itself
+	 * has no {@code ragEnabled} flag — it inherits everything from the linked
+	 * {@link TurAIAgent}. The check is config-only — no model is instantiated,
+	 * so broken credentials do not hide the AI Mode button.
+	 */
+	private ChatDisabledReason diagnoseAgentReadiness(TurSNSiteGenAi genAi) {
+		if (genAi == null) return ChatDisabledReason.NO_GENAI;
 		TurAIAgent agent = genAi.getTurAIAgent();
-		if (agent == null || agent.getEnabled() != 1 || !agent.isRagEnabled()) return false;
+		if (agent == null) return ChatDisabledReason.NO_AGENT;
+		if (agent.getEnabled() != 1) return ChatDisabledReason.AGENT_DISABLED;
+		if (!agent.isRagEnabled()) return ChatDisabledReason.RAG_DISABLED;
 		boolean hasLlm = agent.getLlmInstances() != null && !agent.getLlmInstances().isEmpty();
-		return hasLlm
-				&& agent.getTurEmbeddingModelInstance() != null
-				&& agent.getTurStoreInstance() != null;
+		if (!hasLlm) return ChatDisabledReason.MISSING_LLM;
+		if (agent.getTurEmbeddingModelInstance() == null) return ChatDisabledReason.MISSING_EMBEDDING;
+		if (agent.getTurStoreInstance() == null) return ChatDisabledReason.MISSING_STORE;
+		return ChatDisabledReason.NONE;
+	}
+
+	private boolean isAgentRagReady(TurSNSiteGenAi genAi) {
+		return diagnoseAgentReadiness(genAi) == ChatDisabledReason.NONE;
 	}
 
 	private Locale resolveLocale(String requested, String siteName) {
@@ -178,11 +211,15 @@ public class TurSNSiteGenAiAPI {
 	 */
 	@GetMapping("/enabled")
 	public ChatEnabledResponse isEnabled(@PathVariable String siteName) {
-		boolean enabled = turSNSearchProcess.getSNSite(siteName)
-				.map(site -> isAgentRagReady(site.getTurSNSiteGenAi()))
-				.orElse(false);
+		ChatDisabledReason reason = turSNSearchProcess.getSNSite(siteName)
+				.map(site -> diagnoseAgentReadiness(site.getTurSNSiteGenAi()))
+				.orElse(ChatDisabledReason.NO_GENAI);
 		var session = configProperties.getChat().getSession();
-		return new ChatEnabledResponse(enabled, session.getCookieName(), session.getTtlSeconds());
+		return new ChatEnabledResponse(
+				reason == ChatDisabledReason.NONE,
+				reason.name(),
+				session.getCookieName(),
+				session.getTtlSeconds());
 	}
 
 	/**
@@ -326,7 +363,18 @@ public class TurSNSiteGenAiAPI {
 				.orElseGet(List::of);
 	}
 
-	public record ChatEnabledResponse(boolean enabled, String sessionCookieName, long sessionTtlSeconds) {
+	/**
+	 * Response for {@code GET /api/sn/{siteName}/chat/enabled}.
+	 *
+	 * <p>{@code reason} is a {@link ChatDisabledReason} name — {@code "NONE"} when
+	 * chat is fully wired, otherwise the first missing condition the diagnostic
+	 * walk found. The UI uses it to render a precise tooltip telling the admin
+	 * what to fix (e.g. {@code RAG_DISABLED} → "Enable RAG on the agent").
+	 *
+	 * @since 2026.2.17
+	 */
+	public record ChatEnabledResponse(boolean enabled, String reason,
+			String sessionCookieName, long sessionTtlSeconds) {
 	}
 
 	public record ConversationRequest(List<ConversationMessage> messages, String locale,

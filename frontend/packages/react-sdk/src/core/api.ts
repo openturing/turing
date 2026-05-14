@@ -118,9 +118,54 @@ export function fetchChat(site: string, params: Pick<SearchParams, "q" | "_setlo
  */
 export interface ChatEnabledResponse {
   readonly enabled: boolean;
+  /**
+   * Diagnostic code explaining why chat is unavailable. `"NONE"` when
+   * `enabled` is true; otherwise one of: `"NO_GENAI"`, `"NO_AGENT"`,
+   * `"AGENT_DISABLED"`, `"RAG_DISABLED"`, `"MISSING_LLM"`,
+   * `"MISSING_EMBEDDING"`, `"MISSING_STORE"`. May be absent on older
+   * Turing backends — treat absence as opaque "disabled".
+   *
+   * @since 2026.2.17
+   */
+  readonly reason?: ChatDisabledReason;
   readonly sessionCookieName?: string;
   readonly sessionTtlSeconds?: number;
 }
+
+/**
+ * Why the chat endpoint is disabled for a site. Mirror of the
+ * server-side enum in {@code TurSNSiteGenAiAPI.ChatDisabledReason}.
+ *
+ * @since 2026.2.17
+ */
+export type ChatDisabledReason =
+  | "NONE"
+  | "NO_GENAI"
+  | "NO_AGENT"
+  | "AGENT_DISABLED"
+  | "RAG_DISABLED"
+  | "MISSING_LLM"
+  | "MISSING_EMBEDDING"
+  | "MISSING_STORE";
+
+/**
+ * Human-readable hint for each {@link ChatDisabledReason} value.
+ * The frontend can use it directly as a tooltip on the AI Mode toggle
+ * when the chat is unavailable. Localized to PT-BR by default since
+ * the diagnostic is admin-facing in the only locale the SDK currently ships.
+ *
+ * @since 2026.2.17
+ */
+export const CHAT_DISABLED_HINTS: Readonly<Record<ChatDisabledReason, string>> = {
+  NONE: "Chat com IA está disponível",
+  NO_GENAI: "Site não tem GenAI configurado no admin do Turing",
+  NO_AGENT: "Nenhum AI Agent vinculado a este site no admin do Turing",
+  AGENT_DISABLED: "O AI Agent vinculado está desabilitado",
+  RAG_DISABLED: "RAG está desabilitado no AI Agent (habilite no admin)",
+  MISSING_LLM: "O AI Agent não tem nenhuma instância de LLM configurada",
+  MISSING_EMBEDDING: "O AI Agent não tem um modelo de embedding selecionado",
+  MISSING_STORE: "O AI Agent não tem um vector store selecionado",
+};
 
 /**
  * Lightweight check whether the site has RAG (Generative AI) enabled.
@@ -150,6 +195,15 @@ export interface PostChatConversationOptions {
    * and returned in the final {@link TurChatConversationResponse}.
    */
   readonly onToken?: (token: string) => void;
+  /**
+   * Called once if the chat-flow engine emits an `"options"` SSE event for
+   * the turn — with the parsed `string[]` of chip labels to render below the
+   * assistant message. Picking a chip is equivalent to sending that label as
+   * the next user message.
+   *
+   * @since 2026.2.17
+   */
+  readonly onOptions?: (options: string[]) => void;
   /** Aborts the in-flight SSE request when triggered. */
   readonly signal?: AbortSignal;
   /**
@@ -173,16 +227,25 @@ export interface PostChatConversationOptions {
 }
 
 /**
- * Drains a Spring `Flux<ChatResponse>` SSE stream into a single concatenated
- * string. Each `data:` line is parsed as {@link TurChatStreamEvent}; the
- * chunks are aggregated and forwarded one-by-one to {@code onToken} when
- * provided. Shared between the site RAG chat and the agent chat — both
- * endpoints emit the same shape.
+ * Drains a Spring `Flux<ChatResponse>` SSE stream and returns both the
+ * concatenated assistant text and any chip labels emitted by the chat-flow
+ * engine via a `type === "options"` event. Each `data:` line is parsed as
+ * {@link TurChatStreamEvent} and routed by {@code type}:
+ *
+ * - `"token"` (or omitted, for older servers): {@code content} is text — append
+ *   to {@code aggregated} and forward through {@code onToken}.
+ * - `"options"`: {@code content} is a JSON-encoded `string[]` — parsed once
+ *   and surfaced via {@code onOptions} and on the returned value. Empty/
+ *   malformed payloads are silently dropped.
+ *
+ * Shared between the site RAG chat and the agent chat — both endpoints emit
+ * the same shape.
  */
 async function consumeAssistantStream(
   response: Response,
   onToken?: (token: string) => void,
-): Promise<string> {
+  onOptions?: (options: string[]) => void,
+): Promise<{ text: string; options: string[] }> {
   if (!response.body) {
     throw new Error("Chat response has no body");
   }
@@ -190,19 +253,42 @@ async function consumeAssistantStream(
   const decoder = new TextDecoder();
   let buffer = "";
   let aggregated = "";
+  let optionLabels: string[] = [];
 
   function consumeLine(line: string) {
     if (!line.startsWith("data:")) return;
     const jsonStr = line.slice(5).trim();
     if (!jsonStr) return;
+    let parsed: TurChatStreamEvent;
     try {
-      const parsed = JSON.parse(jsonStr) as TurChatStreamEvent;
-      if (parsed.content) {
-        aggregated += parsed.content;
-        onToken?.(parsed.content);
-      }
+      parsed = JSON.parse(jsonStr) as TurChatStreamEvent;
     } catch {
       // Skip malformed JSON chunks (e.g. heartbeat comments)
+      return;
+    }
+    if (parsed.type === "options") {
+      // `content` is itself a JSON-encoded string[] — parse it once. Silently
+      // drop malformed/empty payloads rather than spamming the console; the
+      // UI just won't render chips for this turn.
+      try {
+        const parsedOptions = JSON.parse(parsed.content) as unknown;
+        if (Array.isArray(parsedOptions)) {
+          const labels = parsedOptions.filter((s): s is string => typeof s === "string");
+          if (labels.length > 0) {
+            optionLabels = labels;
+            onOptions?.(labels);
+          }
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    // Default to text. Treat any unknown `type` as a token event so old
+    // servers (no `type` field) and forward-compat servers both work.
+    if (parsed.content) {
+      aggregated += parsed.content;
+      onToken?.(parsed.content);
     }
   }
 
@@ -219,7 +305,7 @@ async function consumeAssistantStream(
   } finally {
     reader.releaseLock();
   }
-  return aggregated;
+  return { text: aggregated, options: optionLabels };
 }
 
 /**
@@ -267,8 +353,12 @@ export async function postChatConversation(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const aggregated = await consumeAssistantStream(response, options?.onToken);
-  return { role: "assistant", content: aggregated };
+  const { text, options: chipOptions } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+  );
+  return { role: "assistant", content: text, options: chipOptions };
 }
 
 /**
@@ -279,6 +369,13 @@ export async function postChatConversation(
  */
 export interface PostAgentChatOptions {
   readonly onToken?: (token: string) => void;
+  /**
+   * Called once if the chat-flow engine emits an `"options"` SSE event for
+   * the turn. See {@link PostChatConversationOptions.onOptions}.
+   *
+   * @since 2026.2.17
+   */
+  readonly onOptions?: (options: string[]) => void;
   readonly signal?: AbortSignal;
   readonly conversationId?: string;
   readonly flowId?: string;

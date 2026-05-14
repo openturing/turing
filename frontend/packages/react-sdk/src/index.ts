@@ -20,12 +20,14 @@ export {
   fetchSortOptions,
   parseHrefToParams,
   postClick,
+  CHAT_DISABLED_HINTS,
 } from "./core/api";
 export type {
   SearchParams,
   PostChatConversationOptions,
   PostAgentChatOptions,
   ChatEnabledResponse,
+  ChatDisabledReason,
   ClickTrackParams,
   TurChatSessionSlots,
 } from "./core/api";
