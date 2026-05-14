@@ -423,8 +423,12 @@ export async function postAgentChat(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const aggregated = await consumeAssistantStream(response, options?.onToken);
-  return { role: "assistant", content: aggregated };
+  const { text, options: chipOptions } = await consumeAssistantStream(
+    response,
+    options?.onToken,
+    options?.onOptions,
+  );
+  return { role: "assistant", content: text, options: chipOptions };
 }
 
 /**

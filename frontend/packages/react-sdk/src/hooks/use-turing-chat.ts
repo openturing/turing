@@ -22,6 +22,16 @@ export interface ChatMessage extends TurChatConversationMessage {
   id: string;
   /** Unix ms when the message was created */
   timestamp: number;
+  /**
+   * Suggested chip labels for the next user turn (only present on assistant
+   * messages, only when the chat-flow engine emitted an `"options"` event
+   * for the turn). The host renders them as buttons below the bubble;
+   * picking one is equivalent to sending that label as the next user
+   * message. Empty array (or missing) means free text only.
+   *
+   * @since 2026.2.17
+   */
+  options?: string[];
 }
 
 /**
@@ -345,6 +355,7 @@ export function useTuringChat(
           role: "assistant",
           content: res?.content ?? "",
           timestamp: Date.now(),
+          options: res?.options && res.options.length > 0 ? res.options : undefined,
         };
 
         const allWithReply = [...messagesRef.current, assistantMsg];
