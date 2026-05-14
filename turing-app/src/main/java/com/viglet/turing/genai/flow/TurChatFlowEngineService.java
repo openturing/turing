@@ -11,7 +11,9 @@ package com.viglet.turing.genai.flow;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
+import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
@@ -290,6 +293,43 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * Aggregates every slot captured during a chat session into a single
+     * flat map. Slots are conversation-scoped — sub-flows in one chain
+     * already share their variable map through descent/ascent, and across
+     * separate root flows the AI agent treats slots as globally addressable
+     * by name. Merge order is oldest-first so the most recent value of a
+     * shared slot wins.
+     *
+     * <p>The {@code conversationId} argument must match the value persisted
+     * by the SDK in the {@code TUR_SESSION} cookie when the chat started —
+     * it is the same string the engine writes to {@code chat_flow_state
+     * .conversationId} on every turn.
+     *
+     * @since 2026.2.7
+     */
+    public TurChatSessionSlotsDto listSlotsForConversation(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return new TurChatSessionSlotsDto(conversationId, Map.of());
+        }
+
+        Map<String, String> slots = new LinkedHashMap<>();
+
+        submissionRepository.findByConversationIdOrderByCompletedAtDesc(conversationId).stream()
+                .sorted(Comparator.comparing(TurChatFlowSubmission::getCompletedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())))
+                .forEach(submission -> slots.putAll(
+                        ChatFlowOps.readVariablesJson(submission.getVariablesJson())));
+
+        stateRepository.findByConversationId(conversationId).stream()
+                .sorted(Comparator.comparing(TurChatFlowState::getUpdatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())))
+                .forEach(state -> slots.putAll(
+                        ChatFlowOps.readVariablesJson(state.getVariablesJson())));
+
+        return new TurChatSessionSlotsDto(conversationId, slots);
+    }
+
+    /**
      * Drops the persisted state for {@code (conversationId, flowId)}. The
      * next chat turn rebuilds it from the START node.
      *
@@ -450,16 +490,23 @@ public class TurChatFlowEngineService {
             return Optional.empty();
         }
 
-        // 4) ALWAYS re-trigger: drop prior end-state so the flow restarts.
+        // 4) ALWAYS re-trigger: soft-reset the prior state so the flow restarts at the
+        //    first interactive node WHILE PRESERVING collected slot values. Carrying the
+        //    variables forward lets {@link ChatFlowOps#walkThroughSatisfiedQuestions}
+        //    fast-forward past aiQuestion nodes whose outputVariable was already filled
+        //    on a previous run — without that, every re-trigger would force the user to
+        //    re-answer the same questions (the pizza-flow bug, see
+        //    TurChatFlowAlwaysRetriggerEngineIT).
         TurChatFlow flow = picked.get().flow();
+        ChatFlowGraph pickedGraph = picked.get().graph();
         if (completedFlowIds.contains(flow.getId())
                 && flow.getTriggerMode() == TurChatFlowTriggerMode.ALWAYS) {
             stateRepository.findByConversationIdAndFlow_Id(conversationId, flow.getId())
-                    .ifPresent(stateRepository::delete);
+                    .ifPresent(prior -> resetForAlwaysRetrigger(prior, pickedGraph));
             stateRepository.flush();
         }
 
-        Optional<TurChatFlowState> newState = loadOrInitState(conversationId, flow, picked.get().graph());
+        Optional<TurChatFlowState> newState = loadOrInitState(conversationId, flow, pickedGraph);
         // loadOrInitState walks transparent nodes; the leaf may belong to a
         // sub-flow rather than the picked root flow. Align the FlowSelection
         // with the leaf so the prompt addendum and strategy run against the
@@ -471,6 +518,46 @@ public class TurChatFlowEngineService {
                     : parseGraph(activeFlow).orElse(picked.get().graph());
             return new FlowSelection(activeFlow, activeGraph, s);
         });
+    }
+
+    /**
+     * Soft-reset for an {@code ALWAYS}-trigger flow whose state has reached an
+     * {@code end} node. Repositions the cursor on the first interactive node
+     * and clears {@code endNodeId} so the row is treated as in-progress again,
+     * but <em>preserves</em> {@code variablesJson} so slot values captured on
+     * the previous run carry forward. {@link ChatFlowOps#walkThroughSatisfiedQuestions}
+     * is then invoked to fast-forward past every aiQuestion whose slot is
+     * already filled (and any chained condition / switch / slot / sub-flow
+     * via {@link #walkTransparentNodes}). On a graph with no start node — a
+     * pathological edit-state — the row is deleted as a defensive fallback
+     * so {@link #loadOrInitState} can rebuild from scratch.
+     *
+     * @since 2026.2.7
+     */
+    private void resetForAlwaysRetrigger(TurChatFlowState prior, ChatFlowGraph graph) {
+        Optional<ChatFlowNode> startNode = graph.startNode();
+        if (startNode.isEmpty()) {
+            stateRepository.delete(prior);
+            return;
+        }
+        ChatFlowNode anchor = ChatFlowOps.firstInteractiveNode(graph, startNode.get())
+                .orElse(startNode.get());
+        prior.setCurrentNodeId(anchor.id());
+        // Variables are NOT cleared on purpose — captured slot values are
+        // conversation-scoped, so a re-triggered flow can skip aiQuestion
+        // nodes whose outputVariable was already filled on a previous run.
+        TurChatFlowState saved = stateRepository.save(prior);
+        // Walk transparent nodes (conditions, switches, slot ops, satisfied
+        // aiQuestions, sub-flow descent) so the next user turn lands on the
+        // first node that genuinely needs the user. {@code null} aux model is
+        // fine — every walker tolerates it (slot/persona/satisfied-questions
+        // are pure data, condition/switch fall back to wildcard without LLM).
+        // walkTransparentNodes mutates state.currentNodeId in-memory for the
+        // satisfied-questions case (no implicit save), so we save once more
+        // here to guarantee the cursor lands on the right node when
+        // loadOrInitState re-queries it on the next line of selectActiveFlow.
+        TurChatFlowState walked = walkTransparentNodes(saved, null);
+        stateRepository.save(walked);
     }
 
     private record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
@@ -620,6 +707,9 @@ public class TurChatFlowEngineService {
             // type, so calling both is cheap and order-independent.
             ChatFlowOps.walkThroughConditions(state, graph, auxModel);
             ChatFlowOps.walkThroughSwitches(state, graph, auxModel);
+            // Skip aiQuestion nodes whose slot is already filled (unless the
+            // node opted in to always-ask via overrideExistingValue=true).
+            ChatFlowOps.walkThroughSatisfiedQuestions(state, graph);
             Optional<ChatFlowNode> currentOpt = graph.nodeById(state.getCurrentNodeId());
             if (currentOpt.isEmpty()) {
                 return state;
@@ -649,6 +739,18 @@ public class TurChatFlowEngineService {
                 if (personaId != null && !personaId.isBlank()) {
                     setActivePersonaVariable(state, personaId);
                 }
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                continue;
+            }
+
+            // Slot node: SET writes a literal value into the conversation state
+            // (honoring overrideExistingValue when the slot already has a value);
+            // DELETE removes the slot entirely. Either way the node is
+            // transparent — no LLM round-trip — and the flow advances on the
+            // single outgoing edge.
+            if ("slot".equals(current.type())) {
+                ChatFlowOps.applySlotNode(state, current);
                 ChatFlowOps.advanceToFirstEdge(state, graph, current);
                 state = stateRepository.save(state);
                 continue;
@@ -768,11 +870,6 @@ public class TurChatFlowEngineService {
         return stateRepository.save(parent);
     }
 
-    /**
-     * Walks {@code state}'s parent chain and returns true if any ancestor
-     * (including {@code state} itself) already runs the flow identified by
-     * {@code flowId}. Prevents direct or indirect recursion.
-     */
     /**
      * Writes (or overwrites) the reserved {@code __activePersonaId} entry in
      * the state's {@code variablesJson} so the persona resolver picks up the

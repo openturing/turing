@@ -38,15 +38,19 @@ import com.viglet.turing.genai.authoring.AiAuthoringResponse;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowAuthoringSkill;
 import com.viglet.turing.genai.authoring.chatflow.ChatFlowGeneration;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.persistence.dto.agent.TurAIAgentSlotDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowImportDto;
 import com.viglet.turing.persistence.dto.agent.TurChatFlowSubmissionDto;
 import com.viglet.turing.persistence.dto.persona.TurPersonaDto;
 import com.viglet.turing.persistence.mapper.agent.TurChatFlowMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
+import com.viglet.turing.persistence.model.agent.TurAIAgentSlot;
+import com.viglet.turing.persistence.model.agent.TurAIAgentSlotType;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 
@@ -76,6 +80,7 @@ public class TurChatFlowAPI {
     private final TurChatFlowEngineService chatFlowEngineService;
     private final ChatFlowAuthoringSkill chatFlowAuthoringSkill;
     private final TurPersonaRepository turPersonaRepository;
+    private final TurAIAgentSlotRepository turAIAgentSlotRepository;
 
     public TurChatFlowAPI(TurChatFlowRepository turChatFlowRepository,
             TurChatFlowMapper turChatFlowMapper,
@@ -83,7 +88,8 @@ public class TurChatFlowAPI {
             TurAIAgentRepositoryPort turAIAgentRepositoryPort,
             TurChatFlowEngineService chatFlowEngineService,
             ChatFlowAuthoringSkill chatFlowAuthoringSkill,
-            TurPersonaRepository turPersonaRepository) {
+            TurPersonaRepository turPersonaRepository,
+            TurAIAgentSlotRepository turAIAgentSlotRepository) {
         this.turChatFlowRepository = turChatFlowRepository;
         this.turChatFlowMapper = turChatFlowMapper;
         this.turAIAgentRepository = turAIAgentRepository;
@@ -91,6 +97,7 @@ public class TurChatFlowAPI {
         this.chatFlowEngineService = chatFlowEngineService;
         this.chatFlowAuthoringSkill = chatFlowAuthoringSkill;
         this.turPersonaRepository = turPersonaRepository;
+        this.turAIAgentSlotRepository = turAIAgentSlotRepository;
     }
 
     /** Load the agent entity — only for write paths that need the JPA-managed reference. */
@@ -199,6 +206,10 @@ public class TurChatFlowAPI {
             turAIAgentRepository.save(agent);
         }
 
+        // Slots — auto-create any embedded slot whose name is not yet declared on this agent
+        // so the editor opens with the outputVariable dropdown already populated.
+        resolveSlots(agent, payload.getSlots());
+
         TurChatFlowDto incomingFlow = payload.getChatFlow();
         // No sub-flow remap on the single-flow path — the bundle endpoint is the one that wires
         // multiple flows together. Empty maps are no-ops inside rewriteGraph.
@@ -263,6 +274,14 @@ public class TurChatFlowAPI {
             turAIAgentRepository.save(agent);
         }
 
+        // 1b) Slots — de-duplicate by name across every item in the bundle and auto-create any
+        //     missing entry on the target agent. Existing slots are left untouched.
+        for (TurChatFlowImportDto item : bundle) {
+            if (item != null) {
+                resolveSlots(agent, item.getSlots());
+            }
+        }
+
         // 2) Pre-assign a real UUID to each flow so the sub-flow remap is complete before any
         //    graph is rewritten. Doing this BEFORE saving (rather than insert-then-update) lets us
         //    save each entity exactly once with its final, rewritten graph.
@@ -304,6 +323,37 @@ public class TurChatFlowAPI {
             results.add(turChatFlowMapper.toDto(entity));
         }
         return results;
+    }
+
+    /**
+     * Auto-creates any embedded slot whose name is not already declared on the
+     * target agent (case-insensitive match — slot names are unique per agent).
+     * Existing slots are left untouched: an import never overwrites the type or
+     * description of a slot the operator has already curated.
+     *
+     * @since 2026.2.7
+     */
+    private void resolveSlots(TurAIAgent agent, List<TurAIAgentSlotDto> slots) {
+        if (slots == null || slots.isEmpty()) {
+            return;
+        }
+        for (TurAIAgentSlotDto incoming : slots) {
+            if (incoming == null || incoming.getName() == null
+                    || incoming.getName().isBlank()) {
+                continue;
+            }
+            if (turAIAgentSlotRepository
+                    .findByTurAIAgent_IdAndName(agent.getId(), incoming.getName())
+                    .isPresent()) {
+                continue;
+            }
+            TurAIAgentSlot entity = new TurAIAgentSlot();
+            entity.setName(incoming.getName());
+            entity.setDescription(incoming.getDescription());
+            entity.setType(incoming.getType() != null ? incoming.getType() : TurAIAgentSlotType.STRING);
+            entity.setTurAIAgent(agent);
+            turAIAgentSlotRepository.save(entity);
+        }
     }
 
     /** Copies the editable fields from an imported persona DTO into a fresh entity. */

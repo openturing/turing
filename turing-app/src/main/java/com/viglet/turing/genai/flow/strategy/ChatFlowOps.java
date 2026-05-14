@@ -410,6 +410,139 @@ public final class ChatFlowOps {
         log.warn("[FlowOps] walkThroughConditions hit the {}-hop safety cap", CONDITION_WALK_MAX);
     }
 
+    // ──────────────────────────── Satisfied-question walker ───────────────────────────
+
+    /**
+     * Hard cap on consecutive question-skip hops in
+     * {@link #walkThroughSatisfiedQuestions}. A flow that strings more than
+     * this many already-filled questions in a row is almost certainly cyclic;
+     * the cap keeps the path non-fatal.
+     */
+    private static final int QUESTION_SKIP_WALK_MAX = 16;
+
+    /**
+     * Walks the state past consecutive {@code aiQuestion} nodes whose
+     * {@code outputVariable} slot is already filled with a non-blank value
+     * in the flow's variables map — provided the node does NOT have
+     * {@code overrideExistingValue = true}.
+     *
+     * <p>The skip is a transparent transition: no LLM round-trip, no
+     * persisted advance signal. Used so a flow that re-enters a previously
+     * answered question (loop back from a condition, re-trigger, …) doesn't
+     * re-ask the user for data they already provided.
+     *
+     * @since 2026.2.7
+     */
+    public static void walkThroughSatisfiedQuestions(TurChatFlowState state, ChatFlowGraph graph) {
+        if (state == null || graph == null) {
+            return;
+        }
+        for (int i = 0; i < QUESTION_SKIP_WALK_MAX; i++) {
+            Optional<ChatFlowNode> currentOpt = currentNode(state, graph);
+            if (currentOpt.isEmpty()) {
+                return;
+            }
+            ChatFlowNode current = currentOpt.get();
+            if (!"aiQuestion".equals(current.type())) {
+                return;
+            }
+            String outVar = current.outputVariable();
+            if (outVar == null || outVar.isBlank()) {
+                return;
+            }
+            // Author opted in to always asking — never skip.
+            if (Boolean.TRUE.equals(current.overrideExistingValue())) {
+                return;
+            }
+            Map<String, String> variables = readVariables(state);
+            String existing = variables.get(outVar.trim());
+            if (existing == null || existing.isBlank()) {
+                return;
+            }
+            List<ChatFlowEdge> outgoing = graph.outgoingEdges(current.id());
+            if (outgoing.isEmpty()) {
+                return;
+            }
+            Optional<ChatFlowNode> target = graph.nodeById(outgoing.get(0).target());
+            if (target.isEmpty()) {
+                return;
+            }
+            log.info("[FlowOps] Skipping satisfied question '{}' → '{}' (slot '{}' already filled)",
+                    current.id(), target.get().id(), outVar.trim());
+            state.setCurrentNodeId(target.get().id());
+        }
+        log.warn("[FlowOps] walkThroughSatisfiedQuestions hit the {}-hop safety cap",
+                QUESTION_SKIP_WALK_MAX);
+    }
+
+    // ─────────────────────────── Slot node ───────────────────────────
+
+    /**
+     * Applies a {@code slot} node's effect to the conversation state.
+     * <ul>
+     *   <li>{@code SET}: writes {@link ChatFlowNode#slotValue()} into
+     *       {@link ChatFlowNode#slotName()}. When
+     *       {@link ChatFlowNode#overrideExistingValue()} is {@code false} or
+     *       absent and the slot already has a non-blank value, the call is a
+     *       no-op so curated values are preserved. {@code null} {@code slotValue}
+     *       is coerced to the empty string so operators can use SET to seed an
+     *       empty slot explicitly.</li>
+     *   <li>{@code DELETE}: removes {@link ChatFlowNode#slotName()} from the
+     *       state. Downstream Switch / aiQuestion nodes will see an empty
+     *       slot — the natural way to force a re-capture.</li>
+     * </ul>
+     * Unknown / blank operations are treated as no-ops (defensive: a
+     * mistyped export shouldn't blow up the engine). Persists the change
+     * by calling {@link #writeVariables} when (and only when) the variable
+     * map was actually mutated.
+     *
+     * @since 2026.2.7
+     */
+    public static void applySlotNode(TurChatFlowState state, ChatFlowNode node) {
+        if (state == null || node == null) {
+            return;
+        }
+        String slotName = node.slotName();
+        if (slotName == null || slotName.isBlank()) {
+            log.warn("[FlowOps] Slot node '{}' has no slotName — skipping", node.id());
+            return;
+        }
+        String key = slotName.trim();
+        String operation = node.slotOperation() == null
+                ? "SET"
+                : node.slotOperation().trim().toUpperCase();
+        Map<String, String> variables = readVariables(state);
+
+        if ("DELETE".equals(operation)) {
+            if (variables.remove(key) != null) {
+                log.info("[FlowOps] Slot node '{}' removed slot '{}' on conversation '{}'",
+                        node.id(), key, state.getConversationId());
+                writeVariables(state, variables);
+            }
+            return;
+        }
+
+        if (!"SET".equals(operation)) {
+            log.warn("[FlowOps] Slot node '{}' has unknown operation '{}' — skipping",
+                    node.id(), node.slotOperation());
+            return;
+        }
+
+        String existing = variables.get(key);
+        boolean alreadyFilled = existing != null && !existing.isBlank();
+        boolean override = Boolean.TRUE.equals(node.overrideExistingValue());
+        if (alreadyFilled && !override) {
+            log.info("[FlowOps] Slot node '{}' SET on '{}' skipped (override=false, value present)",
+                    node.id(), key);
+            return;
+        }
+        String value = node.slotValue() == null ? "" : node.slotValue();
+        variables.put(key, value);
+        log.info("[FlowOps] Slot node '{}' SET '{}' on conversation '{}'",
+                node.id(), key, state.getConversationId());
+        writeVariables(state, variables);
+    }
+
     /**
      * Picks an outgoing edge from {@code sourceId} whose {@code sourceHandle}
      * matches {@code handle} (case-insensitive, null/blank treated as a
@@ -512,6 +645,19 @@ public final class ChatFlowOps {
                 return;
             }
             Map<String, String> variables = readVariables(state);
+            // When the author opted in to {@code overrideExistingValue=true}, clear the slot
+            // before evaluating so the switch falls through to its wildcard branch — the same
+            // branch authors typically wire back to an aiQuestion to re-capture the value.
+            // Mirrors the always-ask escape hatch aiQuestion already exposes.
+            String varName = current.switchVariable();
+            if (Boolean.TRUE.equals(current.overrideExistingValue())
+                    && varName != null && !varName.isBlank()
+                    && variables.containsKey(varName.trim())) {
+                log.info("[FlowOps] Switch '{}' override=true — clearing slot '{}' so wildcard fires",
+                        current.id(), varName.trim());
+                variables.remove(varName.trim());
+                writeVariables(state, variables);
+            }
             String resolvedHandle = resolveSwitchHandle(auxModel, current, variables);
             ChatFlowEdge edge = pickConditionEdge(graph, current.id(), resolvedHandle);
             if (edge == null) {

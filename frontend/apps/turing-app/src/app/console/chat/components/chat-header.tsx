@@ -6,6 +6,7 @@ import type { TurAIAgent } from "@/models/agent/ai-agent.model"
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model"
 import { IconHistory, IconPlus, IconRobot } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ChatSessionInfoSheet } from "./chat-session-info-sheet"
 
 interface ChatHeaderProps {
   activeTab: string
@@ -17,9 +18,10 @@ interface ChatHeaderProps {
   hasMessages: boolean
   onNewChat: () => void
   agents: TurAIAgent[]
+  activeSessionId: string | null
 }
 
-export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId, onModelChange, onToggleSidebar, hasMessages, onNewChat, agents }: ChatHeaderProps) {
+export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId, onModelChange, onToggleSidebar, hasMessages, onNewChat, agents, activeSessionId }: ChatHeaderProps) {
   const { t } = useTranslation()
 
   return (
@@ -29,6 +31,7 @@ export function ChatHeader({ activeTab, onTabChange, llmInstances, selectedLlmId
         <button type="button" onClick={onToggleSidebar} title={t("chat.sessions")} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted shrink-0">
           <IconHistory className="size-5" />
         </button>
+        <ChatSessionInfoSheet conversationId={activeSessionId} />
         <Select value={selectedLlmId} onValueChange={onModelChange}>
           <SelectTrigger className="flex-1 min-w-0">
             <SelectValue placeholder={t("chat.selectModel")} />

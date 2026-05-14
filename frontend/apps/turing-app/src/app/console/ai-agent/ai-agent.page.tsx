@@ -6,7 +6,7 @@ import type { BreadcrumbItem } from "@/contexts/breadcrumb.context";
 import { useSubPageBreadcrumb } from "@/hooks/use-sub-page-breadcrumb";
 import type { TurAIAgent } from "@/models/agent/ai-agent.model.ts";
 import { TurAIAgentService } from "@/services/agent/ai-agent.service";
-import { IconBraces, IconBulb, IconCpu2, IconHistory, IconRobot, IconServer2, IconSettings, IconSitemap, IconTool, IconUserCircle } from "@tabler/icons-react";
+import { IconBraces, IconBulb, IconCpu2, IconHistory, IconLayoutList, IconRobot, IconServer2, IconSettings, IconSitemap, IconTool, IconUserCircle } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -46,6 +46,7 @@ export default function AIAgentPage() {
         { title: t("aiAgent.nav.mcpServers"), url: "/mcp", icon: IconServer2 },
         { title: t("aiAgent.nav.customTools"), url: "/custom-tool", icon: IconBraces },
         { title: t("aiAgent.nav.intents"), url: "/intent", icon: IconBulb },
+        { title: t("aiAgent.nav.slots"), url: "/slot", icon: IconLayoutList },
         {
           // No `url` → InternalSidebar renders this as a SidebarGroupLabel
           // heading the children below, instead of a clickable nav item.

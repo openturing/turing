@@ -7,6 +7,7 @@ import {
   IconPlayerPlayFilled,
   IconSparkles,
   IconSubtask,
+  IconVariable,
   type Icon,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +33,7 @@ const PALETTE: PaletteItem[] = [
   { type: "aiQuestion", labelKey: "chatFlow.palette.aiQuestion", icon: IconBook2, accent: "text-blue-600" },
   { type: "condition", labelKey: "chatFlow.palette.condition", icon: IconDatabase, accent: "text-amber-600" },
   { type: "switch", labelKey: "chatFlow.palette.switch", icon: IconArrowsSplit2, accent: "text-cyan-600" },
+  { type: "slot", labelKey: "chatFlow.palette.slot", icon: IconVariable, accent: "text-sky-600" },
   { type: "functionCall", labelKey: "chatFlow.palette.functionCall", icon: IconBell, accent: "text-orange-600" },
   { type: "subFlow", labelKey: "chatFlow.palette.subFlow", icon: IconSubtask, accent: "text-violet-600" },
   { type: "persona", labelKey: "chatFlow.palette.persona", icon: IconSparkles, accent: "text-fuchsia-600" },

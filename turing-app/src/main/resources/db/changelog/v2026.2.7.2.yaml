@@ -1,0 +1,55 @@
+databaseChangeLog:
+  # AI Agent Slots — typed-variable catalogue per agent. Chat-flow nodes that
+  # write into a variable (outputVariable on askQuestion, …) will pick from
+  # this catalogue instead of accepting free-text identifiers. One row per
+  # slot; unique by (agent_id, name) so chat flows can rely on a stable
+  # symbol-name → type contract.
+
+  - changeSet:
+      id: v2026.2.7.2-create-ai-agent-slot-table
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: ai_agent_slot
+      changes:
+        - createTable:
+            tableName: ai_agent_slot
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(40)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: agent_id
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: type
+                  type: VARCHAR(16)
+                  defaultValue: STRING
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: ai_agent_slot
+            columnNames: agent_id, name
+            constraintName: uq_ai_agent_slot_agent_name
+        - addForeignKeyConstraint:
+            baseTableName: ai_agent_slot
+            baseColumnNames: agent_id
+            referencedTableName: ai_agent
+            referencedColumnNames: id
+            constraintName: fk_ai_agent_slot_agent
+            onDelete: CASCADE

@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.viglet.turing.persistence.dto.agent.TurChatSessionMessageDto;
+import com.viglet.turing.persistence.dto.agent.TurChatSessionMessagesDto;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 import jakarta.annotation.PostConstruct;
@@ -141,6 +143,38 @@ public class TurChatMemoryService {
             queue.offer(queued);
             log.warn("Chat memory queue is full ({}); dropped oldest event", MAX_QUEUE_SIZE);
         }
+    }
+
+    /**
+     * Reads the chronological list of role-tagged messages persisted for a
+     * conversation. The list is capped at {@code limit} most-recent items
+     * (clamped to the {@code [1, 1000]} range by the store). Returns an
+     * empty {@code messages} list when chat memory is disabled or when no
+     * row exists for the given {@code conversationId}.
+     *
+     * <p>The {@code conversationId} argument must match the value the SDK
+     * wrote to the {@code TUR_SESSION} cookie when the chat started — the
+     * same string the {@link TurChatMemoryEvent} batches use as their key.
+     *
+     * @since 2026.2.7
+     */
+    public TurChatSessionMessagesDto listMessages(String conversationId, int limit) {
+        String engine = store.getEngine().name();
+        boolean enabled = store.isEnabled();
+        if (!enabled || conversationId == null || conversationId.isBlank()) {
+            return new TurChatSessionMessagesDto(conversationId, engine, enabled, List.of(), null);
+        }
+        List<TurChatSessionMessageDto> messages = store.findMessages(conversationId, limit).stream()
+                .map(m -> new TurChatSessionMessageDto(
+                        asString(m.get("role")),
+                        asString(m.get("content")),
+                        asString(m.get("timestamp"))))
+                .toList();
+        return new TurChatSessionMessagesDto(conversationId, engine, enabled, messages, null);
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
     }
 
     /**

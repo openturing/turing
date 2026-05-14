@@ -50,6 +50,11 @@ export const queryKeys = {
     listByAgent: (agentId: string) => [...queryKeys.chatFlows.all(), 'list', 'agent', agentId] as const,
     detail: (id: string) => [...queryKeys.chatFlows.all(), 'detail', id] as const,
   },
+  aiAgentSlots: {
+    all: () => ['ai-agent-slots'] as const,
+    listByAgent: (agentId: string) => [...queryKeys.aiAgentSlots.all(), 'list', 'agent', agentId] as const,
+    detail: (id: string) => [...queryKeys.aiAgentSlots.all(), 'detail', id] as const,
+  },
   customTools: {
     all: () => ['custom-tools'] as const,
     list: () => [...queryKeys.customTools.all(), 'list'] as const,
@@ -105,6 +110,11 @@ export const queryKeys = {
   adminRoles: {
     all: () => ['admin-roles'] as const,
     list: () => [...queryKeys.adminRoles.all(), 'list'] as const,
+  },
+  chatSessions: {
+    all: () => ['chat-sessions'] as const,
+    slots: (conversationId: string) =>
+      [...queryKeys.chatSessions.all(), 'slots', conversationId] as const,
   },
   chatAnalytics: {
     all: () => ['chat-analytics'] as const,

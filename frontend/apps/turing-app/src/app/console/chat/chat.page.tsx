@@ -455,6 +455,7 @@ export default function ChatPage() {
           hasMessages={!isEmpty}
           onNewChat={handleNewChat}
           agents={agents}
+          activeSessionId={activeSessionId}
         />
 
         {/* Agent Tabs */}

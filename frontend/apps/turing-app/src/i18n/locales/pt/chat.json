@@ -38,6 +38,17 @@
     "failedAgentResponse": "Falha ao obter resposta de {{agent}}.",
     "contextCompacted": "Contexto compactado com sucesso.",
     "failedCompact": "Falha ao compactar contexto.",
-    "contextCompactedLabel": "**[Contexto compactado]**"
+    "contextCompactedLabel": "**[Contexto compactado]**",
+    "sessionInfo": {
+      "button": "Informações da sessão",
+      "title": "Informações da sessão",
+      "description": "Detalhes da conversa atual. Os valores dos slots são atualizados enquanto este painel está aberto.",
+      "conversationId": "ID da conversa",
+      "noActiveSession": "Nenhuma sessão ativa. Envie uma mensagem para iniciar.",
+      "copied": "ID da conversa copiado para a área de transferência",
+      "slots": "Slots",
+      "slotsEmpty": "Nenhum slot foi capturado ainda nesta conversa.",
+      "slotsError": "Falha ao carregar os valores dos slots desta conversa."
+    }
   }
 }

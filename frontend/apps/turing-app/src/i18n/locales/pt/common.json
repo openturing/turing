@@ -1,9 +1,11 @@
 {
   "common": {
     "save": "Salvar",
+    "saving": "Salvando…",
     "cancel": "Cancelar",
     "close": "Fechar",
     "delete": "Excluir",
+    "deleting": "Excluindo…",
     "new": "Novo",
     "loading": "Carregando...",
     "actions": "Ações",

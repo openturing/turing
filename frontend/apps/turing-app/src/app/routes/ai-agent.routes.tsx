@@ -13,6 +13,7 @@ const AIAgentPersonaPage = lazy(() => import("../console/ai-agent/persona/ai-age
 const AIAgentMcpPage = lazy(() => import("../console/ai-agent/mcp/ai-agent.mcp.page"))
 const AIAgentCustomToolPage = lazy(() => import("../console/ai-agent/custom-tool/ai-agent.custom-tool.page"))
 const AIAgentToolsPage = lazy(() => import("../console/ai-agent/tools/ai-agent.tools.page"))
+const AIAgentSlotPage = lazy(() => import("../console/ai-agent/slot/ai-agent.slot.page"))
 const IntentListPage = lazy(() => import("../console/intent/intent.list.page"))
 const IntentSettingsPage = lazy(() => import("../console/intent/settings/intent.settings.page"))
 const IntentAiChatPage = lazy(() => import("../console/intent/ai-chat/intent.ai-chat.page"))
@@ -43,6 +44,7 @@ export const AIAgentRoutes = (
             <Route path="mcp" element={<AIAgentMcpPage />} />
             <Route path="custom-tool" element={<AIAgentCustomToolPage />} />
             <Route path="tools" element={<AIAgentToolsPage />} />
+            <Route path="slot" element={<AIAgentSlotPage />} />
             <Route path="chat-flow" element={<ChatFlowListPage />} />
             <Route path="chat-flow/new/ai-chat" element={<ChatFlowAiChatPage />} />
             <Route path="chat-flow/:flowId" element={<ChatFlowPage />} />

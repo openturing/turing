@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
 import type { ChatFlowGeneration, TurChatFlow } from "@/models/agent/chat-flow.model";
 import type { TurChatFlowSubmission } from "@/models/agent/chat-flow-submission.model";
 import type { AiAuthoringRequest, AiAuthoringResponse } from "@/models/ai-authoring/ai-authoring.model";
@@ -15,6 +16,12 @@ import type { TurPersona } from "@/models/persona/persona.model";
 export interface TurChatFlowImportPayload {
   chatFlow: TurChatFlow;
   personas?: TurPersona[];
+  /**
+   * Typed slots referenced by the flow's {@code outputVariable} fields. Names
+   * not yet declared on the target agent are auto-created at import time so
+   * the editor opens with a populated slot dropdown.
+   */
+  slots?: TurAIAgentSlot[];
 }
 
 /**

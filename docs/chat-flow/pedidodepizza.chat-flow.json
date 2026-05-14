@@ -4,6 +4,16 @@
   "guardrailMethod": "LLM_JUDGE",
   "triggerDescription": "Use este fluxo quando o usuário quiser pedir uma pizza, fazer um pedido de delivery, ou perguntar sobre o cardápio para fazer pedido.",
   "triggerMode": "ALWAYS",
+  "slots": [
+    { "name": "customerName", "description": "Nome do cliente capturado na saudação.", "type": "STRING" },
+    { "name": "customerPhone", "description": "Telefone de contato (validado com regex de telefone).", "type": "STRING" },
+    { "name": "pizzaFlavor", "description": "Sabor da pizza escolhido (Margherita, Calabresa, Portuguesa, Quatro Queijos, Pepperoni).", "type": "STRING" },
+    { "name": "pizzaSize", "description": "Tamanho da pizza (Pequena, Média, Grande).", "type": "STRING" },
+    { "name": "stuffedCrust", "description": "Indicação de borda recheada (sim/não) — usada pelo nó Condition para decidir o próximo passo.", "type": "STRING" },
+    { "name": "crustFlavor", "description": "Sabor da borda recheada (Catupiry, Cheddar, Chocolate). Capturado apenas quando stuffedCrust == 'sim'.", "type": "STRING" },
+    { "name": "deliveryAddress", "description": "Endereço completo de entrega (rua, número, bairro, cidade).", "type": "TEXT" },
+    { "name": "paymentMethod", "description": "Forma de pagamento escolhida (Dinheiro, Cartão na entrega, Pix).", "type": "STRING" }
+  ],
   "graph": {
     "nodes": [
       {

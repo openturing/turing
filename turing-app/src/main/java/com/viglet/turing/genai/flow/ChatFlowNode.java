@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -115,6 +115,52 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.inlineOptions() == null ? List.of() : data.inlineOptions();
     }
 
+    /**
+     * When {@code true} on an {@code aiQuestion} node, the engine always
+     * asks the question and overwrites any value already collected into
+     * {@link #outputVariable()}. When {@code false} (or {@code null}) and
+     * the slot already holds a non-blank value in the flow state's
+     * variables, the node is treated as a transparent transition and the
+     * engine skips straight to the next edge — no LLM round-trip.
+     *
+     * @since 2026.2.7
+     */
+    public Boolean overrideExistingValue() {
+        return data.overrideExistingValue();
+    }
+
+    /**
+     * Slot the {@code slot} node operates on. Must be one of the agent's
+     * declared slots so the value lands in a stable, typed schema.
+     *
+     * @since 2026.2.7
+     */
+    public String slotName() {
+        return data.slotName();
+    }
+
+    /**
+     * Operation performed by a {@code slot} node: {@code SET} (write
+     * {@link #slotValue()} into the conversation state, honoring
+     * {@link #overrideExistingValue()} when the slot is already populated)
+     * or {@code DELETE} (remove the slot entirely).
+     *
+     * @since 2026.2.7
+     */
+    public String slotOperation() {
+        return data.slotOperation();
+    }
+
+    /**
+     * Literal value the {@code slot} node writes when {@link #slotOperation()}
+     * is {@code SET}. Ignored for {@code DELETE}.
+     *
+     * @since 2026.2.7
+     */
+    public String slotValue() {
+        return data.slotValue();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -131,7 +177,11 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String personaId,
             String switchVariable,
             List<SwitchOption> switchOptions,
-            List<String> inlineOptions) {
+            List<String> inlineOptions,
+            Boolean overrideExistingValue,
+            String slotName,
+            String slotOperation,
+            String slotValue) {
     }
 
     /**

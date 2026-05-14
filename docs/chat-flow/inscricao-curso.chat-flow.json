@@ -6,6 +6,10 @@
     "guardrailMethod": "LLM_JUDGE",
     "triggerDescription": "Ativar quando o usuário quiser se inscrever em um curso novo, perguntar sobre programas, vestibular, MBA, pós-graduação ou educação executiva. NÃO disparar para dúvidas sobre boleto, segunda via, atestado de matrícula ou suporte técnico do portal.",
     "triggerMode": "ONCE",
+    "slots": [
+      { "name": "aluno_nome", "description": "Primeiro nome do aluno, capturado na abertura da inscrição.", "type": "STRING" },
+      { "name": "tipo_curso", "description": "Modalidade escolhida pelo aluno — usada pelo Switch para rotear entre Graduação e Educação Executiva.", "type": "STRING" }
+    ],
     "personas": [
       {
         "id": "PERSONA_ATENDENTE_BR",
@@ -153,6 +157,9 @@
     "guardrailMethod": "LLM_JUDGE",
     "triggerDescription": "",
     "triggerMode": "ONCE",
+    "slots": [
+      { "name": "curso_graduacao_escolhido", "description": "Curso de graduação escolhido pelo aluno (Ingegneria Informatica, Architettura, Medicina e Chirurgia, Economia e Commercio).", "type": "STRING" }
+    ],
     "graph": {
       "nodes": [
         {
@@ -204,6 +211,9 @@
     "guardrailMethod": "LLM_JUDGE",
     "triggerDescription": "",
     "triggerMode": "ONCE",
+    "slots": [
+      { "name": "curso_executiva_escolhido", "description": "Programa de educação executiva escolhido pelo aluno (MBA en Liderazgo, Innovación y Transformación Digital, Estrategia Corporativa Global, Finanzas para Ejecutivos).", "type": "STRING" }
+    ],
     "graph": {
       "nodes": [
         {

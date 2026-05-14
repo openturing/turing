@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+
 /**
  * Request body for the chat-flow import endpoint. Bundles the flow itself
  * with the personas referenced by its {@code persona} nodes — the import
@@ -49,4 +50,15 @@ public class TurChatFlowImportDto {
      * behaves exactly like a regular create.
      */
     private List<TurPersonaDto> personas;
+
+    /**
+     * Slots embedded alongside the flow. Optional. Each entry whose
+     * {@code name} is not yet declared on the target agent is auto-created
+     * before the flow is saved, so {@code outputVariable} fields inside the
+     * graph resolve to a real slot in the catalogue. Existing slots are left
+     * untouched — names match case-insensitively within the agent scope.
+     *
+     * @since 2026.2.7
+     */
+    private List<TurAIAgentSlotDto> slots;
 }

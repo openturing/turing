@@ -3,9 +3,11 @@ import type { Node } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
 import { useAiAgent } from "@/api/queries/ai-agent.queries";
 import { useChatFlows } from "@/api/queries/chat-flow.queries";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,7 +18,7 @@ import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
-import type { FlowNodeData, FlowNodeType, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowNodeData, FlowNodeType, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
@@ -39,6 +41,7 @@ interface FlowPropertiesProps {
 
 const VALIDATION_OPTIONS = ["none", "email", "phone", "url", "number", "date"];
 const TOOL_SOURCE_OPTIONS: FlowToolSource[] = ["NATIVE", "MCP"];
+const SLOT_OPERATION_OPTIONS: FlowSlotOperation[] = ["SET", "DELETE"];
 
 export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
   const { t } = useTranslation();
@@ -54,6 +57,10 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
   // is cached by react-query, no extra round-trips per selected node.
   const { data: agent } = useAiAgent(agentId);
   const personaOptions = useMemo(() => agent?.personas ?? [], [agent]);
+  // Slots catalogue — outputVariable on askQuestion nodes must reference
+  // one of these so captured values land in a stable, typed schema.
+  const { data: slots } = useAIAgentSlots(agentId);
+  const slotOptions = useMemo(() => slots ?? [], [slots]);
 
   useEffect(() => {
     nativeToolService.query().then(setNativeToolGroups).catch(() => setNativeToolGroups([]));
@@ -119,13 +126,53 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
         {type === "aiQuestion" && (
           <>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="flow-node-output">{t("chatFlow.properties.outputVariable")}</Label>
-              <Input
-                id="flow-node-output"
+              <Label>{t("chatFlow.properties.outputVariable")}</Label>
+              <Select
                 value={data.outputVariable ?? ""}
-                onChange={(e) => update({ outputVariable: e.target.value })}
-                placeholder="user_response"
-              />
+                onValueChange={(value) => update({ outputVariable: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.outputVariablePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {slotOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.outputVariableEmpty")}
+                    </div>
+                  ) : (
+                    slotOptions.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.name}>
+                        <span className="font-mono text-[12px]">{slot.name}</span>
+                        <span className="ml-2 text-muted-foreground">— {t(`aiAgent.slot.types.${slot.type}`)}</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.outputVariableHint")}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="flow-node-override" className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  id="flow-node-override"
+                  checked={data.overrideExistingValue ?? false}
+                  onCheckedChange={(checked) =>
+                    update({ overrideExistingValue: checked === true ? true : undefined })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">
+                    {t("chatFlow.properties.overrideExistingValue")}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("chatFlow.properties.overrideExistingValueHint")}
+                  </span>
+                </div>
+              </label>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -308,18 +355,53 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
         {type === "switch" && (
           <>
             <div className="flex flex-col gap-1">
-              <Label htmlFor="flow-node-switch-variable">
-                {t("chatFlow.properties.switchVariable")}
-              </Label>
-              <Input
-                id="flow-node-switch-variable"
+              <Label>{t("chatFlow.properties.switchVariable")}</Label>
+              <Select
                 value={data.switchVariable ?? ""}
-                onChange={(e) => update({ switchVariable: e.target.value || undefined })}
-                placeholder="course_level"
-              />
+                onValueChange={(value) => update({ switchVariable: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.switchVariablePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {slotOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.switchVariableEmpty")}
+                    </div>
+                  ) : (
+                    slotOptions.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.name}>
+                        <span className="font-mono text-[12px]">{slot.name}</span>
+                        <span className="ml-2 text-muted-foreground">— {t(`aiAgent.slot.types.${slot.type}`)}</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
               <span className="text-[11px] text-muted-foreground">
                 {t("chatFlow.properties.switchVariableHint")}
               </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="flow-node-switch-override" className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  id="flow-node-switch-override"
+                  checked={data.overrideExistingValue ?? false}
+                  onCheckedChange={(checked) =>
+                    update({ overrideExistingValue: checked === true ? true : undefined })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">
+                    {t("chatFlow.properties.overrideExistingValue")}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("chatFlow.properties.switchOverrideHint")}
+                  </span>
+                </div>
+              </label>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -387,6 +469,109 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             </span>
           </div>
         )}
+
+        {type === "slot" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.slotOperation")}</Label>
+              <Select
+                value={data.slotOperation ?? "SET"}
+                onValueChange={(value) =>
+                  update({
+                    slotOperation: value as FlowSlotOperation,
+                    /* When switching to DELETE the value/override become meaningless;
+                       drop them so the export JSON stays tight. */
+                    ...(value === "DELETE"
+                      ? { slotValue: undefined, overrideExistingValue: undefined }
+                      : {}),
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SLOT_OPERATION_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {t(`chatFlow.properties.slotOperationOptions.${option}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.slotOperationHint")}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.slotName")}</Label>
+              <Select
+                value={data.slotName ?? ""}
+                onValueChange={(value) => update({ slotName: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.slotNamePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {slotOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.slotNameEmpty")}
+                    </div>
+                  ) : (
+                    slotOptions.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.name}>
+                        <span className="font-mono text-[12px]">{slot.name}</span>
+                        <span className="ml-2 text-muted-foreground">— {t(`aiAgent.slot.types.${slot.type}`)}</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.slotNameHint")}
+              </span>
+            </div>
+
+            {(data.slotOperation ?? "SET") === "SET" && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="flow-node-slot-value">{t("chatFlow.properties.slotValue")}</Label>
+                  <Textarea
+                    id="flow-node-slot-value"
+                    rows={3}
+                    value={data.slotValue ?? ""}
+                    onChange={(e) => update({ slotValue: e.target.value || undefined })}
+                    placeholder={t("chatFlow.properties.slotValuePlaceholder")}
+                  />
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("chatFlow.properties.slotValueHint")}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="flow-node-slot-override" className="flex items-start gap-2 cursor-pointer">
+                    <Checkbox
+                      id="flow-node-slot-override"
+                      checked={data.overrideExistingValue ?? false}
+                      onCheckedChange={(checked) =>
+                        update({ overrideExistingValue: checked === true ? true : undefined })
+                      }
+                      className="mt-0.5"
+                    />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium">
+                        {t("chatFlow.properties.overrideExistingValue")}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {t("chatFlow.properties.slotOverrideHint")}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
     </aside>
   );
@@ -410,6 +595,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.persona";
     case "switch":
       return "chatFlow.palette.switch";
+    case "slot":
+      return "chatFlow.palette.slot";
   }
 }
 

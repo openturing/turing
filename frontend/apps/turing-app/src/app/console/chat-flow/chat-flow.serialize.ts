@@ -11,6 +11,7 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   subFlow: "SUB FLOW",
   persona: "PERSONA SWITCH",
   switch: "SWITCH",
+  slot: "SLOT",
 };
 
 /**
@@ -26,6 +27,9 @@ export function buildDefaultNodeData(type: FlowNodeType): FlowNodeData {
       { id: newSwitchOptionId(), label: "Option 1" },
       { id: newSwitchOptionId(), label: "Option 2" },
     ];
+  }
+  if (type === "slot") {
+    base.slotOperation = "SET";
   }
   return base;
 }

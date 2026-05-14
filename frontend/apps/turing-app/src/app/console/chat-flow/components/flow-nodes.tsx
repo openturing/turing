@@ -9,6 +9,7 @@ import {
   IconBell,
   IconSparkles,
   IconSubtask,
+  IconVariable,
 } from "@tabler/icons-react";
 
 import type { FlowNodeData } from "../types";
@@ -235,6 +236,53 @@ export function SwitchNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+export function SlotNode({ data }: ChatFlowNodeProps) {
+  const operation = data.slotOperation ?? "SET";
+  const slotName = typeof data.slotName === "string" && data.slotName.trim().length > 0
+    ? data.slotName
+    : null;
+  const isDelete = operation === "DELETE";
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-sky-500 bg-background shadow-md">
+      <div className="flex items-center justify-between gap-2 bg-sky-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconVariable className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Slot"}</div>
+        </div>
+        <span className="rounded bg-sky-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+          {operation}
+        </span>
+      </div>
+      <div className="bg-sky-50 p-3 text-xs leading-relaxed text-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+        <div>
+          <span className="font-semibold">Slot: </span>
+          {slotName ? (
+            <code className="rounded bg-sky-200/60 px-1 py-0.5 text-[11px] dark:bg-sky-900/50">
+              {slotName}
+            </code>
+          ) : (
+            <span className="italic opacity-60">not selected</span>
+          )}
+        </div>
+        {!isDelete && (
+          <div className="mt-1 opacity-90">
+            <span className="font-semibold">Value: </span>
+            {data.slotValue && data.slotValue.length > 0 ? (
+              <code className="rounded bg-sky-200/60 px-1 py-0.5 text-[11px] dark:bg-sky-900/50">
+                {data.slotValue}
+              </code>
+            ) : (
+              <span className="italic opacity-60">empty</span>
+            )}
+          </div>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-sky-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-sky-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
@@ -244,4 +292,5 @@ export const nodeTypes = {
   subFlow: SubFlowNode,
   persona: PersonaNode,
   switch: SwitchNode,
+  slot: SlotNode,
 };

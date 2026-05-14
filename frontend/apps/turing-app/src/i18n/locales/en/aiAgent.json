@@ -14,6 +14,7 @@
       "mcpServers": "MCP Servers",
       "customTools": "Custom Tools",
       "intents": "Intents",
+      "slots": "Slots",
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "history": "History"
@@ -21,6 +22,46 @@
     "persona": {
       "title": "Personas",
       "description": "Allowed voices for this agent. Pick the catalog and one default; chat flows can switch the active persona mid-conversation."
+    },
+    "slot": {
+      "title": "Slots",
+      "description": "Typed-variable catalogue for this agent. Chat-flow nodes pick from these instead of free-text identifiers so captured values land in a stable schema.",
+      "add": "Add slot",
+      "edit": "Edit slot",
+      "delete": "Delete slot",
+      "addTitle": "Add slot",
+      "editTitle": "Edit slot",
+      "dialogDescription": "Slots are the typed variables this agent can write into. Pick a name and a primitive type.",
+      "deleteTitle": "Delete slot",
+      "deleteConfirm": "Are you sure you want to delete the slot \"{{name}}\"? Chat-flow nodes referencing it will lose their binding.",
+      "blankTitle": "No slots defined yet",
+      "blankDescription": "Create the typed variables your chat flows will collect — name, address, age, etc. Each slot has a name and a primitive type.",
+      "namePlaceholder": "e.g. visitor_name",
+      "nameHint": "Letters, digits and underscores; must start with a letter or underscore.",
+      "descriptionPlaceholder": "Optional — what this slot captures and how flows should use it.",
+      "created": "Slot \"{{name}}\" created",
+      "updated": "Slot \"{{name}}\" updated",
+      "deleted": "Slot \"{{name}}\" deleted",
+      "saveFailed": "Failed to save slot",
+      "deleteFailed": "Failed to delete slot",
+      "fields": {
+        "name": "Name",
+        "type": "Type",
+        "description": "Description",
+        "actions": "Actions"
+      },
+      "types": {
+        "STRING": "String",
+        "INTEGER": "Integer",
+        "BOOLEAN": "Boolean",
+        "FLOAT": "Float",
+        "TEXT": "Text"
+      },
+      "errors": {
+        "nameRequired": "Name is required",
+        "nameInvalid": "Name must start with a letter or underscore and contain only letters, digits and underscores",
+        "nameTaken": "A slot with this name already exists for this agent"
+      }
     },
     "history": {
       "title": "History",

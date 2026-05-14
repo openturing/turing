@@ -98,7 +98,8 @@
       "functionCall": "Function Call",
       "subFlow": "Sub Flow",
       "persona": "Persona Switch",
-      "switch": "Switch"
+      "switch": "Switch",
+      "slot": "Slot"
     },
     "properties": {
       "header": "Node Properties",
@@ -110,6 +111,11 @@
       "aiInstructionPlaceholder": "Ask the user a question and capture the answer. Expected Output: the value you want to store.",
       "aiInstructionHint": "Prompt forwarded to Spring AI when this step runs.",
       "outputVariable": "Output Variable",
+      "outputVariablePlaceholder": "Select a slot…",
+      "outputVariableEmpty": "No slots defined for this agent. Add one under Slots in the sidebar first.",
+      "outputVariableHint": "Picks from the agent's typed-slot catalogue so the captured value lands in a stable schema.",
+      "overrideExistingValue": "Always ask (override existing value)",
+      "overrideExistingValueHint": "When unchecked, the engine skips this step if the slot is already filled. Check to always ask and overwrite the previous value.",
       "functionName": "Function Call",
       "toolSource": "Tool Source",
       "toolSourceOptions": {
@@ -132,7 +138,10 @@
       "personaEmpty": "This agent has no personas in its catalog. Add some on the agent's Personas page.",
       "personaHint": "When this step runs, the conversation immediately switches to this persona's voice. The change persists until another Persona node is reached or the conversation ends.",
       "switchVariable": "Switch Variable",
-      "switchVariableHint": "Optional flow-context variable name where the matched option label is stored.",
+      "switchVariablePlaceholder": "Select a slot…",
+      "switchVariableEmpty": "No slots defined for this agent. Add one under Slots in the sidebar first.",
+      "switchVariableHint": "Picks the typed slot the engine reads to route this Switch — keep one slot per branching variable.",
+      "switchOverrideHint": "When checked, the Switch re-evaluates the slot even if it already had a value; otherwise it reuses the previously captured value as-is.",
       "switchOptions": "Switch Options",
       "switchOptionsHint": "Each option becomes a separate handle on the right of the node — wire it to a different downstream flow.",
       "switchOptionsEmpty": "No options yet — add one to expose a branch.",
@@ -148,7 +157,21 @@
         "url": "URL",
         "number": "Number",
         "date": "Date"
-      }
+      },
+      "slotOperation": "Operation",
+      "slotOperationHint": "Set writes a literal value to the chosen slot; Delete removes the slot from the conversation state.",
+      "slotOperationOptions": {
+        "SET": "Set value",
+        "DELETE": "Delete value"
+      },
+      "slotName": "Slot",
+      "slotNamePlaceholder": "Select a slot…",
+      "slotNameEmpty": "No slots defined for this agent. Add one under Slots in the sidebar first.",
+      "slotNameHint": "Slot the engine writes to (or deletes). Must be declared on the agent's slot catalogue.",
+      "slotValue": "Value",
+      "slotValuePlaceholder": "Literal value to write",
+      "slotValueHint": "Stored verbatim in the conversation state; downstream Switch or AI Question nodes can read it.",
+      "slotOverrideHint": "When checked, overwrite the slot even if it already had a value; otherwise the node no-ops to preserve the existing value."
     },
     "preview": {
       "title": "Chat Preview",

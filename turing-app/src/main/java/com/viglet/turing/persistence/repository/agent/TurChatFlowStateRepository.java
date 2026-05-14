@@ -49,4 +49,13 @@ public interface TurChatFlowStateRepository extends JpaRepository<TurChatFlowSta
      * @since 2026.2.6
      */
     List<TurChatFlowState> findByParentStateId(String parentStateId);
+
+    /**
+     * Every in-progress flow state attached to a conversation, regardless of
+     * the agent. Used by the session-variables API to expose live values
+     * collected so far when the caller only has the {@code conversationId}.
+     *
+     * @since 2026.2.7
+     */
+    List<TurChatFlowState> findByConversationId(String conversationId);
 }

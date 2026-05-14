@@ -1,3 +1,4 @@
+import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
 import {
   CHAT_FLOW_GUARDRAIL_METHODS,
   CHAT_FLOW_TRIGGER_MODES,
@@ -27,6 +28,12 @@ export interface ChatFlowExportEntry {
   triggerDescription?: string | null;
   triggerMode?: TurChatFlowTriggerMode;
   personas?: TurPersona[];
+  /**
+   * Typed slots referenced by the flow's {@code outputVariable} fields. The
+   * backend auto-creates any slot whose name is not yet declared on the
+   * target agent — existing slots are left untouched.
+   */
+  slots?: TurAIAgentSlot[];
   graph?: { nodes?: unknown; edges?: unknown };
   /** Back-compat: pre-Phase-B exports stored nodes/edges at the top level. */
   nodes?: unknown;
@@ -63,5 +70,5 @@ export function buildImportPayloadFromExport(
         ? entry.triggerMode
         : "ONCE",
   };
-  return { chatFlow, personas: entry.personas };
+  return { chatFlow, personas: entry.personas, slots: entry.slots };
 }

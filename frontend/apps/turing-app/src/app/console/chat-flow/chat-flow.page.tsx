@@ -35,6 +35,7 @@ import {
   type TurChatFlowGuardrailMethod,
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
+import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
 import {
   useCreateChatFlow,
   useDeleteChatFlow,
@@ -88,6 +89,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const deleteMutation = useDeleteChatFlow();
   const importMutation = useImportChatFlow();
   const importBundleMutation = useImportChatFlowBundle();
+  const { data: agentSlots } = useAIAgentSlots(agentId);
 
   /* Auto-collapse the AI Agent's internal sidebar on first render only: the canvas needs the
      extra horizontal space. The ref guard prevents re-collapsing after the user reopens the
@@ -203,12 +205,24 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
 
   const onExport = useCallback(() => {
     const flowName = name.trim() || flow.name || "chat-flow";
+    // Embed only the slots actually referenced by an outputVariable in the graph — keeps the
+    // export minimal and avoids leaking the rest of the agent's slot catalogue. Names match the
+    // unique-per-agent contract the backend enforces on import.
+    const referencedSlotNames = new Set(
+      nodes
+        .map((n) => n.data?.outputVariable)
+        .filter((v): v is string => typeof v === "string" && v.length > 0),
+    );
+    const slots = (agentSlots ?? [])
+      .filter((s) => referencedSlotNames.has(s.name))
+      .map(({ id: _id, ...rest }) => rest);
     const payload = {
       name: flowName,
       description: description.trim() || null,
       guardrailMethod,
       triggerDescription: triggerDescription.trim() || null,
       triggerMode,
+      slots,
       graph: {
         nodes: nodes.map((n) => ({
           id: n.id,
@@ -234,7 +248,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     link.download = `${safeFileName}.chat-flow.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [name, description, guardrailMethod, triggerDescription, triggerMode, nodes, edges, flow.name]);
+  }, [name, description, guardrailMethod, triggerDescription, triggerMode, nodes, edges, flow.name, agentSlots]);
 
   const onImportFile = useCallback(
     async (file: File) => {

@@ -119,8 +119,16 @@ function appendFromNode(entries: TranscriptEntry[], data: FlowNodeData) {
       entries.push({ actor: "bot", text: `↳ ${data.label}: ${target}` });
       break;
     }
+    case "slot": {
+      const op = data.slotOperation ?? "SET";
+      const name = data.slotName ?? "(no slot)";
+      const detail = op === "DELETE" ? "delete" : `= ${data.slotValue ?? "(empty)"}`;
+      entries.push({ actor: "bot", text: `⚙ ${data.label}: ${name} ${detail}` });
+      break;
+    }
     case "start":
     case "end":
+    case "persona":
       break;
   }
 }

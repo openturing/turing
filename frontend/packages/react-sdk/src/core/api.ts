@@ -382,6 +382,53 @@ export function fetchIntents(site: string): Promise<TurIntent[]> {
   return get<TurIntent[]>(`/sn/${site}/chat/intents`);
 }
 
+/**
+ * Slots captured during a chat session, returned as a single flat map keyed
+ * by slot name. The backend merges values across every flow (active or
+ * completed) of the AI agent that the conversation touched, so consumers
+ * never need to walk a per-flow tree.
+ *
+ * @since 2026.2.7
+ */
+export interface TurChatSessionSlots {
+  readonly conversationId: string;
+  readonly slots: Readonly<Record<string, string>>;
+}
+
+/**
+ * Reads the slots captured during the conversation from the site's RAG
+ * endpoint. Use when the SDK is in site mode (the same default as
+ * {@link postChatConversation}). Pair with {@link useTuringSlots} to wire
+ * a polled refresh.
+ *
+ * Server endpoint: {@code GET /api/sn/{site}/chat/slots?conversationId=...}.
+ *
+ * @since 2026.2.7
+ */
+export function fetchSiteChatSlots(
+  site: string,
+  conversationId: string,
+): Promise<TurChatSessionSlots> {
+  const qs = new URLSearchParams({ conversationId });
+  return get<TurChatSessionSlots>(`/sn/${site}/chat/slots?${qs}`);
+}
+
+/**
+ * Reads the slots captured during the conversation from the agent endpoint.
+ * Use when the SDK is in agent mode (mirrors {@link postAgentChat}).
+ *
+ * Server endpoint: {@code GET /api/v2/ai-agent/{agentId}/chat-slots?conversationId=...}.
+ *
+ * @since 2026.2.7
+ */
+export function fetchAgentChatSlots(
+  agentId: string,
+  conversationId: string,
+): Promise<TurChatSessionSlots> {
+  const qs = new URLSearchParams({ conversationId });
+  return get<TurChatSessionSlots>(`/v2/ai-agent/${agentId}/chat-slots?${qs}`);
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }

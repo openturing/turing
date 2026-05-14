@@ -98,7 +98,8 @@
       "functionCall": "Chamada de Função",
       "subFlow": "Sub Fluxo",
       "persona": "Trocar Persona",
-      "switch": "Seletor"
+      "switch": "Seletor",
+      "slot": "Slot"
     },
     "properties": {
       "header": "Propriedades do Nó",
@@ -110,6 +111,11 @@
       "aiInstructionPlaceholder": "Pergunte algo ao usuário e capture a resposta. Saída esperada: o valor que deseja armazenar.",
       "aiInstructionHint": "Prompt enviado ao Spring AI quando este passo for executado.",
       "outputVariable": "Variável de Saída",
+      "outputVariablePlaceholder": "Selecione um slot…",
+      "outputVariableEmpty": "Nenhum slot definido para este agente. Cadastre um em Slots na barra lateral primeiro.",
+      "outputVariableHint": "Escolhe um item do catálogo de slots tipados do agente para garantir um schema estável dos valores capturados.",
+      "overrideExistingValue": "Sempre perguntar (sobrescrever valor existente)",
+      "overrideExistingValueHint": "Quando desmarcado, o engine pula este passo se o slot já estiver preenchido. Marque para sempre perguntar e sobrescrever o valor anterior.",
       "functionName": "Função",
       "toolSource": "Origem da Ferramenta",
       "toolSourceOptions": {
@@ -132,7 +138,10 @@
       "personaEmpty": "Este agent não tem nenhuma persona no catálogo. Cadastre na página Personas do agent.",
       "personaHint": "Quando este passo executar, a conversa muda imediatamente para a voz desta persona. A troca persiste até atravessar outro nó Persona ou até o fim da conversa.",
       "switchVariable": "Variável do Seletor",
-      "switchVariableHint": "Nome opcional da variável de contexto do fluxo onde o rótulo da opção escolhida será armazenado.",
+      "switchVariablePlaceholder": "Selecione um slot…",
+      "switchVariableEmpty": "Nenhum slot definido para este agente. Cadastre um em Slots na barra lateral primeiro.",
+      "switchVariableHint": "Escolhe o slot tipado que o engine lê para rotear este Seletor — mantenha um slot por variável de ramificação.",
+      "switchOverrideHint": "Quando marcado, o Seletor reavalia o slot mesmo que ele já tenha um valor; caso contrário, reusa o valor capturado anteriormente.",
       "switchOptions": "Opções do Seletor",
       "switchOptionsHint": "Cada opção vira um handle separado à direita do nó — conecte cada um a um fluxo distinto.",
       "switchOptionsEmpty": "Nenhuma opção ainda — adicione uma para expor uma ramificação.",
@@ -148,7 +157,21 @@
         "url": "URL",
         "number": "Número",
         "date": "Data"
-      }
+      },
+      "slotOperation": "Operação",
+      "slotOperationHint": "Definir grava um valor literal no slot escolhido; Excluir remove o slot do estado da conversa.",
+      "slotOperationOptions": {
+        "SET": "Definir valor",
+        "DELETE": "Excluir valor"
+      },
+      "slotName": "Slot",
+      "slotNamePlaceholder": "Selecione um slot…",
+      "slotNameEmpty": "Nenhum slot definido para este agente. Cadastre um em Slots na barra lateral primeiro.",
+      "slotNameHint": "Slot em que o engine grava (ou exclui). Precisa estar declarado no catálogo de slots do agente.",
+      "slotValue": "Valor",
+      "slotValuePlaceholder": "Valor literal a ser gravado",
+      "slotValueHint": "Armazenado literalmente no estado da conversa; nós Switch ou AI Question posteriores podem lê-lo.",
+      "slotOverrideHint": "Quando marcado, sobrescreve o slot mesmo que ele já tenha um valor; caso contrário o nó não faz nada para preservar o valor existente."
     },
     "preview": {
       "title": "Pré-visualização",

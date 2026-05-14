@@ -38,6 +38,17 @@
     "failedAgentResponse": "Failed to get a response from {{agent}}.",
     "contextCompacted": "Context compacted successfully.",
     "failedCompact": "Failed to compact context.",
-    "contextCompactedLabel": "**[Context compacted]**"
+    "contextCompactedLabel": "**[Context compacted]**",
+    "sessionInfo": {
+      "button": "Session info",
+      "title": "Session info",
+      "description": "Details about the current conversation. Slot values refresh while this panel is open.",
+      "conversationId": "Conversation ID",
+      "noActiveSession": "No active session. Send a message to start one.",
+      "copied": "Conversation ID copied to clipboard",
+      "slots": "Slots",
+      "slotsEmpty": "No slots have been captured yet for this conversation.",
+      "slotsError": "Failed to load slot values for this conversation."
+    }
   }
 }

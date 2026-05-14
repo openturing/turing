@@ -13,9 +13,20 @@ export type FlowNodeType =
   | "functionCall"
   | "subFlow"
   | "persona"
-  | "switch";
+  | "switch"
+  | "slot";
 
 export type FlowToolSource = "NATIVE" | "MCP";
+
+/**
+ * Operations supported by the {@code slot} node. {@code SET} writes a literal
+ * value to {@link FlowNodeData.slotName} in the flow's variable map (honoring
+ * {@link FlowNodeData.overrideExistingValue} when the slot already has a
+ * value); {@code DELETE} removes the slot entirely.
+ *
+ * @since 2026.2.7
+ */
+export type FlowSlotOperation = "SET" | "DELETE";
 
 /**
  * A single branch on a Switch node. The `id` is used as the `sourceHandle` of any outgoing edge,
@@ -36,6 +47,13 @@ export interface FlowNodeData extends Record<string, unknown> {
   aiInstruction?: string;
   /** Variable name where the collected value is stored in the flow context (e.g. "email"). */
   outputVariable?: string;
+  /**
+   * When true on an aiQuestion node, the engine always asks the question and overwrites any
+   * value already collected into {@link outputVariable}. When false/omitted and the slot
+   * already has a non-blank value, the engine skips the node (transparent transition).
+   * @since 2026.2.7
+   */
+  overrideExistingValue?: boolean;
   /** Validation rule for AI question outputs. */
   validationRule?: string;
   /**
@@ -64,6 +82,20 @@ export interface FlowNodeData extends Record<string, unknown> {
   switchOptions?: FlowSwitchOption[];
   /** Optional flow-context variable name where the matched Switch option label is stored. @since 2026.2.7 */
   switchVariable?: string;
+  /**
+   * Slot the {@code slot} node operates on — must be one of the agent's
+   * declared slots so the value lands in a stable, typed schema.
+   * @since 2026.2.7
+   */
+  slotName?: string;
+  /** {@code SET} writes {@link slotValue}; {@code DELETE} removes the slot. @since 2026.2.7 */
+  slotOperation?: FlowSlotOperation;
+  /**
+   * Literal value written to {@link slotName} by a {@code SET} operation.
+   * Ignored when {@link slotOperation} is {@code DELETE}.
+   * @since 2026.2.7
+   */
+  slotValue?: string;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {
@@ -106,5 +138,10 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-cyan-50 dark:bg-cyan-950/40",
     border: "border-cyan-500",
     text: "text-cyan-900 dark:text-cyan-100",
+  },
+  slot: {
+    bg: "bg-sky-50 dark:bg-sky-950/40",
+    border: "border-sky-500",
+    text: "text-sky-900 dark:text-sky-100",
   },
 };

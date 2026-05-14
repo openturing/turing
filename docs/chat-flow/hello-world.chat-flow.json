@@ -2,6 +2,18 @@
   "name": "Hello World",
   "description": "Minimal three-step flow: greets the user, captures a name, captures an email, then ends. Useful for smoke-testing the Phase B engine.",
   "guardrailMethod": "HEURISTIC",
+  "slots": [
+    {
+      "name": "name",
+      "description": "User's display name captured from the greeting turn.",
+      "type": "STRING"
+    },
+    {
+      "name": "email",
+      "description": "User's email address — validated as RFC-like before being stored.",
+      "type": "STRING"
+    }
+  ],
   "graph": {
     "nodes": [
       {

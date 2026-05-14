@@ -15,6 +15,8 @@ export {
   deleteAgentFlowState,
   fetchAutoComplete,
   fetchIntents,
+  fetchSiteChatSlots,
+  fetchAgentChatSlots,
   fetchSortOptions,
   parseHrefToParams,
   postClick,
@@ -25,6 +27,7 @@ export type {
   PostAgentChatOptions,
   ChatEnabledResponse,
   ClickTrackParams,
+  TurChatSessionSlots,
 } from "./core/api";
 
 // ── Session ──
@@ -65,6 +68,13 @@ export { useTuringChat } from "./hooks/use-turing-chat";
 export type { UseTuringChatReturn, UseTuringChatOptions, UseTuringChatAgent, ChatMessage, ChatStatus } from "./hooks/use-turing-chat";
 export { useTuringIntents } from "./hooks/use-turing-intents";
 export type { UseTuringIntentsReturn } from "./hooks/use-turing-intents";
+export { useTuringSlots } from "./hooks/use-turing-slots";
+export type {
+  UseTuringSlotsReturn,
+  UseTuringSlotsOptions,
+  UseTuringSlotsAgent,
+  SlotsStatus,
+} from "./hooks/use-turing-slots";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 

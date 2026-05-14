@@ -14,6 +14,7 @@
       "mcpServers": "Servidores MCP",
       "customTools": "Ferramentas Customizadas",
       "intents": "Intents",
+      "slots": "Slots",
       "chat": "Chat",
       "chatFlow": "Chat Flow",
       "history": "Histórico"
@@ -21,6 +22,46 @@
     "persona": {
       "title": "Personas",
       "description": "Vozes permitidas para este agent. Escolha o catálogo e uma padrão; chat flows podem trocar a persona ativa durante a conversa."
+    },
+    "slot": {
+      "title": "Slots",
+      "description": "Catálogo de variáveis tipadas deste agente. Os nodes do chat flow usam esses slots em vez de identificadores livres, garantindo que os valores coletados sigam um schema estável.",
+      "add": "Adicionar slot",
+      "edit": "Editar slot",
+      "delete": "Excluir slot",
+      "addTitle": "Adicionar slot",
+      "editTitle": "Editar slot",
+      "dialogDescription": "Slots são as variáveis tipadas que este agente pode preencher. Defina um nome e um tipo primitivo.",
+      "deleteTitle": "Excluir slot",
+      "deleteConfirm": "Tem certeza que deseja excluir o slot \"{{name}}\"? Os nodes do chat flow que o referenciam perderão o vínculo.",
+      "blankTitle": "Nenhum slot definido ainda",
+      "blankDescription": "Crie as variáveis tipadas que seus chat flows vão coletar — nome, endereço, idade etc. Cada slot tem um nome e um tipo primitivo.",
+      "namePlaceholder": "ex.: nome_visitante",
+      "nameHint": "Letras, dígitos e underscores; deve começar com letra ou underscore.",
+      "descriptionPlaceholder": "Opcional — o que este slot captura e como os flows devem usá-lo.",
+      "created": "Slot \"{{name}}\" criado",
+      "updated": "Slot \"{{name}}\" atualizado",
+      "deleted": "Slot \"{{name}}\" excluído",
+      "saveFailed": "Falha ao salvar slot",
+      "deleteFailed": "Falha ao excluir slot",
+      "fields": {
+        "name": "Nome",
+        "type": "Tipo",
+        "description": "Descrição",
+        "actions": "Ações"
+      },
+      "types": {
+        "STRING": "Texto curto",
+        "INTEGER": "Inteiro",
+        "BOOLEAN": "Booleano",
+        "FLOAT": "Decimal",
+        "TEXT": "Texto longo"
+      },
+      "errors": {
+        "nameRequired": "Nome é obrigatório",
+        "nameInvalid": "O nome deve começar com letra ou underscore e conter apenas letras, dígitos e underscores",
+        "nameTaken": "Já existe um slot com este nome neste agente"
+      }
     },
     "history": {
       "title": "Histórico",

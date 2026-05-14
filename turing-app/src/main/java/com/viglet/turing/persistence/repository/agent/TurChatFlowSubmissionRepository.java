@@ -23,4 +23,12 @@ public interface TurChatFlowSubmissionRepository extends JpaRepository<TurChatFl
 
     /** Submissions of a flow ordered newest first — feeds the History page. */
     List<TurChatFlowSubmission> findByFlow_IdOrderByCompletedAtDesc(String flowId);
+
+    /**
+     * Every completed (or abandoned) submission tied to a conversation
+     * across all flows, newest first. Used by the session-variables API.
+     *
+     * @since 2026.2.7
+     */
+    List<TurChatFlowSubmission> findByConversationIdOrderByCompletedAtDesc(String conversationId);
 }

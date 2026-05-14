@@ -58,6 +58,7 @@ export function useImportChatFlow() {
       invalidateChatFlows(queryClient);
       queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.aiAgents.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiAgentSlots.all() });
     },
   });
 }
@@ -76,6 +77,7 @@ export function useImportChatFlowBundle() {
       invalidateChatFlows(queryClient);
       queryClient.invalidateQueries({ queryKey: queryKeys.personas.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.aiAgents.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aiAgentSlots.all() });
     },
   });
 }

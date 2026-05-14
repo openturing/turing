@@ -46,6 +46,7 @@ import com.viglet.turing.genai.TurSNGenAi.ConversationMessage;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
 import com.viglet.turing.persistence.dto.intent.TurIntentDto;
 import com.viglet.turing.persistence.mapper.intent.TurIntentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -281,6 +282,23 @@ public class TurSNSiteGenAiAPI {
 					return chatFlowEngineService.resetAllStatesForAgent(conversationId, agent.getId());
 				})
 				.orElse(0);
+	}
+
+	/**
+	 * Public, unauthenticated read of the slots captured during the current
+	 * chat session, returned as a single flat map at the JSON root. Lets
+	 * embedding sites pick up slot values the visitor has already filled
+	 * through the chat (e.g. preferred locale, course of interest, name)
+	 * and reflect them elsewhere on the page without re-asking. The
+	 * {@code conversationId} comes from the SDK's {@code TUR_SESSION}
+	 * cookie — same id the chat-flow engine keys on.
+	 *
+	 * @since 2026.2.7
+	 */
+	@GetMapping("/slots")
+	public TurChatSessionSlotsDto chatSlots(@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		return chatFlowEngineService.listSlotsForConversation(conversationId);
 	}
 
 	/**
