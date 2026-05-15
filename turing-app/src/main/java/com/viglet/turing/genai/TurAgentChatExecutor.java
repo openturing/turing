@@ -309,6 +309,7 @@ public class TurAgentChatExecutor {
 
             TurChatFlowState newState = flowContext == null ? null : flowContext.state();
             if (flowContext != null) {
+                String originalNodeId = flowContext.state().getCurrentNodeId();
                 var advance = chatFlowEngineService.advance(flowContext.flow(),
                         flowContext.state(), flowContext.graph(),
                         lastUserMessage, text, chatModel);
@@ -318,6 +319,34 @@ public class TurAgentChatExecutor {
                     text = advance.assistantOverride();
                 }
                 newState = advance.state();
+
+                // When advance walked transparently from the current aiQuestion
+                // through switch/condition/slot/persona nodes and parked the
+                // conversation on a NEW aiQuestion, the reply we just got from
+                // the LLM was generated with the OLD node's Goal — so the user
+                // sees an acknowledgment of their last input but never the new
+                // node's content (the "vou montar um plano… um momento" demo
+                // bug). Regenerate the reply with the new node's Goal as the
+                // active step so the user sees the proper response on this
+                // very turn. Skipped when:
+                //   • the strategy already produced an override (LLM_JUDGE
+                //     redirect — that's already targeted at the user);
+                //   • the state did not transition;
+                //   • the new node is not an aiQuestion (start/end/persona/
+                //     slot/switch/condition are transparent or terminal, no
+                //     fresh user-facing prompt to compose).
+                if (advance.assistantOverride() == null
+                        && newState != null
+                        && originalNodeId != null
+                        && !originalNodeId.equals(newState.getCurrentNodeId())) {
+                    String regenerated = regenerateReplyForNewNode(
+                            agent, llmInstance, chatModel, chatOptions,
+                            activePersona, baseSystemPrompt, history,
+                            lastUserMessage, newState, flowContext, username);
+                    if (regenerated != null) {
+                        text = regenerated;
+                    }
+                }
             }
 
             // Persona's negative-constraint check runs LAST so it also
@@ -381,6 +410,80 @@ public class TurAgentChatExecutor {
         }
         return assistantText.concatWith(
                 Flux.just(new ChatResponse("assistant", optionsJson, "options")));
+    }
+
+    /**
+     * Second LLM call for the new leaf node after the flow engine's transparent
+     * walk moved the conversation past the original aiQuestion. Composes the
+     * same prompt shape the first call used (base prompt + flow addendum for
+     * the NEW node + persona wrap + full history) and returns the new text.
+     *
+     * <p>Returns {@code null} when the new leaf node has no aiInstruction (no
+     * Goal to address — e.g. an end node a strategy mis-resolved into), when
+     * its type is not {@code aiQuestion}, or when the LLM call yields no text.
+     * Caller treats {@code null} as "keep the original reply".
+     *
+     * @since 2026.2.7
+     */
+    private String regenerateReplyForNewNode(TurAIAgent agent,
+            TurLLMInstance llmInstance,
+            ChatModel chatModel,
+            org.springframework.ai.model.tool.ToolCallingChatOptions chatOptions,
+            TurPersona activePersona,
+            String baseSystemPrompt,
+            List<ChatMessageItem> history,
+            String lastUserMessage,
+            TurChatFlowState newState,
+            FlowContext originalContext,
+            String username) {
+        // Resolve the graph for the new state's flow — may differ from the
+        // original when the walk descended into a sub-flow.
+        ChatFlowGraph newGraph = newState.getFlow() != null
+                && newState.getFlow().getId() != null
+                && newState.getFlow().getId().equals(originalContext.flow().getId())
+                        ? originalContext.graph()
+                        : chatFlowEngineService.parseGraph(newState.getFlow())
+                                .orElse(originalContext.graph());
+        ChatFlowNode newNode = newGraph.nodeById(newState.getCurrentNodeId()).orElse(null);
+        if (newNode == null || !"aiQuestion".equals(newNode.type())) {
+            return null;
+        }
+        if (newNode.aiInstruction() == null || newNode.aiInstruction().isBlank()) {
+            return null;
+        }
+
+        String newAddendum = chatFlowEngineService.buildSystemPromptAddendum(
+                newState.getFlow(), newState, newGraph);
+        String regenSystemPrompt = personaPromptComposer.compose(
+                activePersona,
+                agent.getTurEmbeddingModelInstance(),
+                lastUserMessage,
+                baseSystemPrompt + newAddendum);
+
+        List<Message> regenMessages = new ArrayList<>();
+        regenMessages.add(new SystemMessage(regenSystemPrompt));
+        for (ChatMessageItem item : history) {
+            String content = item.content() == null ? "" : item.content();
+            if ("assistant".equals(item.role())) {
+                regenMessages.add(new AssistantMessage(content));
+            } else {
+                regenMessages.add(new UserMessage(content));
+            }
+        }
+
+        log.info("[AgentExec] Regenerating reply for new node '{}' (type={}) after transparent walk",
+                newNode.id(), newNode.type());
+        Prompt regenPrompt = new Prompt(regenMessages, chatOptions);
+        var regenResponse = chatModel.call(regenPrompt);
+        tokenUsageService.recordUsage(llmInstance, regenResponse, username);
+        if (regenResponse.getResult() == null
+                || regenResponse.getResult().getOutput() == null
+                || regenResponse.getResult().getOutput().getText() == null) {
+            return null;
+        }
+        String regenText = regenResponse.getResult().getOutput().getText();
+        log.info("[AgentExec] Regenerated reply: {} chars", regenText.length());
+        return regenText;
     }
 
     /**

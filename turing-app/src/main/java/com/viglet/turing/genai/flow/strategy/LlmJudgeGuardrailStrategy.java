@@ -48,6 +48,15 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String NOT_SET = "(none)";
 
+    /**
+     * Minimum user-message length (after trim) that qualifies a rejected verdict
+     * for a second-opinion retry. Set to defeat the cheap politeness-marker
+     * cases ({@code "ok"}, {@code "valeu"}) without ever costing more than one
+     * extra judge call per turn on a substantive answer that was wrongly
+     * rejected by a non-deterministic first verdict.
+     */
+    private static final int RETRY_MIN_USER_MESSAGE_LENGTH = 10;
+
     private final HeuristicGuardrailStrategy fallback;
 
     public LlmJudgeGuardrailStrategy(HeuristicGuardrailStrategy fallback) {
@@ -82,6 +91,41 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         if (verdict == null) {
             log.warn("[LlmJudge] No usable verdict — falling back to heuristic");
             return fallback.advance(ctx);
+        }
+
+        // Second opinion when the first verdict looks like a false reject: the
+        // judge said "stay, no value collected" against a substantive user
+        // message on a node that expects an output variable. The judge call
+        // is non-deterministic even at temperature 0 (~5% flake observed in
+        // production), so one cheap retry recovers the turn without forcing
+        // the user to re-type. See {@code shouldRetryVerdict} for the guard.
+        if (shouldRetryVerdict(verdict, node, ctx.userMessage())) {
+            log.info("[LlmJudge] First verdict rejected non-trivial reply on node '{}' — "
+                    + "requesting second opinion", node.id());
+            JudgeVerdict retry = askJudge(judgeModel, node,
+                    ctx.userMessage(), ctx.assistantMessage());
+            if (retry != null) {
+                log.info("[LlmJudge] Retry verdict on node '{}': onTopic={} ready={} collected='{}'",
+                        node.id(), retry.onTopic(), retry.readyToAdvance(), retry.collectedValue());
+                verdict = retry;
+            }
+            // If both verdicts still say "stay, no value" for a substantive user
+            // message on a slot-collecting node, the judge is consistently wrong
+            // (gpt-4o-mini at temp=0 is deterministic — flake-retry doesn't
+            // recover). Treat the user reply as the slot value and force-advance:
+            // stalling on a real answer is strictly worse than over-capturing.
+            // This mirrors the existing defensive fallback that already handles
+            // the inverse ("judge said advance but forgot to extract").
+            if (shouldRetryVerdict(verdict, node, ctx.userMessage())) {
+                log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' — "
+                        + "force-capturing user message as the slot value",
+                        ctx.userMessage(), node.id());
+                verdict = new JudgeVerdict(verdict.onTopic(),
+                        ctx.userMessage().trim(),
+                        /* readyToAdvance */ true,
+                        verdict.redirectMessage(),
+                        /* abandoned */ false);
+            }
         }
 
         TurChatFlowState state = ctx.state();
@@ -177,6 +221,35 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                     + "next turn will land on the new node's goal", previous);
         }
         return null;
+    }
+
+    /**
+     * Tight predicate for "this verdict looks like a flake, ask again". Only
+     * triggers when all four conditions hold:
+     * <ul>
+     *   <li>not {@code abandoned} — never spend an extra call to recover a
+     *       quit request;</li>
+     *   <li>not {@code readyToAdvance} — a positive verdict is final;</li>
+     *   <li>{@code collected_value} is null/blank — the judge admitted it
+     *       extracted nothing, the prime indicator of a false reject;</li>
+     *   <li>the node actually <em>expects</em> an output variable and the
+     *       user typed at least {@value #RETRY_MIN_USER_MESSAGE_LENGTH}
+     *       characters — short politeness markers ("ok", "valeu") are
+     *       legitimate stays and must NOT trigger a retry.</li>
+     * </ul>
+     */
+    private static boolean shouldRetryVerdict(JudgeVerdict verdict, ChatFlowNode node, String userMessage) {
+        if (verdict.abandoned() || verdict.readyToAdvance()) {
+            return false;
+        }
+        if (verdict.collectedValue() != null && !verdict.collectedValue().isBlank()) {
+            return false;
+        }
+        if (node.outputVariable() == null || node.outputVariable().isBlank()) {
+            return false;
+        }
+        return userMessage != null
+                && userMessage.trim().length() >= RETRY_MIN_USER_MESSAGE_LENGTH;
     }
 
     // ─────────────────────────── Judge call ───────────────────────────

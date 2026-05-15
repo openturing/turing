@@ -172,9 +172,18 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     }
   }, [conversationId]);
 
-  // Polling: re-trigger the effect above on a timer when requested.
+  // Polling: re-trigger the cookie-sync + fetcher effects above on a timer.
+  // The interval intentionally runs even when {@code conversationId} is still
+  // null — the {@code TUR_SESSION} cookie is minted by the first chat turn,
+  // which may happen long AFTER this hook mounts (header + FlowOutputs render
+  // with the page; the visitor types the first message later). Without polling
+  // through the null phase we'd never observe the cookie appearing and the
+  // header / slot-driven panels would only fill in after a manual refresh.
+  // The bump only triggers a fetch once `conversationId` is non-null
+  // (the fetcher effect early-returns in the null phase), so the polling
+  // cost while the cookie is still missing is just one variable bump per tick.
   useEffect(() => {
-    if (!enabled || !conversationId || pollInterval <= 0) {
+    if (!enabled || pollInterval <= 0) {
       return;
     }
     const handle = globalThis.setInterval(() => {
@@ -183,7 +192,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       globalThis.clearInterval(handle);
     };
-  }, [enabled, conversationId, pollInterval]);
+  }, [enabled, pollInterval]);
 
   const refresh = useCallback(() => {
     setTick((t) => t + 1);
