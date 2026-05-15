@@ -82,7 +82,7 @@ class TurSNSiteSearchAPITest {
         TurSNSiteSearchAPI api = new TurSNSiteSearchAPI(service, searchProcess, snapshots);
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectPost("site",
-                new TurSNSearchParams(), null, null, null, TurSNFilterQueryOperator.NONE,
+                new TurSNSearchParams(), TurSNFilterQueryOperator.NONE,
                 TurSNFilterQueryOperator.NONE, Locale.US, new TurSNSitePostParamsBean(), null,
                 mock(HttpServletRequest.class));
 
@@ -104,7 +104,7 @@ class TurSNSiteSearchAPITest {
         org.mockito.Mockito.doReturn(notFound).when(service).notFoundResponse();
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectGet("site", params,
-                null, null, null, TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE,
                 Locale.US, mock(HttpServletRequest.class));
 
         assertThat(response).isSameAs(notFound);
@@ -128,8 +128,8 @@ class TurSNSiteSearchAPITest {
         when(service.getTurSNSiteSearchContext(params, request, "site")).thenReturn(context);
         when(searchProcess.searchList(context)).thenReturn(expected);
 
-        ResponseEntity<List<Object>> response = api.turSNSiteSearchSelectListGet("site", params, null,
-                null, null, TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US, request);
+        ResponseEntity<List<Object>> response = api.turSNSiteSearchSelectListGet("site", params,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(expected);
@@ -155,7 +155,7 @@ class TurSNSiteSearchAPITest {
         when(service.executePostSearch(params, postParams, request, "site")).thenReturn(expected);
 
         ResponseEntity<TurSNSiteSearchBean> response = api.turSNSiteSearchSelectPost("site", params,
-                null, null, null, TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
+                TurSNFilterQueryOperator.NONE, TurSNFilterQueryOperator.NONE, Locale.US,
                 postParams, principal, request);
 
         assertThat(response).isSameAs(expected);
