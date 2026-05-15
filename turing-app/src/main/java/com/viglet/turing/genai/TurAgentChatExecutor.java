@@ -247,10 +247,21 @@ public class TurAgentChatExecutor {
             }
         }
 
-        var chatOptions = DefaultToolCallingChatOptions.builder()
+        // Publish the conversation id into the tool context so Custom Tool
+        // Groovy scripts can write back into the live chat-flow slots (see
+        // TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID). When
+        // there is no conversation (rare — RAG-only fire-and-forget call),
+        // we just don't add the entry; the slot helper handles a null id
+        // defensively as no-op.
+        var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
                 .toolCallbacks(callbacks)
-                .internalToolExecutionEnabled(true)
-                .build();
+                .internalToolExecutionEnabled(true);
+        if (conversationId != null && !conversationId.isBlank()) {
+            chatOptionsBuilder.toolContext(java.util.Map.of(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID,
+                    conversationId));
+        }
+        var chatOptions = chatOptionsBuilder.build();
 
         String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
         String lastUserMessageEarly = lastMessageOfRole(history, "user");

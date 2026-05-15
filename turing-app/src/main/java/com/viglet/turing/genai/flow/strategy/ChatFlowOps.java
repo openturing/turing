@@ -104,11 +104,56 @@ public final class ChatFlowOps {
         }
         Map<String, String> variables = readVariables(state);
         if (!variables.isEmpty()) {
-            sb.append("Already collected: ").append(variables).append('\n');
+            sb.append("Already collected: ").append(summarizeVariables(variables)).append('\n');
         }
         appendNextStepHint(sb, graph, node);
         sb.append(HARD_RULES);
         return sb.toString();
+    }
+
+    /**
+     * Maximum length of a single slot value rendered in the "Already collected"
+     * block of the system prompt. Beyond this, the value is replaced by a
+     * short marker so the LLM can SEE that the slot exists (and decide whether
+     * to call a tool that uses it) without being tempted to echo a 1.5 KB JSON
+     * blob verbatim in its reply — the bug that produced the raw {@code
+     * programas_match} array dumped into chat after a card-driven tool run.
+     */
+    private static final int MAX_INLINED_VARIABLE_LENGTH = 120;
+
+    /**
+     * Renders the variable map for the {@code Already collected:} line of the
+     * system prompt, replacing each value whose serialized form exceeds
+     * {@link #MAX_INLINED_VARIABLE_LENGTH} with an opaque marker that conveys
+     * "this slot is populated, but its contents are large/structured and
+     * managed by a downstream UI component (cards, timeline, etc.) — do NOT
+     * paste it back in the reply".
+     *
+     * <p>Recognizes JSON-shaped values (start with {@code {} or {@code [}) so
+     * the marker reads {@code (json, N chars)} instead of just
+     * {@code (truncated)}. Plain text values that happen to be long get the
+     * same truncation treatment.
+     */
+    private static String summarizeVariables(Map<String, String> variables) {
+        LinkedHashMap<String, String> rendered = new LinkedHashMap<>(variables.size());
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
+            String value = entry.getValue();
+            if (value == null) {
+                rendered.put(entry.getKey(), "");
+                continue;
+            }
+            if (value.length() <= MAX_INLINED_VARIABLE_LENGTH) {
+                rendered.put(entry.getKey(), value);
+                continue;
+            }
+            String trimmed = value.trim();
+            boolean json = trimmed.startsWith("{") || trimmed.startsWith("[");
+            String marker = json
+                    ? "(json, " + value.length() + " chars — content managed by UI/tool, do not quote)"
+                    : "(text, " + value.length() + " chars — truncated, do not quote)";
+            rendered.put(entry.getKey(), marker);
+        }
+        return rendered.toString();
     }
 
     /**

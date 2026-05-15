@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.viglet.turing.domain.customtool.TurCustomToolDomain;
 import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
@@ -55,12 +56,28 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class TurCustomToolCallbackService {
 
+    /**
+     * Key under which {@link com.viglet.turing.genai.TurAgentChatExecutor}
+     * publishes the active conversation id into the Spring AI
+     * {@code ToolContext}. Custom Tool Groovy scripts read it via the
+     * {@code slots} binding (a {@link TurCustomToolSlotHelper} pre-bound to
+     * this id) so they can write/read chat-flow variables on the live
+     * conversation.
+     */
+    public static final String TOOL_CONTEXT_CONVERSATION_ID = "turing.conversationId";
+
     private final TurCustomToolRepositoryPort repositoryPort;
+    private final TurCustomToolSearchHelper searchHelper;
+    private final TurChatFlowStateRepository stateRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
-    public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort) {
+    public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort,
+            TurCustomToolSearchHelper searchHelper,
+            TurChatFlowStateRepository stateRepository) {
         this.repositoryPort = repositoryPort;
+        this.searchHelper = searchHelper;
+        this.stateRepository = stateRepository;
     }
 
     /**
@@ -164,14 +181,63 @@ public class TurCustomToolCallbackService {
     }
 
     String executeGroovy(TurCustomToolDomain tool, String toolInput) throws ReflectiveOperationException {
+        return executeGroovy(tool, toolInput, null);
+    }
+
+    /**
+     * Two-argument variant invoked by {@code GroovyToolCallback.call(...,
+     * ToolContext)} so scripts can write back into the live conversation's
+     * slot map. The conversation id arrives via the context key
+     * {@link #TOOL_CONTEXT_CONVERSATION_ID}; when absent the {@code slots}
+     * binding is created in no-op mode so callers can still test scripts
+     * outside an active session.
+     */
+    String executeGroovy(TurCustomToolDomain tool, String toolInput, ToolContext toolContext)
+            throws ReflectiveOperationException {
         Map<String, Object> args = parseArgs(toolInput);
         CachedScript cached = scriptFor(tool);
         Binding binding = new Binding(new HashMap<>(args));
+        // Standard bindings every script receives:
+        //   args         — the parsed LLM-supplied arguments as a Map (also each
+        //                  key is auto-bound as a top-level variable, e.g.
+        //                  `query` for {"query": "..."}).
+        //   http         — generic HTTP client (postJson, getJson) for tools
+        //                  that hit arbitrary external APIs.
+        //   turingSearch — high-level abstraction over the Turing search
+        //                  surfaces (ann, sn) so scripts don't have to know
+        //                  about VectorStore / SearchRequest plumbing.
+        //   slots        — conversation-scoped getter/setter for chat-flow
+        //                  variables. set(name, value) propagates to the
+        //                  React portal on its next polling tick — that's
+        //                  how a tool feeds dynamic data into UI components
+        //                  like the "Programas recomendados" card grid.
         binding.setVariable("args", args);
+        binding.setVariable("http", new TurCustomToolHttpHelper());
+        binding.setVariable("turingSearch", searchHelper);
+        binding.setVariable("slots", new TurCustomToolSlotHelper(
+                resolveConversationId(toolContext), stateRepository));
         Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
         return result == null ? "" : result.toString();
+    }
+
+    /**
+     * Extracts the conversation id published by {@code TurAgentChatExecutor}
+     * into the tool context. Returns {@code null} when the context is null
+     * (e.g. unit-test invocation) or the key is missing — the slot helper
+     * handles that defensively with no-op writes.
+     */
+    private static String resolveConversationId(ToolContext toolContext) {
+        if (toolContext == null) {
+            return null;
+        }
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) {
+            return null;
+        }
+        Object value = ctx.get(TOOL_CONTEXT_CONVERSATION_ID);
+        return value == null ? null : value.toString();
     }
 
     private Map<String, Object> parseArgs(String toolInput) {
@@ -299,7 +365,18 @@ public class TurCustomToolCallbackService {
 
         @Override
         public String call(String toolInput, ToolContext toolContext) {
-            return call(toolInput);
+            // Two-arg path: thread the context through so scripts can read
+            // the conversation id and write back into the slot map (e.g. to
+            // drive a React card grid). When toolContext is null we fall
+            // back to the legacy one-arg execution — keeps unit-test paths
+            // that bypass the chat executor working.
+            try {
+                String result = executeGroovy(tool, toolInput, toolContext);
+                return richReturn != null ? richReturn.wrap(result) : result;
+            } catch (Exception e) {
+                log.error("[CustomTool] '{}' failed: {}", tool.title(), e.getMessage(), e);
+                return "Error executing tool: " + e.getMessage();
+            }
         }
     }
 

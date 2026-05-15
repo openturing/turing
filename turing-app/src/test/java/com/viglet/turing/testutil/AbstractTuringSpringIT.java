@@ -10,9 +10,11 @@
 package com.viglet.turing.testutil;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -41,6 +43,24 @@ public abstract class AbstractTuringSpringIT {
     private static final String DIR_PREFIX = "turing-it-";
 
     /**
+     * Classpath location of an optional H2 snapshot copied from a running
+     * Turing instance ({@code turing-app/store/db/turingDB.mv.db}). When
+     * present, ITs boot against the snapshot — meaning persona catalog,
+     * Custom Tool definitions, MCP servers, agent ↔ tool bindings, RAG
+     * configuration, indexed sites etc. are all already there, just as
+     * the developer configured them in the dev console. Without the
+     * snapshot the IT falls back to a fully-empty H2 and Liquibase runs
+     * the full migration set from scratch — the original behavior.
+     *
+     * <p>Liquibase still runs on top of the snapshot at context startup:
+     * its {@code databasechangelog} table tracks applied changesets, so
+     * only NEW changesets added since the snapshot was taken get applied.
+     * This keeps schema drift in check without invalidating the snapshot.
+     */
+    private static final String SNAPSHOT_RESOURCE = "/h2-snapshot/turingDB.mv.db";
+    private static final String H2_DB_FILE = "turingDB.mv.db";
+
+    /**
      * Per-JVM-run temp directory holding the H2 file. Living under
      * {@link System#getProperty(String) java.io.tmpdir} means the OS reaps
      * it eventually and it never collides with the dev store. File-based
@@ -56,9 +76,37 @@ public abstract class AbstractTuringSpringIT {
         // Best-effort: sweep up dirs left over from previous runs that
         // were killed before the shutdown hook below could fire.
         sweepStaleItDirs();
+        // Seed the snapshot into the per-run dir BEFORE Spring boots. The
+        // datasource URL points at {@code <DB_DIR>/turingDB} so the snapshot
+        // file has to land there with the right name before the first DB
+        // connection opens.
+        seedSnapshotIfPresent();
         // Normal exit path — delete THIS run's dir on shutdown.
         Runtime.getRuntime().addShutdownHook(new Thread(
                 () -> deleteRecursively(DB_DIR), "turing-it-cleanup"));
+    }
+
+    /**
+     * Copies the bundled H2 snapshot into {@link #DB_DIR} when the classpath
+     * resource is present. No-op when the resource is absent — ITs run
+     * against a freshly-Liquibase-migrated empty DB just like before. The
+     * copy is best-effort: any IO error is logged-and-skipped so a missing
+     * or corrupt snapshot never stops the test run.
+     */
+    private static void seedSnapshotIfPresent() {
+        try (InputStream in = AbstractTuringSpringIT.class.getResourceAsStream(SNAPSHOT_RESOURCE)) {
+            if (in == null) {
+                return;
+            }
+            Files.createDirectories(DB_DIR);
+            Path target = DB_DIR.resolve(H2_DB_FILE);
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+            System.out.printf("[IT] Seeded H2 from snapshot %s → %s (%d bytes)%n",
+                    SNAPSHOT_RESOURCE, target, Files.size(target));
+        } catch (IOException e) {
+            System.err.printf("[IT] Could not seed H2 snapshot (%s) — falling back to empty DB%n",
+                    e.getMessage());
+        }
     }
 
     @DynamicPropertySource
