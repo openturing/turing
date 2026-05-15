@@ -182,7 +182,24 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         boolean valid = !hasOutputVar
                 || (hasCollected
                         && ChatFlowOps.valueMatchesRule(node.validationRule(), collected));
-        boolean shouldAdvance = verdict.readyToAdvance() && valid;
+
+        // The judge's system prompt has an explicit STRICT RULE: "if you set
+        // collected_value to a non-null string AND no validation rule fails
+        // for it, you MUST set ready_to_advance to true". gpt-4o-mini
+        // occasionally violates this — captures a perfectly valid value but
+        // returns ready_to_advance=false (anecdotally because it disliked the
+        // bot's reply and tried to "punish" by holding the flow). Enforce
+        // the rule on our side: a captured + valid value advances the flow
+        // regardless of what the verdict claimed. The on_topic flag still
+        // controls the displayed text (judge redirect when off-topic, even
+        // though we advance the state).
+        boolean enforcedReady = verdict.readyToAdvance() || (hasCollected && valid);
+        if (!verdict.readyToAdvance() && enforcedReady) {
+            log.info("[LlmJudge] Judge violated its own STRICT RULE on node '{}' "
+                    + "(collected='{}' valid=true but ready=false) — force-advancing",
+                    node.id(), collected);
+        }
+        boolean shouldAdvance = enforcedReady && valid;
 
         if (!shouldAdvance) {
             // Not advancing: write current variables back and decide reply.

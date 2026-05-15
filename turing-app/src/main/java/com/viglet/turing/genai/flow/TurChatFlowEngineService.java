@@ -211,6 +211,17 @@ public class TurChatFlowEngineService {
         if (state == null || graph == null) {
             return AdvanceResult.of(state);
         }
+        // Refresh from DB so we pick up any state mutation made during the
+        // chat call by side effects we can't see from here — primarily slot
+        // writes from Custom Tool callbacks ({@code TurCustomToolSlotHelper}
+        // saves via a separate {@code findByConversationId} + {@code save}
+        // round-trip, leaving the in-memory {@code state} parameter stale).
+        // Without this refresh the strategy's {@code writeVariables} at the
+        // end of {@code advance} silently overwrites those tool writes,
+        // wiping slots like {@code programas_match} that drive the UI.
+        if (state.getId() != null) {
+            state = stateRepository.findById(state.getId()).orElse(state);
+        }
         Optional<ChatFlowNode> nodeOpt = currentNode(state, graph);
         if (nodeOpt.isEmpty()) {
             return AdvanceResult.of(state);
