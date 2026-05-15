@@ -138,6 +138,7 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(field));
+        when(turSNSiteFieldExtRepository.findById("field-1")).thenReturn(Optional.of(field));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
@@ -178,6 +179,9 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(sourceField, targetField));
+        when(turSNSiteFieldExtRepository.findById("field-source")).thenReturn(Optional.of(sourceField));
+        when(turSNSiteFieldExtRepository.findById("field-target")).thenReturn(Optional.of(targetField));
+        when(turSNSiteCustomFacetRepository.findById("facet-1")).thenReturn(Optional.of(facet));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
@@ -241,6 +245,8 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(sourceField));
+        when(turSNSiteFieldExtRepository.findById("field-source")).thenReturn(Optional.of(sourceField));
+        when(turSNSiteCustomFacetRepository.findById("facet-1")).thenReturn(Optional.of(facet));
         when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))
                 .thenReturn(List.of(facet));
 
@@ -268,6 +274,7 @@ class TurSNSiteCustomFacetAPITest {
         when(turSNSiteRepository.findById("site-1")).thenReturn(Optional.of(site));
         when(turSNSiteFieldExtRepository.findByTurSNSite(any(Sort.class), eq(site)))
                 .thenReturn(List.of(field));
+        when(turSNSiteFieldExtRepository.findById("field-1")).thenReturn(Optional.of(field));
         when(turSNSiteFieldExtRepository.save(any(TurSNSiteFieldExt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(turSNSiteCustomFacetRepository.findByFieldExtsWithDetails(any()))

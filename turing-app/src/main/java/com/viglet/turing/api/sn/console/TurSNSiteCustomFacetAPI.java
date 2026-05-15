@@ -142,10 +142,12 @@ public class TurSNSiteCustomFacetAPI {
         CustomFacetFieldBinding currentBinding = findCustomFacetBindingById(turSNSite, customFacetId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, CUSTOM_FACET_NOT_FOUND));
 
-        TurSNSiteFieldExt sourceField = currentBinding.getFieldExt();
-        TurSNSiteCustomFacet customFacet = currentBinding.getCustomFacet();
+        TurSNSiteFieldExt sourceField = getTargetField(turSNSite, currentBinding.getFieldExt().getId());
+        TurSNSiteCustomFacet customFacet = turSNSiteCustomFacetRepository.findById(customFacetId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, CUSTOM_FACET_NOT_FOUND));
 
         TurSNSiteFieldExt targetField = Optional.ofNullable(payload.getFieldExtId())
+                .filter(id -> !id.equals(sourceField.getId()))
                 .map(fieldId -> getTargetField(turSNSite, fieldId))
                 .orElse(sourceField);
 
@@ -192,10 +194,8 @@ public class TurSNSiteCustomFacetAPI {
         CustomFacetFieldBinding binding = findCustomFacetBindingById(turSNSite, customFacetId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, CUSTOM_FACET_NOT_FOUND));
 
-        TurSNSiteFieldExt fieldExt = binding.getFieldExt();
-        fieldExt.setCustomFacets(Optional.ofNullable(fieldExt.getCustomFacets())
-                .orElse(Set.of())
-                .stream()
+        TurSNSiteFieldExt fieldExt = getTargetField(turSNSite, binding.getFieldExt().getId());
+        fieldExt.setCustomFacets(fieldExt.getCustomFacets().stream()
                 .filter(item -> !customFacetId.equals(item.getId()))
                 .collect(Collectors.toSet()));
 
@@ -376,9 +376,9 @@ public class TurSNSiteCustomFacetAPI {
             throw new ResponseStatusException(BAD_REQUEST, "fieldExtId is required.");
         }
 
-        return getSiteFields(turSNSite).stream()
-                .filter(field -> fieldExtId.equals(field.getId()))
-                .findFirst()
+        return turSNSiteFieldExtRepository.findById(fieldExtId)
+                .filter(field -> field.getTurSNSite() != null
+                        && turSNSite.getId().equals(field.getTurSNSite().getId()))
                 .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Field not found for this site."));
     }
 
