@@ -70,17 +70,20 @@ public class TurCustomToolCallbackService {
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
     private final com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus;
+    private final TurCodeInterpreterToolService codeInterpreterToolService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
     public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort,
             TurCustomToolSearchHelper searchHelper,
             TurChatFlowStateRepository stateRepository,
-            com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus) {
+            com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus,
+            TurCodeInterpreterToolService codeInterpreterToolService) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
         this.slotEventBus = slotEventBus;
+        this.codeInterpreterToolService = codeInterpreterToolService;
     }
 
     /**
@@ -258,6 +261,11 @@ public class TurCustomToolCallbackService {
         binding.setVariable("turingSearch", searchHelper);
         binding.setVariable("slots", new TurCustomToolSlotHelper(
                 resolveConversationId(toolContext), stateRepository, slotEventBus));
+        // `code` — sandboxed Python execution via TurCodeInterpreterToolService.
+        // Lets a Custom Tool offload heavy work (PDF rendering with reportlab,
+        // matplotlib charts, data transforms) to the platform's Python runtime
+        // without re-implementing process management or file-serving plumbing.
+        binding.setVariable("code", new TurCustomToolCodeHelper(codeInterpreterToolService));
         Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
