@@ -9,12 +9,14 @@ export type FlowNodeType =
   | "start"
   | "end"
   | "aiQuestion"
+  | "formCapture"
   | "condition"
   | "functionCall"
   | "subFlow"
   | "persona"
   | "switch"
-  | "slot";
+  | "slot"
+  | "writeSlot";
 
 export type FlowToolSource = "NATIVE" | "MCP";
 
@@ -143,5 +145,20 @@ export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; tex
     bg: "bg-sky-50 dark:bg-sky-950/40",
     border: "border-sky-500",
     text: "text-sky-900 dark:text-sky-100",
+  },
+  writeSlot: {
+    // Distinct from `slot` so authors can spot at-a-glance which slot
+    // nodes interpolate (writeSlot, teal) vs. write literal (slot, sky).
+    bg: "bg-teal-50 dark:bg-teal-950/40",
+    border: "border-teal-500",
+    text: "text-teal-900 dark:text-teal-100",
+  },
+  formCapture: {
+    // Indigo: visually adjacent to aiQuestion's blue (same family of
+    // "capture user input" nodes) but distinct enough that authors can
+    // tell which one is LLM-driven vs. regex-validated at a glance.
+    bg: "bg-indigo-50 dark:bg-indigo-950/40",
+    border: "border-indigo-500",
+    text: "text-indigo-900 dark:text-indigo-100",
   },
 };

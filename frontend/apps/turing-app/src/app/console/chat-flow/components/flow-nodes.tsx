@@ -5,6 +5,8 @@ import {
   IconBook2,
   IconDatabase,
   IconFlag3,
+  IconForms,
+  IconPencilPlus,
   IconPlayerPlayFilled,
   IconBell,
   IconSparkles,
@@ -283,14 +285,112 @@ export function SlotNode({ data }: ChatFlowNodeProps) {
   );
 }
 
+/**
+ * Like {@link SlotNode} but signals server-side {@code {{var}}} interpolation
+ * — value previewed verbatim (with the template syntax visible) so the author
+ * can see at-a-glance which placeholders are wired. The teal palette
+ * differentiates it from the literal-write {@link SlotNode}.
+ *
+ * @since 2026.2.7
+ */
+export function WriteSlotNode({ data }: ChatFlowNodeProps) {
+  const slotName = typeof data.slotName === "string" && data.slotName.trim().length > 0
+    ? data.slotName
+    : null;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-teal-500 bg-background shadow-md">
+      <div className="flex items-center justify-between gap-2 bg-teal-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconPencilPlus className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Write Slot"}</div>
+        </div>
+        <span className="rounded bg-teal-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+          TPL
+        </span>
+      </div>
+      <div className="bg-teal-50 p-3 text-xs leading-relaxed text-teal-900 dark:bg-teal-950/40 dark:text-teal-100">
+        <div>
+          <span className="font-semibold">Slot: </span>
+          {slotName ? (
+            <code className="rounded bg-teal-200/60 px-1 py-0.5 text-[11px] dark:bg-teal-900/50">
+              {slotName}
+            </code>
+          ) : (
+            <span className="italic opacity-60">not selected</span>
+          )}
+        </div>
+        <div className="mt-1 opacity-90">
+          <span className="font-semibold">Value: </span>
+          {data.slotValue && data.slotValue.length > 0 ? (
+            <code className="rounded bg-teal-200/60 px-1 py-0.5 text-[11px] dark:bg-teal-900/50">
+              {data.slotValue}
+            </code>
+          ) : (
+            <span className="italic opacity-60">empty template</span>
+          )}
+        </div>
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-teal-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-teal-600!" />
+    </div>
+  );
+}
+
+/**
+ * Like {@link AIQuestionNode} but signals deterministic capture with a
+ * format validation rule (CPF, CNPJ, email, phone, CEP, etc). The indigo
+ * palette signals "structured input" — adjacent to aiQuestion blue so
+ * authors immediately see they're in the same family.
+ *
+ * @since 2026.2.7
+ */
+export function FormCaptureNode({ data }: ChatFlowNodeProps) {
+  const rule = typeof data.validationRule === "string" && data.validationRule.trim().length > 0
+    ? data.validationRule
+    : null;
+  return (
+    <div className="w-64 overflow-hidden rounded-lg border-2 border-indigo-500 bg-background shadow-md">
+      <div className="flex items-center justify-between gap-2 bg-indigo-500 px-3 py-2 text-white">
+        <div className="flex items-center gap-2">
+          <IconForms className="size-4" />
+          <div className="text-xs font-semibold uppercase tracking-wide">{data.label || "Form Capture"}</div>
+        </div>
+        {rule && (
+          <span className="rounded bg-indigo-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+            {rule}
+          </span>
+        )}
+      </div>
+      <div className="bg-indigo-50 p-3 text-xs leading-relaxed text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100">
+        <div>
+          <span className="font-semibold">Prompt: </span>
+          {data.aiInstruction?.trim() || <span className="italic opacity-60">No prompt yet</span>}
+        </div>
+        {data.outputVariable && (
+          <div className="mt-1 opacity-90">
+            <span className="font-semibold">Output: </span>
+            <code className="rounded bg-indigo-200/60 px-1 py-0.5 text-[11px] dark:bg-indigo-900/50">
+              {data.outputVariable}
+            </code>
+          </div>
+        )}
+      </div>
+      <Handle type="target" position={Position.Left} className="size-2.5! bg-indigo-600!" />
+      <Handle type="source" position={Position.Right} className="size-2.5! bg-indigo-600!" />
+    </div>
+  );
+}
+
 export const nodeTypes = {
   start: StartNode,
   end: EndNode,
   aiQuestion: AIQuestionNode,
+  formCapture: FormCaptureNode,
   condition: ConditionNode,
   functionCall: FunctionCallNode,
   subFlow: SubFlowNode,
   persona: PersonaNode,
   switch: SwitchNode,
   slot: SlotNode,
+  writeSlot: WriteSlotNode,
 };

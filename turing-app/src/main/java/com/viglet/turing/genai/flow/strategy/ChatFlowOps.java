@@ -58,15 +58,50 @@ public final class ChatFlowOps {
     };
 
     /** Validation patterns understood by node {@code validationRule} fields. */
-    private static final Map<String, Pattern> VALIDATION_PATTERNS = Map.of(
-            "email", Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"),
-            "phone", Pattern.compile("\\+?[0-9][0-9 ()\\-]{6,}\\b"),
-            "url", Pattern.compile("https?://[\\w.\\-/?#=&%+]+", Pattern.CASE_INSENSITIVE),
-            "number", Pattern.compile("-?\\d+(?:[.,]\\d+)?"),
-            "date", Pattern.compile("\\b\\d{1,4}[/-]\\d{1,2}[/-]\\d{1,4}\\b"));
+    private static final Map<String, Pattern> VALIDATION_PATTERNS = Map.ofEntries(
+            Map.entry("email", Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b")),
+            Map.entry("phone", Pattern.compile("\\+?[0-9][0-9 ()\\-]{6,}\\b")),
+            Map.entry("url",   Pattern.compile("https?://[\\w.\\-/?#=&%+]+", Pattern.CASE_INSENSITIVE)),
+            Map.entry("number",Pattern.compile("-?\\d+(?:[.,]\\d+)?")),
+            Map.entry("date",  Pattern.compile("\\b\\d{1,4}[/-]\\d{1,2}[/-]\\d{1,4}\\b")),
+            // BR document formats — match canonical "###.###.###-##" and "##.###.###/####-##"
+            // but also tolerate digits-only (formCapture nodes typically clean punctuation
+            // client-side before sending). We don't run the mod-11 digit-check here yet;
+            // the regex narrows the input enough that downstream code (or the strategy
+            // re-asking on a "still wrong" hit) can reject obvious garbage. Full check
+            // is a follow-up — see [[project_form_capture_digit_check]].
+            Map.entry("cpf",   Pattern.compile("\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b")),
+            Map.entry("cnpj",  Pattern.compile("\\b\\d{2}\\.?\\d{3}\\.?\\d{3}/?\\d{4}-?\\d{2}\\b")),
+            Map.entry("cep",   Pattern.compile("\\b\\d{5}-?\\d{3}\\b")));
 
     private ChatFlowOps() {
         // utility class — not instantiable
+    }
+
+    /**
+     * True when {@code node} is an interactive question step — currently
+     * {@code aiQuestion} (LLM-driven prompt + extraction) or
+     * {@code formCapture} (deterministic input field with regex validation
+     * via {@link ChatFlowNode#validationRule()}). Both pause the engine
+     * waiting for a user reply, both collect into
+     * {@link ChatFlowNode#outputVariable()}, and both expose chip suggestions
+     * via {@link ChatFlowNode#inlineOptions()}; treating them as a single
+     * "question-like" family in the auxiliary helpers (satisfied-question
+     * skip walk, suggested-options surface) keeps behavior consistent so
+     * authors can swap one for the other without losing a feature.
+     *
+     * <p>The difference between the two surfaces only at strategy time:
+     * {@code aiQuestion} delegates extraction to the LLM (or the structured-
+     * output strategy's JSON contract), while {@code formCapture} is
+     * expected to reject anything the {@code validationRule} regex doesn't
+     * match — no LLM extraction.
+     *
+     * @since 2026.2.7
+     */
+    public static boolean isQuestionLike(ChatFlowNode node) {
+        if (node == null) return false;
+        String type = node.type();
+        return "aiQuestion".equals(type) || "formCapture".equals(type);
     }
 
     // ─────────────────────────── System-prompt building ───────────────────────────
@@ -488,7 +523,7 @@ public final class ChatFlowOps {
                 return;
             }
             ChatFlowNode current = currentOpt.get();
-            if (!"aiQuestion".equals(current.type())) {
+            if (!isQuestionLike(current)) {
                 return;
             }
             String outVar = current.outputVariable();
@@ -521,6 +556,76 @@ public final class ChatFlowOps {
     }
 
     // ─────────────────────────── Slot node ───────────────────────────
+
+    /**
+     * Like {@link #applySlotNode(TurChatFlowState, ChatFlowNode)} but
+     * interprets {@code {{slotName}}} references inside the node's
+     * {@code slotValue} as live reads from the conversation's variable map
+     * — performed once at write time, so the persisted slot value is fully
+     * resolved (consumers never have to interpolate).
+     *
+     * <p>This is the value-add of the dedicated {@code writeSlot} node type
+     * over a plain {@code slot SET}: the latter writes the raw literal
+     * (including any {@code {{...}}} placeholders), which pushed
+     * interpolation onto every consumer. {@code writeSlot} pulls it server-
+     * side so reads are simple lookups.
+     *
+     * <p>Operation is always SET — {@code writeSlot} doesn't expose DELETE
+     * (use a {@code slot} node for that). Unknown slot references resolve
+     * to the empty string, mirroring the SDK's interpolator on the React
+     * side so behavior is consistent across the boundary.
+     *
+     * @since 2026.2.7
+     */
+    public static void applyWriteSlotNode(TurChatFlowState state, ChatFlowNode node) {
+        if (state == null || node == null) return;
+        String slotName = node.slotName();
+        if (slotName == null || slotName.isBlank()) {
+            log.warn("[FlowOps] writeSlot node '{}' has no slotName — skipping", node.id());
+            return;
+        }
+        String key = slotName.trim();
+        Map<String, String> variables = readVariables(state);
+        String existing = variables.get(key);
+        boolean alreadyFilled = existing != null && !existing.isBlank();
+        boolean override = Boolean.TRUE.equals(node.overrideExistingValue());
+        if (alreadyFilled && !override) {
+            log.info("[FlowOps] writeSlot node '{}' on '{}' skipped (override=false, value present)",
+                    node.id(), key);
+            return;
+        }
+        String raw = node.slotValue() == null ? "" : node.slotValue();
+        String resolved = interpolateVariables(raw, variables);
+        variables.put(key, resolved);
+        log.info("[FlowOps] writeSlot node '{}' wrote '{}' ({} chars after interpolation) on conv '{}'",
+                node.id(), key, resolved.length(), state.getConversationId());
+        writeVariables(state, variables);
+    }
+
+    /**
+     * Substitutes {@code {{name}}} occurrences with the corresponding entry
+     * in {@code variables}. Unknown / blank values resolve to the empty
+     * string — same forgiving contract as the React-side interpolator the
+     * portal uses on read.
+     */
+    static String interpolateVariables(String template, Map<String, String> variables) {
+        if (template == null || template.isEmpty()) return "";
+        // Each match is replaced with the live value (or "" when missing).
+        // No nested-template support — a single pass keeps the contract
+        // predictable; if authors need composition they can chain writeSlot
+        // nodes.
+        java.util.regex.Matcher m = INTERPOLATION_PATTERN.matcher(template);
+        StringBuilder out = new StringBuilder(template.length());
+        while (m.find()) {
+            String name = m.group(1).trim();
+            String value = variables == null ? null : variables.get(name);
+            m.appendReplacement(out, java.util.regex.Matcher.quoteReplacement(value == null ? "" : value));
+        }
+        m.appendTail(out);
+        return out.toString();
+    }
+
+    private static final Pattern INTERPOLATION_PATTERN = Pattern.compile("\\{\\{\\s*([^}\\s][^}]*?)\\s*}}");
 
     /**
      * Applies a {@code slot} node's effect to the conversation state.
@@ -629,7 +734,7 @@ public final class ChatFlowOps {
      * @since 2026.2.7
      */
     public static List<String> suggestedOptions(ChatFlowGraph graph, ChatFlowNode current) {
-        if (graph == null || current == null || !"aiQuestion".equals(current.type())) {
+        if (graph == null || current == null || !isQuestionLike(current)) {
             return List.of();
         }
         if (!current.inlineOptions().isEmpty()) {

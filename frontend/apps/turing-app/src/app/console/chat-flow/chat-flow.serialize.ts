@@ -6,12 +6,14 @@ export const DEFAULT_LABEL: Record<FlowNodeType, string> = {
   start: "START",
   end: "END",
   aiQuestion: "AI QUESTION",
+  formCapture: "FORM CAPTURE",
   condition: "CONDITION",
   functionCall: "FUNCTION CALL",
   subFlow: "SUB FLOW",
   persona: "PERSONA SWITCH",
   switch: "SWITCH",
   slot: "SLOT",
+  writeSlot: "WRITE SLOT",
 };
 
 /**

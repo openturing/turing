@@ -826,6 +826,18 @@ public class TurChatFlowEngineService {
                 continue;
             }
 
+            // writeSlot node: like slot SET but expands {{varName}} template
+            // references in the value at write time, so the persisted slot
+            // is fully resolved (consumers do not have to interpolate).
+            if ("writeSlot".equals(current.type())) {
+                ChatFlowOps.applyWriteSlotNode(state, current);
+                ChatFlowOps.advanceToFirstEdge(state, graph, current);
+                state = stateRepository.save(state);
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
+                continue;
+            }
+
             if ("end".equals(current.type()) && state.getParentStateId() != null) {
                 TurChatFlowState parent = ascendFromSubFlow(state);
                 if (parent == null) {

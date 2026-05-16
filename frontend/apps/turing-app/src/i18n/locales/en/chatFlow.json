@@ -94,12 +94,14 @@
       "start": "Start",
       "end": "End",
       "aiQuestion": "AI Question",
+      "formCapture": "Form Capture",
       "condition": "Condition",
       "functionCall": "Function Call",
       "subFlow": "Sub Flow",
       "persona": "Persona Switch",
       "switch": "Switch",
-      "slot": "Slot"
+      "slot": "Slot",
+      "writeSlot": "Write Slot (templated)"
     },
     "properties": {
       "header": "Node Properties",

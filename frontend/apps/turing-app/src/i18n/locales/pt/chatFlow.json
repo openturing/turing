@@ -94,12 +94,14 @@
       "start": "Início",
       "end": "Fim",
       "aiQuestion": "Pergunta (IA)",
+      "formCapture": "Captura de Formulário",
       "condition": "Condição",
       "functionCall": "Chamada de Função",
       "subFlow": "Sub Fluxo",
       "persona": "Trocar Persona",
       "switch": "Seletor",
-      "slot": "Slot"
+      "slot": "Slot",
+      "writeSlot": "Gravar Slot (com template)"
     },
     "properties": {
       "header": "Propriedades do Nó",

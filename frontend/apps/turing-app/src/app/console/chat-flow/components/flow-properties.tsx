@@ -107,7 +107,7 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
           />
         </div>
 
-        {(type === "aiQuestion" || type === "functionCall") && (
+        {(type === "aiQuestion" || type === "formCapture" || type === "functionCall") && (
           <div className="flex flex-col gap-1">
             <Label htmlFor="flow-node-instruction">{t("chatFlow.properties.aiInstruction")}</Label>
             <Textarea
@@ -123,7 +123,7 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
           </div>
         )}
 
-        {type === "aiQuestion" && (
+        {(type === "aiQuestion" || type === "formCapture") && (
           <>
             <div className="flex flex-col gap-1">
               <Label>{t("chatFlow.properties.outputVariable")}</Label>
@@ -572,6 +572,79 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
             )}
           </>
         )}
+
+        {type === "writeSlot" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <Label>{t("chatFlow.properties.slotName")}</Label>
+              <Select
+                value={data.slotName ?? ""}
+                onValueChange={(value) => update({ slotName: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("chatFlow.properties.slotNamePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {slotOptions.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("chatFlow.properties.slotNameEmpty")}
+                    </div>
+                  ) : (
+                    slotOptions.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.name}>
+                        <span className="font-mono text-[12px]">{slot.name}</span>
+                        <span className="ml-2 text-muted-foreground">— {t(`aiAgent.slot.types.${slot.type}`)}</span>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.slotNameHint")}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="flow-node-write-slot-value">{t("chatFlow.properties.slotValue")}</Label>
+              <Textarea
+                id="flow-node-write-slot-value"
+                rows={3}
+                value={data.slotValue ?? ""}
+                onChange={(e) => update({ slotValue: e.target.value || undefined })}
+                placeholder={t("chatFlow.properties.writeSlotValuePlaceholder", {
+                  defaultValue: "Hello {{name}}! Welcome to {{area_label}}.",
+                })}
+              />
+              <span className="text-[11px] text-muted-foreground">
+                {t("chatFlow.properties.writeSlotValueHint", {
+                  defaultValue:
+                    "Supports {{slotName}} template references — resolved at write time using the conversation's current variable map. Unknown slots resolve to the empty string.",
+                })}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="flow-node-write-slot-override" className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  id="flow-node-write-slot-override"
+                  checked={data.overrideExistingValue ?? false}
+                  onCheckedChange={(checked) =>
+                    update({ overrideExistingValue: checked === true ? true : undefined })
+                  }
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium">
+                    {t("chatFlow.properties.overrideExistingValue")}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {t("chatFlow.properties.slotOverrideHint")}
+                  </span>
+                </div>
+              </label>
+            </div>
+          </>
+        )}
       </div>
     </aside>
   );
@@ -585,6 +658,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.end";
     case "aiQuestion":
       return "chatFlow.palette.aiQuestion";
+    case "formCapture":
+      return "chatFlow.palette.formCapture";
     case "condition":
       return "chatFlow.palette.condition";
     case "functionCall":
@@ -597,6 +672,8 @@ function typeLabelKey(type: FlowNodeType): string {
       return "chatFlow.palette.switch";
     case "slot":
       return "chatFlow.palette.slot";
+    case "writeSlot":
+      return "chatFlow.palette.writeSlot";
   }
 }
 
