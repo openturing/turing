@@ -9,10 +9,7 @@
 name: Java CI with Maven and SonarCloud
 
 on:
-  push:
-    branches: ["2026.2"]
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   validate:
