@@ -1,7 +1,7 @@
 {
   "name": "turing-example-vinyl-records",
   "private": true,
-  "version": "2026.2.25",
+  "version": "2026.2.26",
   "type": "module",
   "scripts": {
     "dev": "vite",
