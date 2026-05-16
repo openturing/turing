@@ -6,6 +6,7 @@ import {
   type TurChatSessionSlots,
 } from "../core/api";
 import { readTurSession, TUR_SESSION_DEFAULT_COOKIE_NAME } from "../core/session";
+import { subscribeSlotsSse } from "../core/slots-sse-multiplexer";
 import { useTuringContext } from "../core/use-turing-context";
 
 export type SlotsStatus = "idle" | "loading" | "success" | "error";
@@ -188,11 +189,13 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     };
   }, [enabled, conversationId, agentId, config.site, tick, sseActive]);
 
-  // SSE branch: open one EventSource per (site, conversationId) and feed
-  // every message into the same slot state. The server pushes the full
-  // merged map so we never have to diff. The first message after CONNECT
-  // is the initial snapshot — kept identical to the polling first-fetch
-  // so the {@code status === "success"} signal stays meaningful.
+  // SSE branch: subscribe via the module-level multiplexer keyed on
+  // (baseURL, site, conversationId). Multiple useTuringSlots instances
+  // on the same page share ONE EventSource — was N before. The server
+  // pushes the full merged map so we never have to diff. The first
+  // onMessage after subscribe is either the live initial snapshot (first
+  // subscriber for this conversation) or the cached snapshot replayed
+  // via queueMicrotask (late subscriber joining an existing channel).
   useEffect(() => {
     if (!enabled || !sseActive || !conversationId) return;
     if (globalThis.EventSource === undefined) {
@@ -203,34 +206,21 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     setStatus("loading");
     setError(null);
     const baseURL = axios.defaults.baseURL ?? "";
-    const url = `${baseURL}/sn/${config.site}/chat/slots/stream?conversationId=${encodeURIComponent(
-      conversationId,
-    )}`;
-    const es = new globalThis.EventSource(url, { withCredentials: true });
-    es.onmessage = (ev) => {
-      try {
-        const payload = JSON.parse(ev.data) as TurChatSessionSlots;
+    const subscription = subscribeSlotsSse(baseURL, config.site, conversationId, {
+      onMessage: (payload) => {
         lastFetchedConversationRef.current = conversationId;
         setSlots(Object.freeze({ ...(payload?.slots ?? {}) }));
         setStatus("success");
-      } catch {
-        // Skip malformed payloads — heartbeats / blank lines never reach
-        // here (EventSource swallows them) so this only catches a
-        // genuinely corrupt JSON event.
-      }
-    };
-    es.onerror = () => {
-      // EventSource auto-reconnects on transient errors, but if the
-      // connection has been closed (e.g. server returned 4xx) the
-      // readyState flips to CLOSED — that's our cue to give up and let
-      // the polling effect take over for this session.
-      if (es.readyState === globalThis.EventSource.CLOSED) {
+      },
+      onClosed: () => {
+        // Server severed the connection (readyState=CLOSED). Fall back
+        // to polling — the polling effect re-runs when sseActive flips.
         setSseDisabled(true);
         setError("SSE channel closed; falling back to polling.");
-      }
-    };
+      },
+    });
     return () => {
-      es.close();
+      subscription.close();
     };
   }, [enabled, sseActive, conversationId, config.site]);
 

@@ -87,7 +87,11 @@ export type {
   SlotsStatus,
 } from "./hooks/use-turing-slots";
 export { useTuringSlot } from "./hooks/use-turing-slot";
-export type { UseTuringSlotReturn } from "./hooks/use-turing-slot";
+export type {
+  UseTuringSlotReturn,
+  UseTuringSlotOptions,
+  UseTuringSlotParseMode,
+} from "./hooks/use-turing-slot";
 export { useTuringSlotWriter } from "./hooks/use-turing-slot-writer";
 export type {
   UseTuringSlotWriterReturn,
