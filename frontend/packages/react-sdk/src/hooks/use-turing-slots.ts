@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import axios from "axios";
 import {
   fetchAgentChatSlots,
   fetchSiteChatSlots,
@@ -52,6 +53,24 @@ export interface UseTuringSlotsOptions {
    * while a slide-in panel is closed. Defaults to {@code true}.
    */
   readonly enabled?: boolean;
+  /**
+   * Transport for slot updates. {@code "polling"} (default) refetches on
+   * the {@link UseTuringSlotsOptions#pollInterval} timer — works everywhere
+   * but trades latency for compatibility. {@code "sse"} opens a single
+   * EventSource against {@code GET /sn/{site}/chat/slots/stream}; the
+   * server pushes the full slot map on every write (latency &lt;100 ms).
+   *
+   * <p>SSE is opt-in for now so existing apps don't change behavior on
+   * upgrade. When SSE fails (network drop, server returns non-200, the
+   * conversation cookie isn't set yet) the hook silently falls back to
+   * the polling timer.
+   *
+   * <p>SSE is currently site-mode only — agent mode keeps polling
+   * regardless of this option.
+   *
+   * @since 2026.2.7
+   */
+  readonly transport?: "polling" | "sse";
 }
 
 export interface UseTuringSlotsReturn {
@@ -100,8 +119,12 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     agent,
     pollInterval = 0,
     enabled = true,
+    transport = "polling",
   } = options;
   const agentId = agent?.id;
+  // SSE only works on site mode for now — agent mode falls back to polling
+  // even when the caller asks for "sse" so behavior stays predictable.
+  const useSse = transport === "sse" && !agentId;
 
   // Resolve the conversation id eagerly so it's stable across renders — and so
   // the hook returns the same value the chat would post on the next turn.
@@ -129,8 +152,13 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     setConversationId((current) => (current === next ? current : next));
   }, [explicitConversationId, sessionCookieName, tick]);
 
+  // Local state so the SSE branch can toggle off after a fatal error,
+  // forcing the polling fallback to take over.
+  const [sseDisabled, setSseDisabled] = useState(false);
+  const sseActive = useSse && !sseDisabled;
+
   useEffect(() => {
-    if (!enabled || !conversationId) {
+    if (!enabled || !conversationId || sseActive) {
       return;
     }
 
@@ -158,7 +186,53 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       alive = false;
     };
-  }, [enabled, conversationId, agentId, config.site, tick]);
+  }, [enabled, conversationId, agentId, config.site, tick, sseActive]);
+
+  // SSE branch: open one EventSource per (site, conversationId) and feed
+  // every message into the same slot state. The server pushes the full
+  // merged map so we never have to diff. The first message after CONNECT
+  // is the initial snapshot — kept identical to the polling first-fetch
+  // so the {@code status === "success"} signal stays meaningful.
+  useEffect(() => {
+    if (!enabled || !sseActive || !conversationId) return;
+    if (globalThis.EventSource === undefined) {
+      // No browser support (rare — IE only). Fall back to polling silently.
+      setSseDisabled(true);
+      return;
+    }
+    setStatus("loading");
+    setError(null);
+    const baseURL = axios.defaults.baseURL ?? "";
+    const url = `${baseURL}/sn/${config.site}/chat/slots/stream?conversationId=${encodeURIComponent(
+      conversationId,
+    )}`;
+    const es = new globalThis.EventSource(url, { withCredentials: true });
+    es.onmessage = (ev) => {
+      try {
+        const payload = JSON.parse(ev.data) as TurChatSessionSlots;
+        lastFetchedConversationRef.current = conversationId;
+        setSlots(Object.freeze({ ...(payload?.slots ?? {}) }));
+        setStatus("success");
+      } catch {
+        // Skip malformed payloads — heartbeats / blank lines never reach
+        // here (EventSource swallows them) so this only catches a
+        // genuinely corrupt JSON event.
+      }
+    };
+    es.onerror = () => {
+      // EventSource auto-reconnects on transient errors, but if the
+      // connection has been closed (e.g. server returned 4xx) the
+      // readyState flips to CLOSED — that's our cue to give up and let
+      // the polling effect take over for this session.
+      if (es.readyState === globalThis.EventSource.CLOSED) {
+        setSseDisabled(true);
+        setError("SSE channel closed; falling back to polling.");
+      }
+    };
+    return () => {
+      es.close();
+    };
+  }, [enabled, sseActive, conversationId, config.site]);
 
   // Drop cached slots when the conversation id flips to a different visitor
   // session — otherwise stale data leaks across logins / TUR_SESSION resets.
@@ -183,7 +257,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
   // (the fetcher effect early-returns in the null phase), so the polling
   // cost while the cookie is still missing is just one variable bump per tick.
   useEffect(() => {
-    if (!enabled || pollInterval <= 0) {
+    if (!enabled || pollInterval <= 0 || sseActive) {
       return;
     }
     const handle = globalThis.setInterval(() => {
@@ -192,7 +266,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       globalThis.clearInterval(handle);
     };
-  }, [enabled, pollInterval]);
+  }, [enabled, pollInterval, sseActive]);
 
   const refresh = useCallback(() => {
     setTick((t) => t + 1);

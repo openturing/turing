@@ -131,5 +131,7 @@ export const queryKeys = {
       [...queryKeys.chatAnalytics.all(), 'sessions', params] as const,
     session: (id: string) => [...queryKeys.chatAnalytics.all(), 'session', id] as const,
     transcript: (id: string) => [...queryKeys.chatAnalytics.all(), 'transcript', id] as const,
+    timeseries: (params: Record<string, unknown>) =>
+      [...queryKeys.chatAnalytics.all(), 'timeseries', params] as const,
   },
 } as const;

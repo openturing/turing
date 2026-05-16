@@ -152,7 +152,10 @@ public class TurChatAnalyticsService {
     public void recordToolCall(String conversationId, String toolName, long latencyMs, boolean success) {
         if (conversationId == null || conversationId.isBlank()) return;
         InFlight inflight = inFlight.get(conversationId);
-        if (inflight != null) inflight.recordToolCall(toolName, latencyMs, success);
+        if (inflight == null) return;
+        inflight.recordToolCall(latencyMs, success);
+        log.debug("[ChatAnalytics] tool '{}' conv={} latencyMs={} success={}",
+                toolName, conversationId, latencyMs, success);
     }
 
     /**
@@ -247,10 +250,10 @@ public class TurChatAnalyticsService {
                     inflight == null ? 0  : inflight.turns,
                     inflight == null ? 0L : inflight.tokensIn,
                     inflight == null ? 0L : inflight.tokensOut,
-                    durationMs));
-            // Tool aggregates are session-only for now (not persisted on the
-            // event record yet); surface them in logs so operators can grep
-            // per-conversation tool usage without a separate dashboard.
+                    durationMs,
+                    inflight == null ? 0  : inflight.toolCalls,
+                    inflight == null ? 0  : inflight.toolErrors,
+                    inflight == null ? 0L : inflight.totalToolLatencyMs));
             if (inflight != null && inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
@@ -314,7 +317,7 @@ public class TurChatAnalyticsService {
             this.lastTouchedAt = Instant.now();
         }
 
-        synchronized void recordToolCall(String toolName, long latencyMs, boolean success) {
+        synchronized void recordToolCall(long latencyMs, boolean success) {
             this.toolCalls += 1;
             if (!success) this.toolErrors += 1;
             this.totalToolLatencyMs += Math.max(0, latencyMs);

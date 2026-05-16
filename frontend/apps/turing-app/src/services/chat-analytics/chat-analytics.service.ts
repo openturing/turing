@@ -3,6 +3,8 @@ import type {
   TurChatAnalyticsHealth,
   TurChatAnalyticsSession,
   TurChatAnalyticsSessionsParams,
+  TurChatAnalyticsTimeseriesParams,
+  TurChatAnalyticsTimeseriesPoint,
   TurChatAnalyticsTranscript,
 } from "@/models/chat-analytics/chat-analytics.model";
 
@@ -37,6 +39,16 @@ export class TurChatAnalyticsService {
       if (axios.isAxiosError(err) && err.response?.status === 404) return null;
       throw err;
     }
+  }
+
+  async timeseries(
+    params: TurChatAnalyticsTimeseriesParams = {},
+  ): Promise<TurChatAnalyticsTimeseriesPoint[]> {
+    const response = await axios.get<TurChatAnalyticsTimeseriesPoint[]>(
+      "/system/chat-analytics/timeseries",
+      { params },
+    );
+    return response.data ?? [];
   }
 
   async transcript(conversationId: string, limit = 200): Promise<TurChatAnalyticsTranscript | null> {

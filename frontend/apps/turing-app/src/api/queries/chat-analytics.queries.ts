@@ -3,6 +3,8 @@ import type {
   TurChatAnalyticsHealth,
   TurChatAnalyticsSession,
   TurChatAnalyticsSessionsParams,
+  TurChatAnalyticsTimeseriesParams,
+  TurChatAnalyticsTimeseriesPoint,
   TurChatAnalyticsTranscript,
 } from '@/models/chat-analytics/chat-analytics.model';
 import { TurChatAnalyticsService } from '@/services/chat-analytics/chat-analytics.service';
@@ -23,6 +25,13 @@ export function useChatAnalyticsSessions(params: TurChatAnalyticsSessionsParams 
     // factory wraps the raw params object in the key array deterministically.
     queryKey: queryKeys.chatAnalytics.sessions(params as Record<string, unknown>),
     queryFn: () => service.sessions(params),
+  });
+}
+
+export function useChatAnalyticsTimeseries(params: TurChatAnalyticsTimeseriesParams = {}) {
+  return useQuery<TurChatAnalyticsTimeseriesPoint[]>({
+    queryKey: queryKeys.chatAnalytics.timeseries(params as Record<string, unknown>),
+    queryFn: () => service.timeseries(params),
   });
 }
 

@@ -47,6 +47,7 @@ import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository
 import com.viglet.turing.persistence.repository.agent.TurChatFlowSubmissionRepository;
 import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 import com.viglet.turing.service.chatanalytics.TurChatSessionOutcome;
+import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.core.JacksonException;
@@ -76,17 +77,20 @@ public class TurChatFlowEngineService {
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowSubmissionRepository submissionRepository;
     private final TurChatAnalyticsService chatAnalyticsService;
+    private final TurChatSlotEventBus slotEventBus;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
             TurChatFlowRepository chatFlowRepository,
             TurChatFlowSubmissionRepository submissionRepository,
             TurChatAnalyticsService chatAnalyticsService,
+            TurChatSlotEventBus slotEventBus,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.submissionRepository = submissionRepository;
         this.chatAnalyticsService = chatAnalyticsService;
+        this.slotEventBus = slotEventBus;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -383,6 +387,10 @@ public class TurChatFlowEngineService {
         }
         log.info("[FlowEngine.writeSlot] conv={} slot='{}' wrote {} chars across {} state(s)",
                 conversationId, name, coerced.length(), touched);
+        // Notify SSE subscribers with the full merged slot map — clients
+        // never have to diff, and the cost of recomputing is one extra
+        // query (typically <1 ms).
+        slotEventBus.publish(conversationId, listSlotsForConversation(conversationId).slots());
         return touched;
     }
 
@@ -810,6 +818,11 @@ public class TurChatFlowEngineService {
                 ChatFlowOps.applySlotNode(state, current);
                 ChatFlowOps.advanceToFirstEdge(state, graph, current);
                 state = stateRepository.save(state);
+                // SSE notification: a flow slot write is functionally
+                // identical to slots.set / writeSlot — emit the full merged
+                // map so subscribers don't have to special-case the source.
+                slotEventBus.publish(state.getConversationId(),
+                        listSlotsForConversation(state.getConversationId()).slots());
                 continue;
             }
 

@@ -17,6 +17,7 @@ import java.util.Map;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
+import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,11 +50,14 @@ public class TurCustomToolSlotHelper {
 
     private final String conversationId;
     private final TurChatFlowStateRepository stateRepository;
+    private final TurChatSlotEventBus slotEventBus;
 
     public TurCustomToolSlotHelper(String conversationId,
-            TurChatFlowStateRepository stateRepository) {
+            TurChatFlowStateRepository stateRepository,
+            TurChatSlotEventBus slotEventBus) {
         this.conversationId = conversationId;
         this.stateRepository = stateRepository;
+        this.slotEventBus = slotEventBus;
     }
 
     /**
@@ -83,14 +87,19 @@ public class TurCustomToolSlotHelper {
         }
         String coerced = value == null ? "" : value;
         int valueLen = coerced.length();
+        Map<String, String> mergedAfterWrite = new LinkedHashMap<>();
         for (TurChatFlowState state : states) {
             Map<String, String> vars = new LinkedHashMap<>(ChatFlowOps.readVariables(state));
             vars.put(name, coerced);
             ChatFlowOps.writeVariables(state, vars);
             stateRepository.save(state);
+            mergedAfterWrite.putAll(vars);
             log.info("[slots.set] conv={} stateId={} slot='{}' wrote {} chars",
                     conversationId, state.getId(), name, valueLen);
         }
+        // SSE notification — same merged-map contract as the writeSlot
+        // endpoint, so subscribers don't have to special-case the source.
+        slotEventBus.publish(conversationId, mergedAfterWrite);
     }
 
     /**

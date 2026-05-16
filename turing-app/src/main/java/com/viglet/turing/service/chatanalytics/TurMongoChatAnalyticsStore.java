@@ -103,6 +103,9 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             set.add(Updates.set("totalTurns", event.totalTurns()));
             set.add(Updates.set("totalTokensIn", event.totalTokensIn()));
             set.add(Updates.set("totalTokensOut", event.totalTokensOut()));
+            set.add(Updates.set("totalToolCalls", event.totalToolCalls()));
+            set.add(Updates.set("totalToolErrors", event.totalToolErrors()));
+            set.add(Updates.set("totalToolLatencyMs", event.totalToolLatencyMs()));
             set.add(Updates.set("durationMs", event.durationMs()));
             set.add(Updates.set("updatedAt", new Date()));
             if (event.completedAt() != null) {
@@ -279,8 +282,24 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
                                         new Document("$eq", List.of("$sentiment", "NEGATIVE")),
                                         new Document("$eq", List.of("$sentiment", "FRUSTRATED")))))
                                 .append("then", 1).append("else", 0))));
-                case "avg_duration_ms"  -> group.append("metricAvg", new Document("$avg", "$durationMs"));
-                case "avg_tokens_out"   -> group.append("metricAvg", new Document("$avg", "$totalTokensOut"));
+                case "avg_duration_ms"        -> group.append("metricAvg", new Document("$avg", "$durationMs"));
+                case "avg_tokens_out"         -> group.append("metricAvg", new Document("$avg", "$totalTokensOut"));
+                // Per-session averages for tool metrics — same family as
+                // avg_X above. Sessions that never invoked a tool contribute
+                // 0 to the numerator and 1 to the denominator (sessions),
+                // which gives "avg per session" not "avg per tool call".
+                case "tool_calls_per_session"  -> group.append("metricAvg", new Document("$avg", "$totalToolCalls"));
+                case "tool_errors_per_session" -> group.append("metricAvg", new Document("$avg", "$totalToolErrors"));
+                case "avg_tool_latency_ms"     -> group.append("metricAvg", new Document("$avg", "$totalToolLatencyMs"));
+                // Errors / calls × 100 — needs two sums in the bucket because
+                // the denominator (tool calls) varies across sessions. Sessions
+                // with zero tool calls contribute 0 to both sums; division by
+                // zero is guarded in computeValue. Returned as 0-100 so the
+                // dashboard renders directly as a percent without scaling.
+                case "tool_error_rate_pct" -> {
+                    group.append("metricSum",       new Document("$sum", "$totalToolErrors"));
+                    group.append("metricDivisor",   new Document("$sum", "$totalToolCalls"));
+                }
                 default -> { /* sessions: total alone is enough */ }
             }
             pipeline.add(new Document("$group", group));
@@ -470,7 +489,11 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
                  "goal_achievement_rate",
                  "negative_sentiment_rate",
                  "avg_duration_ms",
-                 "avg_tokens_out" -> metric.trim();
+                 "avg_tokens_out",
+                 "tool_calls_per_session",
+                 "tool_errors_per_session",
+                 "avg_tool_latency_ms",
+                 "tool_error_rate_pct" -> metric.trim();
             default -> "sessions";
         };
     }
@@ -484,8 +507,17 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         return switch (metric) {
             case "goal_achievement_rate", "negative_sentiment_rate" ->
                     total > 0 ? numberAsDouble(doc.get("metricSum")) / total : 0d;
-            case "avg_duration_ms", "avg_tokens_out" ->
+            case "avg_duration_ms", "avg_tokens_out",
+                 "tool_calls_per_session", "tool_errors_per_session",
+                 "avg_tool_latency_ms" ->
                     numberAsDouble(doc.get("metricAvg"));
+            case "tool_error_rate_pct" -> {
+                // errors / calls × 100 — guard divide-by-zero when no session
+                // in the bucket invoked any tool (calls=0). Returns 0d so the
+                // chart shows a clean baseline instead of NaN.
+                double divisor = numberAsDouble(doc.get("metricDivisor"));
+                yield divisor > 0 ? numberAsDouble(doc.get("metricSum")) * 100d / divisor : 0d;
+            }
             default -> total; // "sessions" — count is the value
         };
     }
@@ -513,10 +545,13 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("outcome",          doc.getString("outcome"));
         row.put("startedAt",        toIsoString(doc.getDate("startedAt")));
         row.put("completedAt",      toIsoString(doc.getDate("completedAt")));
-        row.put("totalTurns",       doc.get("totalTurns", 0));
-        row.put("totalTokensIn",    doc.get("totalTokensIn", 0L));
-        row.put("totalTokensOut",   doc.get("totalTokensOut", 0L));
-        row.put("durationMs",       doc.get("durationMs", 0L));
+        row.put("totalTurns",         doc.get("totalTurns", 0));
+        row.put("totalTokensIn",      doc.get("totalTokensIn", 0L));
+        row.put("totalTokensOut",     doc.get("totalTokensOut", 0L));
+        row.put("totalToolCalls",     doc.get("totalToolCalls", 0));
+        row.put("totalToolErrors",    doc.get("totalToolErrors", 0));
+        row.put("totalToolLatencyMs", doc.get("totalToolLatencyMs", 0L));
+        row.put("durationMs",         doc.get("durationMs", 0L));
         row.put("firstUserMessage", doc.getString("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.
         row.put("intentLabel",      doc.getString("intentLabel"));

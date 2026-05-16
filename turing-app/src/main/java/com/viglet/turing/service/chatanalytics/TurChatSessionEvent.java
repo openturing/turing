@@ -56,7 +56,13 @@ public record TurChatSessionEvent(
         int totalTurns,
         long totalTokensIn,
         long totalTokensOut,
-        long durationMs) {
+        long durationMs,
+        /** Total tool callbacks invoked during the session (across all tools). */
+        int totalToolCalls,
+        /** Subset of {@link #totalToolCalls} that threw or returned an error. */
+        int totalToolErrors,
+        /** Sum of per-call wall-clock latency for every tool invocation, in ms. */
+        long totalToolLatencyMs) {
 
     /** Builder of the start record (most aggregate fields zeroed/null). */
     public static TurChatSessionEvent start(String conversationId, String agentId,
@@ -66,6 +72,6 @@ public record TurChatSessionEvent(
         return new TurChatSessionEvent(conversationId, agentId, personaId,
                 llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
                 firstUserMessage, startedAt, null, TurChatSessionOutcome.IN_PROGRESS,
-                0, 0L, 0L, 0L);
+                0, 0L, 0L, 0L, 0, 0, 0L);
     }
 }

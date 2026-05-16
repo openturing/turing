@@ -85,10 +85,13 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             putIfNotBlank(fields, "userId",           event.userId());
             putIfNotBlank(fields, "locale",           event.locale());
             if (event.outcome() != null) fields.put("outcome", event.outcome().name());
-            fields.put("totalTurns",     String.valueOf(event.totalTurns()));
-            fields.put("totalTokensIn",  String.valueOf(event.totalTokensIn()));
-            fields.put("totalTokensOut", String.valueOf(event.totalTokensOut()));
-            fields.put("durationMs",     String.valueOf(event.durationMs()));
+            fields.put("totalTurns",         String.valueOf(event.totalTurns()));
+            fields.put("totalTokensIn",      String.valueOf(event.totalTokensIn()));
+            fields.put("totalTokensOut",     String.valueOf(event.totalTokensOut()));
+            fields.put("totalToolCalls",     String.valueOf(event.totalToolCalls()));
+            fields.put("totalToolErrors",    String.valueOf(event.totalToolErrors()));
+            fields.put("totalToolLatencyMs", String.valueOf(event.totalToolLatencyMs()));
+            fields.put("durationMs",         String.valueOf(event.durationMs()));
             fields.put("updatedAt",      Instant.now().toString());
             if (event.completedAt() != null) {
                 fields.put("completedAt", event.completedAt().toString());
@@ -222,7 +225,9 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         boolean dailyBuckets = "day".equals(interval);
         boolean rateMetric = isRateMetric(validatedMetric);
 
-        // bucket → running totals/counters; LinkedHashMap so we keep ascending order
+        // bucket → [total, primarySum, divisorSum]. divisorSum is only used
+        // by metrics like {@code tool_error_rate} that divide two session-
+        // wide totals (errors / calls) — single-sum metrics leave it at 0.
         Map<Long, double[]> buckets = new java.util.TreeMap<>();
         try (Jedis jedis = pool.getResource()) {
             List<String> ids = jedis.zrangeByScore(byTimeKey(),
@@ -237,9 +242,10 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 Instant when;
                 try { when = Instant.parse(startedAt); } catch (Exception e) { continue; }
                 long bucketKey = truncate(when, dailyBuckets);
-                double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d});
-                acc[0] += 1; // total
+                double[] acc = buckets.computeIfAbsent(bucketKey, k -> new double[]{0d, 0d, 0d});
+                acc[0] += 1; // total (sessions)
                 acc[1] += metricContribution(hash, validatedMetric);
+                acc[2] += metricDivisorContribution(hash, validatedMetric);
             }
         } catch (Exception e) {
             log.warn("Chat analytics timeseries(Redis) failed: {}", e.getMessage());
@@ -249,12 +255,16 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         for (Map.Entry<Long, double[]> entry : buckets.entrySet()) {
             int total = (int) entry.getValue()[0];
             double sum = entry.getValue()[1];
+            double divisor = entry.getValue()[2];
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("bucket", Instant.ofEpochMilli(entry.getKey()).toString());
             row.put("total", total);
             row.put("value", switch (validatedMetric) {
                 case "goal_achievement_rate", "negative_sentiment_rate" -> total > 0 ? sum / total : 0d;
-                case "avg_duration_ms", "avg_tokens_out" -> total > 0 ? sum / total : 0d;
+                case "avg_duration_ms", "avg_tokens_out",
+                     "tool_calls_per_session", "tool_errors_per_session",
+                     "avg_tool_latency_ms" -> total > 0 ? sum / total : 0d;
+                case "tool_error_rate_pct" -> divisor > 0 ? sum * 100d / divisor : 0d;
                 default -> total;
             });
             result.add(row);
@@ -409,7 +419,11 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                  "goal_achievement_rate",
                  "negative_sentiment_rate",
                  "avg_duration_ms",
-                 "avg_tokens_out" -> metric.trim();
+                 "avg_tokens_out",
+                 "tool_calls_per_session",
+                 "tool_errors_per_session",
+                 "avg_tool_latency_ms",
+                 "tool_error_rate_pct" -> metric.trim();
             default -> "sessions";
         };
     }
@@ -442,10 +456,35 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
                 String s = hash.get("sentiment");
                 yield ("NEGATIVE".equals(s) || "FRUSTRATED".equals(s)) ? 1d : 0d;
             }
-            case "avg_duration_ms" -> parseLong(hash.get("durationMs"));
-            case "avg_tokens_out"  -> parseLong(hash.get("totalTokensOut"));
-            default -> 0d; // "sessions" — total alone is the value
+            case "avg_duration_ms"         -> parseLong(hash.get("durationMs"));
+            case "avg_tokens_out"          -> parseLong(hash.get("totalTokensOut"));
+            // The next three are per-session averages — divisor is bucket
+            // session count, same family as avg_tokens_out / avg_duration_ms.
+            // Each session contributes its own session-total to the sum.
+            case "tool_calls_per_session"  -> parseLong(hash.get("totalToolCalls"));
+            case "tool_errors_per_session" -> parseLong(hash.get("totalToolErrors"));
+            case "avg_tool_latency_ms"     -> parseLong(hash.get("totalToolLatencyMs"));
+            // tool_error_rate_pct is errors / calls × 100 — numerator is the
+            // session's tool errors; divisor is filled by metricDivisorContribution.
+            case "tool_error_rate_pct"     -> parseLong(hash.get("totalToolErrors"));
+            default -> 0d;
         };
+    }
+
+    /**
+     * Denominator contribution for two-sum rate metrics. Returns 0 for the
+     * single-sum family — those use {@link #metricContribution} alone and
+     * divide by the bucket's session count.
+     */
+    private static double metricDivisorContribution(Map<String, String> hash, String metric) {
+        // For tool_error_rate_pct the denominator is total tool calls across
+        // sessions in the bucket — so a 1-call session with 1 error rates
+        // 100% while a 10-call session with 1 error rates 10%, matching
+        // the "rate" semantics the dashboard expects.
+        if ("tool_error_rate_pct".equals(metric)) {
+            return parseLong(hash.get("totalToolCalls"));
+        }
+        return 0d;
     }
 
     private static Map<String, Object> toRow(String id, Map<String, String> hash) {
@@ -461,10 +500,13 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("outcome",          hash.get("outcome"));
         row.put("startedAt",        hash.get("startedAt"));
         row.put("completedAt",      hash.get("completedAt"));
-        row.put("totalTurns",       parseLong(hash.get("totalTurns")));
-        row.put("totalTokensIn",    parseLong(hash.get("totalTokensIn")));
-        row.put("totalTokensOut",   parseLong(hash.get("totalTokensOut")));
-        row.put("durationMs",       parseLong(hash.get("durationMs")));
+        row.put("totalTurns",         parseLong(hash.get("totalTurns")));
+        row.put("totalTokensIn",      parseLong(hash.get("totalTokensIn")));
+        row.put("totalTokensOut",     parseLong(hash.get("totalTokensOut")));
+        row.put("totalToolCalls",     parseLong(hash.get("totalToolCalls")));
+        row.put("totalToolErrors",    parseLong(hash.get("totalToolErrors")));
+        row.put("totalToolLatencyMs", parseLong(hash.get("totalToolLatencyMs")));
+        row.put("durationMs",         parseLong(hash.get("durationMs")));
         row.put("firstUserMessage", hash.get("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.
         row.put("intentLabel",      hash.get("intentLabel"));

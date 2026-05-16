@@ -69,15 +69,18 @@ public class TurCustomToolCallbackService {
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
+    private final com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
     public TurCustomToolCallbackService(TurCustomToolRepositoryPort repositoryPort,
             TurCustomToolSearchHelper searchHelper,
-            TurChatFlowStateRepository stateRepository) {
+            TurChatFlowStateRepository stateRepository,
+            com.viglet.turing.service.chatslots.TurChatSlotEventBus slotEventBus) {
         this.repositoryPort = repositoryPort;
         this.searchHelper = searchHelper;
         this.stateRepository = stateRepository;
+        this.slotEventBus = slotEventBus;
     }
 
     /**
@@ -254,7 +257,7 @@ public class TurCustomToolCallbackService {
         binding.setVariable("http", new TurCustomToolHttpHelper());
         binding.setVariable("turingSearch", searchHelper);
         binding.setVariable("slots", new TurCustomToolSlotHelper(
-                resolveConversationId(toolContext), stateRepository));
+                resolveConversationId(toolContext), stateRepository, slotEventBus));
         Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();

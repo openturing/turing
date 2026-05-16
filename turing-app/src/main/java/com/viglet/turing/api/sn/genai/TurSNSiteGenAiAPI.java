@@ -56,6 +56,7 @@ import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
+import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -80,6 +81,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatFlowEngineService chatFlowEngineService;
 	private final TurConfigProperties configProperties;
 	private final TurChatMemoryService chatMemoryService;
+	private final TurChatSlotEventBus slotEventBus;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -90,7 +92,8 @@ public class TurSNSiteGenAiAPI {
 			TurIntentMapper turIntentMapper,
 			TurChatFlowEngineService chatFlowEngineService,
 			TurConfigProperties configProperties,
-			TurChatMemoryService chatMemoryService) {
+			TurChatMemoryService chatMemoryService,
+			TurChatSlotEventBus slotEventBus) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -101,6 +104,7 @@ public class TurSNSiteGenAiAPI {
 		this.chatFlowEngineService = chatFlowEngineService;
 		this.configProperties = configProperties;
 		this.chatMemoryService = chatMemoryService;
+		this.slotEventBus = slotEventBus;
 	}
 
 	/**
@@ -368,6 +372,36 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	public record ChatSlotWriteResponse(int updatedStates) {
+	}
+
+	/**
+	 * Server-sent stream of slot updates for the given conversation. Pushes
+	 * the full merged slot map every time any of the three write paths
+	 * mutates a chat-flow state: the {@code slot} node executor, the
+	 * {@code slots.set(...)} helper inside a Custom Tool Groovy script, and
+	 * the {@code POST /chat/slots} writeSlot endpoint.
+	 *
+	 * <p>The stream opens with one synchronous snapshot read from the
+	 * persistence layer (no waiting for the next mutation), so a client that
+	 * connects mid-conversation immediately sees the current state. After
+	 * that, every event corresponds to a real write. There is no heartbeat
+	 * — the HTTP layer (Spring + the reverse proxy) handles keep-alive on
+	 * an idle SSE channel.
+	 *
+	 * <p>Single-node only — see {@link com.viglet.turing.service.chatslots.TurChatSlotEventBus}
+	 * for the cluster caveat. SDKs that need cluster-correctness should keep
+	 * polling as a fallback.
+	 *
+	 * @since 2026.2.7
+	 */
+	@GetMapping(value = "/slots/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<TurChatSessionSlotsDto> streamSlots(@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		if (conversationId == null || conversationId.isBlank()) {
+			return Flux.empty();
+		}
+		TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
+		return Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId));
 	}
 
 	/**

@@ -223,8 +223,10 @@ public class TurChatAnalyticsAPI {
     /**
      * Time-bucketed values for a single metric — drives the trend panels in
      * Grafana. {@code metric} accepts {@code sessions}, {@code goal_achievement_rate},
-     * {@code negative_sentiment_rate}, {@code avg_duration_ms}, {@code avg_tokens_out}.
-     * {@code interval} accepts {@code hour} or {@code day}.
+     * {@code negative_sentiment_rate}, {@code avg_duration_ms}, {@code avg_tokens_out},
+     * {@code tool_calls_per_session}, {@code tool_errors_per_session},
+     * {@code avg_tool_latency_ms}, {@code tool_error_rate_pct} (errors / calls
+     * × 100, 0-100). {@code interval} accepts {@code hour} or {@code day}.
      */
     @GetMapping(value = "/timeseries", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Map<String, Object>> timeseries(

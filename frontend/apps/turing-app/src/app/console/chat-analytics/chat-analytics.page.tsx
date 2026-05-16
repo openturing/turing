@@ -1,10 +1,18 @@
 import {
   useChatAnalyticsHealth,
   useChatAnalyticsSessions,
+  useChatAnalyticsTimeseries,
   useChatAnalyticsTranscript,
 } from "@/api/queries/chat-analytics.queries";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -20,9 +28,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { TurChatAnalyticsSession } from "@/models/chat-analytics/chat-analytics.model";
-import { IconMessageOff } from "@tabler/icons-react";
+import type {
+  TurChatAnalyticsMetric,
+  TurChatAnalyticsSession,
+} from "@/models/chat-analytics/chat-analytics.model";
+import { IconChartLine, IconMessageOff } from "@tabler/icons-react";
 import { useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const NEUTRAL = "outline";
 const SUCCESS = "default";
@@ -46,6 +66,13 @@ function formatDuration(ms?: number | null): string {
   const minutes = Math.floor(seconds / 60);
   const remSeconds = seconds % 60;
   return `${minutes}m ${remSeconds}s`;
+}
+
+function formatToolCalls(session: TurChatAnalyticsSession): string | number {
+  const calls = session.totalToolCalls ?? 0;
+  if (calls === 0) return 0;
+  const errors = session.totalToolErrors ?? 0;
+  return errors > 0 ? `${calls} (${errors} err)` : `${calls}`;
 }
 
 function outcomeVariant(outcome?: string | null): typeof NEUTRAL | typeof SUCCESS | typeof DESTRUCTIVE | typeof SECONDARY {
@@ -145,6 +172,11 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
                 <MetaRow label="Turns"     value={data.session.totalTurns ?? 0} />
                 <MetaRow label="Tokens in"  value={data.session.totalTokensIn ?? 0} />
                 <MetaRow label="Tokens out" value={data.session.totalTokensOut ?? 0} />
+                <MetaRow label="Tool calls" value={formatToolCalls(data.session)} />
+                <MetaRow
+                  label="Tool latency"
+                  value={formatDuration(data.session.totalToolLatencyMs)}
+                />
               </CardContent>
             </Card>
 
@@ -237,6 +269,129 @@ function DetailPanel({ conversationId, onClose }: Readonly<DetailPanelProps>) {
   );
 }
 
+interface MetricOption {
+  readonly value: TurChatAnalyticsMetric;
+  readonly label: string;
+  /** How to render the raw {@code value} returned by the backend. */
+  readonly format: (v: number) => string;
+}
+
+const METRIC_OPTIONS: readonly MetricOption[] = [
+  { value: "sessions",                 label: "Sessions",                  format: (v) => v.toFixed(0) },
+  { value: "avg_duration_ms",          label: "Avg duration",              format: formatDuration },
+  { value: "avg_tokens_out",           label: "Avg tokens out",            format: (v) => v.toFixed(0) },
+  { value: "goal_achievement_rate",    label: "Goal achievement",          format: (v) => `${(v * 100).toFixed(1)}%` },
+  { value: "negative_sentiment_rate",  label: "Negative sentiment",        format: (v) => `${(v * 100).toFixed(1)}%` },
+  { value: "tool_calls_per_session",   label: "Tool calls / session",      format: (v) => v.toFixed(2) },
+  { value: "tool_errors_per_session",  label: "Tool errors / session",     format: (v) => v.toFixed(2) },
+  { value: "avg_tool_latency_ms",      label: "Avg tool latency",          format: formatDuration },
+  { value: "tool_error_rate_pct",      label: "Tool error rate",           format: (v) => `${v.toFixed(1)}%` },
+];
+
+function TimeseriesPanel() {
+  const [metric, setMetric] = useState<TurChatAnalyticsMetric>("sessions");
+  const { data: points = [], isLoading, isError } = useChatAnalyticsTimeseries({
+    metric,
+    interval: "hour",
+  });
+  const option = METRIC_OPTIONS.find((m) => m.value === metric) ?? METRIC_OPTIONS[0];
+  // Pre-format X labels so the tooltip and axis share the same string and the
+  // axis density is predictable across hour-vs-day buckets.
+  const chartData = points.map((p) => ({
+    bucket: p.bucket,
+    bucketLabel: new Date(p.bucket).toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+    }),
+    value: p.value,
+  }));
+  const hasData = chartData.length > 0;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <IconChartLine className="size-4" />
+              Trends
+            </CardTitle>
+            <CardDescription>
+              Per-hour aggregates for the same time window as the table.
+            </CardDescription>
+          </div>
+          <Select value={metric} onValueChange={(v) => setMetric(v as TurChatAnalyticsMetric)}>
+            <SelectTrigger className="w-[260px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {METRIC_OPTIONS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <p className="text-muted-foreground py-12 text-center text-sm">Loading…</p>
+        )}
+        {isError && (
+          <p className="text-destructive py-12 text-center text-sm">Failed to load timeseries.</p>
+        )}
+        {!isLoading && !isError && !hasData && (
+          <p className="text-muted-foreground py-12 text-center text-sm">
+            No data for this metric in the selected window.
+          </p>
+        )}
+        {hasData && (
+          <div className="h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis
+                  dataKey="bucketLabel"
+                  stroke="var(--muted-foreground)"
+                  fontSize={11}
+                  tick={{ fill: "var(--muted-foreground)" }}
+                />
+                <YAxis
+                  stroke="var(--muted-foreground)"
+                  fontSize={11}
+                  tick={{ fill: "var(--muted-foreground)" }}
+                  tickFormatter={option.format}
+                  width={70}
+                  allowDecimals
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                  formatter={(v) => [option.format(Number(v)), option.label]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                  name={option.label}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function SessionRow({
   row,
   onSelect,
@@ -306,6 +461,7 @@ export default function ChatAnalyticsPage() {
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
+      <TimeseriesPanel />
       <Card>
         <CardHeader>
           <CardTitle>Recent chat sessions</CardTitle>
