@@ -56,6 +56,10 @@ import com.viglet.turing.persistence.repository.intent.TurIntentRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
+import com.viglet.turing.service.chatslots.TurChatHandoffService;
+import com.viglet.turing.service.chatslots.TurChatHandoffService.Channel;
+import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffRequest;
+import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffResult;
 import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 import com.viglet.turing.service.chatslots.TurChatSlotExtractionService;
 import com.viglet.turing.service.chatslots.TurChatSlotExtractionService.SlotExtractionResult;
@@ -85,6 +89,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
 	private final TurChatSlotExtractionService slotExtractionService;
+	private final TurChatHandoffService handoffService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -97,7 +102,8 @@ public class TurSNSiteGenAiAPI {
 			TurConfigProperties configProperties,
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
-			TurChatSlotExtractionService slotExtractionService) {
+			TurChatSlotExtractionService slotExtractionService,
+			TurChatHandoffService handoffService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -110,6 +116,7 @@ public class TurSNSiteGenAiAPI {
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
 		this.slotExtractionService = slotExtractionService;
+		this.handoffService = handoffService;
 	}
 
 	/**
@@ -462,6 +469,60 @@ public class TurSNSiteGenAiAPI {
 			int slotsWritten,
 			int extractedTextChars,
 			String error) {
+	}
+
+	/**
+	 * Channel-agnostic handoff: composes a deep link (WhatsApp / mailto /
+	 * sms / …) carrying the conversation context so a human consultant
+	 * can pick up where the bot left off without re-asking. The slot
+	 * {@code handoff_status} is written as a side effect — both for the
+	 * React UI (hide the CTA once clicked) and for the analytics dashboard
+	 * (compare handoff rates across A/B variants).
+	 *
+	 * <p>Generic: caller passes the channel + destination + optional
+	 * intro + slot whitelist. WhatsApp uses {@code wa.me} universal
+	 * links; email uses {@code mailto:}; SMS uses {@code sms:}. New
+	 * channels plug in via {@code TurChatHandoffService.Channel}.
+	 *
+	 * @since 2026.2.7
+	 */
+	@PostMapping("/handoff")
+	public ChatHandoffResponse handoff(@PathVariable String siteName,
+			@RequestBody ChatHandoffRequest body) {
+		if (body == null) {
+			return ChatHandoffResponse.error("Request body is required");
+		}
+		Channel channel;
+		try {
+			channel = Channel.valueOf(body.channel().toUpperCase(java.util.Locale.ROOT));
+		} catch (IllegalArgumentException | NullPointerException e) {
+			return ChatHandoffResponse.error("Unknown channel: " + body.channel());
+		}
+		HandoffResult result = handoffService.buildLink(body.conversationId(),
+				new HandoffRequest(channel, body.destination(), body.intro(), body.slotsToInclude()));
+		if (result.error() != null) {
+			return ChatHandoffResponse.error(result.error());
+		}
+		return new ChatHandoffResponse(result.url(), result.transcript(),
+				result.slotsIncluded(), null);
+	}
+
+	public record ChatHandoffRequest(
+			String conversationId,
+			String channel,
+			String destination,
+			String intro,
+			List<String> slotsToInclude) {
+	}
+
+	public record ChatHandoffResponse(
+			String url,
+			String transcript,
+			int slotsIncluded,
+			String error) {
+		static ChatHandoffResponse error(String message) {
+			return new ChatHandoffResponse(null, null, 0, message);
+		}
 	}
 
 	/**

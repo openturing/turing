@@ -620,6 +620,79 @@ export async function postSiteSlotExtract(
   return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
 }
 
+/**
+ * Channels accepted by the handoff endpoint. {@code whatsapp} produces a
+ * {@code wa.me} universal link; {@code email} a {@code mailto:};
+ * {@code sms} an {@code sms:} link. New channels plug in on the server
+ * side without touching this SDK.
+ *
+ * @since 2026.2.7
+ */
+export type TurChatHandoffChannel = "whatsapp" | "email" | "sms";
+
+/**
+ * Server response for the handoff endpoint. {@code url} is the absolute
+ * deep link the client should open (e.g. via {@code window.open(url, "_blank")});
+ * {@code transcript} is the rendered slot context embedded inside the
+ * URL's body, returned verbatim so the UI can preview to the visitor
+ * what the consultant will see.
+ *
+ * @since 2026.2.7
+ */
+export interface TurChatHandoffResponse {
+  readonly url: string | null;
+  readonly transcript: string | null;
+  readonly slotsIncluded: number;
+  readonly error?: string | null;
+}
+
+/**
+ * Builds a channel-specific handoff deep link carrying the conversation
+ * context. The visitor's captured slots (name, cargo, area, objetivo,
+ * etc.) are embedded in the link's message body so the human consultant
+ * picks up the conversation without re-asking. Side effect on the
+ * server: writes {@code handoff_status = "{channel}_requested"} to the
+ * chat-flow state for analytics tracking.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/handoff}.
+ *
+ * @example
+ * ```ts
+ * const result = await postSiteHandoff(site, {
+ *   conversationId: "abc-123",
+ *   channel: "whatsapp",
+ *   destination: "5511999999999",
+ *   intro: "Olá! Vim do site do Insper EE.",
+ *   slotsToInclude: ["name", "cargo_atual", "area_label", "objetivo"],
+ * });
+ * if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+ * ```
+ *
+ * @since 2026.2.7
+ */
+export async function postSiteHandoff(
+  site: string,
+  params: {
+    readonly conversationId: string;
+    readonly channel: TurChatHandoffChannel;
+    readonly destination: string;
+    readonly intro?: string;
+    readonly slotsToInclude?: ReadonlyArray<string>;
+  },
+): Promise<TurChatHandoffResponse> {
+  const { data } = await axios.post<TurChatHandoffResponse>(
+    `/sn/${site}/chat/handoff`,
+    {
+      conversationId: params.conversationId,
+      channel: params.channel,
+      destination: params.destination,
+      intro: params.intro,
+      slotsToInclude: params.slotsToInclude,
+    },
+  );
+  return data ?? { url: null, transcript: null, slotsIncluded: 0 };
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }
