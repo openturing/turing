@@ -67,7 +67,20 @@ public class TurChatHandoffService {
         /** {@code mailto:} link — opens user's email client. */
         EMAIL,
         /** {@code sms:} link — opens user's SMS app. */
-        SMS
+        SMS,
+        /**
+         * Telegram {@code t.me} link — opens chat with the consultant's
+         * username/phone. {@code destination} should be the Telegram
+         * username (without the {@code @}) or phone number with country code.
+         */
+        TELEGRAM,
+        /**
+         * Slack deep link — opens the consultant's DM in the Slack app.
+         * {@code destination} format: {@code "{teamId}/{userId}"} (both
+         * Slack opaque ids, e.g. {@code "T01ABCDEF/U05XYZ123"}). Falls
+         * back to the web client if Slack isn't installed.
+         */
+        SLACK
     }
 
     private final TurChatFlowEngineService engineService;
@@ -122,6 +135,8 @@ public class TurChatHandoffService {
             case WHATSAPP -> buildWhatsAppUrl(request.destination(), transcript);
             case EMAIL    -> buildMailtoUrl(request.destination(), transcript);
             case SMS      -> buildSmsUrl(request.destination(), transcript);
+            case TELEGRAM -> buildTelegramUrl(request.destination(), transcript);
+            case SLACK    -> buildSlackUrl(request.destination(), transcript);
         };
 
         // Tracking slot — lower-cased channel name + "_requested" suffix
@@ -212,6 +227,42 @@ public class TurChatHandoffService {
         // "?body=" as of 2023, so we standardize on that.
         String digits = phone.replaceAll("[^0-9+]", "");
         return "sms:" + digits + "?body=" + urlEncode(body);
+    }
+
+    /**
+     * Telegram universal link. Accepts either {@code @username} (strip the
+     * @) or a digits-only phone number with country code. Telegram's
+     * {@code t.me/{username}?text=...} works on web + mobile, redirects
+     * to the native Telegram app when installed.
+     */
+    private static String buildTelegramUrl(String destination, String body) {
+        String clean = destination.trim();
+        if (clean.startsWith("@")) clean = clean.substring(1);
+        // Phones get sent to t.me/+digits; usernames go to t.me/username.
+        if (clean.matches("\\+?[0-9 ()\\-]+")) {
+            clean = "+" + clean.replaceAll("\\D", "");
+        }
+        return "https://t.me/" + clean + "?text=" + urlEncode(body);
+    }
+
+    /**
+     * Slack deep link. Expects {@code "{teamId}/{userId}"} — the team's
+     * opaque id (T-prefix, e.g. {@code T01ABCDEF}) and the user's opaque
+     * id (U-prefix). The {@code slack://} scheme opens the desktop/mobile
+     * app; we wrap in {@code https://slack.com/app_redirect?...} so the
+     * link gracefully falls back to the web client when Slack isn't
+     * installed.
+     */
+    private static String buildSlackUrl(String destination, String body) {
+        String[] parts = destination.trim().split("/", 2);
+        String teamId = parts.length > 0 ? parts[0] : "";
+        String userId = parts.length > 1 ? parts[1] : "";
+        // app_redirect supports team+channel; for DM the channel is the
+        // user id. Slack pre-fills the message draft from the `message`
+        // query param.
+        return "https://slack.com/app_redirect?team=" + urlEncode(teamId)
+                + "&channel=" + urlEncode(userId)
+                + "&message=" + urlEncode(body);
     }
 
     private static String urlEncode(String value) {

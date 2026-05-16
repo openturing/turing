@@ -463,6 +463,11 @@ public class TurChatFlowAPI {
                     if (incoming.getTriggerMode() != null) {
                         existing.setTriggerMode(incoming.getTriggerMode());
                     }
+                    existing.setExperimentKey(incoming.getExperimentKey());
+                    existing.setVariantLabel(incoming.getVariantLabel());
+                    existing.setTrafficWeight(incoming.getTrafficWeight());
+                    existing.setExperimentStartsAt(incoming.getExperimentStartsAt());
+                    existing.setExperimentEndsAt(incoming.getExperimentEndsAt());
                     turChatFlowRepository.save(existing);
                     return turChatFlowMapper.toDto(existing);
                 }).orElse(new TurChatFlowDto());

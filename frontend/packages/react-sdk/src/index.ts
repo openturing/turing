@@ -20,6 +20,7 @@ export {
   postSiteChatSlot,
   postSiteSlotExtract,
   postSiteHandoff,
+  fetchSiteChatState,
   fetchSortOptions,
   parseHrefToParams,
   postClick,
@@ -37,6 +38,7 @@ export type {
   TurChatSlotExtractResponse,
   TurChatHandoffChannel,
   TurChatHandoffResponse,
+  TurChatConversationState,
 } from "./core/api";
 
 // ── Session ──
@@ -104,6 +106,18 @@ export type {
   UseTuringHandoffOptions,
   HandoffStatus,
 } from "./hooks/use-turing-handoff";
+export { useTuringVoice } from "./hooks/use-turing-voice";
+export type {
+  UseTuringVoiceReturn,
+  UseTuringVoiceOptions,
+} from "./hooks/use-turing-voice";
+export { useTuringFlowState } from "./hooks/use-turing-flow-state";
+export type {
+  UseTuringFlowStateReturn,
+  UseTuringFlowStateOptions,
+} from "./hooks/use-turing-flow-state";
+export { useTuringExperiment } from "./hooks/use-turing-experiment";
+export type { UseTuringExperimentReturn } from "./hooks/use-turing-experiment";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 

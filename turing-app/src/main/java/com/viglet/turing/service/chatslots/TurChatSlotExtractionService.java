@@ -26,7 +26,6 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.viglet.turing.commons.file.TurFileAttributes;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -38,6 +37,7 @@ import com.viglet.turing.system.security.TurSecretCryptoService;
 import com.viglet.turing.utils.TurFileUtils;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 /**

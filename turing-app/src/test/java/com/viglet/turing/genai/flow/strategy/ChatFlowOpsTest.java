@@ -110,13 +110,16 @@ class ChatFlowOpsTest {
 
     // ─────────────────────────── extractValue (validation patterns) ───────────────────────────
     //
-    // The new patterns (cpf / cnpj / cep) match canonical Brazilian doc
-    // formats. We do NOT yet run mod-11 digit checks — these tests pin the
-    // current behavior so a future digit-check upgrade can land as a
-    // separate, observable change.
+    // Two layers per BR document validation: (1) regex matches the format
+    // (digits + optional canonical punctuation), (2) mod-11 checksum verifies
+    // the digits are mathematically valid. Numbers like 12345678900 satisfy
+    // the regex but fail step 2 — extractValue returns null so the strategy
+    // re-asks just like any other validation miss.
 
     @Test
     void extractValue_cpfMatchesFormattedAndUnformatted() {
+        // 123.456.789-09 is a mathematically valid CPF (verified by hand:
+        // sum = 210, rem=1 → DV1=0 ✓; sum = 255, rem=2 → DV2=9 ✓).
         assertThat(ChatFlowOps.extractValue("cpf", "Meu CPF é 123.456.789-09"))
                 .isEqualTo("123.456.789-09");
         assertThat(ChatFlowOps.extractValue("cpf", "12345678909"))
@@ -124,11 +127,46 @@ class ChatFlowOpsTest {
     }
 
     @Test
+    void extractValue_cpfChecksumRejectsInvalidNumber() {
+        // 12345678900 matches the regex but the last digit (0) is wrong —
+        // the actual check digit for 12345678 is 9 + 0 = 90 (DV1=0, DV2=9).
+        // Anything else → null (treat as no match → strategy re-asks).
+        assertThat(ChatFlowOps.extractValue("cpf", "Meu CPF é 12345678900"))
+                .as("invalid checksum → null even though regex matches")
+                .isNull();
+    }
+
+    @Test
+    void extractValue_cpfRejectsRepeatedDigits() {
+        // 11111111111 mathematically satisfies mod-11 (all weights cancel
+        // to 0 mod 11) but Receita Federal flags these as invalid. Same
+        // for 000.000.000-00, 222.222.222-22, etc.
+        assertThat(ChatFlowOps.extractValue("cpf", "11111111111")).isNull();
+        assertThat(ChatFlowOps.extractValue("cpf", "000.000.000-00")).isNull();
+        assertThat(ChatFlowOps.extractValue("cpf", "999.999.999-99")).isNull();
+    }
+
+    @Test
     void extractValue_cnpjMatchesFormattedAndUnformatted() {
+        // 12.345.678/0001-95 is a mathematically valid CNPJ (verified by
+        // hand: sum1=222 → DV1=9 ✓; sum2=237 → DV2=5 ✓).
         assertThat(ChatFlowOps.extractValue("cnpj", "CNPJ 12.345.678/0001-95"))
                 .isEqualTo("12.345.678/0001-95");
         assertThat(ChatFlowOps.extractValue("cnpj", "12345678000195"))
                 .isEqualTo("12345678000195");
+    }
+
+    @Test
+    void extractValue_cnpjChecksumRejectsInvalidNumber() {
+        // Flip the last digit to 0 → fails DV2 → null.
+        assertThat(ChatFlowOps.extractValue("cnpj", "12.345.678/0001-90"))
+                .isNull();
+    }
+
+    @Test
+    void extractValue_cnpjRejectsRepeatedDigits() {
+        assertThat(ChatFlowOps.extractValue("cnpj", "11.111.111/1111-11")).isNull();
+        assertThat(ChatFlowOps.extractValue("cnpj", "00000000000000")).isNull();
     }
 
     @Test

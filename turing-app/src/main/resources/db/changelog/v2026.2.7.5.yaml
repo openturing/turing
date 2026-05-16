@@ -1,0 +1,30 @@
+databaseChangeLog:
+  # A/B variant scheduling columns on chat_flow. Lets flow authors stage a
+  # treatment variant ahead of a campaign and have it auto-go-live, or set
+  # an end date so a promo variant auto-retires. The engine's
+  # resolveAbVariant filters by these window bounds at first-touch
+  # assignment time; in-flight conversations stay sticky on the variant
+  # they were already on (state row keyed on flow id, untouched by
+  # schedule changes). Both nullable — null means "open on that side".
+
+  - changeSet:
+      id: v2026.2.7.5-add-chat-flow-experiment-schedule-columns
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: experimentStartsAt
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: experimentStartsAt
+                  type: TIMESTAMP
+              - column:
+                  name: experimentEndsAt
+                  type: TIMESTAMP

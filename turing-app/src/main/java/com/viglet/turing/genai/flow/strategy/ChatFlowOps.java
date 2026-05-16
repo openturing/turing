@@ -1164,13 +1164,104 @@ public final class ChatFlowOps {
             String trimmed = userMessage.trim();
             return trimmed.length() >= 2 ? trimmed : null;
         }
-        Pattern pattern = VALIDATION_PATTERNS.get(validationRule.trim().toLowerCase());
+        String rule = validationRule.trim().toLowerCase();
+        Pattern pattern = VALIDATION_PATTERNS.get(rule);
         if (pattern == null) {
             String trimmed = userMessage.trim();
             return trimmed.length() >= 2 ? trimmed : null;
         }
         var matcher = pattern.matcher(userMessage);
-        return matcher.find() ? matcher.group() : null;
+        if (!matcher.find()) return null;
+        String candidate = matcher.group();
+        // BR document rules need a second pass: the regex pins the format
+        // (correct length + punctuation), but the mathematical checksum is
+        // what separates a real CPF/CNPJ from a syntactically-correct
+        // random number (111.111.111-11, 12345678900, etc.). Returning null
+        // when the checksum fails causes the strategy to re-ask, same as
+        // any other validation miss — the user retypes.
+        if ("cpf".equals(rule)  && !isValidCpfChecksum(candidate))  return null;
+        if ("cnpj".equals(rule) && !isValidCnpjChecksum(candidate)) return null;
+        return candidate;
+    }
+
+    /**
+     * Brazilian CPF checksum (módulo 11). Caller must have already
+     * confirmed the digit string matches the {@code cpf} regex — this
+     * method only adds the math check. Rejects sequences of repeated
+     * digits ({@code 111.111.111-11}, {@code 000.000.000-00}, …) which
+     * mathematically satisfy mod 11 but are flagged as test/invalid
+     * by Receita Federal.
+     *
+     * <p>Package-private for unit testing.
+     */
+    static boolean isValidCpfChecksum(String cpf) {
+        if (cpf == null) return false;
+        String digits = cpf.replaceAll("\\D", "");
+        if (digits.length() != 11) return false;
+        if (isAllSameDigit(digits)) return false;
+        // Check digit 1: weighted sum of positions 1..9 by 10..2
+        int dv1 = computeMod11CheckDigit(digits, 9, 10);
+        if (dv1 != Character.digit(digits.charAt(9), 10)) return false;
+        // Check digit 2: weighted sum of positions 1..10 by 11..2
+        int dv2 = computeMod11CheckDigit(digits, 10, 11);
+        return dv2 == Character.digit(digits.charAt(10), 10);
+    }
+
+    /**
+     * Brazilian CNPJ checksum (módulo 11). Same shape as CPF but with
+     * 14 digits and a different weight cycle (5..2 then 9..2 for digit
+     * 13, shifted by one for digit 14). Repeated-digit sequences are
+     * rejected for the same reason as CPF.
+     *
+     * <p>Package-private for unit testing.
+     */
+    static boolean isValidCnpjChecksum(String cnpj) {
+        if (cnpj == null) return false;
+        String digits = cnpj.replaceAll("\\D", "");
+        if (digits.length() != 14) return false;
+        if (isAllSameDigit(digits)) return false;
+        // CNPJ uses a 6,5,4,3,2,9,8,7,6,5,4,3,2 weight cycle (going right→left)
+        // — implemented as positions 1..12 weighted 5,4,3,2,9,8,7,6,5,4,3,2.
+        int[] weights1 = {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int dv1 = computeMod11WithWeights(digits, weights1);
+        if (dv1 != Character.digit(digits.charAt(12), 10)) return false;
+        int[] weights2 = {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        int dv2 = computeMod11WithWeights(digits, weights2);
+        return dv2 == Character.digit(digits.charAt(13), 10);
+    }
+
+    /**
+     * CPF-style mod-11 check digit: weights decrement from {@code startWeight}
+     * down to 2 across {@code len} positions starting at index 0.
+     */
+    private static int computeMod11CheckDigit(String digits, int len, int startWeight) {
+        int sum = 0;
+        for (int i = 0; i < len; i++) {
+            sum += Character.digit(digits.charAt(i), 10) * (startWeight - i);
+        }
+        int rem = sum % 11;
+        return rem < 2 ? 0 : 11 - rem;
+    }
+
+    /**
+     * CNPJ-style mod-11 check digit: explicit weight array per position
+     * (the cycle isn't a simple decrement — see {@link #isValidCnpjChecksum}).
+     */
+    private static int computeMod11WithWeights(String digits, int[] weights) {
+        int sum = 0;
+        for (int i = 0; i < weights.length; i++) {
+            sum += Character.digit(digits.charAt(i), 10) * weights[i];
+        }
+        int rem = sum % 11;
+        return rem < 2 ? 0 : 11 - rem;
+    }
+
+    private static boolean isAllSameDigit(String digits) {
+        char first = digits.charAt(0);
+        for (int i = 1; i < digits.length(); i++) {
+            if (digits.charAt(i) != first) return false;
+        }
+        return true;
     }
 
     /**

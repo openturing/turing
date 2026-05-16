@@ -60,6 +60,7 @@ import com.viglet.turing.service.chatslots.TurChatHandoffService;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.Channel;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffRequest;
 import com.viglet.turing.service.chatslots.TurChatHandoffService.HandoffResult;
+import com.viglet.turing.service.chatslots.TurChatShareOgService;
 import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
 import com.viglet.turing.service.chatslots.TurChatSlotExtractionService;
 import com.viglet.turing.service.chatslots.TurChatSlotExtractionService.SlotExtractionResult;
@@ -90,6 +91,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurChatSlotEventBus slotEventBus;
 	private final TurChatSlotExtractionService slotExtractionService;
 	private final TurChatHandoffService handoffService;
+	private final TurChatShareOgService shareOgService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -103,7 +105,8 @@ public class TurSNSiteGenAiAPI {
 			TurChatMemoryService chatMemoryService,
 			TurChatSlotEventBus slotEventBus,
 			TurChatSlotExtractionService slotExtractionService,
-			TurChatHandoffService handoffService) {
+			TurChatHandoffService handoffService,
+			TurChatShareOgService shareOgService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -117,6 +120,7 @@ public class TurSNSiteGenAiAPI {
 		this.slotEventBus = slotEventBus;
 		this.slotExtractionService = slotExtractionService;
 		this.handoffService = handoffService;
+		this.shareOgService = shareOgService;
 	}
 
 	/**
@@ -355,6 +359,26 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * Snapshot of the conversation's active flow state — flow identity,
+	 * current cursor node, guardrail method, A/B experiment context.
+	 * Lightweight read, no LLM round-trip — used by debug surfaces like
+	 * {@code SlotInspector} and by app-level logic that branches on
+	 * variant (e.g. show different layout for Marina vs Lucas without
+	 * a separate slot for that).
+	 *
+	 * <p>Returns a DTO with all-null fields when the conversation has
+	 * no active state yet (visitor mid-typing first message).
+	 *
+	 * @since 2026.2.7
+	 */
+	@GetMapping("/state")
+	public com.viglet.turing.genai.flow.TurChatFlowEngineService.ConversationStateDto chatState(
+			@PathVariable String siteName,
+			@RequestParam String conversationId) {
+		return chatFlowEngineService.getConversationState(conversationId);
+	}
+
+	/**
 	 * Public, unauthenticated <em>write</em> of a single slot on the current
 	 * conversation. Companion to {@link #chatSlots(String, String)} — lets a
 	 * React component force a slot value without round-tripping through the
@@ -396,9 +420,15 @@ public class TurSNSiteGenAiAPI {
 	 * <p>The stream opens with one synchronous snapshot read from the
 	 * persistence layer (no waiting for the next mutation), so a client that
 	 * connects mid-conversation immediately sees the current state. After
-	 * that, every event corresponds to a real write. There is no heartbeat
-	 * — the HTTP layer (Spring + the reverse proxy) handles keep-alive on
-	 * an idle SSE channel.
+	 * that, every event corresponds to a real write — plus a comment-only
+	 * heartbeat every 25s to keep idle proxies (nginx default
+	 * {@code proxy_read_timeout=60s}, corporate firewalls) from severing
+	 * the TCP connection.
+	 *
+	 * <p>Heartbeats are SSE comments ({@code : heartbeat}) — the EventSource
+	 * spec mandates they're silently discarded by the browser, so subscribers
+	 * see them as a no-op. No need for a {@code transport: "sse"} client
+	 * change to handle them.
 	 *
 	 * <p>Single-node only — see {@link com.viglet.turing.service.chatslots.TurChatSlotEventBus}
 	 * for the cluster caveat. SDKs that need cluster-correctness should keep
@@ -407,13 +437,22 @@ public class TurSNSiteGenAiAPI {
 	 * @since 2026.2.7
 	 */
 	@GetMapping(value = "/slots/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<TurChatSessionSlotsDto> streamSlots(@PathVariable String siteName,
+	public Flux<org.springframework.http.codec.ServerSentEvent<TurChatSessionSlotsDto>> streamSlots(
+			@PathVariable String siteName,
 			@RequestParam String conversationId) {
 		if (conversationId == null || conversationId.isBlank()) {
 			return Flux.empty();
 		}
 		TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
-		return Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId));
+		Flux<org.springframework.http.codec.ServerSentEvent<TurChatSessionSlotsDto>> data =
+				Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId))
+						.map(snapshot -> org.springframework.http.codec.ServerSentEvent
+								.<TurChatSessionSlotsDto>builder(snapshot).build());
+		Flux<org.springframework.http.codec.ServerSentEvent<TurChatSessionSlotsDto>> heartbeats =
+				Flux.interval(java.time.Duration.ofSeconds(25))
+						.map(tick -> org.springframework.http.codec.ServerSentEvent
+								.<TurChatSessionSlotsDto>builder().comment("heartbeat").build());
+		return Flux.merge(data, heartbeats);
 	}
 
 	/**
@@ -523,6 +562,28 @@ public class TurSNSiteGenAiAPI {
 		static ChatHandoffResponse error(String message) {
 			return new ChatHandoffResponse(null, null, 0, message);
 		}
+	}
+
+	/**
+	 * Server-side rendered Open Graph share card. The chat-flow author
+	 * builds a deep-link to this endpoint with the slot values they want
+	 * surfaced in the preview (e.g. {@code ?name=Alexandre&area=financas
+	 * &dest=https://ee.insper.edu.br/match}); social-platform scrapers
+	 * (WhatsApp, Slack, LinkedIn, X, Discord, …) hit it, harvest the
+	 * personalized {@code og:*} / {@code twitter:*} meta tags, and render
+	 * a rich preview card. Human visitors who click the link are
+	 * meta-refresh-redirected to {@code dest}.
+	 *
+	 * <p>{@code @RequestParam Map} collects all query params as-is, so
+	 * the renderer is fully generic — any slot the flow author wants to
+	 * weave into the title/description becomes a query key.
+	 *
+	 * @since 2026.2.7
+	 */
+	@GetMapping(value = "/share/og", produces = MediaType.TEXT_HTML_VALUE)
+	public String shareOg(@PathVariable String siteName,
+			@RequestParam java.util.Map<String, String> params) {
+		return shareOgService.renderCard(params);
 	}
 
 	/**

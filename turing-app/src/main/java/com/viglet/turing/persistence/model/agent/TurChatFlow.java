@@ -15,6 +15,7 @@ package com.viglet.turing.persistence.model.agent;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.viglet.turing.persistence.utils.TurAssignableUuidGenerator;
@@ -136,6 +137,39 @@ public class TurChatFlow implements Serializable {
      */
     @Column(name = "trafficWeight")
     private Integer trafficWeight;
+
+    /**
+     * Optional schedule window opening. When set, the variant is excluded
+     * from fresh A/B assignment until {@code now() >= experimentStartsAt}
+     * — so a flow author can stage a treatment variant ahead of time and
+     * have it auto-go-live without an admin click. Conversations already
+     * assigned to this variant continue uninterrupted (assignment is
+     * sticky); only first-touch traffic is gated.
+     *
+     * <p>{@code null} means "live now" — no scheduling constraint.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "experimentStartsAt")
+    private Instant experimentStartsAt;
+
+    /**
+     * Optional schedule window closing. When set, the variant is excluded
+     * from fresh A/B assignment after {@code now() > experimentEndsAt} —
+     * letting a campaign-specific variant auto-retire at the end of a
+     * promo window without leaving lingering traffic. Same stickiness
+     * applies: in-flight conversations finish on their assigned variant.
+     *
+     * <p>If every variant in an experiment has expired, the engine falls
+     * back to the LLM-router-picked flow as if no A/B were configured.
+     *
+     * <p>{@code null} means "no end date" — the variant stays in
+     * rotation until disabled manually.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "experimentEndsAt")
+    private Instant experimentEndsAt;
 
     /**
      * Owning AI agent. The client always knows the agent id from the URL, so

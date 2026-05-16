@@ -11,6 +11,8 @@ package com.viglet.turing.genai.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -189,6 +191,41 @@ class TurChatFlowAbVariantAssignmentTest {
             }
         }
         org.assertj.core.api.Assertions.fail("no negative-hash conv id sampled in 200 attempts");
+    }
+
+    // ─────────────────────────── Scheduling ───────────────────────────
+
+    @Test
+    void isInExperimentWindow_nullBoundsMeanAlwaysOpen() {
+        TurChatFlow f = variant("A", "control", 50);
+        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, Instant.now()))
+                .as("Null window bounds → variant always eligible")
+                .isTrue();
+    }
+
+    @Test
+    void isInExperimentWindow_beforeStart_excluded() {
+        TurChatFlow f = variant("A", "control", 50);
+        Instant now = Instant.now();
+        f.setExperimentStartsAt(now.plus(1, ChronoUnit.HOURS));
+        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isFalse();
+    }
+
+    @Test
+    void isInExperimentWindow_afterEnd_excluded() {
+        TurChatFlow f = variant("A", "control", 50);
+        Instant now = Instant.now();
+        f.setExperimentEndsAt(now.minus(1, ChronoUnit.HOURS));
+        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isFalse();
+    }
+
+    @Test
+    void isInExperimentWindow_withinWindow_included() {
+        TurChatFlow f = variant("A", "control", 50);
+        Instant now = Instant.now();
+        f.setExperimentStartsAt(now.minus(1, ChronoUnit.HOURS));
+        f.setExperimentEndsAt(now.plus(1, ChronoUnit.HOURS));
+        assertThat(TurChatFlowEngineService.isInExperimentWindow(f, now)).isTrue();
     }
 
     // ─────────────────────────── helpers ───────────────────────────

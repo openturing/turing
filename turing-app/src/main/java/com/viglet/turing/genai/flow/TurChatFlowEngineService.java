@@ -289,6 +289,70 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * Snapshot of the conversation's active flow state — flow identity,
+     * the current cursor node, and any A/B experiment context. Returned
+     * by {@code GET /chat/state} so React tooling (SlotInspector,
+     * useTuringFlowState, useTuringExperiment) can render debug panels
+     * or variant-aware UI without round-tripping to /slots.
+     *
+     * <p>All fields are nullable — when the conversation has no active
+     * state (visitor hasn't sent the first message yet), the DTO is
+     * returned with {@code flowId=null}. Callers should treat that as
+     * "no active flow yet, retry later".
+     *
+     * @since 2026.2.7
+     */
+    public record ConversationStateDto(
+            String conversationId,
+            String flowId,
+            String flowName,
+            String currentNodeId,
+            String guardrailMethod,
+            String experimentKey,
+            String variantLabel) {
+    }
+
+    /**
+     * Returns the active state for the conversation, picking the LEAF state
+     * row (deepest descendant in a sub-flow chain) to surface the actually-
+     * driving flow when the conversation is mid sub-flow. When multiple
+     * flows have state rows for the same conversation, the most recently
+     * updated leaf wins — matches the engine's continuation logic.
+     *
+     * @since 2026.2.7
+     */
+    public ConversationStateDto getConversationState(String conversationId) {
+        if (conversationId == null || conversationId.isBlank()) {
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null);
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        if (states.isEmpty()) {
+            return new ConversationStateDto(conversationId, null, null, null, null, null, null);
+        }
+        // Skip rows that point at other rows as parent — we want the leaf.
+        Set<String> hasDescendant = states.stream()
+                .map(TurChatFlowState::getParentStateId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        TurChatFlowState leaf = states.stream()
+                .filter(s -> !hasDescendant.contains(s.getId()))
+                .sorted(Comparator.comparing(TurChatFlowState::getUpdatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
+                .findFirst()
+                .orElse(states.get(0));
+        TurChatFlow flow = leaf.getFlow();
+        return new ConversationStateDto(
+                conversationId,
+                flow == null ? null : flow.getId(),
+                flow == null ? null : flow.getName(),
+                leaf.getCurrentNodeId(),
+                flow == null || flow.getGuardrailMethod() == null
+                        ? null : flow.getGuardrailMethod().name(),
+                flow == null ? null : flow.getExperimentKey(),
+                flow == null ? null : flow.getVariantLabel());
+    }
+
+    /**
      * Newest-first list of every finished run of {@code flow}, read from
      * the append-only {@link TurChatFlowSubmission} table.
      */
@@ -611,13 +675,23 @@ public class TurChatFlowEngineService {
         if (experimentKey == null || experimentKey.isBlank()) {
             return new AbResolved(routerFlow, routerGraph);
         }
+        java.time.Instant now = java.time.Instant.now();
         List<TurChatFlow> variants = candidates.stream()
                 .map(RouterCandidate::flow)
                 .filter(f -> experimentKey.equals(f.getExperimentKey()))
+                .filter(f -> isInExperimentWindow(f, now))
                 .toList();
+        if (variants.isEmpty()) {
+            // Every variant is outside its scheduled window — fall back to the
+            // router pick and skip A/B tagging entirely so the conversation
+            // looks like a non-experiment session in analytics.
+            log.info("[A/B] Experiment '{}': no variants in active window — "
+                    + "falling back to router pick {}", experimentKey, routerFlow.getId());
+            return new AbResolved(routerFlow, routerGraph);
+        }
         TurChatFlow finalFlow = routerFlow;
         ChatFlowGraph finalGraph = routerGraph;
-        if (variants.size() > 1) {
+        if (variants.size() > 1 || !variants.get(0).getId().equals(routerFlow.getId())) {
             TurChatFlow assigned = assignVariant(variants, conversationId, experimentKey);
             if (!assigned.getId().equals(routerFlow.getId())) {
                 Optional<ChatFlowGraph> assignedGraph = parseGraph(assigned);
@@ -637,6 +711,22 @@ public class TurChatFlowEngineService {
         chatAnalyticsService.recordExperimentAssignment(conversationId,
                 experimentKey, finalFlow.getVariantLabel());
         return new AbResolved(finalFlow, finalGraph);
+    }
+
+    /**
+     * Schedule-window check for a flow variant. Returns true when {@code now}
+     * sits inside the optional {@code [experimentStartsAt, experimentEndsAt]}
+     * window — null bounds mean "open on that side". Used to gate first-touch
+     * A/B assignment so flow authors can stage future variants and let past
+     * ones auto-retire without admin intervention.
+     *
+     * <p>Package-private for unit testing.
+     */
+    static boolean isInExperimentWindow(TurChatFlow flow, java.time.Instant now) {
+        java.time.Instant start = flow.getExperimentStartsAt();
+        java.time.Instant end = flow.getExperimentEndsAt();
+        return (start == null || !now.isBefore(start))
+                && (end == null || !now.isAfter(end));
     }
 
     private record AbResolved(TurChatFlow flow, ChatFlowGraph graph) {}

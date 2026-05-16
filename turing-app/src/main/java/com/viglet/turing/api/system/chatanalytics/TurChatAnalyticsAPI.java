@@ -63,15 +63,18 @@ public class TurChatAnalyticsAPI {
     private final TurChatMemoryStore chatMemoryStore;
     private final TurAIAgentRepository agentRepository;
     private final TurPersonaRepository personaRepository;
+    private final com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService;
 
     public TurChatAnalyticsAPI(TurChatAnalyticsService analyticsService,
             TurChatMemoryStore chatMemoryStore,
             TurAIAgentRepository agentRepository,
-            TurPersonaRepository personaRepository) {
+            TurPersonaRepository personaRepository,
+            com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService significanceService) {
         this.analyticsService = analyticsService;
         this.chatMemoryStore = chatMemoryStore;
         this.agentRepository = agentRepository;
         this.personaRepository = personaRepository;
+        this.significanceService = significanceService;
     }
 
     /**
@@ -263,6 +266,46 @@ public class TurChatAnalyticsAPI {
                 fromInstant, toInstant, dimension, limit);
         enrichBucketLabels(rows, dimension);
         return rows;
+    }
+
+    /**
+     * Statistical-significance evaluation for an A/B experiment. Pulls
+     * per-variant counts from the analytics store, runs a two-proportion
+     * z-test on the chosen {@code successMetric}, returns a verdict the
+     * dashboard renders as a banner: "Winner: 'lucas-alumni' (p=0.013)"
+     * vs "Underpowered: 47 sessions, need ≥ 100" vs "No significant
+     * difference yet".
+     *
+     * <p>Endpoint params:
+     * <ul>
+     *   <li>{@code experimentKey} — the shared key declared on both variants</li>
+     *   <li>{@code successMetric} — {@code GOAL_ACHIEVED} (default),
+     *       {@code HANDOFF_WHATSAPP}, {@code LEAD_EMAIL_CAPTURED}</li>
+     *   <li>{@code alpha} — significance threshold, default {@code 0.05}</li>
+     *   <li>{@code from} / {@code to} — time window, defaults 30 days back</li>
+     * </ul>
+     *
+     * @since 2026.2.7
+     */
+    @GetMapping(value = "/experiment/{experimentKey}/significance",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SignificanceResult
+            experimentSignificance(
+            @org.springframework.web.bind.annotation.PathVariable String experimentKey,
+            @RequestParam(defaultValue = "GOAL_ACHIEVED") String successMetric,
+            @RequestParam(required = false) Double alpha,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric metric;
+        try {
+            metric = com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric
+                    .valueOf(successMetric.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            metric = com.viglet.turing.service.chatanalytics.TurExperimentSignificanceService.SuccessMetric.GOAL_ACHIEVED;
+        }
+        Instant fromInstant = parseInstant(from, defaultFrom());
+        Instant toInstant   = parseInstant(to,   defaultTo());
+        return significanceService.evaluate(experimentKey, metric, fromInstant, toInstant, alpha);
     }
 
     /**

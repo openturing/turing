@@ -621,6 +621,42 @@ export async function postSiteSlotExtract(
 }
 
 /**
+ * Snapshot of a conversation's active chat-flow state. Returned by the
+ * lightweight {@code GET /chat/state} endpoint — useful for debug
+ * panels and for app-level logic that needs to know which A/B variant
+ * the visitor was routed to. All fields are nullable when the
+ * conversation hasn't started yet.
+ *
+ * @since 2026.2.7
+ */
+export interface TurChatConversationState {
+  readonly conversationId: string;
+  readonly flowId: string | null;
+  readonly flowName: string | null;
+  readonly currentNodeId: string | null;
+  readonly guardrailMethod: string | null;
+  readonly experimentKey: string | null;
+  readonly variantLabel: string | null;
+}
+
+/**
+ * Lightweight read of the conversation's flow state. No LLM call, no
+ * slot polling — just one row from the chat-flow state table. Used by
+ * {@link useTuringFlowState} and {@link useTuringExperiment}.
+ *
+ * Server endpoint: {@code GET /api/sn/{site}/chat/state?conversationId=...}.
+ *
+ * @since 2026.2.7
+ */
+export function fetchSiteChatState(
+  site: string,
+  conversationId: string,
+): Promise<TurChatConversationState> {
+  const qs = new URLSearchParams({ conversationId });
+  return get<TurChatConversationState>(`/sn/${site}/chat/state?${qs}`);
+}
+
+/**
  * Channels accepted by the handoff endpoint. {@code whatsapp} produces a
  * {@code wa.me} universal link; {@code email} a {@code mailto:};
  * {@code sms} an {@code sms:} link. New channels plug in on the server
@@ -628,7 +664,12 @@ export async function postSiteSlotExtract(
  *
  * @since 2026.2.7
  */
-export type TurChatHandoffChannel = "whatsapp" | "email" | "sms";
+export type TurChatHandoffChannel =
+  | "whatsapp"
+  | "email"
+  | "sms"
+  | "telegram"
+  | "slack";
 
 /**
  * Server response for the handoff endpoint. {@code url} is the absolute
