@@ -57,6 +57,8 @@ import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleReposit
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.service.chatmemory.TurChatMemoryService;
 import com.viglet.turing.service.chatslots.TurChatSlotEventBus;
+import com.viglet.turing.service.chatslots.TurChatSlotExtractionService;
+import com.viglet.turing.service.chatslots.TurChatSlotExtractionService.SlotExtractionResult;
 import com.viglet.turing.sn.TurSNSearchProcess;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -82,6 +84,7 @@ public class TurSNSiteGenAiAPI {
 	private final TurConfigProperties configProperties;
 	private final TurChatMemoryService chatMemoryService;
 	private final TurChatSlotEventBus slotEventBus;
+	private final TurChatSlotExtractionService slotExtractionService;
 
 	public TurSNSiteGenAiAPI(TurSNSearchProcess turSNSearchProcess,
 			TurSNGenAi turGenAi,
@@ -93,7 +96,8 @@ public class TurSNSiteGenAiAPI {
 			TurChatFlowEngineService chatFlowEngineService,
 			TurConfigProperties configProperties,
 			TurChatMemoryService chatMemoryService,
-			TurChatSlotEventBus slotEventBus) {
+			TurChatSlotEventBus slotEventBus,
+			TurChatSlotExtractionService slotExtractionService) {
 		this.turSNSearchProcess = turSNSearchProcess;
 		this.turGenAi = turGenAi;
 		this.turGenAiContextFactory = turGenAiContextFactory;
@@ -105,6 +109,7 @@ public class TurSNSiteGenAiAPI {
 		this.configProperties = configProperties;
 		this.chatMemoryService = chatMemoryService;
 		this.slotEventBus = slotEventBus;
+		this.slotExtractionService = slotExtractionService;
 	}
 
 	/**
@@ -402,6 +407,61 @@ public class TurSNSiteGenAiAPI {
 		}
 		TurChatSessionSlotsDto initial = chatFlowEngineService.listSlotsForConversation(conversationId);
 		return Flux.concat(Flux.just(initial), slotEventBus.subscribe(conversationId));
+	}
+
+	/**
+	 * Document-to-slots extraction. The caller uploads any Tika-parseable
+	 * file (PDF / DOCX / TXT / RTF / HTML) plus the current conversation
+	 * id; the service extracts text via Apache Tika (same path the RAG
+	 * asset pipeline uses), asks the agent's LLM to map the document onto
+	 * the requested slots, and writes the results via the chat-flow engine
+	 * — so the React UI sees the fills land in &lt;100 ms through the SSE
+	 * channel.
+	 *
+	 * <p>Generic by design: caller passes the slot names it wants filled
+	 * (comma-separated in {@code slotNames}) or leaves it empty to target
+	 * the agent's full slot catalog. Use cases include CV/resume upload
+	 * to skip the manual question flow, invoice upload to auto-fill
+	 * billing fields, form upload to extract structured data, etc.
+	 *
+	 * <p>The endpoint is unauthenticated — same posture as the rest of
+	 * {@code /api/sn/{site}/chat/*} — so deployments that need access
+	 * control should layer it at the reverse proxy.
+	 *
+	 * @since 2026.2.7
+	 */
+	@PostMapping(value = "/slot-extract", consumes = "multipart/form-data")
+	public ChatSlotExtractResponse extractSlots(@PathVariable String siteName,
+			@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+			@RequestParam("conversationId") String conversationId,
+			@RequestParam(value = "slotNames", required = false) String slotNames) {
+		return turSNSearchProcess.getSNSite(siteName)
+				.map(site -> {
+					TurSNSiteGenAi genAi = site.getTurSNSiteGenAi();
+					if (genAi == null || genAi.getTurAIAgent() == null) {
+						return new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
+								"No AI agent configured for site '" + siteName + "'");
+					}
+					TurAIAgent agent = genAi.getTurAIAgent();
+					java.util.List<String> requested = (slotNames == null || slotNames.isBlank())
+							? java.util.List.of()
+							: java.util.Arrays.stream(slotNames.split(","))
+									.map(String::trim).filter(s -> !s.isEmpty())
+									.toList();
+					SlotExtractionResult result = slotExtractionService.extract(
+							file, agent, conversationId, requested);
+					return new ChatSlotExtractResponse(result.extracted(),
+							result.slotsWritten(), result.extractedTextChars(), null);
+				})
+				.orElseGet(() -> new ChatSlotExtractResponse(java.util.Map.of(), 0, 0,
+						"Site not found: " + siteName));
+	}
+
+	public record ChatSlotExtractResponse(
+			java.util.Map<String, String> extracted,
+			int slotsWritten,
+			int extractedTextChars,
+			String error) {
 	}
 
 	/**

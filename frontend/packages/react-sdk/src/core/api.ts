@@ -567,6 +567,59 @@ export async function postSiteChatSlot(
   return data ?? { updatedStates: 0 };
 }
 
+/**
+ * Server response for the slot-extract endpoint. {@code extracted} maps
+ * each requested slot name to the value the LLM produced (or {@code null}
+ * when the document didn't contain enough info to fill that slot).
+ * {@code slotsWritten} counts how many were persisted by the engine —
+ * may be less than {@code Object.keys(extracted).length} if some values
+ * were null or the conversation had no live flow state yet.
+ *
+ * @since 2026.2.7
+ */
+export interface TurChatSlotExtractResponse {
+  readonly extracted: Readonly<Record<string, string | null>>;
+  readonly slotsWritten: number;
+  readonly extractedTextChars: number;
+  /** Set when the server short-circuited (site/agent missing). */
+  readonly error?: string | null;
+}
+
+/**
+ * Uploads a document (PDF / DOCX / TXT / RTF / HTML — anything Apache Tika
+ * auto-detects) and asks the server to extract values for the requested
+ * slots using the agent's configured LLM. Each extracted field is written
+ * to the conversation's chat-flow state via the same path as the
+ * {@code POST /chat/slots} writer — so {@link useTuringSlots} subscribers
+ * receive the new values over SSE in &lt;100 ms.
+ *
+ * <p>Generic by design: caller supplies the {@code slotNames} array
+ * (e.g. {@code ["name", "cargo_atual", "objetivo"]}) — if omitted, the
+ * server targets the entire agent slot catalog.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/slot-extract}.
+ *
+ * @since 2026.2.7
+ */
+export async function postSiteSlotExtract(
+  site: string,
+  file: File,
+  conversationId: string,
+  slotNames?: ReadonlyArray<string>,
+): Promise<TurChatSlotExtractResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("conversationId", conversationId);
+  if (slotNames && slotNames.length > 0) {
+    form.append("slotNames", slotNames.join(","));
+  }
+  const { data } = await axios.post<TurChatSlotExtractResponse>(
+    `/sn/${site}/chat/slot-extract`,
+    form,
+  );
+  return data ?? { extracted: {}, slotsWritten: 0, extractedTextChars: 0 };
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }

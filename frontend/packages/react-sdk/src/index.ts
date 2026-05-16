@@ -18,6 +18,7 @@ export {
   fetchSiteChatSlots,
   fetchAgentChatSlots,
   postSiteChatSlot,
+  postSiteSlotExtract,
   fetchSortOptions,
   parseHrefToParams,
   postClick,
@@ -32,6 +33,7 @@ export type {
   ClickTrackParams,
   TurChatSessionSlots,
   TurChatSlotWriteResponse,
+  TurChatSlotExtractResponse,
 } from "./core/api";
 
 // ── Session ──
@@ -87,6 +89,12 @@ export type {
   UseTuringSlotWriterOptions,
   SlotWriteStatus,
 } from "./hooks/use-turing-slot-writer";
+export { useTuringSlotExtract } from "./hooks/use-turing-slot-extract";
+export type {
+  UseTuringSlotExtractReturn,
+  UseTuringSlotExtractOptions,
+  SlotExtractStatus,
+} from "./hooks/use-turing-slot-extract";
 export { useTuringClickTracking } from "./hooks/use-turing-click-tracking";
 export type { UseTuringClickTrackingReturn } from "./hooks/use-turing-click-tracking";
 
