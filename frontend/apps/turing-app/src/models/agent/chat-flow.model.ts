@@ -47,6 +47,36 @@ export interface TurChatFlow {
   /** Natural-language description used by the LLM router. Empty disables auto-trigger. */
   triggerDescription?: string | null;
   triggerMode: TurChatFlowTriggerMode;
+  /**
+   * Optional experiment id. Flows sharing the same {@code experimentKey}
+   * are treated as A/B variants — when the router picks any of them, the
+   * engine deterministically reassigns to a single variant based on
+   * {@code hash(conversationId + experimentKey)} weighted by
+   * {@link trafficWeight}. Sticky per conversation.
+   *
+   * <p>{@code null}/empty disables A/B routing for this flow.
+   *
+   * @since 2026.2.7
+   */
+  experimentKey?: string | null;
+  /**
+   * Human-readable variant label inside {@link experimentKey} —
+   * {@code "control"}, {@code "treatment_v2"}, {@code "hero_short"}.
+   * Required when {@code experimentKey} is set; surfaces in the analytics
+   * dashboard as the grouping dimension.
+   *
+   * @since 2026.2.7
+   */
+  variantLabel?: string | null;
+  /**
+   * Relative weight (0-100) inside the experiment. Two variants at
+   * 50 each = 50/50 split; 90 + 10 = 90/10. Sum across variants does
+   * not have to be 100 — only ratios matter. {@code 0} pauses the arm
+   * without deleting it (preserves historical assignments for analysis).
+   *
+   * @since 2026.2.7
+   */
+  trafficWeight?: number | null;
 }
 
 /* ─────────────────── AI Authoring shapes ─────────────────── */

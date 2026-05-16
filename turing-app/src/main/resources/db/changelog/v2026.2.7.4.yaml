@@ -1,0 +1,46 @@
+databaseChangeLog:
+  # A/B experiment columns on chat_flow. Native chat-flow experimentation:
+  # flows sharing the same {@code experimentKey} are treated as variants
+  # of the same A/B test, with deterministic per-conversation assignment
+  # weighted by {@code trafficWeight}. Hibernate auto-generates these
+  # in dev (ddl-auto=update); this changelog is the production migration.
+  # Pinning all three as nullable keeps existing flows valid — the
+  # router treats null experimentKey as "no experiment, run as usual".
+
+  - changeSet:
+      id: v2026.2.7.4-add-chat-flow-ab-experiment-columns
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: experimentKey
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: experimentKey
+                  type: VARCHAR(64)
+              - column:
+                  name: variantLabel
+                  type: VARCHAR(64)
+              - column:
+                  name: trafficWeight
+                  type: INT
+        # Composite index supports the assignVariant sibling lookup:
+        # given an agent + an experimentKey, find all variants. Without
+        # this the router would scan every flow on the agent on each
+        # router invocation. Selectivity is high (most flows have null
+        # experimentKey) so this stays small.
+        - createIndex:
+            tableName: chat_flow
+            indexName: idx_chat_flow_agent_experiment
+            columns:
+              - column:
+                  name: agent_id
+              - column:
+                  name: experimentKey

@@ -91,6 +91,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
             fields.put("totalToolCalls",     String.valueOf(event.totalToolCalls()));
             fields.put("totalToolErrors",    String.valueOf(event.totalToolErrors()));
             fields.put("totalToolLatencyMs", String.valueOf(event.totalToolLatencyMs()));
+            putIfNotBlank(fields, "experimentKey", event.experimentKey());
+            putIfNotBlank(fields, "variantLabel",  event.variantLabel());
             fields.put("durationMs",         String.valueOf(event.durationMs()));
             fields.put("updatedAt",      Instant.now().toString());
             if (event.completedAt() != null) {
@@ -274,7 +276,14 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
 
     @Override
     public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows) {
-        String field = "personaId".equals(dimension) ? "personaId" : "agentId";
+        // Whitelist matches the Mongo store's; "experimentKey" and
+        // "variantLabel" surface A/B test arm comparison on the dashboard.
+        String field = switch (dimension == null ? "" : dimension) {
+            case "personaId"     -> "personaId";
+            case "experimentKey" -> "experimentKey";
+            case "variantLabel"  -> "variantLabel";
+            default -> "agentId";
+        };
         int cap = Math.max(1, Math.min(maxRows, 100));
 
         // dim → aggregates: [sessions, durationSum, processedCount, achievedScore, negativeCount]
@@ -506,6 +515,8 @@ public class TurRedisChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("totalToolCalls",     parseLong(hash.get("totalToolCalls")));
         row.put("totalToolErrors",    parseLong(hash.get("totalToolErrors")));
         row.put("totalToolLatencyMs", parseLong(hash.get("totalToolLatencyMs")));
+        row.put("experimentKey",      hash.get("experimentKey"));
+        row.put("variantLabel",       hash.get("variantLabel"));
         row.put("durationMs",         parseLong(hash.get("durationMs")));
         row.put("firstUserMessage", hash.get("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.

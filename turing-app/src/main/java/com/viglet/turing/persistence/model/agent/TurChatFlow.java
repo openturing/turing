@@ -91,6 +91,53 @@ public class TurChatFlow implements Serializable {
     private TurChatFlowTriggerMode triggerMode = TurChatFlowTriggerMode.ONCE;
 
     /**
+     * Optional experiment grouping key. Flows that share an
+     * {@code experimentKey} are treated as variants of the same A/B
+     * (or A/B/C/…) test: when the LLM router picks any one of them, the
+     * engine deterministically reassigns to a single variant based on
+     * {@code hash(conversationId + experimentKey)} weighted by
+     * {@link #trafficWeight}. The assignment is sticky per conversation,
+     * so the visitor stays on the same variant across re-triggers.
+     *
+     * <p>Blank/null disables A/B routing — the flow runs whenever the
+     * router picks it, like every other flow.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "experimentKey", length = 64)
+    private String experimentKey;
+
+    /**
+     * Human-readable label for this variant ({@code "control"},
+     * {@code "treatment_v2"}, {@code "hero_short"}, …). Used by the
+     * analytics dashboard to group session metrics per variant — the
+     * key alone identifies the experiment, the label identifies the arm.
+     *
+     * <p>Required when {@link #experimentKey} is set; ignored otherwise.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "variantLabel", length = 64)
+    private String variantLabel;
+
+    /**
+     * Relative traffic weight (0-100) for this variant within the
+     * experiment. Two variants with weights {@code 50} and {@code 50}
+     * split traffic evenly; weights {@code 90} and {@code 10} send 90%
+     * of conversations to the first. Sum across variants does NOT have
+     * to be 100 — the assignment math normalizes by total weight, so
+     * {@code 1:1} and {@code 50:50} produce the same distribution.
+     *
+     * <p>{@code 0} or {@code null} means "exclude from traffic" — useful
+     * to keep a variant declared (so completed sessions can be analyzed)
+     * while pausing fresh assignments to it.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "trafficWeight")
+    private Integer trafficWeight;
+
+    /**
      * Owning AI agent. The client always knows the agent id from the URL, so
      * the back-reference is hidden from JSON to keep the payload small and
      * avoid serializing the full agent graph.

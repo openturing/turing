@@ -1,6 +1,8 @@
 import axios from "axios";
 import type {
   TurChatAnalyticsHealth,
+  TurChatAnalyticsScorecardParams,
+  TurChatAnalyticsScorecardRow,
   TurChatAnalyticsSession,
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
@@ -39,6 +41,16 @@ export class TurChatAnalyticsService {
       if (axios.isAxiosError(err) && err.response?.status === 404) return null;
       throw err;
     }
+  }
+
+  async scorecard(
+    params: TurChatAnalyticsScorecardParams = {},
+  ): Promise<TurChatAnalyticsScorecardRow[]> {
+    const response = await axios.get<TurChatAnalyticsScorecardRow[]>(
+      "/system/chat-analytics/scorecard",
+      { params },
+    );
+    return response.data ?? [];
   }
 
   async timeseries(

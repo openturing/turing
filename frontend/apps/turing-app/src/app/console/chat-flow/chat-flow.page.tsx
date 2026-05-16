@@ -115,6 +115,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
     flow.triggerMode ?? "ONCE",
   );
+  const [experimentKey, setExperimentKey] = useState(flow.experimentKey ?? "");
+  const [variantLabel, setVariantLabel] = useState(flow.variantLabel ?? "");
+  const [trafficWeight, setTrafficWeight] = useState<number | null>(flow.trafficWeight ?? null);
   const [open, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -176,6 +179,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       return;
     }
     setSaving(true);
+    const trimmedKey = experimentKey.trim();
     const payload: TurChatFlow = {
       ...flow,
       name: name.trim(),
@@ -185,6 +189,12 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       guardrailMethod,
       triggerDescription: triggerDescription.trim() || null,
       triggerMode,
+      // A/B experiment fields stay coupled: clearing the key wipes
+      // label + weight so the backend sees a clean opt-out instead of
+      // dangling metadata.
+      experimentKey: trimmedKey || null,
+      variantLabel: trimmedKey ? (variantLabel.trim() || null) : null,
+      trafficWeight: trimmedKey ? trafficWeight : null,
     };
     try {
       if (isNew) {
@@ -201,7 +211,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     } finally {
       setSaving(false);
     }
-  }, [name, description, guardrailMethod, triggerDescription, triggerMode, nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
+  }, [name, description, guardrailMethod, triggerDescription, triggerMode,
+      experimentKey, variantLabel, trafficWeight,
+      nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
   const onExport = useCallback(() => {
     const flowName = name.trim() || flow.name || "chat-flow";
@@ -375,6 +387,12 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setTriggerDescription={setTriggerDescription}
           triggerMode={triggerMode}
           setTriggerMode={setTriggerMode}
+          experimentKey={experimentKey}
+          setExperimentKey={setExperimentKey}
+          variantLabel={variantLabel}
+          setVariantLabel={setVariantLabel}
+          trafficWeight={trafficWeight}
+          setTrafficWeight={setTrafficWeight}
         />
 
         <ChatFlowDiagramTab

@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { IconBolt, IconSettings } from "@tabler/icons-react";
+import { IconBolt, IconFlask, IconSettings } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -67,6 +67,12 @@ interface SettingsTabProps {
   setTriggerDescription: (value: string) => void;
   triggerMode: TurChatFlowTriggerMode;
   setTriggerMode: (value: TurChatFlowTriggerMode) => void;
+  experimentKey: string;
+  setExperimentKey: (value: string) => void;
+  variantLabel: string;
+  setVariantLabel: (value: string) => void;
+  trafficWeight: number | null;
+  setTrafficWeight: (value: number | null) => void;
 }
 
 export function ChatFlowSettingsTab({
@@ -80,6 +86,12 @@ export function ChatFlowSettingsTab({
   setTriggerDescription,
   triggerMode,
   setTriggerMode,
+  experimentKey,
+  setExperimentKey,
+  variantLabel,
+  setVariantLabel,
+  trafficWeight,
+  setTrafficWeight,
 }: Readonly<SettingsTabProps>) {
   const { t } = useTranslation();
   return (
@@ -200,6 +212,88 @@ export function ChatFlowSettingsTab({
                     ))}
                   </SelectContent>
                 </Select>
+              </FormRow>
+            </div>
+          </SectionCard.Content>
+        </SectionCard>
+
+        {/* ── Card: A/B experiment ── */}
+        <SectionCard variant="amber">
+          <SectionCard.Header
+            icon={IconFlask}
+            title={t("chatFlow.sections.experiment.title", {
+              defaultValue: "A/B experiment",
+            })}
+            description={t("chatFlow.sections.experiment.description", {
+              defaultValue:
+                "Group this flow with sibling flows under the same experiment key — the router will reassign conversations across variants by traffic weight. Leave the key empty to disable A/B routing.",
+            })}
+          />
+          <SectionCard.Content>
+            <div className="space-y-6">
+              <FormRow
+                htmlFor="chat-flow-experiment-key"
+                label={t("chatFlow.fields.experimentKey", { defaultValue: "Experiment key" })}
+                description={t("chatFlow.fields.experimentKeyHint", {
+                  defaultValue:
+                    "Identifier shared across all variants of one A/B test (e.g. 'pricing-page-tone'). Stable: changing it ends the experiment and starts a new one.",
+                })}
+              >
+                <Input
+                  id="chat-flow-experiment-key"
+                  value={experimentKey}
+                  onChange={(event) => setExperimentKey(event.target.value)}
+                  placeholder="e.g. programa-match-headline-2026q1"
+                  maxLength={64}
+                />
+              </FormRow>
+
+              <FormRow
+                htmlFor="chat-flow-variant-label"
+                label={t("chatFlow.fields.variantLabel", { defaultValue: "Variant label" })}
+                description={t("chatFlow.fields.variantLabelHint", {
+                  defaultValue:
+                    "This flow's arm inside the experiment ('control', 'treatment_v2', 'warmer_tone'). Surfaces as the grouping dimension in the analytics dashboard.",
+                })}
+              >
+                <Input
+                  id="chat-flow-variant-label"
+                  value={variantLabel}
+                  onChange={(event) => setVariantLabel(event.target.value)}
+                  placeholder="control"
+                  maxLength={64}
+                  disabled={!experimentKey.trim()}
+                />
+              </FormRow>
+
+              <FormRow
+                htmlFor="chat-flow-traffic-weight"
+                label={t("chatFlow.fields.trafficWeight", { defaultValue: "Traffic weight" })}
+                description={t("chatFlow.fields.trafficWeightHint", {
+                  defaultValue:
+                    "Relative weight (0-100) across variants. (50, 50) splits evenly; (90, 10) routes 90% to the first. Sums do not have to equal 100 — only ratios matter. 0 pauses this arm without deleting it.",
+                })}
+              >
+                <Input
+                  id="chat-flow-traffic-weight"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={trafficWeight ?? ""}
+                  onChange={(event) => {
+                    const raw = event.target.value;
+                    if (raw === "") {
+                      setTrafficWeight(null);
+                      return;
+                    }
+                    const parsed = Number.parseInt(raw, 10);
+                    if (!Number.isNaN(parsed)) {
+                      setTrafficWeight(Math.max(0, Math.min(100, parsed)));
+                    }
+                  }}
+                  placeholder="50"
+                  disabled={!experimentKey.trim()}
+                />
               </FormRow>
             </div>
           </SectionCard.Content>

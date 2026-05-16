@@ -132,6 +132,32 @@ public class TurChatAnalyticsService {
     }
 
     /**
+     * Tags an in-flight conversation with the A/B experiment variant it
+     * landed on. Called once per session by the flow router right after
+     * {@code assignVariant} picks an arm — sticky thereafter (subsequent
+     * calls on the same conversation are no-ops to preserve the original
+     * assignment for the entire session's analytics).
+     *
+     * @since 2026.2.7
+     */
+    public void recordExperimentAssignment(String conversationId, String experimentKey,
+            String variantLabel) {
+        if (conversationId == null || conversationId.isBlank()) return;
+        if (experimentKey == null || experimentKey.isBlank()) return;
+        InFlight inflight = inFlight.get(conversationId);
+        if (inflight == null) return;
+        // First-write-wins — preserves the original arm even if the router
+        // re-runs (defensive: shouldn't happen, but pinning here means no
+        // amount of mid-session retry can flip the assignment).
+        if (inflight.experimentKey == null) {
+            inflight.experimentKey = experimentKey;
+            inflight.variantLabel = variantLabel;
+            log.info("[ChatAnalytics] conv={} tagged experiment '{}' variant '{}'",
+                    conversationId, experimentKey, variantLabel);
+        }
+    }
+
+    /**
      * Records a single tool invocation for the conversation: tool name,
      * wall-clock latency, success/failure. Aggregates accumulate on the
      * in-flight record (no I/O), so logging tool calls is cheap enough
@@ -253,7 +279,9 @@ public class TurChatAnalyticsService {
                     durationMs,
                     inflight == null ? 0  : inflight.toolCalls,
                     inflight == null ? 0  : inflight.toolErrors,
-                    inflight == null ? 0L : inflight.totalToolLatencyMs));
+                    inflight == null ? 0L : inflight.totalToolLatencyMs,
+                    inflight == null ? null : inflight.experimentKey,
+                    inflight == null ? null : inflight.variantLabel));
             if (inflight != null && inflight.toolCalls > 0) {
                 log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
                         conversationId, inflight.toolCalls, inflight.toolErrors,
@@ -296,6 +324,11 @@ public class TurChatAnalyticsService {
         int toolCalls;
         int toolErrors;
         long totalToolLatencyMs;
+        // Set lazily after the flow router assigns an experiment variant —
+        // happens on the FIRST turn that lands on an experimentKey'd flow.
+        // Sticky thereafter (a conversation never reflows experiments mid-life).
+        volatile String experimentKey;
+        volatile String variantLabel;
 
         InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
                 String embeddingModelId, String storeInstanceId, String userId, String locale) {

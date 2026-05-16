@@ -240,9 +240,16 @@ public class TurChatAnalyticsAPI {
     }
 
     /**
-     * Per-agent (or per-persona) scorecard — sessions, goal-achievement rate,
-     * negative+frustrated sentiment rate, avg duration, top intent. Lets us
-     * compare which agent/persona drags or lifts the mean.
+     * Scorecard grouped by a categorical dimension — same metric columns
+     * (sessions, goal-achievement rate, negative+frustrated sentiment rate,
+     * avg duration, top intent), pivoted by {@code dimension}:
+     * <ul>
+     *   <li>{@code agentId} (default) and {@code personaId} — compare
+     *       agents / personas head-to-head.</li>
+     *   <li>{@code experimentKey} and {@code variantLabel} — A/B test
+     *       breakdown. Group by the key to see traffic across experiments;
+     *       group by label to compare variants of the active one.</li>
+     * </ul>
      */
     @GetMapping(value = "/scorecard", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Map<String, Object>> scorecard(

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import type {
   TurChatAnalyticsHealth,
+  TurChatAnalyticsScorecardParams,
+  TurChatAnalyticsScorecardRow,
   TurChatAnalyticsSession,
   TurChatAnalyticsSessionsParams,
   TurChatAnalyticsTimeseriesParams,
@@ -32,6 +34,13 @@ export function useChatAnalyticsTimeseries(params: TurChatAnalyticsTimeseriesPar
   return useQuery<TurChatAnalyticsTimeseriesPoint[]>({
     queryKey: queryKeys.chatAnalytics.timeseries(params as Record<string, unknown>),
     queryFn: () => service.timeseries(params),
+  });
+}
+
+export function useChatAnalyticsScorecard(params: TurChatAnalyticsScorecardParams = {}) {
+  return useQuery<TurChatAnalyticsScorecardRow[]>({
+    queryKey: queryKeys.chatAnalytics.scorecard(params as Record<string, unknown>),
+    queryFn: () => service.scorecard(params),
   });
 }
 

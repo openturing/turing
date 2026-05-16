@@ -62,7 +62,19 @@ public record TurChatSessionEvent(
         /** Subset of {@link #totalToolCalls} that threw or returned an error. */
         int totalToolErrors,
         /** Sum of per-call wall-clock latency for every tool invocation, in ms. */
-        long totalToolLatencyMs) {
+        long totalToolLatencyMs,
+        /**
+         * A/B experiment id this conversation participated in, or {@code null}
+         * when the active flow was outside any experiment. Joins to all the
+         * variants under the same key for cross-variant comparisons.
+         */
+        String experimentKey,
+        /**
+         * Variant arm the conversation was assigned to inside
+         * {@link #experimentKey} (e.g. {@code "control"}, {@code "treatment_v2"}).
+         * {@code null} when {@link #experimentKey} is null.
+         */
+        String variantLabel) {
 
     /** Builder of the start record (most aggregate fields zeroed/null). */
     public static TurChatSessionEvent start(String conversationId, String agentId,
@@ -72,6 +84,6 @@ public record TurChatSessionEvent(
         return new TurChatSessionEvent(conversationId, agentId, personaId,
                 llmInstanceId, embeddingModelId, storeInstanceId, userId, locale,
                 firstUserMessage, startedAt, null, TurChatSessionOutcome.IN_PROGRESS,
-                0, 0L, 0L, 0L, 0, 0, 0L);
+                0, 0L, 0L, 0L, 0, 0, 0L, null, null);
     }
 }

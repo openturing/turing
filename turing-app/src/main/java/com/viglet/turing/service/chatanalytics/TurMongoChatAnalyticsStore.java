@@ -106,6 +106,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
             set.add(Updates.set("totalToolCalls", event.totalToolCalls()));
             set.add(Updates.set("totalToolErrors", event.totalToolErrors()));
             set.add(Updates.set("totalToolLatencyMs", event.totalToolLatencyMs()));
+            putIfNotBlank(set, "experimentKey", event.experimentKey());
+            putIfNotBlank(set, "variantLabel", event.variantLabel());
             set.add(Updates.set("durationMs", event.durationMs()));
             set.add(Updates.set("updatedAt", new Date()));
             if (event.completedAt() != null) {
@@ -326,7 +328,17 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
     @Override
     public List<Map<String, Object>> scorecard(Instant from, Instant to, String dimension, int maxRows) {
         try {
-            String field = "personaId".equals(dimension) ? "personaId" : "agentId";
+            // Whitelist of dimensions — exposed as the {@code group} param
+            // on the /scorecard endpoint. Adding experimentKey + variantLabel
+            // lets the dashboard compare A/B arms head-to-head with the
+            // same metrics (sessions, avg duration, goal rate, sentiment).
+            // Anything outside the list falls back to agentId.
+            String field = switch (dimension == null ? "" : dimension) {
+                case "personaId"    -> "personaId";
+                case "experimentKey" -> "experimentKey";
+                case "variantLabel" -> "variantLabel";
+                default -> "agentId";
+            };
             int cap = Math.max(1, Math.min(maxRows, 100));
 
             List<Bson> pipeline = new ArrayList<>();
@@ -551,6 +563,8 @@ public class TurMongoChatAnalyticsStore implements TurChatAnalyticsStore {
         row.put("totalToolCalls",     doc.get("totalToolCalls", 0));
         row.put("totalToolErrors",    doc.get("totalToolErrors", 0));
         row.put("totalToolLatencyMs", doc.get("totalToolLatencyMs", 0L));
+        row.put("experimentKey",      doc.getString("experimentKey"));
+        row.put("variantLabel",       doc.getString("variantLabel"));
         row.put("durationMs",         doc.get("durationMs", 0L));
         row.put("firstUserMessage", doc.getString("firstUserMessage"));
         // Enrichment columns — null until the scheduled enricher runs.

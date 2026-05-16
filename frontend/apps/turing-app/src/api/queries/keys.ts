@@ -133,5 +133,7 @@ export const queryKeys = {
     transcript: (id: string) => [...queryKeys.chatAnalytics.all(), 'transcript', id] as const,
     timeseries: (params: Record<string, unknown>) =>
       [...queryKeys.chatAnalytics.all(), 'timeseries', params] as const,
+    scorecard: (params: Record<string, unknown>) =>
+      [...queryKeys.chatAnalytics.all(), 'scorecard', params] as const,
   },
 } as const;

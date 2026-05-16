@@ -555,15 +555,16 @@ public class TurChatFlowEngineService {
             return Optional.empty();
         }
 
-        // 4) ALWAYS re-trigger: soft-reset the prior state so the flow restarts at the
-        //    first interactive node WHILE PRESERVING collected slot values. Carrying the
-        //    variables forward lets {@link ChatFlowOps#walkThroughSatisfiedQuestions}
-        //    fast-forward past aiQuestion nodes whose outputVariable was already filled
-        //    on a previous run — without that, every re-trigger would force the user to
-        //    re-answer the same questions (the pizza-flow bug, see
-        //    TurChatFlowAlwaysRetriggerEngineIT).
-        TurChatFlow flow = picked.get().flow();
-        ChatFlowGraph pickedGraph = picked.get().graph();
+        // 4) A/B experiment routing: when the router-picked flow has an
+        //    experimentKey, deterministically reassign to a variant within
+        //    the same experiment group. The assignment is sticky per
+        //    conversation (same hash bucket regardless of which variant
+        //    the router happened to land on first) so a user never flips
+        //    variants mid-experiment.
+        AbResolved ab = resolveAbVariant(picked.get(), candidates, conversationId);
+        final TurChatFlow flow = ab.flow();
+        final ChatFlowGraph pickedGraph = ab.graph();
+
         if (completedFlowIds.contains(flow.getId())
                 && flow.getTriggerMode() == TurChatFlowTriggerMode.ALWAYS) {
             stateRepository.findByConversationIdAndFlow_Id(conversationId, flow.getId())
@@ -579,10 +580,114 @@ public class TurChatFlowEngineService {
         return newState.map(s -> {
             TurChatFlow activeFlow = s.getFlow();
             ChatFlowGraph activeGraph = activeFlow.getId().equals(flow.getId())
-                    ? picked.get().graph()
-                    : parseGraph(activeFlow).orElse(picked.get().graph());
+                    ? pickedGraph
+                    : parseGraph(activeFlow).orElse(pickedGraph);
             return new FlowSelection(activeFlow, activeGraph, s);
         });
+    }
+
+    /**
+     * Resolves the router-picked candidate against any A/B experiment it
+     * belongs to: if the candidate has a non-blank {@code experimentKey},
+     * collects sibling candidates under the same key and reassigns to the
+     * deterministically-chosen variant. Also fires the analytics tag in
+     * the same step so the in-flight record knows the arm before the
+     * first turn is recorded.
+     *
+     * <p>Returns the original candidate (flow + graph) when the experiment
+     * group has fewer than two variants, when the chosen variant has an
+     * unparseable graph (defensive fallback), or when no experimentKey is
+     * configured.
+     *
+     * <p>Extracted as a separate helper so {@link #selectActiveFlow} keeps
+     * the inner block flat enough for the final-capture lambdas downstream
+     * to compile.
+     */
+    private AbResolved resolveAbVariant(RouterCandidate picked,
+            List<RouterCandidate> candidates, String conversationId) {
+        TurChatFlow routerFlow = picked.flow();
+        ChatFlowGraph routerGraph = picked.graph();
+        String experimentKey = routerFlow.getExperimentKey();
+        if (experimentKey == null || experimentKey.isBlank()) {
+            return new AbResolved(routerFlow, routerGraph);
+        }
+        List<TurChatFlow> variants = candidates.stream()
+                .map(RouterCandidate::flow)
+                .filter(f -> experimentKey.equals(f.getExperimentKey()))
+                .toList();
+        TurChatFlow finalFlow = routerFlow;
+        ChatFlowGraph finalGraph = routerGraph;
+        if (variants.size() > 1) {
+            TurChatFlow assigned = assignVariant(variants, conversationId, experimentKey);
+            if (!assigned.getId().equals(routerFlow.getId())) {
+                Optional<ChatFlowGraph> assignedGraph = parseGraph(assigned);
+                if (assignedGraph.isPresent()) {
+                    log.info("[A/B] Experiment '{}': router picked {} ({}) → reassigned to {} ({})",
+                            experimentKey, routerFlow.getId(), routerFlow.getVariantLabel(),
+                            assigned.getId(), assigned.getVariantLabel());
+                    finalFlow = assigned;
+                    finalGraph = assignedGraph.get();
+                } else {
+                    log.warn("[A/B] Experiment '{}': assigned variant {} has unparseable graph — "
+                            + "staying on router pick {}", experimentKey,
+                            assigned.getId(), routerFlow.getId());
+                }
+            }
+        }
+        chatAnalyticsService.recordExperimentAssignment(conversationId,
+                experimentKey, finalFlow.getVariantLabel());
+        return new AbResolved(finalFlow, finalGraph);
+    }
+
+    private record AbResolved(TurChatFlow flow, ChatFlowGraph graph) {}
+
+    /**
+     * Deterministic weighted-random assignment of a conversation to one
+     * variant within an A/B experiment. Same {@code conversationId +
+     * experimentKey} always maps to the same variant, so the assignment
+     * is sticky for the entire experiment lifetime — visitors never flip
+     * variants mid-conversation, and re-triggers preserve the original
+     * arm. Uses {@code Math.floorMod} on the hash so negative hashes
+     * still land in {@code [0, totalWeight)}.
+     *
+     * <p>Weighting rules:
+     * <ul>
+     *   <li>Sum of {@code trafficWeight} &gt; 0 → variants are picked
+     *       proportionally to their weight. {@code (1, 1)} ≡ {@code (50, 50)}
+     *       — only ratios matter, no need to sum to 100.</li>
+     *   <li>All weights null or 0 → uniform distribution. Lets authors
+     *       opt out of the weighting math entirely when they just want
+     *       an even split.</li>
+     *   <li>A single variant with weight 0 inside an experiment of
+     *       non-zero variants is excluded — useful to pause an arm
+     *       without deleting it (analytics on past assignments stay
+     *       readable).</li>
+     * </ul>
+     *
+     * <p>Package-private for unit testing.
+     *
+     * @since 2026.2.7
+     */
+    static TurChatFlow assignVariant(List<TurChatFlow> variants, String conversationId,
+            String experimentKey) {
+        int totalWeight = 0;
+        for (TurChatFlow v : variants) {
+            totalWeight += Math.max(0, v.getTrafficWeight() == null ? 0 : v.getTrafficWeight());
+        }
+        int hash = (conversationId + ":" + experimentKey).hashCode();
+        if (totalWeight <= 0) {
+            // Uniform fallback — every variant is equally likely.
+            int idx = Math.floorMod(hash, variants.size());
+            return variants.get(idx);
+        }
+        int bucket = Math.floorMod(hash, totalWeight);
+        int cumulative = 0;
+        for (TurChatFlow v : variants) {
+            cumulative += Math.max(0, v.getTrafficWeight() == null ? 0 : v.getTrafficWeight());
+            if (bucket < cumulative) return v;
+        }
+        // Defensive fallback — should never reach here when totalWeight > 0.
+        return variants.get(variants.size() - 1);
     }
 
     /**

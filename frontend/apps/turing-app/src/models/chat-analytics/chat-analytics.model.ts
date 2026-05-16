@@ -114,3 +114,43 @@ export interface TurChatAnalyticsTimeseriesParams {
   /** "hour" or "day". Defaults to "hour" on the server. */
   interval?: "hour" | "day";
 }
+
+/**
+ * Dimensions accepted by the {@code /scorecard} endpoint. {@code agentId}
+ * and {@code personaId} pivot on identity for head-to-head agent/persona
+ * comparison; {@code experimentKey} and {@code variantLabel} pivot on the
+ * A/B test arm so you can see which variant lifts the metric.
+ *
+ * @since 2026.2.7
+ */
+export type TurChatAnalyticsScorecardDimension =
+  | "agentId"
+  | "personaId"
+  | "experimentKey"
+  | "variantLabel";
+
+/**
+ * One row of the {@code /scorecard} response. {@code bucket} is the raw
+ * identity (agent id / persona id / experimentKey / variantLabel),
+ * {@code bucketLabel} is the human-readable name the server resolved
+ * (agent.title / persona.name) — for experiment dimensions both columns
+ * carry the same value since experiment keys/labels are already strings.
+ */
+export interface TurChatAnalyticsScorecardRow {
+  bucket: string;
+  bucketLabel?: string | null;
+  sessions: number;
+  avgDurationMs?: number | null;
+  goalAchievedRate?: number | null;
+  negativeRate?: number | null;
+  topIntent?: string | null;
+}
+
+export interface TurChatAnalyticsScorecardParams {
+  from?: string;
+  to?: string;
+  /** Defaults to "agentId" on the server. */
+  dimension?: TurChatAnalyticsScorecardDimension;
+  /** Defaults to 20 on the server, capped at 100. */
+  limit?: number;
+}

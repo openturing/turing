@@ -1,5 +1,6 @@
 import {
   useChatAnalyticsHealth,
+  useChatAnalyticsScorecard,
   useChatAnalyticsSessions,
   useChatAnalyticsTimeseries,
   useChatAnalyticsTranscript,
@@ -30,9 +31,10 @@ import {
 } from "@/components/ui/table";
 import type {
   TurChatAnalyticsMetric,
+  TurChatAnalyticsScorecardDimension,
   TurChatAnalyticsSession,
 } from "@/models/chat-analytics/chat-analytics.model";
-import { IconChartLine, IconMessageOff } from "@tabler/icons-react";
+import { IconChartLine, IconFlask, IconMessageOff } from "@tabler/icons-react";
 import { useState } from "react";
 import {
   CartesianGrid,
@@ -392,6 +394,119 @@ function TimeseriesPanel() {
   );
 }
 
+interface DimensionOption {
+  readonly value: TurChatAnalyticsScorecardDimension;
+  readonly label: string;
+}
+
+const DIMENSION_OPTIONS: readonly DimensionOption[] = [
+  { value: "agentId",       label: "Agent" },
+  { value: "personaId",     label: "Persona" },
+  { value: "experimentKey", label: "Experiment key" },
+  { value: "variantLabel",  label: "A/B variant" },
+];
+
+function ScorecardPanel() {
+  const [dimension, setDimension] = useState<TurChatAnalyticsScorecardDimension>("agentId");
+  const { data: rows = [], isLoading, isError } = useChatAnalyticsScorecard({
+    dimension,
+    limit: 20,
+  });
+  const isExperimentDim = dimension === "experimentKey" || dimension === "variantLabel";
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <IconFlask className="size-4" />
+              Scorecard
+            </CardTitle>
+            <CardDescription>
+              {isExperimentDim
+                ? "A/B variants compared head-to-head — pick a row to see which arm lifts conversion."
+                : "Per-bucket session counts + AI-enriched signals. Pick a dimension to pivot."}
+            </CardDescription>
+          </div>
+          <Select
+            value={dimension}
+            onValueChange={(v) => setDimension(v as TurChatAnalyticsScorecardDimension)}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DIMENSION_OPTIONS.map((d) => (
+                <SelectItem key={d.value} value={d.value}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <p className="text-muted-foreground py-8 text-center text-sm">Loading…</p>
+        )}
+        {isError && (
+          <p className="text-destructive py-8 text-center text-sm">Failed to load scorecard.</p>
+        )}
+        {!isLoading && !isError && rows.length === 0 && (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            {isExperimentDim
+              ? "No experiments declared yet — set an experimentKey on at least two chat flows to enable A/B routing."
+              : "No data for this dimension in the selected window."}
+          </p>
+        )}
+        {rows.length > 0 && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  {DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label ?? dimension}
+                </TableHead>
+                <TableHead className="text-right">Sessions</TableHead>
+                <TableHead className="text-right">Avg duration</TableHead>
+                <TableHead className="text-right">Goal ✓ rate</TableHead>
+                <TableHead className="text-right">Negative rate</TableHead>
+                <TableHead>Top intent</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.bucket}>
+                  <TableCell className="font-medium">
+                    {row.bucketLabel ?? row.bucket ?? "unknown"}
+                  </TableCell>
+                  <TableCell className="text-right">{row.sessions ?? 0}</TableCell>
+                  <TableCell className="text-right">
+                    {formatDuration(row.avgDurationMs)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {formatRate(row.goalAchievedRate)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {formatRate(row.negativeRate)}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {row.topIntent ?? "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatRate(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 function SessionRow({
   row,
   onSelect,
@@ -462,6 +577,7 @@ export default function ChatAnalyticsPage() {
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <TimeseriesPanel />
+      <ScorecardPanel />
       <Card>
         <CardHeader>
           <CardTitle>Recent chat sessions</CardTitle>
