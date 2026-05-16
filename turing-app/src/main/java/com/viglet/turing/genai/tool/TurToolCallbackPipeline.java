@@ -10,7 +10,10 @@
 package com.viglet.turing.genai.tool;
 
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.viglet.turing.service.chatanalytics.TurChatAnalyticsService;
 
 /**
  * Single consolidation point for the tool-callback decorator chain.
@@ -43,9 +46,12 @@ import org.springframework.stereotype.Service;
 public class TurToolCallbackPipeline {
 
     private final TurToolDescriptionService toolDescriptionService;
+    private final TurChatAnalyticsService analyticsService;
 
-    public TurToolCallbackPipeline(TurToolDescriptionService toolDescriptionService) {
+    public TurToolCallbackPipeline(TurToolDescriptionService toolDescriptionService,
+            @Autowired(required = false) TurChatAnalyticsService analyticsService) {
         this.toolDescriptionService = toolDescriptionService;
+        this.analyticsService = analyticsService;
     }
 
     /**
@@ -63,6 +69,6 @@ public class TurToolCallbackPipeline {
             return new ToolCallback[0];
         }
         ToolCallback[] withDescriptions = TurToolDescriptionCallback.wrap(raw, toolDescriptionService);
-        return TurLoggingToolCallback.wrap(withDescriptions);
+        return TurLoggingToolCallback.wrap(withDescriptions, analyticsService);
     }
 }

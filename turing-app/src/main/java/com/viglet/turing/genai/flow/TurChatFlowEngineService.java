@@ -341,6 +341,52 @@ public class TurChatFlowEngineService {
     }
 
     /**
+     * Writes {@code name = value} on every chat-flow state attached to the
+     * conversation, mirroring what {@code slots.set(...)} does from a Custom
+     * Tool Groovy script — same persistence path, same merge semantics. Used
+     * by the public {@code POST /chat/slots} endpoint so a React component
+     * can force a slot (e.g. user clicks an "área = Liderança" button) and
+     * skip the matching question on the next chat turn.
+     *
+     * <p>Returns the number of state rows touched: {@code 0} means the
+     * conversation has no active flow yet — the caller should send the first
+     * chat message before writing slots so the engine has a state to merge
+     * into.
+     *
+     * @param conversationId active conversation id from {@code TUR_SESSION}
+     * @param name           slot name; blank → no-op (returns 0)
+     * @param value          slot value; {@code null} is coerced to "" so the
+     *                       slot ends up keyed but cleared (matches the
+     *                       {@code slot} chat-flow node convention)
+     * @return number of {@code TurChatFlowState} rows updated
+     * @since 2026.2.7
+     */
+    public int writeSlot(String conversationId, String name, String value) {
+        if (conversationId == null || conversationId.isBlank()
+                || name == null || name.isBlank()) {
+            return 0;
+        }
+        List<TurChatFlowState> states = stateRepository.findByConversationId(conversationId);
+        if (states.isEmpty()) {
+            log.info("[FlowEngine.writeSlot] NO-OP — no chat-flow states for conv={} (slot '{}' skipped)",
+                    conversationId, name);
+            return 0;
+        }
+        String coerced = value == null ? "" : value;
+        int touched = 0;
+        for (TurChatFlowState state : states) {
+            Map<String, String> vars = new LinkedHashMap<>(ChatFlowOps.readVariables(state));
+            vars.put(name, coerced);
+            ChatFlowOps.writeVariables(state, vars);
+            stateRepository.save(state);
+            touched++;
+        }
+        log.info("[FlowEngine.writeSlot] conv={} slot='{}' wrote {} chars across {} state(s)",
+                conversationId, name, coerced.length(), touched);
+        return touched;
+    }
+
+    /**
      * Drops the persisted state for {@code (conversationId, flowId)}. The
      * next chat turn rebuilds it from the START node.
      *

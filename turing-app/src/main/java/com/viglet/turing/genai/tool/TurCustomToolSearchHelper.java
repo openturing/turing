@@ -227,7 +227,9 @@ public class TurCustomToolSearchHelper {
      * have been collected. Preserves the input order so the highest-score
      * chunk represents its document in the return.
      */
-    private static List<Map<String, Object>> collapseToTopKDocuments(List<Map<String, Object>> hits,
+    // Package-private so TurCustomToolSearchHelperTest can exercise the dedup
+    // logic without standing up the full Spring context + a real vector store.
+    static List<Map<String, Object>> collapseToTopKDocuments(List<Map<String, Object>> hits,
             int limit, List<String> dedupKeys) {
         if (hits.isEmpty() || limit <= 0) {
             return Collections.emptyList();
@@ -258,8 +260,9 @@ public class TurCustomToolSearchHelper {
      *   <li>A {@link List} → those fields in order, dedup'd.</li>
      * </ul>
      */
+    // Package-private for unit testing.
     @SuppressWarnings("unchecked")
-    private static List<String> resolveDedupKeys(Object dedupBy) {
+    static List<String> resolveDedupKeys(Object dedupBy) {
         if (dedupBy == null) {
             return DEFAULT_DEDUP_KEYS;
         }
@@ -303,7 +306,8 @@ public class TurCustomToolSearchHelper {
      * absent or blank — the caller treats that as "this hit can't be deduped"
      * and skips it.
      */
-    private static String firstNonBlank(Map<String, Object> hit, List<String> keys) {
+    // Package-private for unit testing.
+    static String firstNonBlank(Map<String, Object> hit, List<String> keys) {
         for (String key : keys) {
             Object value = hit.get(key);
             if (value == null) continue;

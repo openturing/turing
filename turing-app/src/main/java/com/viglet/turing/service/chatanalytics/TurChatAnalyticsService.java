@@ -132,6 +132,30 @@ public class TurChatAnalyticsService {
     }
 
     /**
+     * Records a single tool invocation for the conversation: tool name,
+     * wall-clock latency, success/failure. Aggregates accumulate on the
+     * in-flight record (no I/O), so logging tool calls is cheap enough
+     * to keep on the hot path. The {@code recordSessionEnd} flush carries
+     * the totals into the analytics store row.
+     *
+     * <p>No-op when the conversation has no in-flight entry (e.g. the
+     * Custom Tool preview endpoint runs outside an active session).
+     *
+     * @param conversationId active conversation id, or null/blank to skip
+     * @param toolName       sanitized tool name (matches Spring AI's
+     *                       {@code ToolDefinition.name()})
+     * @param latencyMs      milliseconds the {@code call(...)} took, end-to-end
+     * @param success        false when the callback threw or returned an
+     *                       error envelope
+     * @since 2026.2.7
+     */
+    public void recordToolCall(String conversationId, String toolName, long latencyMs, boolean success) {
+        if (conversationId == null || conversationId.isBlank()) return;
+        InFlight inflight = inFlight.get(conversationId);
+        if (inflight != null) inflight.recordToolCall(toolName, latencyMs, success);
+    }
+
+    /**
      * Idle-aware sweep that converts silent in-flight sessions into
      * {@code ABANDONED} rows in the store before evicting them. Two thresholds:
      *
@@ -224,6 +248,14 @@ public class TurChatAnalyticsService {
                     inflight == null ? 0L : inflight.tokensIn,
                     inflight == null ? 0L : inflight.tokensOut,
                     durationMs));
+            // Tool aggregates are session-only for now (not persisted on the
+            // event record yet); surface them in logs so operators can grep
+            // per-conversation tool usage without a separate dashboard.
+            if (inflight != null && inflight.toolCalls > 0) {
+                log.info("[ChatAnalytics] session {} tool aggregates: calls={} errors={} totalLatencyMs={}",
+                        conversationId, inflight.toolCalls, inflight.toolErrors,
+                        inflight.totalToolLatencyMs);
+            }
         } catch (RuntimeException e) {
             log.warn("Chat analytics recordSessionEnd failed for {}: {}",
                     conversationId, e.getMessage());
@@ -258,6 +290,9 @@ public class TurChatAnalyticsService {
         int turns;
         long tokensIn;
         long tokensOut;
+        int toolCalls;
+        int toolErrors;
+        long totalToolLatencyMs;
 
         InFlight(Instant startedAt, String agentId, String personaId, String llmInstanceId,
                 String embeddingModelId, String storeInstanceId, String userId, String locale) {
@@ -276,6 +311,13 @@ public class TurChatAnalyticsService {
             this.turns += 1;
             this.tokensIn += Math.max(0, in);
             this.tokensOut += Math.max(0, out);
+            this.lastTouchedAt = Instant.now();
+        }
+
+        synchronized void recordToolCall(String toolName, long latencyMs, boolean success) {
+            this.toolCalls += 1;
+            if (!success) this.toolErrors += 1;
+            this.totalToolLatencyMs += Math.max(0, latencyMs);
             this.lastTouchedAt = Instant.now();
         }
     }

@@ -339,6 +339,38 @@ public class TurSNSiteGenAiAPI {
 	}
 
 	/**
+	 * Public, unauthenticated <em>write</em> of a single slot on the current
+	 * conversation. Companion to {@link #chatSlots(String, String)} — lets a
+	 * React component force a slot value without round-tripping through the
+	 * chat (e.g. user clicks a quick-pick button and the corresponding
+	 * question should be skipped). Writes to every active chat-flow state for
+	 * the conversation; returns the number of state rows touched (0 when the
+	 * conversation hasn't started a flow yet).
+	 *
+	 * <p>The {@code conversationId} must match the {@code TUR_SESSION} cookie
+	 * the SDK sent on prior chat turns — otherwise there's no state to write
+	 * into and the call is a no-op.
+	 *
+	 * @since 2026.2.7
+	 */
+	@PostMapping("/slots")
+	public ChatSlotWriteResponse writeChatSlot(@PathVariable String siteName,
+			@RequestBody ChatSlotWriteRequest body) {
+		if (body == null) {
+			return new ChatSlotWriteResponse(0);
+		}
+		int touched = chatFlowEngineService.writeSlot(
+				body.conversationId(), body.name(), body.value());
+		return new ChatSlotWriteResponse(touched);
+	}
+
+	public record ChatSlotWriteRequest(String conversationId, String name, String value) {
+	}
+
+	public record ChatSlotWriteResponse(int updatedStates) {
+	}
+
+	/**
 	 * Public, unauthenticated list of enabled intents for the site's AI agent.
 	 * Surfaces the curated quick-prompt suggestions that authors set up in the
 	 * agent's Intent admin UI, so the search frontend can render them as chips

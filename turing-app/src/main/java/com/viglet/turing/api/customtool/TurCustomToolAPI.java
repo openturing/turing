@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.domain.customtool.TurCustomToolRepositoryPort;
+import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
+import com.viglet.turing.genai.tool.TurCustomToolCallbackService.PreviewResult;
 import com.viglet.turing.persistence.dto.customtool.TurCustomToolDto;
 import com.viglet.turing.persistence.mapper.customtool.TurCustomToolMapper;
 import com.viglet.turing.persistence.model.customtool.TurCustomTool;
@@ -47,10 +50,17 @@ import org.codehaus.groovy.syntax.SyntaxException;
 public class TurCustomToolAPI {
     private final TurCustomToolRepository repository;
     private final TurCustomToolMapper mapper;
+    private final TurCustomToolRepositoryPort repositoryPort;
+    private final TurCustomToolCallbackService callbackService;
 
-    public TurCustomToolAPI(TurCustomToolRepository repository, TurCustomToolMapper mapper) {
+    public TurCustomToolAPI(TurCustomToolRepository repository,
+            TurCustomToolMapper mapper,
+            TurCustomToolRepositoryPort repositoryPort,
+            TurCustomToolCallbackService callbackService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.repositoryPort = repositoryPort;
+        this.callbackService = callbackService;
     }
 
     @Operation(summary = "Custom Tool List")
@@ -151,5 +161,44 @@ public class TurCustomToolAPI {
     }
 
     public record ValidateScriptResponse(boolean valid, String error, Integer line, Integer column) {
+    }
+
+    /**
+     * Hot-reload preview: re-runs the persisted tool against caller-supplied
+     * args without touching any chat conversation. The standard bindings
+     * ({@code args}, {@code http}, {@code turingSearch}, {@code slots}) are
+     * all active — {@code slots.set} is a no-op since there is no live
+     * conversation, but everything else (HTTP calls, vector search) executes
+     * for real so the admin can verify behavior with real data.
+     *
+     * <p>The cached compiled script in {@link TurCustomToolCallbackService}
+     * is invalidated automatically on each call when the source has changed
+     * (hash-based), so saving a new version in the editor + clicking "Test"
+     * picks up the fresh code without a server restart — that's the
+     * hot-reload story.
+     *
+     * @param id   id of the persisted custom tool to execute
+     * @param body request envelope with the {@code argsJson} the LLM would
+     *             have sent (e.g. {@code {"query":"finanças CFO"}})
+     */
+    @Operation(summary = "Execute a Custom Tool against caller-supplied args (admin preview)")
+    @PostMapping("/{id}/execute")
+    public ExecuteToolResponse execute(@PathVariable String id,
+            @RequestBody ExecuteToolRequest body) {
+        return repositoryPort.findById(id)
+                .map(tool -> {
+                    PreviewResult preview = callbackService.executeForPreview(tool,
+                            body == null || body.argsJson() == null ? "{}" : body.argsJson());
+                    return new ExecuteToolResponse(preview.ok(), preview.result(),
+                            preview.error(), preview.elapsedMs());
+                })
+                .orElse(new ExecuteToolResponse(false, null,
+                        "Custom tool '" + id + "' not found.", 0L));
+    }
+
+    public record ExecuteToolRequest(String argsJson) {
+    }
+
+    public record ExecuteToolResponse(boolean ok, String result, String error, long elapsedMs) {
     }
 }

@@ -530,6 +530,43 @@ export function fetchAgentChatSlots(
   return get<TurChatSessionSlots>(`/v2/ai-agent/${agentId}/chat-slots?${qs}`);
 }
 
+/**
+ * Server response for the slot-write endpoint. {@code updatedStates} is the
+ * number of chat-flow state rows that absorbed the write — {@code 0} when
+ * the conversation has no active flow yet (caller must send the first chat
+ * message before writing slots).
+ *
+ * @since 2026.2.7
+ */
+export interface TurChatSlotWriteResponse {
+  readonly updatedStates: number;
+}
+
+/**
+ * Writes a single slot on the current conversation through the site's GenAI
+ * endpoint. Companion to {@link fetchSiteChatSlots} — lets a React component
+ * force a slot value (e.g. user picks an option via button) without sending
+ * a chat message. The backend writes to every active flow state for
+ * {@code conversationId}; if none exists yet, the call is a no-op and the
+ * response reports {@code updatedStates: 0}.
+ *
+ * Server endpoint: {@code POST /api/sn/{site}/chat/slots}.
+ *
+ * @since 2026.2.7
+ */
+export async function postSiteChatSlot(
+  site: string,
+  conversationId: string,
+  name: string,
+  value: string,
+): Promise<TurChatSlotWriteResponse> {
+  const { data } = await axios.post<TurChatSlotWriteResponse>(
+    `/sn/${site}/chat/slots`,
+    { conversationId, name, value },
+  );
+  return data ?? { updatedStates: 0 };
+}
+
 export function fetchAutoComplete(site: string, params: SearchParams): Promise<string[]> {
   return get<string[]>(`/sn/${site}/ac?${buildQueryString(params)}`);
 }

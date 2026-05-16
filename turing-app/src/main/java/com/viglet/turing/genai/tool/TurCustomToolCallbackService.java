@@ -185,6 +185,45 @@ public class TurCustomToolCallbackService {
     }
 
     /**
+     * Admin-facing preview hook: runs the tool's Groovy script with the
+     * supplied args JSON, exactly as the chat executor would, but with NO
+     * conversation context (slot writes become no-ops) and NO rich-return
+     * fence wrapping. Returns the raw value the script returned so the admin
+     * editor can show "this is what the LLM would see" without having to
+     * spin up a chat to test a tweak.
+     *
+     * <p>Exceptions are caught and serialized into the response so a buggy
+     * script doesn't bubble a 500 — the UI can show the error string and
+     * the operator iterates.
+     *
+     * @since 2026.2.7
+     */
+    public PreviewResult executeForPreview(TurCustomToolDomain tool, String argsJson) {
+        long start = System.currentTimeMillis();
+        try {
+            String result = executeGroovy(tool, argsJson, null);
+            long elapsed = System.currentTimeMillis() - start;
+            log.info("[CustomTool/preview] '{}' completed in {}ms ({} chars)",
+                    tool.title(), elapsed, result == null ? 0 : result.length());
+            return new PreviewResult(true, result, null, elapsed);
+        } catch (Exception e) {
+            long elapsed = System.currentTimeMillis() - start;
+            log.warn("[CustomTool/preview] '{}' failed in {}ms: {}",
+                    tool.title(), elapsed, e.getMessage());
+            return new PreviewResult(false, null, e.getMessage(), elapsed);
+        }
+    }
+
+    /**
+     * Plain result envelope for {@link #executeForPreview(TurCustomToolDomain, String)}.
+     * Either {@code result} or {@code error} is populated (the other is
+     * {@code null}); {@code elapsedMs} is wall-clock time including parse
+     * + execute.
+     */
+    public record PreviewResult(boolean ok, String result, String error, long elapsedMs) {
+    }
+
+    /**
      * Two-argument variant invoked by {@code GroovyToolCallback.call(...,
      * ToolContext)} so scripts can write back into the live conversation's
      * slot map. The conversation id arrives via the context key
