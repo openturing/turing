@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,13 @@ public class TurCodeInterpreterToolService {
     private static final int TIMEOUT_SECONDS = 30;
     private static final int MAX_OUTPUT_LENGTH = 15_000;
     private static final String SANDBOX_DIR = "code-interpreter";
+    /**
+     * Subdir of {@link #SANDBOX_DIR} where ephemeral per-call session
+     * directories live. Separated from {@code _deps/} (the persistent
+     * pip cache) so {@link TurCodeInterpreterCleanupTask} can sweep this
+     * tree safely on a TTL without touching deps the next call will hit.
+     */
+    static final String SESSIONS_DIR = "sessions";
 
     /** Fixed, read-only system directories allowed in the subprocess PATH. */
     private static final String SAFE_PATH;
@@ -53,9 +62,22 @@ public class TurCodeInterpreterToolService {
     }
 
     private final TurGlobalSettingsService turGlobalSettingsService;
+    private final TurCustomToolDependencyService dependencyService;
 
+    /**
+     * Test-friendly constructor — wires the sandbox without auto-install.
+     * Equivalent to {@code new TurCodeInterpreterToolService(settings, null)};
+     * the dep service call falls back to "no deps dir" so PYTHONPATH stays
+     * unset and behavior matches the pre-2026.2.7 era.
+     */
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService) {
+        this(turGlobalSettingsService, null);
+    }
+
+    public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
+            TurCustomToolDependencyService dependencyService) {
         this.turGlobalSettingsService = turGlobalSettingsService;
+        this.dependencyService = dependencyService;
     }
 
     @Value("${turing.code-interpreter.python-executable:}")
@@ -64,14 +86,109 @@ public class TurCodeInterpreterToolService {
     @Value("${server.port:2700}")
     private int serverPort;
 
+    /**
+     * Concurrency cap on simultaneous Python subprocesses. A burst of
+     * 100 visitors clicking "Baixar PDF" at once otherwise spawns 100
+     * Python procs (each ~50-100 MB RSS for reportlab) and OOMs the
+     * host. The semaphore queues requests above the cap and fails
+     * fast after a short timeout — the caller (typically Marina/Lucas
+     * in the chat) surfaces the error to the visitor with a "try again
+     * in a moment" message.
+     *
+     * <p>Default {@code Runtime.availableProcessors()} (matches the
+     * sweet-spot for CPU-bound work like reportlab/matplotlib);
+     * override via {@code turing.code-interpreter.max-concurrent} for
+     * environments where Python tools are mostly I/O-bound (higher
+     * cap fine) or memory-constrained (lower cap).
+     */
+    @Value("${turing.code-interpreter.max-concurrent:#{T(java.lang.Runtime).getRuntime().availableProcessors()}}")
+    private int maxConcurrent;
+
+    @Value("${turing.code-interpreter.acquire-timeout-ms:2000}")
+    private long acquireTimeoutMs;
+
+    /**
+     * Lazy-initialized semaphore — the @Value field {@link #maxConcurrent}
+     * is populated AFTER the constructor runs, so we can't size the
+     * semaphore at construction time. {@link AtomicReference} keeps the
+     * lazy init thread-safe without synchronization on the hot path.
+     */
+    private final AtomicReference<Semaphore> concurrencyLimiter = new AtomicReference<>();
+
+    /** Per-call carrier for the agent's pythonRequirements addendum. */
+    private final ThreadLocal<String> extraRequirements = new ThreadLocal<>();
+
     @Tool(name = "execute_python", description = ".")
     public String executePython(String code) {
+        return executePythonWithExtraRequirements(code, null);
+    }
+
+    /**
+     * Same as {@link #executePython(String)} but with an agent-specific
+     * {@code requirements.txt} addendum that gets unioned with the global
+     * {@code GLOBAL_PYTHON_REQUIREMENTS} setting before pip installs.
+     *
+     * <p>Called by {@link TurCustomToolCodeHelper} when a Groovy Custom
+     * Tool invokes {@code code.executePython(script)} — the helper
+     * carries the agent's {@code pythonRequirements} from
+     * {@link TurCustomToolCallbackService}'s wiring of the helper at
+     * binding time, so per-agent Python envs work end-to-end without
+     * threading state through the {@code @Tool} method signature (which
+     * would alter the LLM-facing schema).
+     *
+     * @param code Python source code to execute.
+     * @param extraReqs agent-specific {@code requirements.txt} addendum,
+     *                  or null/blank when only the global env is needed.
+     */
+    public String executePythonWithExtraRequirements(String code, String extraReqs) {
+        // Concurrency gate: cap simultaneous Python subprocesses so a
+        // 100-visitor burst doesn't fork 100 procs and OOM the host.
+        // tryAcquire with a short timeout — if capacity is exhausted
+        // longer than 2s the caller gets a fail-fast error rather than
+        // blocking the whole chat turn indefinitely.
+        Semaphore limiter = resolveLimiter();
+        boolean acquired;
+        try {
+            acquired = limiter.tryAcquire(acquireTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Error: code interpreter wait interrupted";
+        }
+        if (!acquired) {
+            log.warn("[CodeInterpreter] concurrency exhausted (cap={} available=0); rejecting call",
+                    maxConcurrent);
+            return "Error: code interpreter is at capacity right now — please try again in a moment.";
+        }
+        try {
+            return executePythonInternal(code, extraReqs);
+        } finally {
+            limiter.release();
+        }
+    }
+
+    private Semaphore resolveLimiter() {
+        Semaphore existing = concurrencyLimiter.get();
+        if (existing != null) return existing;
+        int permits = Math.max(1, maxConcurrent);
+        Semaphore created = new Semaphore(permits, true); // fair = FIFO
+        if (concurrencyLimiter.compareAndSet(null, created)) return created;
+        return concurrencyLimiter.get();
+    }
+
+    private String executePythonInternal(String code, String extraReqs) {
         String sessionId = UUID.randomUUID().toString().substring(0, 8);
-        log.info("[CodeInterpreter] session={} | Executing {} chars of Python code",
-                sessionId, code.length());
+        log.info("[CodeInterpreter] session={} | Executing {} chars of Python code (agentExtras={})",
+                sessionId, code.length(), (extraReqs == null || extraReqs.isBlank()) ? "no" : "yes");
 
-        File sessionDir = new File(TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR), sessionId);
-
+        // Date-bucketed session layout: store/code-interpreter/sessions/YYYY-MM-DD/{sessionId}.
+        // Lets the cleanup task drop an entire day's bucket atomically when
+        // it ages out of the TTL window, instead of scanning N flat dirs.
+        // Files stay reachable via /api/v2/code-interpreter/{sessionId}/{file}
+        // — the file API resolves the date prefix at serve time.
+        String dateBucket = java.time.LocalDate.now().toString();
+        File sessionsRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR + "/" + SESSIONS_DIR);
+        File sessionDir = new File(new File(sessionsRoot, dateBucket), sessionId);
+        extraRequirements.set(extraReqs);
         try {
             Files.createDirectories(sessionDir.toPath());
             Path scriptPath = sessionDir.toPath().resolve("script.py");
@@ -87,6 +204,10 @@ public class TurCodeInterpreterToolService {
         } catch (Exception e) {
             log.error("[CodeInterpreter] session={} | EXCEPTION: {}", sessionId, e.getMessage(), e);
             return "Error executing Python code: " + e.getMessage();
+        } finally {
+            // Mandatory: clear the ThreadLocal so virtual-thread pools don't
+            // leak the value into unrelated tool invocations.
+            extraRequirements.remove();
         }
     }
 
@@ -124,6 +245,17 @@ public class TurCodeInterpreterToolService {
             Path scriptPath) throws IOException, InterruptedException {
         Path runnerPath = sessionDir.toPath().resolve("_runner.py");
         Files.writeString(runnerPath, buildRunnerScript(scriptPath.getFileName().toString()));
+        // Resolve auto-installed deps BEFORE building the env. The dep
+        // service unions the global `GLOBAL_PYTHON_REQUIREMENTS` setting
+        // with the optional agent-specific addendum (carried via the
+        // ThreadLocal set by the public entry point) — hash-keyed cache
+        // dir on first call, instant on subsequent (cache hit). When
+        // both sources are blank, returns null → no PYTHONPATH injection
+        // and behavior matches the pre-2026.2.7 era (operator manages
+        // the Python env manually). Failures propagate as
+        // DependencyInstallException → caught by the outer try/catch and
+        // surfaced as the script's error message.
+        Path depsDir = dependencyService.ensureInstalled(extraRequirements.get());
         ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
         pb.directory(sessionDir);
         pb.redirectErrorStream(false);
@@ -132,7 +264,14 @@ public class TurCodeInterpreterToolService {
         env.put("PATH", SAFE_PATH);
         env.put("PYTHONUTF8", "1");
         env.put("PYTHONIOENCODING", "utf-8");
-        env.remove("PYTHONPATH");
+        if (depsDir != null) {
+            // Replace any inherited PYTHONPATH — keeping it isolated to
+            // ONLY the platform-managed deps dir is the whole point of
+            // this feature (otherwise operator system-packages leak in).
+            env.put("PYTHONPATH", depsDir.toAbsolutePath().toString());
+        } else {
+            env.remove("PYTHONPATH");
+        }
         env.remove("PYTHONSTARTUP");
         env.remove("PYTHONHOME");
         env.remove("PYTHONUSERSITE");

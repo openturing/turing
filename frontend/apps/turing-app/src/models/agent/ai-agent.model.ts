@@ -21,6 +21,14 @@ export interface TurAIAgent {
   /** Hard cap on persisted messages per conversation. */
   chatMemoryMaxMessages: number;
   nativeTools?: string | null;
+  /**
+   * Optional agent-specific Python `requirements.txt` addendum. Unioned
+   * with the global `pythonRequirements` setting before the Code
+   * Interpreter sandbox runs any Custom Tool that calls
+   * `code.executePython(...)`. Empty/null = global-only (preserves
+   * pre-2026.2.7 behavior). @since 2026.2.7
+   */
+  pythonRequirements?: string | null;
   llmInstances: TurLLMInstance[];
   mcpServers: TurMcpServer[];
   customTools: TurCustomTool[];

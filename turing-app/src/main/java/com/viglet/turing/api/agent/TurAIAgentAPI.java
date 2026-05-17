@@ -156,6 +156,12 @@ public class TurAIAgentAPI {
                     Math.max(1, turAIAgent.getChatMemoryFlushIntervalMinutes()));
             agentEdit.setChatMemoryMaxMessages(
                     Math.max(1, turAIAgent.getChatMemoryMaxMessages()));
+            // Agent-specific Python deps addendum — unioned with the global
+            // GLOBAL_PYTHON_REQUIREMENTS by the Code Interpreter dep service
+            // before pip install. NULL = global-only, the safe default that
+            // preserves pre-2026.2.7 behavior for agents that don't need
+            // anything extra.
+            agentEdit.setPythonRequirements(turAIAgent.getPythonRequirements());
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());

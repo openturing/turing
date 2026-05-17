@@ -101,6 +101,33 @@ public class TurAIAgent implements Serializable {
     @Column(length = 2000)
     private String nativeTools;
 
+    /**
+     * Optional agent-specific Python {@code requirements.txt} addendum.
+     * The Code Interpreter sandbox installs the UNION of:
+     * <ol>
+     *   <li>Global {@code GLOBAL_PYTHON_REQUIREMENTS} setting — baseline
+     *       used by every agent (typically {@code reportlab},
+     *       {@code matplotlib}, …).</li>
+     *   <li>This field — packages specific to this agent's tools
+     *       (e.g. an analytics agent adds {@code pandas==2.0}).</li>
+     * </ol>
+     * <p>The {@code TurCustomToolDependencyService} hashes the union and
+     * caches by hash, so different combinations get their own deps dir
+     * without conflict. Agent-level requirements travel with the agent
+     * on export/import, which makes cross-environment promotion painless
+     * (vs. having to also sync Global Settings on each target instance).
+     *
+     * <p>Format: one package per line, optionally version-pinned
+     * ({@code pandas==2.0}, {@code openpyxl>=3.1}). Blank lines and
+     * {@code #} comments tolerated. Empty/null = global-only (no
+     * agent-specific addition).
+     *
+     * @since 2026.2.7
+     */
+    @Lob
+    @Column(name = "pythonRequirements")
+    private String pythonRequirements;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "ai_agent_llm_instance",
             joinColumns = @JoinColumn(name = "agent_id"),

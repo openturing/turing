@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -26,7 +27,7 @@ import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.s
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
+import { IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -146,6 +147,7 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryEnabled: value.chatMemoryEnabled ?? false,
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
+      pythonRequirements: value.pythonRequirements ?? "",
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -567,6 +569,40 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                       <FormMessage />
                     </FormItemTwoColumns.Right>
                   </FormItemTwoColumns>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard>
+            <SectionCard.Header
+              icon={IconBrandPython}
+              title={t("forms.agentSettings.codeInterpreter")}
+              description={t("forms.agentSettings.codeInterpreterDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="pythonRequirements"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("forms.agentSettings.pythonRequirements")}</FormLabel>
+                    <FormDescription>
+                      {t("forms.agentSettings.pythonRequirementsDesc")}
+                    </FormDescription>
+                    <FormControl>
+                      <Textarea
+                        className="font-mono text-sm"
+                        rows={5}
+                        placeholder={"pandas==2.0\nopenpyxl>=3.1"}
+                        spellCheck={false}
+                        autoComplete="off"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
             </SectionCard.Content>

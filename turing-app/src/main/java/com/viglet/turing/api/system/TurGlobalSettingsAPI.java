@@ -35,6 +35,7 @@ public class TurGlobalSettingsAPI {
         return TurGlobalSettingsBean.builder()
                 .decimalSeparator(turGlobalSettingsService.getDecimalSeparator())
                 .pythonExecutable(turGlobalSettingsService.getPythonExecutable())
+                .pythonRequirements(turGlobalSettingsService.getPythonRequirements())
                 .defaultLlmId(turGlobalSettingsService.getDefaultLlmId())
                 .llmCacheEnabled(turGlobalSettingsService.isLlmCacheEnabled())
                 .llmCacheTtlMs(turGlobalSettingsService.getLlmCacheTtlMs())
@@ -59,6 +60,8 @@ public class TurGlobalSettingsAPI {
                         .updateDecimalSeparator(globalSettings.getDecimalSeparator()))
                 .pythonExecutable(turGlobalSettingsService
                         .updatePythonExecutable(globalSettings.getPythonExecutable()))
+                .pythonRequirements(turGlobalSettingsService
+                        .updatePythonRequirements(globalSettings.getPythonRequirements()))
                 .defaultLlmId(turGlobalSettingsService
                         .updateDefaultLlmId(globalSettings.getDefaultLlmId()))
                 .llmCacheEnabled(turGlobalSettingsService

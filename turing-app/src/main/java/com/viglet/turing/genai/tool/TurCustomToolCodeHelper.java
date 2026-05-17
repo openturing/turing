@@ -16,6 +16,12 @@ package com.viglet.turing.genai.tool;
  * data transformation) to the platform's sandboxed Python runtime without
  * re-implementing process management.
  *
+ * <p>The helper carries an optional {@code agentRequirements} addendum
+ * resolved by {@link TurCustomToolCallbackService} from the active agent's
+ * {@code TurAIAgent.pythonRequirements} field. When non-blank, the
+ * {@link TurCustomToolDependencyService} installs the UNION of global +
+ * agent-specific requirements before the Python subprocess starts.
+ *
  * <p>One instance is constructed per Custom Tool invocation by
  * {@link TurCustomToolCallbackService}, sharing the same singleton
  * {@link TurCodeInterpreterToolService} (the sandbox manager is stateless;
@@ -44,15 +50,33 @@ package com.viglet.turing.genai.tool;
 public class TurCustomToolCodeHelper {
 
     private final TurCodeInterpreterToolService codeInterpreter;
+    private final String agentRequirements;
 
     public TurCustomToolCodeHelper(TurCodeInterpreterToolService codeInterpreter) {
-        this.codeInterpreter = codeInterpreter;
+        this(codeInterpreter, null);
     }
 
     /**
-     * Executes a Python script in the platform sandbox and returns the
-     * markdown result produced by {@link TurCodeInterpreterToolService}.
-     * 30-second timeout enforced; longer scripts must split work or be
+     * @param codeInterpreter the platform's Python sandbox manager.
+     * @param agentRequirements optional agent-specific
+     *                          {@code requirements.txt} addendum (from
+     *                          {@code TurAIAgent.pythonRequirements}).
+     *                          Null/blank means "no agent-specific
+     *                          packages — global env only".
+     */
+    public TurCustomToolCodeHelper(TurCodeInterpreterToolService codeInterpreter,
+            String agentRequirements) {
+        this.codeInterpreter = codeInterpreter;
+        this.agentRequirements = agentRequirements;
+    }
+
+    /**
+     * Executes a Python script in the platform sandbox with the union of
+     * global + agent-specific Python requirements available on
+     * {@code PYTHONPATH}. Returns the markdown result produced by
+     * {@link TurCodeInterpreterToolService}.
+     *
+     * <p>30-second timeout enforced; longer scripts must split work or be
      * refactored.
      *
      * @param pythonCode complete script source. Inputs must be inlined
@@ -65,6 +89,6 @@ public class TurCustomToolCodeHelper {
         if (pythonCode == null || pythonCode.isBlank()) {
             return "Error: empty Python code";
         }
-        return codeInterpreter.executePython(pythonCode);
+        return codeInterpreter.executePythonWithExtraRequirements(pythonCode, agentRequirements);
     }
 }

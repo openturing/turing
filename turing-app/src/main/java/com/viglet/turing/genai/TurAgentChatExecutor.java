@@ -247,19 +247,31 @@ public class TurAgentChatExecutor {
             }
         }
 
-        // Publish the conversation id into the tool context so Custom Tool
-        // Groovy scripts can write back into the live chat-flow slots (see
-        // TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID). When
-        // there is no conversation (rare — RAG-only fire-and-forget call),
-        // we just don't add the entry; the slot helper handles a null id
-        // defensively as no-op.
+        // Publish per-turn context into the tool context map so Custom
+        // Tool Groovy scripts (via the `slots`/`code` helpers) see it on
+        // every invocation:
+        //   - conversationId  → drives slot read/write through TurChatFlowEngineService
+        //   - agentPythonReqs → unioned with GLOBAL_PYTHON_REQUIREMENTS by
+        //                       the dep service before pip install
+        // Map.of() doesn't accept nulls — build with a LinkedHashMap so
+        // we can skip entries cleanly when their source value is absent.
+        var toolContextMap = new java.util.LinkedHashMap<String, Object>();
+        if (conversationId != null && !conversationId.isBlank()) {
+            toolContextMap.put(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID,
+                    conversationId);
+        }
+        String agentPythonRequirements = agent.getPythonRequirements();
+        if (agentPythonRequirements != null && !agentPythonRequirements.isBlank()) {
+            toolContextMap.put(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS,
+                    agentPythonRequirements);
+        }
         var chatOptionsBuilder = DefaultToolCallingChatOptions.builder()
                 .toolCallbacks(callbacks)
                 .internalToolExecutionEnabled(true);
-        if (conversationId != null && !conversationId.isBlank()) {
-            chatOptionsBuilder.toolContext(java.util.Map.of(
-                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID,
-                    conversationId));
+        if (!toolContextMap.isEmpty()) {
+            chatOptionsBuilder.toolContext(toolContextMap);
         }
         var chatOptions = chatOptionsBuilder.build();
 

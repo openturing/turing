@@ -14,6 +14,8 @@
     "currencyFormat": "Currency format",
     "pythonPath": "Python Executable Path",
     "pythonPathDesc": "Absolute path to the Python interpreter used by the code interpreter tool. Leave empty to auto-detect from known system locations.",
+    "pythonRequirements": "Python Requirements",
+    "pythonRequirementsDesc": "requirements.txt-style declaration of Python packages the Code Interpreter sandbox auto-installs before every Custom Tool that calls code.executePython(...). One package per line, optionally version-pinned (e.g. reportlab==4.0.7). Blank disables auto-install. Packages are cached per-hash, so identical content never re-installs. AI Agents may add their own per-agent requirements that get unioned with this baseline.",
     "llmSettings": "LLM Settings",
     "llmSettingsDesc": "Language model instance and cache configuration for reports, insights, and emails.",
     "defaultLlm": "Default LLM",

@@ -14,6 +14,8 @@
     "currencyFormat": "Formato de moeda",
     "pythonPath": "Caminho do Executável Python",
     "pythonPathDesc": "Caminho absoluto para o interpretador Python usado pela ferramenta de interpretação de código. Deixe vazio para detectar automaticamente.",
+    "pythonRequirements": "Dependências Python",
+    "pythonRequirementsDesc": "Declaração no estilo requirements.txt dos pacotes Python que o sandbox do Code Interpreter instala automaticamente antes de cada Custom Tool que chama code.executePython(...). Um pacote por linha, opcionalmente com versão fixa (ex.: reportlab==4.0.7). Em branco desabilita auto-install. Pacotes ficam em cache por hash — conteúdo idêntico nunca reinstala. AI Agents podem adicionar suas próprias deps específicas, que são unidas a este baseline.",
     "llmSettings": "Configurações de LLM",
     "llmSettingsDesc": "Instância de modelo de linguagem e configuração de cache para relatórios, insights e e-mails.",
     "defaultLlm": "LLM Padrão",

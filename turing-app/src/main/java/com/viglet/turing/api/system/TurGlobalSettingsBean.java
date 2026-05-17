@@ -17,6 +17,14 @@ import lombok.Setter;
 public class TurGlobalSettingsBean {
     private TurGlobalDecimalSeparator decimalSeparator;
     private String pythonExecutable;
+    /**
+     * Optional {@code requirements.txt}-style text declaring Python
+     * packages the Code Interpreter sandbox should auto-install before
+     * every Custom Tool that calls {@code code.executePython(...)}. One
+     * package per line, optionally version-pinned. Blank = no
+     * auto-install (operator manages the env manually).
+     */
+    private String pythonRequirements;
     private String defaultLlmId;
     private boolean llmCacheEnabled;
     private long llmCacheTtlMs;

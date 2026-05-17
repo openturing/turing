@@ -66,6 +66,18 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_CONVERSATION_ID = "turing.conversationId";
 
+    /**
+     * Key under which {@link com.viglet.turing.genai.TurAgentChatExecutor}
+     * publishes the active agent's {@code pythonRequirements}
+     * {@code requirements.txt}-style addendum. The
+     * {@link TurCustomToolCodeHelper} pre-bound to each Custom Tool
+     * invocation carries this value into
+     * {@link TurCodeInterpreterToolService#executePythonWithExtraRequirements}
+     * — the sandbox installs the UNION of global + agent before running
+     * the Python script. Null/blank means "no addendum, global env only."
+     */
+    public static final String TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS = "turing.agentPythonRequirements";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
@@ -265,7 +277,16 @@ public class TurCustomToolCallbackService {
         // Lets a Custom Tool offload heavy work (PDF rendering with reportlab,
         // matplotlib charts, data transforms) to the platform's Python runtime
         // without re-implementing process management or file-serving plumbing.
-        binding.setVariable("code", new TurCustomToolCodeHelper(codeInterpreterToolService));
+        //
+        // The helper carries the active agent's `pythonRequirements` addendum
+        // (when present in toolContext) so the dep service installs the UNION
+        // of global + agent before the Python subprocess starts. This is how
+        // an analytics agent declaring `pandas` gets pandas alongside the
+        // baseline reportlab from Global Settings — no operator handoff
+        // between environments.
+        String agentPythonRequirements = resolveAgentPythonRequirements(toolContext);
+        binding.setVariable("code",
+                new TurCustomToolCodeHelper(codeInterpreterToolService, agentPythonRequirements));
         Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
@@ -288,6 +309,23 @@ public class TurCustomToolCallbackService {
         }
         Object value = ctx.get(TOOL_CONTEXT_CONVERSATION_ID);
         return value == null ? null : value.toString();
+    }
+
+    /**
+     * Extracts the active agent's Python {@code requirements.txt} addendum
+     * (when {@code TurAgentChatExecutor} published it via {@link
+     * #TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS}). Returns null when the
+     * context is absent (unit-test invocation), the key is missing, or
+     * the value is blank.
+     */
+    private static String resolveAgentPythonRequirements(ToolContext toolContext) {
+        if (toolContext == null) return null;
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) return null;
+        Object value = ctx.get(TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS);
+        if (value == null) return null;
+        String text = value.toString();
+        return text.isBlank() ? null : text;
     }
 
     private Map<String, Object> parseArgs(String toolInput) {

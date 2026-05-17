@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/form";
 import { FormItemTwoColumns } from "@/components/ui/form-item-two-columns";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Select,
     SelectContent,
@@ -48,6 +49,7 @@ const DEFAULT_SETTINGS: TurGlobalSettings = {
     decimalSeparator: "DOT",
     defaultLlmId: "",
     pythonExecutable: "",
+    pythonRequirements: "",
     llmCacheEnabled: false,
     llmCacheTtlMs: 3600000,
     llmCacheRegenerate: false,
@@ -208,6 +210,31 @@ export default function GlobalSettingsPage() {
                                                 className="max-w-md font-mono text-sm"
                                                 placeholder="/usr/bin/python3"
                                                 autoComplete="one-time-code"
+                                                disabled={isLoading}
+                                                {...field}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="pythonRequirements"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("globalSettings.pythonRequirements")}</FormLabel>
+                                        <FormDescription>
+                                            {t("globalSettings.pythonRequirementsDesc")}
+                                        </FormDescription>
+                                        <FormControl>
+                                            <Textarea
+                                                className="max-w-md font-mono text-sm"
+                                                rows={5}
+                                                placeholder={"reportlab==4.0.7\nqrcode>=7.4\nmatplotlib"}
+                                                spellCheck={false}
+                                                autoComplete="off"
                                                 disabled={isLoading}
                                                 {...field}
                                                 value={field.value ?? ""}

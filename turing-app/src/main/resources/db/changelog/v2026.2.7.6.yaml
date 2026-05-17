@@ -1,0 +1,36 @@
+databaseChangeLog:
+  # pythonRequirements column on ai_agent. Optional agent-specific
+  # requirements.txt-style addendum to the global Code Interpreter Python
+  # env (`GLOBAL_PYTHON_REQUIREMENTS` config var). The engine installs the
+  # UNION of global + agent on first invocation and caches by SHA-256 of
+  # the normalized union, so different agent combinations each get their
+  # own deps dir without conflict.
+  #
+  # Why agent-level (in addition to global): agent export/import then
+  # carries its own deps. Promoting an agent between environments
+  # (dev → staging → prod) doesn't require also syncing the Global
+  # Settings on each target — the agent is self-contained.
+  #
+  # Hibernate auto-generates this in dev (ddl-auto=update); this changelog
+  # is the production migration. Pinning as TEXT keeps existing agents
+  # valid (NULL = no agent addendum, only global applies).
+
+  - changeSet:
+      id: v2026.2.7.6-add-ai-agent-python-requirements
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: pythonRequirements
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: pythonRequirements
+                  type: TEXT
+                  remarks: "Agent-specific Python requirements.txt addendum; unioned with GLOBAL_PYTHON_REQUIREMENTS before pip install. NULL = global-only."

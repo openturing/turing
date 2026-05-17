@@ -899,7 +899,11 @@
       "chatMemoryFlushIntervalDesc": "How often the in-memory queue is drained to the logging engine. Lower values give more durability; higher values reduce I/O for chatty deployments.",
       "chatMemoryMaxMessages": "Max messages per conversation",
       "chatMemoryMaxMessagesDesc": "Hard cap on persisted turns per conversationId — older messages are dropped to keep documents from growing unbounded.",
-      "chatMemoryMinValue": "Must be at least 1."
+      "chatMemoryMinValue": "Must be at least 1.",
+      "codeInterpreter": "Code Interpreter",
+      "codeInterpreterDesc": "Python sandbox configuration scoped to this agent. Anything declared here is unioned with the global pythonRequirements baseline before pip install.",
+      "pythonRequirements": "Agent Python Requirements",
+      "pythonRequirementsDesc": "requirements.txt-style packages specific to THIS agent's Custom Tools (e.g. pandas for an analytics agent). One per line, optionally version-pinned. The Code Interpreter installs the union of global + agent before each script runs. Empty/null = global-only. Travels with the agent on export/import — promoting an agent between environments doesn't require also syncing Global Settings."
     },
     "agentTools": {
       "available": "Available Native Tools",

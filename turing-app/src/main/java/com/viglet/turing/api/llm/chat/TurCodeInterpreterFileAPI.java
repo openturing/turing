@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TurCodeInterpreterFileAPI {
 
     private static final String SANDBOX_DIR = "code-interpreter";
+    private static final String SESSIONS_DIR = "sessions";
 
     @GetMapping("/{sessionId}/{filename}")
     public ResponseEntity<Resource> getFile(@PathVariable String sessionId, @PathVariable String filename) {
@@ -40,9 +41,14 @@ public class TurCodeInterpreterFileAPI {
         }
 
         File sandboxRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR);
-        File file = new File(new File(sandboxRoot, sessionId), filename);
-
-        if (!file.exists() || !file.isFile()) {
+        // Session dirs live at `sandboxRoot/sessions/YYYY-MM-DD/{sessionId}/`
+        // (date-bucketed by TurCodeInterpreterToolService for cleanup
+        // efficiency). The URL exposes only {sessionId} — the file API
+        // searches today's bucket first (hottest path), then walks
+        // backwards through the day buckets until found. Sessions older
+        // than the cleanup TTL are gone anyway.
+        File file = resolveSessionFile(sandboxRoot, sessionId, filename);
+        if (file == null) {
             return ResponseEntity.notFound().build();
         }
 
@@ -68,6 +74,43 @@ public class TurCodeInterpreterFileAPI {
             log.error("Failed to serve code interpreter file {}/{}: {}", sessionId, filename, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    /**
+     * Resolves {@code {sessionId}/{filename}} against the date-bucketed
+     * layout. Strategy: try today's bucket first (overwhelmingly the
+     * common case — visitors usually download right after generation);
+     * fall back to scanning sibling buckets from newest to oldest. Any
+     * bucket older than the cleanup TTL won't have the file anymore;
+     * this scan only checks dirs that still exist on disk so the cost
+     * is bounded by {@code (cleanup-ttl-hours / 24) + 1} stat() calls
+     * (≤2 at default 24h TTL).
+     */
+    private static File resolveSessionFile(File sandboxRoot, String sessionId, String filename) {
+        File sessionsRoot = new File(sandboxRoot, SESSIONS_DIR);
+        if (!sessionsRoot.isDirectory()) {
+            // Pre-migration layout: session dirs sat directly under
+            // `code-interpreter/{sessionId}/`. Keep the fallback alive
+            // so URLs minted before the upgrade still resolve while the
+            // old dirs phase out via cleanup.
+            File legacy = new File(new File(sandboxRoot, sessionId), filename);
+            return legacy.isFile() ? legacy : null;
+        }
+        // Today's bucket is the hot path.
+        String today = java.time.LocalDate.now().toString();
+        File hot = new File(new File(new File(sessionsRoot, today), sessionId), filename);
+        if (hot.isFile()) return hot;
+        // Cold path: scan sibling date buckets (newest first).
+        File[] dateBuckets = sessionsRoot.listFiles(File::isDirectory);
+        if (dateBuckets == null || dateBuckets.length == 0) return null;
+        java.util.Arrays.sort(dateBuckets, java.util.Comparator
+                .comparing(File::getName).reversed());
+        for (File bucket : dateBuckets) {
+            if (bucket.getName().equals(today)) continue; // already tried
+            File candidate = new File(new File(bucket, sessionId), filename);
+            if (candidate.isFile()) return candidate;
+        }
+        return null;
     }
 
     private static final Map<String, String> EXTENSION_MIME_TYPES = Map.ofEntries(

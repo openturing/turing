@@ -57,6 +57,42 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    /**
+     * Returns the global {@code requirements.txt}-style declaration of
+     * Python packages the Code Interpreter sandbox should make available
+     * to every Custom Tool that calls {@code code.executePython(...)}.
+     * One package per line, optionally pinned with a version constraint
+     * (e.g. {@code reportlab==4.0.7}, {@code qrcode>=7.4}). Blank lines
+     * and {@code #} comments are tolerated.
+     *
+     * <p>Empty string disables auto-install — operators who manage the
+     * Python env manually keep working as before.
+     *
+     * <p>Single global setting (vs. per-tool or per-agent) by design:
+     * the Code Interpreter session dir is shared across every script
+     * invocation, so a single env applied uniformly is simpler to reason
+     * about and to operate. Configured via Console → Settings → Code
+     * Interpreter.
+     *
+     * @since 2026.2.7
+     */
+    public String getPythonRequirements() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_REQUIREMENTS)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
+    public String updatePythonRequirements(String requirements) {
+        String value = requirements == null ? "" : requirements.trim();
+        TurConfigVar configVar = turConfigVarRepository.findById(TurConfigVarOnStartup.PYTHON_REQUIREMENTS)
+                .orElseGet(TurConfigVar::new);
+        configVar.setId(TurConfigVarOnStartup.PYTHON_REQUIREMENTS);
+        configVar.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+        configVar.setValue(value);
+        turConfigVarRepository.save(configVar);
+        return value;
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)

@@ -32,6 +32,7 @@ public class TurConfigVarOnStartup {
 	public static final String FIRST_TIME = "FIRST_TIME";
 	public static final String DECIMAL_SEPARATOR = "GLOBAL_DECIMAL_SEPARATOR";
 	public static final String PYTHON_EXECUTABLE = "GLOBAL_PYTHON_EXECUTABLE";
+	public static final String PYTHON_REQUIREMENTS = "GLOBAL_PYTHON_REQUIREMENTS";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
@@ -61,6 +62,7 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(FIRST_TIME, SYSTEM_PATH, "true");
 		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
 		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
+		ensureConfigVar(PYTHON_REQUIREMENTS, GLOBAL_PATH, "");
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
