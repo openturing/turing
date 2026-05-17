@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -96,6 +97,11 @@ public class TurCodeInterpreterToolService {
         this(turGlobalSettingsService, dependencyService, null);
     }
 
+    // Mark the full-args ctor as the one Spring should use for autowiring.
+    // With 3 public constructors none of them is the obvious "longest
+    // satisfiable" — Spring falls back to the no-arg ctor (which doesn't
+    // exist) and the whole context fails to load. Annotation pins the choice.
+    @Autowired
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
             TurCustomToolDependencyService dependencyService,
             TurCodeInterpreterUrlSigner urlSigner) {

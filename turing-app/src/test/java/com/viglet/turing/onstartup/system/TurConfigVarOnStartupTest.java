@@ -35,7 +35,7 @@ class TurConfigVarOnStartupTest {
         turConfigVarOnStartup.createDefaultRows();
 
         ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
-        verify(turConfigVarRepository, org.mockito.Mockito.times(16)).save(captor.capture());
+        verify(turConfigVarRepository, org.mockito.Mockito.times(18)).save(captor.capture());
 
         List<TurConfigVar> savedVars = captor.getAllValues();
         assertTrue(savedVars.stream().anyMatch(configVar -> "FIRST_TIME".equals(configVar.getId())
@@ -47,6 +47,17 @@ class TurConfigVarOnStartupTest {
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PYTHON_EXECUTABLE".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_PYTHON_REQUIREMENTS".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                && "".equals(configVar.getValue())));
+        assertTrue(savedVars.stream().anyMatch(configVar ->
+                "GLOBAL_CODE_INTERPRETER_URL_SIGNING_SECRET".equals(configVar.getId())
+                && "/system/global".equals(configVar.getPath())
+                // Secret is randomly generated each run — can't pin to a literal.
+                // Just verify it was minted (non-blank) and shaped like Base64
+                // (44 chars for 32 random bytes).
+                && configVar.getValue() != null
+                && configVar.getValue().length() >= 40));
         assertTrue(savedVars.stream().anyMatch(configVar -> "GLOBAL_DEFAULT_LLM".equals(configVar.getId())
                 && "/system/global".equals(configVar.getPath())
                 && "".equals(configVar.getValue())));

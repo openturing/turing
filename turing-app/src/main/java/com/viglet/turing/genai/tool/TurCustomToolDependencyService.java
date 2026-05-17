@@ -21,6 +21,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
@@ -87,6 +88,12 @@ public class TurCustomToolDependencyService {
     private final TurGlobalSettingsService globalSettings;
     private final PipRunner pipRunner;
 
+    // Disambiguates Spring's constructor selection — without this Spring sees
+    // two ctors and tries to wire the longest (2-arg), which needs a PipRunner
+    // bean that doesn't exist (it's a package-private test seam). Pinning the
+    // public 1-arg ctor as @Autowired sends Spring down the production path
+    // (defaultPipRunner) and leaves the 2-arg ctor available for the test.
+    @Autowired
     public TurCustomToolDependencyService(TurGlobalSettingsService globalSettings) {
         this(globalSettings, defaultPipRunner());
     }
