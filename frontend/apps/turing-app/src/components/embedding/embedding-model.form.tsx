@@ -25,13 +25,14 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model.ts"
-import { IconAdjustments, IconCube, IconPlug, IconSettings, IconToggleLeft } from "@tabler/icons-react"
+import { IconAdjustments, IconAlertTriangle, IconCube, IconPlug, IconSettings, IconToggleLeft, IconTrash } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
+import { Button } from "../ui/button"
 import { StickySaveBar } from "../ui/sticky-save-bar"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
@@ -414,6 +415,29 @@ export const EmbeddingModelForm: React.FC<Props> = ({ value, isNew }) => {
                 </SectionCard.Content>
               </SectionCard>
 
+              {/* Danger zone — duplicate of the desktop-only CardHeader
+                  trash icon as an always-visible labelled button.
+                  Shares the same `open` state so only one dialog renders. */}
+              {!isNew && (
+                <SectionCard variant="rose">
+                  <SectionCard.Header
+                    icon={IconAlertTriangle}
+                    title={t("forms.embedding.dangerZoneTitle")}
+                    description={t("forms.embedding.dangerZoneDesc")}
+                  />
+                  <SectionCard.Content>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setOpen(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      <IconTrash className="size-4" />
+                      {t("forms.embedding.deleteAction")}
+                    </Button>
+                  </SectionCard.Content>
+                </SectionCard>
+              )}
             </form>
           </Form>
         </CardContent>

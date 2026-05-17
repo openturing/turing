@@ -108,7 +108,10 @@
       "advancedDesc": "Formato de resposta, capacidades e substituições do provedor.",
       "statusDesc": "Habilitar ou desabilitar este modelo de linguagem.",
       "titleRequired": "Um título é obrigatório para esta instância de modelo de linguagem.",
-      "vendorRequired": "Fornecedor é obrigatório."
+      "vendorRequired": "Fornecedor é obrigatório.",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneDesc": "Apaga permanentemente esta instância de modelo de linguagem. Agentes que a referenciam vão falhar na próxima chamada até serem reatribuídos.",
+      "deleteAction": "Apagar este modelo de linguagem"
     },
     "token": {
       "general": "Geral",
@@ -157,7 +160,10 @@
       "statusDesc": "Habilitar ou desabilitar este servidor MCP.",
       "titleRequired": "Um título é obrigatório para este servidor MCP.",
       "connectionTypeRequired": "Selecione um tipo de conexão.",
-      "typeRequired": "Selecione um tipo."
+      "typeRequired": "Selecione um tipo.",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneDesc": "Apaga permanentemente este servidor MCP. Personas e agentes que o referenciam perdem a conexão na próxima chamada.",
+      "deleteAction": "Apagar este servidor MCP"
     },
     "se": {
       "generalDesc": "Título e descrição para este mecanismo.",
@@ -256,7 +262,10 @@
       "modelPathRequired": "Caminho do modelo é obrigatório para transformers locais.",
       "onlyOnnx": "Apenas arquivos .onnx são suportados.",
       "tokenizerRequired": "Caminho do tokenizador é obrigatório para transformers locais.",
-      "onlyJsonTokenizer": "Apenas arquivos .json de tokenizador são suportados."
+      "onlyJsonTokenizer": "Apenas arquivos .json de tokenizador são suportados.",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneDesc": "Apaga permanentemente este modelo de embedding. Stores que o referenciam param de indexar até serem reatribuídos.",
+      "deleteAction": "Apagar este modelo de embedding"
     },
     "integration": {
       "generalDesc": "Nome e descrição para esta integração.",
@@ -854,7 +863,10 @@
       "vibeCodingHint": "Dica: refira-se aos nomes dos parâmetros declarados no formulário — eles ficam disponíveis diretamente como variáveis no script (e também via o map `args`).",
       "vibeCodingGenerate": "Gerar código",
       "statusDesc": "Desative para ocultar esta ferramenta de todos os agentes.",
-      "enabledDesc": "Quando desativada, a ferramenta não fica exposta a nenhum agente."
+      "enabledDesc": "Quando desativada, a ferramenta não fica exposta a nenhum agente.",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneDesc": "Apaga permanentemente este custom tool. Agentes ativos que o referenciam perdem acesso imediatamente.",
+      "deleteAction": "Apagar este custom tool"
     },
     "agentSettings": {
       "generalDesc": "Identidade e propósito deste agente de IA.",
@@ -1235,7 +1247,10 @@
       "brandContext": "Contexto de Marca",
       "brandContextDesc": "Servidor MCP expondo manuais de marca, diretrizes de voz ou frameworks de mensagem.",
       "brandContextMcp": "Servidor MCP",
-      "brandContextMcpPlaceholder": "Sem contexto de marca"
+      "brandContextMcpPlaceholder": "Sem contexto de marca",
+      "dangerZoneTitle": "Zona de perigo",
+      "dangerZoneDesc": "Apaga permanentemente esta persona. Agentes que a referenciam voltam a operar sem persona no próximo turno.",
+      "deleteAction": "Apagar esta persona"
     }
   }
 }

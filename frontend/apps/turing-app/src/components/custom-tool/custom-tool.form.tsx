@@ -29,7 +29,7 @@ import { VibeCodingButton } from "@/components/custom-tool/vibe-coding-button"
 import { StreamLanguage } from "@codemirror/language"
 import { groovy } from "@codemirror/legacy-modes/mode/groovy"
 import { oneDark } from "@codemirror/theme-one-dark"
-import { IconBraces, IconCheck, IconCode, IconList, IconLoader2, IconPlayerPlay, IconSettings, IconToggleLeft, IconX } from "@tabler/icons-react"
+import { IconAlertTriangle, IconBraces, IconCheck, IconCode, IconList, IconLoader2, IconPlayerPlay, IconSettings, IconToggleLeft, IconTrash, IconX } from "@tabler/icons-react"
 import CodeMirror from "@uiw/react-codemirror"
 import { toast } from "@viglet/viglet-design-system"
 import { useEffect, useState } from "react"
@@ -582,6 +582,36 @@ export const CustomToolForm: React.FC<Props> = ({ value, isNew }) => {
                   />
                 </SectionCard.Content>
               </SectionCard>
+
+              {/* Danger zone — only when editing an existing tool. The
+                  original delete trigger lives in the desktop-only
+                  CardHeader (hidden md:grid), which means mobile users
+                  couldn't reach it AND desktop users with long forms
+                  had to scroll back to the top to find the small trash
+                  icon. This labelled button is always reachable, and it
+                  reuses the same `open` state as the CardHeader trigger
+                  so both surfaces open the SAME DialogDelete instance —
+                  no duplicate modal. */}
+              {!isNew && (
+                <SectionCard variant="rose">
+                  <SectionCard.Header
+                    icon={IconAlertTriangle}
+                    title={t("forms.customTool.dangerZoneTitle")}
+                    description={t("forms.customTool.dangerZoneDesc")}
+                  />
+                  <SectionCard.Content>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setOpen(true)}
+                      className="w-full sm:w-auto"
+                    >
+                      <IconTrash className="size-4" />
+                      {t("forms.customTool.deleteAction")}
+                    </Button>
+                  </SectionCard.Content>
+                </SectionCard>
+              )}
             </form>
           </Form>
         </CardContent>

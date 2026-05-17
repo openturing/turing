@@ -108,7 +108,10 @@
       "advancedDesc": "Response format, capabilities, and provider overrides.",
       "statusDesc": "Enable or disable this language model.",
       "titleRequired": "A title is required for this language model instance.",
-      "vendorRequired": "Vendor is required."
+      "vendorRequired": "Vendor is required.",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDesc": "Permanently delete this language model instance. Agents that reference it will fail on their next call until reassigned.",
+      "deleteAction": "Delete this language model"
     },
     "token": {
       "general": "General",
@@ -157,7 +160,10 @@
       "statusDesc": "Enable or disable this MCP server.",
       "titleRequired": "A title is required for this MCP server.",
       "connectionTypeRequired": "Please select a connection type.",
-      "typeRequired": "Please select a type."
+      "typeRequired": "Please select a type.",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDesc": "Permanently delete this MCP server. Personas and agents that reference it will lose the connection on their next call.",
+      "deleteAction": "Delete this MCP server"
     },
     "se": {
       "generalDesc": "Title and description for this engine.",
@@ -256,7 +262,10 @@
       "modelPathRequired": "Model path is required for local transformers.",
       "onlyOnnx": "Only .onnx files are supported.",
       "tokenizerRequired": "Tokenizer path is required for local transformers.",
-      "onlyJsonTokenizer": "Only .json tokenizer files are supported."
+      "onlyJsonTokenizer": "Only .json tokenizer files are supported.",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDesc": "Permanently delete this embedding model. Stores that reference it will stop indexing until reassigned.",
+      "deleteAction": "Delete this embedding model"
     },
     "integration": {
       "generalDesc": "Name and description for this integration.",
@@ -854,7 +863,10 @@
       "vibeCodingHint": "Tip: refer to the parameter names you declared in the form — they are exposed directly as variables in the script (and also via the `args` map).",
       "vibeCodingGenerate": "Generate code",
       "statusDesc": "Disable to hide this tool from all agents.",
-      "enabledDesc": "When disabled, the tool will not be exposed to any agent."
+      "enabledDesc": "When disabled, the tool will not be exposed to any agent.",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDesc": "Permanently delete this custom tool. Active agents that reference it will lose access immediately.",
+      "deleteAction": "Delete this custom tool"
     },
     "agentSettings": {
       "generalDesc": "Identity and purpose of this AI agent.",
@@ -1235,7 +1247,10 @@
       "brandContext": "Brand Context",
       "brandContextDesc": "MCP server exposing brand manuals, voice guidelines or messaging frameworks.",
       "brandContextMcp": "MCP Server",
-      "brandContextMcpPlaceholder": "No brand context"
+      "brandContextMcpPlaceholder": "No brand context",
+      "dangerZoneTitle": "Danger zone",
+      "dangerZoneDesc": "Permanently delete this persona. Agents that reference it will fall back to no persona on the next turn.",
+      "deleteAction": "Delete this persona"
     }
   }
 }

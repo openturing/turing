@@ -1,7 +1,7 @@
 "use client"
 import { ROUTES } from "@/app/routes.const"
 import { SectionCard } from "../ui/section-card"
-import { IconSettings, IconBrain, IconSparkles, IconAdjustments, IconToggleLeft } from "@tabler/icons-react"
+import { IconAdjustments, IconAlertTriangle, IconBrain, IconSettings, IconSparkles, IconToggleLeft, IconTrash } from "@tabler/icons-react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Form,
@@ -37,6 +37,7 @@ import {
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
+import { Button } from "../ui/button"
 import { FormItemTwoColumns } from "../ui/form-item-two-columns"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { StickySaveBar } from "../ui/sticky-save-bar"
@@ -753,6 +754,29 @@ export const LLMInstanceForm: React.FC<Props> = ({ value, isNew }) => {
                   </SectionCard.Content>
                 </SectionCard>
 
+                {/* Danger zone — labelled, always-visible counterpart to the
+                    desktop-only CardHeader trash icon. Shares the same
+                    `open`/`setOpen` state so only one DialogDelete renders. */}
+                {!isNew && (
+                  <SectionCard variant="rose">
+                    <SectionCard.Header
+                      icon={IconAlertTriangle}
+                      title={t("forms.llm.dangerZoneTitle")}
+                      description={t("forms.llm.dangerZoneDesc")}
+                    />
+                    <SectionCard.Content>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
+                        <IconTrash className="size-4" />
+                        {t("forms.llm.deleteAction")}
+                      </Button>
+                    </SectionCard.Content>
+                  </SectionCard>
+                )}
               </div>
             </CardContent>
           </Card>

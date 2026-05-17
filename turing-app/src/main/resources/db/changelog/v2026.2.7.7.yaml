@@ -1,0 +1,38 @@
+databaseChangeLog:
+  # Widen `chat_flow.description` from VARCHAR(500) → CLOB/TEXT.
+  #
+  # Existing flows authored against the 500-char cap fit fine, but live
+  # data (Insper EE's Aula-Relâmpago persona description is ~580 chars)
+  # already overflows in production with an opaque H2/Postgres error:
+  #   "Value too long for column DESCRIPTION CHARACTER VARYING(500)"
+  #
+  # The two other free-form text columns on this table —
+  # `triggerDescription` and `definitionJson` — are already `longtext`
+  # (`@Lob`). Aligning `description` with them is the lowest-risk fix:
+  # no truncation of existing data, no app-side validation tightening
+  # that would block already-authored flows from saving.
+  #
+  # Type = `longtext` (Liquibase synonym) to match the existing
+  # convention in this codebase. The sibling `triggerDescription` column
+  # on this same `chat_flow` table was declared as `type: longtext` in
+  # v2026.2.5.1; same for `variablesJson`, `prompt`, and every other
+  # CLOB-shaped column in past migrations. Liquibase translates this to
+  # the platform-native unbounded text type:
+  #   MySQL/MariaDB → LONGTEXT · Postgres → TEXT · H2/Oracle → CLOB ·
+  #   SQL Server → NVARCHAR(MAX).
+
+  - changeSet:
+      id: v2026.2.7.7-widen-chat-flow-description
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - columnExists:
+            tableName: chat_flow
+            columnName: description
+      changes:
+        - modifyDataType:
+            tableName: chat_flow
+            columnName: description
+            newDataType: longtext

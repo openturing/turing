@@ -57,7 +57,16 @@ public class TurChatFlow implements Serializable {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 500)
+    /**
+     * Free-form admin description of the flow. Promoted from
+     * {@code VARCHAR(500)} → {@code longtext} in v2026.2.7.7 — real-world
+     * persona descriptions (e.g. Insper EE's Aula-Relâmpago professor at
+     * ~580 chars) overflow the original cap. The trigger-description and
+     * definition-json fields on this same entity already use {@code @Lob}
+     * for the same reason; aligning the description here matches them.
+     */
+    @Lob
+    @Column(columnDefinition = "longtext")
     private String description;
 
     @Lob

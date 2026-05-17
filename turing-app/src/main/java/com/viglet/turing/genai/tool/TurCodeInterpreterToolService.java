@@ -493,6 +493,14 @@ public class TurCodeInterpreterToolService {
         }
     }
 
+    /**
+     * Chars of stdout to inline in the failure log. Long enough to surface
+     * "reportlab not installed" / "ModuleNotFoundError" / SystemExit prints,
+     * short enough that a runaway script's "Hello World" loop doesn't blow
+     * the log line.
+     */
+    private static final int FAILURE_STDOUT_TAIL_CHARS = 1500;
+
     private void logResult(String sessionId, Path scriptPath, int exitCode,
             StringBuilder stdout, StringBuilder stderr, File[] generatedFiles) {
         int fileCount = generatedFiles != null ? generatedFiles.length : 0;
@@ -503,9 +511,28 @@ public class TurCodeInterpreterToolService {
             log.warn("[CodeInterpreter] session={} | SUCCESS with warnings | script={} | stdout={} chars | stderr:\n{}",
                     sessionId, scriptPath.toAbsolutePath(), stdout.length(), stderr);
         } else {
-            log.error("[CodeInterpreter] session={} | FAILED (exit={}) | script={} | stderr:\n{}",
-                    sessionId, exitCode, scriptPath.toAbsolutePath(), stderr);
+            // Include stdout tail too. Failures like `raise SystemExit(1)`
+            // after a `print("…")` (e.g. our reportlab-missing branch) put
+            // the diagnostic on stdout and leave stderr empty — without
+            // this, the operator sees "FAILED stderr:<empty>" and has no
+            // signal to act on.
+            log.error("[CodeInterpreter] session={} | FAILED (exit={}) | script={} | stdout (last {} chars):\n{}\nstderr:\n{}",
+                    sessionId, exitCode, scriptPath.toAbsolutePath(),
+                    FAILURE_STDOUT_TAIL_CHARS, tail(stdout, FAILURE_STDOUT_TAIL_CHARS), stderr);
         }
+    }
+
+    /**
+     * Returns the trailing {@code n} chars of {@code buf}, prefixed with
+     * a "[…N chars truncated]" marker when the buffer was longer than
+     * the cap. Empty buffer renders as {@code "(empty)"} so the log line
+     * is never ambiguous (vs. an actual empty placeholder).
+     */
+    private static String tail(StringBuilder buf, int n) {
+        if (buf == null || buf.isEmpty()) return "(empty)";
+        if (buf.length() <= n) return buf.toString();
+        int dropped = buf.length() - n;
+        return "[… " + dropped + " chars truncated]\n" + buf.substring(buf.length() - n);
     }
 
     /**

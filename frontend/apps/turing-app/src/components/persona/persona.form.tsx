@@ -36,12 +36,14 @@ import type { TurStoreInstance } from "@/models/store/store-instance.model.ts"
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service"
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import {
+  IconAlertTriangle,
   IconBan,
   IconBookmark,
   IconMessage2,
   IconPalette,
   IconSettings,
   IconSparkles,
+  IconTrash,
 } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -49,6 +51,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@viglet/viglet-design-system"
 import { DialogDelete } from "../dialog.delete"
+import { Button } from "../ui/button"
 import { GradientSwitch } from "../ui/gradient-switch"
 import { PromptEditor } from "../ui/prompt-editor"
 import { SectionCard } from "../ui/section-card"
@@ -617,6 +620,33 @@ export const PersonaForm: React.FC<Props> = ({ value, isNew }) => {
                     />
                   </SectionCard.Content>
                 </SectionCard>
+
+                {/* Danger zone — duplicates the desktop-only CardHeader
+                    delete trigger as a labelled button that's visible on
+                    every screen size AND doesn't require scrolling back
+                    to the top of a long form to find. Reuses the same
+                    `open`/`setOpen` state as the CardHeader trigger so
+                    only ONE DialogDelete instance renders. */}
+                {!isNew && (
+                  <SectionCard variant="rose">
+                    <SectionCard.Header
+                      icon={IconAlertTriangle}
+                      title={t("forms.persona.dangerZoneTitle")}
+                      description={t("forms.persona.dangerZoneDesc")}
+                    />
+                    <SectionCard.Content>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
+                        <IconTrash className="size-4" />
+                        {t("forms.persona.deleteAction")}
+                      </Button>
+                    </SectionCard.Content>
+                  </SectionCard>
+                )}
               </div>
             </CardContent>
           </Card>

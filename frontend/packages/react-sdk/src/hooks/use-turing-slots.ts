@@ -236,18 +236,26 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     }
   }, [conversationId]);
 
-  // Polling: re-trigger the cookie-sync + fetcher effects above on a timer.
-  // The interval intentionally runs even when {@code conversationId} is still
-  // null — the {@code TUR_SESSION} cookie is minted by the first chat turn,
-  // which may happen long AFTER this hook mounts (header + FlowOutputs render
-  // with the page; the visitor types the first message later). Without polling
-  // through the null phase we'd never observe the cookie appearing and the
-  // header / slot-driven panels would only fill in after a manual refresh.
-  // The bump only triggers a fetch once `conversationId` is non-null
-  // (the fetcher effect early-returns in the null phase), so the polling
-  // cost while the cookie is still missing is just one variable bump per tick.
+  // Polling tick: drives BOTH the slot-fetcher effect (transport=polling)
+  // AND the cookie-sync effect (which depends on `tick`). The latter is
+  // load-bearing even when SSE is the chosen transport — without it, a
+  // hook that mounted BEFORE the chat's first turn (header / FlowOutputs
+  // render with the page; visitor types later) never detects the
+  // TUR_SESSION cookie being minted, leaves `conversationId` stuck at
+  // null, and the SSE subscription effect early-returns forever.
+  // Symptom: slot-driven panels only appear after a manual refresh.
+  //
+  // Guard logic:
+  //  • SSE off → always poll (existing behavior, drives the fetcher).
+  //  • SSE on + conversationId null → poll just to bump tick so the
+  //    cookie-sync effect re-runs and catches the freshly-minted cookie.
+  //  • SSE on + conversationId set → stop polling; SSE provides live
+  //    updates and we don't need to bump tick anymore.
   useEffect(() => {
-    if (!enabled || pollInterval <= 0 || sseActive) {
+    if (!enabled || pollInterval <= 0) {
+      return;
+    }
+    if (sseActive && conversationId) {
       return;
     }
     const handle = globalThis.setInterval(() => {
@@ -256,7 +264,7 @@ export function useTuringSlots(options: UseTuringSlotsOptions = {}): UseTuringSl
     return () => {
       globalThis.clearInterval(handle);
     };
-  }, [enabled, pollInterval, sseActive]);
+  }, [enabled, pollInterval, sseActive, conversationId]);
 
   const refresh = useCallback(() => {
     setTick((t) => t + 1);
