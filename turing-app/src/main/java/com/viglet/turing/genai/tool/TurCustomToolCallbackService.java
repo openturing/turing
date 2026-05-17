@@ -78,6 +78,19 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS = "turing.agentPythonRequirements";
 
+    /**
+     * Key under which {@link com.viglet.turing.genai.TurAgentChatExecutor}
+     * publishes the active agent's id. Combined with
+     * {@link #TOOL_CONTEXT_CONVERSATION_ID}, it drives the tenant-isolated
+     * session-dir layout in {@link TurCodeInterpreterToolService}:
+     * {@code tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sid}/}.
+     *
+     * <p>Path-level isolation only — not a runtime sandbox boundary.
+     * See {@link TurCustomToolCodeHelper} JSDoc for the full security
+     * caveat.
+     */
+    public static final String TOOL_CONTEXT_AGENT_ID = "turing.agentId";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;
@@ -285,8 +298,11 @@ public class TurCustomToolCallbackService {
         // baseline reportlab from Global Settings — no operator handoff
         // between environments.
         String agentPythonRequirements = resolveAgentPythonRequirements(toolContext);
+        String tenantAgentId = resolveAgentId(toolContext);
+        String tenantConversationId = resolveConversationId(toolContext);
         binding.setVariable("code",
-                new TurCustomToolCodeHelper(codeInterpreterToolService, agentPythonRequirements));
+                new TurCustomToolCodeHelper(codeInterpreterToolService,
+                        agentPythonRequirements, tenantAgentId, tenantConversationId));
         Script script = cached.scriptClass.getDeclaredConstructor().newInstance();
         script.setBinding(binding);
         Object result = script.run();
@@ -323,6 +339,22 @@ public class TurCustomToolCallbackService {
         Map<String, Object> ctx = toolContext.getContext();
         if (ctx == null) return null;
         Object value = ctx.get(TOOL_CONTEXT_AGENT_PYTHON_REQUIREMENTS);
+        if (value == null) return null;
+        String text = value.toString();
+        return text.isBlank() ? null : text;
+    }
+
+    /**
+     * Extracts the active agent's id published via
+     * {@link #TOOL_CONTEXT_AGENT_ID}. Drives the tenant-isolated path
+     * layout in {@link TurCodeInterpreterToolService}; null when no
+     * agent context is available (e.g. unit tests).
+     */
+    private static String resolveAgentId(ToolContext toolContext) {
+        if (toolContext == null) return null;
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) return null;
+        Object value = ctx.get(TOOL_CONTEXT_AGENT_ID);
         if (value == null) return null;
         String text = value.toString();
         return text.isBlank() ? null : text;

@@ -69,6 +69,8 @@ class TurAIAgentChatAPITest {
     private TurChatFlowRepository turChatFlowRepository;
     @Mock
     private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+    @Mock
+    private com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner urlSigner;
 
     private TurAIAgentChatAPI api;
 
@@ -78,7 +80,7 @@ class TurAIAgentChatAPITest {
                 turAIAgentRepository, turAIAgentRepositoryPort,
                 turLLMInstanceRepository, turLLMInstanceRepositoryPort,
                 llmProviderFactory, turSecretCryptoService, agentChatExecutor,
-                turChatFlowRepository, chatFlowEngineService);
+                turChatFlowRepository, chatFlowEngineService, urlSigner);
     }
 
     private static TurAIAgentDomain agentDomain(String id) {
@@ -138,7 +140,7 @@ class TurAIAgentChatAPITest {
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
                 List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
-        assertThatThrownBy(() -> api.chat("missing", request))
+        assertThatThrownBy(() -> api.chat("missing", request, org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AI Agent not found");
     }
@@ -153,7 +155,7 @@ class TurAIAgentChatAPITest {
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
                 List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
-        assertThatThrownBy(() -> api.chat("agent-1", request))
+        assertThatThrownBy(() -> api.chat("agent-1", request, org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("AI Agent is disabled");
     }
@@ -169,7 +171,7 @@ class TurAIAgentChatAPITest {
         var request = new TurAIAgentChatAPI.AgentChatRequest("missing-llm",
                 List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
-        assertThatThrownBy(() -> api.chat("agent-1", request))
+        assertThatThrownBy(() -> api.chat("agent-1", request, org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("LLM instance not found");
     }
@@ -193,7 +195,7 @@ class TurAIAgentChatAPITest {
         var request = new TurAIAgentChatAPI.AgentChatRequest("llm-1",
                 List.of(new TurAIAgentChatAPI.ChatMessageItem("user", "Hi")), null, null);
 
-        assertThatThrownBy(() -> api.chat("agent-1", request))
+        assertThatThrownBy(() -> api.chat("agent-1", request, org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletResponse.class)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("is not configured for agent");
     }

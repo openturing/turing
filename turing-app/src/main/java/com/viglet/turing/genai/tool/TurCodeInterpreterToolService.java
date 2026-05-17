@@ -30,11 +30,27 @@ public class TurCodeInterpreterToolService {
     private static final String SANDBOX_DIR = "code-interpreter";
     /**
      * Subdir of {@link #SANDBOX_DIR} where ephemeral per-call session
-     * directories live. Separated from {@code _deps/} (the persistent
-     * pip cache) so {@link TurCodeInterpreterCleanupTask} can sweep this
-     * tree safely on a TTL without touching deps the next call will hit.
+     * directories live WHEN no tenant context is available (LLM-direct
+     * {@code execute_python} calls, unit tests). Kept as a fallback for
+     * back-compat with pre-2026.2.7 URLs.
      */
     static final String SESSIONS_DIR = "sessions";
+    /**
+     * Subdir of {@link #SANDBOX_DIR} where tenant-isolated session dirs
+     * live: {@code tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sessionId}/}.
+     * Used whenever both agent + conversation context are known (which
+     * is the common path in production — Custom Tools always run inside
+     * a chat turn). Path-level isolation lets the cleanup task scope
+     * deletes by tenant and lets future hardening (signed URLs, cookie
+     * auth) verify the caller owns the session.
+     *
+     * <p><b>Important:</b> this is OPERATIONAL isolation, NOT a runtime
+     * security boundary. A malicious Python script still runs as the
+     * JVM user and can {@code open("../../other-tenant/file")}. Proper
+     * runtime isolation needs containerization (Docker / gVisor /
+     * Firecracker) — separate roadmap.
+     */
+    static final String TENANTS_DIR = "tenants";
 
     /** Fixed, read-only system directories allowed in the subprocess PATH. */
     private static final String SAFE_PATH;
@@ -63,21 +79,29 @@ public class TurCodeInterpreterToolService {
 
     private final TurGlobalSettingsService turGlobalSettingsService;
     private final TurCustomToolDependencyService dependencyService;
+    private final TurCodeInterpreterUrlSigner urlSigner;
 
     /**
-     * Test-friendly constructor — wires the sandbox without auto-install.
-     * Equivalent to {@code new TurCodeInterpreterToolService(settings, null)};
-     * the dep service call falls back to "no deps dir" so PYTHONPATH stays
-     * unset and behavior matches the pre-2026.2.7 era.
+     * Test-friendly constructor — wires the sandbox without auto-install
+     * and without URL signing. Equivalent to
+     * {@code new TurCodeInterpreterToolService(settings, null, null)}; URLs
+     * are emitted unsigned (legacy behavior) and PYTHONPATH stays unset.
      */
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService) {
-        this(turGlobalSettingsService, null);
+        this(turGlobalSettingsService, null, null);
     }
 
     public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
             TurCustomToolDependencyService dependencyService) {
+        this(turGlobalSettingsService, dependencyService, null);
+    }
+
+    public TurCodeInterpreterToolService(TurGlobalSettingsService turGlobalSettingsService,
+            TurCustomToolDependencyService dependencyService,
+            TurCodeInterpreterUrlSigner urlSigner) {
         this.turGlobalSettingsService = turGlobalSettingsService;
         this.dependencyService = dependencyService;
+        this.urlSigner = urlSigner;
     }
 
     @Value("${turing.code-interpreter.python-executable:}")
@@ -117,10 +141,69 @@ public class TurCodeInterpreterToolService {
 
     /** Per-call carrier for the agent's pythonRequirements addendum. */
     private final ThreadLocal<String> extraRequirements = new ThreadLocal<>();
+    /**
+     * Per-call carrier for the active agent id. When set with
+     * {@link #tenantConversationId} the session dir lands under
+     * {@code tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sid}/} —
+     * path-isolated from other tenants. Null when called outside a
+     * Custom Tool context (LLM-direct {@code execute_python}), in which
+     * case the legacy flat layout under {@code sessions/} is used.
+     */
+    private final ThreadLocal<String> tenantAgentId = new ThreadLocal<>();
+    private final ThreadLocal<String> tenantConversationId = new ThreadLocal<>();
 
     @Tool(name = "execute_python", description = ".")
     public String executePython(String code) {
         return executePythonWithExtraRequirements(code, null);
+    }
+
+    /**
+     * Tenant-aware overload — used by
+     * {@link TurCustomToolCodeHelper} when both agent + conversation
+     * context are available. Routes the session dir under
+     * {@code tenants/{agentId}/{conversationId}/...} so cleanup and
+     * future authorization layers can scope by tenant.
+     *
+     * <p>Either id can be null/blank — in which case the legacy
+     * {@code sessions/} layout is used (preserving back-compat with
+     * pre-2026.2.7 invocations).
+     */
+    public String executePythonForTenant(String code, String extraReqs,
+            String agentId, String conversationId) {
+        tenantAgentId.set(sanitizePathSegment(agentId));
+        tenantConversationId.set(sanitizePathSegment(conversationId));
+        try {
+            return executePythonWithExtraRequirements(code, extraReqs);
+        } finally {
+            tenantAgentId.remove();
+            tenantConversationId.remove();
+        }
+    }
+
+    /**
+     * Strips any path-traversal danger from server-generated ids before
+     * they're appended to a filesystem path. UUIDs in the codebase use
+     * {@code [a-zA-Z0-9-]} only, so anything outside that set is either
+     * adversarial or an upstream bug — coerce to a safe form.
+     *
+     * <p>Defense in depth: agent/conversation ids are minted by Turing
+     * (never user-controlled), but a future API tweak could relax the
+     * format. Doing the sanitize here guards against the regression.
+     */
+    static String sanitizePathSegment(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        // Keep only safe filename characters.
+        String safe = raw.replaceAll("[^a-zA-Z0-9._-]", "");
+        if (safe.isEmpty()) return null;
+        // Reject path-traversal sentinels that survive the char filter:
+        // `.` (current dir) and `..` (parent dir). Without this check, a
+        // raw id like "../etc" reduces to "..etc" (OK) but "../" reduces
+        // to ".." which `new File(parent, "..")` resolves to the parent
+        // → cross-tenant traversal. Same for "." which is a no-op segment
+        // but lets an adversary land in their own dir's parent on the
+        // next level.
+        if (".".equals(safe) || "..".equals(safe)) return null;
+        return safe;
     }
 
     /**
@@ -180,14 +263,29 @@ public class TurCodeInterpreterToolService {
         log.info("[CodeInterpreter] session={} | Executing {} chars of Python code (agentExtras={})",
                 sessionId, code.length(), (extraReqs == null || extraReqs.isBlank()) ? "no" : "yes");
 
-        // Date-bucketed session layout: store/code-interpreter/sessions/YYYY-MM-DD/{sessionId}.
-        // Lets the cleanup task drop an entire day's bucket atomically when
-        // it ages out of the TTL window, instead of scanning N flat dirs.
-        // Files stay reachable via /api/v2/code-interpreter/{sessionId}/{file}
-        // — the file API resolves the date prefix at serve time.
+        // Tenant-aware date-bucketed session layout:
+        //   - With tenant: tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sessionId}/
+        //   - Without (LLM-direct @Tool, unit tests): legacy sessions/YYYY-MM-DD/{sessionId}/
+        // Path-level isolation lets cleanup scope by tenant and lets future
+        // hardening (signed URLs, cookie auth) verify ownership. URLs stay
+        // /api/v2/code-interpreter/{sessionId}/{file} — the file API
+        // walks both layouts to resolve at serve time.
         String dateBucket = java.time.LocalDate.now().toString();
-        File sessionsRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR + "/" + SESSIONS_DIR);
-        File sessionDir = new File(new File(sessionsRoot, dateBucket), sessionId);
+        String agentId = tenantAgentId.get();
+        String convId = tenantConversationId.get();
+        File sessionDir;
+        if (agentId != null && convId != null) {
+            File tenantsRoot = TurCommonsUtils.addSubDirToStoreDir(
+                    SANDBOX_DIR + "/" + TENANTS_DIR);
+            sessionDir = new File(new File(new File(
+                    new File(tenantsRoot, agentId), convId), dateBucket), sessionId);
+            log.debug("[CodeInterpreter] session={} | tenant-scoped dir agentId={} convId={}",
+                    sessionId, agentId, convId);
+        } else {
+            File sessionsRoot = TurCommonsUtils.addSubDirToStoreDir(
+                    SANDBOX_DIR + "/" + SESSIONS_DIR);
+            sessionDir = new File(new File(sessionsRoot, dateBucket), sessionId);
+        }
         extraRequirements.set(extraReqs);
         try {
             Files.createDirectories(sessionDir.toPath());
@@ -307,7 +405,12 @@ public class TurCodeInterpreterToolService {
         File[] generatedFiles = sessionDir
                 .listFiles((dir, name) -> !name.equals("script.py") && !name.equals("_runner.py"));
 
-        String result = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles);
+        // Snapshot the tenant convId BEFORE buildResult — the ThreadLocal
+        // gets cleared in the outer finally and buildResult would see null
+        // otherwise. The convId carries into the HMAC payload so the
+        // server can later verify cookie-binding.
+        String convForUrl = tenantConversationId.get();
+        String result = buildResult(sessionId, exitCode, stdout, stderr, generatedFiles, convForUrl);
         logResult(sessionId, scriptPath, exitCode, stdout, stderr, generatedFiles);
         return result;
     }
@@ -325,7 +428,8 @@ public class TurCodeInterpreterToolService {
     }
 
     private String buildResult(String sessionId, int exitCode,
-            StringBuilder stdout, StringBuilder stderr, File[] generatedFiles) {
+            StringBuilder stdout, StringBuilder stderr, File[] generatedFiles,
+            String convId) {
         StringBuilder result = new StringBuilder();
 
         if (!stdout.isEmpty()) {
@@ -343,26 +447,44 @@ public class TurCodeInterpreterToolService {
             result.append(stderr);
         }
 
-        if (generatedFiles != null && generatedFiles.length > 0) {
-            result.append("\n--- Generated Files ---\n");
-            result.append(
-                    "IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
-            for (File f : generatedFiles) {
-                String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName();
-                boolean isImage = isImageFile(f.getName());
-                if (isImage) {
-                    result.append("![").append(f.getName()).append("](").append(fileUrl).append(")\n");
-                } else {
-                    result.append("[Download ").append(f.getName()).append("](").append(fileUrl).append(")\n");
-                }
-            }
-        }
+        appendGeneratedFiles(result, sessionId, generatedFiles, convId);
 
         if (result.isEmpty()) {
             result.append("(no output)");
         }
 
         return result.toString();
+    }
+
+    /**
+     * Emits the markdown bullet list for files produced by the Python
+     * script. Extracted from {@link #buildResult} to keep the latter
+     * within the project's cognitive-complexity budget. Each URL gets a
+     * signed query string when the signer is wired (production); the
+     * legacy 1-arg test constructor leaves {@code urlSigner == null} so
+     * the URL stays unsigned and tests don't have to mint signatures.
+     */
+    private void appendGeneratedFiles(StringBuilder result, String sessionId,
+            File[] generatedFiles, String convId) {
+        if (generatedFiles == null || generatedFiles.length == 0) return;
+        result.append("\n--- Generated Files ---\n");
+        result.append(
+                "IMPORTANT: Copy the markdown below EXACTLY as-is. URLs are relative paths starting with /. Do NOT add https:// or any domain.\n");
+        for (File f : generatedFiles) {
+            String signedSuffix = (urlSigner == null)
+                    ? ""
+                    : urlSigner.signQueryString(sessionId, f.getName(), convId);
+            String fileUrl = "/api/v2/code-interpreter/" + sessionId + "/" + f.getName() + signedSuffix;
+            String prefix = isImageFile(f.getName()) ? "!" : "Download ";
+            // Image markdown: ![alt](url). Plain link: [Download name](url).
+            // The "Download " prefix label lives inside the [] for non-image
+            // links so the LLM gets a verbatim label it can echo.
+            if (isImageFile(f.getName())) {
+                result.append("![").append(f.getName()).append("](").append(fileUrl).append(")\n");
+            } else {
+                result.append("[").append(prefix).append(f.getName()).append("](").append(fileUrl).append(")\n");
+            }
+        }
     }
 
     private void logResult(String sessionId, Path scriptPath, int exitCode,

@@ -13,12 +13,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.viglet.turing.commons.utils.TurCommonsUtils;
+import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
+import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner.VerifyResult;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +35,38 @@ public class TurCodeInterpreterFileAPI {
 
     private static final String SANDBOX_DIR = "code-interpreter";
     private static final String SESSIONS_DIR = "sessions";
+    private static final String TENANTS_DIR = "tenants";
+
+    private final TurCodeInterpreterUrlSigner urlSigner;
+
+    public TurCodeInterpreterFileAPI(TurCodeInterpreterUrlSigner urlSigner) {
+        this.urlSigner = urlSigner;
+    }
 
     @GetMapping("/{sessionId}/{filename}")
-    public ResponseEntity<Resource> getFile(@PathVariable String sessionId, @PathVariable String filename) {
+    public ResponseEntity<Resource> getFile(
+            @PathVariable String sessionId,
+            @PathVariable String filename,
+            @RequestParam(value = "exp", required = false) String exp,
+            @RequestParam(value = "sig", required = false) String sig,
+            @CookieValue(value = TurCodeInterpreterUrlSigner.CONV_COOKIE, required = false) String convCookie) {
         // Sanitize inputs to prevent path traversal
         if (sessionId.contains("..") || sessionId.contains("/") || sessionId.contains("\\")
                 || filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
             return ResponseEntity.badRequest().build();
+        }
+
+        // HMAC + expiry + cookie-binding gate. Performed BEFORE filesystem
+        // resolution so a 403 doesn't leak whether the file exists. When
+        // signing is disabled (operator opt-out via config), verify()
+        // returns OK and we serve as before.
+        VerifyResult verdict = urlSigner.verify(sessionId, filename, exp, sig, convCookie);
+        if (verdict != VerifyResult.OK) {
+            // Single 403 for any non-OK outcome — the granular enum case
+            // is logged for diagnostics but not surfaced to the client so
+            // an attacker can't probe which check fails first.
+            log.warn("[CodeInterpreterFileAPI] rejecting {}/{}: {}", sessionId, filename, verdict);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         File sandboxRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR);
@@ -77,31 +106,61 @@ public class TurCodeInterpreterFileAPI {
     }
 
     /**
-     * Resolves {@code {sessionId}/{filename}} against the date-bucketed
-     * layout. Strategy: try today's bucket first (overwhelmingly the
-     * common case — visitors usually download right after generation);
-     * fall back to scanning sibling buckets from newest to oldest. Any
-     * bucket older than the cleanup TTL won't have the file anymore;
-     * this scan only checks dirs that still exist on disk so the cost
-     * is bounded by {@code (cleanup-ttl-hours / 24) + 1} stat() calls
-     * (≤2 at default 24h TTL).
+     * Resolves {@code {sessionId}/{filename}} across three possible disk
+     * layouts in priority order:
+     * <ol>
+     *   <li><b>Tenant-isolated</b> ({@code tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sessionId}/})
+     *       — current production layout for Custom-Tool invocations.</li>
+     *   <li><b>Date-bucketed flat</b> ({@code sessions/YYYY-MM-DD/{sessionId}/})
+     *       — legacy fallback for {@code @Tool}-direct calls and pre-2026.2.7 URLs.</li>
+     *   <li><b>Pre-date-bucket</b> ({@code {sessionId}/}) — oldest fallback
+     *       for URLs minted before the date layout migration.</li>
+     * </ol>
+     * <p>Each layer tries today's bucket first (overwhelmingly the hot
+     * path — visitors usually download right after generation), then
+     * sibling date buckets newest-first. Any bucket older than the
+     * cleanup TTL won't have the file anymore; the scan only stats
+     * dirs that still exist on disk.
      */
     private static File resolveSessionFile(File sandboxRoot, String sessionId, String filename) {
-        File sessionsRoot = new File(sandboxRoot, SESSIONS_DIR);
-        if (!sessionsRoot.isDirectory()) {
-            // Pre-migration layout: session dirs sat directly under
-            // `code-interpreter/{sessionId}/`. Keep the fallback alive
-            // so URLs minted before the upgrade still resolve while the
-            // old dirs phase out via cleanup.
-            File legacy = new File(new File(sandboxRoot, sessionId), filename);
-            return legacy.isFile() ? legacy : null;
+        // 1. Tenant tree (current production)
+        File tenantHit = resolveInTenantTree(new File(sandboxRoot, TENANTS_DIR), sessionId, filename);
+        if (tenantHit != null) return tenantHit;
+        // 2. Legacy date-bucketed flat
+        File flatHit = resolveInDateBucketedTree(new File(sandboxRoot, SESSIONS_DIR), sessionId, filename);
+        if (flatHit != null) return flatHit;
+        // 3. Pre-date-bucket flat: code-interpreter/{sessionId}/{filename}
+        File preDateBucket = new File(new File(sandboxRoot, sessionId), filename);
+        return preDateBucket.isFile() ? preDateBucket : null;
+    }
+
+    /**
+     * Scans {@code tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sessionId}/{filename}}.
+     * O(agents × conversations × dates) in the worst case but bounded by
+     * the cleanup TTL — most dirs are gone within 24h.
+     */
+    private static File resolveInTenantTree(File tenantsRoot, String sessionId, String filename) {
+        if (!tenantsRoot.isDirectory()) return null;
+        File[] agentDirs = tenantsRoot.listFiles(File::isDirectory);
+        if (agentDirs == null) return null;
+        for (File agentDir : agentDirs) {
+            File[] convDirs = agentDir.listFiles(File::isDirectory);
+            if (convDirs == null) continue;
+            for (File convDir : convDirs) {
+                File hit = resolveInDateBucketedTree(convDir, sessionId, filename);
+                if (hit != null) return hit;
+            }
         }
-        // Today's bucket is the hot path.
+        return null;
+    }
+
+    /** Common helper for the {@code YYYY-MM-DD/{sessionId}/{filename}} pattern. */
+    private static File resolveInDateBucketedTree(File root, String sessionId, String filename) {
+        if (!root.isDirectory()) return null;
         String today = java.time.LocalDate.now().toString();
-        File hot = new File(new File(new File(sessionsRoot, today), sessionId), filename);
+        File hot = new File(new File(new File(root, today), sessionId), filename);
         if (hot.isFile()) return hot;
-        // Cold path: scan sibling date buckets (newest first).
-        File[] dateBuckets = sessionsRoot.listFiles(File::isDirectory);
+        File[] dateBuckets = root.listFiles(File::isDirectory);
         if (dateBuckets == null || dateBuckets.length == 0) return null;
         java.util.Arrays.sort(dateBuckets, java.util.Comparator
                 .comparing(File::getName).reversed());

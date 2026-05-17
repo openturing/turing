@@ -93,6 +93,31 @@ public class TurGlobalSettingsService {
         return value;
     }
 
+    /**
+     * Returns the server-side HMAC secret used to sign / verify the
+     * {@code ?exp&sig} query string on {@code /api/v2/code-interpreter/}
+     * URLs. Auto-generated on first boot (see
+     * {@link TurConfigVarOnStartup#CODE_INTERPRETER_URL_SIGNING_SECRET})
+     * so a deployment without manual configuration still gets unguessable
+     * signed URLs.
+     *
+     * <p>Rotate by deleting the row and restarting — the on-startup hook
+     * mints a fresh value. Rotation invalidates every previously-emitted
+     * URL, which is the desired outcome (an operator-initiated rotation
+     * is almost always in response to a leak).
+     *
+     * <p>Not exposed via the admin API: a secret that round-trips through
+     * the UI is one screenshot away from being compromised. Kept inside
+     * the service layer only.
+     *
+     * @since 2026.2.7
+     */
+    public String getCodeInterpreterUrlSigningSecret() {
+        return turConfigVarRepository.findById(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET)
+                .map(TurConfigVar::getValue)
+                .orElse("");
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)

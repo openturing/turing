@@ -79,6 +79,7 @@ public class TurCodeInterpreterCleanupTask {
 
     static final String SANDBOX_DIR = "code-interpreter";
     static final String SESSIONS_DIR = "sessions";
+    static final String TENANTS_DIR = "tenants";
 
     @Value("${turing.code-interpreter.cleanup.enabled:true}")
     private boolean enabled;
@@ -100,17 +101,51 @@ public class TurCodeInterpreterCleanupTask {
             return;
         }
         File sandboxRoot = TurCommonsUtils.addSubDirToStoreDir(SANDBOX_DIR);
-        File sessionsRoot = new File(sandboxRoot, SESSIONS_DIR);
-        if (!sessionsRoot.isDirectory()) {
-            return;
-        }
-        File[] buckets = sessionsRoot.listFiles(File::isDirectory);
-        if (buckets == null || buckets.length == 0) {
-            return;
-        }
         LocalDate cutoff = LocalDate.now().minusDays(Math.max(1, sessionTtlHours / 24));
-        long deletedBuckets = 0;
-        long deletedBytes = 0;
+        Stats total = new Stats();
+        // Legacy flat layout: sessions/YYYY-MM-DD/{sid}/
+        sweepDateBucketedTree(new File(sandboxRoot, SESSIONS_DIR), cutoff, total);
+        // Tenant-isolated layout: tenants/{agentId}/{conversationId}/YYYY-MM-DD/{sid}/
+        sweepTenantTree(new File(sandboxRoot, TENANTS_DIR), cutoff, total);
+        if (total.deletedBuckets > 0) {
+            log.info("[CodeInterpreterCleanup] swept {} bucket(s) | freed ~{} MB | ttl={}h | cutoff={}",
+                    total.deletedBuckets, (total.deletedBytes / 1_048_576),
+                    sessionTtlHours, cutoff);
+        }
+    }
+
+    /**
+     * Walks {@code tenants/{agentId}/{conversationId}/} and sweeps the
+     * date-bucketed subtree inside each conversation. Empty parent dirs
+     * (no surviving date buckets after the sweep) are also pruned so
+     * deleted-agent footprints don't linger forever.
+     */
+    private void sweepTenantTree(File tenantsRoot, LocalDate cutoff, Stats stats) {
+        if (!tenantsRoot.isDirectory()) return;
+        File[] agentDirs = tenantsRoot.listFiles(File::isDirectory);
+        if (agentDirs == null) return;
+        for (File agentDir : agentDirs) {
+            File[] convDirs = agentDir.listFiles(File::isDirectory);
+            if (convDirs == null) continue;
+            for (File convDir : convDirs) {
+                sweepDateBucketedTree(convDir, cutoff, stats);
+                // Prune empty conversation dir.
+                if (isEmptyDirectory(convDir)) convDir.delete();
+            }
+            // Prune empty agent dir.
+            if (isEmptyDirectory(agentDir)) agentDir.delete();
+        }
+    }
+
+    /**
+     * Walks {@code root/YYYY-MM-DD/...} and deletes buckets whose date
+     * is strictly before {@code cutoff}. Non-date sibling dirs (operator
+     * scratch space) are left untouched.
+     */
+    private void sweepDateBucketedTree(File root, LocalDate cutoff, Stats stats) {
+        if (!root.isDirectory()) return;
+        File[] buckets = root.listFiles(File::isDirectory);
+        if (buckets == null) return;
         for (File bucket : buckets) {
             LocalDate bucketDate;
             try {
@@ -128,14 +163,22 @@ public class TurCodeInterpreterCleanupTask {
             if (!bucketDate.isBefore(cutoff)) continue;
             long sizeBefore = sizeOf(bucket.toPath());
             if (deleteRecursively(bucket.toPath())) {
-                deletedBuckets++;
-                deletedBytes += sizeBefore;
+                stats.deletedBuckets++;
+                stats.deletedBytes += sizeBefore;
             }
         }
-        if (deletedBuckets > 0) {
-            log.info("[CodeInterpreterCleanup] swept {} bucket(s) | freed ~{} MB | ttl={}h | cutoff={}",
-                    deletedBuckets, (deletedBytes / 1_048_576), sessionTtlHours, cutoff);
-        }
+    }
+
+    private static boolean isEmptyDirectory(File dir) {
+        if (!dir.isDirectory()) return false;
+        File[] children = dir.listFiles();
+        return children == null || children.length == 0;
+    }
+
+    /** Aggregated counters threaded through the recursive sweep. */
+    private static final class Stats {
+        long deletedBuckets;
+        long deletedBytes;
     }
 
     private static long sizeOf(Path root) {

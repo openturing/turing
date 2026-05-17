@@ -261,6 +261,14 @@ public class TurAgentChatExecutor {
                     com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_CONVERSATION_ID,
                     conversationId);
         }
+        // agentId — drives tenant-isolated Code Interpreter session dirs
+        // (tenants/{agentId}/{conversationId}/...). Always published when
+        // the agent has an id (every persisted agent does).
+        if (agent.getId() != null && !agent.getId().isBlank()) {
+            toolContextMap.put(
+                    com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID,
+                    agent.getId());
+        }
         String agentPythonRequirements = agent.getPythonRequirements();
         if (agentPythonRequirements != null && !agentPythonRequirements.isBlank()) {
             toolContextMap.put(

@@ -23,7 +23,10 @@ class TurGlobalSettingsBeanTest {
     @Test
     void shouldCreateUsingAllArgsConstructor() {
         TurGlobalSettingsBean bean = new TurGlobalSettingsBean(
-                TurGlobalDecimalSeparator.DOT, null, null,
+                TurGlobalDecimalSeparator.DOT,
+                null,  // pythonExecutable
+                null,  // pythonRequirements (new in 2026.2.7)
+                null,  // defaultLlmId
                 false, 0L, false,
                 TurEmailProviderType.BREVO, null, null, null, null,
                 false, null, null, null);

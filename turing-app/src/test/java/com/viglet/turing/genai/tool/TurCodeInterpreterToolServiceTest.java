@@ -27,13 +27,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithStdoutOnly() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("Hello World\n");
         StringBuilder stderr = new StringBuilder();
 
-        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null);
+        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null, null);
 
         assertThat(result).isEqualTo("Hello World\n");
     }
@@ -42,13 +42,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithWarnings() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("output\n");
         StringBuilder stderr = new StringBuilder("DeprecationWarning: something\n");
 
-        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null);
+        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null, null);
 
         assertThat(result)
                 .contains("output")
@@ -60,13 +60,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithError() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder("NameError: name 'x' is not defined\n");
 
-        String result = (String) method.invoke(service, "abc123", 1, stdout, stderr, null);
+        String result = (String) method.invoke(service, "abc123", 1, stdout, stderr, null, null);
 
         assertThat(result)
                 .contains("ERROR (exit code 1)")
@@ -77,13 +77,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithNoOutput() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
-        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null);
+        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null, null);
 
         assertThat(result).isEqualTo("(no output)");
     }
@@ -92,7 +92,7 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithGeneratedFiles() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         File tempFile = File.createTempFile("output", ".png");
@@ -102,7 +102,7 @@ class TurCodeInterpreterToolServiceTest {
         StringBuilder stderr = new StringBuilder();
 
         String result = (String) method.invoke(service, "session1", 0,
-                stdout, stderr, new File[]{tempFile});
+                stdout, stderr, new File[]{tempFile}, null);
 
         assertThat(result)
                 .contains("Generated Files")
@@ -114,13 +114,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldTruncateLongStdout() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("x".repeat(20_000));
         StringBuilder stderr = new StringBuilder();
 
-        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null);
+        String result = (String) method.invoke(service, "abc123", 0, stdout, stderr, null, null);
 
         assertThat(result)
                 .contains("[output truncated]")
@@ -131,7 +131,7 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithNonImageGeneratedFile() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         File tempFile = File.createTempFile("data", ".csv");
@@ -141,7 +141,7 @@ class TurCodeInterpreterToolServiceTest {
         StringBuilder stderr = new StringBuilder();
 
         String result = (String) method.invoke(service, "session2", 0,
-                stdout, stderr, new File[]{tempFile});
+                stdout, stderr, new File[]{tempFile}, null);
 
         assertThat(result)
                 .contains("Generated Files")
@@ -154,13 +154,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithBothStdoutAndWarnings() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("result: 42\n");
         StringBuilder stderr = new StringBuilder("FutureWarning: something deprecated\n");
 
-        String result = (String) method.invoke(service, "s1", 0, stdout, stderr, null);
+        String result = (String) method.invoke(service, "s1", 0, stdout, stderr, null, null);
 
         assertThat(result)
                 .contains("result: 42")
@@ -172,13 +172,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithErrorAndStderr() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("partial output\n");
         StringBuilder stderr = new StringBuilder("Traceback...\n");
 
-        String result = (String) method.invoke(service, "s1", 1, stdout, stderr, null);
+        String result = (String) method.invoke(service, "s1", 1, stdout, stderr, null, null);
 
         assertThat(result)
                 .contains("partial output")
@@ -190,13 +190,13 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithEmptyGeneratedFilesArray() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         StringBuilder stdout = new StringBuilder("ok\n");
         StringBuilder stderr = new StringBuilder();
 
-        String result = (String) method.invoke(service, "s1", 0, stdout, stderr, new File[0]);
+        String result = (String) method.invoke(service, "s1", 0, stdout, stderr, new File[0], null);
 
         assertThat(result).isEqualTo("ok\n");
         assertThat(result).doesNotContain("Generated Files");
@@ -314,7 +314,7 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithMultipleGeneratedFiles() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         File imageFile = File.createTempFile("chart", ".png");
@@ -326,7 +326,7 @@ class TurCodeInterpreterToolServiceTest {
         StringBuilder stderr = new StringBuilder();
 
         String result = (String) method.invoke(service, "multi", 0,
-                stdout, stderr, new File[]{imageFile, dataFile});
+                stdout, stderr, new File[]{imageFile, dataFile}, null);
 
         assertThat(result)
                 .contains("Generated Files")
@@ -490,7 +490,7 @@ class TurCodeInterpreterToolServiceTest {
     void shouldBuildResultWithStdoutStderrAndFiles() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
                 "buildResult", String.class, int.class,
-                StringBuilder.class, StringBuilder.class, File[].class);
+                StringBuilder.class, StringBuilder.class, File[].class, String.class);
         method.setAccessible(true);
 
         File imgFile = File.createTempFile("plot", ".png");
@@ -502,7 +502,7 @@ class TurCodeInterpreterToolServiceTest {
         StringBuilder stderr = new StringBuilder("DeprecationWarning: old API\n");
 
         String result = (String) method.invoke(service, "sess1", 0,
-                stdout, stderr, new File[]{imgFile, csvFile});
+                stdout, stderr, new File[]{imgFile, csvFile}, null);
 
         assertThat(result)
                 .contains("Processing complete")

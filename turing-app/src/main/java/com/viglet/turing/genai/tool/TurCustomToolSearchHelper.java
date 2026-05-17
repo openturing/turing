@@ -9,6 +9,7 @@
  */
 package com.viglet.turing.genai.tool;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,6 +26,13 @@ import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.api.sn.search.TurSNSiteSearchService;
+import com.viglet.turing.commons.se.TurSEParameters;
+import com.viglet.turing.commons.sn.TurSNConfig;
+import com.viglet.turing.commons.sn.bean.TurSNSearchParams;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchBean;
+import com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean;
+import com.viglet.turing.commons.sn.search.TurSNFilterQueryOperator;
+import com.viglet.turing.commons.sn.search.TurSNSiteSearchContext;
 import com.viglet.turing.genai.TurGenAiContext;
 import com.viglet.turing.genai.TurGenAiContextFactory;
 import com.viglet.turing.genai.TurRagFilters;
@@ -320,16 +328,227 @@ public class TurCustomToolSearchHelper {
     }
 
     /**
-     * Convenience: the SN site search endpoint flavored for Groovy scripts.
-     * Currently a placeholder — wire to {@link TurSNSiteSearchService} once
-     * a customer tool demands it. Throws {@link UnsupportedOperationException}
-     * to make the lazy-implementation choice explicit rather than silently
-     * returning empty.
+     * Lexical (Solr/Elastic) site search exposed to Custom Tool Groovy
+     * scripts as {@code turingSearch.sn(...)}. Twin of {@link #ann(Map)}
+     * for cases where vector similarity isn't the right tool —
+     * exact-term lookups, faceted filtering on structured fields, sort
+     * by a numeric/date field, pagination of a known corpus.
+     *
+     * <p>Runs in-process against {@link TurSNSearchProcess#search}, the
+     * same code path the public {@code /api/sn/{site}/search} endpoint
+     * uses — no HTTP self-call.
+     *
+     * <p>Supported parameters (Groovy {@code Map} keys):
+     * <ul>
+     *   <li>{@code site} — SN site name (required).</li>
+     *   <li>{@code query} / {@code q} — search query (default {@code "*"}
+     *       for browse-all).</li>
+     *   <li>{@code locale} — BCP-47 tag; defaults to the site's default
+     *       locale.</li>
+     *   <li>{@code rows} — page size; default {@value #DEFAULT_TOP_K},
+     *       capped at {@value #MAX_TOP_K}.</li>
+     *   <li>{@code page} / {@code p} — 1-indexed page number; default 1.</li>
+     *   <li>{@code sort} — Solr sort expression (e.g. {@code "preco asc"});
+     *       default {@code "relevance"}.</li>
+     *   <li>{@code fq} — {@code List<String>} of filter queries
+     *       ({@code "field:value"}) joined with the {@code fqOp} operator.</li>
+     *   <li>{@code fqAnd} / {@code fqOr} — explicit AND / OR filter pools.</li>
+     *   <li>{@code fqOp} / {@code fqiOp} — top-level / per-item operator,
+     *       one of {@code "AND"} / {@code "OR"} / {@code "NONE"}.</li>
+     *   <li>{@code fl} — {@code List<String>} of field names to return
+     *       (Solr {@code fl} param); default returns all stored fields.</li>
+     *   <li>{@code templateName} — shorthand: a single string promotes to
+     *       {@code fq=["templateName:<value>"]} so callers can skip the
+     *       array boilerplate for the most common filter.</li>
+     * </ul>
+     *
+     * <h3>Return shape</h3>
+     * One {@link Map} per hit, structured like {@link #ann(Map)} returns:
+     * <ul>
+     *   <li>Every {@code fields[*]} entry flattened to the top level —
+     *       {@code hit.title}, {@code hit.preco}, etc. work directly in
+     *       Groovy without a nested unwrap.</li>
+     *   <li>{@code id} — convenience alias of the document's id field.</li>
+     *   <li>{@code source} — search-engine plugin source identifier
+     *       (Solr, ES, etc.).</li>
+     *   <li>{@code elevate} — true when the result is pinned by
+     *       elevation rules; useful for the script to surface "promoted"
+     *       hits differently.</li>
+     * </ul>
+     *
+     * @return list of hit maps (empty when no results); never {@code null}.
+     * @throws IllegalArgumentException when {@code site} is missing or the
+     *         site doesn't exist.
+     * @since 2026.2.7
      */
     public List<Map<String, Object>> sn(Map<String, Object> params) {
-        throw new UnsupportedOperationException(
-                "turingSearch.sn is not implemented yet — use turingSearch.ann for vector search "
-                + "or http.getJson('/sn/{site}?...') for the raw site-search endpoint.");
+        String site = asString(params, "site");
+        if (site == null || site.isBlank()) {
+            throw new IllegalArgumentException("turingSearch.sn: 'site' is required");
+        }
+        String query = firstNonBlankString(asString(params, "query"), asString(params, "q"));
+        if (query == null || query.isBlank()) {
+            // Convenience: SN search default is browse-all when q is empty.
+            // Match TurSNSearchParams' own default rather than forcing the
+            // caller to remember the convention.
+            query = "*";
+        }
+        if (!turSNSearchProcess.getSNSite(site).isPresent()) {
+            throw new IllegalArgumentException("turingSearch.sn: site '" + site + "' not found");
+        }
+
+        TurSNSearchParams snParams = buildSnSearchParams(params, site, query);
+
+        // Synthetic URI: only used for facet/pagination link construction
+        // inside the response, which Custom Tool scripts never consume.
+        // The /api/v2/sn/{site} shape mirrors the real endpoint so any
+        // future code path that inspects it sees a coherent value.
+        URI uri = URI.create("/api/v2/sn/" + site + "?q=" + urlEncode(query));
+        TurSNSiteSearchContext context = new TurSNSiteSearchContext(
+                site, new TurSNConfig(), new TurSEParameters(snParams),
+                snParams.getLocale(), uri);
+
+        log.info("[turingSearch.sn] site={} locale={} rows={} page={} sort={} fq={} query='{}'",
+                site, snParams.getLocale(), snParams.getRows(), snParams.getP(),
+                snParams.getSort(), snParams.getFq(), query);
+
+        TurSNSiteSearchBean searchBean;
+        try {
+            searchBean = turSNSearchProcess.search(context);
+        } catch (Exception e) {
+            log.error("[turingSearch.sn] failed: site={} query='{}': {}",
+                    site, query, e.getMessage(), e);
+            return Collections.emptyList();
+        }
+        if (searchBean == null || searchBean.getResults() == null
+                || searchBean.getResults().getDocument() == null) {
+            return Collections.emptyList();
+        }
+        return toSnHitList(searchBean.getResults().getDocument());
+    }
+
+    /**
+     * Builds {@link TurSNSearchParams} from the Groovy parameter map.
+     * Maps Groovy-friendly keys ({@code rows}, {@code page}, {@code sort})
+     * to the underlying bean fields and routes the {@code templateName}
+     * shorthand into the default filter-query pool.
+     */
+    private TurSNSearchParams buildSnSearchParams(Map<String, Object> params,
+            String site, String query) {
+        TurSNSearchParams snParams = new TurSNSearchParams();
+        snParams.setQ(query);
+        Integer rows = asInt(params, "rows");
+        snParams.setRows(rows == null ? DEFAULT_TOP_K : Math.min(rows, MAX_TOP_K));
+        Integer page = firstNonNull(asInt(params, "page"), asInt(params, "p"));
+        if (page != null && page > 0) snParams.setP(page);
+        String sort = asString(params, "sort");
+        if (sort != null && !sort.isBlank()) snParams.setSort(sort);
+        snParams.setLocale(resolveLocale(asString(params, "locale"), site));
+
+        List<String> fq = asStringList(params.get("fq"));
+        // templateName=<v> shorthand → fq+="templateName:<v>". Mirrors the
+        // ann() helper's same-named shortcut for muscle-memory parity.
+        Object templateName = params.get("templateName");
+        if (templateName != null) {
+            String tn = templateName.toString().trim();
+            if (!tn.isEmpty()) {
+                if (fq == null) fq = new ArrayList<>();
+                else fq = new ArrayList<>(fq);
+                fq.add("templateName:" + tn);
+            }
+        }
+        if (fq != null && !fq.isEmpty()) snParams.setFq(fq);
+
+        List<String> fqAnd = asStringList(params.get("fqAnd"));
+        if (fqAnd != null && !fqAnd.isEmpty()) snParams.setFqAnd(fqAnd);
+        List<String> fqOr = asStringList(params.get("fqOr"));
+        if (fqOr != null && !fqOr.isEmpty()) snParams.setFqOr(fqOr);
+
+        TurSNFilterQueryOperator fqOp = asFqOperator(params.get("fqOp"));
+        if (fqOp != null) snParams.setFqOp(fqOp);
+        TurSNFilterQueryOperator fqiOp = asFqOperator(params.get("fqiOp"));
+        if (fqiOp != null) snParams.setFqiOp(fqiOp);
+
+        List<String> fl = asStringList(params.get("fl"));
+        if (fl != null && !fl.isEmpty()) snParams.setFl(fl);
+
+        return snParams;
+    }
+
+    /**
+     * Flattens a {@link TurSNSiteSearchDocumentBean} list into the same
+     * hit-map shape {@link #ann(Map)} emits, so a Groovy script can read
+     * {@code hit.title} regardless of which search surface it called.
+     */
+    static List<Map<String, Object>> toSnHitList(List<TurSNSiteSearchDocumentBean> docs) {
+        if (docs == null || docs.isEmpty()) return Collections.emptyList();
+        List<Map<String, Object>> out = new ArrayList<>(docs.size());
+        for (TurSNSiteSearchDocumentBean doc : docs) {
+            Map<String, Object> hit = new LinkedHashMap<>();
+            if (doc.getFields() != null) {
+                hit.putAll(doc.getFields());
+            }
+            // Reserved fields come AFTER metadata so they always win when a
+            // stored field happens to collide.
+            if (doc.getFields() != null && doc.getFields().containsKey("id")) {
+                hit.put("id", doc.getFields().get("id"));
+            }
+            hit.put("source", doc.getSource());
+            hit.put("elevate", doc.isElevate());
+            out.add(hit);
+        }
+        return out;
+    }
+
+    private static String firstNonBlankString(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) return v;
+        }
+        return null;
+    }
+
+    private static <T> T firstNonNull(T a, T b) {
+        return a != null ? a : b;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> asStringList(Object raw) {
+        if (raw == null) return null;
+        if (raw instanceof List<?> list) {
+            List<String> out = new ArrayList<>(list.size());
+            for (Object o : list) {
+                if (o != null) out.add(String.valueOf(o));
+            }
+            return out;
+        }
+        if (raw instanceof String s) {
+            // Single string → singleton list. Groovy callers often pass
+            // a bare string for the common case ({@code fq: "area:tech"}).
+            String trimmed = s.trim();
+            return trimmed.isEmpty() ? null : List.of(trimmed);
+        }
+        return null;
+    }
+
+    private static TurSNFilterQueryOperator asFqOperator(Object raw) {
+        if (raw == null) return null;
+        if (raw instanceof TurSNFilterQueryOperator op) return op;
+        String s = raw.toString().trim().toUpperCase(Locale.ROOT);
+        if (s.isEmpty()) return null;
+        try {
+            return TurSNFilterQueryOperator.valueOf(s);
+        } catch (IllegalArgumentException e) {
+            log.warn("[turingSearch.sn] unknown fqOp/fqiOp value '{}' — falling back to NONE", raw);
+            return TurSNFilterQueryOperator.NONE;
+        }
+    }
+
+    private static String urlEncode(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return value;
+        }
     }
 
     /* ---------- Internals ---------- */

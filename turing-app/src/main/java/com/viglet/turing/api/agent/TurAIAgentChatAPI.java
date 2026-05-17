@@ -18,6 +18,7 @@ import com.viglet.turing.domain.llm.TurLLMInstanceDomain;
 import com.viglet.turing.domain.llm.TurLLMInstanceRepositoryPort;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.flow.TurChatFlowEngineService;
+import com.viglet.turing.genai.tool.TurCodeInterpreterUrlSigner;
 import com.viglet.turing.persistence.dto.agent.TurChatSessionSlotsDto;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider;
 import com.viglet.turing.genai.provider.llm.TurGenAiLlmProviderFactory;
@@ -30,6 +31,8 @@ import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.system.security.TurSecretCryptoService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -55,6 +58,7 @@ public class TurAIAgentChatAPI {
     private final TurAgentChatExecutor agentChatExecutor;
     private final TurChatFlowRepository turChatFlowRepository;
     private final TurChatFlowEngineService chatFlowEngineService;
+    private final TurCodeInterpreterUrlSigner urlSigner;
 
     public TurAIAgentChatAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentRepositoryPort turAIAgentRepositoryPort,
@@ -64,7 +68,8 @@ public class TurAIAgentChatAPI {
             TurSecretCryptoService turSecretCryptoService,
             TurAgentChatExecutor agentChatExecutor,
             TurChatFlowRepository turChatFlowRepository,
-            TurChatFlowEngineService chatFlowEngineService) {
+            TurChatFlowEngineService chatFlowEngineService,
+            TurCodeInterpreterUrlSigner urlSigner) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentRepositoryPort = turAIAgentRepositoryPort;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -74,6 +79,7 @@ public class TurAIAgentChatAPI {
         this.agentChatExecutor = agentChatExecutor;
         this.turChatFlowRepository = turChatFlowRepository;
         this.chatFlowEngineService = chatFlowEngineService;
+        this.urlSigner = urlSigner;
     }
 
     public record AgentChatRequest(
@@ -97,7 +103,8 @@ public class TurAIAgentChatAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public Flux<ChatResponse> chat(
             @PathVariable String agentId,
-            @org.springframework.web.bind.annotation.RequestBody AgentChatRequest request) {
+            @org.springframework.web.bind.annotation.RequestBody AgentChatRequest request,
+            HttpServletResponse response) {
 
         TurAIAgent agent = turAIAgentRepository.findById(agentId)
                 .orElseThrow(() -> new IllegalArgumentException("AI Agent not found: " + agentId));
@@ -119,6 +126,24 @@ public class TurAIAgentChatAPI {
 
         log.info("[AgentChat] Agent '{}' received request with {} messages, LLM: {}",
                 agent.getTitle(), request.messages().size(), turLLMInstance.getTitle());
+
+        // Cookie-binding for /api/v2/code-interpreter/ signed URLs. Path-
+        // scoped so the cookie never travels to unrelated endpoints, and
+        // HttpOnly so JavaScript can't read it (defense against XSS-based
+        // cookie theft). SameSite=Lax keeps the cookie attached on top-
+        // level navigations (the visitor clicking a download link in the
+        // chat transcript) while blocking it on cross-origin AJAX from
+        // a different site — exactly the boundary we want.
+        if (urlSigner.isCookieBound() && request.conversationId() != null
+                && !request.conversationId().isBlank()) {
+            Cookie cookie = new Cookie(TurCodeInterpreterUrlSigner.CONV_COOKIE,
+                    request.conversationId());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/api/v2/code-interpreter");
+            cookie.setMaxAge((int) Math.min(Integer.MAX_VALUE, urlSigner.getTtlSeconds()));
+            cookie.setAttribute("SameSite", "Lax");
+            response.addCookie(cookie);
+        }
 
         // All the tool resolution + chat model + streaming logic is centralized
         // in TurAgentChatExecutor so the SN site AI Mode can reuse the same

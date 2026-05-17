@@ -20,6 +20,9 @@
  */
 package com.viglet.turing.onstartup.system;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +32,25 @@ import com.viglet.turing.persistence.repository.system.TurConfigVarRepository;
 @Component
 @Transactional
 public class TurConfigVarOnStartup {
+	/** Reused across calls — SecureRandom is thread-safe and instantiating it is expensive (kernel entropy seeding). */
+	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 	public static final String FIRST_TIME = "FIRST_TIME";
 	public static final String DECIMAL_SEPARATOR = "GLOBAL_DECIMAL_SEPARATOR";
 	public static final String PYTHON_EXECUTABLE = "GLOBAL_PYTHON_EXECUTABLE";
 	public static final String PYTHON_REQUIREMENTS = "GLOBAL_PYTHON_REQUIREMENTS";
+	/**
+	 * Server-side HMAC secret used by
+	 * {@code TurCodeInterpreterUrlSigner} to sign / verify the
+	 * {@code ?exp&sig} query string on {@code /api/v2/code-interpreter/}
+	 * URLs. Auto-generated with {@link SecureRandom} on first boot (32
+	 * random bytes, Base64-encoded) so a deployment without explicit
+	 * configuration still gets unguessable signed URLs. Operators may
+	 * rotate by deleting the row — the next startup mints a fresh secret
+	 * (existing URLs invalidate, which is the desired post-rotation
+	 * outcome).
+	 */
+	public static final String CODE_INTERPRETER_URL_SIGNING_SECRET =
+			"GLOBAL_CODE_INTERPRETER_URL_SIGNING_SECRET";
 	public static final String DEFAULT_LLM = "GLOBAL_DEFAULT_LLM";
 	public static final String EMAIL_PROVIDER = "GLOBAL_EMAIL_PROVIDER";
 	public static final String EMAIL_API_KEY = "GLOBAL_EMAIL_API_KEY";
@@ -63,6 +81,10 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
 		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
 		ensureConfigVar(PYTHON_REQUIREMENTS, GLOBAL_PATH, "");
+		// Mint a fresh HMAC secret only when none exists — never overwrite
+		// (would invalidate every previously-emitted signed URL across the
+		// fleet on restart).
+		ensureConfigVar(CODE_INTERPRETER_URL_SIGNING_SECRET, GLOBAL_PATH, generateUrlSigningSecret());
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
@@ -86,6 +108,17 @@ public class TurConfigVarOnStartup {
 			turConfigVar.setValue(value);
 			turConfigVarRepository.save(turConfigVar);
 		}
+	}
+
+	/**
+	 * 32 random bytes → 44-char Base64 string. Re-used every fresh install
+	 * (or after operator-initiated rotation) for the code-interpreter URL
+	 * HMAC. 32 bytes = 256 bits — matches HMAC-SHA256's native block size.
+	 */
+	static String generateUrlSigningSecret() {
+		byte[] bytes = new byte[32];
+		SECURE_RANDOM.nextBytes(bytes);
+		return Base64.getEncoder().encodeToString(bytes);
 	}
 
 }

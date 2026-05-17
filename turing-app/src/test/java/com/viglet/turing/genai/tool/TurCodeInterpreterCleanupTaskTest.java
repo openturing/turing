@@ -46,6 +46,7 @@ class TurCodeInterpreterCleanupTaskTest {
     private TurCodeInterpreterCleanupTask task;
     private Path sandboxRoot;
     private Path sessionsRoot;
+    private Path tenantsRoot;
     private Path depsRoot;
 
     @BeforeEach
@@ -56,8 +57,10 @@ class TurCodeInterpreterCleanupTaskTest {
         sandboxRoot = Path.of(TurCommonsUtils.addSubDirToStoreDir(
                 TurCodeInterpreterCleanupTask.SANDBOX_DIR).getPath());
         sessionsRoot = sandboxRoot.resolve(TurCodeInterpreterCleanupTask.SESSIONS_DIR);
+        tenantsRoot = sandboxRoot.resolve(TurCodeInterpreterCleanupTask.TENANTS_DIR);
         depsRoot = sandboxRoot.resolve("_deps");
         deleteRecursively(sessionsRoot);
+        deleteRecursively(tenantsRoot);
         deleteRecursively(depsRoot);
         Files.createDirectories(sessionsRoot);
     }
@@ -65,6 +68,7 @@ class TurCodeInterpreterCleanupTaskTest {
     @AfterEach
     void tearDown() throws IOException {
         deleteRecursively(sessionsRoot);
+        deleteRecursively(tenantsRoot);
         deleteRecursively(depsRoot);
     }
 
@@ -170,10 +174,110 @@ class TurCodeInterpreterCleanupTaskTest {
         assertThat(Files.exists(twoDays)).isFalse();
     }
 
+    // ─────────────────────── Tenant-isolated layout ───────────────────────
+
+    @Test
+    void sweep_tenantTree_deletesOldBucketsPerConversation() throws IOException {
+        // Layout:
+        //   tenants/agent-marina/conv-A/<today>/sid-1/      keep
+        //   tenants/agent-marina/conv-A/<5 days ago>/sid-2/ DELETE
+        //   tenants/agent-camila/conv-B/<today>/sid-3/      keep
+        //   tenants/agent-camila/conv-B/<3 days ago>/sid-4/ DELETE
+        Path marinaToday = makeTenantBucket("agent-marina", "conv-A", LocalDate.now(), "alive.pdf");
+        Path marinaOld   = makeTenantBucket("agent-marina", "conv-A", LocalDate.now().minusDays(5), "stale.pdf");
+        Path camilaToday = makeTenantBucket("agent-camila", "conv-B", LocalDate.now(), "alive.pdf");
+        Path camilaOld   = makeTenantBucket("agent-camila", "conv-B", LocalDate.now().minusDays(3), "stale.pdf");
+
+        task.sweep();
+
+        assertThat(Files.exists(marinaToday)).as("Marina's recent bucket survives").isTrue();
+        assertThat(Files.exists(marinaOld)).as("Marina's stale bucket deleted").isFalse();
+        assertThat(Files.exists(camilaToday)).as("Camila's recent bucket survives").isTrue();
+        assertThat(Files.exists(camilaOld)).as("Camila's stale bucket deleted").isFalse();
+    }
+
+    @Test
+    void sweep_tenantTree_prunesEmptyConversationAndAgentDirs() throws IOException {
+        // Single stale bucket under agent/conv — after sweep, both
+        // conversation AND agent dirs should be empty and pruned.
+        Path stale = makeTenantBucket("agent-x", "conv-x", LocalDate.now().minusDays(10), "old.pdf");
+        Path convDir = stale.getParent();
+        Path agentDir = convDir.getParent();
+
+        task.sweep();
+
+        assertThat(Files.exists(stale)).as("stale date bucket deleted").isFalse();
+        assertThat(Files.exists(convDir))
+                .as("empty conversation dir pruned (deleted agents leave no footprint)")
+                .isFalse();
+        assertThat(Files.exists(agentDir))
+                .as("empty agent dir pruned")
+                .isFalse();
+    }
+
+    @Test
+    void sweep_tenantTree_keepsAgentWithSurvivingBucket() throws IOException {
+        // Agent has BOTH a stale and a recent bucket → only the stale
+        // one is deleted; agent + conversation dirs survive.
+        Path keep = makeTenantBucket("agent-y", "conv-y", LocalDate.now(), "alive.pdf");
+        Path drop = makeTenantBucket("agent-y", "conv-y", LocalDate.now().minusDays(5), "stale.pdf");
+
+        task.sweep();
+
+        assertThat(Files.exists(keep)).isTrue();
+        assertThat(Files.exists(drop)).isFalse();
+        assertThat(Files.exists(keep.getParent().getParent()))
+                .as("Agent dir NOT pruned while it still owns surviving buckets")
+                .isTrue();
+    }
+
+    @Test
+    void sweep_walksBothLayoutsInOneSweep() throws IOException {
+        // Legacy layout + tenant layout coexist (mid-migration / mixed
+        // traffic). Single sweep call must handle both.
+        Path legacyStale = makeBucketWithFile(LocalDate.now().minusDays(7), "legacy.pdf");
+        Path tenantStale = makeTenantBucket("agent-z", "conv-z", LocalDate.now().minusDays(7), "tenant.pdf");
+
+        task.sweep();
+
+        assertThat(Files.exists(legacyStale)).as("Legacy stale bucket deleted").isFalse();
+        assertThat(Files.exists(tenantStale)).as("Tenant stale bucket deleted").isFalse();
+    }
+
+    @Test
+    void sweep_tenantTree_leavesNonDateDirsAlone() throws IOException {
+        // Operator scratch inside a tenant dir — non-date name must NOT
+        // be deleted even when the rest of the tree is swept.
+        Path agentDir = tenantsRoot.resolve("agent-z");
+        Path convDir = agentDir.resolve("conv-z");
+        Path scratch = convDir.resolve("operator-scratch");
+        Files.createDirectories(scratch);
+        Files.writeString(scratch.resolve("note.txt"), "sentinel");
+
+        task.sweep();
+
+        assertThat(Files.exists(scratch))
+                .as("Non-date-named dirs inside tenant scope are untouched")
+                .isTrue();
+        // Conv dir survives because scratch keeps it non-empty.
+        assertThat(Files.exists(convDir)).isTrue();
+    }
+
     // ─────────────────────── Helpers ───────────────────────
 
     private Path makeBucketWithFile(LocalDate date, String filename) throws IOException {
         Path bucket = sessionsRoot.resolve(date.toString());
+        Path session = bucket.resolve("abcd1234");
+        Files.createDirectories(session);
+        Files.writeString(session.resolve(filename), "test payload");
+        return bucket;
+    }
+
+    private Path makeTenantBucket(String agentId, String conversationId,
+            LocalDate date, String filename) throws IOException {
+        Path bucket = tenantsRoot.resolve(agentId)
+                .resolve(conversationId)
+                .resolve(date.toString());
         Path session = bucket.resolve("abcd1234");
         Files.createDirectories(session);
         Files.writeString(session.resolve(filename), "test payload");

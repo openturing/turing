@@ -270,4 +270,91 @@ class TurCustomToolSearchHelperTest {
                 entry("source_id", sourceId),
                 entry("content", content));
     }
+
+    // ─────────────────────────── toSnHitList ───────────────────────────
+
+    @Test
+    void toSnHitList_emptyOrNullReturnsEmpty() {
+        assertThat(TurCustomToolSearchHelper.toSnHitList(null)).isEmpty();
+        assertThat(TurCustomToolSearchHelper.toSnHitList(List.of())).isEmpty();
+    }
+
+    @Test
+    void toSnHitList_flattensFieldsAndKeepsSourceAndElevate() {
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("solr");
+        doc.setElevate(true);
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("id", "doc-42");
+        fields.put("title", "MBA Executivo");
+        fields.put("preco", 49_900);
+        doc.setFields(fields);
+
+        List<Map<String, Object>> hits = TurCustomToolSearchHelper.toSnHitList(List.of(doc));
+
+        assertThat(hits).hasSize(1);
+        Map<String, Object> hit = hits.get(0);
+        // Field flattening: script can write `hit.title` / `hit.preco` directly.
+        assertThat(hit)
+                .containsEntry("title", "MBA Executivo")
+                .containsEntry("preco", 49_900)
+                .containsEntry("id", "doc-42")
+                .containsEntry("source", "solr")
+                .containsEntry("elevate", true);
+    }
+
+    @Test
+    void toSnHitList_idAliasResolvesFromFieldsMap() {
+        // When the stored {@code id} field is present, the helper aliases it
+        // to the top-level "id" key so {@code hit.id} works identically to
+        // {@code hit.fields.id} — matches ann() behavior.
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("solr");
+        doc.setElevate(false);
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("id", "doc-7");
+        fields.put("title", "Pricing Strategy");
+        doc.setFields(fields);
+
+        List<Map<String, Object>> hits = TurCustomToolSearchHelper.toSnHitList(List.of(doc));
+
+        assertThat(hits.get(0)).containsEntry("id", "doc-7");
+    }
+
+    @Test
+    void toSnHitList_missingFieldsDoesNotThrow() {
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("elastic");
+        doc.setElevate(false);
+        // fields == null → hit gets only the reserved keys; no NPE.
+
+        List<Map<String, Object>> hits = TurCustomToolSearchHelper.toSnHitList(List.of(doc));
+
+        assertThat(hits).hasSize(1);
+        Map<String, Object> hit = hits.get(0);
+        assertThat(hit)
+                .containsEntry("source", "elastic")
+                .containsEntry("elevate", false)
+                .doesNotContainKey("id");
+    }
+
+    @Test
+    void toSnHitList_reservedKeysWinOverCollidingFieldName() {
+        // A stored field named "source" would collide with the reserved
+        // top-level "source" we add. Contract: reserved key wins (matches
+        // ann()'s same-named conflict rule).
+        var doc = new com.viglet.turing.commons.sn.bean.TurSNSiteSearchDocumentBean();
+        doc.setSource("solr");
+        doc.setElevate(false);
+        Map<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("source", "should-be-overwritten");
+        fields.put("title", "Test");
+        doc.setFields(fields);
+
+        List<Map<String, Object>> hits = TurCustomToolSearchHelper.toSnHitList(List.of(doc));
+
+        assertThat(hits.get(0).get("source"))
+                .as("reserved 'source' wins over a stored field with the same name")
+                .isEqualTo("solr");
+    }
 }
