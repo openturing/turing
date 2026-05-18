@@ -703,7 +703,7 @@ export interface TurChatHandoffResponse {
  *   conversationId: "abc-123",
  *   channel: "whatsapp",
  *   destination: "5511999999999",
- *   intro: "Olá! Vim do site do Insper EE.",
+ *   intro: "Olá! Vim do site de Executive Education.",
  *   slotsToInclude: ["name", "cargo_atual", "area_label", "objetivo"],
  * });
  * if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");

@@ -25,15 +25,15 @@ import lombok.extern.slf4j.Slf4j;
  * the SPA's generic landing-page metadata.
  *
  * <p>Pattern: the flow's {@code share_url} slot points to this endpoint
- * (e.g. {@code https://insper-api.example/api/sn/ee/chat/share/og?
- * name=Alexandre&area=financas&...&dest=https%3A%2F%2Fee.insper.edu.br
+ * (e.g. {@code https://education-api.example/api/sn/ee/chat/share/og?
+ * name=Alexandre&area=financas&...&dest=https%3A%2F%2Fee.education.example.com
  * %2Fprograma-match}). Scrapers don't follow the redirect — they parse
  * the meta tags. Humans click the link, see the redirect, land on the
  * actual SPA.
  *
  * <p>Generic on purpose — caller passes arbitrary slot values via query
  * params; the service builds a card per a configurable template. No
- * Insper-specific code lives here; the template values come from the
+ * Education-specific code lives here; the template values come from the
  * URL the chat-flow author wrote.
  *
  * @author Alexandre Oliveira
@@ -59,7 +59,7 @@ public class TurChatShareOgService {
         String area = orDefault(params.get("area"), "");
         String objetivo = orDefault(params.get("objetivo"), "");
         // Direct overrides — caller can bypass the auto-generated title /
-        // description by passing them explicitly (useful for non-Insper
+        // description by passing them explicitly (useful for non-Education
         // share use cases on the same endpoint).
         String title = orDefault(params.get("title"),
                 buildAutoTitle(name, area));
@@ -101,7 +101,7 @@ public class TurChatShareOgService {
         html.append("<p>").append(escapeHtml(title)).append("</p>\n");
         if (!dest.isBlank()) {
             html.append("<p><a href=\"").append(escapeAttr(dest))
-                    .append("\">Continuar para o Insper EE →</a></p>\n");
+                    .append("\">Continuar para Executive Education →</a></p>\n");
             // JS fallback for the meta refresh — fires immediately
             html.append("<script>setTimeout(function(){location.replace(\"")
                     .append(escapeJs(dest)).append("\")},100);</script>\n");
@@ -119,7 +119,7 @@ public class TurChatShareOgService {
     }
 
     /**
-     * "Alexandre escolheu a trilha de Finanças no Programa-Match do Insper EE,
+     * "Alexandre escolheu a trilha de Finanças no Programa-Match da Executive Education,
      *  com o objetivo de virar CFO em 3 anos. Veja a recomendação personalizada."
      */
     private static String buildAutoDescription(String name, String area, String objetivo) {
@@ -127,7 +127,7 @@ public class TurChatShareOgService {
         if (!name.isBlank()) sb.append(name);
         else sb.append("Um(a) visitante");
         if (!area.isBlank()) sb.append(" escolheu a trilha de ").append(capitalize(area));
-        sb.append(" no Programa-Match do Insper EE");
+        sb.append(" no Programa-Match da Executive Education");
         if (!objetivo.isBlank()) sb.append(", com o objetivo de ").append(objetivo);
         sb.append(". Veja a recomendação personalizada.");
         return sb.toString();

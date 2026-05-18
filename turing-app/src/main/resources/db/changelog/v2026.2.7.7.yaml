@@ -2,7 +2,7 @@ databaseChangeLog:
   # Widen `chat_flow.description` from VARCHAR(500) → CLOB/TEXT.
   #
   # Existing flows authored against the 500-char cap fit fine, but live
-  # data (Insper EE's Aula-Relâmpago persona description is ~580 chars)
+  # data (Executive Education's Aula-Relâmpago persona description is ~580 chars)
   # already overflows in production with an opaque H2/Postgres error:
   #   "Value too long for column DESCRIPTION CHARACTER VARYING(500)"
   #

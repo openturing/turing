@@ -188,11 +188,11 @@ class TurCommonsUtilsTest {
         // Reproduces the URISyntaxException reported when a query value contained
         // raw non-ASCII characters (e.g. "economia é"). The fix uses the multi-arg
         // URI constructor so 'é' is percent-encoded instead of failing.
-        URI uri = new URI("/api/sn/insper-dev-author/search?q=foo&p=1&_setlocale=pt&sort=relevance");
+        URI uri = new URI("/api/sn/education-dev-author/search?q=foo&p=1&_setlocale=pt&sort=relevance");
         URI result = TurCommonsUtils.addOrReplaceParameter(uri, "q", "economia é", true);
 
         // The path must remain intact and the value must be percent-encoded.
-        assertThat(result.getRawPath()).isEqualTo("/api/sn/insper-dev-author/search");
+        assertThat(result.getRawPath()).isEqualTo("/api/sn/education-dev-author/search");
         assertThat(result.toASCIIString())
                 .contains("q=economia%20%C3%A9")
                 .contains("p=1")

@@ -105,8 +105,17 @@ public class TurChatFlowEngineService {
     /**
      * Result of {@link #selectActiveFlow}. Tells the executor which flow (if
      * any) should govern the current chat turn.
+     *
+     * <p>{@code freshlyTriggered} is {@code true} on the very turn that the
+     * router picked this flow — i.e. the user's message IS the trigger
+     * signal, not data to feed into the first interactive node. The
+     * executor uses this to skip the LlmJudge advance pass on the trigger
+     * turn (otherwise the trigger text gets force-captured as the first
+     * slot value — the "name = 'Plano de carreira pessoal'" bug). On
+     * continuation turns it's {@code false}.
      */
-    public record FlowSelection(TurChatFlow flow, ChatFlowGraph graph, TurChatFlowState state) {
+    public record FlowSelection(TurChatFlow flow, ChatFlowGraph graph, TurChatFlowState state,
+            boolean freshlyTriggered) {
     }
 
     /**
@@ -231,6 +240,13 @@ public class TurChatFlowEngineService {
             return AdvanceResult.of(state);
         }
         String previousNodeId = state.getCurrentNodeId();
+        // Snapshot the persisted variables BEFORE the strategy runs so we can
+        // detect slot captures (LlmJudge `collected_value` on an aiQuestion
+        // never goes through a `slot`/`writeSlot` node, so the SSE publish in
+        // those branches doesn't fire — without this diff the slot inspector
+        // and any UI subscribed via SSE never learn about Q&A-captured slots
+        // until the next poll, which the SDK disables once SSE is active).
+        String previousVariablesJson = state.getVariablesJson();
         log.info("[FlowEngine] advance: flow='{}' conv='{}' node='{}' guardrail={} userMsg='{}'",
                 flow.getId(), state.getConversationId(), previousNodeId,
                 flow.getGuardrailMethod(),
@@ -263,6 +279,15 @@ public class TurChatFlowEngineService {
         if (leaf.getParentStateId() == null) {
             ChatFlowGraph leafGraph = parseGraph(leaf.getFlow()).orElse(graph);
             recordSubmissionIfTerminal(leaf.getFlow(), leaf, leafGraph, previousNodeId);
+        }
+        // SSE notification: if the strategy mutated the variables map (e.g.
+        // LlmJudge captured `collected_value` on an aiQuestion node, or
+        // condition walk wrote an intermediate value), push the merged slot
+        // map so SSE-bound clients (slot inspector, portal cards) see the
+        // new values without waiting for a poll tick.
+        if (!Objects.equals(previousVariablesJson, leaf.getVariablesJson())) {
+            slotEventBus.publish(leaf.getConversationId(),
+                    listSlotsForConversation(leaf.getConversationId()).slots());
         }
         return new AdvanceResult(leaf, override);
     }
@@ -564,7 +589,9 @@ public class TurChatFlowEngineService {
             }
             log.info("[FlowEngine] Continuation: flow '{}' is in progress for conversation '{}'",
                     state.getFlow().getId(), conversationId);
-            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state));
+            // Continuation: user msg should be processed as input to the
+            // current node by the LlmJudge advance pass.
+            return Optional.of(new FlowSelection(state.getFlow(), graphOpt.get(), state, false));
         }
 
         // 2) Build candidate list. A flow counts as "completed" only when its
@@ -646,7 +673,11 @@ public class TurChatFlowEngineService {
             ChatFlowGraph activeGraph = activeFlow.getId().equals(flow.getId())
                     ? pickedGraph
                     : parseGraph(activeFlow).orElse(pickedGraph);
-            return new FlowSelection(activeFlow, activeGraph, s);
+            // Fresh trigger: user msg IS the trigger signal. The executor
+            // skips the LlmJudge advance and just regens the first node's
+            // question for this turn — otherwise the trigger text gets
+            // force-captured as the first slot value.
+            return new FlowSelection(activeFlow, activeGraph, s, true);
         });
     }
 

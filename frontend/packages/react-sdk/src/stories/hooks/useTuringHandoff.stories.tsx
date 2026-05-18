@@ -31,7 +31,7 @@ import { useState } from "react";
  * const { handoff, status } = useTuringHandoff({
  *   channel: "whatsapp",
  *   destination: "5511999999999",
- *   intro: "Olá! Vim do site do Insper EE.",
+ *   intro: "Olá! Vim do site de Executive Education.",
  *   slotsToInclude: ["name", "cargo_atual", "area_label", "objetivo"],
  * });
  *
@@ -77,9 +77,9 @@ const CHANNEL_DEFAULTS: Record<
   { destination: string; placeholder: string; icon: string; label: string }
 > = {
   whatsapp: { destination: "5511999999999", placeholder: "Phone digits (with country code)", icon: "💬", label: "WhatsApp" },
-  email:    { destination: "consultor@insper.edu.br", placeholder: "Email address", icon: "📩", label: "Email" },
+  email:    { destination: "consultor@education.example.com", placeholder: "Email address", icon: "📩", label: "Email" },
   sms:      { destination: "+5511999999999", placeholder: "Phone with +", icon: "📱", label: "SMS" },
-  telegram: { destination: "@insper_ee_consultor", placeholder: "@username or +phone", icon: "✈️", label: "Telegram" },
+  telegram: { destination: "@education_ee_consultor", placeholder: "@username or +phone", icon: "✈️", label: "Telegram" },
   slack:    { destination: "T01ABCDEF/U05XYZ123", placeholder: "{teamId}/{userId}", icon: "💼", label: "Slack" },
 };
 
@@ -370,7 +370,7 @@ type Story = StoryObj<typeof HandoffDemo>;
 export const WhatsApp: Story = {
   args: {
     channel: "whatsapp",
-    intro: "Olá! Vim do site do Insper EE e queria continuar a conversa por aqui.",
+    intro: "Olá! Vim do site de Executive Education e queria continuar a conversa por aqui.",
     failProbability: 0,
     latencyMs: 350,
   },
@@ -379,7 +379,7 @@ export const WhatsApp: Story = {
 export const Email: Story = {
   args: {
     channel: "email",
-    intro: "Olá, segue o resumo do meu interesse no Insper Educação Executiva.",
+    intro: "Olá, segue o resumo do meu interesse em Executive Education.",
     failProbability: 0,
     latencyMs: 350,
   },
@@ -388,7 +388,7 @@ export const Email: Story = {
 export const Telegram: Story = {
   args: {
     channel: "telegram",
-    intro: "Oi! Vim do site do Insper, queria continuar por aqui.",
+    intro: "Oi! Vim do site de Education, queria continuar por aqui.",
     failProbability: 0,
     latencyMs: 350,
   },
@@ -407,7 +407,7 @@ export const ErrorPath: Story = {
   name: "Error path (50% failure)",
   args: {
     channel: "whatsapp",
-    intro: "Olá! Vim do site do Insper EE.",
+    intro: "Olá! Vim do site de Executive Education.",
     failProbability: 0.5,
     latencyMs: 350,
   },

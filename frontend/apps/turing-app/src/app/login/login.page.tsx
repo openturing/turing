@@ -15,9 +15,10 @@ const LoginPage = () => {
       <Login.Background
         withFormulas={settings.formulas}
         withBonds={settings.formulas}
-        withLightning={settings.animations}
+        withLightning={settings.explosion}
         withExplosion={settings.explosion}
         withOrbs={settings.animations}
+        motionPaused={!settings.animations}
         withGrid
       />
 
@@ -50,7 +51,11 @@ const LoginPage = () => {
           <LoginForm />
         </Login.Card>
 
-        <Login.Footer>Viglet Turing ES &mdash; Enterprise IconSearch Intelligence</Login.Footer>
+        <Login.Footer>
+          Viglet Turing ES &mdash; Enterprise{" "}
+          <IconSearch className="inline h-3.5 w-3.5 align-[-2px] text-blue-500" />{" "}
+          Intelligence
+        </Login.Footer>
       </Login.Content>
     </Login>
   )

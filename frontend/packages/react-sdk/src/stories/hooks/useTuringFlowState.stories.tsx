@@ -46,7 +46,7 @@ import { useEffect, useState } from "react";
  * ## About this story
  *
  * The story simulates the polling fetch with state that progresses
- * through a realistic Insper EE flow (`ai-name` → `ai-cargo` →
+ * through a realistic Executive Education flow (`ai-name` → `ai-cargo` →
  * `ai-objetivo` → `ai-area` → `ai-confirma-financas`). Use the Refresh
  * button to advance the cursor manually, or set `simulatedAutoAdvance`
  * to drive it forward on a timer.
@@ -275,8 +275,8 @@ const meta: Meta<typeof FlowStateDemo> = {
       options: [
         "Programa-Match — Educação Executiva",
         "Programa-Match — Educação Executiva (Lucas Alumni)",
-        "In-Company Match — Insper EE Corporate",
-        "Aula-Relâmpago Insper EE",
+        "In-Company Match — Executive Education Corporate",
+        "Aula-Relâmpago Executive Education",
       ],
     },
     variantLabel: {
@@ -328,7 +328,7 @@ export const LucasAlumni: Story = {
 export const InCompany: Story = {
   name: "Camila B2B — no A/B label (single-variant flow)",
   args: {
-    flowName: "In-Company Match — Insper EE Corporate",
+    flowName: "In-Company Match — Executive Education Corporate",
     variantLabel: "camila-account-exec",
     guardrailMethod: "LLM_JUDGE",
     pollInterval: 0,

@@ -568,7 +568,7 @@ public class TurSNSiteGenAiAPI {
 	 * Server-side rendered Open Graph share card. The chat-flow author
 	 * builds a deep-link to this endpoint with the slot values they want
 	 * surfaced in the preview (e.g. {@code ?name=Alexandre&area=financas
-	 * &dest=https://ee.insper.edu.br/match}); social-platform scrapers
+	 * &dest=https://ee.education.example.com/match}); social-platform scrapers
 	 * (WhatsApp, Slack, LinkedIn, X, Discord, …) hit it, harvest the
 	 * personalized {@code og:*} / {@code twitter:*} meta tags, and render
 	 * a rich preview card. Human visitors who click the link are

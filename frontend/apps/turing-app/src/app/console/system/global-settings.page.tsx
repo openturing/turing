@@ -21,7 +21,7 @@ import { StickyPageHeader } from "@/components/sticky-page-header";
 import type { TurGlobalSettings } from "@/models/system/global-settings.model";
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service";
 import { SectionCard } from "@/components/ui/section-card";
-import { IconBrain, IconDatabase, IconDeviceFloppy, IconLoader2, IconMail, IconMailForward, IconSettings } from "@tabler/icons-react";
+import { IconAlertTriangle, IconBrain, IconCheck, IconDatabase, IconDeviceFloppy, IconKey, IconLoader2, IconMail, IconMailForward, IconRefresh, IconSettings } from "@tabler/icons-react";
 import type { TurLLMInstance } from "@/models/llm/llm-instance.model";
 import type { TurEmbeddingModel } from "@/models/embedding/embedding-model.model";
 import type { TurStoreInstance } from "@/models/store/store-instance.model";
@@ -76,6 +76,12 @@ export default function GlobalSettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSendingTest, setIsSendingTest] = useState(false);
+    // HMAC URL-signing secret status. The value itself never reaches this
+    // page — only a boolean for "configured/blank" and a short preview
+    // after a rotation. Screenshot-safe by construction.
+    const [secretConfigured, setSecretConfigured] = useState<boolean | null>(null);
+    const [secretPreview, setSecretPreview] = useState<string | null>(null);
+    const [isRotatingSecret, setIsRotatingSecret] = useState(false);
     const [llmInstances, setLlmInstances] = useState<TurLLMInstance[]>([]);
     const [embeddingModels, setEmbeddingModels] = useState<TurEmbeddingModel[]>([]);
     const [storeInstances, setStoreInstances] = useState<TurStoreInstance[]>([]);
@@ -88,19 +94,44 @@ export default function GlobalSettingsPage() {
             turEmbeddingModelService.query(),
             turStoreInstanceService.query(),
             turAIAgentService.query(),
+            // URL-signing secret status (boolean only — value stays on server).
+            // Fail-soft: if this 6th call errors, we still load the rest of the
+            // page and just show "unknown" status; admin can still hit the
+            // regenerate button which mints a fresh row.
+            turGlobalSettingsService.getUrlSigningSecretStatus().catch(() => ({ configured: false })),
         ])
-            .then(([loadedSettings, instances, embModels, stores, agents]) => {
+            .then(([loadedSettings, instances, embModels, stores, agents, secretStatus]) => {
                 setLlmInstances(instances.filter((i) => i.enabled === 1));
                 setEmbeddingModels(embModels.filter((m) => m.enabled === 1));
                 setStoreInstances(stores.filter((s) => s.enabled === 1));
                 setAiAgents(agents.filter((a) => a.enabled === 1));
                 setSettings(loadedSettings);
+                setSecretConfigured(secretStatus.configured);
             })
             .catch(() => {
                 toast.error(t("globalSettings.loadFailed"));
             })
             .finally(() => setIsLoading(false));
     }, []);
+
+    const onRotateUrlSigningSecret = async () => {
+        // Confirm in a native dialog — rotation invalidates every previously
+        // emitted signed URL across the fleet. No-op when user cancels.
+        const confirmed = window.confirm(t("globalSettings.urlSigningSecretRotateConfirm"));
+        if (!confirmed) return;
+        try {
+            setIsRotatingSecret(true);
+            const result = await turGlobalSettingsService.regenerateUrlSigningSecret();
+            setSecretConfigured(true);
+            setSecretPreview(result.preview);
+            toast.success(t("globalSettings.urlSigningSecretRotateSuccess"));
+        } catch (error) {
+            console.error("rotate url signing secret failed", error);
+            toast.error(t("globalSettings.urlSigningSecretRotateFailed"));
+        } finally {
+            setIsRotatingSecret(false);
+        }
+    };
 
     const onSubmit = async (data: TurGlobalSettings) => {
         try {
@@ -244,6 +275,67 @@ export default function GlobalSettingsPage() {
                                     </FormItem>
                                 )}
                             />
+                        </SectionCard.Content>
+                    </SectionCard>
+
+                    {/* URL Signing Secret — Code Interpreter file API HMAC.
+                        Status-only (no value on the wire); regenerate button
+                        mints a fresh secret server-side. Rotating invalidates
+                        every previously emitted signed download URL — that's
+                        the intended behavior of an operator-initiated rotation. */}
+                    <SectionCard variant="rose">
+                        <SectionCard.Header
+                            icon={IconKey}
+                            title={t("globalSettings.urlSigningSecretTitle")}
+                            description={t("globalSettings.urlSigningSecretDesc")}
+                        />
+                        <SectionCard.Content>
+                            <FormItemTwoColumns>
+                                <FormItemTwoColumns.Left>
+                                    <FormItemTwoColumns.Label>
+                                        {t("globalSettings.urlSigningSecretStatusLabel")}
+                                    </FormItemTwoColumns.Label>
+                                    <FormItemTwoColumns.Description>
+                                        {secretConfigured === null
+                                            ? t("globalSettings.urlSigningSecretStatusUnknown")
+                                            : secretConfigured
+                                                ? t("globalSettings.urlSigningSecretStatusConfigured")
+                                                : t("globalSettings.urlSigningSecretStatusBlank")}
+                                        {secretPreview && (
+                                            <span className="block mt-1 font-mono text-xs text-muted-foreground">
+                                                {t("globalSettings.urlSigningSecretPreview", { preview: secretPreview })}
+                                            </span>
+                                        )}
+                                    </FormItemTwoColumns.Description>
+                                </FormItemTwoColumns.Left>
+                                <FormItemTwoColumns.Right>
+                                    <div className="flex items-center gap-2">
+                                        {secretConfigured && !isRotatingSecret && (
+                                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                                <IconCheck className="size-4" />
+                                                {t("globalSettings.urlSigningSecretSetBadge")}
+                                            </span>
+                                        )}
+                                        {!secretConfigured && secretConfigured !== null && (
+                                            <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                                <IconAlertTriangle className="size-4" />
+                                                {t("globalSettings.urlSigningSecretBlankBadge")}
+                                            </span>
+                                        )}
+                                        <GradientButton
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={onRotateUrlSigningSecret}
+                                            loading={isRotatingSecret}
+                                            disabled={isLoading || isRotatingSecret}
+                                        >
+                                            <IconRefresh className="size-4" />
+                                            {t("globalSettings.urlSigningSecretRotateAction")}
+                                        </GradientButton>
+                                    </div>
+                                </FormItemTwoColumns.Right>
+                            </FormItemTwoColumns>
                         </SectionCard.Content>
                     </SectionCard>
 

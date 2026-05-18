@@ -91,6 +91,36 @@ public class TurGlobalSettingsAPI {
                 .build();
     }
 
+    /**
+     * Status + rotation surface for the HMAC URL-signing secret. The
+     * actual secret VALUE is never sent to the client — only a boolean
+     * "set/not set" status (for GET) and a preview (first 8 Base64 chars)
+     * after rotation (for POST). A screenshot of the admin UI must never
+     * leak the live secret.
+     */
+    @Operation(summary = "Status of the URL-signing secret (set vs blank)")
+    @GetMapping("/code-interpreter/url-signing-secret")
+    public TurUrlSigningSecretStatus getUrlSigningSecretStatus() {
+        return new TurUrlSigningSecretStatus(
+                turGlobalSettingsService.isCodeInterpreterUrlSigningSecretSet());
+    }
+
+    @Operation(summary = "Mint a fresh URL-signing secret. Invalidates every previously emitted signed URL.")
+    @PostMapping("/code-interpreter/url-signing-secret/regenerate")
+    public TurUrlSigningSecretRotation regenerateUrlSigningSecret() {
+        String preview = turGlobalSettingsService.regenerateCodeInterpreterUrlSigningSecret();
+        log.info("[GlobalSettings] URL-signing secret rotated by admin — first 8 chars: {}…", preview);
+        return new TurUrlSigningSecretRotation(true, preview);
+    }
+
+    /** Status payload — only the boolean is sent, never the value. */
+    public record TurUrlSigningSecretStatus(boolean configured) {
+    }
+
+    /** Rotation result — preview is the first 8 chars only, for confirmation in the UI. */
+    public record TurUrlSigningSecretRotation(boolean rotated, String preview) {
+    }
+
     @Operation(summary = "Send a test email to validate email configuration")
     @PostMapping("/email/test")
     public ResponseEntity<TurEmailTestResponse> sendTestEmail() {

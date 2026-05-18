@@ -89,11 +89,11 @@ class TurSNSiteSearchGraphQLControllerTest {
         // port — adapter test pins the projection / filtering. Controller
         // test just asserts the controller delegates and forwards the list.
         when(siteRepositoryPort.findAllNamesOrderedByNameIgnoreCase())
-                .thenReturn(List.of("insper-stage-publish", "demo-site"));
+                .thenReturn(List.of("education-stage-publish", "demo-site"));
 
         List<String> result = controller.siteNames();
 
-        assertEquals(List.of("insper-stage-publish", "demo-site"), result);
+        assertEquals(List.of("education-stage-publish", "demo-site"), result);
         verify(siteRepositoryPort).findAllNamesOrderedByNameIgnoreCase();
     }
 
@@ -370,24 +370,24 @@ class TurSNSiteSearchGraphQLControllerTest {
         TurSNSiteSearchGraphQLController controller = new TurSNSiteSearchGraphQLController(
                 searchProcess, siteRepositoryPort, fieldExtRepository, localeRepositoryPort);
 
-        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("insper-stage-publish", 0);
+        com.viglet.turing.domain.sn.TurSNSiteDomain site = siteDomain("education-stage-publish", 0);
 
         // resolveSiteName now goes through the port: enum-style → hyphenated.
-        when(siteRepositoryPort.findByNameIgnoreCase("INSPER_STAGE_PUBLISH"))
+        when(siteRepositoryPort.findByNameIgnoreCase("EDUCATION_STAGE_PUBLISH"))
                 .thenReturn(Optional.empty());
         when(siteRepositoryPort.findAllNamesOrderedByNameIgnoreCase())
-                .thenReturn(List.of("insper-stage-publish"));
+                .thenReturn(List.of("education-stage-publish"));
         // The siteSearch lookup also goes through the port now.
-        when(siteRepositoryPort.findByNameIgnoreCase("insper-stage-publish")).thenReturn(Optional.of(site));
-        when(searchProcess.existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH))
+        when(siteRepositoryPort.findByNameIgnoreCase("education-stage-publish")).thenReturn(Optional.of(site));
+        when(searchProcess.existsByTurSNSiteAndLanguage("education-stage-publish", Locale.ENGLISH))
                 .thenReturn(true);
         when(fieldExtRepository.findBySnSiteId(any())).thenReturn(List.of());
         when(searchProcess.search(any(TurSNSiteSearchContext.class))).thenReturn(new TurSNSiteSearchBean());
 
-        controller.siteSearch("INSPER_STAGE_PUBLISH", new TurSNSearchParamsInput(), "en");
+        controller.siteSearch("EDUCATION_STAGE_PUBLISH", new TurSNSearchParamsInput(), "en");
 
-        verify(searchProcess).existsByTurSNSiteAndLanguage("insper-stage-publish", Locale.ENGLISH);
-        verify(siteRepositoryPort).findByNameIgnoreCase("insper-stage-publish");
+        verify(searchProcess).existsByTurSNSiteAndLanguage("education-stage-publish", Locale.ENGLISH);
+        verify(siteRepositoryPort).findByNameIgnoreCase("education-stage-publish");
     }
 
     @Test

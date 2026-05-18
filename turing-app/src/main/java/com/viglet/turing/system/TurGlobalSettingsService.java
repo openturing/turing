@@ -118,6 +118,45 @@ public class TurGlobalSettingsService {
                 .orElse("");
     }
 
+    /**
+     * Returns whether the URL signing secret is currently populated. Used
+     * by the admin Global Settings page to show a "Set" / "Not set" status
+     * without ever sending the actual secret to the client. A screenshot
+     * of the admin UI must never leak the secret.
+     *
+     * @since 2026.2.7
+     */
+    public boolean isCodeInterpreterUrlSigningSecretSet() {
+        String value = getCodeInterpreterUrlSigningSecret();
+        return value != null && !value.isBlank();
+    }
+
+    /**
+     * Mints a fresh URL signing secret and persists it, returning a short
+     * preview (first 8 chars) for the admin UI to confirm the rotation
+     * happened. The full secret never crosses the wire — only the preview
+     * + a "regenerated" flag. Calling this invalidates EVERY previously
+     * emitted signed URL across the fleet, which is the intended outcome
+     * of an operator-initiated rotation (usually a response to a leak).
+     *
+     * @return preview of the new secret (first 8 chars of the Base64 form)
+     * @since 2026.2.7
+     */
+    public String regenerateCodeInterpreterUrlSigningSecret() {
+        String fresh = TurConfigVarOnStartup.generateUrlSigningSecret();
+        TurConfigVar row = turConfigVarRepository
+                .findById(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET)
+                .orElseGet(() -> {
+                    TurConfigVar v = new TurConfigVar();
+                    v.setId(TurConfigVarOnStartup.CODE_INTERPRETER_URL_SIGNING_SECRET);
+                    v.setPath(TurConfigVarOnStartup.GLOBAL_PATH);
+                    return v;
+                });
+        row.setValue(fresh);
+        turConfigVarRepository.save(row);
+        return fresh.length() >= 8 ? fresh.substring(0, 8) : fresh;
+    }
+
     public String getDefaultLlmId() {
         return turConfigVarRepository.findById(TurConfigVarOnStartup.DEFAULT_LLM)
                 .map(TurConfigVar::getValue)

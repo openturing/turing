@@ -22,7 +22,7 @@ export interface UseTuringHandoffOptions {
   readonly destination?: string;
   /**
    * Default intro text rendered above the slot transcript in the link
-   * body. Localize per app (e.g. "Olá! Vim do site do Insper.").
+   * body. Localize per app (e.g. "Olá! Vim do site de Education.").
    */
   readonly intro?: string;
   /**
@@ -67,7 +67,7 @@ export interface UseTuringHandoffReturn {
  * const { handoff, status } = useTuringHandoff({
  *   channel: "whatsapp",
  *   destination: "5511999999999",
- *   intro: "Olá! Vim do site do Insper EE.",
+ *   intro: "Olá! Vim do site de Executive Education.",
  *   slotsToInclude: ["name", "cargo_atual", "area_label", "objetivo"],
  * });
  *

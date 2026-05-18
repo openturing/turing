@@ -81,10 +81,14 @@ public class TurConfigVarOnStartup {
 		ensureConfigVar(DECIMAL_SEPARATOR, GLOBAL_PATH, DECIMAL_SEPARATOR_DEFAULT_VALUE);
 		ensureConfigVar(PYTHON_EXECUTABLE, GLOBAL_PATH, "");
 		ensureConfigVar(PYTHON_REQUIREMENTS, GLOBAL_PATH, "");
-		// Mint a fresh HMAC secret only when none exists — never overwrite
-		// (would invalidate every previously-emitted signed URL across the
-		// fleet on restart).
-		ensureConfigVar(CODE_INTERPRETER_URL_SIGNING_SECRET, GLOBAL_PATH, generateUrlSigningSecret());
+		// Auto-heal variant for the HMAC secret: like ensureConfigVar but
+		// also re-mints when the row exists with a blank value. Plain
+		// ensureConfigVar wouldn't fix dev/staging DBs that ended up with
+		// the row but no value (e.g. a snapshot from an earlier build
+		// before the random-bytes generator was wired). On HEALTHY rows
+		// (existing + non-blank), this is a no-op — fleet-wide signed URLs
+		// stay valid across restarts.
+		ensureSecretConfigVar(CODE_INTERPRETER_URL_SIGNING_SECRET, GLOBAL_PATH);
 		ensureConfigVar(DEFAULT_LLM, GLOBAL_PATH, "");
 		ensureConfigVar(EMAIL_PROVIDER, GLOBAL_PATH, EMAIL_PROVIDER_DEFAULT_VALUE);
 		ensureConfigVar(EMAIL_API_KEY, GLOBAL_PATH, "");
@@ -111,11 +115,44 @@ public class TurConfigVarOnStartup {
 	}
 
 	/**
-	 * 32 random bytes → 44-char Base64 string. Re-used every fresh install
-	 * (or after operator-initiated rotation) for the code-interpreter URL
-	 * HMAC. 32 bytes = 256 bits — matches HMAC-SHA256's native block size.
+	 * Like {@link #ensureConfigVar}, but also re-mints the value when the
+	 * row exists with a blank/null value. Used only for the HMAC URL-
+	 * signing secret — there's no legitimate "the operator deliberately
+	 * left this blank" state for a cryptographic secret, so a blank means
+	 * something went wrong upstream and we should self-heal. For ordinary
+	 * config rows, plain {@link #ensureConfigVar} is the right tool —
+	 * empty strings are valid (e.g. {@code GLOBAL_PYTHON_REQUIREMENTS}
+	 * defaults to {@code ""}).
 	 */
-	static String generateUrlSigningSecret() {
+	private void ensureSecretConfigVar(String id, String path) {
+		TurConfigVar existing = turConfigVarRepository.findById(id).orElse(null);
+		if (existing == null) {
+			TurConfigVar fresh = new TurConfigVar();
+			fresh.setId(id);
+			fresh.setPath(path);
+			fresh.setValue(generateUrlSigningSecret());
+			turConfigVarRepository.save(fresh);
+			return;
+		}
+		if (existing.getValue() == null || existing.getValue().isBlank()) {
+			existing.setValue(generateUrlSigningSecret());
+			turConfigVarRepository.save(existing);
+		}
+	}
+
+	/**
+	 * 32 random bytes → 44-char Base64 string. 32 bytes = 256 bits, matches
+	 * HMAC-SHA256's native block size. Re-used by:
+	 * <ul>
+	 *   <li>{@link #ensureSecretConfigVar} on fresh install / auto-heal of
+	 *       a blank row;</li>
+	 *   <li>{@code TurGlobalSettingsService.regenerateCodeInterpreterUrlSigningSecret()}
+	 *       when an admin clicks "Regenerate" in the Global Settings page.</li>
+	 * </ul>
+	 * Public so the service in {@code com.viglet.turing.system} can call it
+	 * across the package boundary.
+	 */
+	public static String generateUrlSigningSecret() {
 		byte[] bytes = new byte[32];
 		SECURE_RANDOM.nextBytes(bytes);
 		return Base64.getEncoder().encodeToString(bytes);

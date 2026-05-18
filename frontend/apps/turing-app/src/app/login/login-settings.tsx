@@ -88,7 +88,6 @@ export function LoginSettingsButton({ settings, onUpdate }: LoginSettingsButtonP
             <Switch
               id="login-explosion"
               checked={settings.explosion}
-              disabled={!settings.animations}
               onCheckedChange={(checked) => onUpdate({ explosion: checked })}
             />
           </div>

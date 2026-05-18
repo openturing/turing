@@ -347,19 +347,26 @@ public class TurCodeInterpreterToolService {
 
     private String executeAndCollectOutput(String sessionId, File sessionDir,
             Path scriptPath) throws IOException, InterruptedException {
-        Path runnerPath = sessionDir.toPath().resolve("_runner.py");
-        Files.writeString(runnerPath, buildRunnerScript(scriptPath.getFileName().toString()));
-        // Resolve auto-installed deps BEFORE building the env. The dep
-        // service unions the global `GLOBAL_PYTHON_REQUIREMENTS` setting
+        // Resolve auto-installed deps BEFORE building the env / runner. The
+        // dep service unions the global `GLOBAL_PYTHON_REQUIREMENTS` setting
         // with the optional agent-specific addendum (carried via the
         // ThreadLocal set by the public entry point) — hash-keyed cache
         // dir on first call, instant on subsequent (cache hit). When
-        // both sources are blank, returns null → no PYTHONPATH injection
-        // and behavior matches the pre-2026.2.7 era (operator manages
-        // the Python env manually). Failures propagate as
+        // both sources are blank, returns null → no path injection and
+        // behavior matches the pre-2026.2.7 era (operator manages the
+        // Python env manually). Failures propagate as
         // DependencyInstallException → caught by the outer try/catch and
         // surfaced as the script's error message.
+        //
+        // depsDir is passed BOTH into the runner script (sys.path.insert) AND
+        // the env PYTHONPATH below — belt-and-suspenders. The runner-side
+        // inject is what actually works on Windows (PYTHONPATH propagation
+        // through ProcessBuilder.environment() doesn't always reach the
+        // child process); the env var stays for any Python-native helper
+        // that reads it directly.
         Path depsDir = dependencyService.ensureInstalled(extraRequirements.get());
+        Path runnerPath = sessionDir.toPath().resolve("_runner.py");
+        Files.writeString(runnerPath, buildRunnerScript(scriptPath.getFileName().toString(), depsDir));
         ProcessBuilder pb = new ProcessBuilder(resolvePythonExecutable(), runnerPath.toString());
         pb.directory(sessionDir);
         pb.redirectErrorStream(false);
@@ -540,10 +547,27 @@ public class TurCodeInterpreterToolService {
      * detects if the last statement is a bare expression (e.g. {@code result}
      * instead of {@code print(result)}), and wraps it with {@code print()} so
      * the value is emitted to stdout — mimicking Jupyter/IPython behaviour.
+     *
+     * <p>When {@code depsDir} is non-null, the runner prepends it to
+     * {@code sys.path} BEFORE any import. This is the load-bearing fix for
+     * Windows where {@code ProcessBuilder.environment().put("PYTHONPATH", …)}
+     * sometimes doesn't propagate to the child Python — verified empirically
+     * (`pip install --target=<dir>` succeeded, the dir contained
+     * {@code reportlab/}, but the script's {@code from reportlab…} import
+     * failed with {@code ImportError} until the path was injected into the
+     * runner). Embedding the path in the script bypasses every layer of env
+     * var inheritance and works regardless of the OS quirk.
      */
-    private String buildRunnerScript(String scriptFilename) {
+    private String buildRunnerScript(String scriptFilename, Path depsDir) {
+        String depsPathLiteral = depsDir != null
+                ? repr(depsDir.toAbsolutePath().toString())
+                : "None";
         return """
-                import ast, sys
+                import sys
+                _DEPS_DIR = %s
+                if _DEPS_DIR is not None and _DEPS_DIR not in sys.path:
+                    sys.path.insert(0, _DEPS_DIR)
+                import ast
                 try:
                     import matplotlib as _mpl
                     _mpl.rcParams['font.family'] = 'sans-serif'
@@ -584,7 +608,7 @@ public class TurCodeInterpreterToolService {
                         _save_show()
                 except NameError:
                     pass
-                """.formatted(repr(scriptFilename), repr(scriptFilename));
+                """.formatted(depsPathLiteral, repr(scriptFilename), repr(scriptFilename));
     }
 
     private static final Set<String> IMAGE_EXTENSIONS = Set.of(

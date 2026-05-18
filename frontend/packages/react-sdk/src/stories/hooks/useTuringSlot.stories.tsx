@@ -436,7 +436,7 @@ export const CustomParser_UrlEncoded: Story = {
   name: "custom fn · URL params → Record<string,string>",
   args: {
     slotName: "utm_params",
-    rawValue: "utm_source=linkedin&utm_campaign=insper-ee-2026&utm_medium=organic",
+    rawValue: "utm_source=linkedin&utm_campaign=education-ee-2026&utm_medium=organic",
     parseMode: "urlencoded",
   },
 };

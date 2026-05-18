@@ -119,6 +119,24 @@ public final class ChatFlowOps {
      * the agent should chat freely.
      */
     public static String buildBaseAddendum(ChatFlowNode node, TurChatFlowState state, ChatFlowGraph graph) {
+        return buildBaseAddendum(node, state, graph, true);
+    }
+
+    /**
+     * Same as {@link #buildBaseAddendum(ChatFlowNode, TurChatFlowState, ChatFlowGraph)}
+     * but with explicit control over the "Next step preview" hint at the end.
+     *
+     * <p>Set {@code includeNextStepHint = false} when the prompt is for the
+     * REGEN path after a transparent walk: the LLM has just been asked to
+     * "ask the CURRENT step's question" and showing it the next step's
+     * instruction nudges it to ask THAT one instead — the classic
+     * one-step-ahead chip-vs-question mismatch (chips render from the
+     * current node, but the text matches the next node's aiInstruction).
+     * The default true preserves the chaining benefit for the initial
+     * pre-LLM call where the bot can capture + ask in one reply.
+     */
+    public static String buildBaseAddendum(ChatFlowNode node, TurChatFlowState state,
+            ChatFlowGraph graph, boolean includeNextStepHint) {
         if (node == null || "end".equals(node.type())) {
             return "";
         }
@@ -141,7 +159,9 @@ public final class ChatFlowOps {
         if (!variables.isEmpty()) {
             sb.append("Already collected: ").append(summarizeVariables(variables)).append('\n');
         }
-        appendNextStepHint(sb, graph, node);
+        if (includeNextStepHint) {
+            appendNextStepHint(sb, graph, node);
+        }
         sb.append(HARD_RULES);
         return sb.toString();
     }

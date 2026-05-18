@@ -67,6 +67,8 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
         registry.addViewController("/admin/").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/setup").setViewName(FORWARD_INDEX_HTML);
         registry.addViewController("/setup/").setViewName(FORWARD_INDEX_HTML);
+        registry.addViewController("/bento").setViewName(FORWARD_INDEX_HTML);
+        registry.addViewController("/bento/").setViewName(FORWARD_INDEX_HTML);
 
     }
 
@@ -80,6 +82,7 @@ public class TurStaticResourceConfiguration implements WebMvcConfigurer {
         registryReact(registry, "/login");
         registryReact(registry, "/admin");
         registryReact(registry, "/setup");
+        registryReact(registry, "/bento");
     }
 
     private static void registryFrontend(ResourceHandlerRegistry registry, String context, String location,

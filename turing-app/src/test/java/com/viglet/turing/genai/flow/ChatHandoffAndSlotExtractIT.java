@@ -146,12 +146,12 @@ class ChatHandoffAndSlotExtractIT extends AbstractTuringSpringIT {
     @Test
     void handoff_email_buildsMailtoWithSubjectAndBody() {
         HandoffResult result = handoffService.buildLink(conversationId,
-                new HandoffRequest(Channel.EMAIL, "consultor@insper.edu.br",
+                new HandoffRequest(Channel.EMAIL, "consultor@education.example.com",
                         null, null));
 
         assertThat(result.error()).isNull();
         assertThat(result.url())
-                .startsWith("mailto:consultor@insper.edu.br?subject=")
+                .startsWith("mailto:consultor@education.example.com?subject=")
                 .contains("&body=");
         // Default slot filter: skips internal flags (color, cta_visible).
         String body = decodeQueryParam(result.url(), "body");
@@ -172,10 +172,10 @@ class ChatHandoffAndSlotExtractIT extends AbstractTuringSpringIT {
     @Test
     void handoff_telegram_acceptsUsernameAndPhone() {
         HandoffResult username = handoffService.buildLink(conversationId,
-                new HandoffRequest(Channel.TELEGRAM, "@insper_ee", null, null));
+                new HandoffRequest(Channel.TELEGRAM, "@education_ee", null, null));
         assertThat(username.url())
                 .as("Username form strips the @ and goes to t.me/{username}")
-                .startsWith("https://t.me/insper_ee?text=");
+                .startsWith("https://t.me/education_ee?text=");
 
         HandoffResult phone = handoffService.buildLink(conversationId,
                 new HandoffRequest(Channel.TELEGRAM, "+55 11 91234-5678", null, null));

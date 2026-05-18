@@ -127,6 +127,14 @@ public class TurCodeInterpreterUrlSigner {
      */
     public String signQueryString(String sessionId, String filename, String convId) {
         if (!enabled) return "";
+        if (!hasUsableSecret()) {
+            // Degenerate state: feature is enabled but the HMAC secret is
+            // missing/blank in Global Settings. Emit an unsigned URL rather
+            // than crashing the tool — the file API's verify() also fails
+            // open in this state, so downloads still work. The auto-heal
+            // startup hook tries to mint a fresh secret on next boot.
+            return "";
+        }
         long exp = Instant.now().getEpochSecond() + Math.max(60, ttlSeconds);
         String safeConv = convId == null ? "" : convId;
         String sig = hmacHex(payload(sessionId, filename, exp, safeConv));
@@ -149,6 +157,12 @@ public class TurCodeInterpreterUrlSigner {
     public VerifyResult verify(String sessionId, String filename,
             String expParam, String sigParam, String cookieConv) {
         if (!enabled) return VerifyResult.OK;
+        if (!hasUsableSecret()) {
+            // No secret = signing was skipped (see signQueryString). Mirror
+            // that on the verify side — fail open so files are still
+            // downloadable. Logs already screamed at signing time.
+            return VerifyResult.OK;
+        }
         if (expParam == null || expParam.isBlank() || sigParam == null || sigParam.isBlank()) {
             return VerifyResult.MISSING_SIGNATURE;
         }
@@ -195,15 +209,40 @@ public class TurCodeInterpreterUrlSigner {
         return PAYLOAD_PREFIX + DELIM + sessionId + DELIM + filename + DELIM + exp + DELIM + convId;
     }
 
+    /**
+     * Cached "we already screamed about this" flag — keeps the log clean
+     * when an operator's DB is missing the secret. First call logs loud,
+     * subsequent calls stay silent until JVM restart (when the auto-heal
+     * startup hook either fixes it or doesn't).
+     */
+    private final java.util.concurrent.atomic.AtomicBoolean blankSecretWarned =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    /**
+     * Returns true when {@link TurGlobalSettingsService#getCodeInterpreterUrlSigningSecret()}
+     * is non-blank. Callers use this to gate signing/verification — when
+     * false, the URL hardening feature degrades to a no-op rather than
+     * crashing every file download with HMAC errors.
+     */
+    private boolean hasUsableSecret() {
+        String secret = settingsService.getCodeInterpreterUrlSigningSecret();
+        boolean ok = secret != null && !secret.isBlank();
+        if (!ok && blankSecretWarned.compareAndSet(false, true)) {
+            log.error("[CodeInterpreterUrlSigner] HMAC secret is blank in Global Settings — "
+                    + "URL signing is DISABLED (downloads will work, but the signature gate is off). "
+                    + "Restart the app: TurConfigVarOnStartup auto-heals the row. "
+                    + "If the row exists with a blank value, the auto-heal repopulates it.");
+        }
+        return ok;
+    }
+
     private String hmacHex(String payload) {
         String secret = settingsService.getCodeInterpreterUrlSigningSecret();
+        // Callers are expected to gate via hasUsableSecret() — but be
+        // defensive in case a race lets a blank secret through.
         if (secret == null || secret.isBlank()) {
-            // Should not happen in production — TurConfigVarOnStartup mints
-            // a secret on first boot. Log loudly so the operator notices
-            // before any signed URL ships, but don't crash the request
-            // (it'll simply fail verification, surfacing as 403).
-            log.error("[CodeInterpreterUrlSigner] HMAC secret is blank — signed URLs will fail verification");
-            secret = "";
+            throw new IllegalStateException(
+                    "HMAC signing invoked with blank secret — hasUsableSecret() should have prevented this");
         }
         try {
             Mac mac = Mac.getInstance(HMAC_ALG);

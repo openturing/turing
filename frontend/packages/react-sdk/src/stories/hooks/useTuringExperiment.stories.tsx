@@ -30,7 +30,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
  * - **Variant-aware design**: different layout for the Lucas peer voice
  *   (more casual / first-person UI) vs Marina executive voice
  * - **App-level analytics**: send the variant tag to your own analytics
- *   when the visitor hits a key page event (so non-Insper-EE analytics
+ *   when the visitor hits a key page event (so non-Executive-Education analytics
  *   can cross-reference the A/B group)
  *
  * ## About this story
@@ -188,7 +188,7 @@ function LucasBanner() {
         Variant · alumni peer
       </div>
       <h3 style={{ margin: "8px 0", fontSize: 22, fontWeight: 700 }}>
-        Oi! Eu sou o Lucas — fiz o MBA do Insper em 2024.
+        Oi! Eu sou o Lucas — fiz o MBA de Executive Education em 2024.
       </h3>
       <p style={{ margin: 0, fontSize: 14 }}>
         Aqui eu conto a história. Primeira pessoa, casual, peer-to-peer —

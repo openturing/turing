@@ -509,7 +509,7 @@ The [turing-marketplace](https://github.com/openviglet/turing/tree/2026.2/turing
 | **mythical-creatures** | Fantasy bestiary with multi-language, facets, danger ratings, and More Like This |
 | **space-missions** | Space exploration with agency filters, starfield animation, and HUD-style UI |
 | **vinyl-records** | Record store with album art, star ratings, genre facets, and condition grading |
-| **insper-portal** | Academic institution search with tabs, sidebar navigation, and Portuguese locale |
+| **education-portal** | Academic institution search with tabs, sidebar navigation, and Portuguese locale |
 
 ---
 

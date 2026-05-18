@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
  * the matching `*Supported` flag stays false and the caller can hide
  * the corresponding UI button.
  *
- * Locale defaults to **`pt-BR`** — the Insper EE personas converse in
+ * Locale defaults to **`pt-BR`** — the Executive Education personas converse in
  * Brazilian Portuguese. Override via `lang` option for other markets.
  *
  * ## Key Features
@@ -52,7 +52,7 @@ import { useEffect, useRef, useState } from "react";
  * ## When to use
  *
  * - **Mobile-first chat**: voice input cuts typing on small screens
- *   by ~70%; useful for the Insper EE flow where 60%+ of traffic is
+ *   by ~70%; useful for the Executive Education flow where 60%+ of traffic is
  *   mobile
  * - **Accessibility**: visual impairment, motor limitations — TTS
  *   replay of assistant messages

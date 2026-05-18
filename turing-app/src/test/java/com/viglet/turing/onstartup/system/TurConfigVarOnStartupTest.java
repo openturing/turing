@@ -98,11 +98,22 @@ class TurConfigVarOnStartupTest {
 
     @Test
     void shouldNotCreateConfigVarWhenAlreadyExists() {
+        // Mock returns a fresh TurConfigVar (blank value) for every row.
+        // ensureConfigVar leaves these alone (existing row → no save), but
+        // ensureSecretConfigVar AUTO-HEALS blank values for the HMAC
+        // secret. So save is called exactly once — for the secret heal —
+        // and the other 17 rows are skipped.
         when(turConfigVarRepository.findById(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(new TurConfigVar()));
 
         turConfigVarOnStartup.createDefaultRows();
 
-        verify(turConfigVarRepository, never()).save(org.mockito.ArgumentMatchers.any(TurConfigVar.class));
+        ArgumentCaptor<TurConfigVar> captor = ArgumentCaptor.forClass(TurConfigVar.class);
+        verify(turConfigVarRepository, org.mockito.Mockito.times(1)).save(captor.capture());
+        TurConfigVar saved = captor.getValue();
+        assertTrue("GLOBAL_CODE_INTERPRETER_URL_SIGNING_SECRET".equals(saved.getId())
+                || saved.getValue() != null && !saved.getValue().isBlank(),
+                "Only the URL signing secret should be auto-healed; got id=" + saved.getId()
+                        + " value-length=" + (saved.getValue() == null ? -1 : saved.getValue().length()));
     }
 }

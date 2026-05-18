@@ -235,16 +235,37 @@ class TurCodeInterpreterToolServiceTest {
     @Test
     void shouldBuildRunnerScript() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
-                "buildRunnerScript", String.class);
+                "buildRunnerScript", String.class, java.nio.file.Path.class);
         method.setAccessible(true);
 
-        String script = (String) method.invoke(service, "script.py");
+        // depsDir=null → runner emits `_DEPS_DIR = None` and skips sys.path.insert.
+        String script = (String) method.invoke(service, "script.py", null);
 
         assertThat(script)
-                .contains("import ast, sys")
+                .contains("_DEPS_DIR = None")
+                .contains("import ast")
                 .contains("'script.py'")
                 .contains("ast.parse")
                 .contains("exec(compile");
+    }
+
+    @Test
+    void buildRunnerScript_withDepsDir_prependsSysPath() throws Exception {
+        Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
+                "buildRunnerScript", String.class, java.nio.file.Path.class);
+        method.setAccessible(true);
+
+        java.nio.file.Path depsDir = java.nio.file.Path.of("D:", "tmp", "fake-deps");
+        String script = (String) method.invoke(service, "script.py", depsDir);
+
+        // Repr-quoted, backslash-escaped path embedded as `_DEPS_DIR = '…'`.
+        // The runner uses sys.path.insert before any reportlab/Pillow import,
+        // working around the Windows ProcessBuilder PYTHONPATH propagation bug
+        // that motivated this change.
+        assertThat(script)
+                .contains("_DEPS_DIR = '")
+                .contains("sys.path.insert(0, _DEPS_DIR)")
+                .contains("fake-deps");
     }
 
     @Test
@@ -475,13 +496,16 @@ class TurCodeInterpreterToolServiceTest {
     @Test
     void shouldBuildRunnerScriptWithSpecialCharacters() throws Exception {
         Method method = TurCodeInterpreterToolService.class.getDeclaredMethod(
-                "buildRunnerScript", String.class);
+                "buildRunnerScript", String.class, java.nio.file.Path.class);
         method.setAccessible(true);
 
-        String script = (String) method.invoke(service, "my_script's.py");
+        // depsDir=null keeps the old assertion's intent — special chars in
+        // the script filename must be escaped via the `repr` helper before
+        // being baked into the runner.
+        String script = (String) method.invoke(service, "my_script's.py", null);
 
         assertThat(script)
-                .contains("import ast, sys")
+                .contains("import ast")
                 .contains("my_script\\'s.py")
                 .contains("exec(compile");
     }
