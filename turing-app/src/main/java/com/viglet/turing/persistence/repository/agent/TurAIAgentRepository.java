@@ -22,6 +22,31 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
     @NotNull
     Optional<TurAIAgent> findById(@NotNull String id);
 
+    /** Agent-import fallback by title. @since 2026.2.8 */
+    Optional<TurAIAgent> findByTitleIgnoreCase(String title);
+
+    /**
+     * Used by the MCP-server delete path to find every agent whose
+     * {@code mcpServers} catalog references this server, so the API can
+     * remove the join-table row before the server itself is deleted.
+     *
+     * @since 2026.2.8
+     */
+    @Query("SELECT a FROM TurAIAgent a JOIN a.mcpServers m WHERE m.id = ?1")
+    List<TurAIAgent> findByMcpServerId(String mcpServerId);
+
+    /** Used by the LLM delete path. @since 2026.2.8 */
+    @Query("SELECT a FROM TurAIAgent a JOIN a.llmInstances l WHERE l.id = ?1")
+    List<TurAIAgent> findByLlmInstanceId(String llmInstanceId);
+
+    /** Used by the custom-tool delete path. @since 2026.2.8 */
+    @Query("SELECT a FROM TurAIAgent a JOIN a.customTools t WHERE t.id = ?1")
+    List<TurAIAgent> findByCustomToolId(String customToolId);
+
+    /** Used by the persona delete path. @since 2026.2.8 */
+    @Query("SELECT a FROM TurAIAgent a JOIN a.personas p WHERE p.id = ?1")
+    List<TurAIAgent> findByPersonaId(String personaId);
+
     @CacheEvict(value = { "turAIAgentfindAll", "turAIAgentfindById" }, allEntries = true)
     @NotNull
     @Override

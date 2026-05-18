@@ -29,6 +29,9 @@ public interface TurEmbeddingModelRepository extends JpaRepository<TurEmbeddingM
 	@NotNull
 	Optional<TurEmbeddingModel> findById(@NotNull String id);
 
+	/** Agent-import fallback by modelName. @since 2026.2.8 */
+	Optional<TurEmbeddingModel> findByModelNameIgnoreCase(String modelName);
+
 	@CacheEvict(value = { "turEmbeddingModelfindAll", "turEmbeddingModelfindById" }, allEntries = true)
 	@NotNull
 	@Override

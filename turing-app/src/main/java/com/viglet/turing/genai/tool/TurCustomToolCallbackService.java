@@ -203,12 +203,40 @@ public class TurCustomToolCallbackService {
             return cached;
         }
         GroovyShell shell = new GroovyShell();
+        String source = sanitizeGroovySource(tool.groovyScript() == null ? "" : tool.groovyScript());
         Class<? extends Script> clazz = (Class<? extends Script>) shell.getClassLoader().parseClass(
-                tool.groovyScript() == null ? "" : tool.groovyScript(),
+                source,
                 "TurCustomTool_" + id + ".groovy");
         CachedScript fresh = new CachedScript(clazz, hash);
         scriptCache.put(id, fresh);
         return fresh;
+    }
+
+    /**
+     * Defangs source-level tokens that confuse the Groovy ANTLR4 lexer
+     * inside triple-quote heredocs ({@code '''...'''}). Custom tools
+     * routinely embed Python source as a heredoc — and Python regex
+     * patterns like {@code r"[\U0001F000-\U0001FFFF]"} contain {@code \U}
+     * sequences. The Groovy lexer mis-handles {@code \U} inside heredocs:
+     * a subsequent {@code '''} opener is then reported as
+     * {@code "Unexpected character: '\''"} at the heredoc's first column.
+     *
+     * <p>We swap a bare {@code \U} (not already escaped by a preceding
+     * {@code \}) for {@code \\U}. Inside a Groovy triple-single-quote
+     * heredoc, {@code \\U} is the escape for a single literal backslash
+     * followed by {@code U} — so the runtime string still contains
+     * exactly {@code \U}, which is what the Python sandbox needs. The
+     * lexer is happy because the offending token never appears.
+     *
+     * <p>Reproduced by {@link com.viglet.turing.genai.tool.TurCustomToolGroovyParserBugTest}.
+     */
+    static String sanitizeGroovySource(String src) {
+        if (src == null || src.isEmpty() || src.indexOf("\\U") < 0) {
+            return src == null ? "" : src;
+        }
+        // (?<!\\) — \U not preceded by another backslash (so authors who
+        // already wrote \\U don't get doubled to \\\U).
+        return src.replaceAll("(?<!\\\\)\\\\U", "\\\\\\\\U");
     }
 
     String executeGroovy(TurCustomToolDomain tool, String toolInput) throws ReflectiveOperationException {

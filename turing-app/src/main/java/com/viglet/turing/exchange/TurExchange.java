@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 the original author or authors. 
+ * Copyright (C) 2016-2022 the original author or authors.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -24,15 +24,30 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.viglet.turing.exchange.agent.TurAIAgentExchange;
+import com.viglet.turing.exchange.agent.TurCustomToolExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
-import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.embedding.TurEmbeddingModel;
+import com.viglet.turing.persistence.model.llm.TurLLMInstance;
+import com.viglet.turing.persistence.model.mcp.TurMcpServer;
+import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.model.store.TurStoreInstance;
 
 import lombok.Getter;
+import lombok.Setter;
 
+/**
+ * Root envelope serialized to {@code export.json} for both SN site and AI
+ * agent bundles. Every top-level list is independently optional — a bundle
+ * carrying only AI agents leaves {@link #snSites}/{@link #se} null, and vice
+ * versa. New entity types added in 2026.2.8 for the agent export
+ * ({@link #agents}, {@link #personas}, {@link #mcpServers},
+ * {@link #customTools}) live alongside the older site-side keys so a future
+ * single ZIP can transport an agent and its host SN site together.
+ */
 @Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TurExchange {
 
@@ -51,23 +66,17 @@ public class TurExchange {
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private List<TurEmbeddingModel> embeddingModels;
 
-	public void setSnSites(List<TurSNSiteExchange> snSites) {
-		this.snSites = snSites;
-	}
+	// ─── Agent-side blocks (added 2026.2.8) ───────────────────────────
 
-	public void setLlm(List<TurLLMInstance> llm) {
-		this.llm = llm;
-	}
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private List<TurAIAgentExchange> agents;
 
-	public void setStore(List<TurStoreInstance> store) {
-		this.store = store;
-	}
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private List<TurPersona> personas;
 
-	public void setSe(List<TurSEInstance> se) {
-		this.se = se;
-	}
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private List<TurMcpServer> mcpServers;
 
-	public void setEmbeddingModels(List<TurEmbeddingModel> embeddingModels) {
-		this.embeddingModels = embeddingModels;
-	}
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private List<TurCustomToolExchange> customTools;
 }

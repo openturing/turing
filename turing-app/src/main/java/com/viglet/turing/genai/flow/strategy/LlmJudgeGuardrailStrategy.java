@@ -49,6 +49,17 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     private static final String NOT_SET = "(none)";
 
     /**
+     * Per-node soft-fail policies for {@code aiQuestion} reads from
+     * {@link ChatFlowNode#onJudgeReject()}. See the field's javadoc for the
+     * mode semantics.
+     *
+     * @since 2026.2.31
+     */
+    private static final String REJECT_ADVANCE_WITH_LITERAL = "advance_with_literal";
+    private static final String REJECT_REPROMPT = "reprompt";
+    private static final String REJECT_BLOCK = "block";
+
+    /**
      * Minimum user-message length (after trim) that qualifies a rejected verdict
      * for a second-opinion retry. Set to defeat the cheap politeness-marker
      * cases ({@code "ok"}, {@code "valeu"}) without ever costing more than one
@@ -109,22 +120,57 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                         node.id(), retry.onTopic(), retry.readyToAdvance(), retry.collectedValue());
                 verdict = retry;
             }
-            // If both verdicts still say "stay, no value" for a substantive user
-            // message on a slot-collecting node, the judge is consistently wrong
-            // (gpt-4o-mini at temp=0 is deterministic — flake-retry doesn't
-            // recover). Treat the user reply as the slot value and force-advance:
-            // stalling on a real answer is strictly worse than over-capturing.
-            // This mirrors the existing defensive fallback that already handles
-            // the inverse ("judge said advance but forgot to extract").
-            if (shouldRetryVerdict(verdict, node, ctx.userMessage())) {
-                log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' — "
-                        + "force-capturing user message as the slot value",
-                        ctx.userMessage(), node.id());
-                verdict = new JudgeVerdict(verdict.onTopic(),
-                        ctx.userMessage().trim(),
-                        /* readyToAdvance */ true,
-                        verdict.redirectMessage(),
-                        /* abandoned */ false);
+            // If both verdicts still say "stay, no value" for a substantive
+            // user message on a slot-collecting node, we have two failure
+            // modes that look identical from the engine's side:
+            //
+            //   (a) The judge is being too strict — gpt-4o-mini occasionally
+            //       rejects a perfectly valid value (anecdotally ~5%). In
+            //       this case the judge typically returns a vague or blank
+            //       redirect because it has no real reason to reject.
+            //       Force-capture is the right escape.
+            //
+            //   (b) The user is genuinely off-topic — clicked a non-name
+            //       chip on a name-collecting node, pasted lorem-ipsum, etc.
+            //       In this case the judge returns a substantive
+            //       redirect_message ("Vamos falar sobre seu nome primeiro?")
+            //       because it correctly identified the gap. Force-capture
+            //       here would lock the wrong text into the slot.
+            //
+            // Heuristic to distinguish: if BOTH verdicts carry a non-blank
+            // redirect_message that the judge presumably produced because it
+            // saw a specific off-goal pattern, trust it and stay on the
+            // node. Force-capture only when the judge offered no redirect
+            // (sign of an actual flake, not a deliberate "off-topic"
+            // assessment). The per-node {@code onJudgeReject} field
+            // overrides this heuristic: "advance_with_literal" forces a
+            // capture regardless of the redirect; "block" stays on the node
+            // even when the redirect is blank.
+            boolean stillFlaky = shouldRetryVerdict(verdict, node, ctx.userMessage());
+            String policy = resolveRejectPolicy(node);
+            if (stillFlaky) {
+                if (REJECT_BLOCK.equals(policy)) {
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
+                            + "with onJudgeReject=block — staying on node, no force-capture",
+                            ctx.userMessage(), node.id());
+                } else if (REJECT_ADVANCE_WITH_LITERAL.equals(policy)
+                        || !isNonBlankRedirect(verdict)) {
+                    String why = REJECT_ADVANCE_WITH_LITERAL.equals(policy)
+                            ? "onJudgeReject=advance_with_literal"
+                            : "no redirect message — treating as judge flake";
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' — "
+                            + "{}; force-capturing user message as the slot value",
+                            ctx.userMessage(), node.id(), why);
+                    verdict = new JudgeVerdict(verdict.onTopic(),
+                            ctx.userMessage().trim(),
+                            /* readyToAdvance */ true,
+                            verdict.redirectMessage(),
+                            /* abandoned */ false);
+                } else {
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
+                            + "with redirect='{}' — trusting judge, staying on node",
+                            ctx.userMessage(), node.id(), verdict.redirectMessage());
+                }
             }
         }
 
@@ -255,6 +301,53 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
      *       legitimate stays and must NOT trigger a retry.</li>
      * </ul>
      */
+    /**
+     * Returns {@code true} when the verdict carries a substantive
+     * {@code redirect_message} the judge produced because it actively
+     * decided to keep the visitor on the current node — as opposed to a
+     * blank/missing field that signals the judge had no idea why it
+     * rejected. Used by the force-capture path to decide whether to
+     * trust the judge's "stay here" instinct or treat it as flake.
+     *
+     * <p>Threshold of 8 characters filters one-word placeholder strings
+     * (e.g. "stay", "no") that some prompts emit as a fallback when the
+     * model can't articulate a redirect — those shouldn't count as
+     * confidence signals.
+     */
+    // Package-private (not private) so LlmJudgeGuardrailStrategyTest can
+    // call directly without reflection. Behavioral contract pinned by the
+    // unit test — the force-capture-vs-trust-redirect heuristic is exactly
+    // the kind of subtle condition that regresses silently.
+    static boolean isNonBlankRedirect(JudgeVerdict verdict) {
+        String redirect = verdict.redirectMessage();
+        return redirect != null && redirect.trim().length() >= 8;
+    }
+
+    /**
+     * Resolves the soft-fail policy declared on the node, defaulting to
+     * {@link #REJECT_REPROMPT} when the field is null/blank or names an
+     * unknown value. Lowercased so authors can write either
+     * {@code "advance_with_literal"} or {@code "ADVANCE_WITH_LITERAL"} in
+     * the flow JSON without surprise.
+     *
+     * @since 2026.2.31
+     */
+    static String resolveRejectPolicy(ChatFlowNode node) {
+        String raw = node.onJudgeReject();
+        if (raw == null || raw.isBlank()) {
+            return REJECT_REPROMPT;
+        }
+        String normalized = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (normalized) {
+            case REJECT_ADVANCE_WITH_LITERAL, REJECT_BLOCK, REJECT_REPROMPT -> normalized;
+            default -> {
+                log.warn("[LlmJudge] Unknown onJudgeReject='{}' on node '{}' — defaulting to '{}'",
+                        raw, node.id(), REJECT_REPROMPT);
+                yield REJECT_REPROMPT;
+            }
+        };
+    }
+
     private static boolean shouldRetryVerdict(JudgeVerdict verdict, ChatFlowNode node, String userMessage) {
         if (verdict.abandoned() || verdict.readyToAdvance()) {
             return false;
@@ -395,7 +488,10 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
      * absent. {@code redirectMessage} is only used when {@code onTopic} is
      * false or {@code abandoned} is true.
      */
-    private record JudgeVerdict(boolean onTopic, String collectedValue, boolean readyToAdvance,
+    // Package-private so unit tests in the same package can construct
+    // verdict instances directly (the canonical way to pin force-capture
+    // heuristics without booting a ChatModel or reflecting into the class).
+    record JudgeVerdict(boolean onTopic, String collectedValue, boolean readyToAdvance,
             String redirectMessage, boolean abandoned) {
     }
 }

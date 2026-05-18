@@ -18,7 +18,7 @@ import { TurNativeToolService } from "@/services/genai/native-tool.service";
 import { TurMcpServerService } from "@/services/mcp/mcp-server.service";
 
 import { ensureSwitchOptions, newSwitchOptionId } from "../chat-flow.serialize";
-import type { FlowNodeData, FlowNodeType, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
+import type { FlowNodeData, FlowNodeType, FlowOnJudgeReject, FlowSlotOperation, FlowSwitchOption, FlowToolSource } from "../types";
 
 const nativeToolService = new TurNativeToolService();
 const mcpServerService = new TurMcpServerService();
@@ -42,6 +42,7 @@ interface FlowPropertiesProps {
 const VALIDATION_OPTIONS = ["none", "email", "phone", "url", "number", "date"];
 const TOOL_SOURCE_OPTIONS: FlowToolSource[] = ["NATIVE", "MCP"];
 const SLOT_OPERATION_OPTIONS: FlowSlotOperation[] = ["SET", "DELETE"];
+const ON_JUDGE_REJECT_OPTIONS: FlowOnJudgeReject[] = ["reprompt", "advance_with_literal", "block"];
 
 export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId }: FlowPropertiesProps) {
   const { t } = useTranslation();
@@ -220,6 +221,48 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 })}
               </span>
             </div>
+
+            {type === "aiQuestion" && (
+              <div className="flex flex-col gap-1">
+                <Label>
+                  {t("chatFlow.properties.onJudgeReject", {
+                    defaultValue: "When the judge rejects the answer",
+                  })}
+                </Label>
+                <Select
+                  value={data.onJudgeReject ?? "reprompt"}
+                  onValueChange={(value) =>
+                    update({
+                      // Persist "reprompt" as undefined so it stays
+                      // implicit in the export JSON — preserves the
+                      // pre-2026.2.31 file shape for flows that don't
+                      // opt into either of the other policies.
+                      onJudgeReject:
+                        value === "reprompt" ? undefined : (value as FlowOnJudgeReject),
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ON_JUDGE_REJECT_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {t(`chatFlow.properties.onJudgeRejectOptions.${option}`, {
+                          defaultValue: option,
+                        })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("chatFlow.properties.onJudgeRejectHint", {
+                    defaultValue:
+                      "Only applies when the agent's guardrailMethod is LLM_JUDGE. Default reprompts the user when the judge produced a substantive redirect.",
+                  })}
+                </span>
+              </div>
+            )}
           </>
         )}
 

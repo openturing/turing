@@ -2,9 +2,9 @@
   {
     "id": "EE_PROGRAMA_MATCH",
     "name": "Programa-Match — Educação Executiva",
-    "description": "Marina, consultora de carreira do Executive Education. Em 4 perguntas (nome, cargo atual, objetivo de 3 anos, área de interesse) entrega: tema visual da página adaptado à área, mapa de carreira em 4 nós, comparativo de 3 programas, pitch personalizado, deep link de compartilhamento e CTA de agendamento com captura de email/telefone do lead.",
+    "description": "Marina, consultora de carreira do Acme Edu. Em 4 perguntas (nome, cargo atual, objetivo de 3 anos, área de interesse) entrega: tema visual da página adaptado à área, mapa de carreira em 4 nós, comparativo de 3 programas, pitch personalizado, deep link de compartilhamento e CTA de agendamento com captura de email/telefone do lead.",
     "guardrailMethod": "LLM_JUDGE",
-    "triggerDescription": "Ativar SOMENTE quando o visitante demonstrar intenção EXPLÍCITA e CORRENTE de mapear o próprio próximo passo de carreira individual (B2C). Sinais válidos (qualquer um suficiente): 'quero um plano de carreira', 'monta um plano pra mim', 'o que estudar no Executive Education?', 'qual MBA pra mim?', 'quero crescer profissionalmente', 'quero trocar de área', 'estou pensando em fazer MBA/especialização', 'preciso me recolocar', 'quero virar CFO/CEO/diretor/gerente', 'quero subir de cargo', 'estou perdido na carreira', 'me ajuda a decidir', clique direto do chip '🎯 Plano de carreira pessoal'. Também ativar quando o visitante pergunta diretamente sobre um programa nomeado do EE ('MBA Executivo', 'Programa Avançado', 'CFO Track') no contexto de auto-desenvolvimento. NÃO ATIVAR para: (1) saudações genéricas isoladas ('oi', 'olá', 'bom dia', 'tudo bem', 'tudo certo'); (2) string única que parece nome próprio em resposta a 'qual seu nome?'; (3) menção a treinar EQUIPE/empresa/pessoas no plural ('treinar 15 pessoas', 'in-company', 'minha equipe', 'L&D', 'RH precisa') — esse caminho é o in-company-match; (4) pedido de explicação técnica de um CONCEITO ('o que é Real Options?', 'me explica valuation', 'como funciona M&A?') — esse caminho é o aula-relampago; (5) dúvidas administrativas (boleto, atestado, biblioteca, suporte). Em ambiguidade entre intenções, prefira NÃO disparar — o concierge do agente apresenta os 3 caminhos como chips e o user escolhe explicitamente.",
+    "triggerDescription": "Ativar SOMENTE quando o visitante demonstrar intenção EXPLÍCITA e CORRENTE de mapear o próprio próximo passo de carreira individual (B2C). Sinais válidos (qualquer um suficiente): 'quero um plano de carreira', 'monta um plano pra mim', 'o que estudar no Acme Edu?', 'qual MBA pra mim?', 'quero crescer profissionalmente', 'quero trocar de área', 'estou pensando em fazer MBA/especialização', 'preciso me recolocar', 'quero virar CFO/CEO/diretor/gerente', 'quero subir de cargo', 'estou perdido na carreira', 'me ajuda a decidir', clique direto do chip '🎯 Plano de carreira pessoal'. Também ativar quando o visitante pergunta diretamente sobre um programa nomeado do EE ('MBA Executivo', 'Programa Avançado', 'CFO Track') no contexto de auto-desenvolvimento. NÃO ATIVAR para: (1) saudações genéricas isoladas ('oi', 'olá', 'bom dia', 'tudo bem', 'tudo certo'); (2) string única que parece nome próprio em resposta a 'qual seu nome?'; (3) menção a treinar EQUIPE/empresa/pessoas no plural ('treinar 15 pessoas', 'in-company', 'minha equipe', 'L&D', 'RH precisa') — esse caminho é o in-company-match; (4) pedido de explicação técnica de um CONCEITO ('o que é Real Options?', 'me explica valuation', 'como funciona M&A?') — esse caminho é o aula-relampago; (5) dúvidas administrativas (boleto, atestado, biblioteca, suporte). Em ambiguidade entre intenções, prefira NÃO disparar — o concierge do agente apresenta os 3 caminhos como chips e o user escolhe explicitamente.",
     "triggerMode": "ALWAYS",
     "experimentKey": "programa-match-persona-2026q1",
     "variantLabel": "marina-consultora",
@@ -92,7 +92,22 @@
       },
       {
         "name": "lead_status",
-        "description": "Estado final do lead: email_sent | call_requested | thinking. Usado pelo dashboard de analytics + integração de CRM downstream.",
+        "description": "Estado final do lead: email_sent | call_requested | thinking | pdf_downloaded. Usado pelo dashboard de analytics + integração de CRM downstream.",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_url",
+        "description": "URL relativa do PDF da proposta gerado pelo Custom Tool `gerar_proposta_pdf` (formato: /api/v2/code-interpreter/{sessionId}/{filename}). Quando setado, o portal renderiza o botão '📄 Baixar Plano de Carreira' no ConsultorCTA.",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_filename",
+        "description": "Nome do arquivo PDF (ex: 'proposta-carreira-alexandre.pdf') gerado pelo Custom Tool. Usado como atributo `download` no anchor da UI pra forçar download em vez de open-in-browser.",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_hash",
+        "description": "MD5 hex (32 chars) dos slots que alimentam o PDF (name, cargo_atual, objetivo, area, area_label, final_pitch, stat_pitch, share_url, programas_match, career_path). Escrito pelo tool `gerar_proposta_pdf` após geração bem-sucedida; comparado em chamadas subsequentes pra short-circuitar o sandbox Python quando os inputs não mudaram. Falhas NÃO escrevem este slot — retry imediato sempre re-tenta. Slot interno (não rendered pela UI).",
         "type": "STRING"
       }
     ],
@@ -100,12 +115,12 @@
       {
         "id": "PERSONA_MARINA_EE",
         "name": "Marina — Consultora de Carreira EE",
-        "description": "Consultora de carreira do Executive Education. Tom executivo, acolhedor, direto. Tutela o visitante por 4 perguntas e devolve um plano concreto.",
-        "systemInstruction": "Você é a Marina, consultora de carreira do Executive Education. Fale SEMPRE em português brasileiro. Tom executivo e acolhedor — como um(a) parceiro(a) de carreira sênior, não vendedor(a). Frases curtas, objetivas. Trate o visitante pelo primeiro nome desde o segundo turno. Nunca prometa aprovação, desconto ou bolsa fora do que o flow dita. Nunca peça CPF, cartão ou senha. Nunca fale de concorrentes. Se o visitante divagar, traga de volta para a próxima pergunta com gentileza.",
+        "description": "Consultora de carreira do Acme Education. Tom executivo, acolhedor, direto. Tutela o visitante por 4 perguntas e devolve um plano concreto.",
+        "systemInstruction": "Você é a Marina, consultora de carreira do Acme Education. Fale SEMPRE em português brasileiro. Tom executivo e acolhedor — como um(a) parceiro(a) de carreira sênior, não vendedor(a). Frases curtas, objetivas. Trate o visitante pelo primeiro nome desde o segundo turno. Nunca prometa aprovação, desconto ou bolsa fora do que o flow dita. Nunca peça CPF, cartão ou senha. Nunca fale de concorrentes. Se o visitante divagar, traga de volta para a próxima pergunta com gentileza.",
         "tone": "EXECUTIVE",
         "verbosity": 3,
         "languageStyle": "NEUTRAL",
-        "mandatoryTerms": "Education|programa|carreira",
+        "mandatoryTerms": "Acme|programa|carreira",
         "forbiddenTerms": "talvez|impossível|não posso ajudar|não sei",
         "enabled": 1
       }
@@ -115,13 +130,22 @@
         {
           "id": "start-1",
           "type": "start",
-          "position": { "x": 40, "y": 360 },
-          "data": { "label": "INÍCIO", "type": "start" }
+          "position": {
+            "x": 40,
+            "y": 360
+          },
+          "data": {
+            "label": "INÍCIO",
+            "type": "start"
+          }
         },
         {
           "id": "persona-marina",
           "type": "persona",
-          "position": { "x": 200, "y": 360 },
+          "position": {
+            "x": 200,
+            "y": 360
+          },
           "data": {
             "label": "VOZ: Marina EE",
             "type": "persona",
@@ -131,18 +155,25 @@
         {
           "id": "ai-name",
           "type": "aiQuestion",
-          "position": { "x": 400, "y": 360 },
+          "position": {
+            "x": 400,
+            "y": 360
+          },
           "data": {
             "label": "PERGUNTAR NOME",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome (ex: 'Alexandre', 'Camila Souza', 'João Paulo', até apelidos como 'Xandão'). Antes da pergunta, abra com uma apresentação curta: 'Olá! Sou a Marina, consultora de carreira do Executive Education. Em 4 perguntas monto um plano com 2–3 programas pro seu próximo passo. Qual é o seu primeiro nome?' Tom acolhedor executivo.",
-            "outputVariable": "name"
+            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome (ex: 'Alexandre', 'Camila Souza', 'João Paulo', até apelidos como 'Xandão'). Antes da pergunta, abra com uma apresentação curta: 'Olá! Sou a Marina, consultora de carreira do Acme Education. Em 4 perguntas monto um plano com 2–3 programas pro seu próximo passo. Qual é o seu primeiro nome?' Tom acolhedor executivo.",
+            "outputVariable": "name",
+            "onJudgeReject": "advance_with_literal"
           }
         },
         {
           "id": "write-welcome",
           "type": "writeSlot",
-          "position": { "x": 510, "y": 360 },
+          "position": {
+            "x": 510,
+            "y": 360
+          },
           "data": {
             "label": "BANNER DE BOAS-VINDAS",
             "type": "writeSlot",
@@ -154,154 +185,727 @@
         {
           "id": "ai-cargo",
           "type": "aiQuestion",
-          "position": { "x": 620, "y": 360 },
+          "position": {
+            "x": 620,
+            "y": 360
+          },
           "data": {
             "label": "CARGO ATUAL",
             "type": "aiQuestion",
             "aiInstruction": "Pergunte para {{name}} sobre o MOMENTO PROFISSIONAL ATUAL — cargo + tempo no cargo, numa única pergunta aberta. Aceite QUALQUER resposta que descreva o trabalho atual: 'gerente sr numa fintech há 4 anos', 'CEO', 'desenvolvedor pleno', 'estou desempregado', 'sou empreendedora há 6 meses' — TODAS são respostas válidas. Capture a frase inteira como está. Antes da pergunta, abra com 'Prazer, {{name}}!'. Exemplo de fala completa: 'Prazer, {{name}}! Conta um pouco: qual é o seu cargo atual e há quanto tempo está nele?' Frase curta.",
-            "outputVariable": "cargo_atual"
+            "outputVariable": "cargo_atual",
+            "onJudgeReject": "advance_with_literal"
           }
         },
         {
           "id": "ai-objetivo",
           "type": "aiQuestion",
-          "position": { "x": 840, "y": 360 },
+          "position": {
+            "x": 840,
+            "y": 360
+          },
           "data": {
             "label": "OBJETIVO 3 ANOS",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte para {{name}} ONDE quer estar daqui a 3 ANOS. ACEITE LITERALMENTE QUALQUER resposta — sem julgar se é 'profissional o suficiente' ou alinhada com Executive Education.Capture a frase EXATA do usuário. Exemplos de respostas TODAS VÁLIDAS: 'virar CFO', 'abrir minha empresa', 'mudar para dados', 'jogador de futebol', 'youtuber', 'aposentar e viajar', 'ser fazendeiro', 'não sei ainda', 'só quero ganhar mais'. NUNCA rejeite. NUNCA peça pra 'focar em objetivo profissional'. Se o objetivo for não-corporativo (esporte/arte/lazer/pessoal), apenas capture e siga — a Marina vai adaptar o tom no próximo passo. Exemplo de fala: 'Anotado. Onde você quer estar daqui a 3 anos, {{name}}? Pode ser qualquer aspiração — carreira, projeto pessoal, mudança de vida.' Frase curta.",
-            "outputVariable": "objetivo"
+            "aiInstruction": "Pergunte para {{name}} ONDE quer estar daqui a 3 ANOS. ACEITE LITERALMENTE QUALQUER resposta — sem julgar se é 'profissional o suficiente' ou alinhada com o Acme. Capture a frase EXATA do usuário. Exemplos de respostas TODAS VÁLIDAS: 'virar CFO', 'abrir minha empresa', 'mudar para dados', 'jogador de futebol', 'youtuber', 'aposentar e viajar', 'ser fazendeiro', 'não sei ainda', 'só quero ganhar mais'. NUNCA rejeite. NUNCA peça pra 'focar em objetivo profissional'. Se o objetivo for não-corporativo (esporte/arte/lazer/pessoal), apenas capture e siga — a Marina vai adaptar o tom no próximo passo. Exemplo de fala: 'Anotado. Onde você quer estar daqui a 3 anos, {{name}}? Pode ser qualquer aspiração — carreira, projeto pessoal, mudança de vida.' Frase curta.",
+            "outputVariable": "objetivo",
+            "onJudgeReject": "advance_with_literal"
           }
         },
         {
           "id": "ai-area",
           "type": "aiQuestion",
-          "position": { "x": 1060, "y": 360 },
+          "position": {
+            "x": 1060,
+            "y": 360
+          },
           "data": {
             "label": "ÁREA DE INTERESSE",
             "type": "aiQuestion",
             "aiInstruction": "Pergunte em qual das 4 ÁREAS {{name}} quer aprofundar primeiro. Aceite como resposta válida APENAS um destes valores: 'Finanças & Investimentos', 'Liderança & Gestão', 'Saúde', 'Tecnologia & Dados' (também aceite variantes claras: 'finanças', 'lideranca', 'saude', 'tech', 'tecnologia'). Exemplo de fala: 'Última pergunta antes do plano, {{name}}: em qual dessas áreas você quer aprofundar primeiro? — 💰 Finanças & Investimentos — 👥 Liderança & Gestão — 🏥 Saúde — 💻 Tecnologia & Dados'. Use exatamente esses 4 nomes — viram chips clicáveis.",
-            "outputVariable": "area"
+            "outputVariable": "area",
+            "onJudgeReject": "advance_with_literal"
           }
         },
         {
           "id": "switch-area",
           "type": "switch",
-          "position": { "x": 1300, "y": 360 },
+          "position": {
+            "x": 1300,
+            "y": 360
+          },
           "data": {
             "label": "ÁREA",
             "type": "switch",
             "switchVariable": "area",
             "switchOptions": [
-              { "id": "opt-financas", "label": "Finanças & Investimentos" },
-              { "id": "opt-lideranca", "label": "Liderança & Gestão" },
-              { "id": "opt-saude", "label": "Saúde" },
-              { "id": "opt-tecnologia", "label": "Tecnologia & Dados" }
+              {
+                "id": "opt-financas",
+                "label": "Finanças & Investimentos"
+              },
+              {
+                "id": "opt-lideranca",
+                "label": "Liderança & Gestão"
+              },
+              {
+                "id": "opt-saude",
+                "label": "Saúde"
+              },
+              {
+                "id": "opt-tecnologia",
+                "label": "Tecnologia & Dados"
+              }
             ]
           }
         },
-
-        { "id": "slot-fin-area-label", "type": "slot", "position": { "x": 1520, "y": 40 },
-          "data": { "label": "area_label = Finanças", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Finanças & Investimentos", "overrideExistingValue": true } },
-        { "id": "slot-fin-color", "type": "slot", "position": { "x": 1740, "y": 40 },
-          "data": { "label": "color = navy-financas", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "navy-financas", "overrideExistingValue": true } },
-        { "id": "write-fin-career", "type": "writeSlot", "position": { "x": 1960, "y": 40 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Especialização em Valuation\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo — Trilha Finanças\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-fin-programas", "type": "writeSlot", "position": { "x": 2180, "y": 40 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Especialização em Valuation\",\"duration\":\"6 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 18.900\",\"tag\":\"Mais curto\",\"why\":\"Base sólida em fluxo de caixa, múltiplos e DCF. Bom ponto de entrada para a trilha financeira.\"},{\"name\":\"MBA Executivo — Trilha Finanças\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 76.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Caminho mais direto para o C-level financeiro. Inclui simulações de board e mentoria com CFOs.\"},{\"name\":\"Advanced Finance Bootcamp\",\"duration\":\"3 meses\",\"format\":\"Imersão presencial\",\"priceFrom\":\"R$ 24.000\",\"tag\":\"Mais intensivo\",\"why\":\"Intensivo técnico — ideal se você precisa acelerar tração quantitativa agora.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-fin-cta", "type": "slot", "position": { "x": 2300, "y": 40 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-fin-stat", "type": "slot", "position": { "x": 2420, "y": 40 },
-          "data": { "label": "stat_pitch (Finanças)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "78% dos alunos da trilha de Finanças de Executive Education assumiram cargos de liderança financeira em até 24 meses após o programa.", "overrideExistingValue": true } },
-        { "id": "write-fin-pitch", "type": "writeSlot", "position": { "x": 2540, "y": 40 },
-          "data": { "label": "final_pitch (Finanças)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, no seu perfil de {{cargo_atual}} a trilha de Finanças & Investimentos é o caminho mais direto para chegar a \"{{objetivo}}\". Veja os 3 programas selecionados:", "overrideExistingValue": true } },
-        { "id": "write-fin-share", "type": "writeSlot", "position": { "x": 2660, "y": 40 },
-          "data": { "label": "share_url (Finanças)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=financas&objetivo={{objetivo}}", "overrideExistingValue": true } },
-        { "id": "ai-confirma-financas", "type": "aiQuestion", "position": { "x": 2780, "y": 40 },
-          "data": { "label": "FECHAMENTO FINANÇAS", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Finanças & Investimentos {{objetivo}}'. A tool já ESCREVE os 3 programas no slot programas_match — os cards aparecem AUTOMATICAMENTE em 'Programas recomendados pra você' no portal. NÃO repita os nomes/preços/datas no chat (os cards mostram). PASSO 2 — Componha UMA mensagem CURTA de 1-2 frases. Substitua NOME pelo slot name, CARGO por cargo_atual, OBJETIVO por objetivo. CASO A (objetivo corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas do Executive Education — veja os cards ao lado. Como prefere prosseguir?' CASO B (objetivo não-corporativo: esporte/arte/pessoal): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Executive Education. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha do usuário em cta_choice — aceite 'email', 'consultor' ou 'depois'/'pensar'.",
+        {
+          "id": "slot-fin-area-label",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 40
+          },
+          "data": {
+            "label": "area_label = Finanças",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Finanças & Investimentos",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-color",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 40
+          },
+          "data": {
+            "label": "color = navy-financas",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "navy-financas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-career",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 40
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Especialização em Valuation\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo — Trilha Finanças\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-programas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 40
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Especialização em Valuation\",\"duration\":\"6 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 18.900\",\"tag\":\"Mais curto\",\"why\":\"Base sólida em fluxo de caixa, múltiplos e DCF. Bom ponto de entrada para a trilha financeira.\"},{\"name\":\"MBA Executivo — Trilha Finanças\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 76.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Caminho mais direto para o C-level financeiro. Inclui simulações de board e mentoria com CFOs.\"},{\"name\":\"Advanced Finance Bootcamp\",\"duration\":\"3 meses\",\"format\":\"Imersão presencial\",\"priceFrom\":\"R$ 24.000\",\"tag\":\"Mais intensivo\",\"why\":\"Intensivo técnico — ideal se você precisa acelerar tração quantitativa agora.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-cta",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 40
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-stat",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 40
+          },
+          "data": {
+            "label": "stat_pitch (Finanças)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "78% dos alunos da trilha de Finanças do Acme assumiram cargos de liderança financeira em até 24 meses após o programa.",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-pitch",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 40
+          },
+          "data": {
+            "label": "final_pitch (Finanças)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, no seu perfil de {{cargo_atual}} a trilha de Finanças & Investimentos é o caminho mais direto para chegar a \"{{objetivo}}\". Veja os 3 programas selecionados:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-share",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 40
+          },
+          "data": {
+            "label": "share_url (Finanças)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=financas&objetivo={{objetivo}}",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-financas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 40
+          },
+          "data": {
+            "label": "FECHAMENTO FINANÇAS",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Finanças & Investimentos {{objetivo}}'. A tool já ESCREVE os 3 programas no slot programas_match — os cards aparecem AUTOMATICAMENTE em 'Programas recomendados pra você' no portal. NÃO repita os nomes/preços/datas no chat (os cards mostram). PASSO 2 — Componha UMA mensagem CURTA de 1-2 frases. Substitua NOME pelo slot name, CARGO por cargo_atual, OBJETIVO por objetivo. CASO A (objetivo corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas do Acme Edu — veja os cards ao lado. Como prefere prosseguir?' CASO B (objetivo não-corporativo: esporte/arte/pessoal): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Acme Edu. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha do usuário em cta_choice — aceite 'email', 'consultor' ou 'depois'/'pensar'.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Receber por email", "📅 Agendar consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-lid-area-label", "type": "slot", "position": { "x": 1520, "y": 240 },
-          "data": { "label": "area_label = Liderança", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Liderança & Gestão", "overrideExistingValue": true } },
-        { "id": "slot-lid-color", "type": "slot", "position": { "x": 1740, "y": 240 },
-          "data": { "label": "color = graphite-lideranca", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "graphite-lideranca", "overrideExistingValue": true } },
-        { "id": "write-lid-career", "type": "writeSlot", "position": { "x": 1960, "y": 240 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Liderança de Alto Impacto\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-lid-programas", "type": "writeSlot", "position": { "x": 2180, "y": 240 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Liderança de Alto Impacto\",\"duration\":\"4 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 22.000\",\"tag\":\"Mais curto\",\"why\":\"Ferramentas de gestão de pessoas, feedback e times de alta performance.\"},{\"name\":\"MBA Executivo\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 78.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão integrada de negócio + módulo internacional. Caminho consagrado para Diretoria.\"},{\"name\":\"Board Practice\",\"duration\":\"6 meses\",\"format\":\"Presencial\",\"priceFrom\":\"R$ 36.000\",\"tag\":\"Mais sênior\",\"why\":\"Para quem já vai entrar em conselhos — governança, ESG e relação com acionistas.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-lid-cta", "type": "slot", "position": { "x": 2300, "y": 240 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-lid-stat", "type": "slot", "position": { "x": 2420, "y": 240 },
-          "data": { "label": "stat_pitch (Liderança)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "9 em cada 10 alunos do MBA Executivo de Executive Education relatam promoção ou mudança de cargo no prazo de 18 meses.", "overrideExistingValue": true } },
-        { "id": "write-lid-pitch", "type": "writeSlot", "position": { "x": 2540, "y": 240 },
-          "data": { "label": "final_pitch (Liderança)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, levando seu perfil de {{cargo_atual}} para \"{{objetivo}}\" passa por gestão de pessoas + estratégia. A trilha de Liderança & Gestão foi desenhada exatamente pra essa virada:", "overrideExistingValue": true } },
-        { "id": "write-lid-share", "type": "writeSlot", "position": { "x": 2660, "y": 240 },
-          "data": { "label": "share_url (Liderança)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=lideranca&objetivo={{objetivo}}", "overrideExistingValue": true } },
-        { "id": "ai-confirma-lideranca", "type": "aiQuestion", "position": { "x": 2780, "y": 240 },
-          "data": { "label": "FECHAMENTO LIDERANÇA", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Liderança & Gestão {{objetivo}}'. A tool escreve os programas no slot programas_match — os cards aparecem em 'Programas recomendados pra você' automaticamente. NÃO repita nomes/preços no chat (os cards mostram). PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas de Liderança & Gestão — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Executive Education. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha do usuário em cta_choice.",
+            "inlineOptions": [
+              "📩 Receber por email",
+              "📅 Agendar consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-lid-area-label",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 240
+          },
+          "data": {
+            "label": "area_label = Liderança",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Liderança & Gestão",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-color",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 240
+          },
+          "data": {
+            "label": "color = graphite-lideranca",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "graphite-lideranca",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-career",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 240
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Liderança de Alto Impacto\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-programas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 240
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Liderança de Alto Impacto\",\"duration\":\"4 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 22.000\",\"tag\":\"Mais curto\",\"why\":\"Ferramentas de gestão de pessoas, feedback e times de alta performance.\"},{\"name\":\"MBA Executivo\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 78.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão integrada de negócio + módulo internacional. Caminho consagrado para Diretoria.\"},{\"name\":\"Board Practice\",\"duration\":\"6 meses\",\"format\":\"Presencial\",\"priceFrom\":\"R$ 36.000\",\"tag\":\"Mais sênior\",\"why\":\"Para quem já vai entrar em conselhos — governança, ESG e relação com acionistas.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-cta",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 240
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-stat",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 240
+          },
+          "data": {
+            "label": "stat_pitch (Liderança)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "9 em cada 10 alunos do MBA Executivo do Acme relatam promoção ou mudança de cargo no prazo de 18 meses.",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-pitch",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 240
+          },
+          "data": {
+            "label": "final_pitch (Liderança)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, levando seu perfil de {{cargo_atual}} para \"{{objetivo}}\" passa por gestão de pessoas + estratégia. A trilha de Liderança & Gestão foi desenhada exatamente pra essa virada:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-share",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 240
+          },
+          "data": {
+            "label": "share_url (Liderança)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=lideranca&objetivo={{objetivo}}",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-lideranca",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 240
+          },
+          "data": {
+            "label": "FECHAMENTO LIDERANÇA",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Liderança & Gestão {{objetivo}}'. A tool escreve os programas no slot programas_match — os cards aparecem em 'Programas recomendados pra você' automaticamente. NÃO repita nomes/preços no chat (os cards mostram). PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas de Liderança & Gestão — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Acme Edu. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha do usuário em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Receber por email", "📅 Agendar consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-sau-area-label", "type": "slot", "position": { "x": 1520, "y": 440 },
-          "data": { "label": "area_label = Saúde", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Saúde", "overrideExistingValue": true } },
-        { "id": "slot-sau-color", "type": "slot", "position": { "x": 1740, "y": 440 },
-          "data": { "label": "color = green-saude", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "green-saude", "overrideExistingValue": true } },
-        { "id": "write-sau-career", "type": "writeSlot", "position": { "x": 1960, "y": 440 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Gestão Hospitalar\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA em Saúde\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-sau-programas", "type": "writeSlot", "position": { "x": 2180, "y": 440 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Gestão Hospitalar\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 21.500\",\"tag\":\"Mais curto\",\"why\":\"Operação, custos e qualidade em hospitais e clínicas. Aplicação imediata na rotina.\"},{\"name\":\"MBA em Saúde\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 68.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão sistêmica do setor — operadoras, prestadores, regulação e inovação clínica.\"},{\"name\":\"Inovação em Saúde\",\"duration\":\"5 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 19.000\",\"tag\":\"Mais inovador\",\"why\":\"Healthtechs, IA clínica e novos modelos de cuidado. Ideal para perfil empreendedor.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-sau-cta", "type": "slot", "position": { "x": 2300, "y": 440 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-sau-stat", "type": "slot", "position": { "x": 2420, "y": 440 },
-          "data": { "label": "stat_pitch (Saúde)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "Setor de saúde no Brasil crescerá 65% até 2030. Gestores com formação executiva específica capturam +40% do salário médio.", "overrideExistingValue": true } },
-        { "id": "write-sau-pitch", "type": "writeSlot", "position": { "x": 2540, "y": 440 },
-          "data": { "label": "final_pitch (Saúde)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, com seu contexto de {{cargo_atual}}, a área de Saúde combina operação clínica + ferramentas de gestão executiva. Pra \"{{objetivo}}\", as 3 trilhas mais relevantes:", "overrideExistingValue": true } },
-        { "id": "write-sau-share", "type": "writeSlot", "position": { "x": 2660, "y": 440 },
-          "data": { "label": "share_url (Saúde)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=saude&objetivo={{objetivo}}", "overrideExistingValue": true } },
-        { "id": "ai-confirma-saude", "type": "aiQuestion", "position": { "x": 2780, "y": 440 },
-          "data": { "label": "FECHAMENTO SAÚDE", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Saúde gestão hospitalar {{objetivo}}'. A tool escreve no slot programas_match e os cards aparecem em 'Programas recomendados pra você'. NÃO repita nomes/preços no chat. PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas da área de Saúde — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Executive Education. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha em cta_choice.",
+            "inlineOptions": [
+              "📩 Receber por email",
+              "📅 Agendar consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-sau-area-label",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 440
+          },
+          "data": {
+            "label": "area_label = Saúde",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Saúde",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-color",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 440
+          },
+          "data": {
+            "label": "color = green-saude",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "green-saude",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-career",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 440
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Gestão Hospitalar\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA em Saúde\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-programas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 440
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Gestão Hospitalar\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 21.500\",\"tag\":\"Mais curto\",\"why\":\"Operação, custos e qualidade em hospitais e clínicas. Aplicação imediata na rotina.\"},{\"name\":\"MBA em Saúde\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 68.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão sistêmica do setor — operadoras, prestadores, regulação e inovação clínica.\"},{\"name\":\"Inovação em Saúde\",\"duration\":\"5 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 19.000\",\"tag\":\"Mais inovador\",\"why\":\"Healthtechs, IA clínica e novos modelos de cuidado. Ideal para perfil empreendedor.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-cta",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 440
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-stat",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 440
+          },
+          "data": {
+            "label": "stat_pitch (Saúde)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "Setor de saúde no Brasil crescerá 65% até 2030. Gestores com formação executiva específica capturam +40% do salário médio.",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-pitch",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 440
+          },
+          "data": {
+            "label": "final_pitch (Saúde)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, com seu contexto de {{cargo_atual}}, a área de Saúde combina operação clínica + ferramentas de gestão executiva. Pra \"{{objetivo}}\", as 3 trilhas mais relevantes:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-share",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 440
+          },
+          "data": {
+            "label": "share_url (Saúde)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=saude&objetivo={{objetivo}}",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-saude",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 440
+          },
+          "data": {
+            "label": "FECHAMENTO SAÚDE",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Saúde gestão hospitalar {{objetivo}}'. A tool escreve no slot programas_match e os cards aparecem em 'Programas recomendados pra você'. NÃO repita nomes/preços no chat. PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas da área de Saúde — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Acme Edu. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Receber por email", "📅 Agendar consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-tec-area-label", "type": "slot", "position": { "x": 1520, "y": 640 },
-          "data": { "label": "area_label = Tecnologia", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Tecnologia & Dados", "overrideExistingValue": true } },
-        { "id": "slot-tec-color", "type": "slot", "position": { "x": 1740, "y": 640 },
-          "data": { "label": "color = violet-tech", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "violet-tech", "overrideExistingValue": true } },
-        { "id": "write-tec-career", "type": "writeSlot", "position": { "x": 1960, "y": 640 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"IA para Negócios\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"Data Science Executivo\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-tec-programas", "type": "writeSlot", "position": { "x": 2180, "y": 640 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"IA para Negócios\",\"duration\":\"3 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 14.500\",\"tag\":\"Mais curto\",\"why\":\"Casos práticos de IA generativa aplicada — sem profundidade técnica. Bom para gestores.\"},{\"name\":\"Data Science Executivo\",\"duration\":\"10 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 42.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Decisão orientada por dados em escala. Modelos preditivos, dashboards e governança de dados.\"},{\"name\":\"Transformação Digital\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 28.000\",\"tag\":\"Mais estratégico\",\"why\":\"Para quem precisa liderar a transformação como diretor(a) — foco em modelo de negócio e cultura.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-tec-cta", "type": "slot", "position": { "x": 2300, "y": 640 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-tec-stat", "type": "slot", "position": { "x": 2420, "y": 640 },
-          "data": { "label": "stat_pitch (Tech)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "85% das vagas C-level em tecnologia exigem conhecimento de IA + dados — gap que o Executive Education fecha em 6-12 meses.", "overrideExistingValue": true } },
-        { "id": "write-tec-pitch", "type": "writeSlot", "position": { "x": 2540, "y": 640 },
-          "data": { "label": "final_pitch (Tech)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, no perfil de {{cargo_atual}} a virada para \"{{objetivo}}\" passa por fluência em IA + decisão data-driven. As 3 trilhas pra essa direção:", "overrideExistingValue": true } },
-        { "id": "write-tec-share", "type": "writeSlot", "position": { "x": 2660, "y": 640 },
-          "data": { "label": "share_url (Tech)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=tecnologia&objetivo={{objetivo}}", "overrideExistingValue": true } },
-        { "id": "ai-confirma-tech", "type": "aiQuestion", "position": { "x": 2780, "y": 640 },
-          "data": { "label": "FECHAMENTO TECNOLOGIA", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Tecnologia & Dados {{objetivo}}'. A tool escreve no slot programas_match e os cards aparecem em 'Programas recomendados pra você'. NÃO repita nomes/preços no chat. PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas de Tecnologia & Dados — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Executive Education. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha em cta_choice.",
+            "inlineOptions": [
+              "📩 Receber por email",
+              "📅 Agendar consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-tec-area-label",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 640
+          },
+          "data": {
+            "label": "area_label = Tecnologia",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Tecnologia & Dados",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-color",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 640
+          },
+          "data": {
+            "label": "color = violet-tech",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "violet-tech",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-career",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 640
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"IA para Negócios\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"Data Science Executivo\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-programas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 640
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"IA para Negócios\",\"duration\":\"3 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 14.500\",\"tag\":\"Mais curto\",\"why\":\"Casos práticos de IA generativa aplicada — sem profundidade técnica. Bom para gestores.\"},{\"name\":\"Data Science Executivo\",\"duration\":\"10 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 42.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Decisão orientada por dados em escala. Modelos preditivos, dashboards e governança de dados.\"},{\"name\":\"Transformação Digital\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 28.000\",\"tag\":\"Mais estratégico\",\"why\":\"Para quem precisa liderar a transformação como diretor(a) — foco em modelo de negócio e cultura.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-cta",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 640
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-stat",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 640
+          },
+          "data": {
+            "label": "stat_pitch (Tech)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "85% das vagas C-level em tecnologia exigem conhecimento de IA + dados — gap que o Acme Edu fecha em 6-12 meses.",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-pitch",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 640
+          },
+          "data": {
+            "label": "final_pitch (Tech)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, no perfil de {{cargo_atual}} a virada para \"{{objetivo}}\" passa por fluência em IA + decisão data-driven. As 3 trilhas pra essa direção:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-share",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 640
+          },
+          "data": {
+            "label": "share_url (Tech)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=tecnologia&objetivo={{objetivo}}",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-tech",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 640
+          },
+          "data": {
+            "label": "FECHAMENTO TECNOLOGIA",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Tecnologia & Dados {{objetivo}}'. A tool escreve no slot programas_match e os cards aparecem em 'Programas recomendados pra você'. NÃO repita nomes/preços no chat. PASSO 2 — UMA mensagem CURTA. CASO A (corporativo): 'Pronto, NOME! Com seu contexto (CARGO) e o objetivo de OBJETIVO, selecionei 3 programas de Tecnologia & Dados — veja os cards ao lado. Como prefere prosseguir?' CASO B (não-corporativo): 'NOME, entendo que seu foco principal é OBJETIVO — caminho que não passa diretamente pelo Acme Edu. Mesmo assim, os 3 programas ao lado podem complementar essa jornada. Como prefere prosseguir?' NUNCA escreva 'vou montar', 'aguarde', 'um momento'. Capture a escolha em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Receber por email", "📅 Agendar consultor", "🕒 Vou pensar"] } },
-
-        { "id": "switch-cta", "type": "switch", "position": { "x": 3000, "y": 360 },
+            "inlineOptions": [
+              "📩 Receber por email",
+              "📅 Agendar consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-cta",
+          "type": "switch",
+          "position": {
+            "x": 3000,
+            "y": 360
+          },
           "data": {
             "label": "CTA CHOICE",
             "type": "switch",
             "switchVariable": "cta_choice",
             "switchOptions": [
-              { "id": "opt-cta-email", "label": "📩 Receber por email" },
-              { "id": "opt-cta-consultor", "label": "📅 Agendar consultor" },
-              { "id": "opt-cta-later", "label": "🕒 Vou pensar" }
+              {
+                "id": "opt-cta-email",
+                "label": "📩 Receber por email"
+              },
+              {
+                "id": "opt-cta-consultor",
+                "label": "📅 Agendar consultor"
+              },
+              {
+                "id": "opt-cta-pdf",
+                "label": "📄 Baixar plano em PDF"
+              },
+              {
+                "id": "opt-cta-later",
+                "label": "🕒 Vou pensar"
+              }
             ]
           }
         },
-        { "id": "form-lead-email", "type": "formCapture", "position": { "x": 3220, "y": 200 },
+        {
+          "id": "ai-deliver-pdf-marina",
+          "type": "aiQuestion",
+          "position": {
+            "x": 3220,
+            "y": 720
+          },
+          "data": {
+            "label": "GERAR PDF (Marina)",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 (OBRIGATÓRIO) — Chame a tool `gerar_proposta_pdf` SEM nenhum argumento (ela lê tudo dos slots da conversa: name, cargo_atual, objetivo, area_label, programas_match, career_path, final_pitch, stat_pitch, share_url). A tool roda Python (reportlab) no sandbox do Turing, gera um PDF de 4 páginas com cores da área escolhida + timeline de carreira + QR code do share_url, e escreve `proposta_pdf_url` e `proposta_pdf_filename` nos slots. PASSO 2 — Diga UMA frase curta para {{name}}: 'Pronto, {{name}}! Acabei de gerar o seu Plano de Carreira em PDF — clica no botão verde abaixo dos programas para baixar.' NÃO tente repetir o conteúdo do PDF no chat (já está nos cards). Capture qualquer resposta seguinte do visitante em cta_choice (pode ser 'email' ou 'consultor' ou 'depois').",
+            "outputVariable": "cta_choice",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "write-lead-pdf-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 720
+          },
+          "data": {
+            "label": "lead_status = pdf_downloaded",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "pdf_downloaded",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-lead-email",
+          "type": "formCapture",
+          "position": {
+            "x": 3220,
+            "y": 200
+          },
           "data": {
             "label": "CAPTURA DE EMAIL",
             "type": "formCapture",
@@ -311,9 +915,28 @@
             "overrideExistingValue": true
           }
         },
-        { "id": "write-lead-email-status", "type": "writeSlot", "position": { "x": 3440, "y": 200 },
-          "data": { "label": "lead_status = email_sent", "type": "writeSlot", "slotName": "lead_status", "slotValue": "email_sent", "overrideExistingValue": true } },
-        { "id": "form-lead-phone", "type": "formCapture", "position": { "x": 3220, "y": 360 },
+        {
+          "id": "write-lead-email-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 200
+          },
+          "data": {
+            "label": "lead_status = email_sent",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "email_sent",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-lead-phone",
+          "type": "formCapture",
+          "position": {
+            "x": 3220,
+            "y": 360
+          },
           "data": {
             "label": "CAPTURA DE TELEFONE",
             "type": "formCapture",
@@ -323,284 +946,1425 @@
             "overrideExistingValue": true
           }
         },
-        { "id": "write-lead-phone-status", "type": "writeSlot", "position": { "x": 3440, "y": 360 },
-          "data": { "label": "lead_status = call_requested", "type": "writeSlot", "slotName": "lead_status", "slotValue": "call_requested", "overrideExistingValue": true } },
-        { "id": "slot-lead-later-status", "type": "slot", "position": { "x": 3440, "y": 520 },
-          "data": { "label": "lead_status = thinking", "type": "slot", "slotName": "lead_status", "slotOperation": "SET", "slotValue": "thinking", "overrideExistingValue": true } },
-        { "id": "end-shared", "type": "end", "position": { "x": 3680, "y": 360 },
-          "data": { "label": "FIM", "type": "end" } }
+        {
+          "id": "write-lead-phone-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 360
+          },
+          "data": {
+            "label": "lead_status = call_requested",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "call_requested",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lead-later-status",
+          "type": "slot",
+          "position": {
+            "x": 3440,
+            "y": 520
+          },
+          "data": {
+            "label": "lead_status = thinking",
+            "type": "slot",
+            "slotName": "lead_status",
+            "slotOperation": "SET",
+            "slotValue": "thinking",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "end-shared",
+          "type": "end",
+          "position": {
+            "x": 3680,
+            "y": 360
+          },
+          "data": {
+            "label": "FIM",
+            "type": "end"
+          }
+        }
       ],
       "edges": [
-        { "id": "e1", "source": "start-1", "target": "persona-marina", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e2", "source": "persona-marina", "target": "ai-name", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e3", "source": "ai-name", "target": "write-welcome", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e3b", "source": "write-welcome", "target": "ai-cargo", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e4", "source": "ai-cargo", "target": "ai-objetivo", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e5", "source": "ai-objetivo", "target": "ai-area", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e6", "source": "ai-area", "target": "switch-area", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-fin-1", "source": "switch-area", "target": "slot-fin-area-label", "sourceHandle": "opt-financas", "targetHandle": null, "label": "Finanças" },
-        { "id": "e-fin-2", "source": "slot-fin-area-label", "target": "slot-fin-color", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-3", "source": "slot-fin-color", "target": "write-fin-career", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-4", "source": "write-fin-career", "target": "write-fin-programas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-5", "source": "write-fin-programas", "target": "slot-fin-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-6", "source": "slot-fin-cta", "target": "slot-fin-stat", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-7", "source": "slot-fin-stat", "target": "write-fin-pitch", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-8", "source": "write-fin-pitch", "target": "write-fin-share", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-9", "source": "write-fin-share", "target": "ai-confirma-financas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-fin-10", "source": "ai-confirma-financas", "target": "switch-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-lid-1", "source": "switch-area", "target": "slot-lid-area-label", "sourceHandle": "opt-lideranca", "targetHandle": null, "label": "Liderança" },
-        { "id": "e-lid-2", "source": "slot-lid-area-label", "target": "slot-lid-color", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-3", "source": "slot-lid-color", "target": "write-lid-career", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-4", "source": "write-lid-career", "target": "write-lid-programas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-5", "source": "write-lid-programas", "target": "slot-lid-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-6", "source": "slot-lid-cta", "target": "slot-lid-stat", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-7", "source": "slot-lid-stat", "target": "write-lid-pitch", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-8", "source": "write-lid-pitch", "target": "write-lid-share", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-9", "source": "write-lid-share", "target": "ai-confirma-lideranca", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-lid-10", "source": "ai-confirma-lideranca", "target": "switch-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-sau-1", "source": "switch-area", "target": "slot-sau-area-label", "sourceHandle": "opt-saude", "targetHandle": null, "label": "Saúde" },
-        { "id": "e-sau-2", "source": "slot-sau-area-label", "target": "slot-sau-color", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-3", "source": "slot-sau-color", "target": "write-sau-career", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-4", "source": "write-sau-career", "target": "write-sau-programas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-5", "source": "write-sau-programas", "target": "slot-sau-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-6", "source": "slot-sau-cta", "target": "slot-sau-stat", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-7", "source": "slot-sau-stat", "target": "write-sau-pitch", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-8", "source": "write-sau-pitch", "target": "write-sau-share", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-9", "source": "write-sau-share", "target": "ai-confirma-saude", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-sau-10", "source": "ai-confirma-saude", "target": "switch-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-tec-1", "source": "switch-area", "target": "slot-tec-area-label", "sourceHandle": "opt-tecnologia", "targetHandle": null, "label": "Tecnologia" },
-        { "id": "e-tec-2", "source": "slot-tec-area-label", "target": "slot-tec-color", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-3", "source": "slot-tec-color", "target": "write-tec-career", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-4", "source": "write-tec-career", "target": "write-tec-programas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-5", "source": "write-tec-programas", "target": "slot-tec-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-6", "source": "slot-tec-cta", "target": "slot-tec-stat", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-7", "source": "slot-tec-stat", "target": "write-tec-pitch", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-8", "source": "write-tec-pitch", "target": "write-tec-share", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-9", "source": "write-tec-share", "target": "ai-confirma-tech", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-tec-10", "source": "ai-confirma-tech", "target": "switch-cta", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-cta-email-1", "source": "switch-cta", "target": "form-lead-email", "sourceHandle": "opt-cta-email", "targetHandle": null, "label": "Email" },
-        { "id": "e-cta-email-2", "source": "form-lead-email", "target": "write-lead-email-status", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-cta-email-3", "source": "write-lead-email-status", "target": "end-shared", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-cta-phone-1", "source": "switch-cta", "target": "form-lead-phone", "sourceHandle": "opt-cta-consultor", "targetHandle": null, "label": "Consultor" },
-        { "id": "e-cta-phone-2", "source": "form-lead-phone", "target": "write-lead-phone-status", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "e-cta-phone-3", "source": "write-lead-phone-status", "target": "end-shared", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "e-cta-later-1", "source": "switch-cta", "target": "slot-lead-later-status", "sourceHandle": "opt-cta-later", "targetHandle": null, "label": "Pensar" },
-        { "id": "e-cta-later-2", "source": "slot-lead-later-status", "target": "end-shared", "sourceHandle": null, "targetHandle": null, "label": null }
+        {
+          "id": "e1",
+          "source": "start-1",
+          "target": "persona-marina",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e2",
+          "source": "persona-marina",
+          "target": "ai-name",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3",
+          "source": "ai-name",
+          "target": "write-welcome",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e3b",
+          "source": "write-welcome",
+          "target": "ai-cargo",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e4",
+          "source": "ai-cargo",
+          "target": "ai-objetivo",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e5",
+          "source": "ai-objetivo",
+          "target": "ai-area",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e6",
+          "source": "ai-area",
+          "target": "switch-area",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-1",
+          "source": "switch-area",
+          "target": "slot-fin-area-label",
+          "sourceHandle": "opt-financas",
+          "targetHandle": null,
+          "label": "Finanças"
+        },
+        {
+          "id": "e-fin-2",
+          "source": "slot-fin-area-label",
+          "target": "slot-fin-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-3",
+          "source": "slot-fin-color",
+          "target": "write-fin-career",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-4",
+          "source": "write-fin-career",
+          "target": "write-fin-programas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-5",
+          "source": "write-fin-programas",
+          "target": "slot-fin-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-6",
+          "source": "slot-fin-cta",
+          "target": "slot-fin-stat",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-7",
+          "source": "slot-fin-stat",
+          "target": "write-fin-pitch",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-8",
+          "source": "write-fin-pitch",
+          "target": "write-fin-share",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-9",
+          "source": "write-fin-share",
+          "target": "ai-confirma-financas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-fin-10",
+          "source": "ai-confirma-financas",
+          "target": "switch-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-1",
+          "source": "switch-area",
+          "target": "slot-lid-area-label",
+          "sourceHandle": "opt-lideranca",
+          "targetHandle": null,
+          "label": "Liderança"
+        },
+        {
+          "id": "e-lid-2",
+          "source": "slot-lid-area-label",
+          "target": "slot-lid-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-3",
+          "source": "slot-lid-color",
+          "target": "write-lid-career",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-4",
+          "source": "write-lid-career",
+          "target": "write-lid-programas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-5",
+          "source": "write-lid-programas",
+          "target": "slot-lid-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-6",
+          "source": "slot-lid-cta",
+          "target": "slot-lid-stat",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-7",
+          "source": "slot-lid-stat",
+          "target": "write-lid-pitch",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-8",
+          "source": "write-lid-pitch",
+          "target": "write-lid-share",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-9",
+          "source": "write-lid-share",
+          "target": "ai-confirma-lideranca",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-lid-10",
+          "source": "ai-confirma-lideranca",
+          "target": "switch-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-1",
+          "source": "switch-area",
+          "target": "slot-sau-area-label",
+          "sourceHandle": "opt-saude",
+          "targetHandle": null,
+          "label": "Saúde"
+        },
+        {
+          "id": "e-sau-2",
+          "source": "slot-sau-area-label",
+          "target": "slot-sau-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-3",
+          "source": "slot-sau-color",
+          "target": "write-sau-career",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-4",
+          "source": "write-sau-career",
+          "target": "write-sau-programas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-5",
+          "source": "write-sau-programas",
+          "target": "slot-sau-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-6",
+          "source": "slot-sau-cta",
+          "target": "slot-sau-stat",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-7",
+          "source": "slot-sau-stat",
+          "target": "write-sau-pitch",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-8",
+          "source": "write-sau-pitch",
+          "target": "write-sau-share",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-9",
+          "source": "write-sau-share",
+          "target": "ai-confirma-saude",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-sau-10",
+          "source": "ai-confirma-saude",
+          "target": "switch-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-1",
+          "source": "switch-area",
+          "target": "slot-tec-area-label",
+          "sourceHandle": "opt-tecnologia",
+          "targetHandle": null,
+          "label": "Tecnologia"
+        },
+        {
+          "id": "e-tec-2",
+          "source": "slot-tec-area-label",
+          "target": "slot-tec-color",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-3",
+          "source": "slot-tec-color",
+          "target": "write-tec-career",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-4",
+          "source": "write-tec-career",
+          "target": "write-tec-programas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-5",
+          "source": "write-tec-programas",
+          "target": "slot-tec-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-6",
+          "source": "slot-tec-cta",
+          "target": "slot-tec-stat",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-7",
+          "source": "slot-tec-stat",
+          "target": "write-tec-pitch",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-8",
+          "source": "write-tec-pitch",
+          "target": "write-tec-share",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-9",
+          "source": "write-tec-share",
+          "target": "ai-confirma-tech",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-tec-10",
+          "source": "ai-confirma-tech",
+          "target": "switch-cta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-email-1",
+          "source": "switch-cta",
+          "target": "form-lead-email",
+          "sourceHandle": "opt-cta-email",
+          "targetHandle": null,
+          "label": "Email"
+        },
+        {
+          "id": "e-cta-email-2",
+          "source": "form-lead-email",
+          "target": "write-lead-email-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-email-3",
+          "source": "write-lead-email-status",
+          "target": "end-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-phone-1",
+          "source": "switch-cta",
+          "target": "form-lead-phone",
+          "sourceHandle": "opt-cta-consultor",
+          "targetHandle": null,
+          "label": "Consultor"
+        },
+        {
+          "id": "e-cta-phone-2",
+          "source": "form-lead-phone",
+          "target": "write-lead-phone-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-phone-3",
+          "source": "write-lead-phone-status",
+          "target": "end-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-later-1",
+          "source": "switch-cta",
+          "target": "slot-lead-later-status",
+          "sourceHandle": "opt-cta-later",
+          "targetHandle": null,
+          "label": "Pensar"
+        },
+        {
+          "id": "e-cta-later-2",
+          "source": "slot-lead-later-status",
+          "target": "end-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-pdf-1",
+          "source": "switch-cta",
+          "target": "ai-deliver-pdf-marina",
+          "sourceHandle": "opt-cta-pdf",
+          "targetHandle": null,
+          "label": "PDF"
+        },
+        {
+          "id": "e-cta-pdf-2",
+          "source": "ai-deliver-pdf-marina",
+          "target": "write-lead-pdf-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "e-cta-pdf-3",
+          "source": "write-lead-pdf-status",
+          "target": "end-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
       ]
     }
   },
   {
     "id": "EE_PROGRAMA_MATCH_LUCAS",
     "name": "Programa-Match — Educação Executiva (Lucas Alumni)",
-    "description": "Variante A/B do Programa-Match com Lucas, alumni recente do Executive Education (formou em 2024, hoje Head de Estratégia). Mesma estrutura de 4 perguntas + área + lead capture, mas com voz peer-to-peer: storytelling de ex-aluno em vez de stats de mercado, tom casual em vez de executivo, recomendação por experiência própria em vez de autoridade consultiva. Hipótese: peer voice converte mais que authority voice no público de transição de carreira.",
+    "description": "Variante A/B do Programa-Match com Lucas, alumni recente do Acme Edu (formou em 2024, hoje Head de Estratégia). Mesma estrutura de 4 perguntas + área + lead capture, mas com voz peer-to-peer: storytelling de ex-aluno em vez de stats de mercado, tom casual em vez de executivo, recomendação por experiência própria em vez de autoridade consultiva. Hipótese: peer voice converte mais que authority voice no público de transição de carreira.",
     "guardrailMethod": "LLM_JUDGE",
-    "triggerDescription": "Ativar SOMENTE quando o visitante demonstrar intenção EXPLÍCITA e CORRENTE de mapear o próprio próximo passo de carreira individual (B2C). Sinais válidos (qualquer um suficiente): 'quero um plano de carreira', 'monta um plano pra mim', 'o que estudar no Executive Education?', 'qual MBA pra mim?', 'quero crescer profissionalmente', 'quero trocar de área', 'estou pensando em fazer MBA/especialização', 'preciso me recolocar', 'quero virar CFO/CEO/diretor/gerente', 'quero subir de cargo', 'estou perdido na carreira', 'me ajuda a decidir', clique direto do chip '🎯 Plano de carreira pessoal'. Também ativar quando o visitante pergunta diretamente sobre um programa nomeado do EE ('MBA Executivo', 'Programa Avançado', 'CFO Track') no contexto de auto-desenvolvimento. NÃO ATIVAR para: (1) saudações genéricas isoladas ('oi', 'olá', 'bom dia', 'tudo bem', 'tudo certo'); (2) string única que parece nome próprio em resposta a 'qual seu nome?'; (3) menção a treinar EQUIPE/empresa/pessoas no plural ('treinar 15 pessoas', 'in-company', 'minha equipe', 'L&D', 'RH precisa') — esse caminho é o in-company-match; (4) pedido de explicação técnica de um CONCEITO ('o que é Real Options?', 'me explica valuation', 'como funciona M&A?') — esse caminho é o aula-relampago; (5) dúvidas administrativas (boleto, atestado, biblioteca, suporte). Em ambiguidade entre intenções, prefira NÃO disparar — o concierge do agente apresenta os 3 caminhos como chips e o user escolhe explicitamente.",
+    "triggerDescription": "Ativar SOMENTE quando o visitante demonstrar intenção EXPLÍCITA e CORRENTE de mapear o próprio próximo passo de carreira individual (B2C). Sinais válidos (qualquer um suficiente): 'quero um plano de carreira', 'monta um plano pra mim', 'o que estudar no Acme Edu?', 'qual MBA pra mim?', 'quero crescer profissionalmente', 'quero trocar de área', 'estou pensando em fazer MBA/especialização', 'preciso me recolocar', 'quero virar CFO/CEO/diretor/gerente', 'quero subir de cargo', 'estou perdido na carreira', 'me ajuda a decidir', clique direto do chip '🎯 Plano de carreira pessoal'. Também ativar quando o visitante pergunta diretamente sobre um programa nomeado do EE ('MBA Executivo', 'Programa Avançado', 'CFO Track') no contexto de auto-desenvolvimento. NÃO ATIVAR para: (1) saudações genéricas isoladas ('oi', 'olá', 'bom dia', 'tudo bem', 'tudo certo'); (2) string única que parece nome próprio em resposta a 'qual seu nome?'; (3) menção a treinar EQUIPE/empresa/pessoas no plural ('treinar 15 pessoas', 'in-company', 'minha equipe', 'L&D', 'RH precisa') — esse caminho é o in-company-match; (4) pedido de explicação técnica de um CONCEITO ('o que é Real Options?', 'me explica valuation', 'como funciona M&A?') — esse caminho é o aula-relampago; (5) dúvidas administrativas (boleto, atestado, biblioteca, suporte). Em ambiguidade entre intenções, prefira NÃO disparar — o concierge do agente apresenta os 3 caminhos como chips e o user escolhe explicitamente.",
     "triggerMode": "ALWAYS",
     "experimentKey": "programa-match-persona-2026q1",
     "variantLabel": "lucas-alumni",
     "trafficWeight": 50,
     "slots": [
-      { "name": "name", "description": "Primeiro nome do visitante.", "type": "STRING" },
-      { "name": "cargo_atual", "description": "Cargo atual e tempo no cargo.", "type": "STRING" },
-      { "name": "objetivo", "description": "Objetivo de carreira em 3 anos.", "type": "STRING" },
-      { "name": "area", "description": "Área escolhida (chave técnica).", "type": "STRING" },
-      { "name": "area_label", "description": "Nome amigável da área.", "type": "STRING" },
-      { "name": "color", "description": "Chave de tema visual.", "type": "STRING" },
-      { "name": "career_path", "description": "JSON array com 4 nós do mapa de carreira.", "type": "STRING" },
-      { "name": "programas_match", "description": "JSON array com 3 programas comparados.", "type": "STRING" },
-      { "name": "cta_visible", "description": "Quando 'true', exibe botões de CTA.", "type": "STRING" },
-      { "name": "welcome_personalized", "description": "Banner de boas-vindas personalizado.", "type": "STRING" },
-      { "name": "stat_pitch", "description": "Storytelling do Lucas — quote de alumni em vez de estatística.", "type": "STRING" },
-      { "name": "final_pitch", "description": "Frase de fechamento personalizada.", "type": "STRING" },
-      { "name": "share_url", "description": "Deep link compartilhável.", "type": "STRING" },
-      { "name": "cta_choice", "description": "Decisão de CTA: email | consultor | depois.", "type": "STRING" },
-      { "name": "lead_email", "description": "Email capturado via formCapture.", "type": "STRING" },
-      { "name": "lead_phone", "description": "Telefone capturado via formCapture.", "type": "STRING" },
-      { "name": "lead_status", "description": "Estado final do lead.", "type": "STRING" }
+      {
+        "name": "name",
+        "description": "Primeiro nome do visitante.",
+        "type": "STRING"
+      },
+      {
+        "name": "cargo_atual",
+        "description": "Cargo atual e tempo no cargo.",
+        "type": "STRING"
+      },
+      {
+        "name": "objetivo",
+        "description": "Objetivo de carreira em 3 anos.",
+        "type": "STRING"
+      },
+      {
+        "name": "area",
+        "description": "Área escolhida (chave técnica).",
+        "type": "STRING"
+      },
+      {
+        "name": "area_label",
+        "description": "Nome amigável da área.",
+        "type": "STRING"
+      },
+      {
+        "name": "color",
+        "description": "Chave de tema visual.",
+        "type": "STRING"
+      },
+      {
+        "name": "career_path",
+        "description": "JSON array com 4 nós do mapa de carreira.",
+        "type": "STRING"
+      },
+      {
+        "name": "programas_match",
+        "description": "JSON array com 3 programas comparados.",
+        "type": "STRING"
+      },
+      {
+        "name": "cta_visible",
+        "description": "Quando 'true', exibe botões de CTA.",
+        "type": "STRING"
+      },
+      {
+        "name": "welcome_personalized",
+        "description": "Banner de boas-vindas personalizado.",
+        "type": "STRING"
+      },
+      {
+        "name": "stat_pitch",
+        "description": "Storytelling do Lucas — quote de alumni em vez de estatística.",
+        "type": "STRING"
+      },
+      {
+        "name": "final_pitch",
+        "description": "Frase de fechamento personalizada.",
+        "type": "STRING"
+      },
+      {
+        "name": "share_url",
+        "description": "Deep link compartilhável.",
+        "type": "STRING"
+      },
+      {
+        "name": "cta_choice",
+        "description": "Decisão de CTA: email | consultor | depois.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_email",
+        "description": "Email capturado via formCapture.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_phone",
+        "description": "Telefone capturado via formCapture.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_status",
+        "description": "Estado final do lead (email_sent | call_requested | thinking | pdf_downloaded).",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_url",
+        "description": "URL relativa do PDF da proposta gerado pelo tool gerar_proposta_pdf.",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_filename",
+        "description": "Nome do arquivo PDF para o atributo download do anchor na UI.",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_pdf_hash",
+        "description": "MD5 hex dos inputs do PDF — pin de idempotência (skip Python no 2º click).",
+        "type": "STRING"
+      }
     ],
     "personas": [
       {
         "id": "PERSONA_LUCAS_ALUMNI_EE",
-        "name": "Lucas — Alumni 2024 (Executive Education)",
-        "description": "Alumni recém-formado do MBA Executivo de Executive Education (2024). Hoje Head de Estratégia numa scale-up. Voz peer-to-peer: fala como amigo que passou pelo programa, não como vendedor. Conta histórias próprias, usa primeira pessoa.",
-        "systemInstruction": "Você é o Lucas, formado no MBA Executivo do Executive Education em 2024. Hoje é Head de Estratégia numa scale-up. Fale SEMPRE em português brasileiro. Tom CASUAL e peer-to-peer — como um amigo mais velho que já passou pelo caminho. Use primeira pessoa: 'Eu fiz...', 'Quando estava na sua etapa...', 'O que mais me ajudou foi...'. Trate o visitante pelo primeiro nome desde o segundo turno. NUNCA seja vendedor — você é ex-aluno compartilhando experiência, não consultor de vendas. Pode mencionar dificuldades reais do programa (tempo, custo) — autenticidade > polish. Se o visitante divagar, traga de volta com naturalidade ('saca, no meu caso eu também tava confuso aí...'). NUNCA prometa aprovação/bolsa/desconto. NUNCA peça CPF, cartão ou senha. NUNCA fale de concorrentes.",
+        "name": "Lucas — Alumni 2024 (Acme Edu)",
+        "description": "Alumni recém-formado do MBA Executivo do Acme (2024). Hoje Head de Estratégia numa scale-up. Voz peer-to-peer: fala como amigo que passou pelo programa, não como vendedor. Conta histórias próprias, usa primeira pessoa.",
+        "systemInstruction": "Você é o Lucas, formado no MBA Executivo do Acme Edu em 2024. Hoje é Head de Estratégia numa scale-up. Fale SEMPRE em português brasileiro. Tom CASUAL e peer-to-peer — como um amigo mais velho que já passou pelo caminho. Use primeira pessoa: 'Eu fiz...', 'Quando estava na sua etapa...', 'O que mais me ajudou foi...'. Trate o visitante pelo primeiro nome desde o segundo turno. NUNCA seja vendedor — você é ex-aluno compartilhando experiência, não consultor de vendas. Pode mencionar dificuldades reais do programa (tempo, custo) — autenticidade > polish. Se o visitante divagar, traga de volta com naturalidade ('saca, no meu caso eu também tava confuso aí...'). NUNCA prometa aprovação/bolsa/desconto. NUNCA peça CPF, cartão ou senha. NUNCA fale de concorrentes.",
         "tone": "CASUAL",
         "verbosity": 3,
         "languageStyle": "NARRATIVE",
-        "mandatoryTerms": "Education|programa|MBA",
+        "mandatoryTerms": "Acme|programa|MBA",
         "forbiddenTerms": "impossível|não posso ajudar|sou consultor|vou te vender",
         "enabled": 1
       }
     ],
     "graph": {
       "nodes": [
-        { "id": "start-lucas", "type": "start", "position": { "x": 40, "y": 360 },
-          "data": { "label": "INÍCIO", "type": "start" } },
-        { "id": "persona-lucas", "type": "persona", "position": { "x": 200, "y": 360 },
-          "data": { "label": "VOZ: Lucas Alumni", "type": "persona", "personaId": "PERSONA_LUCAS_ALUMNI_EE" } },
-        { "id": "ai-name-lucas", "type": "aiQuestion", "position": { "x": 400, "y": 360 },
+        {
+          "id": "start-lucas",
+          "type": "start",
+          "position": {
+            "x": 40,
+            "y": 360
+          },
+          "data": {
+            "label": "INÍCIO",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-lucas",
+          "type": "persona",
+          "position": {
+            "x": 200,
+            "y": 360
+          },
+          "data": {
+            "label": "VOZ: Lucas Alumni",
+            "type": "persona",
+            "personaId": "PERSONA_LUCAS_ALUMNI_EE"
+          }
+        },
+        {
+          "id": "ai-name-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 400,
+            "y": 360
+          },
           "data": {
             "label": "PERGUNTAR NOME (Lucas)",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome. Abra como ex-aluno apresentando-se: 'Opa! Sou o Lucas, formei no MBA Executivo de Executive Education em 2024. Quando entrei aqui no site eu também tava perdido entre os programas, então deixa eu te ajudar a achar o seu. Como você se chama?' Tom: peer, casual, primeira pessoa.",
-            "outputVariable": "name"
+            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome. Abra como ex-aluno apresentando-se: 'Opa! Sou o Lucas, formei no MBA Executivo do Acme em 2024. Quando entrei aqui no site eu também tava perdido entre os programas, então deixa eu te ajudar a achar o seu. Como você se chama?' Tom: peer, casual, primeira pessoa.",
+            "outputVariable": "name",
+            "onJudgeReject": "advance_with_literal"
           }
         },
-        { "id": "write-welcome-lucas", "type": "writeSlot", "position": { "x": 510, "y": 360 },
+        {
+          "id": "write-welcome-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 510,
+            "y": 360
+          },
           "data": {
             "label": "BANNER LUCAS",
             "type": "writeSlot",
             "slotName": "welcome_personalized",
-            "slotValue": "{{name}}, prazer! 🎓 Vou te contar quais programas do Executive Education mudaram a minha carreira aqui.",
+            "slotValue": "{{name}}, prazer! 🎓 Vou te contar quais programas do Acme Edu mudaram a minha carreira aqui.",
             "overrideExistingValue": true
           }
         },
-        { "id": "ai-cargo-lucas", "type": "aiQuestion", "position": { "x": 620, "y": 360 },
+        {
+          "id": "ai-cargo-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 620,
+            "y": 360
+          },
           "data": {
             "label": "CARGO (Lucas)",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte ao(à) {{name}} o cargo atual + tempo no cargo. Use linguagem peer: 'Beleza, {{name}}. Conta aí: o que você faz hoje e há quanto tempo? Quando comecei o programa eu tava como gerente sênior numa fintech, então qualquer cargo serve — não precisa achar que sua resposta é pequena demais ou grande demais.' Capture a frase exata como veio.",
-            "outputVariable": "cargo_atual"
+            "aiInstruction": "Pergunte ao(à) {{name}} o cargo atual + tempo no cargo, numa única pergunta aberta. Use linguagem peer: 'Beleza, {{name}}. Conta aí: o que você faz hoje e há quanto tempo? Quando comecei o programa eu tava como gerente sênior numa fintech, então qualquer cargo serve — não precisa achar que sua resposta é pequena demais ou grande demais.' Aceite QUALQUER resposta que descreva o trabalho atual: 'gerente sênior numa fintech há 4 anos', 'CEO', 'desenvolvedor pleno', 'estou desempregado', 'sou empreendedora há 6 meses' — TODAS são respostas válidas, mesmo as compostas (cargo + tempo numa frase só). Capture a frase inteira como está.",
+            "outputVariable": "cargo_atual",
+            "onJudgeReject": "advance_with_literal"
           }
         },
-        { "id": "ai-objetivo-lucas", "type": "aiQuestion", "position": { "x": 840, "y": 360 },
+        {
+          "id": "ai-objetivo-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 840,
+            "y": 360
+          },
           "data": {
             "label": "OBJETIVO (Lucas)",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte ao(à) {{name}} onde quer estar daqui a 3 anos. Use storytelling pessoal: 'Quando eu comecei o programa, meu objetivo era virar Head de Estratégia — hoje cheguei. E o seu, {{name}}? Daqui a 3 anos, onde você se vê? Pode ser qualquer coisa — virar CFO, abrir empresa, mudar de área, até virar fazendeiro. Sem julgamento.' Aceite QUALQUER resposta.",
-            "outputVariable": "objetivo"
+            "aiInstruction": "Pergunte ao(à) {{name}} onde quer estar daqui a 3 anos. Use storytelling pessoal: 'Quando eu comecei o programa, meu objetivo era virar Head de Estratégia — hoje cheguei. E o seu, {{name}}? Daqui a 3 anos, onde você se vê? Pode ser qualquer coisa — virar CFO, abrir empresa, mudar de área, até virar fazendeiro. Sem julgamento.' ACEITE LITERALMENTE QUALQUER resposta — sem julgar se é 'profissional o suficiente' ou alinhada com Executive Education. Capture a frase EXATA do usuário. Exemplos de respostas TODAS VÁLIDAS: 'virar CFO', 'abrir minha empresa', 'mudar para dados', 'jogador de futebol', 'youtuber', 'aposentar e viajar', 'ser fazendeiro', 'não sei ainda', 'só quero ganhar mais'. NUNCA rejeite. NUNCA peça pra 'focar em objetivo profissional'. Se o objetivo for não-corporativo (esporte/arte/lazer/pessoal), apenas capture e siga — o Lucas vai adaptar o tom no próximo passo.",
+            "outputVariable": "objetivo",
+            "onJudgeReject": "advance_with_literal"
           }
         },
-        { "id": "ai-area-lucas", "type": "aiQuestion", "position": { "x": 1060, "y": 360 },
+        {
+          "id": "ai-area-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1060,
+            "y": 360
+          },
           "data": {
             "label": "ÁREA (Lucas)",
             "type": "aiQuestion",
             "aiInstruction": "Pergunte qual das 4 áreas {{name}} quer aprofundar primeiro. Use peer-tone: 'Última pergunta antes de eu te mostrar o que rolaria pro seu perfil, {{name}}: qual dessas áreas te atrai mais agora? — 💰 Finanças & Investimentos — 👥 Liderança & Gestão — 🏥 Saúde — 💻 Tecnologia & Dados.' Aceite as 4 labels exatas (ou variantes claras: 'finanças', 'lideranca', 'saude', 'tech'). Use exatamente esses 4 nomes — viram chips clicáveis.",
-            "outputVariable": "area"
+            "outputVariable": "area",
+            "onJudgeReject": "advance_with_literal"
           }
         },
-        { "id": "switch-area-lucas", "type": "switch", "position": { "x": 1300, "y": 360 },
+        {
+          "id": "switch-area-lucas",
+          "type": "switch",
+          "position": {
+            "x": 1300,
+            "y": 360
+          },
           "data": {
             "label": "ÁREA (Lucas)",
             "type": "switch",
             "switchVariable": "area",
             "switchOptions": [
-              { "id": "opt-financas", "label": "Finanças & Investimentos" },
-              { "id": "opt-lideranca", "label": "Liderança & Gestão" },
-              { "id": "opt-saude", "label": "Saúde" },
-              { "id": "opt-tecnologia", "label": "Tecnologia & Dados" }
+              {
+                "id": "opt-financas",
+                "label": "Finanças & Investimentos"
+              },
+              {
+                "id": "opt-lideranca",
+                "label": "Liderança & Gestão"
+              },
+              {
+                "id": "opt-saude",
+                "label": "Saúde"
+              },
+              {
+                "id": "opt-tecnologia",
+                "label": "Tecnologia & Dados"
+              }
             ]
           }
         },
-
-        { "id": "slot-fin-area-label-lucas", "type": "slot", "position": { "x": 1520, "y": 40 },
-          "data": { "label": "area_label = Finanças", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Finanças & Investimentos", "overrideExistingValue": true } },
-        { "id": "slot-fin-color-lucas", "type": "slot", "position": { "x": 1740, "y": 40 },
-          "data": { "label": "color = navy-financas", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "navy-financas", "overrideExistingValue": true } },
-        { "id": "write-fin-career-lucas", "type": "writeSlot", "position": { "x": 1960, "y": 40 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Especialização em Valuation\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo — Trilha Finanças\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-fin-programas-lucas", "type": "writeSlot", "position": { "x": 2180, "y": 40 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Especialização em Valuation\",\"duration\":\"6 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 18.900\",\"tag\":\"Mais curto\",\"why\":\"Base sólida em fluxo de caixa, múltiplos e DCF. Bom ponto de entrada para a trilha financeira.\"},{\"name\":\"MBA Executivo — Trilha Finanças\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 76.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Caminho mais direto para o C-level financeiro. Inclui simulações de board e mentoria com CFOs.\"},{\"name\":\"Advanced Finance Bootcamp\",\"duration\":\"3 meses\",\"format\":\"Imersão presencial\",\"priceFrom\":\"R$ 24.000\",\"tag\":\"Mais intensivo\",\"why\":\"Intensivo técnico — ideal se você precisa acelerar tração quantitativa agora.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-fin-cta-lucas", "type": "slot", "position": { "x": 2300, "y": 40 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-fin-stat-lucas", "type": "slot", "position": { "x": 2420, "y": 40 },
-          "data": { "label": "stat_pitch peer (Finanças)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "Eu fiz a Especialização em Valuation há 14 meses. O que mudou pra mim: aprendi a ler P&L de aquisição em 20 minutos, não 3 dias. Quando entrei numa mesa com CFO da nossa série B, foi a primeira vez que sentei como par, não como junior. — Lucas", "overrideExistingValue": true } },
-        { "id": "write-fin-pitch-lucas", "type": "writeSlot", "position": { "x": 2540, "y": 40 },
-          "data": { "label": "final_pitch peer (Finanças)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, no seu perfil ({{cargo_atual}}) eu faria EXATAMENTE o que fiz: começa pelo Valuation enquanto continua no trabalho, depois engata o MBA. Pra chegar em \"{{objetivo}}\" em 3 anos, esses são os programas que faria diferença pra mim:", "overrideExistingValue": true } },
-        { "id": "write-fin-share-lucas", "type": "writeSlot", "position": { "x": 2660, "y": 40 },
-          "data": { "label": "share_url (Finanças)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=financas&objetivo={{objetivo}}&v=lucas", "overrideExistingValue": true } },
-        { "id": "ai-confirma-financas-lucas", "type": "aiQuestion", "position": { "x": 2780, "y": 40 },
-          "data": { "label": "FECHAMENTO FINANÇAS (Lucas)", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Finanças & Investimentos {{objetivo}}'. A tool escreve os 3 programas no slot programas_match. NÃO repita nomes/preços/datas no chat. PASSO 2 — UMA mensagem CURTA em tom peer (primeira pessoa, como ex-aluno). CASO A (objetivo corporativo): 'Pronto, {{name}}! Os 3 programas tão ali do lado. Pelo seu perfil ({{cargo_atual}}) eu também escolheria a trilha de Finanças pra chegar em {{objetivo}}. Como prefere seguir?' CASO B (objetivo não-corporativo): '{{name}}, sei que seu foco é {{objetivo}} — eu também tinha sonhos paralelos. Olha, dos programas de Executive Education, esses 3 ainda podem te dar uma boa fundação executiva. Como prefere seguir?' NUNCA diga 'vou montar', 'aguarde'. Capture a escolha em cta_choice (email | consultor | depois).",
+        {
+          "id": "slot-fin-area-label-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 40
+          },
+          "data": {
+            "label": "area_label = Finanças",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Finanças & Investimentos",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-color-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 40
+          },
+          "data": {
+            "label": "color = navy-financas",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "navy-financas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-career-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 40
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Especialização em Valuation\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo — Trilha Finanças\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-programas-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 40
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Especialização em Valuation\",\"duration\":\"6 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 18.900\",\"tag\":\"Mais curto\",\"why\":\"Base sólida em fluxo de caixa, múltiplos e DCF. Bom ponto de entrada para a trilha financeira.\"},{\"name\":\"MBA Executivo — Trilha Finanças\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 76.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Caminho mais direto para o C-level financeiro. Inclui simulações de board e mentoria com CFOs.\"},{\"name\":\"Advanced Finance Bootcamp\",\"duration\":\"3 meses\",\"format\":\"Imersão presencial\",\"priceFrom\":\"R$ 24.000\",\"tag\":\"Mais intensivo\",\"why\":\"Intensivo técnico — ideal se você precisa acelerar tração quantitativa agora.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-cta-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 40
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-fin-stat-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 40
+          },
+          "data": {
+            "label": "stat_pitch peer (Finanças)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "Eu fiz a Especialização em Valuation há 14 meses. O que mudou pra mim: aprendi a ler P&L de aquisição em 20 minutos, não 3 dias. Quando entrei numa mesa com CFO da nossa série B, foi a primeira vez que sentei como par, não como junior. — Lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-pitch-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 40
+          },
+          "data": {
+            "label": "final_pitch peer (Finanças)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, no seu perfil ({{cargo_atual}}) eu faria EXATAMENTE o que fiz: começa pelo Valuation enquanto continua no trabalho, depois engata o MBA. Pra chegar em \"{{objetivo}}\" em 3 anos, esses são os programas que faria diferença pra mim:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-fin-share-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 40
+          },
+          "data": {
+            "label": "share_url (Finanças)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=financas&objetivo={{objetivo}}&v=lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-financas-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 40
+          },
+          "data": {
+            "label": "FECHAMENTO FINANÇAS (Lucas)",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Finanças & Investimentos {{objetivo}}'. A tool escreve os 3 programas no slot programas_match. NÃO repita nomes/preços/datas no chat. PASSO 2 — UMA mensagem CURTA em tom peer (primeira pessoa, como ex-aluno). CASO A (objetivo corporativo): 'Pronto, {{name}}! Os 3 programas tão ali do lado. Pelo seu perfil ({{cargo_atual}}) eu também escolheria a trilha de Finanças pra chegar em {{objetivo}}. Como prefere seguir?' CASO B (objetivo não-corporativo): '{{name}}, sei que seu foco é {{objetivo}} — eu também tinha sonhos paralelos. Olha, dos programas do Acme, esses 3 ainda podem te dar uma boa fundação executiva. Como prefere seguir?' NUNCA diga 'vou montar', 'aguarde'. Capture a escolha em cta_choice (email | consultor | depois).",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Recebe por email", "📅 Quero falar com consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-lid-area-label-lucas", "type": "slot", "position": { "x": 1520, "y": 240 },
-          "data": { "label": "area_label = Liderança", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Liderança & Gestão", "overrideExistingValue": true } },
-        { "id": "slot-lid-color-lucas", "type": "slot", "position": { "x": 1740, "y": 240 },
-          "data": { "label": "color = graphite-lideranca", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "graphite-lideranca", "overrideExistingValue": true } },
-        { "id": "write-lid-career-lucas", "type": "writeSlot", "position": { "x": 1960, "y": 240 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Liderança de Alto Impacto\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-lid-programas-lucas", "type": "writeSlot", "position": { "x": 2180, "y": 240 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Liderança de Alto Impacto\",\"duration\":\"4 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 22.000\",\"tag\":\"Mais curto\",\"why\":\"Ferramentas de gestão de pessoas, feedback e times de alta performance.\"},{\"name\":\"MBA Executivo\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 78.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão integrada de negócio + módulo internacional. Caminho consagrado para Diretoria.\"},{\"name\":\"Board Practice\",\"duration\":\"6 meses\",\"format\":\"Presencial\",\"priceFrom\":\"R$ 36.000\",\"tag\":\"Mais sênior\",\"why\":\"Para quem já vai entrar em conselhos — governança, ESG e relação com acionistas.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-lid-cta-lucas", "type": "slot", "position": { "x": 2300, "y": 240 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-lid-stat-lucas", "type": "slot", "position": { "x": 2420, "y": 240 },
-          "data": { "label": "stat_pitch peer (Liderança)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "Antes do MBA eu era o gerente que evitava conversa difícil. Hoje, quando dou feedback duro pra um diretor, ele me agradece. O programa não me ensinou \"liderança\" abstrata — me deu coragem de aplicar. — Lucas", "overrideExistingValue": true } },
-        { "id": "write-lid-pitch-lucas", "type": "writeSlot", "position": { "x": 2540, "y": 240 },
-          "data": { "label": "final_pitch peer (Liderança)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, no seu ponto ({{cargo_atual}}) é praticamente onde eu tava antes de subir. Pra chegar em \"{{objetivo}}\" o caminho é gestão de gente + visão de board. Os 3 programas que escolheria de novo:", "overrideExistingValue": true } },
-        { "id": "write-lid-share-lucas", "type": "writeSlot", "position": { "x": 2660, "y": 240 },
-          "data": { "label": "share_url (Liderança)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=lideranca&objetivo={{objetivo}}&v=lucas", "overrideExistingValue": true } },
-        { "id": "ai-confirma-lideranca-lucas", "type": "aiQuestion", "position": { "x": 2780, "y": 240 },
-          "data": { "label": "FECHAMENTO LIDERANÇA (Lucas)", "type": "aiQuestion",
+            "inlineOptions": [
+              "📩 Recebe por email",
+              "📅 Quero falar com consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-lid-area-label-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 240
+          },
+          "data": {
+            "label": "area_label = Liderança",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Liderança & Gestão",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-color-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 240
+          },
+          "data": {
+            "label": "color = graphite-lideranca",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "graphite-lideranca",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-career-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 240
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Liderança de Alto Impacto\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA Executivo\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-programas-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 240
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Liderança de Alto Impacto\",\"duration\":\"4 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 22.000\",\"tag\":\"Mais curto\",\"why\":\"Ferramentas de gestão de pessoas, feedback e times de alta performance.\"},{\"name\":\"MBA Executivo\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 78.500\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão integrada de negócio + módulo internacional. Caminho consagrado para Diretoria.\"},{\"name\":\"Board Practice\",\"duration\":\"6 meses\",\"format\":\"Presencial\",\"priceFrom\":\"R$ 36.000\",\"tag\":\"Mais sênior\",\"why\":\"Para quem já vai entrar em conselhos — governança, ESG e relação com acionistas.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-cta-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 240
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lid-stat-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 240
+          },
+          "data": {
+            "label": "stat_pitch peer (Liderança)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "Antes do MBA eu era o gerente que evitava conversa difícil. Hoje, quando dou feedback duro pra um diretor, ele me agradece. O programa não me ensinou \"liderança\" abstrata — me deu coragem de aplicar. — Lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-pitch-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 240
+          },
+          "data": {
+            "label": "final_pitch peer (Liderança)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, no seu ponto ({{cargo_atual}}) é praticamente onde eu tava antes de subir. Pra chegar em \"{{objetivo}}\" o caminho é gestão de gente + visão de board. Os 3 programas que escolheria de novo:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-lid-share-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 240
+          },
+          "data": {
+            "label": "share_url (Liderança)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=lideranca&objetivo={{objetivo}}&v=lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-lideranca-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 240
+          },
+          "data": {
+            "label": "FECHAMENTO LIDERANÇA (Lucas)",
+            "type": "aiQuestion",
             "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Liderança & Gestão {{objetivo}}'. A tool escreve no slot programas_match. PASSO 2 — UMA mensagem CURTA em tom peer. CASO A (corporativo): 'Pronto, {{name}}! Os 3 ali do lado — minha aposta pessoal, dado seu cargo ({{cargo_atual}}) e objetivo de {{objetivo}}, é começar pelo Liderança de Alto Impacto e depois engatar o MBA. Como prefere seguir?' CASO B (não-corporativo): '{{name}}, vejo que seu foco é {{objetivo}} — caminho legítimo. Os 3 ao lado ainda podem te dar uma base de gente + processo útil. Como prefere seguir?' Capture em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Recebe por email", "📅 Quero falar com consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-sau-area-label-lucas", "type": "slot", "position": { "x": 1520, "y": 440 },
-          "data": { "label": "area_label = Saúde", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Saúde", "overrideExistingValue": true } },
-        { "id": "slot-sau-color-lucas", "type": "slot", "position": { "x": 1740, "y": 440 },
-          "data": { "label": "color = green-saude", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "green-saude", "overrideExistingValue": true } },
-        { "id": "write-sau-career-lucas", "type": "writeSlot", "position": { "x": 1960, "y": 440 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Gestão Hospitalar\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"MBA em Saúde\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-sau-programas-lucas", "type": "writeSlot", "position": { "x": 2180, "y": 440 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"Gestão Hospitalar\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 21.500\",\"tag\":\"Mais curto\",\"why\":\"Operação, custos e qualidade em hospitais e clínicas. Aplicação imediata na rotina.\"},{\"name\":\"MBA em Saúde\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 68.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão sistêmica do setor — operadoras, prestadores, regulação e inovação clínica.\"},{\"name\":\"Inovação em Saúde\",\"duration\":\"5 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 19.000\",\"tag\":\"Mais inovador\",\"why\":\"Healthtechs, IA clínica e novos modelos de cuidado. Ideal para perfil empreendedor.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-sau-cta-lucas", "type": "slot", "position": { "x": 2300, "y": 440 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-sau-stat-lucas", "type": "slot", "position": { "x": 2420, "y": 440 },
-          "data": { "label": "stat_pitch peer (Saúde)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "Minha amiga Bia fez o MBA em Saúde junto comigo (mesmo módulo, salas diferentes). Hoje ela é Diretora Médica numa operadora — antes era pediatra de pronto-socorro. O salto não foi mágica: foi rede + linguagem de negócio. — Lucas", "overrideExistingValue": true } },
-        { "id": "write-sau-pitch-lucas", "type": "writeSlot", "position": { "x": 2540, "y": 440 },
-          "data": { "label": "final_pitch peer (Saúde)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, com seu perfil ({{cargo_atual}}) e objetivo de \"{{objetivo}}\" — Saúde em Executive Education combina clínica + gestão. Vi gente como você fazer isso em 18 meses. Os 3 programas:", "overrideExistingValue": true } },
-        { "id": "write-sau-share-lucas", "type": "writeSlot", "position": { "x": 2660, "y": 440 },
-          "data": { "label": "share_url (Saúde)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=saude&objetivo={{objetivo}}&v=lucas", "overrideExistingValue": true } },
-        { "id": "ai-confirma-saude-lucas", "type": "aiQuestion", "position": { "x": 2780, "y": 440 },
-          "data": { "label": "FECHAMENTO SAÚDE (Lucas)", "type": "aiQuestion",
-            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Saúde gestão hospitalar {{objetivo}}'. A tool escreve em programas_match. PASSO 2 — UMA mensagem CURTA, peer-tone. CASO A (corporativo): 'Pronto, {{name}}! Os 3 ali. Conhecendo seu cargo ({{cargo_atual}}) e o objetivo \"{{objetivo}}\", Saúde em Executive Education é uma das áreas mais subestimadas — minha amiga Bia confirma. Como prefere seguir?' CASO B (não-corporativo): '{{name}}, foco em {{objetivo}} é legítimo. Mesmo assim, os 3 ali do lado podem te dar uma fundação de gestão útil. Como prefere seguir?' Capture em cta_choice.",
+            "inlineOptions": [
+              "📩 Recebe por email",
+              "📅 Quero falar com consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-sau-area-label-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 440
+          },
+          "data": {
+            "label": "area_label = Saúde",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Saúde",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-color-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 440
+          },
+          "data": {
+            "label": "color = green-saude",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "green-saude",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-career-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 440
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"Gestão Hospitalar\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"MBA em Saúde\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-programas-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 440
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"Gestão Hospitalar\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 21.500\",\"tag\":\"Mais curto\",\"why\":\"Operação, custos e qualidade em hospitais e clínicas. Aplicação imediata na rotina.\"},{\"name\":\"MBA em Saúde\",\"duration\":\"18 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 68.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Visão sistêmica do setor — operadoras, prestadores, regulação e inovação clínica.\"},{\"name\":\"Inovação em Saúde\",\"duration\":\"5 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 19.000\",\"tag\":\"Mais inovador\",\"why\":\"Healthtechs, IA clínica e novos modelos de cuidado. Ideal para perfil empreendedor.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-cta-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 440
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-sau-stat-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 440
+          },
+          "data": {
+            "label": "stat_pitch peer (Saúde)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "Minha amiga Bia fez o MBA em Saúde junto comigo (mesmo módulo, salas diferentes). Hoje ela é Diretora Médica numa operadora — antes era pediatra de pronto-socorro. O salto não foi mágica: foi rede + linguagem de negócio. — Lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-pitch-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 440
+          },
+          "data": {
+            "label": "final_pitch peer (Saúde)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, com seu perfil ({{cargo_atual}}) e objetivo de \"{{objetivo}}\" — Saúde no Acme combina clínica + gestão. Vi gente como você fazer isso em 18 meses. Os 3 programas:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-sau-share-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 440
+          },
+          "data": {
+            "label": "share_url (Saúde)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=saude&objetivo={{objetivo}}&v=lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-saude-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 440
+          },
+          "data": {
+            "label": "FECHAMENTO SAÚDE (Lucas)",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Saúde gestão hospitalar {{objetivo}}'. A tool escreve em programas_match. PASSO 2 — UMA mensagem CURTA, peer-tone. CASO A (corporativo): 'Pronto, {{name}}! Os 3 ali. Conhecendo seu cargo ({{cargo_atual}}) e o objetivo \"{{objetivo}}\", Saúde no Acme é uma das áreas mais subestimadas — minha amiga Bia confirma. Como prefere seguir?' CASO B (não-corporativo): '{{name}}, foco em {{objetivo}} é legítimo. Mesmo assim, os 3 ali do lado podem te dar uma fundação de gestão útil. Como prefere seguir?' Capture em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Recebe por email", "📅 Quero falar com consultor", "🕒 Vou pensar"] } },
-
-        { "id": "slot-tec-area-label-lucas", "type": "slot", "position": { "x": 1520, "y": 640 },
-          "data": { "label": "area_label = Tecnologia", "type": "slot", "slotName": "area_label", "slotOperation": "SET", "slotValue": "Tecnologia & Dados", "overrideExistingValue": true } },
-        { "id": "slot-tec-color-lucas", "type": "slot", "position": { "x": 1740, "y": 640 },
-          "data": { "label": "color = violet-tech", "type": "slot", "slotName": "color", "slotOperation": "SET", "slotValue": "violet-tech", "overrideExistingValue": true } },
-        { "id": "write-tec-career-lucas", "type": "writeSlot", "position": { "x": 1960, "y": 640 },
-          "data": { "label": "career_path (TPL)", "type": "writeSlot", "slotName": "career_path", "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"IA para Negócios\",\"badge\":\"Programa Education\"},{\"step\":\"+18 meses\",\"label\":\"Data Science Executivo\",\"badge\":\"Programa Education\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]", "overrideExistingValue": true } },
-        { "id": "write-tec-programas-lucas", "type": "writeSlot", "position": { "x": 2180, "y": 640 },
-          "data": { "label": "programas_match (TPL)", "type": "writeSlot", "slotName": "programas_match", "slotValue": "[{\"name\":\"IA para Negócios\",\"duration\":\"3 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 14.500\",\"tag\":\"Mais curto\",\"why\":\"Casos práticos de IA generativa aplicada — sem profundidade técnica. Bom para gestores.\"},{\"name\":\"Data Science Executivo\",\"duration\":\"10 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 42.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Decisão orientada por dados em escala. Modelos preditivos, dashboards e governança de dados.\"},{\"name\":\"Transformação Digital\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 28.000\",\"tag\":\"Mais estratégico\",\"why\":\"Para quem precisa liderar a transformação como diretor(a) — foco em modelo de negócio e cultura.\"}]", "overrideExistingValue": true } },
-        { "id": "slot-tec-cta-lucas", "type": "slot", "position": { "x": 2300, "y": 640 },
-          "data": { "label": "cta_visible = true", "type": "slot", "slotName": "cta_visible", "slotOperation": "SET", "slotValue": "true", "overrideExistingValue": true } },
-        { "id": "slot-tec-stat-lucas", "type": "slot", "position": { "x": 2420, "y": 640 },
-          "data": { "label": "stat_pitch peer (Tech)", "type": "slot", "slotName": "stat_pitch", "slotOperation": "SET", "slotValue": "Eu pulei IA para Negócios no início porque achei que era \"de cabelo solto\". 6 meses depois voltei correndo. Quando comecei a chegar com IA em reuniões de estratégia, virei a referência da empresa. — Lucas", "overrideExistingValue": true } },
-        { "id": "write-tec-pitch-lucas", "type": "writeSlot", "position": { "x": 2540, "y": 640 },
-          "data": { "label": "final_pitch peer (Tech)", "type": "writeSlot", "slotName": "final_pitch", "slotValue": "{{name}}, no perfil de {{cargo_atual}} a virada pra \"{{objetivo}}\" passa por fluência em IA + dados. Eu corri pra fazer; recomendo na mesma ordem:", "overrideExistingValue": true } },
-        { "id": "write-tec-share-lucas", "type": "writeSlot", "position": { "x": 2660, "y": 640 },
-          "data": { "label": "share_url (Tech)", "type": "writeSlot", "slotName": "share_url", "slotValue": "https://ee.education.example.com/programa-match?ref={{name}}&area=tecnologia&objetivo={{objetivo}}&v=lucas", "overrideExistingValue": true } },
-        { "id": "ai-confirma-tech-lucas", "type": "aiQuestion", "position": { "x": 2780, "y": 640 },
-          "data": { "label": "FECHAMENTO TECH (Lucas)", "type": "aiQuestion",
+            "inlineOptions": [
+              "📩 Recebe por email",
+              "📅 Quero falar com consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "slot-tec-area-label-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1520,
+            "y": 640
+          },
+          "data": {
+            "label": "area_label = Tecnologia",
+            "type": "slot",
+            "slotName": "area_label",
+            "slotOperation": "SET",
+            "slotValue": "Tecnologia & Dados",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-color-lucas",
+          "type": "slot",
+          "position": {
+            "x": 1740,
+            "y": 640
+          },
+          "data": {
+            "label": "color = violet-tech",
+            "type": "slot",
+            "slotName": "color",
+            "slotOperation": "SET",
+            "slotValue": "violet-tech",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-career-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 1960,
+            "y": 640
+          },
+          "data": {
+            "label": "career_path (TPL)",
+            "type": "writeSlot",
+            "slotName": "career_path",
+            "slotValue": "[{\"step\":\"HOJE\",\"label\":\"{{cargo_atual}}\",\"badge\":\"Você está aqui\"},{\"step\":\"6 meses\",\"label\":\"IA para Negócios\",\"badge\":\"Programa Acme\"},{\"step\":\"+18 meses\",\"label\":\"Data Science Executivo\",\"badge\":\"Programa Acme\"},{\"step\":\"3 anos\",\"label\":\"{{objetivo}}\",\"badge\":\"Destino\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-programas-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2180,
+            "y": 640
+          },
+          "data": {
+            "label": "programas_match (TPL)",
+            "type": "writeSlot",
+            "slotName": "programas_match",
+            "slotValue": "[{\"name\":\"IA para Negócios\",\"duration\":\"3 meses\",\"format\":\"Online ao vivo\",\"priceFrom\":\"R$ 14.500\",\"tag\":\"Mais curto\",\"why\":\"Casos práticos de IA generativa aplicada — sem profundidade técnica. Bom para gestores.\"},{\"name\":\"Data Science Executivo\",\"duration\":\"10 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 42.000\",\"tag\":\"Mais alinhado ao seu objetivo\",\"why\":\"Decisão orientada por dados em escala. Modelos preditivos, dashboards e governança de dados.\"},{\"name\":\"Transformação Digital\",\"duration\":\"6 meses\",\"format\":\"Híbrido\",\"priceFrom\":\"R$ 28.000\",\"tag\":\"Mais estratégico\",\"why\":\"Para quem precisa liderar a transformação como diretor(a) — foco em modelo de negócio e cultura.\"}]",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-cta-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2300,
+            "y": 640
+          },
+          "data": {
+            "label": "cta_visible = true",
+            "type": "slot",
+            "slotName": "cta_visible",
+            "slotOperation": "SET",
+            "slotValue": "true",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-tec-stat-lucas",
+          "type": "slot",
+          "position": {
+            "x": 2420,
+            "y": 640
+          },
+          "data": {
+            "label": "stat_pitch peer (Tech)",
+            "type": "slot",
+            "slotName": "stat_pitch",
+            "slotOperation": "SET",
+            "slotValue": "Eu pulei IA para Negócios no início porque achei que era \"de cabelo solto\". 6 meses depois voltei correndo. Quando comecei a chegar com IA em reuniões de estratégia, virei a referência da empresa. — Lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-pitch-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2540,
+            "y": 640
+          },
+          "data": {
+            "label": "final_pitch peer (Tech)",
+            "type": "writeSlot",
+            "slotName": "final_pitch",
+            "slotValue": "{{name}}, no perfil de {{cargo_atual}} a virada pra \"{{objetivo}}\" passa por fluência em IA + dados. Eu corri pra fazer; recomendo na mesma ordem:",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-tec-share-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 2660,
+            "y": 640
+          },
+          "data": {
+            "label": "share_url (Tech)",
+            "type": "writeSlot",
+            "slotName": "share_url",
+            "slotValue": "/programa-match?ref={{name}}&area=tecnologia&objetivo={{objetivo}}&v=lucas",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-confirma-tech-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2780,
+            "y": 640
+          },
+          "data": {
+            "label": "FECHAMENTO TECH (Lucas)",
+            "type": "aiQuestion",
             "aiInstruction": "PASSO 1 — Chame 'search_ee_programs' com query='Tecnologia & Dados {{objetivo}}'. PASSO 2 — UMA mensagem CURTA, peer-tone. CASO A (corporativo): 'Pronto, {{name}}! Pra seu cargo ({{cargo_atual}}) e objetivo \"{{objetivo}}\" — meu maior arrependimento foi não ter feito IA para Negócios antes. Os 3 ali do lado, na ordem que eu refaria. Como prefere seguir?' CASO B (não-corporativo): '{{name}}, foco em {{objetivo}} é legítimo. Os 3 ali do lado ainda dão fluência digital. Como prefere seguir?' Capture em cta_choice.",
             "outputVariable": "cta_choice",
-            "inlineOptions": ["📩 Recebe por email", "📅 Quero falar com consultor", "🕒 Vou pensar"] } },
-
-        { "id": "switch-cta-lucas", "type": "switch", "position": { "x": 3000, "y": 360 },
+            "inlineOptions": [
+              "📩 Recebe por email",
+              "📅 Quero falar com consultor",
+              "📄 Baixar plano em PDF",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-cta-lucas",
+          "type": "switch",
+          "position": {
+            "x": 3000,
+            "y": 360
+          },
           "data": {
             "label": "CTA CHOICE (Lucas)",
             "type": "switch",
             "switchVariable": "cta_choice",
             "switchOptions": [
-              { "id": "opt-cta-email", "label": "📩 Recebe por email" },
-              { "id": "opt-cta-consultor", "label": "📅 Quero falar com consultor" },
-              { "id": "opt-cta-later", "label": "🕒 Vou pensar" }
+              {
+                "id": "opt-cta-email",
+                "label": "📩 Recebe por email"
+              },
+              {
+                "id": "opt-cta-consultor",
+                "label": "📅 Quero falar com consultor"
+              },
+              {
+                "id": "opt-cta-pdf",
+                "label": "📄 Baixar plano em PDF"
+              },
+              {
+                "id": "opt-cta-later",
+                "label": "🕒 Vou pensar"
+              }
             ]
           }
         },
-        { "id": "form-lead-email-lucas", "type": "formCapture", "position": { "x": 3220, "y": 200 },
+        {
+          "id": "ai-deliver-pdf-lucas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 3220,
+            "y": 720
+          },
+          "data": {
+            "label": "GERAR PDF (Lucas)",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 (OBRIGATÓRIO) — Chame `gerar_proposta_pdf` sem args (lê dos slots). PASSO 2 — Peer-tone, UMA frase curta: '{{name}}, gerei o seu Plano de Carreira em PDF — clica no botão verde aí em baixo pra baixar.' NUNCA repita o conteúdo do PDF no chat. Capture qualquer resposta seguinte em cta_choice.",
+            "outputVariable": "cta_choice",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "write-lead-pdf-status-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 720
+          },
+          "data": {
+            "label": "lead_status = pdf_downloaded",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "pdf_downloaded",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-lead-email-lucas",
+          "type": "formCapture",
+          "position": {
+            "x": 3220,
+            "y": 200
+          },
           "data": {
             "label": "CAPTURA DE EMAIL (Lucas)",
             "type": "formCapture",
@@ -610,9 +2374,28 @@
             "overrideExistingValue": true
           }
         },
-        { "id": "write-lead-email-status-lucas", "type": "writeSlot", "position": { "x": 3440, "y": 200 },
-          "data": { "label": "lead_status = email_sent", "type": "writeSlot", "slotName": "lead_status", "slotValue": "email_sent", "overrideExistingValue": true } },
-        { "id": "form-lead-phone-lucas", "type": "formCapture", "position": { "x": 3220, "y": 360 },
+        {
+          "id": "write-lead-email-status-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 200
+          },
+          "data": {
+            "label": "lead_status = email_sent",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "email_sent",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-lead-phone-lucas",
+          "type": "formCapture",
+          "position": {
+            "x": 3220,
+            "y": 360
+          },
           "data": {
             "label": "CAPTURA DE TELEFONE (Lucas)",
             "type": "formCapture",
@@ -622,76 +2405,515 @@
             "overrideExistingValue": true
           }
         },
-        { "id": "write-lead-phone-status-lucas", "type": "writeSlot", "position": { "x": 3440, "y": 360 },
-          "data": { "label": "lead_status = call_requested", "type": "writeSlot", "slotName": "lead_status", "slotValue": "call_requested", "overrideExistingValue": true } },
-        { "id": "slot-lead-later-status-lucas", "type": "slot", "position": { "x": 3440, "y": 520 },
-          "data": { "label": "lead_status = thinking", "type": "slot", "slotName": "lead_status", "slotOperation": "SET", "slotValue": "thinking", "overrideExistingValue": true } },
-        { "id": "end-shared-lucas", "type": "end", "position": { "x": 3680, "y": 360 },
-          "data": { "label": "FIM", "type": "end" } }
+        {
+          "id": "write-lead-phone-status-lucas",
+          "type": "writeSlot",
+          "position": {
+            "x": 3440,
+            "y": 360
+          },
+          "data": {
+            "label": "lead_status = call_requested",
+            "type": "writeSlot",
+            "slotName": "lead_status",
+            "slotValue": "call_requested",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-lead-later-status-lucas",
+          "type": "slot",
+          "position": {
+            "x": 3440,
+            "y": 520
+          },
+          "data": {
+            "label": "lead_status = thinking",
+            "type": "slot",
+            "slotName": "lead_status",
+            "slotOperation": "SET",
+            "slotValue": "thinking",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "end-shared-lucas",
+          "type": "end",
+          "position": {
+            "x": 3680,
+            "y": 360
+          },
+          "data": {
+            "label": "FIM",
+            "type": "end"
+          }
+        }
       ],
       "edges": [
-        { "id": "el-1", "source": "start-lucas", "target": "persona-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-2", "source": "persona-lucas", "target": "ai-name-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-3a", "source": "ai-name-lucas", "target": "write-welcome-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-3b", "source": "write-welcome-lucas", "target": "ai-cargo-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-4", "source": "ai-cargo-lucas", "target": "ai-objetivo-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-5", "source": "ai-objetivo-lucas", "target": "ai-area-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-6", "source": "ai-area-lucas", "target": "switch-area-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-fin-1", "source": "switch-area-lucas", "target": "slot-fin-area-label-lucas", "sourceHandle": "opt-financas", "targetHandle": null, "label": "Finanças" },
-        { "id": "el-fin-2", "source": "slot-fin-area-label-lucas", "target": "slot-fin-color-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-3", "source": "slot-fin-color-lucas", "target": "write-fin-career-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-4", "source": "write-fin-career-lucas", "target": "write-fin-programas-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-5", "source": "write-fin-programas-lucas", "target": "slot-fin-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-6", "source": "slot-fin-cta-lucas", "target": "slot-fin-stat-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-7", "source": "slot-fin-stat-lucas", "target": "write-fin-pitch-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-8", "source": "write-fin-pitch-lucas", "target": "write-fin-share-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-9", "source": "write-fin-share-lucas", "target": "ai-confirma-financas-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-fin-10", "source": "ai-confirma-financas-lucas", "target": "switch-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-lid-1", "source": "switch-area-lucas", "target": "slot-lid-area-label-lucas", "sourceHandle": "opt-lideranca", "targetHandle": null, "label": "Liderança" },
-        { "id": "el-lid-2", "source": "slot-lid-area-label-lucas", "target": "slot-lid-color-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-3", "source": "slot-lid-color-lucas", "target": "write-lid-career-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-4", "source": "write-lid-career-lucas", "target": "write-lid-programas-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-5", "source": "write-lid-programas-lucas", "target": "slot-lid-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-6", "source": "slot-lid-cta-lucas", "target": "slot-lid-stat-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-7", "source": "slot-lid-stat-lucas", "target": "write-lid-pitch-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-8", "source": "write-lid-pitch-lucas", "target": "write-lid-share-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-9", "source": "write-lid-share-lucas", "target": "ai-confirma-lideranca-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-lid-10", "source": "ai-confirma-lideranca-lucas", "target": "switch-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-sau-1", "source": "switch-area-lucas", "target": "slot-sau-area-label-lucas", "sourceHandle": "opt-saude", "targetHandle": null, "label": "Saúde" },
-        { "id": "el-sau-2", "source": "slot-sau-area-label-lucas", "target": "slot-sau-color-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-3", "source": "slot-sau-color-lucas", "target": "write-sau-career-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-4", "source": "write-sau-career-lucas", "target": "write-sau-programas-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-5", "source": "write-sau-programas-lucas", "target": "slot-sau-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-6", "source": "slot-sau-cta-lucas", "target": "slot-sau-stat-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-7", "source": "slot-sau-stat-lucas", "target": "write-sau-pitch-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-8", "source": "write-sau-pitch-lucas", "target": "write-sau-share-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-9", "source": "write-sau-share-lucas", "target": "ai-confirma-saude-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-sau-10", "source": "ai-confirma-saude-lucas", "target": "switch-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-tec-1", "source": "switch-area-lucas", "target": "slot-tec-area-label-lucas", "sourceHandle": "opt-tecnologia", "targetHandle": null, "label": "Tecnologia" },
-        { "id": "el-tec-2", "source": "slot-tec-area-label-lucas", "target": "slot-tec-color-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-3", "source": "slot-tec-color-lucas", "target": "write-tec-career-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-4", "source": "write-tec-career-lucas", "target": "write-tec-programas-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-5", "source": "write-tec-programas-lucas", "target": "slot-tec-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-6", "source": "slot-tec-cta-lucas", "target": "slot-tec-stat-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-7", "source": "slot-tec-stat-lucas", "target": "write-tec-pitch-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-8", "source": "write-tec-pitch-lucas", "target": "write-tec-share-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-9", "source": "write-tec-share-lucas", "target": "ai-confirma-tech-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-tec-10", "source": "ai-confirma-tech-lucas", "target": "switch-cta-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-cta-email-1", "source": "switch-cta-lucas", "target": "form-lead-email-lucas", "sourceHandle": "opt-cta-email", "targetHandle": null, "label": "Email" },
-        { "id": "el-cta-email-2", "source": "form-lead-email-lucas", "target": "write-lead-email-status-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-cta-email-3", "source": "write-lead-email-status-lucas", "target": "end-shared-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-cta-phone-1", "source": "switch-cta-lucas", "target": "form-lead-phone-lucas", "sourceHandle": "opt-cta-consultor", "targetHandle": null, "label": "Consultor" },
-        { "id": "el-cta-phone-2", "source": "form-lead-phone-lucas", "target": "write-lead-phone-status-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-        { "id": "el-cta-phone-3", "source": "write-lead-phone-status-lucas", "target": "end-shared-lucas", "sourceHandle": null, "targetHandle": null, "label": null },
-
-        { "id": "el-cta-later-1", "source": "switch-cta-lucas", "target": "slot-lead-later-status-lucas", "sourceHandle": "opt-cta-later", "targetHandle": null, "label": "Pensar" },
-        { "id": "el-cta-later-2", "source": "slot-lead-later-status-lucas", "target": "end-shared-lucas", "sourceHandle": null, "targetHandle": null, "label": null }
+        {
+          "id": "el-1",
+          "source": "start-lucas",
+          "target": "persona-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-2",
+          "source": "persona-lucas",
+          "target": "ai-name-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-3a",
+          "source": "ai-name-lucas",
+          "target": "write-welcome-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-3b",
+          "source": "write-welcome-lucas",
+          "target": "ai-cargo-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-4",
+          "source": "ai-cargo-lucas",
+          "target": "ai-objetivo-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-5",
+          "source": "ai-objetivo-lucas",
+          "target": "ai-area-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-6",
+          "source": "ai-area-lucas",
+          "target": "switch-area-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-1",
+          "source": "switch-area-lucas",
+          "target": "slot-fin-area-label-lucas",
+          "sourceHandle": "opt-financas",
+          "targetHandle": null,
+          "label": "Finanças"
+        },
+        {
+          "id": "el-fin-2",
+          "source": "slot-fin-area-label-lucas",
+          "target": "slot-fin-color-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-3",
+          "source": "slot-fin-color-lucas",
+          "target": "write-fin-career-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-4",
+          "source": "write-fin-career-lucas",
+          "target": "write-fin-programas-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-5",
+          "source": "write-fin-programas-lucas",
+          "target": "slot-fin-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-6",
+          "source": "slot-fin-cta-lucas",
+          "target": "slot-fin-stat-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-7",
+          "source": "slot-fin-stat-lucas",
+          "target": "write-fin-pitch-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-8",
+          "source": "write-fin-pitch-lucas",
+          "target": "write-fin-share-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-9",
+          "source": "write-fin-share-lucas",
+          "target": "ai-confirma-financas-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-fin-10",
+          "source": "ai-confirma-financas-lucas",
+          "target": "switch-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-1",
+          "source": "switch-area-lucas",
+          "target": "slot-lid-area-label-lucas",
+          "sourceHandle": "opt-lideranca",
+          "targetHandle": null,
+          "label": "Liderança"
+        },
+        {
+          "id": "el-lid-2",
+          "source": "slot-lid-area-label-lucas",
+          "target": "slot-lid-color-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-3",
+          "source": "slot-lid-color-lucas",
+          "target": "write-lid-career-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-4",
+          "source": "write-lid-career-lucas",
+          "target": "write-lid-programas-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-5",
+          "source": "write-lid-programas-lucas",
+          "target": "slot-lid-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-6",
+          "source": "slot-lid-cta-lucas",
+          "target": "slot-lid-stat-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-7",
+          "source": "slot-lid-stat-lucas",
+          "target": "write-lid-pitch-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-8",
+          "source": "write-lid-pitch-lucas",
+          "target": "write-lid-share-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-9",
+          "source": "write-lid-share-lucas",
+          "target": "ai-confirma-lideranca-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-lid-10",
+          "source": "ai-confirma-lideranca-lucas",
+          "target": "switch-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-1",
+          "source": "switch-area-lucas",
+          "target": "slot-sau-area-label-lucas",
+          "sourceHandle": "opt-saude",
+          "targetHandle": null,
+          "label": "Saúde"
+        },
+        {
+          "id": "el-sau-2",
+          "source": "slot-sau-area-label-lucas",
+          "target": "slot-sau-color-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-3",
+          "source": "slot-sau-color-lucas",
+          "target": "write-sau-career-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-4",
+          "source": "write-sau-career-lucas",
+          "target": "write-sau-programas-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-5",
+          "source": "write-sau-programas-lucas",
+          "target": "slot-sau-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-6",
+          "source": "slot-sau-cta-lucas",
+          "target": "slot-sau-stat-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-7",
+          "source": "slot-sau-stat-lucas",
+          "target": "write-sau-pitch-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-8",
+          "source": "write-sau-pitch-lucas",
+          "target": "write-sau-share-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-9",
+          "source": "write-sau-share-lucas",
+          "target": "ai-confirma-saude-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-sau-10",
+          "source": "ai-confirma-saude-lucas",
+          "target": "switch-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-1",
+          "source": "switch-area-lucas",
+          "target": "slot-tec-area-label-lucas",
+          "sourceHandle": "opt-tecnologia",
+          "targetHandle": null,
+          "label": "Tecnologia"
+        },
+        {
+          "id": "el-tec-2",
+          "source": "slot-tec-area-label-lucas",
+          "target": "slot-tec-color-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-3",
+          "source": "slot-tec-color-lucas",
+          "target": "write-tec-career-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-4",
+          "source": "write-tec-career-lucas",
+          "target": "write-tec-programas-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-5",
+          "source": "write-tec-programas-lucas",
+          "target": "slot-tec-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-6",
+          "source": "slot-tec-cta-lucas",
+          "target": "slot-tec-stat-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-7",
+          "source": "slot-tec-stat-lucas",
+          "target": "write-tec-pitch-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-8",
+          "source": "write-tec-pitch-lucas",
+          "target": "write-tec-share-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-9",
+          "source": "write-tec-share-lucas",
+          "target": "ai-confirma-tech-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-tec-10",
+          "source": "ai-confirma-tech-lucas",
+          "target": "switch-cta-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-email-1",
+          "source": "switch-cta-lucas",
+          "target": "form-lead-email-lucas",
+          "sourceHandle": "opt-cta-email",
+          "targetHandle": null,
+          "label": "Email"
+        },
+        {
+          "id": "el-cta-email-2",
+          "source": "form-lead-email-lucas",
+          "target": "write-lead-email-status-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-email-3",
+          "source": "write-lead-email-status-lucas",
+          "target": "end-shared-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-phone-1",
+          "source": "switch-cta-lucas",
+          "target": "form-lead-phone-lucas",
+          "sourceHandle": "opt-cta-consultor",
+          "targetHandle": null,
+          "label": "Consultor"
+        },
+        {
+          "id": "el-cta-phone-2",
+          "source": "form-lead-phone-lucas",
+          "target": "write-lead-phone-status-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-phone-3",
+          "source": "write-lead-phone-status-lucas",
+          "target": "end-shared-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-later-1",
+          "source": "switch-cta-lucas",
+          "target": "slot-lead-later-status-lucas",
+          "sourceHandle": "opt-cta-later",
+          "targetHandle": null,
+          "label": "Pensar"
+        },
+        {
+          "id": "el-cta-later-2",
+          "source": "slot-lead-later-status-lucas",
+          "target": "end-shared-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-pdf-1",
+          "source": "switch-cta-lucas",
+          "target": "ai-deliver-pdf-lucas",
+          "sourceHandle": "opt-cta-pdf",
+          "targetHandle": null,
+          "label": "PDF"
+        },
+        {
+          "id": "el-cta-pdf-2",
+          "source": "ai-deliver-pdf-lucas",
+          "target": "write-lead-pdf-status-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "el-cta-pdf-3",
+          "source": "write-lead-pdf-status-lucas",
+          "target": "end-shared-lucas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
       ]
     }
   }

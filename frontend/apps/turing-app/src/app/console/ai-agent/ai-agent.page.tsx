@@ -88,10 +88,33 @@ export default function AIAgentPage() {
     setOpen(false);
   }
 
+  async function onExport() {
+    if (!agent.id) return;
+    const blob = await turAIAgentService.export(agent.id);
+    if (!blob) {
+      toast.error(t("aiAgent.exportFailed", { defaultValue: "Export failed" }));
+      return;
+    }
+    const slug = (agent.title || "agent")
+      .toLowerCase()
+      .replaceAll(/[^a-z0-9]+/g, "-")
+      .replaceAll(/(^-)|(-$)/g, "");
+    const fileName = `agent-${slug || "untitled"}-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`;
+    const url = globalThis.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    globalThis.URL.revokeObjectURL(url);
+    a.remove();
+  }
+
   return (
     <LoadProvider checkIsNotUndefined={agent} error={error} tryAgainUrl={`${ROUTES.AI_AGENT_INSTANCE}/${id}`}>
       <SubPage icon={IconRobot} feature={t("aiAgent.title")} name={agent.title}
-        onDelete={onDelete} data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
+        onDelete={onDelete} onExport={onExport}
+        data={data} isNew={isNew} urlBase={urlBase} open={open} setOpen={setOpen} />
     </LoadProvider>
   );
 }

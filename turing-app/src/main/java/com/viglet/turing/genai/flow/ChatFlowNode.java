@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -161,6 +161,37 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.slotValue();
     }
 
+    /**
+     * Soft-fail policy for the LLM_JUDGE guardrail on this {@code aiQuestion}
+     * node. Controls what happens when the judge rejects the user's reply on a
+     * slot-collecting node:
+     *
+     * <ul>
+     *   <li>{@code "advance_with_literal"} — after retry, force-capture the
+     *       user's message into {@code outputVariable} and advance regardless
+     *       of whether the judge produced a substantive redirect. Useful on
+     *       free-form slots (cargo, objetivo) where the judge occasionally
+     *       rejects valid compound answers and would otherwise leave the flow
+     *       stuck with a null slot.</li>
+     *   <li>{@code "reprompt"} — default. Stay on the node and surface the
+     *       judge's redirect_message; force-capture only when both verdicts
+     *       returned blank redirects (current heuristic at
+     *       {@code LlmJudgeGuardrailStrategy#isNonBlankRedirect}).</li>
+     *   <li>{@code "block"} — never force-capture. Always trust the judge's
+     *       rejection. Use on critical-validation slots (CPF, email, payment)
+     *       where capturing a wrong value is worse than reprompting.</li>
+     * </ul>
+     *
+     * <p>{@code null} or unrecognized values fall back to {@code "reprompt"}.
+     * Backwards-compatible: existing flows without this field keep the
+     * pre-2026.2.31 behavior.
+     *
+     * @since 2026.2.31
+     */
+    public String onJudgeReject() {
+        return data.onJudgeReject();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -181,7 +212,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             Boolean overrideExistingValue,
             String slotName,
             String slotOperation,
-            String slotValue) {
+            String slotValue,
+            String onJudgeReject) {
     }
 
     /**

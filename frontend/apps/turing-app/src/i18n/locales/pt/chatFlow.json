@@ -118,6 +118,13 @@
       "outputVariableHint": "Escolhe um item do catálogo de slots tipados do agente para garantir um schema estável dos valores capturados.",
       "overrideExistingValue": "Sempre perguntar (sobrescrever valor existente)",
       "overrideExistingValueHint": "Quando desmarcado, o engine pula este passo se o slot já estiver preenchido. Marque para sempre perguntar e sobrescrever o valor anterior.",
+      "onJudgeReject": "Quando o juiz rejeita a resposta",
+      "onJudgeRejectHint": "Só se aplica quando o guardrailMethod do agente é LLM_JUDGE. O padrão repergunta ao usuário quando o juiz produziu um redirecionamento; advance_with_literal força a captura da mensagem do usuário após retry; block sempre confia no juiz.",
+      "onJudgeRejectOptions": {
+        "reprompt": "Repergunta (padrão) — confia no redirecionamento do juiz",
+        "advance_with_literal": "Avança com literal — captura forçada da mensagem do usuário",
+        "block": "Bloquear — nunca captura forçada, sempre repergunta"
+      },
       "functionName": "Função",
       "toolSource": "Origem da Ferramenta",
       "toolSourceOptions": {

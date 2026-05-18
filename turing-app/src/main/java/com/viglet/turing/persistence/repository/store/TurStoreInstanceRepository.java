@@ -43,6 +43,9 @@ public interface TurStoreInstanceRepository extends JpaRepository<TurStoreInstan
 	@NotNull
 	Optional<TurStoreInstance> findById(@NotNull String id);
 
+	/** Agent-import fallback by title. @since 2026.2.8 */
+	Optional<TurStoreInstance> findByTitleIgnoreCase(String title);
+
 	@CacheEvict(value = { "turStoreInstancefindAll", "turStoreInstancefindById" }, allEntries = true)
 	@NotNull
 	@Override

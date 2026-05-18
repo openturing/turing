@@ -194,13 +194,13 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
                 .as("Marina persona must use a valid TurPersonaTone enum value")
                 .isEqualTo(TurPersonaTone.EXECUTIVE);
         assertThat(imp.persona.getLanguageStyle()).isEqualTo(TurPersonaLanguageStyle.NEUTRAL);
-        assertThat(imp.persona.getMandatoryTerms()).contains("Education").contains("programa");
+        assertThat(imp.persona.getMandatoryTerms()).contains("Acme").contains("programa");
         assertThat(imp.persona.getForbiddenTerms()).contains("talvez").contains("impossível");
         assertThat(imp.persona.getEnabled()).isEqualTo(1);
         assertThat(imp.persona.getSystemInstruction())
                 .as("Marina's system prompt is what makes her stay in voice when no node is active")
                 .contains("Marina")
-                .contains("Executive Education");
+                .contains("Acme Education");
 
         assertThat(imp.flow.getName()).contains("Programa-Match");
         assertThat(imp.flow.getGuardrailMethod()).isEqualTo(TurChatFlowGuardrailMethod.LLM_JUDGE);
@@ -218,11 +218,12 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
 
         List<TurAIAgentSlot> slots = slotRepository.findByTurAIAgent_IdOrderByNameAsc(agent.getId());
         assertThat(slots).extracting(TurAIAgentSlot::getName)
-                .as("All 17 declared slots must be created on the agent — original 9 plus the lead-capture set (welcome/stat/pitch/share/cta/email/phone/status)")
+                .as("All 20 declared slots must be created on the agent — original 9 + lead-capture set (welcome/stat/pitch/share/cta/email/phone/status) + PDF set (proposta_pdf_url/filename/hash)")
                 .containsExactlyInAnyOrder("name", "cargo_atual", "objetivo", "area",
                         "area_label", "color", "career_path", "programas_match", "cta_visible",
                         "welcome_personalized", "stat_pitch", "final_pitch", "share_url",
-                        "cta_choice", "lead_email", "lead_phone", "lead_status");
+                        "cta_choice", "lead_email", "lead_phone", "lead_status",
+                        "proposta_pdf_url", "proposta_pdf_filename", "proposta_pdf_hash");
         for (TurAIAgentSlot s : slots) {
             assertThat(s.getType()).as("slot %s type", s.getName()).isEqualTo(TurAIAgentSlotType.STRING);
         }

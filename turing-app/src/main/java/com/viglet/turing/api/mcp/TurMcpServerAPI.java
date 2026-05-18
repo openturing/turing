@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.viglet.turing.persistence.dto.mcp.TurMcpServerDto;
 import com.viglet.turing.persistence.mapper.mcp.TurMcpServerMapper;
 import com.viglet.turing.persistence.model.mcp.TurMcpServer;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
+import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,11 +29,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class TurMcpServerAPI {
     private final TurMcpServerRepository turMcpServerRepository;
     private final TurMcpServerMapper turMcpServerMapper;
+    private final TurAIAgentRepository turAIAgentRepository;
+    private final TurPersonaRepository turPersonaRepository;
 
     public TurMcpServerAPI(TurMcpServerRepository turMcpServerRepository,
-            TurMcpServerMapper turMcpServerMapper) {
+            TurMcpServerMapper turMcpServerMapper,
+            TurAIAgentRepository turAIAgentRepository,
+            TurPersonaRepository turPersonaRepository) {
         this.turMcpServerRepository = turMcpServerRepository;
         this.turMcpServerMapper = turMcpServerMapper;
+        this.turAIAgentRepository = turAIAgentRepository;
+        this.turPersonaRepository = turPersonaRepository;
     }
 
     @Operation(summary = "MCP Server List")
@@ -70,6 +78,23 @@ public class TurMcpServerAPI {
     @Operation(summary = "Delete a MCP Server")
     @DeleteMapping("/{id}")
     public boolean turMcpServerDelete(@PathVariable String id) {
+        // Detach every reference to this MCP server before deleting so the
+        // FK constraints don't reject the delete:
+        //   • ai_agent_mcp_server (M2M join table — remove from agent's catalog)
+        //   • ai_persona.brand_context_mcp_server_id (M2O on persona)
+        //
+        // saveAndFlush instead of save because the next line is a `@Modifying`
+        // JPQL bulk delete that bypasses the persistence context — pending
+        // updates must hit the DB before the constraint check fires.
+        for (var agent : this.turAIAgentRepository.findByMcpServerId(id)) {
+            agent.getMcpServers().removeIf(m -> id.equals(m.getId()));
+            this.turAIAgentRepository.save(agent);
+        }
+        this.turAIAgentRepository.flush();
+        for (var persona : this.turPersonaRepository.findByBrandContextMcpServer_Id(id)) {
+            persona.setBrandContextMcpServer(null);
+            this.turPersonaRepository.saveAndFlush(persona);
+        }
         this.turMcpServerRepository.delete(id);
         return true;
     }

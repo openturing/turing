@@ -134,7 +134,8 @@ export default function ExchangeImportPage() {
                 setStorageEnabled(features.storageEnabled);
 
                 const hasConflicts = (check.conflicts?.length ?? 0) > 0;
-                if (check.hasContent || check.hasTemplate || hasConflicts) {
+                const hasAgentConflicts = (check.agentConflicts?.length ?? 0) > 0;
+                if (check.hasContent || check.hasTemplate || hasConflicts || hasAgentConflicts) {
                     setStatus("import-prompt");
                     return;
                 }
@@ -454,6 +455,7 @@ export default function ExchangeImportPage() {
 
                             <ImportOptionsPanel
                                 conflicts={zipCheck?.conflicts ?? []}
+                                agentConflicts={zipCheck?.agentConflicts ?? []}
                                 hasContent={zipCheck?.hasContent ?? false}
                                 hasTemplate={zipCheck?.hasTemplate ?? false}
                                 storageEnabled={storageEnabled}
@@ -465,7 +467,7 @@ export default function ExchangeImportPage() {
                                 }}
                                 labels={{
                                     configAlwaysIncluded: t("exchange.importOptions.configAlwaysIncluded"),
-                                    conflictWarningTitle: t("exchange.importOptions.conflictWarningTitle", { count: zipCheck?.conflicts?.length ?? 0 }),
+                                    conflictWarningTitle: t("exchange.importOptions.conflictWarningTitle", { count: (zipCheck?.conflicts?.length ?? 0) + (zipCheck?.agentConflicts?.length ?? 0) }),
                                     overwriteConfig: t("exchange.importOptions.overwriteConfig"),
                                     overwriteConfigOn: t("exchange.importOptions.overwriteConfigOn"),
                                     overwriteConfigOff: t("exchange.importOptions.overwriteConfigOff"),

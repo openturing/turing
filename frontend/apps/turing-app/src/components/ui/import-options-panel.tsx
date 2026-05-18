@@ -1,4 +1,7 @@
-import type { TurSiteConflict } from "@/models/marketplace/import-result.model";
+import type {
+    TurAgentConflict,
+    TurSiteConflict,
+} from "@/models/marketplace/import-result.model";
 import {
     IconAlertTriangle,
     IconBrowserCheck,
@@ -22,6 +25,8 @@ export interface ImportOptionsLabels {
 
 interface ImportOptionsPanelProps {
     conflicts: TurSiteConflict[];
+    /** Existing AI agents that the bundle would overwrite. @since 2026.2.8 */
+    agentConflicts?: TurAgentConflict[];
     conflictsLoading?: boolean;
     hasContent: boolean;
     hasTemplate: boolean;
@@ -103,6 +108,7 @@ function OptionCard({
 
 export function ImportOptionsPanel({
     conflicts,
+    agentConflicts = [],
     conflictsLoading,
     hasContent,
     hasTemplate,
@@ -112,7 +118,7 @@ export function ImportOptionsPanel({
     labels,
     disabled,
 }: Readonly<ImportOptionsPanelProps>) {
-    const hasConflicts = conflicts.length > 0;
+    const hasConflicts = conflicts.length > 0 || agentConflicts.length > 0;
     const canIncludeTemplate = hasTemplate && storageEnabled;
 
     return (
@@ -125,7 +131,10 @@ export function ImportOptionsPanel({
                             <div className="font-medium">{labels.conflictWarningTitle}</div>
                             <ul className="mt-1 space-y-0.5 text-muted-foreground">
                                 {conflicts.map((c) => (
-                                    <li key={c.id} className="truncate">• {c.name}</li>
+                                    <li key={`site-${c.id}`} className="truncate">• {c.name}</li>
+                                ))}
+                                {agentConflicts.map((c) => (
+                                    <li key={`agent-${c.id}`} className="truncate">• {c.name} <span className="text-[10px] opacity-60">(agent)</span></li>
                                 ))}
                             </ul>
                         </div>

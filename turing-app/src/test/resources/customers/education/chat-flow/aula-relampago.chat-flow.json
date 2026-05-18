@@ -1,0 +1,155 @@
+[
+  {
+    "id": "EE_AULA_RELAMPAGO",
+    "name": "Aula-Relâmpago Acme Edu",
+    "description": "Professor Acme em modo aula-relâmpago: o visitante escolhe um termo técnico (Real Options, Liderança Servidora, Lean Six Sigma, Machine Learning aplicado a saúde, …), o chat-flow chama a tool `aula_relampago` que puxa 3 referências do acervo acadêmico DSpace, monta uma mind-map em Mermaid + 3 chips de follow-up, e o professor entrega uma explicação de 90 segundos em 4 beats × 22s — calibrada pelo cargo atual do visitante (CEO vê estratégico, gerente vê tático, júnior vê fundamentos) e pelo setor (se vier do Programa-Match). Posiciona o Acme como professor, não vendedor.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "Ativar quando o visitante quer ENTENDER ou APRENDER algo — quaisquer perguntas no formato 'o que é X', 'me explica X', 'me ensina X', 'qual a diferença entre X e Y', 'como funciona X', 'o que significa X em Y', 'X em 90s', 'me dá uma aula-relâmpago', 'fala sobre X', 'me passa o conceito de X' — onde X é um termo técnico ou conceito de carreira (ex.: Real Options, OKR, Liderança Servidora, Six Sigma, Machine Learning, Valuation, Gestão de Riscos, Compliance, Design Thinking). NÃO disparar para pedidos administrativos (matrícula, boleto), nem para o flow Programa-Match (que tem trigger próprio cobrindo saudações e pedidos de programa).",
+    "triggerMode": "ALWAYS",
+    "slots": [
+      {
+        "name": "aula_term",
+        "description": "Termo técnico que o visitante quer aprender em 90s. Capturado no 1º turno; usado pela tool `aula_relampago` como query no DSpace e citado pela persona.",
+        "type": "STRING"
+      },
+      {
+        "name": "aula_sector",
+        "description": "Setor / área de aplicação da aula (Finanças & Investimentos, Liderança & Gestão, Saúde, Tecnologia & Dados). Auto-pulled do slot `area_label` ou `area` quando o visitante vem do Programa-Match. Opcional — quando vazio, a aula vira genérica.",
+        "type": "STRING"
+      },
+      {
+        "name": "aula_lesson_pack",
+        "description": "JSON estruturado escrito pela tool: term, sector, difficultyLevel (STRATEGIC/MANAGERIAL/FOUNDATIONAL/TACTICAL/GENERIC), cargoAtual (echo), totalDspaceHits, references (até 3 com title, author, year, type, quote), followups (3 chips), mindmapMermaid (string), beats (4 × 22s). React UI renderiza um painel 'Fontes Acme' ao lado da fala do professor.",
+        "type": "STRING"
+      },
+      {
+        "name": "aula_followups",
+        "description": "JSON array com 3 strings de perguntas-chip pro próximo turno (ex.: 'Como Real Options aplica em saúde?', 'Qual a armadilha mais comum?', 'Tem caso brasileiro real?'). Renderizado como chips clicáveis abaixo da aula.",
+        "type": "STRING"
+      },
+      {
+        "name": "aula_mindmap",
+        "description": "Diagrama Mermaid (mindmap) com o termo no centro e 4 sub-conceitos extraídos por keyword-frequency dos abstracts DSpace. Renderizado pelo portal usando o mesmo lazy import do CareerPathMermaid.",
+        "type": "STRING"
+      },
+      {
+        "name": "aula_followup_choice",
+        "description": "Qual chip de follow-up o visitante clicou (ou texto livre) após a aula. Captura para decidir se gera outra aula encadeada ou se finaliza.",
+        "type": "STRING"
+      }
+    ],
+    "personas": [
+      {
+        "id": "PERSONA_PROFESSOR_INSPER_EE",
+        "name": "Professor Acme — Aula-Relâmpago",
+        "description": "Professor(a) do Acme Education especialista em destilar conceitos técnicos em 90 segundos. Tom acadêmico mas acessível, calibrado pelo cargo do visitante. Cita SEMPRE pelo menos 1 referência do acervo DSpace.",
+        "systemInstruction": "Você é um(a) Professor(a) experiente do Acme Education, e seu trabalho é entregar AULAS-RELÂMPAGO de 90 segundos sobre conceitos técnicos. Fale SEMPRE em português brasileiro. Tom acadêmico, claro, sem soar pedante. Quando o flow chegar no nó de entrega da aula, você DEVE chamar a tool `aula_relampago` com o termo que o visitante pediu (e com `sector` se souber). A tool retorna um scaffold com 4 beats × 22s + referências do acervo Acme — siga esse scaffold à risca. NUNCA invente referências; cite apenas o que vier no scaffold (autor, ano, título). NÃO ultrapasse 90 segundos no total (~250 palavras faladas). Frases curtas. Termine SEMPRE convidando o visitante a clicar em uma das chips de follow-up. Você NÃO é vendedor(a) — só sugira um programa Acme se vier explícito no scaffold, e mesmo assim como 'próximo passo de aprofundamento', não como pressão.",
+        "tone": "TECHNICAL",
+        "verbosity": 3,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "Acme",
+        "forbiddenTerms": "comprar|adquirir|matricule|inscreva-se já|promoção|desconto",
+        "enabled": 1
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start-1",
+          "type": "start",
+          "position": {
+            "x": 40,
+            "y": 240
+          },
+          "data": {
+            "label": "INÍCIO",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-professor",
+          "type": "persona",
+          "position": {
+            "x": 200,
+            "y": 240
+          },
+          "data": {
+            "label": "VOZ: Professor Acme",
+            "type": "persona",
+            "personaId": "PERSONA_PROFESSOR_INSPER_EE"
+          }
+        },
+        {
+          "id": "ai-pick-term",
+          "type": "aiQuestion",
+          "position": {
+            "x": 420,
+            "y": 240
+          },
+          "data": {
+            "label": "ESCOLHER O TERMO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte ao visitante qual CONCEITO técnico ele quer entender em 90 segundos. Apresente-se brevemente: 'Sou Professor(a) do Acme. Em 90 segundos eu explico qualquer conceito técnico — com 4 beats de 22s e 1 referência do acervo. Qual termo quer aprender?' Aceite o termo EXATO como input — pode ser uma palavra ('Valuation'), uma sigla ('OKR'), ou uma expressão ('Liderança Servidora', 'Machine Learning aplicado a saúde'). Os 4 chips abaixo são SUGESTÕES (cobrindo as 4 áreas do EE), mas o visitante pode digitar qualquer outro termo. NÃO valide se o termo é 'apropriado' — TODO termo merece uma aula.",
+            "outputVariable": "aula_term",
+            "inlineOptions": [
+              "Real Options",
+              "Liderança Servidora",
+              "Lean Six Sigma",
+              "Machine Learning aplicado a saúde"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-deliver-aula",
+          "type": "aiQuestion",
+          "position": {
+            "x": 700,
+            "y": 240
+          },
+          "data": {
+            "label": "ENTREGAR A AULA (tool call)",
+            "type": "aiQuestion",
+            "aiInstruction": "CHAME OBRIGATORIAMENTE a tool `aula_relampago` com: `term` = \"{{aula_term}}\". Se o slot `area_label` existir (visitante veio do Programa-Match), passe também `sector` = \"{{area_label}}\". A tool retorna um SCAFFOLD com 4 beats + referências do acervo DSpace + mindmap. ENTREGUE A AULA seguindo o scaffold EXATAMENTE: 4 beats (~22s cada), citando ao menos 1 referência com autor + ano. Use a quote literal quando vier no scaffold — atribua sempre. NÃO ultrapasse 250 palavras. Termine com 'Qual o próximo passo? Pode clicar nas chips abaixo ou me pedir outro conceito.' — os chips são renderizados pelo portal a partir do slot `aula_followups`. CAPTURE qualquer texto que o visitante responder no próximo turno em `aula_followup_choice`.",
+            "outputVariable": "aula_followup_choice",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "end-1",
+          "type": "end",
+          "position": {
+            "x": 980,
+            "y": 240
+          },
+          "data": {
+            "label": "FIM",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "start-1",
+          "target": "persona-professor"
+        },
+        {
+          "id": "e2",
+          "source": "persona-professor",
+          "target": "ai-pick-term"
+        },
+        {
+          "id": "e3",
+          "source": "ai-pick-term",
+          "target": "ai-deliver-aula"
+        },
+        {
+          "id": "e4",
+          "source": "ai-deliver-aula",
+          "target": "end-1"
+        }
+      ]
+    }
+  }
+]

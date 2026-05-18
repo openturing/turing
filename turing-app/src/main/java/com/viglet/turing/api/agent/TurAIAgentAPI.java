@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.viglet.turing.exchange.agent.TurAIAgentExportService;
 import com.viglet.turing.persistence.dto.agent.TurAIAgentDto;
 import com.viglet.turing.persistence.mapper.agent.TurAIAgentMapper;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
@@ -30,15 +31,27 @@ import com.viglet.turing.persistence.repository.embedding.TurEmbeddingModelRepos
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.mcp.TurMcpServerRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
+import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.store.TurStoreInstanceRepository;
 import com.viglet.turing.spring.utils.TurPersistenceUtils;
 import com.viglet.turing.system.TurGlobalSettingsService;
 
+import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/ai-agent")
 @Tag(name = "AI Agent", description = "AI Agent API")
@@ -51,7 +64,9 @@ public class TurAIAgentAPI {
     private final TurEmbeddingModelRepository turEmbeddingModelRepository;
     private final TurStoreInstanceRepository turStoreInstanceRepository;
     private final TurPersonaRepository turPersonaRepository;
+    private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurGlobalSettingsService turGlobalSettingsService;
+    private final TurAIAgentExportService turAIAgentExportService;
 
     public TurAIAgentAPI(TurAIAgentRepository turAIAgentRepository,
             TurAIAgentMapper turAIAgentMapper,
@@ -61,7 +76,9 @@ public class TurAIAgentAPI {
             TurEmbeddingModelRepository turEmbeddingModelRepository,
             TurStoreInstanceRepository turStoreInstanceRepository,
             TurPersonaRepository turPersonaRepository,
-            TurGlobalSettingsService turGlobalSettingsService) {
+            TurSNSiteGenAiRepository turSNSiteGenAiRepository,
+            TurGlobalSettingsService turGlobalSettingsService,
+            TurAIAgentExportService turAIAgentExportService) {
         this.turAIAgentRepository = turAIAgentRepository;
         this.turAIAgentMapper = turAIAgentMapper;
         this.turLLMInstanceRepository = turLLMInstanceRepository;
@@ -70,7 +87,9 @@ public class TurAIAgentAPI {
         this.turEmbeddingModelRepository = turEmbeddingModelRepository;
         this.turStoreInstanceRepository = turStoreInstanceRepository;
         this.turPersonaRepository = turPersonaRepository;
+        this.turSNSiteGenAiRepository = turSNSiteGenAiRepository;
         this.turGlobalSettingsService = turGlobalSettingsService;
+        this.turAIAgentExportService = turAIAgentExportService;
     }
 
     @Operation(summary = "AI Agent List")
@@ -79,6 +98,44 @@ public class TurAIAgentAPI {
     public List<TurAIAgentDto> turAIAgentList() {
         return turAIAgentMapper
                 .toDtoList(this.turAIAgentRepository.findAll(TurPersistenceUtils.orderByTitleIgnoreCase()));
+    }
+
+    @Operation(summary = "Export an AI Agent as a ZIP bundle",
+            description = "Produces a ZIP containing agent.json (TurExchange envelope), one " +
+                    "chat-flows/{slug}.chat-flow.json per chat flow, and one tools/{slug}.groovy " +
+                    "per custom tool. API keys (LLM apiKey/apiKeyEncrypted) are never serialized.")
+    @GetMapping(value = "/{id}/export", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @Secured({"ROLE_ADMIN", "AI_AGENT_VIEW"})
+    public StreamingResponseBody turAIAgentExport(@PathVariable String id,
+            HttpServletResponse response) {
+        TurAIAgent agent = turAIAgentRepository.findById(id).orElse(null);
+        if (agent == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "AI Agent not found: " + id);
+        }
+        Path zipPath = turAIAgentExportService.exportAgentToZip(id);
+        String filename = "agent-" + safeFilenamePart(agent.getTitle(), id) + ".zip";
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encodedFilename);
+        return output -> {
+            try {
+                Files.copy(zipPath, output);
+                output.flush();
+            } catch (IOException e) {
+                log.error("Failed to stream agent export for {}: {}", id, e.getMessage(), e);
+            } finally {
+                turAIAgentExportService.cleanup(zipPath);
+            }
+        };
+    }
+
+    private static String safeFilenamePart(String name, String id) {
+        String base = (name == null ? "untitled" : name)
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-)|(-$)", "");
+        if (base.isEmpty()) base = "untitled";
+        return base + "-" + (id == null ? "" : id.substring(0, Math.min(8, id.length())));
     }
 
     @Operation(summary = "AI Agent structure")
@@ -172,6 +229,21 @@ public class TurAIAgentAPI {
     @DeleteMapping("/{id}")
     @Secured({"ROLE_ADMIN", "AI_AGENT_DELETE"})
     public boolean turAIAgentDelete(@PathVariable String id) {
+        // SN site GenAI configs may point at this agent via the
+        // fk_sn_site_genai_ai_agent FK. Detach them first (null out agent_id)
+        // so the site keeps its GenAI config but no longer references a
+        // deleted agent — otherwise the FK rejects the agent delete.
+        //
+        // saveAndFlush (vs. save) is required because the agent delete on the
+        // next line is a `@Modifying` JPQL bulk query that bypasses the JPA
+        // persistence context: a plain save() schedules the UPDATE but the
+        // database doesn't see it until flush, so the FK constraint check
+        // fires against the still-old agent_id and rejects the delete.
+        var attachedSites = this.turSNSiteGenAiRepository.findByTurAIAgent_Id(id);
+        for (var siteGenAi : attachedSites) {
+            siteGenAi.setTurAIAgent(null);
+            this.turSNSiteGenAiRepository.saveAndFlush(siteGenAi);
+        }
         this.turAIAgentRepository.delete(id);
         return true;
     }

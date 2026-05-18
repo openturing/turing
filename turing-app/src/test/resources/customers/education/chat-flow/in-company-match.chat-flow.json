@@ -1,0 +1,870 @@
+[
+  {
+    "id": "EE_IN_COMPANY_MATCH",
+    "name": "In-Company Match — Acme Edu Corporate",
+    "description": "Camila Saraiva, account executive corporate do Acme Edu. Captura briefing de treinamento in-company em 6 turnos (razão social, número de pessoas, tema, prazo, formato, papel de decisão) e dispara a tool `compor_proposta_in_company` que retorna uma proposta precificada com módulos curados, cronograma adaptativo por prazo, casos similares via turingSearch e tier de pricing determinístico (small/medium/large/enterprise) com volume discount escalonado (0→48%). Fechamento oferece 5 CTAs: baixar PDF, receber por email, account exec em 24h (4h em fast-track), compartilhar com CEO, pensar.",
+    "guardrailMethod": "LLM_JUDGE",
+    "triggerDescription": "Ativar SOMENTE quando o visitante demonstra intenção CORPORATIVA explícita — pedido de treinamento para a empresa, capacitação de equipe, in-company, treinar colaboradores, formar uma turma fechada, ou quando menciona termos como 'minha empresa', 'meu time', 'nossa equipe', 'razão social', 'CNPJ', 'X pessoas', 'treinar Y pessoas', 'capacitação corporativa', 'workshop fechado', 'turma exclusiva', 'in-company', 'in company', 'L&D', 'RH precisa de'. Também disparar quando o visitante se identifica explicitamente como RH, L&D, gestor de equipe pedindo treinamento, ou CEO/diretor pedindo capacitação. NÃO disparar para conversas individuais de carreira (essas vão pro Programa-Match), nem para saudações genéricas, nem para dúvidas administrativas. Em caso de ambiguidade entre B2B e B2C, este flow tem prioridade quando há QUALQUER menção numérica plural ('15 pessoas', '50 colaboradores') ou de empresa.",
+    "triggerMode": "ALWAYS",
+    "experimentKey": "in-company-persona-2026",
+    "variantLabel": "camila-account-exec",
+    "trafficWeight": 100,
+    "slots": [
+      {
+        "name": "razao_social",
+        "description": "Nome / razão social da empresa que pede o treinamento. Capturado no turno 1 — usado no header do CompanyProposalCard, no PDF e no share_url_b2b.",
+        "type": "STRING"
+      },
+      {
+        "name": "cnpj",
+        "description": "CNPJ opcional. Capturado via formCapture com validationRule=cnpj (mod-11). Pode ficar vazio — não bloqueia a proposta. Reservado para v2 (lead enrichment).",
+        "type": "STRING"
+      },
+      {
+        "name": "setor_empresa",
+        "description": "Setor da empresa que pediu o treinamento — usado pela tool `compor_proposta_in_company` pra enriquecer a busca de casos similares (turingSearch). Opcional.",
+        "type": "STRING"
+      },
+      {
+        "name": "num_pessoas",
+        "description": "Quantas pessoas serão treinadas. Captura tolerante: aceita '15', '15 pessoas', '15-20', '~15'. A tool extrai o inteiro com regex e usa o limite inferior em faixas. Roteia o pricing tier (small ≤14, medium 15-49, large 50-99, enterprise 100+).",
+        "type": "STRING"
+      },
+      {
+        "name": "tier",
+        "description": "Tier de pricing derivado pela tool: small | medium | large | enterprise. Não escrito manualmente — vem da tool.",
+        "type": "STRING"
+      },
+      {
+        "name": "tier_label",
+        "description": "Nome humano do tier (Workshop turma aberta | Programa customizado | In-company dedicado | Programa estruturado). Renderizado no CompanyProposalCard.",
+        "type": "STRING"
+      },
+      {
+        "name": "tema",
+        "description": "Tema central do treinamento — texto livre do visitante. Ex: 'IA generativa', 'liderança de alto impacto', 'finanças para não-financeiros'.",
+        "type": "STRING"
+      },
+      {
+        "name": "tema_normalized",
+        "description": "Tema normalizado pra chave de catálogo: financas | lideranca | saude | tecnologia | outros. Determinado pela tool via regex no texto livre.",
+        "type": "STRING"
+      },
+      {
+        "name": "prazo",
+        "description": "Quando o treinamento precisa rodar: urgente (≤30d) | trimestre (≤90d) | semestre (≤180d) | flex. Roteia o cronograma adaptativo gerado pela tool.",
+        "type": "STRING"
+      },
+      {
+        "name": "prazo_label",
+        "description": "Label humano do prazo + flag fast-track quando aplicável ('≤ 30 dias (Fast-track)'). Renderizado no card.",
+        "type": "STRING"
+      },
+      {
+        "name": "formato",
+        "description": "Formato preferido: Presencial | Online ao vivo | Híbrido. Captura tolerante; a tool sugere um formato dependendo do tier (small→online, medium→híbrido, large→híbrido, enterprise→híbrido com múltiplas turmas).",
+        "type": "STRING"
+      },
+      {
+        "name": "decision_role",
+        "description": "Papel do visitante na decisão: RH/L&D | Gestor da área | C-level | Comprador | Outros. Usado para ajustar o tom no fechamento (RH ouve sobre logistics; C-level ouve sobre ROI).",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_intent",
+        "description": "Resposta sim/não capturada pelo nó ai-coupon-intent. Roteia o switch-coupon-intent: '🎟 Tenho um cupom' pede o código no nó seguinte; '🚫 Sem cupom (pular)' pula direto pra geração da proposta sem cupom. NÃO é o código em si — só sinaliza a intenção.",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_code",
+        "description": "Código de cupom institucional opcional digitado pelo comprador (INSPER10, EARLYBIRD25). A tool valida contra um registry hardcoded e aplica desconto multiplicativo on-top do volume tier. Valores ignorados: vazio, '—', 'nenhum', 'pular', 'skip', 'não', 'n/a' — todos viram no-op sem erro. Códigos não reconhecidos viram coupon_invalid=true e o portal mostra hint pro comprador retentar.",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_applied",
+        "description": "'true' quando o coupon_code casou com o registry e o desconto foi aplicado; 'false' caso contrário. String pra facilitar comparação no chat-flow ('false' === default sem null-checks).",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_pct",
+        "description": "Percentual do desconto do cupom aplicado (0–100). Default '0' quando sem cupom. Multiplicado por (preço × (100-volume%)) — NÃO somado.",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_label",
+        "description": "Label humano do cupom aplicado ('Cupom institucional INSPER10'). Vazio quando sem cupom. Usado pelo dashboard de analytics + Camila no closing.",
+        "type": "STRING"
+      },
+      {
+        "name": "coupon_invalid",
+        "description": "'true' quando o comprador digitou ALGO que não casou com o registry (deixa o portal mostrar hint 'código não reconhecido'). 'false' quando o cupom é válido OU quando o comprador pulou explicitamente ('nenhum'/'skip'/empty).",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_in_company",
+        "description": "JSON estruturado escrito pela tool `compor_proposta_in_company`: {empresa, numPessoas, tier, modulos[], cargaTotal, precoPorPessoa, precoTotal, descontoPercentual, cronograma[], casosSimilares[], proximoPasso}. Portal renderiza como CompanyProposalCard (componente React futuro).",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_in_company_pdf_url",
+        "description": "URL relativa do PDF da proposta corporativa gerado pelo tool `gerar_proposta_pdf` (com flow_type=in_company aplicando layout B2B).",
+        "type": "STRING"
+      },
+      {
+        "name": "proposta_in_company_pdf_filename",
+        "description": "Nome do arquivo PDF da proposta corporativa, usado no atributo download do anchor.",
+        "type": "STRING"
+      },
+      {
+        "name": "cta_visible",
+        "description": "Quando 'true', o portal exibe o CompanyProposalCard e os botões de CTA B2B. Setado pela tool após escrever a proposta.",
+        "type": "STRING"
+      },
+      {
+        "name": "share_url_b2b",
+        "description": "Deep link compartilhável pra outro stakeholder (CEO, RH, comprador) abrir e ver a proposta contextualizada. Params: empresa, tema, num_pessoas. Sem pricing detalhado no URL.",
+        "type": "STRING"
+      },
+      {
+        "name": "sales_room_url",
+        "description": "URL relativa para o sales room multiplayer ('/sales-room?conv=<conversationId>') — espaço onde múltiplos stakeholders (RH + Sponsor + comprador) abrem o mesmo link e veem a proposta + thread de comentários compartilhados (SSE-streamed). Setado pelo tool `compor_proposta_in_company`. Autorização por posse-do-URL (mesmo modelo do share_url Marina).",
+        "type": "STRING"
+      },
+      {
+        "name": "sales_room_comments",
+        "description": "Thread JSON-array de comentários do sales room: [{author, role, message, timestamp}]. Append-only via useTuringSlotWriter. Atualizações fluem pra todos os viewers via SSE. Vazia ('[]' ou ausente) quando ninguém comentou ainda.",
+        "type": "STRING"
+      },
+      {
+        "name": "sales_room_visit_count",
+        "description": "Contador inteiro de visitas ao sales room — incrementado por cada viewer ao abrir o link. Sinaliza pro buyer 'o sponsor abriu a sala?' sem precisar de pixel tracking de email. Pode ter race em escritas concorrentes; aceitável porque o sinal importante é monotonicidade ('alguém abriu'), não exatidão.",
+        "type": "STRING"
+      },
+      {
+        "name": "cta_choice_b2b",
+        "description": "Escolha de CTA do visitante após ver a proposta: pdf | email | account_exec | share_ceo | thinking. Roteia o switch-cta-b2b.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_corp_email",
+        "description": "Email corporativo do comprador (RH/L&D/gestor/CEO) — capturado via formCapture quando cta_choice_b2b=email ou ceo_share. Validation=email.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_corp_phone",
+        "description": "WhatsApp/telefone corporativo do comprador — capturado quando cta_choice_b2b=account_exec. Validation=phone.",
+        "type": "STRING"
+      },
+      {
+        "name": "ceo_email",
+        "description": "Email do CEO/sponsor capturado quando o visitante (RH) quer compartilhar a proposta com o sponsor antes de decidir. Validation=email.",
+        "type": "STRING"
+      },
+      {
+        "name": "lead_corp_status",
+        "description": "Estado final do lead corporativo: briefing_received | proposal_emailed | account_exec_requested | shared_with_sponsor | pdf_downloaded | thinking. Usado pelo dashboard de analytics + integração CRM.",
+        "type": "STRING"
+      }
+    ],
+    "personas": [
+      {
+        "id": "PERSONA_CAMILA_ACCOUNT_EXEC",
+        "name": "Camila Saraiva — Account Executive Corporate (Acme Edu)",
+        "description": "Account executive corporate do Acme Education. Atende comprador B2B (RH/L&D/gestor/CEO) que quer treinar uma turma da empresa. Tom profissional, neutro, número-driven — captura briefing em 6 turnos e entrega proposta precificada na hora. NÃO é consultora de carreira (essa é a Marina, em outro flow); NÃO é vendedora agressiva — é interlocutora consultiva que respeita o ciclo de decisão corporativo (multi-stakeholder, ROI, prazo).",
+        "systemInstruction": "Você é a Camila Saraiva, account executive corporate do Acme Education. Fale SEMPRE em português brasileiro. Tom executivo, profissional, neutro — você está conversando com um comprador B2B (RH, L&D, gestor da área, CEO). Frases curtas, perguntas diretas. NÃO use o primeiro nome do visitante sem ter captura — você está falando com a EMPRESA na pessoa do interlocutor. Trate por 'você' formal. NUNCA prometa preço/desconto/bolsa fora do que a tool `compor_proposta_in_company` calcular. NUNCA peça CPF, cartão, senha. NUNCA fale de concorrentes. Quando o visitante perguntar sobre ROI/case studies, diga que vai mostrar nos cards após o briefing. Se o visitante divagar, traga de volta gentilmente para a próxima pergunta — você tem 6 perguntas pra fazer e o tempo do comprador é caro.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "Acme|proposta|in-company",
+        "forbiddenTerms": "talvez|depende muito|impossível|não posso ajudar|não sei",
+        "enabled": 1
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start-b2b",
+          "type": "start",
+          "position": {
+            "x": 40,
+            "y": 360
+          },
+          "data": {
+            "label": "INÍCIO",
+            "type": "start"
+          }
+        },
+        {
+          "id": "persona-camila",
+          "type": "persona",
+          "position": {
+            "x": 200,
+            "y": 360
+          },
+          "data": {
+            "label": "VOZ: Camila Account Exec",
+            "type": "persona",
+            "personaId": "PERSONA_CAMILA_ACCOUNT_EXEC"
+          }
+        },
+        {
+          "id": "ai-razao-social",
+          "type": "aiQuestion",
+          "position": {
+            "x": 420,
+            "y": 360
+          },
+          "data": {
+            "label": "RAZÃO SOCIAL",
+            "type": "aiQuestion",
+            "aiInstruction": "Apresente-se em 1 frase e peça a razão social: 'Oi! Sou a Camila, account executive corporate do Acme Edu. Em 6 perguntas eu monto uma proposta personalizada de in-company. Vamos começar: qual é a razão social da empresa?' Aceite QUALQUER forma de identificar a empresa: 'Acme S.A.', 'Magazine ABC', 'startup XYZ', 'somos a Banco Beta', 'minha empresa é a Fintech Delta'. Extraia o nome da empresa. NÃO peça CNPJ ainda (opcional, captura no fechamento se o visitante quiser). Frase curta.",
+            "outputVariable": "razao_social",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-setor-empresa",
+          "type": "aiQuestion",
+          "position": {
+            "x": 620,
+            "y": 360
+          },
+          "data": {
+            "label": "SETOR DA EMPRESA",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte o setor da empresa {{razao_social}}: 'Em qual setor a {{razao_social}} atua?'. Os chips abaixo são SUGESTÕES — aceite QUALQUER setor (varejo, indústria, governo, agro, etc.). Capture o setor exato como escrito.",
+            "outputVariable": "setor_empresa",
+            "inlineOptions": [
+              "💰 Financeiro",
+              "🏥 Saúde",
+              "💻 Tecnologia",
+              "🏭 Indústria",
+              "🛒 Varejo",
+              "🎯 Outro"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-num-pessoas",
+          "type": "aiQuestion",
+          "position": {
+            "x": 820,
+            "y": 360
+          },
+          "data": {
+            "label": "NÚMERO DE PESSOAS",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte quantas pessoas serão treinadas: 'Quantas pessoas da {{razao_social}} seriam treinadas?'. Os chips abaixo são as 4 FAIXAS de pricing — aceite também resposta livre ('35 pessoas', 'cerca de 60', 'uns 20'). Capture COMO ESTÁ — a tool depois extrai o inteiro. Frase curta.",
+            "outputVariable": "num_pessoas",
+            "inlineOptions": [
+              "👤 5–14 pessoas",
+              "👥 15–49 pessoas",
+              "👥👥 50–99 pessoas",
+              "🏢 100+ pessoas"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-tema",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1040,
+            "y": 360
+          },
+          "data": {
+            "label": "TEMA DO TREINAMENTO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte o tema central do treinamento: 'Qual é o tema central do treinamento que a {{razao_social}} precisa?'. Os chips sugerem 5 grandes áreas — aceite QUALQUER resposta livre ('IA generativa', 'liderança feminina', 'finanças para não-financeiros', 'compliance bancário', 'OKRs'). Capture LITERALMENTE como o visitante escreveu. A tool depois normaliza para uma das 5 chaves de catálogo (financas|lideranca|saude|tecnologia|outros) via regex.",
+            "outputVariable": "tema",
+            "inlineOptions": [
+              "💰 Finanças",
+              "👥 Liderança & Gestão",
+              "🏥 Saúde",
+              "💻 Tecnologia & Dados",
+              "🎯 Outro tema"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-prazo",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1260,
+            "y": 360
+          },
+          "data": {
+            "label": "PRAZO DE EXECUÇÃO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte o prazo: 'Qual é o prazo de execução? Quando vocês precisam começar/concluir?'. Os 4 chips cobrem as opções principais — aceite também resposta livre ('temos urgência para começar antes do fechamento do tri', 'pode ser depois do recesso de fim de ano'). Capture COMO ESTÁ — a tool depois mapeia para urgente|trimestre|semestre|flex via switch tolerante. Frase curta.",
+            "outputVariable": "prazo",
+            "inlineOptions": [
+              "🚨 Próximos 30 dias",
+              "📅 Próximo trimestre",
+              "🗓️ 6 meses+",
+              "🤔 Flexível"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-formato",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1480,
+            "y": 360
+          },
+          "data": {
+            "label": "FORMATO PREFERIDO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte o formato preferido: 'Formato preferido?'. 3 chips — aceite variantes ('híbrido', 'presencial em SP', 'online ao vivo', 'remoto'). Capture como está. A tool sugere o formato ideal pelo tier — você apenas registra a preferência declarada. Frase MUITO curta.",
+            "outputVariable": "formato",
+            "inlineOptions": [
+              "🏢 Presencial",
+              "💻 Online ao vivo",
+              "🔀 Híbrido"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-decision-role",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1700,
+            "y": 360
+          },
+          "data": {
+            "label": "PAPEL DE DECISÃO",
+            "type": "aiQuestion",
+            "aiInstruction": "Última pergunta antes da proposta: 'Última pergunta, e fechamos a proposta: você é RH/L&D, gestor da área, C-level ou comprador?'. Aceite qualquer resposta ('sou RH', 'gerente de TI', 'CEO', 'compras', 'sou eu mesma quem decide'). Capture literalmente. Esse slot ajusta o TOM do fechamento (RH ouve sobre logistics; C-level ouve sobre ROI; comprador ouve sobre garantias). Frase curta.",
+            "outputVariable": "decision_role",
+            "inlineOptions": [
+              "👔 RH / L&D",
+              "🎯 Gestor da área",
+              "🏢 C-level",
+              "🤝 Comprador / procurement"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "ai-coupon-intent",
+          "type": "aiQuestion",
+          "position": {
+            "x": 1880,
+            "y": 360
+          },
+          "data": {
+            "label": "CUPOM? (sim/não)",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte de forma CURTA e NEUTRA se há cupom institucional: 'Antes de fechar a proposta — você tem algum cupom institucional?'. NÃO liste valores de cupom (INSPER10/EARLYBIRD25 ficam reservados para quem já recebeu). Este nó captura APENAS a INTENÇÃO (sim/não) — o código real é pedido no próximo turno. Se o comprador disser 'qual cupom?' ou 'tem desconto?', responda neutramente: 'É opcional — alguns parceiros e ex-alunos têm um código institucional. Se não tiver, pulamos.'. NUNCA prometa um desconto não-aplicado. UMA frase.",
+            "outputVariable": "coupon_intent",
+            "inlineOptions": [
+              "🎟 Tenho um cupom",
+              "🚫 Sem cupom (pular)"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-coupon-intent",
+          "type": "switch",
+          "position": {
+            "x": 1960,
+            "y": 360
+          },
+          "data": {
+            "label": "TEM CUPOM?",
+            "type": "switch",
+            "switchVariable": "coupon_intent",
+            "switchOptions": [
+              {
+                "id": "opt-coupon-yes",
+                "label": "🎟 Tenho um cupom"
+              },
+              {
+                "id": "opt-coupon-no",
+                "label": "🚫 Sem cupom (pular)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "ai-coupon-code",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2020,
+            "y": 260
+          },
+          "data": {
+            "label": "DIGITE O CÓDIGO",
+            "type": "aiQuestion",
+            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. SEM chips: o comprador precisa digitar o código alfanumérico (ex.: INSPER10, EARLYBIRD25). Capture EXATAMENTE como veio — a tool depois normaliza case e espaços. Se o comprador disser que não lembra ou desistir ('na verdade não tenho', 'pula', 'esquece'), capture COMO ESTÁ — a tool reconhece esses sentinelas e segue sem cupom. NUNCA confirme se o código existe (a tool valida) — apenas registre. UMA frase, sem promessas.",
+            "outputVariable": "coupon_code",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "write-coupon-skip",
+          "type": "writeSlot",
+          "position": {
+            "x": 2020,
+            "y": 460
+          },
+          "data": {
+            "label": "coupon_code = ''",
+            "type": "writeSlot",
+            "slotName": "coupon_code",
+            "slotValue": "",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "ai-deliver-proposta",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2080,
+            "y": 360
+          },
+          "data": {
+            "label": "GERAR PROPOSTA (tool call)",
+            "type": "aiQuestion",
+            "aiInstruction": "PASSO 1 (OBRIGATÓRIO) — Chame a tool `compor_proposta_in_company` SEM nenhum argumento (ela lê todos os slots: razao_social, setor_empresa, num_pessoas, tema, prazo, formato, decision_role). A tool calcula tier de pricing, monta módulos, gera cronograma adaptativo, busca casos similares e escreve TUDO no slot proposta_in_company — o CompanyProposalCard aparece AUTOMATICAMENTE no portal. PASSO 2 — UMA mensagem CURTA (1–2 frases) APÓS a tool retornar. Adapte o tom pelo decision_role: SE decision_role contém 'RH' → 'Pronto! Proposta gerada — veja os cards ao lado com módulos, carga horária e cronograma adaptado ao prazo de {{razao_social}}. Como prefere prosseguir?'. SE decision_role contém 'C-level' OU 'CEO' → 'Pronto! Proposta com ROI mapeado nos cards ao lado: investimento total, distribuição por módulo e cronograma. Como prefere prosseguir?'. SE decision_role contém 'gestor' → 'Pronto! Veja a proposta nos cards: 3 módulos práticos com hands-on, cronograma compatível com o prazo. Como prefere prosseguir?'. SE 'comprador' → 'Pronto! Veja o detalhamento ao lado: pricing por pessoa, desconto de volume aplicado e termos do programa. Como prefere prosseguir?'. NUNCA repita preços/módulos no chat (os cards mostram). Capture a escolha em cta_choice_b2b.",
+            "outputVariable": "cta_choice_b2b",
+            "inlineOptions": [
+              "📄 Baixar proposta em PDF",
+              "📩 Receber por email",
+              "📞 Falar com account exec",
+              "👥 Compartilhar com C-level",
+              "🕒 Vou pensar"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-cta-b2b",
+          "type": "switch",
+          "position": {
+            "x": 2300,
+            "y": 360
+          },
+          "data": {
+            "label": "CTA B2B",
+            "type": "switch",
+            "switchVariable": "cta_choice_b2b",
+            "switchOptions": [
+              {
+                "id": "opt-cta-b2b-pdf",
+                "label": "📄 Baixar proposta em PDF"
+              },
+              {
+                "id": "opt-cta-b2b-email",
+                "label": "📩 Receber por email"
+              },
+              {
+                "id": "opt-cta-b2b-exec",
+                "label": "📞 Falar com account exec"
+              },
+              {
+                "id": "opt-cta-b2b-share-ceo",
+                "label": "👥 Compartilhar com C-level"
+              },
+              {
+                "id": "opt-cta-b2b-later",
+                "label": "🕒 Vou pensar"
+              }
+            ]
+          }
+        },
+        {
+          "id": "ai-deliver-b2b-pdf",
+          "type": "aiQuestion",
+          "position": {
+            "x": 2400,
+            "y": 60
+          },
+          "data": {
+            "label": "GERAR PDF DA PROPOSTA",
+            "type": "aiQuestion",
+            "aiInstruction": "Chame `gerar_proposta_pdf` SEM argumentos (a tool lê todos os slots, incluindo proposta_in_company; o layout B2B é aplicado quando o slot é detectado). Após retornar, diga UMA frase: 'Pronto — sua proposta em PDF está abaixo, no botão verde. Pode compartilhar com o time interno antes de decidir.' Capture eventual próxima ação em cta_choice_b2b.",
+            "outputVariable": "cta_choice_b2b",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "write-b2b-pdf-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 2620,
+            "y": 60
+          },
+          "data": {
+            "label": "lead_corp_status = pdf_downloaded",
+            "type": "writeSlot",
+            "slotName": "lead_corp_status",
+            "slotValue": "pdf_downloaded",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-b2b-email",
+          "type": "formCapture",
+          "position": {
+            "x": 2400,
+            "y": 200
+          },
+          "data": {
+            "label": "EMAIL CORPORATIVO",
+            "type": "formCapture",
+            "aiInstruction": "Peça o email corporativo: 'Perfeito. Qual é o seu email corporativo para eu enviar a proposta completa em PDF + a planilha de pricing detalhada?'. Aceite QUALQUER email válido. Se vier formato estranho, peça pra confirmar: 'Confirma se o email está correto?'.",
+            "outputVariable": "lead_corp_email",
+            "validationRule": "email",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-b2b-email-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 2620,
+            "y": 200
+          },
+          "data": {
+            "label": "lead_corp_status = proposal_emailed",
+            "type": "writeSlot",
+            "slotName": "lead_corp_status",
+            "slotValue": "proposal_emailed",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-b2b-phone",
+          "type": "formCapture",
+          "position": {
+            "x": 2400,
+            "y": 360
+          },
+          "data": {
+            "label": "WHATSAPP DO COMPRADOR",
+            "type": "formCapture",
+            "aiInstruction": "Peça WhatsApp/telefone do comprador. SE o slot prazo_label contém a palavra 'Fast-track', diga: 'Show. Me passe um WhatsApp — fast-track ativado, o account exec entra em contato em até 4 horas úteis.' SENÃO diga: 'Show. Me passe um WhatsApp e o account exec entra em contato em até 1 dia útil para ajustar a proposta.' Aceite formato brasileiro. Se errar, peça pra confirmar: 'Confere se o número está certo?'.",
+            "outputVariable": "lead_corp_phone",
+            "validationRule": "phone",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-b2b-exec-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 2620,
+            "y": 360
+          },
+          "data": {
+            "label": "lead_corp_status = account_exec_requested",
+            "type": "writeSlot",
+            "slotName": "lead_corp_status",
+            "slotValue": "account_exec_requested",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "form-b2b-ceo-email",
+          "type": "formCapture",
+          "position": {
+            "x": 2400,
+            "y": 520
+          },
+          "data": {
+            "label": "EMAIL DO C-LEVEL",
+            "type": "formCapture",
+            "aiInstruction": "Peça o email do C-level/sponsor: 'Excelente — multi-stakeholder é o caminho certo. Qual é o email do C-level/sponsor? Vou enviar uma versão executiva da proposta (1 página) para ele(a) revisar antes de você levantar a decisão.' Aceite email válido. Mensagem destaca que NÃO é enviado bypass — o visitante (RH) continua no controle.",
+            "outputVariable": "ceo_email",
+            "validationRule": "email",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "write-b2b-share-ceo-status",
+          "type": "writeSlot",
+          "position": {
+            "x": 2620,
+            "y": 520
+          },
+          "data": {
+            "label": "lead_corp_status = shared_with_sponsor",
+            "type": "writeSlot",
+            "slotName": "lead_corp_status",
+            "slotValue": "shared_with_sponsor",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "slot-b2b-later-status",
+          "type": "slot",
+          "position": {
+            "x": 2400,
+            "y": 680
+          },
+          "data": {
+            "label": "lead_corp_status = thinking",
+            "type": "slot",
+            "slotName": "lead_corp_status",
+            "slotOperation": "SET",
+            "slotValue": "thinking",
+            "overrideExistingValue": true
+          }
+        },
+        {
+          "id": "end-b2b-shared",
+          "type": "end",
+          "position": {
+            "x": 2840,
+            "y": 360
+          },
+          "data": {
+            "label": "FIM",
+            "type": "end"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "eb-1",
+          "source": "start-b2b",
+          "target": "persona-camila",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-2",
+          "source": "persona-camila",
+          "target": "ai-razao-social",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-3",
+          "source": "ai-razao-social",
+          "target": "ai-setor-empresa",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-4",
+          "source": "ai-setor-empresa",
+          "target": "ai-num-pessoas",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-5",
+          "source": "ai-num-pessoas",
+          "target": "ai-tema",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-6",
+          "source": "ai-tema",
+          "target": "ai-prazo",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-7",
+          "source": "ai-prazo",
+          "target": "ai-formato",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-8",
+          "source": "ai-formato",
+          "target": "ai-decision-role",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-9",
+          "source": "ai-decision-role",
+          "target": "ai-coupon-intent",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-9a",
+          "source": "ai-coupon-intent",
+          "target": "switch-coupon-intent",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-9b1",
+          "source": "switch-coupon-intent",
+          "target": "ai-coupon-code",
+          "sourceHandle": "opt-coupon-yes",
+          "targetHandle": null,
+          "label": "Tem cupom"
+        },
+        {
+          "id": "eb-9b2",
+          "source": "ai-coupon-code",
+          "target": "ai-deliver-proposta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-9c1",
+          "source": "switch-coupon-intent",
+          "target": "write-coupon-skip",
+          "sourceHandle": "opt-coupon-no",
+          "targetHandle": null,
+          "label": "Sem cupom"
+        },
+        {
+          "id": "eb-9c2",
+          "source": "write-coupon-skip",
+          "target": "ai-deliver-proposta",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-10",
+          "source": "ai-deliver-proposta",
+          "target": "switch-cta-b2b",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-pdf-1",
+          "source": "switch-cta-b2b",
+          "target": "ai-deliver-b2b-pdf",
+          "sourceHandle": "opt-cta-b2b-pdf",
+          "targetHandle": null,
+          "label": "PDF"
+        },
+        {
+          "id": "eb-cta-pdf-2",
+          "source": "ai-deliver-b2b-pdf",
+          "target": "write-b2b-pdf-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-pdf-3",
+          "source": "write-b2b-pdf-status",
+          "target": "end-b2b-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-email-1",
+          "source": "switch-cta-b2b",
+          "target": "form-b2b-email",
+          "sourceHandle": "opt-cta-b2b-email",
+          "targetHandle": null,
+          "label": "Email"
+        },
+        {
+          "id": "eb-cta-email-2",
+          "source": "form-b2b-email",
+          "target": "write-b2b-email-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-email-3",
+          "source": "write-b2b-email-status",
+          "target": "end-b2b-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-exec-1",
+          "source": "switch-cta-b2b",
+          "target": "form-b2b-phone",
+          "sourceHandle": "opt-cta-b2b-exec",
+          "targetHandle": null,
+          "label": "Account exec"
+        },
+        {
+          "id": "eb-cta-exec-2",
+          "source": "form-b2b-phone",
+          "target": "write-b2b-exec-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-exec-3",
+          "source": "write-b2b-exec-status",
+          "target": "end-b2b-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-ceo-1",
+          "source": "switch-cta-b2b",
+          "target": "form-b2b-ceo-email",
+          "sourceHandle": "opt-cta-b2b-share-ceo",
+          "targetHandle": null,
+          "label": "Compartilhar CEO"
+        },
+        {
+          "id": "eb-cta-ceo-2",
+          "source": "form-b2b-ceo-email",
+          "target": "write-b2b-share-ceo-status",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-ceo-3",
+          "source": "write-b2b-share-ceo-status",
+          "target": "end-b2b-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        },
+        {
+          "id": "eb-cta-later-1",
+          "source": "switch-cta-b2b",
+          "target": "slot-b2b-later-status",
+          "sourceHandle": "opt-cta-b2b-later",
+          "targetHandle": null,
+          "label": "Pensar"
+        },
+        {
+          "id": "eb-cta-later-2",
+          "source": "slot-b2b-later-status",
+          "target": "end-b2b-shared",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "label": null
+        }
+      ]
+    }
+  }
+]

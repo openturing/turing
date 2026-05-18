@@ -49,6 +49,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 /**
  * Central RFC 7807 ProblemDetail handler. Translates business and framework
@@ -204,6 +205,32 @@ public class TurGlobalExceptionHandler {
         log.warn("[GlobalEx] Upstream unreachable: endpoint={} cause={}",
                 info.endpoint(), info.causeKind());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem);
+    }
+
+    /**
+     * SSE / async client disconnect — the visitor closed the tab, hit
+     * back, or refreshed mid-stream. The servlet container raises this
+     * when the response can no longer be written to the (now-dead)
+     * socket. Without this dedicated handler the exception falls through
+     * to {@link #handleUnexpected(Exception)}, which tries to write a
+     * {@link ProblemDetail} body — but the response Content-Type is
+     * already locked to {@code text/event-stream}, so Spring throws a
+     * second {@code HttpMessageNotWritableException} ("No converter for
+     * ProblemDetail with preset Content-Type text/event-stream") and we
+     * end up with two stack traces in the log for one benign event.
+     *
+     * <p>Returning {@code void} from the handler tells Spring to write
+     * no additional response — the SSE stream is already gone, the
+     * client doesn't need an error body, and we save a useless second
+     * pass through the message converters. Logged at DEBUG because a
+     * client disconnect during a stream is normal browser behavior, not
+     * an application error.
+     *
+     * @since 2026.2.x
+     */
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientDisconnect(AsyncRequestNotUsableException ex) {
+        log.debug("[GlobalEx] SSE client disconnected: {}", ex.getMessage());
     }
 
     /**

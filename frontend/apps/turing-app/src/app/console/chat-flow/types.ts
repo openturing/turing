@@ -31,6 +31,26 @@ export type FlowToolSource = "NATIVE" | "MCP";
 export type FlowSlotOperation = "SET" | "DELETE";
 
 /**
+ * Soft-fail policy applied by the {@code LLM_JUDGE} guardrail when the
+ * judge rejects the user's reply on a slot-collecting aiQuestion node.
+ *
+ * - {@code advance_with_literal}: after retry, force-capture the user's
+ *   message into the slot and advance regardless of the judge's redirect.
+ *   Recommended for free-form prose slots (cargo, objetivo, tema livre)
+ *   where the judge occasionally rejects valid compound answers and
+ *   would leave the flow stuck with a null slot.
+ * - {@code reprompt}: default. Trust the judge's redirect when it carries
+ *   a substantive message; force-capture only when both retries returned
+ *   blank redirects (legacy heuristic).
+ * - {@code block}: never force-capture. Always trust the judge's
+ *   rejection. Use on critical-validation slots (CPF, email, payment)
+ *   where capturing a wrong value is worse than reprompting.
+ *
+ * @since 2026.2.31
+ */
+export type FlowOnJudgeReject = "advance_with_literal" | "reprompt" | "block";
+
+/**
  * A single branch on a Switch node. The `id` is used as the `sourceHandle` of any outgoing edge,
  * so it must remain stable across renames (the label can change, but renaming an id would orphan
  * the wired edges).
@@ -98,6 +118,14 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.2.7
    */
   slotValue?: string;
+  /**
+   * Soft-fail policy on this aiQuestion node when the LLM_JUDGE guardrail
+   * rejects the user's reply. See {@link FlowOnJudgeReject} for the mode
+   * semantics. Omitted/null defaults to {@code reprompt}, preserving the
+   * pre-2026.2.31 behavior on existing flows.
+   * @since 2026.2.31
+   */
+  onJudgeReject?: FlowOnJudgeReject;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {

@@ -35,6 +35,9 @@ public interface TurCustomToolRepository extends JpaRepository<TurCustomTool, St
     @NotNull
     Optional<TurCustomTool> findById(@NotNull String id);
 
+    /** Agent-import fallback by title. @since 2026.2.8 */
+    Optional<TurCustomTool> findByTitleIgnoreCase(String title);
+
     @CacheEvict(value = { "turCustomToolfindAll", "turCustomToolfindById" }, allEntries = true)
     @NotNull
     @Override

@@ -44,6 +44,15 @@ public interface TurLLMInstanceRepository extends JpaRepository<TurLLMInstance, 
 	@NotNull
 	Optional<TurLLMInstance> findById(@NotNull String id);
 
+	/**
+	 * Agent-import fallback: resolves a referenced LLM by title when the
+	 * export's UUID doesn't match any existing row. Not cached because
+	 * import writes immediately after reading.
+	 *
+	 * @since 2026.2.8
+	 */
+	Optional<TurLLMInstance> findByTitleIgnoreCase(String title);
+
 	@CacheEvict(value = { "turLLMInstancefindAll", "turLLMInstancefindById" }, allEntries = true)
 	@NotNull
 	@Override

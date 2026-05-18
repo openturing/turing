@@ -8,6 +8,10 @@ import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
+import {
+    GridColumnVisibilityMenu,
+    usePersistedColumnVisibility,
+} from "@/components/ui/grid-column-visibility-menu";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -180,6 +184,19 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
     const dateLocale = useDateLocale();
     const columns = useMemo(() => buildIndexingColumns(t, dateLocale), [t, dateLocale]);
     const [lastUpdated, setLastUpdated] = useState(Date.now());
+    const { columnVisibility, setColumnVisibility, reset: resetColumns } =
+        usePersistedColumnVisibility("turing.indexing.grid.columnVisibility");
+
+    const columnLabels: Record<string, string> = {
+        date: t("forms.indexingLoggingGrid.date"),
+        source: t("forms.indexingLoggingGrid.source"),
+        status: t("forms.indexingLoggingGrid.status"),
+        resultStatus: t("forms.indexingLoggingGrid.resultStatus"),
+        url: t("forms.indexingLoggingGrid.url"),
+        environment: t("forms.indexingLoggingGrid.environment"),
+        locale: t("forms.indexingLoggingGrid.locale"),
+        sites: t("forms.indexingLoggingGrid.sites"),
+    };
 
     useEffect(() => {
         setLastUpdated(Date.now());
@@ -193,7 +210,9 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
         pageCount: totalPages,
         state: {
             pagination: { pageIndex: page, pageSize },
+            columnVisibility,
         },
+        onColumnVisibilityChange: setColumnVisibility,
     });
 
     return (
@@ -270,6 +289,11 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                             className="h-8 text-xs"
                         />
                     </div>
+                    <GridColumnVisibilityMenu
+                        table={table}
+                        columnLabels={columnLabels}
+                        onReset={resetColumns}
+                    />
                     <GradientButton
                         variant="outline"
                         size="sm"
@@ -332,7 +356,7 @@ export const IndexingLoggingGrid: React.FC<PropsWithChildren<Props>> = ({
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={columns.length}>
+                                    <TableCell colSpan={table.getVisibleLeafColumns().length}>
                                         {t("forms.common.noResultsDot")}
                                     </TableCell>
                                 </TableRow>

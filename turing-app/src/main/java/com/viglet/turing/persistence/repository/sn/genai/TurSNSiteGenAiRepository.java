@@ -21,9 +21,19 @@
 
 package com.viglet.turing.persistence.repository.sn.genai;
 
+import java.util.List;
+
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TurSNSiteGenAiRepository extends JpaRepository<TurSNSiteGenAi, String> {
 
+    /**
+     * Used by the agent-delete path to detach SN sites that point at a soon-to-be-deleted
+     * agent (FK {@code sn_site_genai.agent_id}). Without this, the H2/Postgres FK constraint
+     * {@code fk_sn_site_genai_ai_agent} rejects the agent delete.
+     *
+     * @since 2026.2.8
+     */
+    List<TurSNSiteGenAi> findByTurAIAgent_Id(String agentId);
 }

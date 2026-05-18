@@ -22,6 +22,9 @@ public interface TurMcpServerRepository extends JpaRepository<TurMcpServer, Stri
     @NotNull
     Optional<TurMcpServer> findById(@NotNull String id);
 
+    /** Agent-import fallback by title. @since 2026.2.8 */
+    Optional<TurMcpServer> findByTitleIgnoreCase(String title);
+
     @CacheEvict(value = { "turMcpServerfindAll", "turMcpServerfindById" }, allEntries = true)
     @NotNull
     @Override

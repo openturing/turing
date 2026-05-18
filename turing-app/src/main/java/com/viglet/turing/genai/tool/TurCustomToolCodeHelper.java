@@ -9,6 +9,13 @@
  */
 package com.viglet.turing.genai.tool;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
+
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 /**
  * Convenience helper exposed to Custom Tool Groovy scripts under the binding
  * variable name {@code code}. Wraps {@link TurCodeInterpreterToolService} so
@@ -51,6 +58,15 @@ package com.viglet.turing.genai.tool;
  * @since 2026.2.7
  */
 public class TurCustomToolCodeHelper {
+
+    /**
+     * Shared Jackson ObjectMapper for {@link #executePython(Map)}'s
+     * inputs-to-JSON step. Configuration is the default — no pretty-print,
+     * no special date handling, so the generated JSON is compact and
+     * stable. Created once per helper instance to amortize the small but
+     * non-zero ObjectMapper construction cost across multiple tool calls.
+     */
+    private static final ObjectMapper INPUTS_JSON = JsonMapper.builder().build();
 
     private final TurCodeInterpreterToolService codeInterpreter;
     private final String agentRequirements;
@@ -112,5 +128,81 @@ public class TurCustomToolCodeHelper {
         }
         return codeInterpreter.executePythonForTenant(
                 pythonCode, agentRequirements, agentId, conversationId);
+    }
+
+    /**
+     * Named-argument overload — the idiomatic Groovy call pattern is:
+     *
+     * <pre>{@code
+     *   def result = code.executePython(
+     *       script: '''
+     *           # use INPUTS as a regular Python dict
+     *           print("Empresa:", INPUTS["proposta"]["empresa"])
+     *           # … reportlab / matplotlib / pandas …
+     *       ''',
+     *       inputs: [proposta: parsed, share_url_b2b: shareUrl, hash: inputsHash]
+     *   )
+     * }</pre>
+     *
+     * The helper JSON-encodes + base64-wraps {@code inputs} and prepends a
+     * 3-line prelude to {@code script} that decodes them back into a global
+     * dict named {@code INPUTS}. Eliminates the brittle
+     * {@code '''heredoc''' + var + '''heredoc'''} pattern that Groovy's
+     * antlr4 parser chokes on inside method bodies (script-level it works,
+     * but the moment the heredoc lives inside a {@code def myFn() &#123; … &#125;}
+     * the parser emits {@code Unexpected character: '\''} on the close+reopen
+     * sequence).
+     *
+     * <p>The prelude uses underscore-prefixed import aliases
+     * ({@code _json}, {@code _base64}) so the user's script can re-import
+     * {@code json} or {@code base64} normally without name clash.
+     *
+     * <p>{@code inputs} accepts any Jackson-serializable value: nested
+     * maps, lists, primitives, JSON-typed Groovy objects. Pass {@code null}
+     * or omit the key to skip the prelude entirely (the call degenerates
+     * to {@link #executePython(String)}).
+     *
+     * @param namedArgs Groovy-style named-arg map. Required key: {@code
+     *                  script} (String). Optional key: {@code inputs}
+     *                  (Map or any Jackson-serializable).
+     * @return same markdown payload as {@link #executePython(String)}
+     */
+    public String executePython(Map<String, Object> namedArgs) {
+        if (namedArgs == null) {
+            return "Error: missing named args (script:, inputs:)";
+        }
+        Object scriptObj = namedArgs.get("script");
+        if (!(scriptObj instanceof String script) || script.isBlank()) {
+            return "Error: missing or empty 'script' argument";
+        }
+        Object inputs = namedArgs.get("inputs");
+        if (inputs == null) {
+            return executePython(script);
+        }
+        String json;
+        try {
+            json = INPUTS_JSON.writeValueAsString(inputs);
+        } catch (Exception e) {
+            return "Error: failed to JSON-encode 'inputs': " + e.getMessage();
+        }
+        String b64 = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
+        // The prelude exposes json/base64 under both names — the
+        // underscore-prefixed alias for our own decode call, AND the
+        // bare module name that user scripts overwhelmingly expect to
+        // be available without a re-import. Earlier we exposed only
+        // {@code _json}, which created a silent footgun: scripts that
+        // called {@code json.loads(...)} hit NameError, often swallowed
+        // by a generic {@code except Exception:} branch that defaulted
+        // to {@code []} — the data looked empty when it was actually
+        // present. Importing under both names costs nothing (Python
+        // caches module imports) and removes the trap.
+        // The b64 string is safe to embed in a Python double-quoted literal —
+        // the base64 alphabet (A-Z a-z 0-9 + / =) doesn't contain " or \\.
+        String prelude = "import json as _json\n"
+                + "import json\n"
+                + "import base64 as _base64\n"
+                + "import base64\n"
+                + "INPUTS = _json.loads(_base64.b64decode(\"" + b64 + "\").decode(\"utf-8\"))\n\n";
+        return executePython(prelude + script);
     }
 }

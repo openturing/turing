@@ -27,4 +27,26 @@ export class TurAIAgentService {
     );
     return response.status == 200;
   }
+
+  /**
+   * Downloads the agent as a ZIP bundle:
+   * - `export.json` — TurExchange envelope (same shape as SN site export, so a
+   *   future combined ZIP can carry sites + agents together).
+   * - `chat-flows/{slug}.chat-flow.json` — one per chat flow.
+   * - `tools/{slug}.groovy` — one per custom tool.
+   * API keys / credentials are excluded by design; the operator must re-enter
+   * them after import.
+   *
+   * @since 2026.2.8
+   */
+  async export(id: string): Promise<Blob | null> {
+    const response = await axios
+      .get<Blob>(`/ai-agent/${id}/export`, { responseType: "blob" })
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error("Failed to export AI Agent", error);
+        return null;
+      });
+    return response;
+  }
 }

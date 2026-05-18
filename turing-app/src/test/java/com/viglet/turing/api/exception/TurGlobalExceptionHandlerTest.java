@@ -163,6 +163,31 @@ class TurGlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.detail", equalTo("name must be unique")));
     }
 
+    /**
+     * SSE client disconnect — the handler must NOT try to write a
+     * ProblemDetail body (would fail with HttpMessageNotWritableException
+     * because the response is locked to text/event-stream). With the
+     * dedicated {@code handleClientDisconnect} returning void, MockMvc
+     * sees a 200 with no body and the request finishes cleanly. The
+     * regression we're pinning: without the dedicated handler, this
+     * call would fail with a SECOND exception (HttpMessageNotWritable)
+     * inside the generic 500 handler — exactly the cascading-error log
+     * we saw in production.
+     */
+    @Test
+    void clientDisconnect_isSwallowedWithoutSecondException() throws Exception {
+        mvc.perform(get("/test/sse-aborted"))
+                .andExpect(status().isOk())
+                // No response body — the SSE stream is gone, no point
+                // sending anything else. The dedicated handler returns void.
+                .andExpect(content -> {
+                    String body = content.getResponse().getContentAsString();
+                    if (body != null && !body.isEmpty()) {
+                        throw new AssertionError("Expected empty body, got: " + body);
+                    }
+                });
+    }
+
     @RestController
     @RequestMapping("/test")
     static class TestController {
@@ -229,6 +254,17 @@ class TurGlobalExceptionHandlerTest {
         public void npe() {
             String s = null;
             s.length();
+        }
+
+        @GetMapping("/sse-aborted")
+        public void sseAborted() throws org.springframework.web.context.request.async.AsyncRequestNotUsableException {
+            // Simulates an SSE stream interrupted by a client disconnect.
+            // Real-world this comes from ResponseBodyEmitterReturnValueHandler
+            // wrapping a Tomcat ClientAbortException when the visitor closes
+            // the tab during the stream. The dedicated handler should
+            // swallow it without firing the generic 500 path.
+            throw new org.springframework.web.context.request.async.AsyncRequestNotUsableException(
+                    "ServletResponse failed to flushBuffer: simulated client disconnect");
         }
     }
 }

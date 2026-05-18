@@ -4,6 +4,7 @@ import {
     IconBrowserCheck,
     IconCheck,
     IconDatabase,
+    IconRobot,
     IconSettings2,
     IconX,
 } from "@tabler/icons-react";
@@ -36,35 +37,54 @@ export function ImportResultPanel({ result }: Readonly<{ result: TurImportResult
                 </div>
             )}
             <div className="rounded-lg border border-border/60 divide-y divide-border/60 text-sm">
-                <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                        <IconSettings2 className="size-3.5" />
-                        {t("marketplace.resultSite")}
-                    </span>
-                    <span className="font-medium">{result.siteName}</span>
-                </div>
-                <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                        <IconDatabase className="size-3.5" />
-                        {t("marketplace.resultContent")}
-                    </span>
-                    <span className="font-medium">
-                        {result.contentFiles > 0
-                            ? t("marketplace.resultDocuments", { count: result.contentDocuments })
-                            : t("marketplace.resultNotIncluded")}
-                    </span>
-                </div>
-                <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-muted-foreground flex items-center gap-1.5">
-                        <IconBrowserCheck className="size-3.5" />
-                        {t("marketplace.resultTemplate")}
-                    </span>
-                    <span className="font-medium">
-                        {result.templateImported
-                            ? t("marketplace.resultFiles", { count: result.templateFiles })
-                            : t("marketplace.resultNotIncluded")}
-                    </span>
-                </div>
+                {result.siteImported && (
+                    <>
+                        <div className="flex items-center justify-between px-3 py-2">
+                            <span className="text-muted-foreground flex items-center gap-1.5">
+                                <IconSettings2 className="size-3.5" />
+                                {t("marketplace.resultSite")}
+                            </span>
+                            <span className="font-medium">{result.siteName}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-3 py-2">
+                            <span className="text-muted-foreground flex items-center gap-1.5">
+                                <IconDatabase className="size-3.5" />
+                                {t("marketplace.resultContent")}
+                            </span>
+                            <span className="font-medium">
+                                {result.contentFiles > 0
+                                    ? t("marketplace.resultDocuments", { count: result.contentDocuments })
+                                    : t("marketplace.resultNotIncluded")}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between px-3 py-2">
+                            <span className="text-muted-foreground flex items-center gap-1.5">
+                                <IconBrowserCheck className="size-3.5" />
+                                {t("marketplace.resultTemplate")}
+                            </span>
+                            <span className="font-medium">
+                                {result.templateImported
+                                    ? t("marketplace.resultFiles", { count: result.templateFiles })
+                                    : t("marketplace.resultNotIncluded")}
+                            </span>
+                        </div>
+                    </>
+                )}
+                {result.agentSummary && (
+                    <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                            <IconRobot className="size-3.5" />
+                            {t("marketplace.resultAgents", { defaultValue: "AI Agents" })}
+                        </span>
+                        <span className="font-medium">
+                            {t("marketplace.resultAgentsCount", {
+                                defaultValue: "{{imported}} imported, {{skipped}} skipped",
+                                imported: result.agentSummary.imported.length,
+                                skipped: result.agentSummary.skipped.length,
+                            })}
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -287,6 +287,18 @@ public class TurAgentChatExecutor {
         String lastUserMessageEarly = lastMessageOfRole(history, "user");
         FlowContext flowContext = resolveFlowContext(agent, conversationId, flowId,
                 lastUserMessageEarly, chatModel);
+        // Re-resolve the persona AFTER flow selection. The first call at line
+        // ~240 happened before any flow ran — on a freshly-triggered flow the
+        // engine's transparent walk traversed a `persona-*` node that wrote
+        // {@code __activePersonaId} onto the flow state, switching the active
+        // voice (e.g. in-company router lands on the Camila node). Without
+        // this re-resolve the regen below still uses the agent's default
+        // persona (Marina), so the visitor sees "Sou a Marina" intro on the
+        // first turn of an in-company conversation while every subsequent
+        // turn correctly speaks as Camila.
+        final TurPersona effectivePersona = flowContext != null
+                ? personaResolver.resolve(agent, conversationId)
+                : activePersona;
         String flowAugmented = flowContext == null
                 ? baseSystemPrompt
                 : baseSystemPrompt + chatFlowEngineService.buildSystemPromptAddendum(
@@ -294,9 +306,9 @@ public class TurAgentChatExecutor {
         // Fuse the persona on top of everything: its instruction + style
         // guidelines + vocabulary constraints + brand-context hint +
         // few-shot examples wrap the (already RAG-augmented) base prompt.
-        // No-op when activePersona is null.
+        // No-op when effectivePersona is null.
         String resolvedSystemPrompt = personaPromptComposer.compose(
-                activePersona,
+                effectivePersona,
                 agent.getTurEmbeddingModelInstance(),
                 lastUserMessageEarly,
                 flowAugmented);
@@ -319,7 +331,7 @@ public class TurAgentChatExecutor {
 
         // Open the analytics session record on the first turn. Idempotent —
         // subsequent turns of the same conversation no-op past the upsert.
-        recordSessionStartSafely(agent, activePersona, llmInstance,
+        recordSessionStartSafely(agent, effectivePersona, llmInstance,
                 conversationId, lastUserMessage, username);
 
         return Mono.fromCallable(() -> {
@@ -369,7 +381,7 @@ public class TurAgentChatExecutor {
                             conversationId);
                     String regenerated = regenerateReplyForNewNode(
                             agent, llmInstance, chatModel, chatOptions,
-                            activePersona, baseSystemPrompt, history,
+                            effectivePersona, baseSystemPrompt, history,
                             lastUserMessage, flowContext.state(), flowContext, username);
                     if (regenerated != null) {
                         text = regenerated;
@@ -408,9 +420,19 @@ public class TurAgentChatExecutor {
                     //     slot/switch/condition are transparent or terminal, no
                     //     fresh user-facing prompt to compose).
                     if (advance.assistantOverride() == null && advanced) {
+                        // Re-resolve the persona one more time. The transparent
+                        // walk inside {@code advance()} may have crossed a
+                        // {@code persona-*} node that swapped the active voice
+                        // (some flows do this — e.g. a router flow that owns
+                        // the front door but hands off to a specialist sub-
+                        // persona at the first switch). Using the same lookup
+                        // as the initial post-flow resolve keeps both paths
+                        // (fresh-trigger and mid-flow advance) consistent.
+                        TurPersona regenPersona = personaResolver.resolve(agent, conversationId);
+                        if (regenPersona == null) regenPersona = effectivePersona;
                         String regenerated = regenerateReplyForNewNode(
                                 agent, llmInstance, chatModel, chatOptions,
-                                activePersona, baseSystemPrompt, history,
+                                regenPersona, baseSystemPrompt, history,
                                 lastUserMessage, newState, flowContext, username);
                         if (regenerated != null) {
                             text = regenerated;
@@ -428,8 +450,12 @@ public class TurAgentChatExecutor {
 
             // Persona's negative-constraint check runs LAST so it also
             // catches forbidden terms reintroduced by the flow override.
+            // Validate against the effective persona — when the flow
+            // triggered or transitioned to a new persona this turn, the
+            // forbidden-terms list is the one of the active voice, not
+            // the agent's default.
             TurPersonaValidationResult validation =
-                    personaToneValidator.validate(activePersona, text);
+                    personaToneValidator.validate(effectivePersona, text);
             text = validation.sanitizedText();
 
             // Telemetry: increment turn count + accumulate tokens for the
@@ -555,11 +581,26 @@ public class TurAgentChatExecutor {
         // Bilingual on purpose: persona may run in PT or EN; either way
         // the directive is unambiguous.
         String regenOverride = buildRegenOverride(newNode);
+        // Deliberately drop `baseSystemPrompt` from the regen call. That
+        // prompt contains the agent's orchestration rules ("show 3 caminhos
+        // welcome on first turn", "ROUTER LLM decides flow", etc.) which
+        // are correct for the INITIAL LLM call (routing + persona-free
+        // greeting) but FIGHT the regen's narrow purpose: produce the
+        // current node's question. Observed in production with gpt-4o-mini:
+        // even with the regenOverride explicitly forbidding the welcome,
+        // the LLM kept emitting it on freshly-triggered flows because the
+        // welcome example sits earlier in the prompt and anchors stronger.
+        // Persona prompts already carry the role context (e.g. "Você é a
+        // Marina, consultora de carreira do Insper EE") and the security
+        // rules (NUNCA peça CPF, NUNCA cite concorrentes), so dropping the
+        // agent prompt loses no critical guardrail. The flow addendum
+        // (`newAddendum`) carries the active node's Goal + Collect — that's
+        // all the regen needs.
         String regenSystemPrompt = personaPromptComposer.compose(
                 activePersona,
                 agent.getTurEmbeddingModelInstance(),
                 lastUserMessage,
-                baseSystemPrompt + newAddendum) + regenOverride;
+                newAddendum) + regenOverride;
 
         // Trim history to the last few turns. Sending the full conversation
         // gave the LLM too many examples of the old-pattern Q&A and it kept
@@ -783,19 +824,31 @@ public class TurAgentChatExecutor {
 
                 === HIGHEST-PRIORITY OVERRIDE / INSTRUÇÃO DE PRIORIDADE MÁXIMA ===
                 The conversation has advanced to a NEW step in the flow.
-                Your next reply MUST address the CURRENT step's goal (described in
-                the FLOW STATE / aiInstruction section above). Do NOT repeat or
-                rephrase earlier questions. Do NOT continue the conversational
-                pattern of older turns. The user's last message has ALREADY been
-                captured as the answer to the previous step — acknowledge briefly
-                (one short sentence at most) and ask the CURRENT step's question.
+                Your next reply MUST address the CURRENT step's goal. Do NOT repeat
+                or rephrase earlier questions. Do NOT continue the conversational
+                pattern of older turns. Do NOT skip ahead to a later step. The
+                user's last message has ALREADY been captured as the answer to the
+                previous step — acknowledge briefly (one short sentence at most)
+                and ask the CURRENT step's question.
 
                 A conversa avançou para uma NOVA etapa do flow. Sua próxima resposta
-                DEVE abordar a pergunta da etapa atual (descrita no aiInstruction
-                acima). NÃO repita nem reformule perguntas anteriores. NÃO continue
-                o padrão das mensagens antigas. A mensagem do usuário JÁ FOI
-                capturada como resposta da etapa anterior — faça um acknowledge
-                curto (uma frase, opcional) e em seguida a pergunta da etapa atual.""");
+                DEVE abordar a pergunta da etapa atual. NÃO repita nem reformule
+                perguntas anteriores. NÃO continue o padrão das mensagens antigas.
+                NÃO pule pra uma etapa futura. A mensagem do usuário JÁ FOI capturada
+                como resposta da etapa anterior — faça um acknowledge curto (uma
+                frase, opcional) e em seguida a pergunta da etapa atual.""");
+        // Inline the node's aiInstruction directly in the override. Without
+        // this the override only POINTED to a "FLOW STATE / aiInstruction
+        // section above" — empirically gpt-4o-mini frequently ignored that
+        // pointer and recycled an instruction from a later step it had
+        // already seen via the conversational pattern (in-company flow:
+        // visitor reported the bot asking the `tema` question while the
+        // engine was parked on `ai-num-pessoas`). Re-stating the literal
+        // instruction next to the imperative wording flips compliance.
+        if (newNode.aiInstruction() != null && !newNode.aiInstruction().isBlank()) {
+            sb.append("\n\nCURRENT STEP'S INSTRUCTION (literal — follow this, not any earlier step's):\n")
+              .append(newNode.aiInstruction().trim());
+        }
         List<String> chips = newNode.inlineOptions();
         if (chips != null && !chips.isEmpty()) {
             String joined = String.join(" · ", chips);

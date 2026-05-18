@@ -61,6 +61,18 @@ public interface TurPersonaRepository extends JpaRepository<TurPersona, String> 
     @Cacheable("turPersonafindByNameIgnoreCase")
     Optional<TurPersona> findByNameIgnoreCase(String name);
 
+    /**
+     * Used by the MCP-server delete path to find personas with their
+     * {@code brandContextMcpServer} pointing at the server. The caller
+     * nulls the reference + saveAndFlush before the server is deleted.
+     *
+     * @since 2026.2.8
+     */
+    List<TurPersona> findByBrandContextMcpServer_Id(String mcpServerId);
+
+    /** Used by the store delete path (persona few-shot store). @since 2026.2.8 */
+    List<TurPersona> findByFewShotStore_Id(String storeId);
+
     @Caching(evict = {
             @CacheEvict(value = { "turPersonafindAll", "turPersonafindAllSorted",
                     "turPersonafindById", "turPersonafindByNameIgnoreCase" }, allEntries = true),

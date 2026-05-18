@@ -32,6 +32,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.viglet.turing.exchange.agent.TurAIAgentImportService;
 import com.viglet.turing.exchange.sn.TurSNSiteContentExchangeService;
 import com.viglet.turing.exchange.sn.TurSNSiteExchange;
 import com.viglet.turing.exchange.sn.TurSNSiteImport;
@@ -53,6 +54,7 @@ public class TurImportExchange {
 	private final TurSNSiteContentExchangeService contentExchangeService;
 	private final TurSNSiteRepository turSNSiteRepository;
 	private final TurStorageService storageService;
+	private final TurAIAgentImportService turAIAgentImportService;
 	private static final String EXPORT_FILE = "export.json";
 	private static final String CONTENT_SUFFIX = "_content.json";
 	private static final String APP_DIR = "app";
@@ -64,14 +66,18 @@ public class TurImportExchange {
 							   boolean templateImported, String templateName, int templateFiles,
 							   String error,
 							   List<SiteConflict> conflicts,
-							   boolean searchEngineAvailable) {
+							   boolean searchEngineAvailable,
+							   AgentImportSummary agentSummary,
+							   List<AgentConflict> agentConflicts) {
 
 		public static ImportResult error(String error) {
-			return new ImportResult(false, null, 0, 0, false, null, 0, error, List.of(), true);
+			return new ImportResult(false, null, 0, 0, false, null, 0, error,
+					List.of(), true, null, List.of());
 		}
 
 		public static ImportResult conflict(List<SiteConflict> conflicts) {
-			return new ImportResult(false, null, 0, 0, false, null, 0, null, conflicts, true);
+			return new ImportResult(false, null, 0, 0, false, null, 0, null,
+					conflicts, true, null, List.of());
 		}
 	}
 
@@ -82,6 +88,28 @@ public class TurImportExchange {
 	 * @since 2026.2.4
 	 */
 	public record SiteConflict(String id, String name) {
+	}
+
+	/**
+	 * An AI agent present in the import bundle that already exists in the
+	 * database (matched by ID). Mirrors {@link SiteConflict} so the same
+	 * overwrite-toggle UX applies to both site and agent imports.
+	 *
+	 * @since 2026.2.8
+	 */
+	public record AgentConflict(String id, String name) {
+	}
+
+	/**
+	 * Summary of what the AI-agent block of an import bundle produced. Null
+	 * on the result when the bundle didn't carry any {@code agents[]}.
+	 *
+	 * @since 2026.2.8
+	 */
+	public record AgentImportSummary(List<String> imported, List<String> skipped,
+									 int personasResolved, int llmInstancesResolved,
+									 int mcpServersResolved, int customToolsResolved,
+									 int chatFlowsImported, String error) {
 	}
 
 	/**
@@ -96,11 +124,13 @@ public class TurImportExchange {
 	public TurImportExchange(TurSNSiteImport turSNSiteImport,
 			TurSNSiteContentExchangeService contentExchangeService,
 			TurSNSiteRepository turSNSiteRepository,
-			TurStorageService storageService) {
+			TurStorageService storageService,
+			TurAIAgentImportService turAIAgentImportService) {
 		this.turSNSiteImport = turSNSiteImport;
 		this.contentExchangeService = contentExchangeService;
 		this.turSNSiteRepository = turSNSiteRepository;
 		this.storageService = storageService;
+		this.turAIAgentImportService = turAIAgentImportService;
 	}
 
 	public ImportResult importFromMultipartFile(MultipartFile multipartFile) {
@@ -182,16 +212,49 @@ public class TurImportExchange {
 			}
 		}
 
+		// AI agent block is optional — same envelope, side-by-side with snSites.
+		// Reads chat-flow + Groovy sibling files from extractFolder before cleanup.
+		AgentImportSummary agentSummary = importAgentsFromExportFile(extractFolder, overwrite);
+
 		cleanupSafely(extractFolder, parentExtractFolder);
 
-		log.info("Import complete — site: '{}', content: {} docs from {} files, template: '{}'  ({} files)",
+		log.info("Import complete — site: '{}', content: {} docs from {} files, template: '{}'  ({} files), agents imported: {}, skipped: {}",
 				siteName, contentDocuments, contentFiles,
-				templateName != null ? templateName : "none", templateFileCount);
+				templateName != null ? templateName : "none", templateFileCount,
+				agentSummary == null ? 0 : agentSummary.imported().size(),
+				agentSummary == null ? 0 : agentSummary.skipped().size());
 
 		return new ImportResult(siteImported, siteName,
 				contentDocuments, contentFiles,
 				templateImported, templateName, templateFileCount,
-				null, conflicts, searchEngineAvailable);
+				null, conflicts, searchEngineAvailable,
+				agentSummary, List.of());
+	}
+
+	/**
+	 * Reads {@code export.json} for an {@code agents[]} block and delegates to
+	 * {@link TurAIAgentImportService}. Returns {@code null} when the bundle
+	 * carries no agents — the import endpoint can then ignore the agent half
+	 * of the response without inspecting an empty record.
+	 */
+	private AgentImportSummary importAgentsFromExportFile(File extractFolder, boolean overwrite) {
+		File exportFile = new File(extractFolder, EXPORT_FILE);
+		if (!exportFile.isFile()) return null;
+		try (FileInputStream fis = new FileInputStream(exportFile)) {
+			ObjectMapper mapper = JsonMapper.builder().build();
+			TurExchange exchange = mapper.readValue(fis, TurExchange.class);
+			if (exchange.getAgents() == null || exchange.getAgents().isEmpty()) {
+				return null;
+			}
+			var result = turAIAgentImportService.importAgents(exchange, extractFolder, overwrite);
+			return new AgentImportSummary(result.importedAgentNames(), result.skippedAgentNames(),
+					result.personasResolved(), result.llmInstancesResolved(),
+					result.mcpServersResolved(), result.customToolsResolved(),
+					result.chatFlowsImported(), result.error());
+		} catch (Exception e) {
+			log.error("Error importing AI agents: {}", e.getMessage(), e);
+			return new AgentImportSummary(List.of(), List.of(), 0, 0, 0, 0, 0, e.getMessage());
+		}
 	}
 
 	/**
@@ -229,12 +292,15 @@ public class TurImportExchange {
 
 	/**
 	 * Checks the ZIP for available import options: content files, valid SPA template,
-	 * and any existing SN sites that would be overwritten (matched by ID).
+	 * existing SN sites that would be overwritten (matched by ID), and existing AI
+	 * agents that would be overwritten.
 	 */
 	public Map<String, Object> checkZip(MultipartFile multipartFile) {
 		File extractFolder = this.extractZipFile(multipartFile);
 		if (extractFolder == null) {
-			return Map.of("hasContent", false, "hasTemplate", false, "conflicts", List.of());
+			return Map.of("hasContent", false, "hasTemplate", false,
+					"hasAgents", false,
+					"conflicts", List.of(), "agentConflicts", List.of());
 		}
 		File workFolder = resolveExportFolder(extractFolder);
 		boolean hasContent = findContentFiles(workFolder).length > 0;
@@ -244,6 +310,7 @@ public class TurImportExchange {
 			templateName = readTemplateName(workFolder);
 		}
 		List<SiteConflict> conflicts = detectConflicts(workFolder);
+		AgentDetectionResult agentDetection = detectAgents(workFolder);
 		try {
 			cleanupDirectories(extractFolder, null);
 		} catch (IOException e) {
@@ -254,7 +321,44 @@ public class TurImportExchange {
 		result.put("hasTemplate", hasTemplate);
 		result.put("templateName", templateName);
 		result.put("conflicts", conflicts);
+		result.put("hasAgents", agentDetection.hasAgents());
+		result.put("agentConflicts", agentDetection.conflicts());
+		result.put("agentTitles", agentDetection.titles());
 		return result;
+	}
+
+	private record AgentDetectionResult(boolean hasAgents, List<String> titles,
+										List<AgentConflict> conflicts) {
+	}
+
+	/**
+	 * Reads the {@code agents[]} block inside the bundle's {@code export.json}
+	 * and reports the titles found + which of them collide with an existing
+	 * agent in the database (matched by ID). Mirrors {@link #detectConflicts}
+	 * for SN sites.
+	 */
+	private AgentDetectionResult detectAgents(File extractFolder) {
+		File exportFile = new File(extractFolder, EXPORT_FILE);
+		if (!exportFile.isFile()) {
+			return new AgentDetectionResult(false, List.of(), List.of());
+		}
+		try (FileInputStream fis = new FileInputStream(exportFile)) {
+			ObjectMapper mapper = JsonMapper.builder().build();
+			TurExchange exchange = mapper.readValue(fis, TurExchange.class);
+			if (exchange.getAgents() == null || exchange.getAgents().isEmpty()) {
+				return new AgentDetectionResult(false, List.of(), List.of());
+			}
+			List<String> titles = exchange.getAgents().stream()
+					.map(a -> a.getTitle() == null ? "(untitled)" : a.getTitle())
+					.toList();
+			List<AgentConflict> conflicts = turAIAgentImportService.detectConflicts(exchange).stream()
+					.map(c -> new AgentConflict(c.id(), c.name()))
+					.toList();
+			return new AgentDetectionResult(true, titles, conflicts);
+		} catch (Exception e) {
+			log.warn("Failed to inspect export.json for agents: {}", e.getMessage());
+			return new AgentDetectionResult(false, List.of(), List.of());
+		}
 	}
 
 	private boolean hasValidTemplate(File workFolder) {

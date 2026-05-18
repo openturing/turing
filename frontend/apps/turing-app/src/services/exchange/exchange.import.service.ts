@@ -7,11 +7,22 @@ export interface SiteConflict {
   name: string;
 }
 
+export interface AgentConflict {
+  id: string;
+  name: string;
+}
+
 export interface ZipCheckResult {
   hasContent: boolean;
   hasTemplate: boolean;
   templateName: string | null;
   conflicts: SiteConflict[];
+  /** True when the ZIP envelope carries an {@code agents[]} block. @since 2026.2.8 */
+  hasAgents: boolean;
+  /** Titles of every agent present in the bundle (in envelope order). */
+  agentTitles: string[];
+  /** Agents that already exist in the target DB (matched by ID) — same UX as {@link conflicts}. */
+  agentConflicts: AgentConflict[];
 }
 
 export class TurExchangeImportService {

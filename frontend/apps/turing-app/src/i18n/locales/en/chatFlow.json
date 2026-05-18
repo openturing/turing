@@ -118,6 +118,13 @@
       "outputVariableHint": "Picks from the agent's typed-slot catalogue so the captured value lands in a stable schema.",
       "overrideExistingValue": "Always ask (override existing value)",
       "overrideExistingValueHint": "When unchecked, the engine skips this step if the slot is already filled. Check to always ask and overwrite the previous value.",
+      "onJudgeReject": "When the judge rejects the answer",
+      "onJudgeRejectHint": "Only applies when the agent's guardrailMethod is LLM_JUDGE. Default reprompts the user when the judge produced a substantive redirect; advance_with_literal force-captures the user message after retry; block always trusts the judge.",
+      "onJudgeRejectOptions": {
+        "reprompt": "Reprompt (default) — trust judge redirect",
+        "advance_with_literal": "Advance with literal — force-capture user message",
+        "block": "Block — never force-capture, always reprompt"
+      },
       "functionName": "Function Call",
       "toolSource": "Tool Source",
       "toolSourceOptions": {
