@@ -324,7 +324,36 @@ public class TurAgentChatExecutor {
             }
         }
 
-        Prompt prompt = new Prompt(messages, chatOptions);
+        // Strip the toolset from the INITIAL LLM call too when the active
+        // node's aiInstruction explicitly forbids tool calls (e.g. the
+        // {@code ai-coupon-code} node which only asks "qual é o código?").
+        // Without this, gpt-4o-mini frequently called
+        // {@code compor_proposta_in_company} preemptively in the initial
+        // call BEFORE {@link LlmJudgeGuardrailStrategy} could capture the
+        // coupon code, generating a proposta without the coupon and
+        // publishing it via SSE. The downstream regen for
+        // {@code ai-deliver-proposta} then ran the tool AGAIN with the
+        // freshly-captured coupon, re-writing the slot — the visitor
+        // saw the card flash (no-coupon → with-coupon).
+        // Skipping tools here means the initial call only produces an
+        // acknowledgment text; tools fire once on the regen, with the
+        // coupon already captured, and the card renders correctly the
+        // first time.
+        ChatFlowNode activeNode = flowContext == null ? null
+                : flowContext.graph().nodeById(flowContext.state().getCurrentNodeId()).orElse(null);
+        boolean activeNodeForbidsTools = activeNode != null
+                && forbidsToolCalls(activeNode.aiInstruction());
+        org.springframework.ai.chat.prompt.ChatOptions initialOptions = activeNodeForbidsTools
+                ? DefaultToolCallingChatOptions.builder()
+                        .toolCallbacks(List.<ToolCallback>of())
+                        .internalToolExecutionEnabled(false)
+                        .build()
+                : chatOptions;
+        if (activeNodeForbidsTools) {
+            log.info("[AgentExec] Initial call on node '{}' running tool-free (aiInstruction forbids tools)",
+                    activeNode.id());
+        }
+        Prompt prompt = new Prompt(messages, initialOptions);
         String username = resolveUsername();
         // Reuse the value already computed for the router; both paths need it.
         final String lastUserMessage = lastUserMessageEarly;
@@ -622,7 +651,35 @@ public class TurAgentChatExecutor {
 
         log.info("[AgentExec] Regenerating reply for new node '{}' (type={}) after transparent walk — history trimmed from {} to {} messages",
                 newNode.id(), newNode.type(), history.size(), regenHistory.size());
-        Prompt regenPrompt = new Prompt(regenMessages, chatOptions);
+        // Most regen calls just need to produce text (one acknowledgment +
+        // the next question). When the node's aiInstruction explicitly
+        // forbids tool calls — e.g. {@code ai-coupon-code} which only asks
+        // "qual é o código?" — we strip the toolset so an over-eager LLM
+        // can't preemptively call {@code compor_proposta_in_company} or
+        // {@code gerar_proposta_pdf} (which would generate the proposal
+        // before the slot is captured, then cache by hash and ignore the
+        // user's actual coupon code on the next turn). Detection is a
+        // substring scan of the aiInstruction — authors mark the node by
+        // writing "NÃO CHAME NENHUMA TOOL" / "do not call any tool" /
+        // "no tool" anywhere in the instruction.
+        //
+        // For proposal-delivery nodes ({@code ai-deliver-proposta},
+        // {@code ai-deliver-b2b-pdf}) the aiInstruction says "chame DUAS
+        // tools" or "Chame `gerar_proposta_pdf`" — substring NOT present —
+        // so the regen keeps the full toolset and the proposal is composed
+        // with the freshest slot values (including the just-captured coupon).
+        boolean regenForbidsTools = forbidsToolCalls(newNode.aiInstruction());
+        org.springframework.ai.chat.prompt.ChatOptions regenOptions = regenForbidsTools
+                ? DefaultToolCallingChatOptions.builder()
+                        .toolCallbacks(List.<ToolCallback>of())
+                        .internalToolExecutionEnabled(false)
+                        .build()
+                : chatOptions;
+        if (regenForbidsTools) {
+            log.info("[AgentExec] Regen for node '{}' running tool-free (aiInstruction forbids tools)",
+                    newNode.id());
+        }
+        Prompt regenPrompt = new Prompt(regenMessages, regenOptions);
         var regenResponse = chatModel.call(regenPrompt);
         tokenUsageService.recordUsage(llmInstance, regenResponse, username);
         if (regenResponse.getResult() == null
@@ -633,6 +690,29 @@ public class TurAgentChatExecutor {
         String regenText = regenResponse.getResult().getOutput().getText();
         log.info("[AgentExec] Regenerated reply: {} chars", regenText.length());
         return regenText;
+    }
+
+    /**
+     * Substring-based detector for nodes whose {@code aiInstruction}
+     * tells the LLM to NOT make any tool calls during regeneration.
+     * Authors mark a node by writing one of the trigger phrases anywhere
+     * in the instruction; the regen path strips the toolset on a match
+     * so an over-eager LLM (gpt-4o-mini being notorious for this) can't
+     * preempt the flow by calling a downstream tool before the next slot
+     * is captured.
+     *
+     * <p>Bilingual on purpose: PT-BR flows use the upper-cased Portuguese
+     * directive; EN flows can use the literal English equivalent. The
+     * match is case-insensitive so authors don't have to remember a
+     * specific spelling.
+     */
+    static boolean forbidsToolCalls(String aiInstruction) {
+        if (aiInstruction == null || aiInstruction.isBlank()) return false;
+        String lower = aiInstruction.toLowerCase();
+        return lower.contains("não chame nenhuma tool")
+                || lower.contains("nao chame nenhuma tool")
+                || lower.contains("do not call any tool")
+                || lower.contains("zero tool calls");
     }
 
     /**

@@ -270,8 +270,26 @@ public class TurChatFlowEngineService {
         state = stateRepository.save(state);
         // Walk any Sub Flow boundaries: descend on a SubFlow node, ascend on
         // an end node that has a parent state. Returns the new active leaf.
+        String preWalkNodeId = state.getCurrentNodeId();
         TurChatFlowState leaf = walkTransparentNodes(state, auxiliaryModel);
+        // Two persistence cases:
+        //  (a) Descent/ascent: leaf is a DIFFERENT row (sub-flow child or
+        //      parent on ascend). Save the new leaf so its id and currentNodeId
+        //      are durable before the next turn loads it.
+        //  (b) Same row, but walkTransparentNodes mutated currentNodeId in
+        //      place (e.g. switch → aiQuestion landing, condition resolution,
+        //      satisfied-question fast-forward). Without an explicit save the
+        //      cursor stays at the value persisted by the line above — i.e.
+        //      the switch/condition node — and the next turn's LlmJudge
+        //      processes the user message AGAINST that intermediate node,
+        //      rejecting valid input as off-topic. Visible symptom: visitor
+        //      sees "Beleza — qual é o código?" (regen for the landing
+        //      aiQuestion) and types the coupon, only to be redirected
+        //      with "Poderia me informar se você tem um cupom?" because
+        //      the engine state is still parked on switch-coupon-intent.
         if (leaf != state) {
+            leaf = stateRepository.save(leaf);
+        } else if (!Objects.equals(preWalkNodeId, leaf.getCurrentNodeId())) {
             leaf = stateRepository.save(leaf);
         }
         // Record a submission only when the ROOT flow has just terminated —

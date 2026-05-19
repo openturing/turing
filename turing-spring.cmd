@@ -36,6 +36,7 @@ echo   Logging Engine: %LOGGING_ENGINE%
 echo.
 
 call mvn spring-boot:run -pl turing-app -Dskip.npm -DskipTests -Dmaven.test.skip=true ^
+"-Dspring-boot.run.jvmArguments=-Xms1g -Xmx2g -XX:ReservedCodeCacheSize=256m" ^
 "^
 -Dspring-boot.run.arguments=--spring.h2.console.enabled=true ^
 --turing.storage.type=%STORAGE_TYPE% ^

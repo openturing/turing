@@ -137,15 +137,24 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             //       because it correctly identified the gap. Force-capture
             //       here would lock the wrong text into the slot.
             //
-            // Heuristic to distinguish: if BOTH verdicts carry a non-blank
-            // redirect_message that the judge presumably produced because it
-            // saw a specific off-goal pattern, trust it and stay on the
-            // node. Force-capture only when the judge offered no redirect
-            // (sign of an actual flake, not a deliberate "off-topic"
-            // assessment). The per-node {@code onJudgeReject} field
-            // overrides this heuristic: "advance_with_literal" forces a
-            // capture regardless of the redirect; "block" stays on the node
-            // even when the redirect is blank.
+            // Heuristic to distinguish JUDGE FLAKE from intentional REJECT:
+            //
+            // - Both verdicts SUBSTANTIVE redirect (e.g. "Vamos voltar ao seu
+            //   nome? Como você se chama?") → judge clearly identified the
+            //   input as off-topic. Trust it and stay on the node, EVEN
+            //   when the per-node policy is {@code advance_with_literal}.
+            //   Without this carve-out, a chatty answer to "qual é o seu
+            //   nome?" like "Queria ser diretor de TI" got force-captured
+            //   into the {@code name} slot — the visitor's actual name
+            //   never made it in, and the welcome banner read
+            //   "Queria ser diretor de TI, prazer!".
+            //
+            // - Redirect blank/short → judge couldn't articulate WHY it
+            //   rejected (likely a flake). Fall through to the per-node
+            //   policy: {@code advance_with_literal} captures the message
+            //   as the slot value (escape hatch for valid inputs the judge
+            //   wrongly flagged); {@code block} stays on node; default
+            //   stays on node.
             boolean stillFlaky = shouldRetryVerdict(verdict, node, ctx.userMessage());
             String policy = resolveRejectPolicy(node);
             // Stash policy for the short-message branch below (out of the
@@ -158,23 +167,27 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
                     log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
                             + "with onJudgeReject=block — staying on node, no force-capture",
                             ctx.userMessage(), node.id());
-                } else if (REJECT_ADVANCE_WITH_LITERAL.equals(policy)
-                        || !isNonBlankRedirect(verdict)) {
-                    String why = REJECT_ADVANCE_WITH_LITERAL.equals(policy)
-                            ? "onJudgeReject=advance_with_literal"
-                            : "no redirect message — treating as judge flake";
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' — "
-                            + "{}; force-capturing user message as the slot value",
-                            ctx.userMessage(), node.id(), why);
+                } else if (isNonBlankRedirect(verdict)) {
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
+                            + "with substantive redirect='{}' — trusting judge over policy '{}', "
+                            + "staying on node (no force-capture)",
+                            ctx.userMessage(), node.id(),
+                            verdict.redirectMessage(), policy);
+                } else if (REJECT_ADVANCE_WITH_LITERAL.equals(policy)) {
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' with "
+                            + "blank/short redirect — onJudgeReject=advance_with_literal, "
+                            + "force-capturing user message as the slot value",
+                            ctx.userMessage(), node.id());
                     verdict = new JudgeVerdict(verdict.onTopic(),
                             ctx.userMessage().trim(),
                             /* readyToAdvance */ true,
                             verdict.redirectMessage(),
                             /* abandoned */ false);
                 } else {
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
-                            + "with redirect='{}' — trusting judge, staying on node",
-                            ctx.userMessage(), node.id(), verdict.redirectMessage());
+                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' with "
+                            + "blank/short redirect — staying on node (policy '{}' does not "
+                            + "permit force-capture without a clear judge signal)",
+                            ctx.userMessage(), node.id(), policy);
                 }
             }
         }
