@@ -23,7 +23,7 @@
     "clean": "rimraf \"**/node_modules\" \"**/dist\" \"**/build\""
   },
   "devDependencies": {
-    "turbo": "^2.9.12"
+    "turbo": "^2.9.14"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
