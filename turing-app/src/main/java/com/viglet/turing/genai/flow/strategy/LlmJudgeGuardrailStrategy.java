@@ -148,6 +148,11 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             // even when the redirect is blank.
             boolean stillFlaky = shouldRetryVerdict(verdict, node, ctx.userMessage());
             String policy = resolveRejectPolicy(node);
+            // Stash policy for the short-message branch below (out of the
+            // retry scope). The retry scope only runs for messages ≥ 10
+            // chars; short alphanumeric values like coupon codes never
+            // enter here, so we resolve the policy a second time outside
+            // — see the block right after this if/else chain.
             if (stillFlaky) {
                 if (REJECT_BLOCK.equals(policy)) {
                     log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
@@ -174,8 +179,61 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             }
         }
 
+        // Short-message force-capture path for {@code advance_with_literal}.
+        //
+        // The retry block above only fires for messages ≥
+        // {@link #RETRY_MIN_USER_MESSAGE_LENGTH} chars (designed for natural-
+        // language flakes, not short alphanumeric replies). When the judge
+        // rejects a SHORT reply — coupon codes ("INSPER10"), short answers
+        // ("CFO"), yes/no flavors — the retry never runs, and the soft-fail
+        // policy never gets a chance to force-capture from inside that block.
+        //
+        // Honor {@code onJudgeReject=advance_with_literal} here, OUTSIDE the
+        // length-gated retry: if the policy declares "advance with literal"
+        // and the judge still ended up with no collected value on a slot-
+        // collecting node, capture the user's message as the slot value.
+        // {@code block} and {@code reprompt} keep the legacy behavior
+        // (stay on node) so no node accidentally inherits the soft-fail.
         TurChatFlowState state = ctx.state();
         Map<String, String> variables = ChatFlowOps.readVariables(state);
+
+        if (REJECT_ADVANCE_WITH_LITERAL.equals(resolveRejectPolicy(node))
+                && !verdict.abandoned()
+                && !verdict.readyToAdvance()
+                && (verdict.collectedValue() == null || verdict.collectedValue().isBlank())
+                && node.outputVariable() != null && !node.outputVariable().isBlank()
+                && ctx.userMessage() != null && !ctx.userMessage().isBlank()) {
+            // Defense-in-depth: when the slot is ALREADY populated (e.g. CV
+            // extraction wrote `name` out-of-band while the cursor was parked
+            // on `ai-name`) and the node didn't request override, the safe
+            // thing is to advance WITHOUT overwriting the existing value.
+            // Otherwise we'd clobber a good value (e.g. "Maria" from the CV)
+            // with whatever short message the user happened to send (e.g.
+            // "oi" — a no-op trigger from the front-end after CV upload).
+            String existingValue = variables.get(node.outputVariable().trim());
+            boolean slotAlreadyFilled = existingValue != null && !existingValue.isBlank();
+            boolean overrideExisting = Boolean.TRUE.equals(node.overrideExistingValue());
+            if (slotAlreadyFilled && !overrideExisting) {
+                log.info("[LlmJudge] onJudgeReject=advance_with_literal on node '{}': slot '{}' "
+                        + "already filled out-of-band with '{}' AND overrideExistingValue!=true "
+                        + "— advancing without overwriting (user message '{}' dropped as no-op)",
+                        node.id(), node.outputVariable(), existingValue, ctx.userMessage());
+                verdict = new JudgeVerdict(verdict.onTopic(),
+                        existingValue,
+                        /* readyToAdvance */ true,
+                        verdict.redirectMessage(),
+                        /* abandoned */ false);
+            } else {
+                log.info("[LlmJudge] onJudgeReject=advance_with_literal — force-capturing "
+                        + "short reply '{}' on node '{}' (judge rejected, retry path skipped due to length)",
+                        ctx.userMessage(), node.id());
+                verdict = new JudgeVerdict(verdict.onTopic(),
+                        ctx.userMessage().trim(),
+                        /* readyToAdvance */ true,
+                        verdict.redirectMessage(),
+                        /* abandoned */ false);
+            }
+        }
         log.info("[LlmJudge] Verdict on node '{}': onTopic={} ready={} abandoned={} collected='{}'",
                 node.id(),
                 verdict.onTopic(),
