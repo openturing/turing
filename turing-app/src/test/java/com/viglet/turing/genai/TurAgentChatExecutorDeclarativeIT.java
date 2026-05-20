@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+
+import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 /**
  * Esqueletos para os patches da categoria (B) DECLARATIVE listados em
@@ -45,8 +46,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
-@SpringBootTest(properties = "spring.jmx.enabled=true")
-class TurAgentChatExecutorDeclarativeIT {
+class TurAgentChatExecutorDeclarativeIT extends AbstractTuringSpringIT {
 
     /**
      * Patch #3 — tool-stripping no INITIAL call quando aiInstruction

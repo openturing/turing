@@ -118,6 +118,23 @@ public abstract class AbstractTuringSpringIT {
     }
 
     /**
+     * Routes the embedded Artemis journal/bindings/paging/lock files to a
+     * per-JVM directory under {@link #DB_DIR}. The production default
+     * ({@code store/queue}) is a CWD-relative path, so multiple JVMs
+     * (the running app + every forked Surefire IT) compete for the same
+     * {@code server.lock} file and serialize via {@code FileLockNodeManager}'s
+     * 60-second retry loop — observed in the wild as a 5+ minute IT hang on
+     * Spring context startup with no error logged. Per-JVM isolation makes
+     * concurrent ITs and a locally-running app coexist without contention
+     * and reuses the {@link #DB_DIR} shutdown hook for cleanup.
+     */
+    @DynamicPropertySource
+    static void overrideArtemisDataDirectoryWithEphemeralPath(DynamicPropertyRegistry registry) {
+        String artemisDir = DB_DIR.resolve("queue").toString().replace('\\', '/');
+        registry.add("spring.artemis.embedded.data-directory", () -> artemisDir);
+    }
+
+    /**
      * Deletes every {@code turing-it-*} directory under
      * {@code java.io.tmpdir} that isn't ours. A previous IT run that was
      * {@code kill -9}'d (or whose JVM crashed before

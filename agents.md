@@ -161,9 +161,17 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 
 Every new IT that boots the full Spring context **must** either:
 
-1. **Extend `AbstractTuringSpringIT`** ([turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java](turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java)) — gives you an ephemeral H2 datasource, snapshot seeding, JMX enabled, and proper cleanup. **Preferred**:
+1. **Extend `AbstractTuringSpringIT`** ([turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java](turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java)) — gives you an ephemeral H2 datasource, snapshot seeding, JMX enabled, **per-JVM Artemis data directory**, and proper cleanup. **Preferred**. The subclass **must NOT redeclare `@SpringBootTest`** — that would override (not merge with) the parent's annotation and silently drop `spring.jmx.enabled=true`:
 
    ```java
+   // ✅ correct — inherits @SpringBootTest from AbstractTuringSpringIT
+   class TurFooIT extends AbstractTuringSpringIT {
+       @Test
+       void something() { ... }
+   }
+
+   // ❌ wrong — own @SpringBootTest overrides parent's annotation,
+   //    JMX property is lost, context fails on TurQueueBrowserService
    @SpringBootTest
    class TurFooIT extends AbstractTuringSpringIT { ... }
    ```
@@ -175,7 +183,11 @@ Every new IT that boots the full Spring context **must** either:
    class TurFooIT { ... }
    ```
 
-**Why**: `TurQueueBrowserService` injects `javax.management.MBeanServer` in its constructor (mandatory dep, not optional). In Spring Boot 4, the `JmxAutoConfiguration` that supplies `MBeanServer` is **not** activated in `@SpringBootTest` from `application.yaml` alone — the property has to be passed via `properties = ...` on the annotation. Without it the context fails with `No qualifying bean of type 'javax.management.MBeanServer' available` and Failsafe burns ~30s per attempt before giving up.
+   When going this route, also override `spring.artemis.embedded.data-directory` via `@DynamicPropertySource` to a unique per-JVM path (see `AbstractTuringSpringIT.overrideArtemisDataDirectoryWithEphemeralPath`), otherwise concurrent ITs and a locally-running app will collide on the same Artemis file lock and hang for several minutes on context startup.
+
+**Why JMX must be passed via `properties = ...`**: `TurQueueBrowserService` injects `javax.management.MBeanServer` in its constructor (mandatory dep, not optional). In Spring Boot 4, the `JmxAutoConfiguration` that supplies `MBeanServer` is **not** activated in `@SpringBootTest` from `application.yaml` alone — the property has to be passed via `properties = ...` on the annotation. Without it the context fails with `No qualifying bean of type 'javax.management.MBeanServer' available` and Failsafe burns ~30s per attempt before giving up.
+
+**Why per-JVM Artemis data dir matters**: the production default is `spring.artemis.embedded.data-directory=store/queue` — a CWD-relative path. With embedded Artemis + `persistent: true`, two JVMs sharing that path (e.g. a running app + a forked Surefire IT, or two parallel ITs) compete for `server.lock` and serialize through `FileLockNodeManager`'s sleep-retry loop. Symptom: the IT hangs on Spring context startup with no error logged, until you `Stop-Process` the other JVM. `AbstractTuringSpringIT` redirects this to a unique per-JVM temp dir, eliminating the class of bug entirely.
 
 #### JPA fetch strategy: LAZY by default
 

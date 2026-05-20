@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+
+import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 /**
  * Esqueletos para os patches da categoria (A) RACE listados em
@@ -44,8 +45,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
-@SpringBootTest(properties = "spring.jmx.enabled=true")
-class TurAgentChatExecutorRaceIT {
+class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
 
     /**
      * Patch #1 — re-resolve persona AFTER flow selection
