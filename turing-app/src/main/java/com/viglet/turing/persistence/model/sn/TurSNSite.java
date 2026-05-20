@@ -176,7 +176,7 @@ public class TurSNSite extends TurAuditable<String> implements Serializable {
 	@JoinColumn(name = "se_instance_id", nullable = false)
 	private TurSEInstance turSEInstance;
 
-	@OneToOne
+	@OneToOne(fetch = FetchType.LAZY)
 	private TurSNSiteGenAi turSNSiteGenAi;
 
 	@OneToMany(mappedBy = "turSNSite", orphanRemoval = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL)

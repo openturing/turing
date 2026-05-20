@@ -59,9 +59,25 @@ export function FacetSidebar() {
             value={`facet-${group.label}`}
             className="border border-border/60 rounded-xl overflow-hidden data-[state=open]:border-border"
           >
-            <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline">
-              {group.label}
-            </AccordionTrigger>
+            <div className="relative">
+              <AccordionTrigger
+                className={`px-4 py-3 text-sm font-semibold hover:no-underline ${
+                  group.hasSelected ? "pr-20" : ""
+                }`}
+              >
+                {group.label}
+              </AccordionTrigger>
+              {group.hasSelected && (
+                <button
+                  type="button"
+                  onClick={group.clear}
+                  aria-label={`${t("search.clearFacet")} ${group.label}`}
+                  className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-blue-500 hover:text-blue-600 font-medium cursor-pointer"
+                >
+                  {t("search.clearFacet")}
+                </button>
+              )}
+            </div>
             <AccordionContent className="px-2 pb-2">
               <div className="space-y-0.5">
                 {group.facets.map((facet) => (

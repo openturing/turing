@@ -128,29 +128,29 @@ public class TurAIAgent implements Serializable {
     @Column(name = "pythonRequirements")
     private String pythonRequirements;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "ai_agent_llm_instance",
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "llm_instance_id"))
     private Set<TurLLMInstance> llmInstances = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "ai_agent_mcp_server",
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "mcp_server_id"))
     private Set<TurMcpServer> mcpServers = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "ai_agent_custom_tool",
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "custom_tool_id"))
     private Set<TurCustomTool> customTools = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "embedding_model_instance_id")
     private TurEmbeddingModel turEmbeddingModelInstance;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_instance_id")
     private TurStoreInstance turStoreInstance;
 
@@ -167,7 +167,7 @@ public class TurAIAgent implements Serializable {
      *
      * @since 2026.2.7
      */
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "ai_agent_persona",
             joinColumns = @JoinColumn(name = "agent_id"),
             inverseJoinColumns = @JoinColumn(name = "persona_id"))
@@ -183,7 +183,7 @@ public class TurAIAgent implements Serializable {
      *
      * @since 2026.2.7
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_persona_id")
     private TurPersona defaultPersona;
 }

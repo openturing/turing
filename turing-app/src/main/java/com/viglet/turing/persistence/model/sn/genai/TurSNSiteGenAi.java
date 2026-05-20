@@ -67,7 +67,7 @@ public class TurSNSiteGenAi implements Serializable {
      * embedding model, store, LLM list and {@code systemPrompt} are the
      * source of truth.
      */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agent_id")
     private TurAIAgent turAIAgent;
 
