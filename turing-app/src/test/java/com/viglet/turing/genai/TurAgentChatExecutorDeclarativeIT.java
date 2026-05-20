@@ -45,7 +45,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.jmx.enabled=true")
 class TurAgentChatExecutorDeclarativeIT {
 
     /**

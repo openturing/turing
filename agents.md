@@ -157,6 +157,49 @@ Read paths use **`@tanstack/react-query` v5**. Don't reach for `useState` + `use
 - Integration tests use `@SpringBootTest` with full context — keep controllers lean to avoid bean issues
 - Always run `mvn test -pl turing-app -Dskip.npm=true` after backend changes
 
+#### Integration test (`*IT.java`) `@SpringBootTest` requirements
+
+Every new IT that boots the full Spring context **must** either:
+
+1. **Extend `AbstractTuringSpringIT`** ([turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java](turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java)) — gives you an ephemeral H2 datasource, snapshot seeding, JMX enabled, and proper cleanup. **Preferred**:
+
+   ```java
+   @SpringBootTest
+   class TurFooIT extends AbstractTuringSpringIT { ... }
+   ```
+
+2. **Or, when subclassing isn't possible** (rare — e.g. needs a different base or test slice), explicitly enable JMX on the annotation:
+
+   ```java
+   @SpringBootTest(properties = "spring.jmx.enabled=true")
+   class TurFooIT { ... }
+   ```
+
+**Why**: `TurQueueBrowserService` injects `javax.management.MBeanServer` in its constructor (mandatory dep, not optional). In Spring Boot 4, the `JmxAutoConfiguration` that supplies `MBeanServer` is **not** activated in `@SpringBootTest` from `application.yaml` alone — the property has to be passed via `properties = ...` on the annotation. Without it the context fails with `No qualifying bean of type 'javax.management.MBeanServer' available` and Failsafe burns ~30s per attempt before giving up.
+
+#### JPA fetch strategy: LAZY by default
+
+**Always use `FetchType.LAZY` for associations.** This is a project-wide rule, not a per-case decision.
+
+- `@OneToOne`: JPA default is EAGER → **must** override with `@OneToOne(fetch = FetchType.LAZY)`.
+- `@ManyToOne`: JPA default is EAGER → **must** override with `@ManyToOne(fetch = FetchType.LAZY)`.
+- `@OneToMany`, `@ManyToMany`: default is LAZY — leave it.
+- **Never use `FetchType.EAGER`** unless you have a measured, documented reason. Add a `// reason:` comment when you do.
+
+**Why this is non-negotiable**: EAGER associations cascade across the object graph and explode load cost. Real incident — search latency went from **200ms → 5s** on sites with an AI Agent configured because `TurSNSite → TurSNSiteGenAi → TurAIAgent → 4 @ManyToMany` all defaulted to EAGER, even though search never touches GenAi. Reverting that one chain to LAZY brought search back to ~200ms.
+
+**Safety net for legacy code paths**: [turing-app/src/main/resources/application.yaml](turing-app/src/main/resources/application.yaml) has `hibernate.enable_lazy_load_no_trans=true`, so LAZY access outside a `@Transactional` boundary still works (Hibernate opens a temporary session). This is a fallback for callers we may have missed during the EAGER → LAZY migration — **don't rely on it for new code**. New write paths and chat/RAG flows should access lazy associations inside an `@Transactional` or service-managed session.
+
+**When loading a graph in one shot is genuinely needed**, use:
+- `@EntityGraph(attributePaths = {...})` on the repository method, or
+- `JOIN FETCH` in a `@Query`
+
+— not `FetchType.EAGER` on the entity.
+
+#### Other testing rules
+
+- Always check `application.yaml` defaults before writing test-specific properties — most ITs should inherit project conventions.
+
 ### Common Pitfalls
 
 - `@Column(length=N)` must accommodate all enum/ID values (e.g., "AZURE_OPENAI" = 12 chars)
