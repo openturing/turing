@@ -17,6 +17,7 @@
 package com.viglet.turing.sn;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -100,8 +101,27 @@ public class TurSNUtils {
 
     public static URI requestToURI(HttpServletRequest request) {
         ServletServerHttpRequest servletServerHttpRequest = new ServletServerHttpRequest(request);
-        return ForwardedHeaderUtils.adaptFromForwardedHeaders(servletServerHttpRequest.getURI(),
-                servletServerHttpRequest.getHeaders()).build().toUri();
+        URI original = servletServerHttpRequest.getURI();
+        // Apply X-Forwarded-* on scheme/host/port/path but drop the query
+        // before building, because Spring's UriComponentsBuilder round-trips
+        // the query through encode/decode and double-encodes already-encoded
+        // params (e.g. fq%5B%5D becomes fq%255B%255D, breaking the param-name
+        // comparison in TurSNUtils.removeFilterQueryByFieldName(s) and
+        // corrupting cleanUpFacets / cleanUpLink in the search response).
+        URI adapted = ForwardedHeaderUtils
+                .adaptFromForwardedHeaders(original, servletServerHttpRequest.getHeaders())
+                .replaceQuery(null)
+                .build()
+                .toUri();
+        String rawQuery = original.getRawQuery();
+        if (rawQuery == null || rawQuery.isEmpty()) {
+            return adapted;
+        }
+        try {
+            return new URI(adapted + "?" + rawQuery);
+        } catch (URISyntaxException e) {
+            return original;
+        }
     }
 
     public static URI addFilterQuery(URI uri, String fq) {

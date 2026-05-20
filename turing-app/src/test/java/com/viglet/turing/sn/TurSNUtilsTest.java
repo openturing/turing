@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.viglet.turing.commons.se.TurSEParameters;
 import com.viglet.turing.commons.se.result.spellcheck.TurSESpellCheckResult;
@@ -526,7 +527,166 @@ class TurSNUtilsTest {
         assertThat(docs.get(0).getMetadata()).hasSize(2);
     }
 
+    // --- requestToURI: pct-encoded fq[] handling --------------------------
+
+    /**
+     * Regression test for the cleanUpFacets/cleanUpLink double-encoding bug:
+     * when a client sends {@code fq%5B%5D=...} (pct-encoded brackets), the
+     * URI returned by {@link TurSNUtils#requestToURI(jakarta.servlet.http.HttpServletRequest)}
+     * must keep the query single-encoded. Previously, Spring's
+     * UriComponentsBuilder.build().toUri() re-encoded the already-encoded
+     * components, turning {@code fq%5B%5D} into {@code fq%255B%255D} and
+     * breaking every downstream facet-link routine that compares the param
+     * name against the literal {@code "fq[]"}.
+     */
+    @Test
+    void requestToURIShouldNotDoubleEncodePctEncodedFqBrackets() {
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&p=1&_setlocale=pt&sort=relevance"
+                        + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
+                        + "&rows=9");
+
+        URI uri = TurSNUtils.requestToURI(request);
+
+        assertThat(uri.getRawQuery()).contains("fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
+        assertThat(uri.getRawQuery()).doesNotContain("fq%255B%255D");
+        assertThat(uri.getRawQuery()).doesNotContain("%253A");
+        assertThat(uri.getRawQuery()).doesNotContain("%25C3");
+    }
+
+    @Test
+    void requestToURIShouldNotDoubleEncodeMultipleEncodedFqParams() {
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&p=1&_setlocale=pt&sort=relevance"
+                        + "&fq%5B%5D=templateName%3Acursos"
+                        + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
+                        + "&rows=9");
+
+        URI uri = TurSNUtils.requestToURI(request);
+
+        // both fq[] params must be present in single-encoded form
+        assertThat(uri.getRawQuery()).contains("fq%5B%5D=templateName%3Acursos");
+        assertThat(uri.getRawQuery())
+                .contains("fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
+        assertThat(uri.getRawQuery()).doesNotContain("%255B");
+        assertThat(uri.getRawQuery()).doesNotContain("%255D");
+    }
+
+    @Test
+    void requestToURIShouldHandleLiteralFqBrackets() {
+        // baseline: the "URL 1" case from the bug report (literal `[]`)
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&fq[]=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
+
+        URI uri = TurSNUtils.requestToURI(request);
+
+        // URIBuilder.getQueryParams() must see a name of exactly "fq[]"
+        assertThat(uri.getRawQuery()).doesNotContain("%255B");
+        assertThat(uri.getRawQuery()).doesNotContain("%253A");
+        assertThat(uri.getRawQuery()).doesNotContain("%25C3");
+    }
+
+    // --- end-to-end: cleanUpFacets / cleanUpLink with encoded fq[] -------
+
+    /**
+     * End-to-end reproduction of the {@code cleanUpLink} bug observed at
+     * insper-stage-publish: feeding an incoming request whose query string
+     * uses {@code fq%5B%5D=area-de-conhecimento%3A...}, calling
+     * {@link TurSNUtils#removeFilterQueryByFieldName(URI, String)} on the
+     * URI returned by {@link TurSNUtils#requestToURI} must actually strip
+     * the matching {@code fq[]} param (i.e. the resulting URL must look
+     * like the base search URL, with no fq[]).
+     *
+     * <p>Pre-fix, the URI returned by {@code requestToURI} had its name
+     * double-encoded to {@code fq%255B%255D}; {@code URIBuilder.getQueryParams()}
+     * then exposed the name as {@code "fq%5B%5D"} (still pct-encoded),
+     * which never matched {@code TurSNParamType.FILTER_QUERIES_DEFAULT}
+     * ({@code "fq[]"}) — so the param was kept in the output instead of
+     * being stripped.
+     */
+    @Test
+    void cleanUpLinkScenarioShouldStripEncodedFqFromRequestUri() {
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&p=1&_setlocale=pt&sort=relevance"
+                        + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
+                        + "&rows=9");
+
+        URI uri = TurSNUtils.requestToURI(request);
+        URI cleanUpLink = TurSNUtils.removeFilterQueryByFieldName(uri, "area-de-conhecimento");
+
+        assertThat(cleanUpLink.toString()).doesNotContain("fq");
+        assertThat(cleanUpLink.toString()).doesNotContain("area-de-conhecimento");
+        assertThat(cleanUpLink.toString()).doesNotContain("%255B");
+        assertThat(cleanUpLink.toString()).contains("q=*");
+        assertThat(cleanUpLink.toString()).contains("_setlocale=pt");
+        assertThat(cleanUpLink.toString()).contains("rows=9");
+    }
+
+    @Test
+    void cleanUpFacetsScenarioShouldStripAllEncodedFqsFromRequestUri() {
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&p=1&_setlocale=pt&sort=relevance"
+                        + "&fq%5B%5D=templateName%3Acursos"
+                        + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o"
+                        + "&rows=9");
+
+        URI uri = TurSNUtils.requestToURI(request);
+        URI cleanUpFacets = TurSNUtils.removeFilterQueryByFieldNames(uri,
+                Arrays.asList("templateName", "area-de-conhecimento"));
+
+        assertThat(cleanUpFacets.toString()).doesNotContain("fq");
+        assertThat(cleanUpFacets.toString()).doesNotContain("templateName");
+        assertThat(cleanUpFacets.toString()).doesNotContain("area-de-conhecimento");
+        assertThat(cleanUpFacets.toString()).doesNotContain("%255B");
+        assertThat(cleanUpFacets.toString()).contains("q=*");
+        assertThat(cleanUpFacets.toString()).contains("sort=relevance");
+        assertThat(cleanUpFacets.toString()).contains("rows=9");
+    }
+
+    @Test
+    void cleanUpLinkScenarioShouldKeepUnrelatedFqWhenStrippingOne() {
+        // user has 2 facets active; cleanUpLink for "area-de-conhecimento"
+        // must keep templateName but remove area-de-conhecimento.
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&fq%5B%5D=templateName%3Acursos"
+                        + "&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
+
+        URI uri = TurSNUtils.requestToURI(request);
+        URI cleanUpLink = TurSNUtils.removeFilterQueryByFieldName(uri, "area-de-conhecimento");
+
+        assertThat(cleanUpLink.toString()).doesNotContain("area-de-conhecimento");
+        assertThat(cleanUpLink.toString()).contains("templateName");
+        assertThat(cleanUpLink.toString()).doesNotContain("%255B");
+    }
+
+    @Test
+    void filterQueryByFieldNameShouldFindEncodedFqFromRequestUri() {
+        MockHttpServletRequest request = newGetRequest(
+                "/api/sn/insper-stage-publish/search",
+                "q=*&fq%5B%5D=area-de-conhecimento%3AAdministra%C3%A7%C3%A3o");
+
+        URI uri = TurSNUtils.requestToURI(request);
+        List<String> selected = TurSNUtils.filterQueryByFieldName(uri, "area-de-conhecimento");
+
+        assertThat(selected).hasSize(1);
+    }
+
     // --- Helpers ---
+
+    private static MockHttpServletRequest newGetRequest(String requestUri, String queryString) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+        request.setScheme("http");
+        request.setServerName("localhost");
+        request.setServerPort(80);
+        request.setQueryString(queryString);
+        return request;
+    }
 
     private TurSEParameters createSEParameters(int autoCorrectionDisabled, int currentPage) {
         TurSEParameters params = new TurSEParameters(

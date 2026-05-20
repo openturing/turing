@@ -1,299 +1,722 @@
-# Plano de Implementação — ITs do Execution Harness
+# Plano de Implementação — ITs do Execution Harness (v2)
 
-> Plano para preencher os bodies dos 15 esqueletos em `TurAgentChatExecutor*IT.java`.
-> Cada `@Test` é o contrato que o refactor "advance → 1× LLM call" precisa preservar.
+> Substitui o plano v1 (eixo de divisão errado: por categoria A/B/C do inventário,
+> que só captura wiring e deixa o comportamento do gpt-4o-mini como ponto cego).
+> **Princípio diretor: previsibilidade sem surpresa.** Cada patch crítico tem dois
+> ângulos de regressão — wiring estrutural + resultado contra LLM real — cobertos
+> por testes pareados que se referenciam mutuamente.
 
-Arquivos-alvo:
+Arquivos-alvo (novos) sob `turing-app/src/test/java/com/viglet/turing/genai/`:
 
-- [`turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorRaceIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorRaceIT.java) — 10 esqueletos (A)
-- [`turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorDeclarativeIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorDeclarativeIT.java) — 3 esqueletos (B)
-- [`turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorMiddlewareIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorMiddlewareIT.java) — 2 esqueletos (C)
+- [`TurAgentChatExecutorStructuralIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorStructuralIT.java) — wiring (mock)
+- [`TurAgentChatExecutorBehavioralIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorBehavioralIT.java) — resultado contra LLM real
+- [`TurAgentChatExecutorContractIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorContractIT.java) — middleware (mock)
 
-Referências de patches: [`HARNESS_INVENTORY.md`](HARNESS_INVENTORY.md) §8.4.
+Os 3 arquivos atuais ([`...RaceIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorRaceIT.java),
+[`...DeclarativeIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorDeclarativeIT.java),
+[`...MiddlewareIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorMiddlewareIT.java))
+serão **migrados e deletados** na Fase 0.5.
 
-## 1. Estratégia geral
+Referências de patches: [`HARNESS_INVENTORY.md`](HARNESS_INVENTORY.md) §3 e §8.
 
-**Por que mock de `ChatModel` em vez de OpenAI real.** O IT canônico [`ProgramaMatchEEFlowIT`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java) usa OpenAI real (`gpt-4o-mini`, temperature 0) precisamente porque seu propósito é validar o motor end-to-end, incluindo o comportamento real do judge contra a Marina/Lucas. Para os 15 esqueletos o objetivo é o oposto: pinar **invariantes estruturais do executor** (qual prompt foi montado, quantas chamadas saíram, quais `toolCallbacks` estavam ligados, qual persona foi composta, qual `history` foi enviado). O conteúdo da resposta do LLM é irrelevante e introduzir não-determinismo + custo + `@EnabledIfEnvironmentVariable` no harness de race elimina justamente a propriedade que faz esses testes valerem: **rodam em todo `mvn verify`, sem env-var, em segundos**.
+---
 
-**Por que o ponto de mock é `TurLlmModelFactory.createChatModel(...)`, não `ChatModel` direto.** O executor obtém o `ChatModel` em runtime via injeção do `TurLlmModelFactory` ([`TurAgentChatExecutor.java:121-151`](../../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java#L121-L151)) — a factory descriptografa a API key e enrola o provider em [`TurResilientChatModel`](../../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java#L61-L65). Não há `ChatModel` injetado diretamente no executor. O ponto de mock natural é portanto **a factory**: substituí-la por um spy/mock que retorna um `ChatModel` Mockito controlado pelo teste. Isso também evita ter de mexer no `TurSecretCryptoService` (a key descriptografada nunca chega ao mock).
+## Decisões-chave
 
-**Por que `@SpringBootTest` e não unit-test puro do executor.** O `TurAgentChatExecutor` tem 14 colaboradores no construtor: `TurLlmModelFactory`, `TurSecretCryptoService`, `TurNativeToolService`, `TurMcpToolCallbackService`, `TurCustomToolCallbackService`, `TurToolCallbackPipeline`, `TurLLMTokenUsageService`, `TurChatFlowRepository`, `TurChatFlowEngineService`, `TurPersonaPromptComposer`, `TurPersonaToneValidator`, `TurPersonaBrandContextProvider`, `TurAgentPersonaResolver`, `TurChatAnalyticsService`, `TurChatMemoryService`. Stubar todos por unit-test reescreveria metade do produto. Reusar o context Spring + base [`AbstractTuringSpringIT`](../../turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java) (H2 efêmero por classe, snapshot opcional) custa ~30s de boot uma vez e dá grafo de objetos real.
+Antes de mergulhar no plano: quatro decisões que valem ter explícitas. Cada uma
+se desenvolve em sua seção; este sumário existe pra que um leitor não precise
+montar o quadro a partir de §3.4 + risco #11 + tabela §6.
 
-**Quais beans ficam reais:** `TurChatFlowEngineService`, `TurAgentPersonaResolver`, `TurPersonaPromptComposer`, `TurChatFlowRepository`, `TurAIAgentRepository`, `TurPersonaRepository`, `TurAIAgentSlotRepository`, `TurChatFlowStateRepository`, todas as `*GuardrailStrategy`, todas as `ChatFlowOps` puras. **Quais ficam mockados:** `TurLlmModelFactory` (substituído via `@TestConfiguration`/`@Primary`), e opcionalmente `TurChatAnalyticsService` + `TurChatMemoryService` (para evitar IO desnecessário no H2 e ruído no log — ambos já têm `try/catch` defensivo, mas trocá-los por NoOp deixa os asserts mais limpos). `TurCustomToolCallbackService` e `TurMcpToolCallbackService` podem ficar reais — quando o agent não tem custom-tools nem MCP servers anexados, retornam array vazio e não disparam IO.
+1. **Patch #15 cobre via spy de repositório, não via Fixture 4.** Simular um
+   Custom Tool Groovy escrevendo slot durante `chatModel.call` é mais ruído de
+   setup que sinal de invariante. Caminho preferido: `@SpyBean
+   TurChatFlowStateRepository` + callback Mockito que dispara a escrita no
+   momento certo. Fixture 4 vira **condicional** — só criar se o spy não cobrir
+   o cenário. Detalhes em §3.4 (Fixture 4), risco #11, tabela §6 linha 20.
 
-## 2. Infraestrutura compartilhada
+2. **Pinning explícito do `gpt-4o-mini` nos Javadocs Behavioral.** O eixo
+   comportamental depende de um modelo específico (decisão tomada porque
+   `gpt-4o-mini` falha em produzir JSON consistente, descartando structured
+   output como caminho de guardrail). Cada esqueleto Behavioral inclui o ID da
+   versão do modelo no Javadoc (formato `Pinning: gpt-4o-mini @ 2026-05`). Quando
+   o modelo for retirado ou silenciosamente atualizado, a quebra do teste é a
+   documentação da migração — drift do modelo é **feature do teste**, não bug.
+   Detalhes em risco #6 e §3.3.
 
-### 2.1. `@TestConfiguration` "TurAgentChatExecutorTestSupport"
+3. **Migração dos 15 esqueletos existentes é Fase 0.5 explícita, não trabalho
+   de bastidor.** Cada test method tem destino arquivo-por-arquivo em §5 Fase
+   0.5. Os 3 arquivos antigos ([`...RaceIT`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorRaceIT.java),
+   [`...DeclarativeIT`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorDeclarativeIT.java),
+   [`...MiddlewareIT`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorMiddlewareIT.java))
+   são **deletados** após migração — sem coexistência dupla, sem confusão de
+   "qual IT cobre o quê". Os Javadocs (que são o contrato) são preservados
+   literalmente; só pacote, anotação e referência de inventário mudam.
 
-Localização: `turing-app/src/test/java/com/viglet/turing/genai/testsupport/TurAgentChatExecutorTestSupport.java` (novo).
+4. **Anti-padrão de mock-tautológico documentado em §7.3.** Smell-check durante
+   review: se um Structural test reduz a "se eu retornar X, vejo X no SSE",
+   virou no-op e o par com Behavioral perdeu sentido. §7.3 lista os 4 sinais
+   mais comuns; ler antes de habilitar qualquer esqueleto e antes de revisar
+   PR que toque os 3 arquivos de teste novos.
+
+---
+
+## 1. Princípio: previsibilidade sem surpresa
+
+O harness atual carrega 22 patches catalogados (`HARNESS_INVENTORY.md`). Cada
+patch existe por um motivo, e esse motivo determina **que tipo de teste** consegue
+travar a regressão. Há dois eixos ortogonais e a maioria dos patches críticos
+toca os dois — cobrir só um deixa ponto cego onde regressão silenciosa passa
+no CI verde e quebra em produção.
+
+**Wiring (estrutural).** O harness *compõe o prompt certo*, *monta as
+`ChatOptions` certas*, *persiste na ordem certa*, *chama o `personaResolver`
+N vezes*. Esses invariantes são determinados pelo código do executor, não pelo
+modelo. Mock do `ChatModel` é a ferramenta exata: enfileira respostas,
+captura o `Prompt`, conta invocações. O LLM real não muda o assert — se o teste
+estrutural passa, o wiring está certo. Roda em todo `mvn verify`, < 10 minutos,
+sem env var.
+
+**Resultado (comportamental).** Vários patches existem porque o gpt-4o-mini
+respondia *de um certo jeito* a um certo prompt: anchoring no padrão antigo
+(#10), tool call preemptivo antes do judge capturar coupon (#3), pergunta
+incongruente com chips (#13), persona drift no regen (#1/#2). Verificar que
+*esse comportamento* persiste depois do refactor exige rodar o modelo real
+contra o flow real e ler a resposta. **Mock não consegue avaliar isso**: a
+única coisa que o teste poderia afirmar é "se eu disser ao mock que retornou X,
+o harness usa X" — tautologia. O comportamental usa OpenAI real
+(`gpt-4o-mini`, temperature 0) — herda o padrão de [`ProgramaMatchEEFlowIT`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java)
+e roda só com `-Pllm-it` (nightly / pre-release).
+
+**Por que cobrir só um eixo deixa ponto cego.** Se cobrirmos só estrutural,
+um patch que sumir silenciosamente do `aiInstruction` literal (#12) ainda
+passa nos asserts ("`countMatches == 2`"), mas o gpt-4o-mini volta a reciclar
+instrução antiga porque o pointer não basta. Se cobrirmos só comportamental,
+quando o OpenAI muda o modelo (gpt-4o-mini → gpt-4o-mini-2026-09) e a resposta
+muda de forma cosmética, o teste flake sem que tenha havido regressão real
+de código. **Os dois pareados eliminam a ambiguidade**: regressão estrutural
+quebra estrutural primeiro; mudança de modelo quebra só o comportamental e o
+diagnóstico fica óbvio.
+
+---
+
+## 2. Arquitetura
+
+### 2.1. Três arquivos de teste, eixo por tipo de assert
+
+| Arquivo (sob `turing-app/src/test/java/com/viglet/turing/genai/`) | Tipo | Stub LLM | Profile Maven | Quando roda |
+|---|---|---|---|---|
+| [`TurAgentChatExecutorStructuralIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorStructuralIT.java) | Wiring | Mock via `TurLlmModelFactory` substituído por `@TestConfiguration` `@Primary` | default | Toda PR / CI |
+| [`TurAgentChatExecutorBehavioralIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorBehavioralIT.java) | Resultado vs LLM real | gpt-4o-mini real, `@EnabledIfEnvironmentVariable("OPENAI_API_KEY")` | `-Pllm-it` | Nightly + pre-release |
+| [`TurAgentChatExecutorContractIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorContractIT.java) | Middleware (cycle cap, A/B window, abandon, agent-owner guard) | Mock | default | Toda PR / CI |
+
+**Eixo de divisão.** Não por categoria do patch (A/B/C). Por *que tipo de
+assert quebra primeiro*. Patches A (race) podem ter ambos; patches B
+(declarative) costumam ter ambos quando envolvem tool stripping observável
+(LLM real evita chamar tool removida); patches C (middleware) ficam quase
+sempre só no Contract.
+
+### 2.2. Pareamento patch → testes
+
+Patches **críticos** ganham par estrutural + comportamental. Os Javadocs dos
+dois esqueletos referenciam-se mutuamente ("par estrutural de `xxx` em
+`BehavioralIT`") — drift dos dois fica documentado.
+
+| Patch | Categoria | Structural IT (asserção) | Behavioral IT (asserção contra gpt-4o-mini real) | Fixture |
+|---|---|---|---|---|
+| #1 — persona resolve pós-flow | A | `resolver` chamado ≥ 2×; 1º prompt traz a persona pós-walk | resposta tem voz/marca da persona pós-walk (Lucas), não da default (Marina) | persona-switch-mid-flow |
+| #2 — persona resolve no regen | A | `resolver` chamado 3×; 2º prompt traz persona pós-walk | 2º turn produz resposta na voz pós-walk após cruzar `persona-*` | persona-switch-mid-flow |
+| #3 — tool stripping initial | B | `((ToolCallingChatOptions) prompt.options).toolCallbacks` vazio quando nó marca proibição | gpt-4o-mini real NÃO chama `compor_proposta_in_company` no turno de captura (lê `tool_calls` no response metadata) | tool-free-node |
+| #4 — tool stripping regen | B | idem #3 no 2º call | idem #3 no 2º call | tool-free-node |
+| #7 — regen full path | A | `chatModel.call()` invocado 2×; 2º prompt tem addendum do nó pós-advance | pergunta gerada é do nó B (regex `(?i).*objetivo.*\?`), não do A | programa-match-ee |
+| #10 — OVERRIDE bilíngue | A | substrings literais `INSTRUÇÃO DE PRIORIDADE MÁXIMA` + `HIGHEST-PRIORITY OVERRIDE` no system text do regen | com OVERRIDE: pergunta do nó B; sem OVERRIDE (mock-control): pergunta volta a recair no nó A — pinning empírico | programa-match-ee |
+| #12 — aiInstruction literal inline | A | `countMatches(systemText, aiInstructionSnippet) == 2` no regen | resposta menciona o termo distintivo do `aiInstruction` (ex.: "daqui a 3 anos") | programa-match-ee |
+| #13 — chips congruency | A | os 4 labels aparecem literais + frase "MUST be congruent" no system text | pergunta gerada admite TODAS as 4 chips como resposta natural (regex de OR + verb "papel/decisão/comprar") | regen-with-chips |
+
+Patches **só estruturais** (LLM real não acrescenta sinal):
+
+- #8 — `textAlignedWithCurrentNode` + supressão de chips
+- #9 — regen omite next-step preview
+- #11 — drop do `baseSystemPrompt` no regen
+- #14 — trim de history para 3 turnos
+- #15 — refresh do state pré-advance
+
+Patches **só contrato / middleware** (`ContractIT`):
+
+- #16 — save explícito após walk (cobertura indireta via #17 já existe; novo IT só do invariante double-save)
+- #17 — cycle cap (já coberto por [`TurChatFlowSubFlowEngineIT`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/TurChatFlowSubFlowEngineIT.java) — não duplicar)
+- #18 — fallback HEURISTIC
+- #19 — A/B window (já coberto por [`TurChatFlowAbVariantAssignmentTest`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/TurChatFlowAbVariantAssignmentTest.java) — não duplicar)
+- #20 — agent-owner guard
+- #21 — judge retry / `isNonBlankRedirect` (já coberto por [`LlmJudgeGuardrailStrategyTest`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/strategy/LlmJudgeGuardrailStrategyTest.java) — não duplicar)
+- #22 — `onJudgeReject` declarativo (já coberto pelo mesmo unit-test — não duplicar)
+
+Patches **fora deste escopo** ou já cobertos por indireta forte:
+
+- #5 — `forbidsToolCalls` bilíngue: vira unit-test puro paramétrico (10 casos), entra no `StructuralIT` por coesão.
+- #6 — `freshlyTriggered` skip: indireta forte via [`autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java) — adicionar 1 esqueleto estrutural ("freshlyTriggered=true ⇒ advance NÃO foi invocado neste turno").
+
+**Total de esqueletos esperado:**
+
+- Structural: **12** (8 estruturais "puros" + 4 estruturais pareados com behavioral)
+- Behavioral: **6** (#1, #3, #7, #10, #12, #13 — não #2 pois compartilha fixture com #1 e a assertion comportamental é equivalente)
+- Contract: **4** (#16, #18, #20, e 1 do features implícitas §4)
+- Features implícitas extras (§4): **3** (cascade ascent, persona enum guard, BR-doc mod-11 — promotion formal)
+
+**Total: ~22 esqueletos novos + migração de 15 esqueletos existentes.**
+
+### 2.3. Maven profile `-Pllm-it`
+
+O `failsafe-plugin` já está configurado em [`turing-app/pom.xml:628-644`](../../turing-app/pom.xml#L628-L644)
+com defaults para `*IT.java`. Vamos adicionar um profile que, por default,
+**exclui** os ITs comportamentais (que precisam de OPENAI_API_KEY) e os
+**inclui** quando `-Pllm-it` é passado:
+
+```xml
+<profiles>
+  <profile>
+    <id>llm-it</id>
+    <build><plugins>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*IT.java</include>
+            <include>**/*BehavioralIT.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins></build>
+  </profile>
+</profiles>
+```
+
+**Default (sem profile):** `BehavioralIT` é pulado por causa do
+`@EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")` — não
+precisa exclude explícito; é a mesma estratégia que `ProgramaMatchEEFlowIT` já
+usa. O profile existe para tornar a execução *intencional* em CI nightly:
+quando alguém roda `mvn verify -Pllm-it -DOPENAI_API_KEY=...`, fica explícito
+que a intenção é exercitar o eixo comportamental.
+
+`ProgramaMatchEEFlowIT` continua respondendo à variável de ambiente (sem
+mudança) — o profile não muda o comportamento dele, só sinaliza intenção.
+
+---
+
+## 3. Infraestrutura compartilhada
+
+### 3.1. `@TestConfiguration` para Structural/ContractIT (mock)
+
+Localização: `turing-app/src/test/java/com/viglet/turing/genai/testsupport/TurAgentChatExecutorMockSupport.java`
 
 Responsabilidades:
 
-1. Substituir o bean `TurLlmModelFactory` por um wrapper que retorna o mesmo `ChatModel` Mockito por instância de teste (compartilhado entre initial call e regen — quem queue as respostas é o teste).
-2. Expor um helper `mockNextChatCalls(ChatResponse...)` que enfileira `ChatResponse`s para `chatModel.call(any(Prompt.class))` em ordem. Implementado via `Mockito.when(...).thenReturn(first).thenReturn(second)...`.
-3. Expor um `ArgumentCaptor<Prompt>` global, recuperável via `getCapturedPrompts()` — usado nos asserts de "1º prompt vs 2º prompt".
-4. Substituir `TurChatAnalyticsService` por um spy que mantém a interface mas no-op'a `recordSessionStart` e `recordTurn` para evitar persistência.
-5. Substituir `TurChatMemoryService` por um spy análogo — `recordTurn` retorna sem escrever vector store (que pode não estar configurado no H2 efêmero).
+1. Substituir o bean `TurLlmModelFactory` por `@Bean @Primary` que retorna
+   um `ChatModel` Mockito controlado. Bypass do `TurResilientChatModel`
+   wrapper para preservar o invariante "1 chamada do executor = 1 chamada
+   Mockito" sem retry mascarando.
+2. Helper `mockNextChatCall(String)` enfileira respostas em ordem (initial,
+   regen, ...). Implementado com `Mockito.when(...).thenReturn(first, rest)`.
+3. `ArgumentCaptor<Prompt>` exposto via getter (`capturedPrompts()`) — usado
+   para inspecionar 1º vs 2º prompt.
+4. Spy opcional em `TurAgentPersonaResolver` para contar invocações (#1, #2).
+5. NoOp para `TurChatAnalyticsService` e `TurChatMemoryService` (evita IO no
+   H2 efêmero, deixa asserts limpos).
 
-Forma resumida (sem código completo):
+Assinaturas:
 
 ```java
 @TestConfiguration
-public class TurAgentChatExecutorTestSupport {
-    public static class ChatModelHarness { /* enqueue + captor */ }
-    @Bean ChatModelHarness chatModelHarness() { ... }
-    @Bean @Primary TurLlmModelFactory mockLlmModelFactory(ChatModelHarness h) { ... }
-    @Bean @Primary TurChatAnalyticsService noopChatAnalyticsService() { ... }
-    @Bean @Primary TurChatMemoryService noopChatMemoryService() { ... }
+public class TurAgentChatExecutorMockSupport {
+    public static class ChatModelHarness {
+        ChatModel chatModel();                  // Mockito mock
+        ArgumentCaptor<Prompt> promptCaptor();
+        void queueResponse(String text);        // enqueue "ok"-style ChatResponse
+        void queueToolCallResponse(/* … */);    // for #3/#4 sanity inverse
+        List<Prompt> capturedPrompts();
+        void reset();                           // @BeforeEach
+    }
+    @Bean ChatModelHarness chatModelHarness();
+    @Bean @Primary TurLlmModelFactory mockLlmModelFactory(ChatModelHarness h);
+    @Bean @Primary TurChatAnalyticsService noopChatAnalyticsService();
+    @Bean @Primary TurChatMemoryService noopChatMemoryService();
 }
 ```
 
-A `ChatModelHarness` encapsula:
+Helper para construir `ChatResponse` de teste: `static ChatResponse okText(String)`
+usando `ChatResponse.builder().generations(List.of(new Generation(new AssistantMessage(text))))`.
 
-- `ChatModel chatModel` (Mockito mock criado uma vez)
-- `ArgumentCaptor<Prompt> promptCaptor` (idem)
-- `void enqueue(ChatResponse... responses)` — re-stub `when(chatModel.call(promptCaptor.capture())).thenReturn(first, rest)`
-- `List<Prompt> capturedPrompts()` — `promptCaptor.getAllValues()`
-- `void reset()` — `Mockito.reset(chatModel)` + nova lista interna (chamado em `@BeforeEach`)
-
-Estratégia de construir `ChatResponse` de teste: usar `org.springframework.ai.chat.model.ChatResponse.builder().generations(List.of(new Generation(new AssistantMessage("ok"))))` — Spring AI fornece a API direta; basta um helper `static ChatResponse okText(String text)`.
-
-### 2.2. Base class `AbstractAgentExecutorIT`
-
-**Decisão: SIM**, vale uma base class. Os 15 esqueletos compartilham 80% do setup (criar `TurAIAgent`, criar `TurLLMInstance`, criar `TurPersona`, importar flow JSON, posicionar state em nó N, chamar `executor.execute(...)`, esperar Flux). Sem base class cada `@Test` repete ~40 linhas de boilerplate. Helpers propostos:
-
-- `TurAIAgent createAgent(String title, TurPersona defaultPersona)` — persiste e retorna.
-- `TurLLMInstance createMockableLlmInstance()` — cria um `TurLLMInstance` minimal (provider type qualquer, apiKey encriptada placeholder — a factory mockada ignora).
-- `TurChatFlow importFlowFromClasspath(String resourcePath, int bundleIndex, TurAIAgent agent)` — replica `ProgramaMatchEEFlowIT.importIntoAgent`, mas reusando a fixture-loader como utility (extrair para `EducationEEFixtures` ou novo `ChatFlowImportTestUtil`).
-- `TurChatFlowState seedStateAt(String conversationId, TurChatFlow flow, String nodeId, Map<String,String> vars)` — útil para os ITs que precisam "começar parked no nó X" sem rodar turnos prévios.
-- `List<ChatResponse> runTurn(TurAIAgent agent, TurLLMInstance llm, List<ChatMessageItem> history, String conversationId, String flowId)` — chama `executor.execute(...)` e `.collectList().block(Duration.ofSeconds(5))`.
-- `TurChatFlowState reloadState(String conversationId)` — `stateRepository.findByConversationId(...).orElseThrow()` para asserts pós-turn.
-- `Prompt firstPrompt()` / `Prompt regenPrompt()` — atalhos pra `harness.capturedPrompts().get(0)` / `.get(1)`.
-- `String systemTextOf(Prompt p)` — extrai o `SystemMessage.text()` do prompt.
-
-A base class é `abstract`, sem `@SpringBootTest` ela mesma (cada IT herda já tem `@SpringBootTest @Import(TurAgentChatExecutorTestSupport.class)` no top). Estende `AbstractTuringSpringIT` para reaproveitar o H2 efêmero.
-
-### 2.3. Fixtures novas necessárias
-
-Avaliação por patch:
-
-- **`programa-match-ee.chat-flow.json`** (existente) cobre patches **#1 parcial, #6 sim, #9, #10, #11, #12, #14, #15 indiretamente, #18, #20**. Tem agent owner + persona Marina/Lucas + nós aiQuestion encadeados (`ai-name → ai-cargo → ai-objetivo → ai-area`) que dão o "advance que move o cursor por transparente walk" necessário para os patches de regen. Cobre também o trigger contract para #6.
-- **`in-company-match.chat-flow.json`** (existente, sem IT) tem o nó `ai-coupon-code` e `ai-deliver-proposta` que motivaram os patches **#3/#4/#5**. Porém o `aiInstruction` atual NÃO contém a sentinela `"NÃO CHAME NENHUMA TOOL"` — o tool stripping nunca dispararia rodando essa fixture as-is. Duas opções: (a) mutar o `aiInstruction` em runtime no teste via JSON patch, (b) criar fixture nova com a sentinela. A opção (a) é frágil (acopla o teste à estrutura interna do JSON). **Recomendação: fixture nova baseada no in-company.**
-
-Fixtures novas a criar:
-
-**Fixture 1: `harness-it/tool-free-node.chat-flow.json`**
-Estrutura: `start → ai-coupon-code (aiInstruction contém "NÃO CHAME NENHUMA TOOL") → switch-cupom-ok → ai-deliver (aiInstruction contém "Chame compor_proposta_in_company") → end`
-Patches que serve: **#3, #4, #5** (sentinela bilíngue em PT-BR upper).
-Notas: o agent associado precisa ter o custom-tool `compor_proposta_in_company` registrado (pode ser stub que registra a chamada). A fixture é a mínima necessária para exercer o stripping no initial call (#3) e no regen (#4).
-
-**Fixture 2: `harness-it/persona-switch-mid-flow.chat-flow.json`**
-Estrutura: `start → persona-marina → ai-name → switch-route → persona-lucas → ai-objetivo → end`
-Patches que serve: **#1** (persona walk-written na descida transparente do trigger turn) e **#2** (persona switch no meio do flow disparando regen com persona nova).
-Variação ou nova: nova — o `programa-match-ee` tem persona-marina e persona-lucas em flows SEPARADOS (A/B), não no MESMO flow com switch entre eles. Esta fixture força a "transparent walk cruza persona node entre user input e nó destino" exigida pelos asserts.
-
-**Fixture 3: `harness-it/regen-with-chips.chat-flow.json`**
-Estrutura: `start → ai-cargo (aiInstruction "Pergunte cargo") → switch-area → ai-decision-role (aiInstruction "Pergunte papel na decisão", inlineOptions=["RH/L&D", "Gestor", "C-level", "Comprador"]) → end`
-Patches que serve: **#13** (chips inline no override + "MUST be congruent") e **#8** (suppressão de chips quando `textAlignedWithCurrentNode=false`). Reproduz literalmente o cenário descrito no patch #13.
-Variação ou nova: nova — necessária porque o programa-match não tem `inlineOptions` num nó alvo de regen com `aiInstruction` descrevendo um assunto diferente.
-
-**Fixture 4 (opcional): `harness-it/tool-write-during-call.chat-flow.json`**
-Estrutura: `start → ai-area (aiInstruction força chamar tool search_ee_programs) → ai-confirma → end`
-Patches que serve: **#15** (refresh do state pre-advance). Pode reusar o `programa-match-ee` com um custom-tool stub que escreve no slot `programas_match` via `TurCustomToolSlotHelper.save(...)` mid-turn. **Verificar primeiro se a complexidade de simular tool-call lifecycle do Spring AI compensa** — se o stub for muito ad-hoc, marcar como TODO e cobrir patch #15 indiretamente (vide §6).
-
-Total: **3 fixtures novas firme + 1 condicional**, todas sob `turing-app/src/test/resources/harness-it/`.
-
-## 3. Fases de implementação
-
-### Fase 0 — Infraestrutura (dia 0, sem dependências)
-
-1. Criar pacote `turing-app/src/test/java/com/viglet/turing/genai/testsupport/`.
-2. Implementar `TurAgentChatExecutorTestSupport` (§2.1) + `ChatModelHarness`.
-3. Implementar `AbstractAgentExecutorIT` (§2.2) com helpers `createAgent`, `createMockableLlmInstance`, `importFlowFromClasspath`, `seedStateAt`, `runTurn`, `reloadState`, `firstPrompt`, `regenPrompt`, `systemTextOf`.
-4. Extrair `ChatFlowImportTestUtil.importIntoAgent(...)` a partir de `ProgramaMatchEEFlowIT.importIntoAgent` para reuso. Original mantém método privado que delega para o util.
-5. Smoke test interno (deletar antes de fechar a fase): `_smokeContextLoadsAndChatModelMockReceivesCall` — `@Test` que roda `executor.execute(agentSimples, llmMock, listOf(user("oi")), null, null)`, espera `harness.capturedPrompts()` tamanho 1.
-
-Critério de pronto: smoke test verde + `mvn verify -pl turing-app -Dskip.npm=true` sem regressões nos ITs existentes (`@Primary` overrides não devem poluir o context de outros ITs porque o `@TestConfiguration` só é importado quando explicitamente declarado).
-
-Estimativa: **0.5–1 dia**.
-
-### Fase 1 — Tests sem fixture nova (dia 1–2)
-
-Esqueletos exercitáveis APENAS com `programa-match-ee.chat-flow.json` (após mutações mínimas de state). Total: **8 dos 15**.
-
-1. **`appendsBilingualHighestPriorityOverrideOnRegen`** (#10): seed state em `ai-cargo` com vars `{name: "X"}`, user msg "Gerente sênior", 2 chat responses. Asserta `systemTextOf(regenPrompt())` contém `"INSTRUÇÃO DE PRIORIDADE MÁXIMA"` E `"HIGHEST-PRIORITY OVERRIDE"`, e que `systemTextOf(firstPrompt())` NÃO contém nenhum dos dois. Bloqueio: nenhum.
-2. **`dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict`** (#11): configurar `agent.setSystemPrompt("ROUTER LLM decides flow. Show 3 caminhos welcome on first turn.")`, seed em `ai-cargo`. Asserta marker em `firstPrompt` e ausência em `regenPrompt`. Bloqueio: nenhum.
-3. **`omitsNextStepPreviewHintInRegenAddendum`** (#9): seed em `ai-cargo` (next = `ai-objetivo` cujo aiInstruction começa com "Pergunte onde o visitante quer estar"). Asserta substring de `ai-objetivo.aiInstruction` em `firstPrompt` (next-step hint) e que `regenPrompt` NÃO contém o aiInstruction de `ai-area` (o "nó depois do destino do regen"). Bloqueio: confirmar que `ChatFlowOps.buildBaseAddendum` realmente emite a aiInstruction do nó next-step no initial — ler a função antes de implementar.
-4. **`inlinesAiInstructionLiteralInsideOverrideBlock`** (#12): seed em `ai-cargo`. Esperar 2 ocorrências da substring distintiva do `ai-objetivo.aiInstruction` (ex.: "daqui a 3 anos") em `regenPrompt` — uma no `newAddendum` (`FLOW STATE`), outra no override (`CURRENT STEP'S INSTRUCTION (literal — follow this, not any earlier step's)`). Asserta com `StringUtils.countMatches(systemText, "daqui a 3 anos") == 2`. Bloqueio: nenhum.
-5. **`trimsHistoryToBudgetedRecentTurnsInRegenCall`** (#14): construir `history` com 5 user turns + 5 assistant turns = 10 mensagens, mais o user atual. Asserta `firstPrompt.getInstructions()` filtrado por `UserMessage.class` tem >= 6 (todo o history + current); `regenPrompt` tem `<= 3` UserMessages (REGEN_HISTORY_TURN_BUDGET); última UserMessage do regen == user atual. Bloqueio: nenhum.
-6. **`resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall`** (#1, parcial): no programa-match, o trigger turn faz descent transparente por `start → persona-marina → ai-name`. Esse caminho NÃO troca a persona (Marina é a default). Para validar **a chamada extra** sem fixture nova, podemos: (a) usar `@SpyBean` no `TurAgentPersonaResolver` e contar invocations — sem precisar de persona switch real; o invariante a travar é "resolver chamado >= 2 vezes no trigger turn". Asserta `verify(personaResolver, atLeast(2)).resolve(...)`. Bloqueio: `@SpyBean` em service real precisa de proxy CGLIB — Spring Boot 4 com Java 21 + `--add-opens` é checagem rápida. Se falhar, fallback é `@MockBean` + delegação manual.
-7. **`fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean`** (#18): mais limpo via reflection no `strategyByMethod` Map para REMOVER a entrada de `LLM_JUDGE`, flow configurado com `LLM_JUDGE`. Asserta turno completa sem exception + `HeuristicGuardrailStrategy.advance(...)` invocado uma vez (spy) + log captado contém "fallback" ou "HEURISTIC". Bloqueio: capturar logs em Spring Boot 4 — usar `OutputCaptureExtension` do Spring Boot Test (`spring-boot-test-junit-jupiter`). Verificar disponibilidade.
-8. **`discardsForcedFlowWhenItDoesNotBelongToCallingAgent`** (#20): criar `agentA1` com flow `flowA1`, `agentA2` separado. `runTurn(agentA2, llm, history, conv, flowA1.getId())`. Asserta: `engine.selectActiveFlow(eq(agentA2), ...)` foi invocado pelo menos 1 vez (spy do engine); `state.getFlow().getId()` != `flowA1.getId()` (ou null se router também não pegou); variante positiva (sanity) com `flowA2` pertencendo a `agentA2` invoca o forced sem cair no router. Bloqueio: nenhum.
-
-Critério de pronto: 8 `@Disabled` removidos, asserts implementados, build verde sem env-var `OPENAI_API_KEY`.
-
-Estimativa: **0.5–1 dia por test** quando a infra existe ≈ **2 dias** para os 8. Real-world: 10–30min por teste once infra está pronta, mas reserva 4x para debug.
-
-### Fase 2 — Criação das fixtures novas (dia 3)
-
-Para CADA fixture identificada em §2.3:
-
-1. **`harness-it/tool-free-node.chat-flow.json`** — começar do `in-company-match.chat-flow.json`, podar para 3 nós (start, ai-coupon-code, ai-deliver-proposta, end + edges). Adicionar a sentinela literal `"NÃO CHAME NENHUMA TOOL — capture o código e siga."` ao `aiInstruction` do `ai-coupon-code`. Adicionar `"NÃO CHAME NENHUMA TOOL"` ao `ai-deliver-proposta.aiInstruction` (para servir o patch #4 que strips no regen). Persona única (qualquer — Camila do in-company já existe na fixture, copiar).
-2. **`harness-it/persona-switch-mid-flow.chat-flow.json`** — bundle com 1 flow + 2 personas (Marina + Lucas). Grafo: 5 nós + 4 edges. O `switch-route` decide pelo valor da var `__force_route` (escrito manualmente pelo teste via `seedStateAt` vars).
-3. **`harness-it/regen-with-chips.chat-flow.json`** — bundle com 1 flow + 1 persona. Grafo: 4 nós + 3 edges. O `ai-decision-role` tem `inlineOptions` LITERAL com os 4 labels do patch #13.
-4. (Opcional) **`harness-it/tool-write-during-call.chat-flow.json`** — se decidirmos cobrir #15. Avaliar custo de stubbar tool-call lifecycle do Spring AI: se o stub crescer >50 linhas, pular e marcar #15 como "covered indirectly via existing slot snapshot diff in TurChatFlowEngineService".
-
-Validação de cada fixture: implementar 1 `@Test` "smoke" por fixture que carrega via `chatFlowImportTestUtil.importIntoAgent(...)`, chama `engine.parseGraph(...)` e loga o grafo. Falha rápida se shape do JSON tiver typo.
-
-Estimativa: **0.5 dia**.
-
-### Fase 3 — Tests com fixtures novas (dia 4–5)
-
-7 esqueletos restantes:
-
-9. **`reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode`** (#2): usa Fixture 2. Seed em `ai-name`, user input dispara switch que cruza `persona-lucas`. Asserta `personaResolver.resolve(...)` invocado 3x (linha ~240 + pós resolveFlowContext + dentro regen); `systemTextOf(regenPrompt())` contém o `systemInstruction` da persona Lucas; reply final == 2ª resposta. Bloqueio: spy do resolver (vide #1).
-10. **`stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls`** (#3): usa Fixture 1. Seed em `ai-coupon-code` (que tem a sentinela). Asserta `((ToolCallingChatOptions) firstPrompt.getOptions()).getToolCallbacks()` é vazio; o custom-tool spy NUNCA foi invocado; variante positiva (nó sem sentinela) NÃO strips. Bloqueio: garantir que o agent tem custom-tool registrado no setUp (via spy/mock — IT não usa OpenAI então o tool nunca dispara realmente, mas o callback PRECISA estar no array antes do strip).
-11. **`stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls`** (#4): usa Fixture 1. Seed em estado pré-advance que avança para `ai-deliver-proposta` (sentinela). Asserta `((ToolCallingChatOptions) regenPrompt.getOptions()).getToolCallbacks()` vazio; tool nunca invocado; reply final == 2ª resposta. Bloqueio: nenhum se #3 funcionar.
-12. **`forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText`** (#5): **NÃO precisa de fixture nem `@SpringBootTest`**. É unit test puro do método estático package-private `TurAgentChatExecutor.forbidsToolCalls(String)`. Pode ficar no `*IT.java` por coesão mas marcar com comentário. 10 casos via `@ParameterizedTest` + `@CsvSource` (atenção: strings com vírgula em CSV precisam de aspas duplas envoltas).
-13. **`suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode`** (#8): usa Fixture 3 OU programa-match adaptado. Strategy mockada/spy para retornar `AdvanceResult` com `assistantOverride="literal text"`. Esperar SSE não contendo o array de chips do nó destino. **Bloqueio importante:** capturar o `Flux<ChatResponse>` SSE — o stream emite tokens E options separadamente. Asserta que `responses.stream().filter(r -> "options".equals(r.type())).count() == 0` quando override + advance, e `> 0` no turno seguinte sem override.
-14. **`inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions`** (#13): usa Fixture 3. Seed em `ai-cargo`, user input avança para `ai-decision-role`. Asserta `systemTextOf(regenPrompt())` contém os 4 labels literais + a string "MUST be congruent"; variante negativa: trocar para nó SEM `inlineOptions` e assertar bloco ausente.
-15. **`refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks`** (#15): Fixture 4 (se criada) OU spy do `TurChatFlowStateRepository`. Caminho simulado: usar `@SpyBean(TurChatFlowStateRepository)` para contar `findById(stateId)` invocations DENTRO de `advance(...)`. Mid-turn, simular write-by-tool reescrevendo `state.variablesJson` no DB diretamente via repository.save numa thread paralela OU via callback do Mockito no first chatModel.call. Asserta: pós-turn, `programas_match` no DB == valor escrito pelo "tool"; `findById` invocado pelo menos 1x dentro do advance. Bloqueio sério: difícil de simular determinístico. **Pode ficar como TODO se complexidade explodir.**
-
-Estimativa: **2 dias**.
-
-### Fase 4 — Trigger contract & comportamentos extras (dia 6)
-
-Reviewar §8.5 do inventário — 6 comportamentos cobertos por ITs existentes mas não catalogados como patches:
-
-- Trigger contract pós-2026.2.x — coberto em `ProgramaMatchEEFlowIT.autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent`.
-- Import-bundle persona enum guard — coberto em `importBundle_createsPersonaSlotsAndFlowWithExpectedSettings`.
-- Cascade ascent — coberto em `TurChatFlowSubFlowEngineIT.cascadeAscent_*`.
-- Slot extraction sem LLM — coberto em `ChatHandoffAndSlotExtractIT`.
-- BR document validation patterns — coberto em `ChatFlowOpsTest`.
-- Variable interpolation contract — coberto em `ChatFlowOpsTest.interpolate_*`.
-
-**Decisão: não criar ITs novas para esses comportamentos.** Já têm cobertura em outros lugares (alguns com OpenAI real, mas o lookback é menor — comportamento estrutural não muda). Registrar isso no plano evita esforço duplicado.
-
-Estimativa: **0** (já coberto). Linha registrada por completude.
-
-## 4. Tabela de implementação detalhada
-
-Ordem de implementação ≠ ordem dos esqueletos no arquivo. Ordenado por dependência (fase + custo crescente):
-
-| Ordem | Fase | Test method | Patch | Cat | Fixture | Mocks chave | Asserts chave |
-|-------|------|-------------|-------|-----|---------|-------------|---------------|
-| 1 | 1 | `appendsBilingualHighestPriorityOverrideOnRegen` | #10 | A | programa-match-ee | LlmModelFactory→mock; 2 ChatResponse "ok" | `systemTextOf(regenPrompt()).contains("INSTRUÇÃO DE PRIORIDADE MÁXIMA")`; first prompt NÃO contém |
-| 2 | 1 | `dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict` | #11 | A | programa-match-ee + `agent.setSystemPrompt("ROUTER LLM ...")` | LlmModelFactory→mock; 2 ChatResponse | `firstPrompt` contém "ROUTER LLM"; `regenPrompt` NÃO contém |
-| 3 | 1 | `omitsNextStepPreviewHintInRegenAddendum` | #9 | A | programa-match-ee | LlmModelFactory→mock; 2 ChatResponse | `firstPrompt` contém substring de `ai-objetivo.aiInstruction` (next-step hint); `regenPrompt` NÃO contém aiInstruction de `ai-area` |
-| 4 | 1 | `inlinesAiInstructionLiteralInsideOverrideBlock` | #12 | A | programa-match-ee | LlmModelFactory→mock; 2 ChatResponse | `StringUtils.countMatches(systemTextOf(regenPrompt()), "daqui a 3 anos") == 2` |
-| 5 | 1 | `trimsHistoryToBudgetedRecentTurnsInRegenCall` | #14 | A | programa-match-ee + history de 5+ user turns | LlmModelFactory→mock; 2 ChatResponse | `firstPrompt` `UserMessage` count >= 6; `regenPrompt` `UserMessage` count <= 3; última == atual |
-| 6 | 1 | `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` | #1 | A | programa-match-ee (trigger turn) | LlmModelFactory→mock; SpyBean `TurAgentPersonaResolver` | `verify(resolver, atLeast(2)).resolve(...)` no trigger turn |
-| 7 | 1 | `fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean` | #18 | C | programa-match-ee | Reflection remove LLM_JUDGE de `strategyByMethod`; SpyBean `HeuristicGuardrailStrategy`; OutputCaptureExtension | Sem exception; `Heuristic.advance` invocado 1x; log contém "fallback" + "HEURISTIC" |
-| 8 | 1 | `discardsForcedFlowWhenItDoesNotBelongToCallingAgent` | #20 | C | programa-match-ee (2 agents) | LlmModelFactory→mock; SpyBean `TurChatFlowEngineService.selectActiveFlow` | flowAtivo != flowDeA1; `selectActiveFlow(A2,...)` invocado >=1; sanity positivo: forced de A2 não passa pelo router |
-| 9 | 2 | (smoke) `loadsToolFreeNodeFixture` | n/a | n/a | Fixture 1 (nova) | — | `engine.parseGraph(...).isPresent()` |
-| 10 | 2 | (smoke) `loadsPersonaSwitchMidFlowFixture` | n/a | n/a | Fixture 2 (nova) | — | idem |
-| 11 | 2 | (smoke) `loadsRegenWithChipsFixture` | n/a | n/a | Fixture 3 (nova) | — | idem |
-| 12 | 3 | `forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText` | #5 | B | — (unit puro) | — | 10 casos `@ParameterizedTest`; null/empty/PT-upper/PT-lower/PT-no-accent/EN-mixed/EN-short/embedded/no-sentinel/"tool" sem sentinela |
-| 13 | 3 | `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` | #3 | B | Fixture 1 | LlmModelFactory→mock; tool spy `compor_proposta_in_company` | `((ToolCallingChatOptions) firstPrompt.getOptions()).getToolCallbacks().isEmpty()`; `verify(tool, never()).invoke(...)`; variante negativa em nó sem sentinela |
-| 14 | 3 | `stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls` | #4 | B | Fixture 1 | LlmModelFactory→mock; 2 ChatResponse; tool spy | `regenPrompt.getOptions().toolCallbacks` vazio; tool nunca invocado; reply final == 2ª |
-| 15 | 3 | `reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode` | #2 | A | Fixture 2 | LlmModelFactory→mock; 2 ChatResponse; SpyBean resolver | `verify(resolver, times(3)).resolve(...)`; `regenPrompt` contém Lucas systemInstruction; reply == 2ª |
-| 16 | 3 | `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` | #13 | A | Fixture 3 | LlmModelFactory→mock; 2 ChatResponse | `regenPrompt` contém 4 labels literais + "MUST be congruent"; variante negativa sem `inlineOptions` |
-| 17 | 3 | `suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode` | #8 | A | Fixture 3 OU programa-match | LlmModelFactory→mock; Strategy mockada para retornar `assistantOverride != null` | SSE: 0 events com `type="options"` quando override+advance; turno seguinte > 0 |
-| 18 | 3 | `refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks` | #15 | A | Fixture 4 (cond.) OU programa-match + repo spy | SpyBean `TurChatFlowStateRepository`; callback no chatModel mid-turn que escreve slot via repository | Pós-turn: slot escrito sobrevive; `findById(stateId)` invocado >=1 dentro de `advance` |
-
-**Total: 15 esqueletos + 3 smokes de fixture.**
-
-## 5. Padrões de mock comuns
-
-### 5.1. Mockar `ChatModel.call(Prompt)` single vs multi-call
-
-Padrão central — usado em 13 dos 15 esqueletos. Não fazemos streaming (`ChatModel.stream(...)`) porque o executor usa `chatModel.call(prompt)` síncrono dentro do `Mono.fromCallable`. Para múltiplas chamadas (initial + regen):
-
-```java
-when(harness.chatModel().call(harness.promptCaptor().capture()))
-    .thenReturn(okText("initial-ack"))
-    .thenReturn(okText("regen-reply"));
-```
-
-`harness.capturedPrompts()` retorna `List<Prompt>` na ordem das chamadas. `firstPrompt()` = `.get(0)`, `regenPrompt()` = `.get(1)`. Quando o teste espera apenas 1 chamada (ex.: trigger turn force-regen), o `times(1)` no `verify` cobre.
-
-### 5.2. Capturar `Prompt` para inspecionar `SystemMessage`
+Helper para extrair system text:
 
 ```java
 String systemTextOf(Prompt p) {
     return p.getInstructions().stream()
-        .filter(m -> m instanceof SystemMessage)
-        .map(Message::getText)
-        .findFirst().orElseThrow();
+            .filter(m -> m instanceof SystemMessage)
+            .map(Message::getText)
+            .findFirst().orElseThrow();
 }
 ```
 
-`UserMessage` count:
+### 3.2. Base class `AbstractAgentExecutorIT`
+
+Estende [`AbstractTuringSpringIT`](../../turing-app/src/test/java/com/viglet/turing/testutil/AbstractTuringSpringIT.java)
+(reuso de H2 efêmero por classe). Helpers:
+
+- `TurAIAgent createAgent(String title, TurPersona defaultPersona)`
+- `TurLLMInstance createMockableLlmInstance()` — provider type qualquer,
+  API key encriptada placeholder (factory mockada ignora)
+- `TurChatFlow importFlowFromClasspath(String resourcePath, TurAIAgent agent)`
+  — reusa `EducationEEFixtures.importIntoAgent(...)` via `ChatFlowImportTestUtil`
+- `TurChatFlowState seedStateAt(String conversationId, TurChatFlow flow, String nodeId, Map<String,String> vars)`
+- `List<ChatResponse> runTurn(...)` — chama `executor.execute(...)` + `.collectList().block(Duration.ofSeconds(5))`
+- `TurChatFlowState reloadState(String conversationId)`
+- `Prompt firstPrompt()` / `Prompt regenPrompt()` — atalhos para `capturedPrompts().get(0/1)`
+
+### 3.3. Padrão de BehavioralIT (real LLM)
+
+Herdado de [`ProgramaMatchEEFlowIT`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java):
+
+- `@SpringBootTest` + `@EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")`
+- `@BeforeAll buildChatModel()` constrói `OpenAiChatModel` com `gpt-4o-mini`,
+  temperature 0
+- Setup de `TurLLMInstance` apontando para o mesmo modelo
+- Helper `assertResponseRelatesTo(String reply, String... synonyms)` — match
+  laxo (regex case-insensitive de OR), nunca exact match
+
+Como evitar asserts frágeis:
 
 ```java
-long userCount = p.getInstructions().stream()
-    .filter(m -> m instanceof UserMessage)
-    .count();
+// #10 — pergunta do nó B (objetivo), não do A (cargo):
+assertThat(reply).matches("(?i).*(objetivo|onde\\s+você\\s+quer\\s+estar|carreira).*\\?");
+
+// #1 — voz da persona Lucas (peer-tone), não Marina default:
+assertThat(reply).containsAnyOf("Oi", "Olá", "Beleza");
+assertThat(reply.toLowerCase()).doesNotContain("prezad"); // Marina formal
+
+// #13 — pergunta admite TODAS as 4 chips como resposta natural:
+String q = reply.toLowerCase();
+assertThat(q).matches(".*(papel|decisão|comprar|atuação|área de atuação).*\\?");
+// 4 chips = {RH/L&D, Gestor, C-level, Comprador} → pergunta sobre PAPEL DE DECISÃO
 ```
 
-Para asserts de "contém substring", `assertThat(systemTextOf(p)).contains("X")` direto. Para "exatamente 2 ocorrências", `StringUtils.countMatches`.
+Estratégia para tolerância: cada `BehavioralIT` retry 0 (sem retry); se um
+teste flake, ajustar o regex / synonyms PRIMEIRO antes de relaxar. O flake-rate
+de gpt-4o-mini a temperature 0 com prompt determinístico é < 5% (medido no
+inventário §3 #21); regex laxo absorve.
 
-### 5.3. Inspecionar `toolCallbacks` no `DefaultToolCallingChatOptions`
+### 3.4. Fixtures novas necessárias
+
+Releitura do plano v1 §2.3, validada. Fixtures sob
+`turing-app/src/test/resources/harness-it/`:
+
+**Fixture 1 — `harness-it/tool-free-node.chat-flow.json`** *(firme)*
+Estrutura: `start → ai-coupon-code (aiInstruction contém "NÃO CHAME NENHUMA TOOL")
+→ switch-cupom-ok → ai-deliver (aiInstruction contém "Chame compor_proposta_in_company")
+→ end`. Persona única (Camila do in-company, copiada). O agent associado precisa
+ter `compor_proposta_in_company` registrado como custom tool (stub que registra
+invocações). Serve patches #3, #4, #5 (sentinela PT-BR upper) — tanto Structural
+(asserta `toolCallbacks` vazio) quanto Behavioral (asserta tool não invocada via
+metadata da response).
+
+**Fixture 2 — `harness-it/persona-switch-mid-flow.chat-flow.json`** *(firme)*
+Bundle com 1 flow + 2 personas (Marina + Lucas). Grafo: `start → persona-marina
+→ ai-name → switch-route (decide por `__force_route` setada via `seedStateAt`)
+→ persona-lucas → ai-objetivo → end`. 5 nós + 4 edges. Serve patches #1 e #2.
+Programa-match-ee tem Marina/Lucas em flows SEPARADOS (A/B), não no MESMO flow
+com switch — esta fixture força o walk transparente cruzando persona.
+
+**Fixture 3 — `harness-it/regen-with-chips.chat-flow.json`** *(firme)*
+Bundle com 1 flow + 1 persona. Grafo: `start → ai-cargo (aiInstruction
+"Pergunte cargo") → switch-area → ai-decision-role (aiInstruction "Pergunte
+papel na decisão", inlineOptions=["RH/L&D", "Gestor", "C-level", "Comprador"])
+→ end`. 4 nós + 3 edges. Reproduz literalmente o cenário do patch #13.
+
+**Fixture 4 — `harness-it/tool-write-during-call.chat-flow.json`** *(condicional)*
+Estrutura: `start → ai-area (aiInstruction força chamar tool search_ee_programs)
+→ ai-confirma → end`. Serve patch #15 (refresh do state pre-advance). Avaliar
+custo de simular tool-call lifecycle do Spring AI — se o stub crescer > 50
+linhas, pular esta fixture e cobrir #15 via spy de `TurChatFlowStateRepository`
++ callback Mockito no `chatModel.call` que escreve no state em transação
+paralela. **Decisão preliminar: condicional; preferir spy.**
+
+**Total: 3 fixtures firmes + 1 condicional.**
+
+---
+
+## 4. Features implícitas a promover (do inventário §8.5)
+
+A §8.5 lista 6 comportamentos cobertos por ITs existentes mas não catalogados
+como patches. Dos 6, **3 merecem promoção formal a esqueleto IT no novo arquivo**
+para deixar o invariante visível no eixo "harness behaviour":
+
+1. **Trigger contract pós-2026.2.x** — já coberto por
+   [`ProgramaMatchEEFlowIT.autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java#L245).
+   Está sob `@EnabledIfEnvironmentVariable` e usa LLM real — duplicar como
+   esqueleto Behavioral seria redundante. **Não adicionar esqueleto novo.**
+2. **Import-bundle persona enum guard (`TurPersonaTone.EXECUTIVE`)** — já
+   coberto por [`importBundle_createsPersonaSlotsAndFlowWithExpectedSettings`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java#L184).
+   **Promover** para `StructuralIT` (não precisa LLM real): novo esqueleto
+   `importBundle_rejectsInvalidPersonaTone_yields400WithDescriptiveMessage`.
+3. **Cascade ascent (sub-flow end → parent end → submission atômica)** — já
+   coberto por [`TurChatFlowSubFlowEngineIT.cascadeAscent_whenSubFlowEndsAndParentNextIsAlsoEnd_recordsRootSubmission`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/TurChatFlowSubFlowEngineIT.java#L298).
+   **Não duplicar**, mas adicionar 1 esqueleto Contract espelhando o invariante
+   no nível do executor: `cascadeAscent_recordsSingleSubmissionEvenWhenMultipleEndsCascade`.
+4. **Slot extraction sem LLM** — já coberto por
+   [`ChatHandoffAndSlotExtractIT.slotExtract_agentWithoutLlmInstance_returnsEmptyResult`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/ChatHandoffAndSlotExtractIT.java#L245). **Não duplicar.**
+5. **BR-document mod-11 (CPF/CNPJ)** — já coberto por
+   [`ChatFlowOpsTest`](../../turing-app/src/test/java/com/viglet/turing/genai/flow/strategy/ChatFlowOpsTest.java).
+   **Promover** para `ContractIT` no eixo executor (não engine puro): novo
+   esqueleto `rejectsInvalidCpfWithoutInvokingLlm_whenSlotTypeIsCpf`.
+6. **Variable interpolation contract** — coberto em `ChatFlowOpsTest`. **Não
+   duplicar.**
+
+**Total adicional: +3 esqueletos** (1 Structural + 2 Contract).
+
+---
+
+## 5. Fases de implementação
+
+### Fase 0 — Infraestrutura (0.5–1 dia)
+
+1. Criar pacote `turing-app/src/test/java/com/viglet/turing/genai/testsupport/`
+2. Implementar `TurAgentChatExecutorMockSupport` (§3.1) + `ChatModelHarness`
+3. Implementar `AbstractAgentExecutorIT` (§3.2) com helpers
+4. Extrair `ChatFlowImportTestUtil.importIntoAgent(...)` a partir de
+   `ProgramaMatchEEFlowIT.importIntoAgent` para reuso (mantém método privado
+   delegando para o util)
+5. Adicionar profile `llm-it` ao [`turing-app/pom.xml`](../../turing-app/pom.xml)
+   (§2.3)
+6. Smoke test interno (deletar antes de fechar a fase):
+   `_smokeContextLoadsAndChatModelMockReceivesCall` — verifica `harness.capturedPrompts()` tamanho 1
+
+**Critério de pronto:** smoke verde + `mvn verify -pl turing-app -Dskip.npm=true`
+sem regressão nos ITs existentes (`@Primary` overrides só pegam quando
+`@TestConfiguration` é explicitamente `@Import`-ado).
+
+### Fase 0.5 — Migração dos 15 esqueletos existentes (0.5 dia)
+
+Os Javadocs dos esqueletos atuais são o contrato real — **preservar literalmente**.
+Apenas ajustar `package`, anotação de classe (`@Import(TurAgentChatExecutorMockSupport.class)`
+nos novos arquivos), e renomear conforme necessário.
+
+**De [`TurAgentChatExecutorRaceIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorRaceIT.java) (10 testes) →**
+
+| Test method existente | Destino | Justificativa |
+|---|---|---|
+| `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` (#1) | StructuralIT | wiring: contagem de `personaResolver.resolve()` invocations |
+| `reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode` (#2) | StructuralIT | idem: 3× invocations |
+| `suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode` (#8) | StructuralIT | SSE event count — wiring |
+| `omitsNextStepPreviewHintInRegenAddendum` (#9) | StructuralIT | substring presence/absence — wiring |
+| `appendsBilingualHighestPriorityOverrideOnRegen` (#10) | StructuralIT | substring literal — wiring |
+| `dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict` (#11) | StructuralIT | substring absence — wiring |
+| `inlinesAiInstructionLiteralInsideOverrideBlock` (#12) | StructuralIT | `countMatches == 2` — wiring |
+| `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` (#13) | StructuralIT | substring literal — wiring |
+| `trimsHistoryToBudgetedRecentTurnsInRegenCall` (#14) | StructuralIT | `UserMessage` count — wiring |
+| `refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks` (#15) | StructuralIT | spy contagem de `findById` — wiring |
+
+**De [`TurAgentChatExecutorDeclarativeIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorDeclarativeIT.java) (3 testes) →**
+
+| Test method existente | Destino | Justificativa |
+|---|---|---|
+| `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` (#3) | StructuralIT | `toolCallbacks.isEmpty()` — wiring |
+| `stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls` (#4) | StructuralIT | idem no 2º call |
+| `forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText` (#5) | StructuralIT | unit-test paramétrico, marcar como `@Nested` |
+
+**De [`TurAgentChatExecutorMiddlewareIT.java`](../../turing-app/src/test/java/com/viglet/turing/genai/TurAgentChatExecutorMiddlewareIT.java) (2 testes) →**
+
+| Test method existente | Destino | Justificativa |
+|---|---|---|
+| `fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean` (#18) | ContractIT | middleware C |
+| `discardsForcedFlowWhenItDoesNotBelongToCallingAgent` (#20) | ContractIT | middleware C (defense-in-depth) |
+
+**Após migração:** **deletar** os 3 arquivos antigos. Atualizar referências
+"§8.4" nos Javadocs migrados para apontar para `HARNESS_INVENTORY.md` §3
+(número do patch direto, sem categoria).
+
+### Fase 1 — Esqueletos Structural sem fixture nova (1 dia)
+
+Esqueletos que rodam apenas com `programa-match-ee.chat-flow.json` (já existente):
+
+1. `appendsBilingualHighestPriorityOverrideOnRegen` (#10) — migrado da Fase 0.5
+2. `dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict` (#11)
+3. `omitsNextStepPreviewHintInRegenAddendum` (#9)
+4. `inlinesAiInstructionLiteralInsideOverrideBlock` (#12)
+5. `trimsHistoryToBudgetedRecentTurnsInRegenCall` (#14)
+6. `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` (#1)
+7. `regenFullPath_invokesChatModelTwiceWhenAdvanceMovedCursor` (#7) — **NOVO**
+8. `freshlyTriggered_skipsEngineAdvance` (#6) — **NOVO**
+
+**Critério de pronto:** 8 `@Disabled` removidos, asserts implementados,
+`mvn verify -pl turing-app -Dskip.npm=true` verde.
+
+### Fase 2 — Esqueletos Contract (0.5 dia)
+
+9. `fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean` (#18)
+10. `discardsForcedFlowWhenItDoesNotBelongToCallingAgent` (#20)
+11. `doubleSaveAroundTransparentWalk_persistsFinalCursor` (#16) — **NOVO**
+12. `cascadeAscent_recordsSingleSubmissionEvenWhenMultipleEndsCascade` (features §4)
+13. `rejectsInvalidCpfWithoutInvokingLlm_whenSlotTypeIsCpf` (features §4)
+
+### Fase 3 — Criação das fixtures novas (0.5 dia)
+
+Para cada fixture firme (§3.4):
+
+1. `harness-it/tool-free-node.chat-flow.json` (#3/#4/#5)
+2. `harness-it/persona-switch-mid-flow.chat-flow.json` (#1/#2)
+3. `harness-it/regen-with-chips.chat-flow.json` (#13)
+
+Validação: 1 `@Test` "smoke" por fixture que carrega via `chatFlowImportTestUtil`,
+chama `engine.parseGraph(...)` e loga o grafo. Falha rápida se shape do JSON
+tiver typo.
+
+### Fase 4 — Esqueletos Structural com fixture nova (1 dia)
+
+14. `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` (#3) — Fixture 1
+15. `stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls` (#4) — Fixture 1
+16. `forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText` (#5) — `@Nested`, unit
+17. `reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode` (#2) — Fixture 2
+18. `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` (#13) — Fixture 3
+19. `suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode` (#8) — Fixture 3
+20. `refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks` (#15) — spy de repo (Fixture 4 condicional)
+21. `importBundle_rejectsInvalidPersonaTone_yields400WithDescriptiveMessage` (features §4)
+
+### Fase 5 — Esqueletos Behavioral (1–1.5 dias)
+
+Todos no `TurAgentChatExecutorBehavioralIT.java`. Setup `@BeforeAll buildChatModel()`
+herdado de `ProgramaMatchEEFlowIT`:
+
+22. `personaPostWalk_realLlmRepliesInLucasVoice` (#1 — par estrutural de
+    `resolvesPersonaAfterFlowSelection_*`)
+23. `toolStripped_realLlmDoesNotInvokeRemovedTool_capturesCouponCleanly` (#3 — par estrutural de
+    `stripsToolsOnInitialCall_*`)
+24. `regenFullPath_realLlmAsksQuestionOfPostAdvanceNode_notPriorNode` (#7 — par estrutural de
+    `regenFullPath_invokesChatModelTwice_*`)
+25. `overrideBlock_realLlmFollowsCurrentStep_doesNotAnchorOnHistoryPattern` (#10 — par estrutural de
+    `appendsBilingualHighestPriorityOverride_*`)
+26. `aiInstructionLiteral_realLlmAsksQuestionWithDistinctiveTerm` (#12 — par estrutural de
+    `inlinesAiInstructionLiteral_*`)
+27. `chipsCongruency_realLlmGeneratesQuestionWhereAllChipsAreValidAnswers` (#13 — par estrutural de
+    `inlinesChipLabelsAndCongruency_*`)
+
+**Critério de pronto:** `mvn verify -Pllm-it -DOPENAI_API_KEY=...` verde local
+em < 3 minutos; cada esqueleto Javadoc referencia o par estrutural por nome.
+
+### Fase 6 — Limpeza e fechamento (0.5 dia)
+
+- Remover comentários `TODO` deixados pelos esqueletos
+- Atualizar referências `§8.4` → `§3 #N` nos Javadocs
+- Adicionar uma linha em `HARNESS_INVENTORY.md` §8.3 indicando que pareamento
+  estrutural/comportamental existe (follow-up no inventário, fora deste plano)
+
+**Estimativa total: 4.5–6 dias úteis.**
+
+---
+
+## 6. Tabela mestra de implementação
+
+Ordem por fase. **22 linhas, total esperado.**
+
+| # | Fase | Arquivo | Test method | Patch | Tipo | Fixture | Mocks/setup chave | Asserts chave |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | Structural | `appendsBilingualHighestPriorityOverrideOnRegen` | #10 | wiring | programa-match-ee | LlmModelFactory→mock; 2× `okText` | `systemTextOf(regenPrompt()).contains("INSTRUÇÃO DE PRIORIDADE MÁXIMA")` E `"HIGHEST-PRIORITY OVERRIDE"`; firstPrompt NÃO contém *(par comportamental: #25)* |
+| 2 | 1 | Structural | `dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict` | #11 | wiring | programa-match-ee + `agent.systemPrompt="ROUTER LLM ..."` | LlmModelFactory→mock; 2× `okText` | firstPrompt contém "ROUTER LLM"; regenPrompt NÃO contém |
+| 3 | 1 | Structural | `omitsNextStepPreviewHintInRegenAddendum` | #9 | wiring | programa-match-ee | LlmModelFactory→mock; 2× `okText` | firstPrompt contém aiInstruction de `ai-objetivo`; regenPrompt NÃO contém aiInstruction de `ai-area` |
+| 4 | 1 | Structural | `inlinesAiInstructionLiteralInsideOverrideBlock` | #12 | wiring | programa-match-ee | LlmModelFactory→mock; 2× `okText` | `StringUtils.countMatches(systemTextOf(regenPrompt()), "daqui a 3 anos") == 2` *(par comportamental: #26)* |
+| 5 | 1 | Structural | `trimsHistoryToBudgetedRecentTurnsInRegenCall` | #14 | wiring | programa-match-ee + 5 user turns | LlmModelFactory→mock; 2× `okText` | firstPrompt UserMessage count ≥ 6; regenPrompt ≤ 3; última == atual |
+| 6 | 1 | Structural | `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` | #1 | wiring | programa-match-ee | LlmModelFactory→mock; `@SpyBean TurAgentPersonaResolver` | `verify(resolver, atLeast(2)).resolve(...)` *(par comportamental: #22)* |
+| 7 | 1 | Structural | `regenFullPath_invokesChatModelTwiceWhenAdvanceMovedCursor` | #7 | wiring | programa-match-ee | LlmModelFactory→mock; 2× `okText` | `verify(chatModel, times(2)).call(any())`; regenPrompt addendum tem nó pós-advance *(par comportamental: #24)* |
+| 8 | 1 | Structural | `freshlyTriggered_skipsEngineAdvance` | #6 | wiring | programa-match-ee | `@SpyBean TurChatFlowEngineService` | `verify(engine, never()).advance(any(), any(), any(), any())` no trigger turn |
+| 9 | 2 | Contract | `fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean` | #18 | middleware | programa-match-ee | reflection remove `LLM_JUDGE` de `strategyByMethod`; `OutputCaptureExtension` | sem exception; `Heuristic.advance(...)` 1×; log contém "fallback" |
+| 10 | 2 | Contract | `discardsForcedFlowWhenItDoesNotBelongToCallingAgent` | #20 | middleware | programa-match-ee × 2 agents | LlmModelFactory→mock; spy `engine.selectActiveFlow` | flow ativo ≠ flow de A1; selectActiveFlow(A2,...) ≥ 1×; sanity positivo |
+| 11 | 2 | Contract | `doubleSaveAroundTransparentWalk_persistsFinalCursor` | #16 | middleware | programa-match-ee | `@SpyBean TurChatFlowStateRepository` | `InOrder` valida `save→walk→save`; estado final em nó pós-walk |
+| 12 | 2 | Contract | `cascadeAscent_recordsSingleSubmissionEvenWhenMultipleEndsCascade` | §4 | feature impl. | sub-flow fixture | spy `submission` repo | exactly 1 submission gravada |
+| 13 | 2 | Contract | `rejectsInvalidCpfWithoutInvokingLlm_whenSlotTypeIsCpf` | §4 | feature impl. | programa-match-ee + slot CPF | LlmModelFactory→mock | `verify(chatModel, never()).call(any())`; reject-message → user |
+| 14 | 4 | Structural | `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` | #3 | wiring | tool-free-node | LlmModelFactory→mock; spy `compor_proposta_in_company` | `((ToolCallingChatOptions) firstPrompt.getOptions()).getToolCallbacks()` vazio; tool nunca invocada; sanity negativo *(par comportamental: #23)* |
+| 15 | 4 | Structural | `stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls` | #4 | wiring | tool-free-node | idem; 2× `okText` | regenPrompt toolCallbacks vazio; tool nunca invocada |
+| 16 | 4 | Structural (`@Nested`) | `forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText` | #5 | unit | — | — | 10 casos `@ParameterizedTest` (null/empty/PT-upper/PT-lower/PT-no-accent/EN-mixed/EN-short/embedded/no-sentinel/"tool" sem sentinela) |
+| 17 | 4 | Structural | `reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode` | #2 | wiring | persona-switch-mid-flow | LlmModelFactory→mock; 2× `okText`; SpyBean resolver | `verify(resolver, times(3)).resolve(...)`; regenPrompt contém Lucas systemInstruction |
+| 18 | 4 | Structural | `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` | #13 | wiring | regen-with-chips | LlmModelFactory→mock; 2× `okText` | regenPrompt contém os 4 labels literais + `"MUST be congruent"`; sanity negativo *(par comportamental: #27)* |
+| 19 | 4 | Structural | `suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode` | #8 | wiring | regen-with-chips OU programa-match | Strategy mock retornando `assistantOverride != null` | SSE: 0 events com `type="options"` quando override+advance; turno seguinte > 0 |
+| 20 | 4 | Structural | `refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks` | #15 | wiring | programa-match-ee + repo spy | SpyBean `TurChatFlowStateRepository`; callback Mockito no `chatModel.call` que escreve slot | pós-turn: slot escrito sobrevive; `findById(stateId)` ≥ 1× dentro de advance |
+| 21 | 4 | Structural | `importBundle_rejectsInvalidPersonaTone_yields400WithDescriptiveMessage` | §4 | feature impl. | bundle JSON inválido inline | — | HTTP 400; mensagem cita "tone" + enum válidos |
+| 22 | 5 | Behavioral | `personaPostWalk_realLlmRepliesInLucasVoice` | #1 | comportamental | persona-switch-mid-flow | OpenAI real gpt-4o-mini | `reply.containsAnyOf("Oi","Olá","Beleza")` + `!contains("prezad")` *(par estrutural: #6)* |
+| 23 | 5 | Behavioral | `toolStripped_realLlmDoesNotInvokeRemovedTool_capturesCouponCleanly` | #3 | comportamental | tool-free-node | OpenAI real | `response.metadata.toolCalls.isEmpty()`; slot `cupom` capturado *(par estrutural: #14)* |
+| 24 | 5 | Behavioral | `regenFullPath_realLlmAsksQuestionOfPostAdvanceNode_notPriorNode` | #7 | comportamental | programa-match-ee | OpenAI real | `reply.matches("(?i).*(objetivo\|onde\\s+você\\s+quer\\s+estar).*\\?")` *(par estrutural: #7)* |
+| 25 | 5 | Behavioral | `overrideBlock_realLlmFollowsCurrentStep_doesNotAnchorOnHistoryPattern` | #10 | comportamental | programa-match-ee | OpenAI real | mesma assertion de #24 *(par estrutural: #1)* |
+| 26 | 5 | Behavioral | `aiInstructionLiteral_realLlmAsksQuestionWithDistinctiveTerm` | #12 | comportamental | programa-match-ee | OpenAI real | `reply.toLowerCase().contains("3 anos")` OU `"daqui a"` *(par estrutural: #4)* |
+| 27 | 5 | Behavioral | `chipsCongruency_realLlmGeneratesQuestionWhereAllChipsAreValidAnswers` | #13 | comportamental | regen-with-chips | OpenAI real | `reply.toLowerCase().matches(".*(papel\|decisão\|atuação).*\\?")` *(par estrutural: #18)* |
+
+---
+
+## 7. Padrões de assert
+
+### 7.1. Structural — exemplos canônicos
+
+**Capturar Prompt e inspecionar SystemMessage:**
 
 ```java
-var opts = (ToolCallingChatOptions) prompt.getOptions();
+List<Prompt> prompts = harness.capturedPrompts();
+String firstSys = systemTextOf(prompts.get(0));
+String regenSys = systemTextOf(prompts.get(1));
+assertThat(regenSys).contains("INSTRUÇÃO DE PRIORIDADE MÁXIMA");
+assertThat(firstSys).doesNotContain("HIGHEST-PRIORITY OVERRIDE");
+```
+
+**Inspecionar `ToolCallingChatOptions.getToolCallbacks()`:**
+
+```java
+ToolCallingChatOptions opts = (ToolCallingChatOptions) firstPrompt().getOptions();
 assertThat(opts.getToolCallbacks()).isEmpty();
+verify(composerToolSpy, never()).call(any());
 ```
 
-Para o caminho oposto (variante negativa em #3), assertar `assertThat(opts.getToolCallbacks()).isNotEmpty()` e contém o callback do tool spy pelo `getToolDefinition().name()`.
-
-### 5.4. Verificar `TurChatFlowState` pós-turn
+**Contar invocações em spy de `TurAgentPersonaResolver`:**
 
 ```java
-runTurn(agent, llm, history, conversationId, null);
-TurChatFlowState state = stateRepository.findByConversationId(conversationId).orElseThrow();
+verify(personaResolver, atLeast(2)).resolve(eq(agent), eq(conversationId));
+```
+
+**Ler `TurChatFlowState` pós-turn:**
+
+```java
+TurChatFlowState state = stateRepository.findByConversationId(conv).orElseThrow();
 assertThat(state.getCurrentNodeId()).isEqualTo("ai-objetivo");
 Map<String,String> vars = JSON.readValue(state.getVariablesJson(), new TypeReference<>() {});
 assertThat(vars).containsEntry("cargo_atual", "Gerente sênior");
 ```
 
-Para asserts de SSE (chips suppression #8), coletar a lista de `ChatResponse` do Flux:
+**Verificar ordem com `InOrder`:**
 
 ```java
-List<ChatResponse> emitted = executor.execute(...).collectList().block(Duration.ofSeconds(5));
-long optionEvents = emitted.stream().filter(r -> "options".equals(r.type())).count();
-assertThat(optionEvents).isZero();
+InOrder inOrder = inOrder(stateRepository, engine);
+inOrder.verify(stateRepository).save(any());
+inOrder.verify(engine).walkTransparentNodes(any(), any(), any());
+inOrder.verify(stateRepository).save(any());
 ```
 
-## 6. Riscos e bloqueios
+### 7.2. Behavioral — exemplos canônicos
 
-1. **`TurLlmModelFactory` enrola o `ChatModel` em `TurResilientChatModel`** ([linha 64](../../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java#L64)) com retry + circuit breaker + observation. Substituir a factory inteira via `@Primary` bypassa esse wrapping — preserva o invariante "uma chamada do executor = uma chamada Mockito" sem retry mascarando. Verificar que a factory mockada não dispara `TurResilienceExecutor` em paralelo.
-2. **Custom Tool callbacks Groovy executariam scripts reais** se o agent tiver custom-tools registrados no H2 snapshot (vide `seedCustomToolFromClasspath` em `ProgramaMatchEEFlowIT`). Risco: testes ficam dependentes do snapshot. Estratégia: ITs do harness criam agent FRESH no `@BeforeEach` SEM custom-tools anexados; quando precisar testar tool-stripping (#3, #4), anexar UM custom-tool mockado via repository + spy. O snapshot pode até existir mas o teste não consome a config dele.
-3. **`TurChatMemoryService` pode persistir no vector store** quando configurado. Se o snapshot tiver um `TurStoreInstance` ativado, `recordTurn` tenta escrever em Lucene/Chroma. Mitigação: o `@TestConfiguration` substitui por NoOp via `@Primary`. Sanity check: rodar smoke test com snapshot presente E ausente.
-4. **SSE Flux assíncrono.** `executor.execute(...)` retorna `Flux<ChatResponse>` que faz `.subscribeOn(Schedulers.boundedElastic())`. Asserts precisam `.collectList().block(Duration.ofSeconds(5))`. Atenção: timeout muito curto em CI lento pode flake; 5s é seguro para chamadas mockadas (que retornam síncrono).
-5. **`@SpringBootTest` context startup ~30s.** Cada IT class re-inicia se o `@TestConfiguration` ou `@Import` diferir. Mitigação: TODOS os 3 IT classes usam EXATAMENTE o mesmo `@Import(TurAgentChatExecutorTestSupport.class)` — Spring Boot reusa context entre elas. Confirmar com `--info` que só há 1 context init no logs.
-6. **`ProgramaMatchEEFlowIT` coexiste com OpenAI real e usa `@EnabledIfEnvironmentVariable`.** Os novos ITs do harness NÃO usam essa anotação (rodam sempre). Os ITs do harness e o IT real precisam de strategies de import distintos: o IT real importa SEM TestConfiguration; os novos importam COM. Garantir que `@TestConfiguration` está em pacote DIFERENTE de `customers/education/flow/` para evitar auto-discovery acidental.
-7. **`@SpyBean` em `TurAgentPersonaResolver` (necessário para #1 e #2).** Spring Boot 4 mantém `@SpyBean` mas com CGLIB; service final ou com `final` em métodos pode falhar. Verificar que o resolver NÃO tem métodos final. Backup: `@MockBean` que delega manualmente para o real (verbose mas funciona).
-8. **OutputCaptureExtension para #18** (capturar log "fallback"): a extensão é de `spring-boot-test`. Confirmar import: `import org.springframework.boot.test.system.OutputCaptureExtension;` e `@ExtendWith(OutputCaptureExtension.class)`. Se não funcionar, usar `LogCaptor` (lib externa) ou Mockito spy do `Logger` do `TurChatFlowEngineService` via reflection. Backup low-tech: marcar o assert do log como soft (TODO comment).
-9. **Reflection no `strategyByMethod` (Map privada do engine service para #18)** acopla teste ao internal. Risco baixo (o teste documenta o invariante "se método não estiver no map, fallback") mas se o refactor passar a usar registry-style com `Optional<TurChatFlowGuardrailStrategy>`, o setup do teste muda. Documentar isso na "Nota refactor" do esqueleto — já está.
-10. **Patch #15 (refresh do state) é o mais difícil de simular.** O fluxo "tool escreve slot durante chatModel.call → engine.advance refreshes do DB" exige interceptar o Mockito `chatModel.call` para, no answer, fazer um write no `stateRepository` em transação separada — o que requer `@Transactional(propagation = REQUIRES_NEW)` ou similar para o write ser visível dentro do mesmo turno. **Recomendação: começar marcando #15 como TODO se a complexidade do setup passar de 30 min.** Cobertura indireta já existe via `findByIdNoCache` no engine service.
+**Regex laxo, nunca exact match:**
 
-## 7. Critério de pronto do plano
+```java
+String reply = lastTokenEventContent(emitted);
+assertThat(reply).matches("(?i).*(objetivo|onde\\s+você\\s+quer\\s+estar|carreira).*\\?");
+```
 
-- Todos os 15 `@Disabled` removidos dos 3 arquivos.
-- `mvn verify -pl turing-app -Dskip.npm=true` passa localmente sem env var `OPENAI_API_KEY`.
-- 0 referências a `fail("Not implemented...")` nos 3 arquivos `TurAgentChatExecutor*IT.java`.
-- Asserts capturam EXATAMENTE os invariantes descritos nos Javadocs dos esqueletos — não os relaxam para passar. Se um assert se mostrar fragil/flaky, ajustar o Javadoc PRIMEIRO (e justificar no inventário) antes de relaxar o assert.
-- Após o refactor de inversão de ordem, a aplicação de cada "Nota refactor" se materializa como mudança nos asserts do teste (mudança real de código), não como apagar o `@Disabled` de volta.
-- 3 (ou 4) fixtures novas em `turing-app/src/test/resources/harness-it/` exercitadas por pelo menos 1 IT cada.
-- 1 `@TestConfiguration` + 1 base class compartilhados, ambos package-private fora de `customers/education/flow/`.
+**"Contains any of" para tolerância de paráfrase:**
 
-## 8. O que este plano NÃO cobre
+```java
+assertThat(reply).containsAnyOf("Oi", "Olá", "Beleza");
+assertThat(reply.toLowerCase()).doesNotContain("prezad"); // Marina formal
+```
 
-- Implementação do refactor "advance → 1× LLM call → publish" em si — escopo separado, conduzido após os 15 testes implementados servirem de rede de segurança.
-- Reescrita de [`ProgramaMatchEEFlowIT`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java) — fica como está. Teste end-to-end com OpenAI real, conteúdo determinístico (temperature 0), valor preservado.
-- Performance tuning dos novos ITs (boot do context já tem 30s; otimizar fica para depois).
-- Mudanças em `LlmJudgeGuardrailStrategy` / `HeuristicGuardrailStrategy` / `StructuredOutput*` — refactor da camada de strategies cobre essas separadamente.
-- Migração Spring AI 2.0.0-M2 → 2.x quando lançar — testes podem precisar ajustes nos mocks de `ChatResponse.builder()` se a API mudar.
-- ITs novas para os 6 comportamentos do §8.5 do inventário (trigger contract, persona enum guard, cascade ascent, slot extract no-LLM, BR mod-11, interpolation) — já cobertos em outros ITs, registrado em §3 Fase 4.
-- Patches **#6, #7, #16** da categoria (A) — explicitamente fora do escopo dos 15 esqueletos por instrução do header de `TurAgentChatExecutorRaceIT.java` ("Patches (A) restantes com cobertura parcial ou indireta — #6, #7, #16 — permanecem no inventário"). #7 em particular é o patch CANÔNICO (regen full path) — qualquer dos 10 testes (A) já implementados quebra implicitamente se o regen sumir, então cobertura indireta é forte.
+**Verificar `tool_calls` no response metadata (sem usar ChatResponse mockado):**
+
+```java
+List<ChatResponse> emitted = runTurnReal(agent, llm, history, conv, null);
+// real LLM emits tokens; if it called a tool, an extra event type="tool_call" exists
+long toolEvents = emitted.stream().filter(r -> "tool_call".equals(r.type())).count();
+assertThat(toolEvents).as("tool was stripped — should not have been called").isZero();
+```
+
+**Tolerância: sem retry automático.** Se um BehavioralIT flake, ajustar o
+regex / synonyms PRIMEIRO. Re-rodar 1× manualmente para confirmar não-flake;
+nunca colocar retry loop no teste.
+
+### 7.3. Anti-padrão: quando NÃO mockar
+
+Smells que indicam um Structural test virou tautológico:
+
+- O assert é "o texto que mockei aparece no Flux" → no-op
+- O assert é "ChatModel foi chamado" sem inspecionar `Prompt` capturado → no-op
+- O assert ignora o `ArgumentCaptor` → estrutura provavelmente errada
+- O assert é "se eu retornar resposta X, vejo X no SSE" → tautologia, virar
+  Behavioral ou eliminar
+
+---
+
+## 8. Riscos e bloqueios
+
+Riscos reusados do plano v1:
+
+1. **`TurLlmModelFactory` enrola o `ChatModel` em `TurResilientChatModel`**
+   ([linha 64](../../turing-app/src/main/java/com/viglet/turing/resilience/llm/TurLlmModelFactory.java#L64))
+   com retry + circuit breaker + observation. Substituir a factory inteira via
+   `@Primary` bypassa esse wrapping — confirma o invariante "1 chamada do
+   executor = 1 chamada Mockito" sem retry mascarando.
+2. **Custom Tool callbacks Groovy executariam scripts reais** se o agent tiver
+   custom-tools registrados no H2 snapshot. Mitigação: ITs do harness criam
+   agent FRESH no `@BeforeEach` SEM custom-tools, exceto onde explicitamente
+   necessário (Fixture 1).
+3. **`TurChatMemoryService` pode persistir no vector store** quando configurado.
+   Mitigação: substituído por NoOp via `@Primary` na `MockSupport` config.
+4. **`@SpringBootTest` context startup ~30s.** Todos os 3 IT classes usam
+   EXATAMENTE o mesmo `@Import(TurAgentChatExecutorMockSupport.class)` para
+   Spring reusar context entre eles. BehavioralIT herda de `AbstractTuringSpringIT`
+   sem o mock support — context separado de ~30s adicional (aceitável,
+   roda só com profile).
+5. **`@SpyBean TurAgentPersonaResolver`** em Spring Boot 4 + Java 21 com
+   CGLIB: confirmar resolver não tem métodos `final`. Backup: `@MockBean` +
+   delegação manual.
+
+Riscos novos da reescrita:
+
+6. **Behavioral IT depende de gpt-4o-mini estável.** Modelo pode mudar
+   (deprecation, novo training cut) e quebrar testes. Tratar como **feature,
+   não bug**: cada commit de Behavioral inclui o ID do modelo no Javadoc
+   ("Pinning: gpt-4o-mini @ 2026-05"). Quando o modelo retirar, atualizar
+   conscientemente.
+7. **`OPENAI_API_KEY` em CI.** Variável é segredo — configurar via GitHub
+   Actions secrets quando CI nightly subir. Fora deste plano (follow-up),
+   mas o profile `-Pllm-it` já está preparado para isso.
+8. **Custo do BehavioralIT.** ~$0.01 por suite full run (6 testes × ~1500
+   tokens / teste @ gpt-4o-mini pricing). Aceitável; auditável via OpenAI
+   dashboard. Não rodar em todo PR — só nightly (default sem profile pula
+   por causa do `@EnabledIfEnvironmentVariable`).
+9. **Pareamento pode criar drift.** Se um patch evoluir, dois testes precisam
+   ser atualizados juntos. Mitigação: cada Javadoc referencia o par pelo nome
+   exato do método ("par comportamental: `xxx` em `BehavioralIT`") — buscas
+   de refactor pegam o par.
+10. **Flakiness do real LLM.** Assert deve ser laxo (regex / synonyms),
+    nunca exact match. Já documentado em §7.2. Cap de retries no teste: zero
+    (não escondemos flake; ajustamos regex ou modelo de pinning).
+11. **Patch #15 (refresh state) é o mais difícil de simular** — escalou em
+    prioridade desde plano v1. Spy + callback Mockito é o caminho preferido
+    sobre Fixture 4. Se a complexidade do setup passar de 1h, marcar como
+    TODO e abrir issue separada — não bloquear as outras 21 linhas.
+12. **OutputCaptureExtension para #18.** A extensão é de `spring-boot-test`
+    (`org.springframework.boot.test.system.OutputCaptureExtension`). Confirmar
+    disponibilidade; backup: Mockito spy do `Logger` via reflection.
+
+---
+
+## 9. Critério de pronto
+
+- Todos os ~22 `@Disabled` removidos nos 3 arquivos novos
+- `mvn verify -pl turing-app -Dskip.npm=true` (sem profile) verde em < 10min
+- `mvn verify -Pllm-it -pl turing-app -Dskip.npm=true` verde local com `OPENAI_API_KEY`
+- 0 referências a `fail("Not implemented...")` em qualquer dos 3 arquivos
+- Cada patch crítico (linhas 1, 4, 6, 7, 14, 18 da tabela §6) tem **par estrutural + comportamental** com Javadocs que se referenciam mutuamente pelo nome do método
+- Os 3 arquivos antigos (`...RaceIT`, `...DeclarativeIT`, `...MiddlewareIT`) **deletados** após Fase 0.5
+- 3 fixtures novas firmes em `turing-app/src/test/resources/harness-it/`, exercitadas por ≥ 1 IT cada
+- 1 `@TestConfiguration` (`TurAgentChatExecutorMockSupport`) + 1 base class (`AbstractAgentExecutorIT`) compartilhados, ambos package-private fora de `customers/education/flow/`
+- Profile `llm-it` em [`turing-app/pom.xml`](../../turing-app/pom.xml) funciona local
+- (Follow-up registrado, fora deste plano) Pipeline CI nightly configurado para rodar `-Pllm-it` separado com segredo `OPENAI_API_KEY`
+- (Follow-up registrado, fora deste plano) §8.3 do inventário ganha coluna "Par estrutural / comportamental" indicando os pareamentos
+
+---
+
+## 10. O que NÃO faz parte deste plano
+
+- Implementação do refactor "advance → 1× LLM call" — escopo separado, após
+  os ITs estarem verdes e servindo de rede de segurança
+- Reescrita de [`ProgramaMatchEEFlowIT`](../../turing-app/src/test/java/com/viglet/turing/customers/education/flow/ProgramaMatchEEFlowIT.java)
+  — mantém valor como teste customer-driven end-to-end
+- Configuração de CI nightly para `-Pllm-it` — follow-up
+- Atualização de §8.3 do `HARNESS_INVENTORY.md` refletindo pareamento — follow-up
+- Performance tuning dos novos ITs (boot do context já é ~30s; otimização
+  fica para depois)
+- Migração Spring AI 2.0.0-M6 → 2.x quando lançar; mocks de `ChatResponse.builder()`
+  podem precisar ajuste quando API mudar
+- ITs novas para features implícitas §8.5 já cobertas indiretamente (trigger
+  contract, slot-extract no-LLM, interpolation contract, BR-doc no engine puro)
+  — registrado em §4 quais foram promovidas (3) e quais não foram (3)
