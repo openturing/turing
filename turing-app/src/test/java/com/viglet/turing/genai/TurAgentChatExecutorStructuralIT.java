@@ -492,6 +492,130 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
+    // ─────────────────────────── New skeletons added in T3 (Phase 1) ──────────────
+    // Per docs/IMPROVEMENTS.md §VI.6 Phase 1, the existing-fixture skeleton set
+    // is "#10, #11, #9, #12, #14, #1, #7 (new), #6 (new)". The first six landed
+    // via T2's migration of TurAgentChatExecutorRaceIT; the two "(new)" ones
+    // below were created in T3 and run against `programa-match-ee.chat-flow.json`.
+    //
+    // Patches #6 and #7 both exist today as code paths but were never covered
+    // structurally — only the indirect "happy path of programa-match-ee" in
+    // ProgramaMatchEEFlowIT exercises them. These skeletons exist so the
+    // §I.5 inversion can prove the BEHAVIOR is preserved before the code
+    // that implements it gets deleted.
+
+    /**
+     * Patch #7 — regen FULL PATH: second LLM call after transparent advance
+     * Categoria: A
+     * Localização do patch: TurAgentChatExecutor.java:421-477, 566-693
+     *
+     * Comportamento a travar:
+     *   Quando o initial LLM call termina, o engine.advance(...) move o cursor
+     *   de N para N+K (transparent walk through switch/condition/slot/persona
+     *   nodes), e N+K é um aiQuestion novo — o executor dispara um SEGUNDO
+     *   chatModel.call(prompt) (regen) com o newAddendum do N+K já presente
+     *   no system prompt. O texto final emitido via SSE é o do REGEN, não o
+     *   do initial. Skip da regen quando: advance.assistantOverride() != null
+     *   OR cursor não mudou OR N+K não é aiQuestion.
+     *
+     * Cenário (programa-match-ee, fixture existente):
+     *   Flow:    programa-match-ee.chat-flow.json — cadeia ai-cargo → switch
+     *            → ai-objetivo (ambos aiQuestion).
+     *   Estado:  parked em ai-cargo (conversa em progresso, name capturado).
+     *   Entrada: user msg = "Gerente sênior numa fintech, há 4 anos"
+     *   Mocks:   ChatModel-1 (initial) retorna "ack temporário".
+     *            ChatModel-2 (regen) retorna "Onde você quer estar daqui a 3 anos?".
+     *            (Para evitar que o LLM_JUDGE adicione um terceiro call, ajustar
+     *            o guardrailMethod do flow importado para HEURISTIC.)
+     *
+     * Asserts:
+     *   1. {@code chatModel.call(...)} foi invocado EXATAMENTE 2 vezes
+     *      (initial + regen). Disponível via {@link harness#callCount()}.
+     *   2. O system prompt do SEGUNDO Prompt capturado CONTÉM substring
+     *      distintiva do aiInstruction de ai-objetivo (ex.: "daqui a 3 anos")
+     *      — confirma que o regen system prompt usa o nó pós-advance.
+     *   3. O reply final SSE == resposta enfileirada para o REGEN, não
+     *      "ack temporário" — confirma que o regen sobrescreveu.
+     *   4. (Sanity inverso) — quando o flow está parked em um nó terminal
+     *      (end) ou em um aiQuestion cujo successor não é aiQuestion, o
+     *      regen NÃO dispara: {@code callCount() == 1}.
+     *
+     * Nota refactor:
+     *   Esse é o coração do §I.5 step 1 — o regen DESAPARECE na ordem invertida.
+     *   Pós-inversão este teste é REMOVIDO (não há 2º call estrutural). Pode
+     *   ressurgir como teste de "advance compõe o prompt do nó pós-advance",
+     *   mas sem o callCount==2 invariante.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #7 (new in T3).")
+    void firesSecondLlmCallAfterTransparentAdvanceToNewAiQuestion() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    /**
+     * Patch #6 — freshlyTriggered: skip advance + skip initial LLM call no turno de ativação
+     * Categoria: A
+     * Localização do patch: TurAgentChatExecutor.java:399-420 (advance skip)
+     *                       + TurAgentChatExecutor.java:368-394 (initial skip — shipped in 2026.2.7)
+     *
+     * Comportamento a travar:
+     *   Quando {@code FlowSelection.freshlyTriggered() == true} (o router
+     *   acaba de selecionar o flow pela primeira vez para a conversa, e a
+     *   user msg É o trigger, não input para o primeiro aiQuestion):
+     *
+     *   <ol>
+     *     <li>O executor PULA o initial LLM call inteiro (skipInitialLlmCall=true,
+     *         shipped em 2026.2.7) — saving ~1.5-2s. O contador
+     *         {@link harness#callCount()} deve refletir apenas o REGEN.</li>
+     *     <li>O executor PULA o {@code engine.advance(...)} (porque a user msg
+     *         é o trigger, não resposta ao nó). Sem esse skip, o judge tentaria
+     *         force-capturar o texto do trigger como valor do primeiro slot
+     *         (ex.: name = "Quero montar um plano de carreira pessoal").</li>
+     *     <li>Em seu lugar, o executor dispara DIRETO o regen com o newAddendum
+     *         do nó de entrada — para que o usuário veja a PERGUNTA do primeiro
+     *         aiQuestion já neste turno, em vez do welcome do agent.</li>
+     *   </ol>
+     *
+     * Cenário (programa-match-ee):
+     *   Flow:    programa-match-ee.chat-flow.json — nó de entrada ai-name
+     *            ({@code aiInstruction} = "Pergunte o primeiro nome do visitante").
+     *            Conversa NOVA, sem state pré-existente.
+     *   Estado:  N/A (loadOrInitState criará o state apontando para start).
+     *   Entrada: user msg = "Quero montar um plano de carreira pessoal"
+     *            (claramente o trigger, não um nome).
+     *   Mocks:   ChatModel queue tem APENAS UMA resposta enfileirada:
+     *            "Olá! Sou a Marina, consultora de carreira… Qual é o seu primeiro nome?"
+     *            (a do regen para o nó de entrada).
+     *
+     * Asserts:
+     *   1. {@code harness.callCount() == 1} — o initial foi PULADO, só o
+     *      regen disparou.
+     *   2. O system prompt do PROMPT CAPTURADO (regen, índice 0 já que initial
+     *      foi pulado) CONTÉM substring distintiva do aiInstruction de ai-name
+     *      (ex.: "primeiro nome").
+     *   3. O state persistido tem {@code currentNodeId == "ai-name"} (entrada)
+     *      — confirma que advance NÃO rodou e force-captured o trigger como
+     *      valor de slot.
+     *   4. {@code engine.advance(...)} foi invocado ZERO vezes (spy do engine
+     *      OU verificar via state).
+     *   5. (Sanity inverso) — em um TURNO SUBSEQUENTE (mesma conversa, depois
+     *      do nome capturado), {@code freshlyTriggered=false}, o initial volta
+     *      a disparar e advance roda normal — {@code callCount() >= 1}.
+     *
+     * Nota refactor:
+     *   Pós-inversão (§I.5 step 1): advance roda ANTES do LLM call e SEMPRE
+     *   começa olhando "essa user msg é trigger ou resposta?". A bifurcação
+     *   freshlyTriggered some — vira mecânica natural do advance, não flag.
+     *   Este teste é REMOVIDO; o invariante observável ("trigger turn não
+     *   captura slot, mostra pergunta do nó de entrada") fica como
+     *   responsabilidade de um teste novo no design invertido.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #6 (new in T3).")
+    void skipsInitialCallAndAdvanceOnFreshlyTriggeredFlow_emitsEntryNodeQuestionImmediately() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
     // ─────────────────────────── Declarative patches (B) ───────────────────────────
     // Migrated from TurAgentChatExecutorDeclarativeIT (deleted under T2).
     // Coverage: #3, #4. Patch #5 lives below as a @Nested unit-test class
