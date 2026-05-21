@@ -47,6 +47,8 @@ import com.viglet.turing.genai.tool.TurCustomToolCallbackService;
 import com.viglet.turing.genai.tool.TurMcpToolCallbackService;
 import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurNativeToolService;
+import com.viglet.turing.observability.TurChatPipelineObservation;
+import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -117,6 +119,7 @@ public class TurAgentChatExecutor {
     private final TurAgentPersonaResolver personaResolver;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatMemoryService chatMemoryService;
+    private final TurChatPipelineObservation chatPipelineObservation;
 
     public TurAgentChatExecutor(TurLlmModelFactory llmModelFactory,
             TurSecretCryptoService turSecretCryptoService,
@@ -132,7 +135,8 @@ public class TurAgentChatExecutor {
             TurPersonaBrandContextProvider personaBrandContextProvider,
             TurAgentPersonaResolver personaResolver,
             TurChatAnalyticsService chatAnalyticsService,
-            TurChatMemoryService chatMemoryService) {
+            TurChatMemoryService chatMemoryService,
+            TurChatPipelineObservation chatPipelineObservation) {
         this.llmModelFactory = llmModelFactory;
         this.turSecretCryptoService = turSecretCryptoService;
         this.nativeToolService = nativeToolService;
@@ -148,6 +152,7 @@ public class TurAgentChatExecutor {
         this.personaResolver = personaResolver;
         this.chatAnalyticsService = chatAnalyticsService;
         this.chatMemoryService = chatMemoryService;
+        this.chatPipelineObservation = chatPipelineObservation;
     }
 
     public record ChatMessageItem(String role, String content) {
@@ -229,6 +234,12 @@ public class TurAgentChatExecutor {
             String systemPromptOverride,
             String conversationId,
             String flowId) {
+
+        // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
+        // single grep across the log surfaces a chat-turn latency breakdown
+        // (setup / llm / post). Used by TurAgentChatLatencyIT and field
+        // diagnostics.
+        final long tStart = System.currentTimeMillis();
 
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
         ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
@@ -363,10 +374,19 @@ public class TurAgentChatExecutor {
         recordSessionStartSafely(agent, effectivePersona, llmInstance,
                 conversationId, lastUserMessage, username);
 
+        final long tSetupEnd = System.currentTimeMillis();
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP, tSetupEnd - tStart);
+        log.info("[AgentExec][timing] setup_ms={} (decrypt+chatModel+persona+tools+flow+prompt)",
+                tSetupEnd - tStart);
+
         return Mono.fromCallable(() -> {
             log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
                     agent.getTitle(), llmInstance.getTitle());
+            long tLlmStart = System.currentTimeMillis();
             var response = chatModel.call(prompt);
+            long tLlmEnd = System.currentTimeMillis();
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
+            log.info("[AgentExec][timing] llm_ms={}", tLlmEnd - tLlmStart);
 
             tokenUsageService.recordUsage(llmInstance, response, username);
 
@@ -510,6 +530,17 @@ public class TurAgentChatExecutor {
                 ChatFlowNode current = graph.nodeById(newState.getCurrentNodeId()).orElse(null);
                 suggestedOptions = ChatFlowOps.suggestedOptions(graph, current);
             }
+            long tTotal = System.currentTimeMillis() - tStart;
+            // Post = total - setup - llm_call. Captures the time AFTER the LLM
+            // returns: flow advance, regen LLM round-trip (if any), token
+            // usage record, analytics. Calling it "post" lets the breakdown
+            // assert against pure post-processing without the LLM round-trip
+            // muddying the number.
+            long tPost = tTotal - (tSetupEnd - tStart) - (tLlmEnd - tLlmStart);
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_POST, tPost);
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
+            log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={}",
+                    tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost);
             return new AssistantTurn(text, suggestedOptions);
         })
                 .subscribeOn(Schedulers.boundedElastic())

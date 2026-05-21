@@ -19,18 +19,27 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
     List<TurAIAgent> findAll();
 
     /**
-     * Loads an agent with its 4 {@code @ManyToMany(LAZY)} catalogs eagerly via
-     * LEFT JOIN FETCH. Required because the collections are LAZY but the
-     * cached entity (Spring {@code @Cacheable}) is returned detached on cache
-     * hits, and accessing a lazy proxy on a detached entity throws
+     * Loads an agent with its 4 {@code @ManyToMany(LAZY)} catalogs and 3
+     * {@code @ManyToOne(LAZY)} singletons eagerly via LEFT JOIN FETCH.
+     * Required because the associations are LAZY but the cached entity
+     * (Spring {@code @Cacheable}) is returned detached on cache hits, and
+     * accessing a lazy proxy on a detached entity throws
      * {@code LazyInitializationException (no session)} even with
      * {@code hibernate.enable_lazy_load_no_trans=true} when the session has
-     * already closed. Joining at load time materializes the collections as
-     * concrete sets that don't need a session for later iteration.
+     * already closed. Joining at load time materializes everything as
+     * concrete objects that don't need a session for later access.
+     *
+     * <p>The 3 ManyToOnes ({@code turEmbeddingModelInstance},
+     * {@code turStoreInstance}, {@code defaultPersona}) are accessed by every
+     * chat turn — each as a separate lazy load before this was added, costing
+     * ~50-100ms per round-trip with the temporary session opened by
+     * {@code enable_lazy_load_no_trans}. Folding them into the same query
+     * removes 3 DB hits per chat turn.
      *
      * <p>{@code DISTINCT} is needed because the cartesian product of the four
      * collection joins inflates row count — Hibernate deduplicates by entity
-     * identity but it has to be told to.
+     * identity but it has to be told to. The ManyToOne joins don't multiply
+     * row count further (single row per association) so they're safe to add.
      */
     @Override
     @Cacheable("turAIAgentfindById")
@@ -39,6 +48,9 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
             + " LEFT JOIN FETCH a.mcpServers"
             + " LEFT JOIN FETCH a.customTools"
             + " LEFT JOIN FETCH a.personas"
+            + " LEFT JOIN FETCH a.turEmbeddingModelInstance"
+            + " LEFT JOIN FETCH a.turStoreInstance"
+            + " LEFT JOIN FETCH a.defaultPersona"
             + " WHERE a.id = :id")
     @NotNull
     Optional<TurAIAgent> findById(@NotNull @Param("id") String id);

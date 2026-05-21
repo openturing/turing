@@ -104,6 +104,23 @@ public final class TurMeterNames {
     public static final String STAGE_RESULT_PROCESS = "result.process";
     public static final String STAGE_WIDGET_BUILD = "widget.build";
 
+    /**
+     * Timer for the agent chat pipeline stages — instruments the Java work
+     * around the LLM call (entity load, persona resolution, tool callbacks,
+     * flow context, prompt build, post-processing). Tags: stage, status.
+     * Combined with {@link #LLM_CALLS} this splits a chat turn into the parts
+     * we can independently optimize (DB/cache vs. provider round-trip).
+     *
+     * @since 2026.2.8
+     */
+    public static final String CHAT_PIPELINE = "turing.chat.pipeline";
+
+    /** Chat pipeline stages — names appear as the {@code stage} tag value. */
+    public static final String STAGE_CHAT_TOTAL = "chat.total";
+    public static final String STAGE_CHAT_SETUP = "chat.setup";
+    public static final String STAGE_CHAT_LLM_CALL = "chat.llm.call";
+    public static final String STAGE_CHAT_POST = "chat.post";
+
     /** Snapshot cache outcomes — appear as {@code outcome} tag values. */
     public static final String OUTCOME_HIT = "hit";
     public static final String OUTCOME_MISS = "miss";

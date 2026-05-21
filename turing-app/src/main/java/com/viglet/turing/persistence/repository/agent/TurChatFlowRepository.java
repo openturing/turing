@@ -32,6 +32,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
 public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String> {
     String FIND_ALL = "turChatFlowFindAll";
     String FIND_BY_ID = "turChatFlowFindById";
+    String FIND_BY_AGENT_ID = "turChatFlowFindByAgentId";
 
     @Override
     @Cacheable(FIND_ALL)
@@ -43,15 +44,23 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
     @NotNull
     Optional<TurChatFlow> findById(@NotNull String id);
 
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID }, allEntries = true)
+    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID }, allEntries = true)
     @NotNull
     @Override
     <S extends TurChatFlow> S save(@NotNull S entity);
 
     @Modifying
     @Query("delete from TurChatFlow f where f.id = ?1")
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID }, allEntries = true)
+    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID }, allEntries = true)
     void delete(String id);
 
+    /**
+     * Called once per chat turn from {@code TurAgentChatExecutor.resolveFlowContext}
+     * to enumerate the flows attached to the agent. Cached because the flow
+     * catalog changes rarely (admin edit) compared to chat turn frequency —
+     * the {@code FIND_BY_AGENT_ID} cache is evicted on any
+     * {@code save}/{@code delete} so admin edits propagate without restart.
+     */
+    @Cacheable(FIND_BY_AGENT_ID)
     List<TurChatFlow> findByTurAIAgent_IdOrderByNameAsc(String agentId);
 }
