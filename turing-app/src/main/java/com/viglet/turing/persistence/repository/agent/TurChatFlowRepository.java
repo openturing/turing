@@ -44,14 +44,16 @@ public interface TurChatFlowRepository extends JpaRepository<TurChatFlow, String
     @NotNull
     Optional<TurChatFlow> findById(@NotNull String id);
 
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID }, allEntries = true)
+    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
+            "turChatFlowRouterDecision" }, allEntries = true)
     @NotNull
     @Override
     <S extends TurChatFlow> S save(@NotNull S entity);
 
     @Modifying
     @Query("delete from TurChatFlow f where f.id = ?1")
-    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID }, allEntries = true)
+    @CacheEvict(value = { FIND_ALL, FIND_BY_ID, FIND_BY_AGENT_ID,
+            "turChatFlowRouterDecision" }, allEntries = true)
     void delete(String id);
 
     /**

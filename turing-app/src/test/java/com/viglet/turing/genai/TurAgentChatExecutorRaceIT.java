@@ -18,7 +18,7 @@ import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 /**
  * Esqueletos para os patches da categoria (A) RACE listados em
- * {@code docs/chat-flow/HARNESS_INVENTORY.md} §8.4. Cada {@code @Test}
+ * {@code docs/IMPROVEMENTS.md} §I.3. Cada {@code @Test}
  * é um contrato que o refactor da camada {@code genai/} (inversão para
  * "advance → 1× LLM call → publish") deve preservar ou substituir por
  * uma asserção declarativamente equivalente.
@@ -87,7 +87,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #1.")
     void resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -129,7 +129,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #2.")
     void reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -172,7 +172,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #8.")
     void suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -214,7 +214,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #9.")
     void omitsNextStepPreviewHintInRegenAddendum() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -253,7 +253,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #10.")
     void appendsBilingualHighestPriorityOverrideOnRegen() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -294,7 +294,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #11.")
     void dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -330,7 +330,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #12.")
     void inlinesAiInstructionLiteralInsideOverrideBlock() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -372,7 +372,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #13.")
     void inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -414,7 +414,7 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #14.")
     void trimsHistoryToBudgetedRecentTurnsInRegenCall() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -465,6 +465,6 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #15.")
     void refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 }

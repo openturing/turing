@@ -9,10 +9,15 @@
  */
 package com.viglet.turing.genai.flow;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,10 +28,16 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.pt.PortugueseAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -73,11 +84,67 @@ public class TurChatFlowEngineService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    /**
+     * Spring cache name for the LLM flow-router's decisions. Keyed by
+     * {@code agentId:::sha256(normalized(userMessage))}; value is the picked
+     * flow id (or {@code null} when the router said "none"). Evicted on any
+     * {@link TurChatFlow} save/delete so admin edits to trigger descriptions
+     * propagate without restart.
+     *
+     * @since 2026.2.8
+     */
+    public static final String CACHE_ROUTER_DECISION = "turChatFlowRouterDecision";
+
+    /**
+     * Minimum number of overlapping content words between user message and a
+     * flow's {@code triggerDescription} required for the procedural pre-route
+     * to commit. Below this threshold, the decision falls back to the LLM
+     * router. Two tokens is enough signal in practice (e.g. "plano" +
+     * "carreira" overlapping the trigger description's keywords) without
+     * tripping on accidental single-word matches.
+     */
+    private static final int PROCEDURAL_MIN_OVERLAP = 2;
+
+    /**
+     * Minimum ratio by which the top-scoring flow must beat the runner-up to
+     * commit procedurally. When 1.5×, an ambiguous tie (best=3, second=2)
+     * still falls back to the LLM — only confident wins (best=3, second≤2)
+     * bypass it. Higher ratio = less procedural usage = more correctness;
+     * lower ratio = more speed.
+     */
+    private static final double PROCEDURAL_DOMINANCE_RATIO = 1.5;
+
+    /**
+     * Lucene analyzer used to tokenize the user message and each flow's
+     * {@code triggerDescription} for the procedural pre-route. Picked
+     * {@link PortugueseAnalyzer} because the platform's primary audience is
+     * PT-BR and it ships with:
+     * <ul>
+     *   <li>Lowercase + diacritic-aware normalization out of the box;</li>
+     *   <li>~120 Portuguese stopwords (que, com, para, …) — wider than the
+     *       hand-rolled list we used before;</li>
+     *   <li>Portuguese light stemming so {@code "planos"}, {@code "plano"}
+     *       and {@code "planejar"} collapse to the same stem — overlap
+     *       scoring now matches morphological variants the previous string-
+     *       equality check missed.</li>
+     * </ul>
+     * English trigger descriptions still tokenize cleanly (no EN stopword
+     * filtering, but the loss-bearing keywords pass through untouched, so
+     * overlap still works).
+     *
+     * <p>Lucene {@link Analyzer}s are thread-safe — single instance shared
+     * across all routing calls.
+     *
+     * @since 2026.2.8
+     */
+    private static final Analyzer FLOW_ROUTER_ANALYZER = new PortugueseAnalyzer();
+
     private final TurChatFlowStateRepository stateRepository;
     private final TurChatFlowRepository chatFlowRepository;
     private final TurChatFlowSubmissionRepository submissionRepository;
     private final TurChatAnalyticsService chatAnalyticsService;
     private final TurChatSlotEventBus slotEventBus;
+    private final CacheManager cacheManager;
     private final Map<TurChatFlowGuardrailMethod, TurChatFlowGuardrailStrategy> strategyByMethod;
 
     public TurChatFlowEngineService(TurChatFlowStateRepository stateRepository,
@@ -85,12 +152,14 @@ public class TurChatFlowEngineService {
             TurChatFlowSubmissionRepository submissionRepository,
             TurChatAnalyticsService chatAnalyticsService,
             TurChatSlotEventBus slotEventBus,
+            CacheManager cacheManager,
             List<TurChatFlowGuardrailStrategy> strategies) {
         this.stateRepository = stateRepository;
         this.chatFlowRepository = chatFlowRepository;
         this.submissionRepository = submissionRepository;
         this.chatAnalyticsService = chatAnalyticsService;
         this.slotEventBus = slotEventBus;
+        this.cacheManager = cacheManager;
         // Index strategies by enum so dispatch is O(1) and adding a new
         // strategy needs no edit here — Spring injects the new bean and
         // the map picks it up.
@@ -651,8 +720,26 @@ public class TurChatFlowEngineService {
             return Optional.empty();
         }
 
-        // 3) Ask the router LLM
-        String pickedId = askRouter(routerModel, candidates, lastUserMessage);
+        // 3a) Procedural pre-route — fast, deterministic, no LLM. When the
+        //     user message has 2+ content words overlapping a flow's
+        //     triggerDescription AND that flow dominates the runner-up by
+        //     1.5×, commit straight to it. Cuts ~1-3s of LLM latency from
+        //     freshly-triggered turns where the trigger is obvious. Falls
+        //     back to the LLM router when the procedural pass is ambiguous
+        //     or no description has enough keyword density.
+        String proceduralPick = tryProceduralRoute(candidates, lastUserMessage).orElse(null);
+        final String pickedId;
+        if (proceduralPick != null) {
+            log.info("[FlowEngine] Procedural router picked '{}' (LLM skipped)", proceduralPick);
+            pickedId = proceduralPick;
+        } else {
+            // 3b) Cached LLM router. Same {agentId, userMessage} pair returns
+            //     a cached decision on repeated calls (e.g. canned UI prompts,
+            //     test runs, retries) so the LLM round-trip pays off once per
+            //     unique message per agent. Cache is wiped on any
+            //     TurChatFlow.save/delete so admin edits propagate.
+            pickedId = askRouterCached(agent.getId(), routerModel, candidates, lastUserMessage);
+        }
         if (pickedId == null) {
             return Optional.empty();
         }
@@ -870,6 +957,150 @@ public class TurChatFlowEngineService {
     }
 
     private record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
+    }
+
+    /**
+     * Procedural pre-route — token-overlap score between the user message and
+     * each candidate's {@code triggerDescription}. Returns the picked flow id
+     * when one candidate dominates clearly (≥{@link #PROCEDURAL_MIN_OVERLAP}
+     * overlapping tokens AND ≥{@link #PROCEDURAL_DOMINANCE_RATIO}× the next
+     * best); otherwise {@link Optional#empty()} so the caller can fall back
+     * to the LLM router.
+     *
+     * <p>Stopword set ({@link #STOPWORDS}) covers PT and EN connectives —
+     * works on bilingual deployments without configuration. Doesn't help for
+     * languages outside that set; add stopwords as needed.
+     *
+     * @since 2026.2.8
+     */
+    private Optional<String> tryProceduralRoute(List<RouterCandidate> candidates,
+            String userMessage) {
+        if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        Set<String> userTokens = tokenize(userMessage);
+        if (userTokens.size() < PROCEDURAL_MIN_OVERLAP) {
+            return Optional.empty();
+        }
+        int bestScore = 0;
+        int secondScore = 0;
+        String bestId = null;
+        for (RouterCandidate c : candidates) {
+            Set<String> flowTokens = tokenize(c.flow().getTriggerDescription());
+            if (flowTokens.isEmpty()) {
+                continue;
+            }
+            Set<String> overlap = new HashSet<>(userTokens);
+            overlap.retainAll(flowTokens);
+            int score = overlap.size();
+            if (score > bestScore) {
+                secondScore = bestScore;
+                bestScore = score;
+                bestId = c.flow().getId();
+            } else if (score > secondScore) {
+                secondScore = score;
+            }
+        }
+        if (bestScore < PROCEDURAL_MIN_OVERLAP) {
+            return Optional.empty();
+        }
+        if (secondScore > 0
+                && (double) bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
+            log.debug("[FlowEngine] Procedural router undecided "
+                    + "(best={}, second={}, ratio<{}) — falling back to LLM",
+                    bestScore, secondScore, PROCEDURAL_DOMINANCE_RATIO);
+            return Optional.empty();
+        }
+        return Optional.ofNullable(bestId);
+    }
+
+    /**
+     * Tokenize through Lucene's {@link #FLOW_ROUTER_ANALYZER} — applies
+     * lowercase, diacritic folding, Portuguese stopword filtering and light
+     * stemming in a single pipeline. Returns the deduplicated set of stems
+     * (e.g. "plano de carreira" → {@code {plan, carreir}}, "uns planos para
+     * carreiras" → same {@code {plan, carreir}}). Empty for blank/null
+     * input. The {@link IOException} declared by {@code TokenStream} is
+     * impossible in practice with the in-memory string source — the catch
+     * is for API compliance; we log and degrade to an empty set so the
+     * caller falls back to the LLM router rather than crashing.
+     */
+    private static Set<String> tokenize(String text) {
+        if (text == null || text.isBlank()) {
+            return Set.of();
+        }
+        Set<String> tokens = new HashSet<>();
+        try (TokenStream stream = FLOW_ROUTER_ANALYZER.tokenStream("text", text)) {
+            CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
+            stream.reset();
+            while (stream.incrementToken()) {
+                String token = term.toString();
+                if (!token.isBlank()) {
+                    tokens.add(token);
+                }
+            }
+            stream.end();
+        } catch (IOException e) {
+            log.warn("[FlowEngine] Lucene tokenization failed: {}", e.getMessage());
+            return Set.of();
+        }
+        return tokens;
+    }
+
+    /**
+     * LLM router with manual Spring cache lookup. Keyed by {@code agentId :::
+     * sha256(normalized(userMessage))} — same agent + same wording (modulo
+     * casing/whitespace) returns the cached decision without the 1-3s LLM
+     * round-trip. {@code null} (router said "none") is also cached so
+     * repeated "off-topic" messages don't burn LLM calls.
+     *
+     * <p>The cache is evicted on any {@link TurChatFlow} save/delete via the
+     * {@code @CacheEvict} annotations on {@link TurChatFlowRepository}, so
+     * admin edits to {@code triggerDescription} propagate without restart.
+     *
+     * @since 2026.2.8
+     */
+    private String askRouterCached(String agentId, ChatModel routerModel,
+            List<RouterCandidate> candidates, String userMessage) {
+        Cache cache = cacheManager.getCache(CACHE_ROUTER_DECISION);
+        String key = buildRouterCacheKey(agentId, userMessage);
+        if (cache != null && key != null) {
+            Cache.ValueWrapper hit = cache.get(key);
+            if (hit != null) {
+                Object cached = hit.get();
+                log.info("[FlowEngine] Router cache HIT for agent='{}' key='{}' → '{}' (LLM skipped)",
+                        agentId, key, cached);
+                return (String) cached;
+            }
+            log.info("[FlowEngine] Router cache MISS for agent='{}' key='{}' — calling LLM",
+                    agentId, key);
+        }
+        String picked = askRouter(routerModel, candidates, userMessage);
+        if (cache != null && key != null) {
+            cache.put(key, picked);
+        }
+        return picked;
+    }
+
+    /**
+     * Deterministic cache key — agent id plus a SHA-256 of the lowercased,
+     * whitespace-collapsed user message. Returns {@code null} when inputs
+     * are blank so the caller skips caching gracefully.
+     */
+    private static String buildRouterCacheKey(String agentId, String userMessage) {
+        if (agentId == null || agentId.isBlank()
+                || userMessage == null || userMessage.isBlank()) {
+            return null;
+        }
+        String normalized = userMessage.toLowerCase().trim().replaceAll("\\s+", " ");
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(normalized.getBytes(StandardCharsets.UTF_8));
+            return agentId + ":::" + HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed by the JRE — fall back to plain key
+            return agentId + ":::" + normalized;
+        }
     }
 
     private String askRouter(ChatModel routerModel,

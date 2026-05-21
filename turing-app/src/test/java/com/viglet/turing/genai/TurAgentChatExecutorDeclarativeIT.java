@@ -18,7 +18,7 @@ import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 /**
  * Esqueletos para os patches da categoria (B) DECLARATIVE listados em
- * {@code docs/chat-flow/HARNESS_INVENTORY.md} §8.4. Cada {@code @Test} é
+ * {@code docs/IMPROVEMENTS.md} §I.3. Cada {@code @Test} é
  * um contrato que o refactor deve preservar — esses patches sobrevivem
  * ao refactor virando campos declarativos no {@code ChatFlowNode}
  * (ex.: {@code toolsEnabled}, {@code toolsMode}), MAS o comportamento
@@ -94,7 +94,7 @@ class TurAgentChatExecutorDeclarativeIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #3.")
     void stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -134,7 +134,7 @@ class TurAgentChatExecutorDeclarativeIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #4.")
     void stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -179,6 +179,6 @@ class TurAgentChatExecutorDeclarativeIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #5.")
     void forbidsToolCalls_detectsBilingualSentinelsCaseInsensitivelyInFreeText() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 }

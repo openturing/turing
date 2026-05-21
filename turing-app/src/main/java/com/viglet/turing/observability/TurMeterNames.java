@@ -120,6 +120,10 @@ public final class TurMeterNames {
     public static final String STAGE_CHAT_SETUP = "chat.setup";
     public static final String STAGE_CHAT_LLM_CALL = "chat.llm.call";
     public static final String STAGE_CHAT_POST = "chat.post";
+    /** Time inside {@code chatFlowEngineService.advance} — includes LlmJudge round-trip if configured. */
+    public static final String STAGE_CHAT_ADVANCE = "chat.advance";
+    /** Time inside {@code regenerateReplyForNewNode} — second LLM round-trip when the flow advanced to a new aiQuestion. */
+    public static final String STAGE_CHAT_REGEN = "chat.regen";
 
     /** Snapshot cache outcomes — appear as {@code outcome} tag values. */
     public static final String OUTCOME_HIT = "hit";

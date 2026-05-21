@@ -238,19 +238,26 @@ public class TurAgentChatExecutor {
         // Per-turn timing markers. Logged as "[AgentExec][timing] ..." so a
         // single grep across the log surfaces a chat-turn latency breakdown
         // (setup / llm / post). Used by TurAgentChatLatencyIT and field
-        // diagnostics.
+        // diagnostics. Sub-stages of setup are captured separately so we can
+        // tell apart "everything cached" (~100ms) from a cold-start MCP
+        // handshake / first-time flow load (multi-second).
         final long tStart = System.currentTimeMillis();
 
         String decryptedApiKey = turSecretCryptoService.decrypt(llmInstance.getApiKeyEncrypted());
+        final long tAfterDecrypt = System.currentTimeMillis();
+
         ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
+        final long tAfterChatModel = System.currentTimeMillis();
 
         // Resolve the active persona ONCE per turn — flow overrides may
         // already be in the conversation's flow state. Passed to every
         // downstream consumer (tool callbacks, prompt composer, tone
         // validator, analytics) so the same voice governs the whole turn.
         final TurPersona activePersona = personaResolver.resolve(agent, conversationId);
+        final long tAfterPersona = System.currentTimeMillis();
 
         ToolCallback[] callbacks = resolveToolCallbacks(agent, activePersona);
+        final long tAfterTools = System.currentTimeMillis();
         log.info("[AgentExec] Agent '{}': {} tool callbacks", agent.getTitle(), callbacks.length);
         if (log.isDebugEnabled()) {
             for (ToolCallback cb : callbacks) {
@@ -298,6 +305,7 @@ public class TurAgentChatExecutor {
         String lastUserMessageEarly = lastMessageOfRole(history, "user");
         FlowContext flowContext = resolveFlowContext(agent, conversationId, flowId,
                 lastUserMessageEarly, chatModel);
+        final long tAfterFlow = System.currentTimeMillis();
         // Re-resolve the persona AFTER flow selection. The first call at line
         // ~240 happened before any flow ran — on a freshly-triggered flow the
         // engine's transparent walk traversed a `persona-*` node that wrote
@@ -323,6 +331,7 @@ public class TurAgentChatExecutor {
                 agent.getTurEmbeddingModelInstance(),
                 lastUserMessageEarly,
                 flowAugmented);
+        final long tAfterCompose = System.currentTimeMillis();
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(resolvedSystemPrompt));
@@ -376,28 +385,68 @@ public class TurAgentChatExecutor {
 
         final long tSetupEnd = System.currentTimeMillis();
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP, tSetupEnd - tStart);
-        log.info("[AgentExec][timing] setup_ms={} (decrypt+chatModel+persona+tools+flow+prompt)",
-                tSetupEnd - tStart);
+        // Cold-start (first turn after restart) typically spends seconds in
+        // tools (MCP handshake) or chat_model (TLS to OpenAI). Subsequent
+        // turns hit caches and stay under ~100ms. Each delta is one phase:
+        //   decrypt    — TurSecretCryptoService.decrypt (AES, ~ms)
+        //   chatModel  — llmModelFactory.createChatModel (HTTP client init)
+        //   persona1   — personaResolver.resolve (first pass, pre-flow)
+        //   tools      — resolveToolCallbacks (MCP handshake, custom tools)
+        //   flow       — resolveFlowContext (chat flow load + state init)
+        //   compose    — personaPromptComposer.compose (RAG prefix, prompts)
+        //   session    — recordSessionStartSafely (analytics upsert)
+        log.info("[AgentExec][timing] setup_ms={} "
+                + "(decrypt={} chatModel={} persona1={} tools={} flow={} compose={} session={})",
+                tSetupEnd - tStart,
+                tAfterDecrypt - tStart,
+                tAfterChatModel - tAfterDecrypt,
+                tAfterPersona - tAfterChatModel,
+                tAfterTools - tAfterPersona,
+                tAfterFlow - tAfterTools,
+                tAfterCompose - tAfterFlow,
+                tSetupEnd - tAfterCompose);
 
         return Mono.fromCallable(() -> {
-            log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
-                    agent.getTitle(), llmInstance.getTitle());
-            long tLlmStart = System.currentTimeMillis();
-            var response = chatModel.call(prompt);
-            long tLlmEnd = System.currentTimeMillis();
-            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
-            log.info("[AgentExec][timing] llm_ms={}", tLlmEnd - tLlmStart);
-
-            tokenUsageService.recordUsage(llmInstance, response, username);
+            // When the flow is freshly triggered, the regen path below ALWAYS
+            // overwrites `text` with the flow-aware reply — the initial LLM
+            // call's output is unconditionally discarded. Skip it entirely to
+            // save the ~1.5-2s of that wasted round-trip. Same reasoning the
+            // original comment block on the freshlyTriggered branch laid out
+            // ("Force regen so the user sees the first node's question this
+            // very turn, instead of the initial LLM reply that was generated
+            // WITHOUT the new flow's addendum in context") — we just stop
+            // making the call we knew we were going to throw away.
+            boolean skipInitialLlmCall = flowContext != null && flowContext.freshlyTriggered();
 
             String text = "";
-            if (response.getResult() != null
-                    && response.getResult().getOutput() != null
-                    && response.getResult().getOutput().getText() != null) {
-                text = response.getResult().getOutput().getText();
+            // Held across the if/else so recordTurnTelemetry below can read
+            // usage metadata. Null when the initial call was skipped — the
+            // telemetry helper already null-checks (token counts stay at 0
+            // when the response object is absent).
+            org.springframework.ai.chat.model.ChatResponse response = null;
+            long tLlmStart = System.currentTimeMillis();
+            long tLlmEnd;
+            if (skipInitialLlmCall) {
+                log.info("[AgentExec] Skipping initial LLM call — flow freshly triggered, regen owns the response");
+                tLlmEnd = tLlmStart;
+            } else {
+                log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
+                        agent.getTitle(), llmInstance.getTitle());
+                response = chatModel.call(prompt);
+                tLlmEnd = System.currentTimeMillis();
+
+                tokenUsageService.recordUsage(llmInstance, response, username);
+
+                if (response.getResult() != null
+                        && response.getResult().getOutput() != null
+                        && response.getResult().getOutput().getText() != null) {
+                    text = response.getResult().getOutput().getText();
+                }
+                log.info("[AgentExec] Agent '{}' response: {} chars",
+                        agent.getTitle(), text.length());
             }
-            log.info("[AgentExec] Agent '{}' response: {} chars",
-                    agent.getTitle(), text.length());
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
+            log.info("[AgentExec][timing] llm_ms={}", tLlmEnd - tLlmStart);
 
             TurChatFlowState newState = flowContext == null ? null : flowContext.state();
             // Tracks whether the final `text` was authored for the CURRENT
@@ -416,6 +465,13 @@ public class TurAgentChatExecutor {
             //   • Engine advanced + regen returned null → text still from
             //     the initial LLM call (for old node); chips would mismatch.
             boolean textAlignedWithCurrentNode = true;
+            // Granular timing of the two heavy post-LLM substages: advance
+            // (which may itself fire an LlmJudge LLM round-trip) and regen
+            // (which always fires a second LLM round-trip when the engine
+            // advanced to a new aiQuestion). Both default to 0 so the log
+            // line reads sensibly when neither ran (e.g. no flow attached).
+            long tAdvanceMs = 0;
+            long tRegenMs = 0;
             if (flowContext != null) {
                 if (flowContext.freshlyTriggered()) {
                     // Trigger turn: user's msg is the activation signal, NOT
@@ -428,10 +484,12 @@ public class TurAgentChatExecutor {
                     // flow's addendum in context.
                     log.info("[AgentExec] Flow freshly triggered for conversation '{}' — skipping advance, regenerating for entry node",
                             conversationId);
+                    long tRegenStart = System.currentTimeMillis();
                     String regenerated = regenerateReplyForNewNode(
                             agent, llmInstance, chatModel, chatOptions,
                             effectivePersona, baseSystemPrompt, history,
                             lastUserMessage, flowContext.state(), flowContext, username);
+                    tRegenMs = System.currentTimeMillis() - tRegenStart;
                     if (regenerated != null) {
                         text = regenerated;
                     }
@@ -440,9 +498,11 @@ public class TurAgentChatExecutor {
                     // the current/entry node).
                 } else {
                     String originalNodeId = flowContext.state().getCurrentNodeId();
+                    long tAdvanceStart = System.currentTimeMillis();
                     var advance = chatFlowEngineService.advance(flowContext.flow(),
                             flowContext.state(), flowContext.graph(),
                             lastUserMessage, text, chatModel);
+                    tAdvanceMs = System.currentTimeMillis() - tAdvanceStart;
                     // LLM_JUDGE may rewrite the assistant text when it judges the
                     // reply off-topic; HEURISTIC always leaves the override null.
                     if (advance.assistantOverride() != null) {
@@ -479,10 +539,12 @@ public class TurAgentChatExecutor {
                         // (fresh-trigger and mid-flow advance) consistent.
                         TurPersona regenPersona = personaResolver.resolve(agent, conversationId);
                         if (regenPersona == null) regenPersona = effectivePersona;
+                        long tRegenStart = System.currentTimeMillis();
                         String regenerated = regenerateReplyForNewNode(
                                 agent, llmInstance, chatModel, chatOptions,
                                 regenPersona, baseSystemPrompt, history,
                                 lastUserMessage, newState, flowContext, username);
+                        tRegenMs = System.currentTimeMillis() - tRegenStart;
                         if (regenerated != null) {
                             text = regenerated;
                         }
@@ -539,8 +601,11 @@ public class TurAgentChatExecutor {
             long tPost = tTotal - (tSetupEnd - tStart) - (tLlmEnd - tLlmStart);
             chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_POST, tPost);
             chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
-            log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={}",
-                    tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost);
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_ADVANCE, tAdvanceMs);
+            chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_REGEN, tRegenMs);
+            log.info("[AgentExec][timing] total_ms={} setup_ms={} llm_ms={} post_ms={} (advance_ms={} regen_ms={})",
+                    tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart, tPost,
+                    tAdvanceMs, tRegenMs);
             return new AssistantTurn(text, suggestedOptions);
         })
                 .subscribeOn(Schedulers.boundedElastic())

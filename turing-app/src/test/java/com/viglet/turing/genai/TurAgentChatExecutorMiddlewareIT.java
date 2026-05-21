@@ -18,7 +18,7 @@ import com.viglet.turing.testutil.AbstractTuringSpringIT;
 
 /**
  * Esqueletos para os patches da categoria (C) MIDDLEWARE listados em
- * {@code docs/chat-flow/HARNESS_INVENTORY.md} §8.4. Esses patches
+ * {@code docs/IMPROVEMENTS.md} §I.3. Esses patches
  * sobrevivem ao refactor — são robustez genuína (defense-in-depth,
  * agent-owner check) e DEVEM continuar passando sem ajustes após a
  * inversão da ordem.
@@ -88,7 +88,7 @@ class TurAgentChatExecutorMiddlewareIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #18.")
     void fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
     /**
@@ -133,6 +133,6 @@ class TurAgentChatExecutorMiddlewareIT extends AbstractTuringSpringIT {
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #20.")
     void discardsForcedFlowWhenItDoesNotBelongToCallingAgent() {
-        fail("Not implemented — skeleton from HARNESS_INVENTORY.md §8.4");
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 }
