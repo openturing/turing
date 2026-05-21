@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
@@ -17,10 +18,30 @@ public interface TurAIAgentRepository extends JpaRepository<TurAIAgent, String> 
     @Cacheable("turAIAgentfindAll")
     List<TurAIAgent> findAll();
 
+    /**
+     * Loads an agent with its 4 {@code @ManyToMany(LAZY)} catalogs eagerly via
+     * LEFT JOIN FETCH. Required because the collections are LAZY but the
+     * cached entity (Spring {@code @Cacheable}) is returned detached on cache
+     * hits, and accessing a lazy proxy on a detached entity throws
+     * {@code LazyInitializationException (no session)} even with
+     * {@code hibernate.enable_lazy_load_no_trans=true} when the session has
+     * already closed. Joining at load time materializes the collections as
+     * concrete sets that don't need a session for later iteration.
+     *
+     * <p>{@code DISTINCT} is needed because the cartesian product of the four
+     * collection joins inflates row count — Hibernate deduplicates by entity
+     * identity but it has to be told to.
+     */
     @Override
     @Cacheable("turAIAgentfindById")
+    @Query("SELECT DISTINCT a FROM TurAIAgent a"
+            + " LEFT JOIN FETCH a.llmInstances"
+            + " LEFT JOIN FETCH a.mcpServers"
+            + " LEFT JOIN FETCH a.customTools"
+            + " LEFT JOIN FETCH a.personas"
+            + " WHERE a.id = :id")
     @NotNull
-    Optional<TurAIAgent> findById(@NotNull String id);
+    Optional<TurAIAgent> findById(@NotNull @Param("id") String id);
 
     /** Agent-import fallback by title. @since 2026.2.8 */
     Optional<TurAIAgent> findByTitleIgnoreCase(String title);
