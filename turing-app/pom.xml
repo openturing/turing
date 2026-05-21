@@ -640,6 +640,18 @@
                 <configuration>
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     <testFailureIgnore>true</testFailureIgnore>
+                    <!--
+                        BehavioralIT classes (real-LLM ITs gated by
+                        OPENAI_API_KEY) are excluded from the default run so
+                        every-PR CI doesn't burn API credits and JVMs aren't
+                        slowed down by Spring contexts they'll skip on first
+                        @BeforeAll anyway. Re-include them under -Pllm-it
+                        (see profiles below) — that's the profile to use
+                        for nightly / pre-release pipelines.
+                    -->
+                    <excludes>
+                        <exclude>**/*BehavioralIT.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -684,4 +696,41 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <profiles>
+        <!--
+            llm-it: runs ONLY the real-LLM BehavioralIT classes — the ITs
+            that gate on @EnabledIfEnvironmentVariable("OPENAI_API_KEY") and
+            assert behavior of gpt-4o-mini against pinned prompts. Use this
+            profile for nightly / pre-release pipelines:
+
+                mvn verify -Pllm-it -pl turing-app -Dskip.npm=true
+
+            Without OPENAI_API_KEY set, JUnit short-circuits each class with
+            a "skipped" status — no API calls, no cost. With the key set,
+            the pinned model versions in each test Javadoc determine which
+            calls go out.
+
+            The default failsafe configuration excludes *BehavioralIT.java
+            (see the maven-failsafe-plugin block above), so this profile is
+            additive only when explicitly activated.
+        -->
+        <profile>
+            <id>llm-it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override"/>
+                            <includes>
+                                <include>**/*BehavioralIT.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
