@@ -492,17 +492,18 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
-    // ─────────────────────────── New skeletons added in T3 (Phase 1) ──────────────
-    // Per docs/IMPROVEMENTS.md §VI.6 Phase 1, the existing-fixture skeleton set
-    // is "#10, #11, #9, #12, #14, #1, #7 (new), #6 (new)". The first six landed
-    // via T2's migration of TurAgentChatExecutorRaceIT; the two "(new)" ones
-    // below were created in T3 and run against `programa-match-ee.chat-flow.json`.
-    //
-    // Patches #6 and #7 both exist today as code paths but were never covered
-    // structurally — only the indirect "happy path of programa-match-ee" in
-    // ProgramaMatchEEFlowIT exercises them. These skeletons exist so the
-    // §I.5 inversion can prove the BEHAVIOR is preserved before the code
-    // that implements it gets deleted.
+    /* ─────────────────────────── New skeletons added in T3 (Phase 1) ──────────────
+     * Per docs/IMPROVEMENTS.md §VI.6 Phase 1, the existing-fixture skeleton set
+     * is "#10, #11, #9, #12, #14, #1, #7 (new), #6 (new)". The first six landed
+     * via T2's migration of TurAgentChatExecutorRaceIT; the two "(new)" ones
+     * below were created in T3 and run against `programa-match-ee.chat-flow.json`.
+     *
+     * Patches #6 and #7 both exist today as code paths but were never covered
+     * structurally — only the indirect "happy path of programa-match-ee" in
+     * ProgramaMatchEEFlowIT exercises them. These skeletons exist so the
+     * §I.5 inversion can prove the BEHAVIOR is preserved before the code
+     * that implements it gets deleted.
+     */
 
     /**
      * Patch #7 — regen FULL PATH: second LLM call after transparent advance
@@ -616,11 +617,12 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
-    // ─────────────────────────── Declarative patches (B) ───────────────────────────
-    // Migrated from TurAgentChatExecutorDeclarativeIT (deleted under T2).
-    // Coverage: #3, #4. Patch #5 lives below as a @Nested unit-test class
-    // because it exercises a pure static method on TurAgentChatExecutor —
-    // no Spring context, no harness needed.
+    /* ─────────────────────────── Declarative patches (B) ───────────────────────────
+     * Migrated from TurAgentChatExecutorDeclarativeIT (deleted under T2).
+     * Coverage: #3, #4. Patch #5 lives below as a @Nested unit-test class
+     * because it exercises a pure static method on TurAgentChatExecutor —
+     * no Spring context, no harness needed.
+     */
 
     /**
      * Patch #3 — tool-stripping no INITIAL call quando aiInstruction

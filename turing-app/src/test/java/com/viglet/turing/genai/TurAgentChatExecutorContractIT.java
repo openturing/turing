@@ -141,4 +141,200 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
     void discardsForcedFlowWhenItDoesNotBelongToCallingAgent() {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
+
+    /* ─────────────────────────── New skeletons added in T4 (Phase 2) ──────────────
+     * Per docs/IMPROVEMENTS.md §VI.6 Phase 2, the Contract skeleton set is
+     * "#18, #20, #16 (new double-save), cascade ascent, BR-doc CPF". The
+     * first two landed via T2's migration of TurAgentChatExecutorMiddlewareIT;
+     * the three below were added in T4. All three lock invariants that
+     * survive the §I.5 refactor unchanged — defense-in-depth, sub-flow
+     * navigation, validation primitives — so they should keep passing
+     * verbatim once the executor is inverted.
+     */
+
+    /**
+     * Patch #16 — explicit save AFTER transparent walk (double-save pattern)
+     * Categoria: C
+     * Localização do patch: TurChatFlowEngineService.java:272-294 (current)
+     *                       and walkTransparentNodes saves inside the loop
+     *
+     * Comportamento a travar:
+     *   Durante o transparent walk, o engine PERSISTE o state em DOIS
+     *   momentos por hop interessante:
+     *
+     *   <ol>
+     *     <li>Ao cruzar slot SET / writeSlot / persona / switch resolution
+     *         — {@code state = stateRepository.save(state)} dentro do loop
+     *         (linhas ~1280-1314 de {@code TurChatFlowEngineService}). Isso
+     *         existe porque mutações in-place ao {@code currentNodeId} +
+     *         {@code variablesJson} têm que sobreviver mesmo se o turno
+     *         crashar a meio caminho.</li>
+     *     <li>Ao retornar de {@code advance(...)}, o caller volta a salvar
+     *         o {@code AdvanceResult.state()} (linha ~272-294). Esse segundo
+     *         save garante consistência do FINAL cursor independente do
+     *         que o loop fez.</li>
+     *   </ol>
+     *
+     *   O double-save é defensivo: se a primeira persistência falha por
+     *   contenção / race, o caller ainda persiste a versão final. Se nada
+     *   falhar, é redundante mas barato (mesmo ID, JPA merge).
+     *
+     * Cenário (programa-match-ee):
+     *   Flow:    programa-match-ee.chat-flow.json — qualquer área-branch.
+     *            A 4ª turn ("Finanças & Investimentos") atravessa o switch
+     *            e 5 nós slot SET (area_label, color, career_path,
+     *            programas_match, cta_visible) antes de parkar em
+     *            ai-confirma-financas.
+     *   Estado:  parked em ai-area, conversa em progresso (3 slots
+     *            preenchidos: name, cargo_atual, objetivo).
+     *   Entrada: user msg = "Finanças & Investimentos"
+     *   Mocks:   ChatModel mockado: enqueue 1 resposta de ack para o
+     *            initial call e 1 para o regen do ai-confirma-financas.
+     *            {@code @SpyBean TurChatFlowStateRepository} — contar
+     *            {@code save(state)} invocations.
+     *
+     * Asserts:
+     *   1. {@code stateRepository.save(...)} foi invocado AO MENOS 6 vezes
+     *      durante o turno: 5 slot setters + 1 caller-level save. (Pode
+     *      ser ≥ por reentrada do switch / re-fetch.)
+     *   2. O state persistido final tem TODOS os 5 slots da área Finanças
+     *      preenchidos com os valores corretos (assert via
+     *      {@link #readVars(...)} ou query direto).
+     *   3. {@code state.getCurrentNodeId() == "ai-confirma-financas"}
+     *      — confirma que o save final reflete o cursor pós-walk.
+     *
+     * Nota refactor:
+     *   No design invertido (§I.5 step 5), o cycle vira "advance/walk dentro
+     *   de uma @Transactional → flush → LLM call". O double-save desaparece
+     *   — passa a UM atomic persistence por turno. Este teste é REMOVIDO
+     *   pós-refactor; o invariante "todos os slots do branch foram
+     *   persistidos ao final do turno" sobrevive como um teste mais simples.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #16 (new in T4).")
+    void persistsStateInsideTransparentWalkAndAgainAfterAdvance_doubleSavePattern() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    /**
+     * Cascade ascent — `end` nodes in nested sub-flows pop the chain
+     * Categoria: C (middleware — sub-flow navigation guard)
+     * Localização: TurChatFlowEngineService.java:1316-1323 (`end` in walk)
+     *              + ascendFromSubFlow (~1398) + chainContainsFlow (~1462)
+     *
+     * Comportamento a travar:
+     *   Quando o transparent walk encontra um {@code end} node e o state
+     *   tem {@code parentStateId != null}, o engine sobe pro parent state
+     *   (resume na linha após o Sub Flow node original). Se o parent ALSO
+     *   está num {@code end} (sub-flow do parent terminou), cascateia até
+     *   chegar num parent que tem mais nodes OU até esgotar a chain.
+     *
+     *   Garantia adicional: {@code chainContainsFlow} previne recursão —
+     *   se o sub-flow id já está na chain de parents, ascensão é negada e
+     *   o engine loga "Refusing recursive Sub Flow".
+     *
+     * Cenário (fixture nova OU adaptada):
+     *   Flow:    Bundle com 3 flows: A (top) → SubFlow B (chamado por A) →
+     *            SubFlow C (chamado por B). C tem um aiQuestion seguido de
+     *            end; B tem só o SubFlow C node + end; A tem o SubFlow B
+     *            node + ai-confirma final.
+     *
+     *            Cenário expected: parked no aiQuestion de C; user manda
+     *            resposta; advance avança em C, encontra end de C → sobe pro
+     *            parent B, B está parked após o SubFlow C node, próximo é o
+     *            end de B → sobe pro parent A, A está parked após o SubFlow B
+     *            node, próximo é ai-confirma de A.
+     *
+     *            (programa-match-ee não tem sub-flows; precisará da fixture
+     *            harness-it/nested-sub-flow.chat-flow.json criada em T5.)
+     *
+     *   Estado:  parked em C's aiQuestion, depth-3 chain.
+     *   Entrada: user msg = resposta válida.
+     *   Mocks:   ChatModel mockado retorna acks; sem regen relevante.
+     *
+     * Asserts:
+     *   1. Final state.flow.id == A's flow id (sobe DUAS vezes).
+     *   2. state.currentNodeId == "ai-confirma" (nó de A após o SubFlow B).
+     *   3. state.parentStateId == null (chain esvaziada).
+     *   4. (Negativo) — se o fixture for C → A direto (sem B intermediário),
+     *      o teste detecta que só houve 1 ascent.
+     *   5. (Negativo recursive) — fixture com A → B → A (referência circular)
+     *      deve resultar em log WARN "Refusing recursive Sub Flow" e o state
+     *      ficar no end de B sem ascender.
+     *
+     * Nota refactor:
+     *   Sub-flow descent/ascent é product (§I.6 — "preserve verbatim"). Este
+     *   teste DEVE continuar passando idêntico pós-refactor; é robustez de
+     *   navegação, não race condition.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, cascade ascent (new in T4).")
+    void cascadesAscentThroughChainOfTerminatedSubFlows_landsOnTopLevelNextNode() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    /**
+     * BR-doc CPF/CNPJ checksum validation — {@code ChatFlowOps.isValidCpfChecksum} /
+     * {@code isValidCnpjChecksum}
+     * Categoria: C (middleware — input validation primitive)
+     * Localização: ChatFlowOps.java:1217-1251 (CPF + CNPJ mod-11 checks)
+     *
+     * Comportamento a travar:
+     *   {@code isValidCpfChecksum(String cpf)} returns true ⇔ the 11-digit
+     *   normalized string passes the Receita Federal mod-11 algorithm AND
+     *   is NOT a repeated-digit sequence (111.111.111-11, 000.000.000-00,
+     *   etc.). {@code isValidCnpjChecksum(String cnpj)} idem for 14-digit
+     *   CNPJ with the cycle {6,5,4,3,2,9,8,7,6,5,4,3,2}.
+     *
+     *   These methods sit on the hot path: the LLM_JUDGE strategy extracts
+     *   a candidate CPF/CNPJ string via regex, then routes it through these
+     *   checksums BEFORE force-capturing the slot. A buggy checksum either
+     *   accepts malformed docs (breaks downstream API calls) or rejects
+     *   valid ones (the visitor types it again and again — UX nightmare).
+     *
+     * Cenário:
+     *   Pure unit-style tests, no Spring context. The static methods are
+     *   PACKAGE-PRIVATE on {@code ChatFlowOps} in
+     *   {@code com.viglet.turing.genai.flow.strategy} — this skeleton lives
+     *   in the wrong package to call them directly.
+     *
+     *   Implementer should EITHER:
+     *   <ul>
+     *     <li>Move the {@code @Nested} class into a new file at
+     *         {@code com/viglet/turing/genai/flow/strategy/ChatFlowOpsBrDocUnitTest.java}
+     *         (preferred — keeps tests next to the implementation), OR</li>
+     *     <li>Escalate {@code isValidCpfChecksum} / {@code isValidCnpjChecksum}
+     *         visibility to {@code public} and keep the test here (only do
+     *         this if a real caller outside {@code strategy/} ever needs
+     *         the primitives — currently nobody does).</li>
+     *   </ul>
+     *
+     * Asserts (parameterized recommended, ~10-15 cases):
+     *   CPF valid:
+     *     - 11144477735 (canonical valid CPF used by Receita Federal docs)
+     *     - 390.533.447-05 (real, formatted — strip dots/dash before check)
+     *   CPF invalid:
+     *     - 11111111111 (repeated digits — rejected by isAllSameDigit)
+     *     - 00000000000, 99999999999 (same)
+     *     - 12345678900 (mod-11 fails)
+     *     - "12345" (wrong length)
+     *     - null, "" (defensive)
+     *   CNPJ valid:
+     *     - 11.222.333/0001-81 (canonical real CNPJ)
+     *     - 12.345.678/0001-95 (real, formatted)
+     *   CNPJ invalid:
+     *     - 11111111111111 (repeated)
+     *     - 12345678901234 (mod-11 fails)
+     *     - wrong length, null, ""
+     *
+     * Nota refactor:
+     *   Primitives de validação não mudam com o §I.5 refactor — sobrevive
+     *   inalterado. Pode até virar parte de uma biblioteca shared de
+     *   validation futura sem afetar nada do executor.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, BR-doc CPF (new in T4); see Javadoc — methods are package-private, this skeleton needs to move to ChatFlowOpsBrDocUnitTest.java in com.viglet.turing.genai.flow.strategy.")
+    void brDocCpfCnpjChecksumValidation_acceptsValidRejectsInvalidRejectsRepeatedDigits() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
 }
