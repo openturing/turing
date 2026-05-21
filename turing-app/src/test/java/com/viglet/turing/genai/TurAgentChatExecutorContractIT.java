@@ -13,37 +13,43 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 
-import com.viglet.turing.testutil.AbstractTuringSpringIT;
+import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
+import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
 
 /**
- * Esqueletos para os patches da categoria (C) MIDDLEWARE listados em
- * {@code docs/IMPROVEMENTS.md} §I.3. Esses patches
- * sobrevivem ao refactor — são robustez genuína (defense-in-depth,
- * agent-owner check) e DEVEM continuar passando sem ajustes após a
- * inversão da ordem.
+ * Contract integration tests for {@link TurAgentChatExecutor}. Locks
+ * the middleware (C) patches — defense-in-depth, agent-owner check,
+ * abandon-state path — that survive the §I.5 refactor unchanged.
  *
- * <p>Implementar os bodies usando o padrão de mocking de
- * {@link com.viglet.turing.customers.education.flow.ProgramaMatchEEFlowIT}
- * (mesmo {@code @SpringBootTest} + {@code AbstractTuringSpringIT}). Para
- * o patch #18 vai ser necessário um {@code ChatFlowGuardrailMethod} de
- * enum-only-no-bean — montar via reflection ou via field não persistido
- * (o enum atual mapeia para beans existentes, então o cenário pode
- * exigir um {@code @MockBean} substituindo um {@code GuardrailStrategy}
- * registry para simular "bean missing").
+ * <p>Renamed from {@code TurAgentChatExecutorMiddlewareIT} under task T2.
+ * Same scope, same patches; the {@code Contract} name aligns with
+ * {@code docs/IMPROVEMENTS.md} §VI.2 ("Contract = middleware (cycle cap,
+ * A/B window, agent-owner, abandon)").
+ *
+ * <p>Implementation pattern: same as {@link TurAgentChatExecutorStructuralIT}
+ * — stage canned replies via {@link TurAgentChatExecutorMockSupport},
+ * compose entities with {@link AbstractAgentExecutorIT} helpers. For
+ * patch #18 specifically you'll need a fake {@code GuardrailStrategy}
+ * registry (or a mocked {@code ApplicationContext} bean lookup) that
+ * returns {@code Optional.empty()} for the guardrail enum the test
+ * pins — pure JPA / reflection approaches break because the enum is
+ * closed and persistence assumes a non-null backing bean.
  *
  * <p>Cobertura dos patches: #18, #20.
- * Patches (C) restantes já cobertos:
+ * Patches (C) restantes já cobertos por outros ITs (não duplicar aqui):
  * <ul>
- *   <li>#17 — cycle detection (coberto por {@code TurChatFlowSubFlowEngineIT})</li>
- *   <li>#19 — A/B scheduling window (coberto por
- *       {@code TurChatFlowAbVariantAssignmentTest} + {@code ProgramaMatchEEFlowIT})</li>
+ *   <li>#17 — cycle detection ({@code TurChatFlowSubFlowEngineIT})</li>
+ *   <li>#19 — A/B scheduling window ({@code TurChatFlowAbVariantAssignmentTest}
+ *       + {@code ProgramaMatchEEFlowIT})</li>
  * </ul>
  *
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
-class TurAgentChatExecutorMiddlewareIT extends AbstractTuringSpringIT {
+@Import(TurAgentChatExecutorMockSupport.class)
+class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
 
     /**
      * Patch #18 — fallback HEURISTIC quando strategy bean missing

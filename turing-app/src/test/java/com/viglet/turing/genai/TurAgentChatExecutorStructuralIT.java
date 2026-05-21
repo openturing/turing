@@ -9,43 +9,67 @@
  */
 package com.viglet.turing.genai;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.springframework.context.annotation.Import;
 
-import com.viglet.turing.testutil.AbstractTuringSpringIT;
+import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
+import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
 
 /**
- * Esqueletos para os patches da categoria (A) RACE listados em
- * {@code docs/IMPROVEMENTS.md} §I.3. Cada {@code @Test}
- * é um contrato que o refactor da camada {@code genai/} (inversão para
- * "advance → 1× LLM call → publish") deve preservar ou substituir por
- * uma asserção declarativamente equivalente.
+ * Structural integration tests for {@link TurAgentChatExecutor}. Locks
+ * the <i>wiring</i> contract of the executor — which
+ * {@link org.springframework.ai.chat.prompt.Prompt}s it composes, which
+ * {@link org.springframework.ai.model.tool.ToolCallingChatOptions} it
+ * passes, how many times it invokes {@code personaResolver}, in what
+ * order it persists. Behavior of {@code gpt-4o-mini} (anchoring, drift,
+ * tool preemption) belongs to {@code TurAgentChatExecutorBehavioralIT}
+ * under the {@code -Pllm-it} profile (see {@code docs/IMPROVEMENTS.md}
+ * §VI.3 pairing matrix).
  *
- * <p>Implementar os bodies usando o padrão de mocking de
- * {@link com.viglet.turing.customers.education.flow.ProgramaMatchEEFlowIT}
- * (mesma estratégia de {@code importIntoAgent}, {@code loadOrInitState},
- * {@code engine.advance(...)}) antes de iniciar o refactor — a IT de
- * referência usa OpenAI real porque foi pensada para o motor end-to-end;
- * estes skeletons devem mockar {@link org.springframework.ai.chat.model.ChatModel}
- * via Mockito para serem determinísticos e capturarem invariantes do executor,
- * não do modelo. Veja {@code LlmJudgeGuardrailStrategyTest} para o padrão de
- * stub de {@code ChatModel.call(Prompt)}.
+ * <p>Consolidates the (A) RACE and (B) DECLARATIVE skeleton families
+ * from the original {@code TurAgentChatExecutorRaceIT} +
+ * {@code TurAgentChatExecutorDeclarativeIT} (both deleted under task T2).
+ * Patch coverage: #1, #2, #3, #4, #5 (as {@link ForbidsToolCallsUnitTests}
+ * nested), #8, #9, #10, #11, #12, #13, #14, #15. Patches (A) #6, #7, #16
+ * remain in the inventory with the partial / indirect coverage they
+ * already have — these skeletons do not re-cover them.
  *
- * <p>Todos os métodos estão {@code @Disabled} para manter o build verde
- * enquanto a implementação não acompanha. Body é literalmente
- * {@code fail("Not implemented...")} para garantir que ninguém habilite
- * o teste sem implementar — o Javadoc é o contrato, não o código.
+ * <h2>Implementation pattern</h2>
  *
- * <p>Cobertura dos patches: #1, #2, #8, #9, #10, #11, #12, #13, #14, #15.
- * Patches (A) restantes com cobertura parcial ou indireta — #6, #7, #16 —
- * permanecem no inventário; os esqueletos abaixo não tentam re-cobri-los.
+ * <ol>
+ *   <li>Stage canned replies via {@link TurAgentChatExecutorMockSupport}
+ *       — {@code harness().queueResponse(...)} for blocking, queueing
+ *       multiple responses to drive initial + regen.</li>
+ *   <li>Use the {@link AbstractAgentExecutorIT} helpers —
+ *       {@link AbstractAgentExecutorIT#runTurn},
+ *       {@link AbstractAgentExecutorIT#firstPrompt},
+ *       {@link AbstractAgentExecutorIT#regenPrompt},
+ *       {@link AbstractAgentExecutorIT#systemTextOf}.</li>
+ *   <li>For flow-driven tests, import the matching fixture under
+ *       {@code harness-it/} via
+ *       {@link com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil}
+ *       (fixtures land under task T5).</li>
+ * </ol>
+ *
+ * <p>Each {@code @Test} stays {@code @Disabled} until implemented — the
+ * Javadoc <b>is</b> the contract. Bodies are literally
+ * {@code fail("Not implemented...")} so nobody enables a test without
+ * writing the assertions.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.7
  */
-class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
+@Import(TurAgentChatExecutorMockSupport.class)
+class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
 
     /**
      * Patch #1 — re-resolve persona AFTER flow selection
@@ -466,5 +490,164 @@ class TurAgentChatExecutorRaceIT extends AbstractTuringSpringIT {
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #15.")
     void refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks() {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    // ─────────────────────────── Declarative patches (B) ───────────────────────────
+    // Migrated from TurAgentChatExecutorDeclarativeIT (deleted under T2).
+    // Coverage: #3, #4. Patch #5 lives below as a @Nested unit-test class
+    // because it exercises a pure static method on TurAgentChatExecutor —
+    // no Spring context, no harness needed.
+
+    /**
+     * Patch #3 — tool-stripping no INITIAL call quando aiInstruction
+     *            contém "não chame nenhuma tool"
+     * Categoria: B
+     * Localização do patch: TurAgentChatExecutor.java:328-356
+     *
+     * Comportamento a travar:
+     *   Quando o nó ativo tem {@code aiInstruction} contendo qualquer das
+     *   sentinelas bilíngues do {@code forbidsToolCalls()}, o initial LLM
+     *   call é montado com chat options SEM tool callbacks — o LLM não
+     *   pode invocar tools nesse turno mesmo que o agent tenha tools
+     *   habilitadas.
+     *
+     * Cenário:
+     *   Flow:    in-company-match.chat-flow.json (já existe como fixture
+     *            mas não tem IT). Nó alvo: aiQuestion de captura de coupon
+     *            code com aiInstruction "NÃO CHAME NENHUMA TOOL". Custom
+     *            tool {@code compor_proposta_in_company} configurado no agent.
+     *   Estado:  parked no nó tool-free de captura de coupon.
+     *   Entrada: user msg = "MEU-CUPOM-123"
+     *   Mocks:   ChatModel mockado retorna texto qualquer; ArgumentCaptor<Prompt>
+     *            captura o initial call.
+     *            Tool {@code compor_proposta_in_company} mockado (spy/mock) para
+     *            registrar invocações.
+     *
+     * Asserts:
+     *   1. {@code Prompt.getOptions()} cast para ToolCallingChatOptions —
+     *      {@code getToolCallbacks()} retorna lista VAZIA (callbacks
+     *      stripped).
+     *   2. O tool {@code compor_proposta_in_company} foi invocado ZERO vezes
+     *      no turn: {@code verify(tool, never()).invoke(any())}.
+     *   3. (Sanity inverso) — em um nó SEM "NÃO CHAME NENHUMA TOOL" no
+     *      aiInstruction, o mesmo cenário invoca o tool normalmente.
+     *
+     * Nota refactor:
+     *   Vira o campo declarativo {@code ChatFlowNode.toolsEnabled: boolean}
+     *   (ou {@code toolsMode}). Este teste passa a verificar
+     *   "quando {@code node.toolsEnabled() == false}, options.toolCallbacks
+     *   está vazio" — o invariante observável (tool não chamado) é idêntico.
+     *   A heurística de substring matching some; o campo aparece. O teste
+     *   continua válido com mudança trivial no setup da fixture (declarar
+     *   o campo em vez de adicionar a frase ao aiInstruction).
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #3.")
+    void stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    /**
+     * Patch #4 — tool-stripping no REGEN call (mesma heurística)
+     * Categoria: B
+     * Localização do patch: TurAgentChatExecutor.java:654-681
+     *
+     * Comportamento a travar:
+     *   No regen, quando o NOVO nó (destino do advance) tem aiInstruction
+     *   marcando "NÃO CHAME NENHUMA TOOL", o regen prompt é montado SEM
+     *   tool callbacks — mesma blindagem do #3 mas no segundo call.
+     *
+     * Cenário:
+     *   Flow:    in-company-match. Cadeia: aiQuestion captura-coupon
+     *            (tool-free, dispara regen ao avançar) → aiQuestion
+     *            ai-deliver-proposta (também tool-free, é onde queremos
+     *            que regen rode SEM tools).
+     *   Estado:  parked em N1, user manda coupon.
+     *   Entrada: user msg = "CUPOM-XYZ"
+     *   Mocks:   ChatModel-1 (initial) retorna ack qualquer; ChatModel-2
+     *            (regen) capturado via ArgumentCaptor.
+     *            Tool {@code compor_proposta_in_company} mockado.
+     *
+     * Asserts:
+     *   1. O 2º Prompt capturado tem {@code options.getToolCallbacks()}
+     *      VAZIO (stripped no regen).
+     *   2. O tool {@code compor_proposta_in_company} foi invocado ZERO vezes
+     *      durante o regen (não há card-flash com proposta sem coupon).
+     *   3. O reply final SSE corresponde à 2ª chamada (regen) — confirmando
+     *      que o caminho regen é o exercitado.
+     *
+     * Nota refactor:
+     *   Sem regen, este teste é redundante com o #3 — o initial call único
+     *   já cobre o invariante. Teste removido; o campo {@code toolsEnabled}
+     *   é consultado uma única vez no novo design.
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #4.")
+    void stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
+    /**
+     * Patch #5 — {@code forbidsToolCalls()} substring matching bilíngue.
+     * Categoria: B. Localização: TurAgentChatExecutor.java:709-716.
+     *
+     * <p>Pure unit test — the method is package-private and the test class
+     * is in the same package, so no Spring context or harness is needed.
+     * Hosted as a {@link Nested} inside the Structural IT per
+     * {@code docs/IMPROVEMENTS.md} §VI.3 ("Special: #5 forbidsToolCalls
+     * bilingual: pure unit test, @Nested inside StructuralIT, ~10
+     * parameterized cases").
+     *
+     * <p>Bodies are real assertions (not {@code @Disabled} placeholders)
+     * because the function already exists — the only thing standing
+     * between this nested class and a green build is enabling it. Reviewed
+     * for safety: every case is deterministic, no side effects, no Spring.
+     *
+     * <p>Refactor note: once §I.5 step 3 replaces the substring scan with
+     * a declarative {@code ChatFlowNode.toolsEnabled} field, the function
+     * disappears and this whole nested class deletes — the contract becomes
+     * "when {@code toolsEnabled=false}, options carry no callbacks",
+     * covered structurally by {@link #stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls}.
+     */
+    @Nested
+    class ForbidsToolCallsUnitTests {
+
+        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
+        @NullAndEmptySource
+        void returnsFalseForNullOrBlank(String aiInstruction) {
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls(aiInstruction));
+        }
+
+        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
+        @CsvSource(value = {
+                // Portuguese, upper case
+                "NÃO CHAME NENHUMA TOOL",
+                // Portuguese, lower case
+                "não chame nenhuma tool",
+                // Portuguese without diacritic
+                "nao chame nenhuma tool",
+                // English, mixed case
+                "Do Not Call Any Tool",
+                // English, short variant
+                "zero tool calls neste turno",
+                // Sentinel embedded mid-paragraph
+                "Pergunte o nome. ZERO TOOL CALLS. Aguarde.",
+        })
+        void detectsBilingualSentinelsCaseInsensitivelyInFreeText(String aiInstruction) {
+            assertTrue(TurAgentChatExecutor.forbidsToolCalls(aiInstruction),
+                    () -> "Expected forbidsToolCalls(\"" + aiInstruction + "\") to be true");
+        }
+
+        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
+        @CsvSource(value = {
+                // No sentinel at all
+                "Pergunte o nome ao usuário.",
+                // The word "tool" alone must NOT match
+                "Use the search tool freely.",
+        })
+        void returnsFalseWhenNoSentinelIsPresent(String aiInstruction) {
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls(aiInstruction),
+                    () -> "Expected forbidsToolCalls(\"" + aiInstruction + "\") to be false");
+        }
     }
 }
