@@ -30,12 +30,97 @@ acting.
 
 ## Table of contents
 
+- [0. Execution order — single ordered task list](#0-execution-order--single-ordered-task-list)
 - [I. Chat-flow execution harness — the big architectural refactor](#i-chat-flow-execution-harness--the-big-architectural-refactor)
 - [II. Chat-flow router (already shipped + backlog)](#ii-chat-flow-router-already-shipped--backlog)
 - [III. Lucene & Search Engine across the GenAI surface](#iii-lucene--search-engine-across-the-genai-surface)
 - [IV. New ideas from the latest session](#iv-new-ideas-from-the-latest-session)
 - [V. Cross-cutting decisions](#v-cross-cutting-decisions)
 - [VI. Integration test plan for the harness refactor](#vi-integration-test-plan-for-the-harness-refactor)
+
+---
+
+## 0. Execution order — single ordered task list
+
+> Flat, top-to-bottom backlog. Pick the lowest-numbered task whose
+> dependencies are ✅ done. Sections §I-§VI below remain the source of
+> truth for *what* each task means and *why* — the table here is the
+> executable view.
+>
+> **Legend** (same as the global one): ✅ shipped · 🛠 in-progress ·
+> 📋 designed, not started · 💭 idea, needs design · ⏳ partial.
+>
+> **Dependency rule of thumb**: tasks in the "Safety net" block must
+> land before any §I.5 step (they're the regression net for the harness
+> refactor); §I.5 steps must land in order (each builds on the prior
+> deletion); post-refactor tasks can mostly parallelize.
+
+### Block A — Safety net (must land before §I.5 begins)
+
+| #  | Status | Depends on | Task | Detail in |
+|----|--------|------------|------|-----------|
+| T1 | 📋 | — | Test infra: `TurAgentChatExecutorMockSupport` + `ChatModelHarness` + `AbstractAgentExecutorIT` + `llm-it` Maven profile (~0.5-1d) | §VI.4, §VI.6 Phase 0 |
+| T2 | 📋 | T1 | Migrate 15 existing skeletons from `…RaceIT` / `…DeclarativeIT` / `…MiddlewareIT` into the new package; delete the 3 old files (~0.5d) | §VI.6 Phase 0.5 |
+| T3 | 📋 | T2 | Structural skeletons reusing `programa-match-ee.chat-flow.json`: patches #10, #11, #9, #12, #14, #1, #7, #6 (~1d) | §VI.6 Phase 1 |
+| T4 | 📋 | T2 | Contract skeletons: #18, #20, #16, cascade ascent, BR-doc CPF (~0.5d) | §VI.6 Phase 2 |
+| T5 | 📋 | T2 | New IT fixtures under `harness-it/`: `tool-free-node`, `persona-switch-mid-flow`, `regen-with-chips` + smoke `@Test`s (~0.5d) | §VI.5, §VI.6 Phase 3 |
+| T6 | 📋 | T5 | Structural skeletons with new fixtures: #3, #4, #5, #2, #13, #8, #15, persona-tone import guard (~1d) | §VI.6 Phase 4 |
+| T7 | 📋 | T1 | `TurAgentChatExecutorBehavioralIT` (real LLM gated by `OPENAI_API_KEY`, profile `-Pllm-it`): pairs #1, #3, #7, #10, #12, #13 (~1-1.5d) | §VI.6 Phase 5 |
+| T8 | 📋 | T3..T7 | Cleanup: remove `TODO` markers, cross-ref pairing in Javadocs, verify done-criteria (~0.5d) | §VI.6 Phase 6, §VI.8 |
+
+### Block B — Harness inversion (§I.5, strictly sequential)
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T9  | 📋 | T8 | Invert `advance → LLM call`: move `chatFlowEngineService.advance(...)` BEFORE `chatModel.call(prompt)`. **Removes patches #6, #7, #8, #11, #14, #15.** | §I.5 step 1 |
+| T10 | 📋 | T9 | Resolve persona ONCE per turn (cursor is now final pre-LLM). **Removes #1, #2.** | §I.5 step 2 |
+| T11 | 📋 | T10 | Introduce declarative `ChatFlowNode.toolsEnabled` (or `toolsMode`). **Removes #3, #4, #5** + retires `forbidsToolCalls`. | §I.5 step 3 |
+| T12 | 📋 | T11 | Eliminate `HIGHEST-PRIORITY OVERRIDE` block + `regenerateReplyForNewNode` entirely. **Removes #9, #10, #12, #13** + `REGEN_HISTORY_TURN_BUDGET`. | §I.5 step 4 |
+| T13 | 📋 | T12 | Clean double-save in transparent walk (#16): one atomic persistence (`advance/walk inside @Transactional → flush → LLM call`). | §I.5 step 5 |
+| T14 | 📋 | T13 | Re-evaluate judge retry (#21) in light of T11: likely "one judge call + behavior driven by `onJudgeReject` literal"; drop `isNonBlankRedirect` heuristic. | §I.5 step 6 |
+| T15 | 📋 | T14 | Lock the middleware-shaped patches: #17 cycle cap, #18 strategy fallback, #19 A/B window, #20 agent-owner check, silent telemetry stay. No code change — a verification pass. | §I.5 step 7 |
+| T16 | 📋 | T15 | Terminal refactor: `execute()` fits in ~80-100 lines (today: 290+); delete `regenerateReplyForNewNode`, `buildRegenOverride`, `trimToRecentTurns`, `forbidsToolCalls`. | §I.5 step 8 |
+
+### Block C — Post-refactor capabilities (parallelizable once Block B lands)
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T17 | ✅ | — | Document the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. | §IV.1.a |
+| T18 | 📋 | T16, T17 | IV.1 real: WebClient/`OpenAiApi`-based bypass in `TurOpenAiLlmProvider` so STREAM mode actually streams token-by-token; ChatExecutor switches to `chatModel.stream(prompt)`; SSE controller forwards each `delta.content` chunk; per-turn tools stay disabled on this path until further notice. | §IV.1.b (this doc) |
+| T19 | 📋 | T8 | Vector → BM25 emergency fallback in RAG: when vector top-1 < `MIN_VECTOR_CONFIDENCE`, retry on `FIELD_CONTENT` (BM25); mark result as keyword-only so the prompt warns the LLM. Cheaper to ship before full hybrid (§T24). | §III.3 |
+| T20 | 📋 | — | Spotlights V1: replace `userQuery.toLowerCase().contains(term)` in `TurSNSpotlightProcess` with `PortugueseAnalyzer` stem-overlap (5-line change, immediate morphology fix). | §III.4 (V1) |
+| T21 | 📋 | T20 | Spotlights V2: per-query `MemoryIndex` + `QueryParser` so admins can write `"plano de carreira"~2` and load synonym files. Ship only when admins ask for phrase/fuzzy. | §III.4 (V2) |
+| T22 | 📋 | — | Persona tone validation via `PortugueseAnalyzer` stems in `TurPersonaToneValidator` — "competitivo" must catch "competitividade". Same morphology pattern as T20. | §IV.3 |
+| T23 | 📋 | T11 | Slot value fuzzy matching in `LlmJudgeGuardrailStrategy`: match extracted value against `inlineOptions` via Lucene `LevenshteinAutomata` (edit distance 2) so "Gerente Senior" matches "Gerente Sênior". | §IV.6 |
+| T24 | 📋 | T19 | RAG hybrid retrieval: vector topK + BM25 topK + Reciprocal Rank Fusion (`k=60`). Native Solr 9 / ES 8 hybrid query; in-process RRF for embedded Lucene. New interface method `hybridSearch` on `TurSearchEnginePlugin`. | §III.2 |
+| T25 | 📋 | — | Router language-aware: `PerFieldAnalyzerWrapper` so EN trigger descriptions tokenize through `EnglishAnalyzer`. Detection via static heuristic / Tika / explicit `triggerLanguage` enum on `TurChatFlow`. | §II.2.1 |
+| T26 | 📋 | T25 | Router scoring: replace overlap counter with Lucene `MoreLikeThis` over an in-memory index of trigger descriptions; dominance ratio becomes a percentile threshold once production logs feed a histogram. | §II.2.2 |
+| T27 | 📋 | T26 | Router scaling: pre-built `SearcherManager` per agent with `BM25Similarity`; evict on `TurChatFlow.save/delete` via the existing `turChatFlowRouterDecision` cache hook. | §II.2.3 |
+| T28 | 📋 | — | Chat analytics intent classifier: ship `TurEsMltAnalyticsEngine @Component` so the "Top Intents" panel stops being empty. Embedded Lucene `MoreLikeThis` for the dev/no-ES fallback. | §III.5 |
+| T29 | 📋 | T16 | Tool pre-filtering for large catalogs: Lucene-similarity over `prompts/tools/**/*.md` descriptions; keep top-K (~10) for the LLM, always keep tools the flow node explicitly requires (`requiredTools` field). | §IV.2 |
+| T30 | 📋 | — | Conversation-relevance retrieval for chat memory: per-conversation `MemoryIndex` + BM25 of past turns concatenated with the recent-N window; prefix retrieved turns with timestamp/position marker so the LLM keeps coherence. | §IV.4 |
+| T31 | 📋 | — | System prompt fragment caching: `@Cacheable` the composed persona-prompt by `(personaId, agentId)` and the flow addendum by `(flowId, currentNodeId)`. Evict on persona/flow/agent edit via existing hooks. RAG fragment stays uncached. | §IV.5 |
+
+### Non-goals (do NOT add as tasks)
+
+Locked-in by §I.6 and §I.7 — preserved verbatim, not subject to the
+ordering above:
+
+- Auto-trigger router, continuation logic, A/B variant assignment +
+  sticky hash + scheduling window, sub-flow descent/ascent, SSE event
+  bus, defense-in-depth checks, silent telemetry,
+  anti-prompt-injection / CPF-CNPJ checksum / yes-no normalization,
+  `TurToolCallbackPipeline.decorate(...)`, `summarizeVariables` cap —
+  all stay as-is.
+- Structured output (LLM → JSON) is NOT a path forward; use tool
+  calling with provider-side schemas instead.
+- The chat-flow DSL (`ChatFlowGraph` / `ChatFlowNode` JSON shape) is
+  NOT being rewritten — only execution is.
+- Spring AI `ChatModel.call()` + `internalToolExecutionEnabled(true)`
+  stay (no framework swap).
+- Heuristic and LlmJudge strategies coexist.
+- No "auto-detect" middleware that guesses node-level intent
+  (toolFree, captureMode, etc.) — those are *authorship*, not runtime.
 
 ---
 
@@ -539,28 +624,75 @@ no budget for batch LLM enrichment.
 Emerged from connecting the chat-flow timing data, the Lucene survey,
 and the harness refactor. None designed in depth yet — sketches only.
 
-### IV.1 💭 Streaming initial LLM + late regen patch
+### IV.1 ⏳ Streaming initial LLM + late regen patch
 
 **Context**: even with the inversion (§I.5 step 1), individual turns
 take ~2s because the LLM round-trip dominates. Until streaming reaches
 all the way to the SSE pipeline, users see a frozen UI for the full
 turn.
 
-**Idea**: switch [`TurAgentChatExecutor`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java)
-from `chatModel.call(prompt)` to `chatModel.stream(prompt)`. Tokens
-arrive in ~500ms (first-token latency typical for gpt-4o-mini). The
-flow advance still runs after the LLM finishes; if it changes the
-cursor, emit a SSE event `type="regenerate"` that the front-end uses
-to *replace* (or patch) the bubble. Perceived latency drops drastically
-even though total time is the same.
+#### IV.1.a ✅ Persistent toggle + documented limitation (shipped 2026.2.7)
 
-**Risks**: tool calling complicates streaming (mid-stream tool calls
-arrive as deltas). Spring AI's `internalToolExecutionEnabled(true)` may
-need re-evaluation. Worth a spike before committing.
+Added [`TurAgentChatMode`](../turing-app/src/main/java/com/viglet/turing/persistence/model/agent/TurAgentChatMode.java)
+enum (`CALL` / `STREAM`), persisted on `TurAIAgent.chatMode`
+(Liquibase `v2026.2.7.8.yaml`, default `CALL`). UI in
+[`ai-agent.settings.form.tsx`](../frontend/apps/turing-app/src/components/agent/ai-agent.settings.form.tsx)
+exposes the select with both PT and EN copy that calls out the
+limitation. The PUT endpoint propagates `chatMode` field-by-field
+(same dropped-on-save bug pattern the `chatMemory` block already
+warned about).
 
-**When**: after the harness refactor (§I.5) lands and regen is gone —
-streaming gets dramatically simpler when there's no second call to
-reconcile.
+[`TurAgentChatExecutor.execute(...)`](../turing-app/src/main/java/com/viglet/turing/genai/TurAgentChatExecutor.java)
+branches when `chatMode=STREAM AND flowContext == null` and uses
+`chatModel.stream(prompt)`; per-turn tools are stripped on this path
+(observed: `DefaultToolCallingChatOptions` + `internalToolExecutionEnabled(true)`
+activate the Spring AI tool-aware aggregator, defeating streaming).
+
+**Confirmed empirically** that Spring AI 2.0.0-M6's
+`OpenAiChatModel.stream(prompt)` still buffers internally even with
+the tool-aware path disabled — `first_raw_ms ≈ llm_ms` (all 500+
+deltas drain in the last ~150ms of the round-trip). Root cause: M6
+migrated from the WebClient-based `OpenAiApi` to the official OpenAI
+Java SDK (`OpenAIOkHttpClientAsync`), whose iterator-based
+`StreamResponse<ChatCompletionChunk>` is wrapped via
+`Flux.fromStream(...)` — the iterator gets drained before publishing.
+The Turing pipeline cannot fix this in-place.
+
+Net user-facing effect today: the setting persists and the executor
+takes the STREAM branch, but on OpenAI-backed agents the bubble still
+fills in one burst. Documented on the enum Javadoc and i18n form copy
+so operators understand the trade-off before flipping the toggle.
+
+#### IV.1.b 📋 Real streaming via WebClient/`OpenAiApi` bypass
+
+**Plan** (executes as task T18 after T17 + T16):
+- In [`TurOpenAiLlmProvider`](../turing-app/src/main/java/com/viglet/turing/genai/provider/llm/TurOpenAiLlmProvider.java),
+  add a second factory method (e.g. `createStreamingChatModel(...)`)
+  that constructs the legacy WebClient-based `OpenAiApi` /
+  `OpenAiChatModel` instead of the SDK-based one. Spring AI 2.0.0-M6
+  retains the alternate builder for compat; if it doesn't, drop
+  through to a hand-rolled `WebClient` posting to `/v1/chat/completions`
+  with `stream:true` and parsing `data: ...` SSE lines into a
+  `Flux<ChatResponse>`.
+- The executor's STREAM branch calls
+  `llmModelFactory.createStreamingChatModel(...)` only when
+  `chatMode=STREAM`; CALL keeps the SDK-based path.
+- Once the harness refactor lands (§I.5 ⇒ regen is gone), the
+  branching simplifies further: a single `chatModel.stream(prompt)`
+  feeds the SSE pipeline for every non-flow turn and the
+  late-regen-as-`type="regenerate"` event becomes moot.
+- Update i18n on the form to drop the limitation warning once green.
+
+**Risks**: maintaining the OpenAI provider against two transports
+(SDK for tool calling, WebClient for streaming) until upstream Spring
+AI fixes M6's streaming. Tool-calling-during-stream remains a
+separate open problem (see the original §IV.1 sketch — mid-stream
+tool deltas, manual tool-execution loop, etc.); for now the path
+stays tool-free.
+
+**When**: gates on T16 (terminal refactor — `execute()` ≤ ~100 lines)
+landing so the WebClient branch slots in without conflicting with
+the regen/advance pipeline that's about to be deleted.
 
 ### IV.2 💭 Tool pre-filtering for large tool catalogs
 

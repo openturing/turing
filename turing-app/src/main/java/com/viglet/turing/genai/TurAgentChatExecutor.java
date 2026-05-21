@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -49,6 +50,7 @@ import com.viglet.turing.genai.tool.TurToolCallbackPipeline;
 import com.viglet.turing.genai.tool.TurNativeToolService;
 import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.observability.TurMeterNames;
+import com.viglet.turing.persistence.model.agent.TurAgentChatMode;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
@@ -385,6 +387,131 @@ public class TurAgentChatExecutor {
 
         final long tSetupEnd = System.currentTimeMillis();
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP, tSetupEnd - tStart);
+
+        // STREAM mode: forward each token chunk to the SSE pipeline as it
+        // arrives so the bubble fills in token-by-token. We only take this
+        // branch when there is NO flow context — flow-driven turns need
+        // the full reply text before advance() / regenerateReplyForNewNode
+        // can decide whether to rewrite the bubble, and there is no clean
+        // way to "un-emit" a token we already sent to the browser. Per
+        // the IV.1 design sketch this fallback is intentional and the
+        // TurAgentChatMode docstring documents it.
+        //
+        // Tone validation is also skipped on this path: TurPersonaToneValidator
+        // returns a sanitizedText that may differ from what was streamed —
+        // we can't retro-sanitize tokens already on the wire. Agents that
+        // rely on persona forbidden-term enforcement should stay on CALL.
+        boolean useStreaming = agent.getChatMode() == TurAgentChatMode.STREAM
+                && flowContext == null;
+        if (useStreaming) {
+            log.info("[AgentExec] STREAM mode for agent '{}' (no flow) — forwarding token chunks to SSE",
+                    agent.getTitle());
+            // Build the streaming prompt with NO ChatOptions at all.
+            //
+            // Why: even with toolCallbacks=empty + internalToolExecutionEnabled(false),
+            // passing a DefaultToolCallingChatOptions instance to
+            // chatModel.stream() activates Spring AI's tool-aware aggregator
+            // upstream. The aggregator buffers the entire delta stream so it
+            // can inspect for tool calls before publishing — observed
+            // first_token_ms ≈ llm_ms (all 400+ chunks drain in the last
+            // ~150ms of the round-trip), which destroys the token-by-token
+            // UX completely.
+            //
+            // Falling back to the ChatModel's default ChatOptions (the
+            // ones baked into the model at construction) lets the upstream
+            // SSE deltas flow through unaggregated — first token in
+            // ~300-800ms, then continuous fill-in.
+            //
+            // Trade-off (documented on TurAgentChatMode): STREAM mode does
+            // not honor per-turn tool callbacks. Agents that need tool
+            // calling should stay on CALL.
+            Prompt streamPrompt = new Prompt(messages);
+
+            final long tLlmStart = System.currentTimeMillis();
+            final StringBuilder accumulated = new StringBuilder();
+            // Captures the last raw Spring AI ChatResponse so we can read
+            // token-usage metadata at completion (providers attach Usage to
+            // the final aggregated chunk; reading the first chunk would
+            // under-report).
+            final AtomicReference<org.springframework.ai.chat.model.ChatResponse> lastRaw =
+                    new AtomicReference<>();
+            // Diagnostics: count chunks and capture first-token time. The ratio
+            // chars/chunks tells us at a glance whether Spring AI is buffering
+            // (one big chunk) or actually forwarding deltas (~30-200 small
+            // chunks for a typical reply). Logged at INFO on completion so
+            // operators don't need to enable DEBUG to verify streaming health.
+            //
+            // Two first-chunk timers isolate WHERE buffering happens:
+            //   firstRawAt   — instant the FIRST raw Spring AI ChatResponse
+            //                  arrives at our subscriber (i.e. left
+            //                  chatModel.stream() and the resilience wrap).
+            //                  If this ≈ llm_ms, the OpenAI SDK / Spring AI
+            //                  is buffering — nothing we do in this pipeline
+            //                  will help; need to swap the transport.
+            //   firstChunkAt — instant the FIRST non-empty CONTENT chunk
+            //                  reaches the SSE emit point (after map+filter).
+            //                  If much later than firstRawAt, our filter is
+            //                  dropping a long preamble of metadata-only chunks.
+            final java.util.concurrent.atomic.AtomicInteger chunkCount =
+                    new java.util.concurrent.atomic.AtomicInteger(0);
+            final java.util.concurrent.atomic.AtomicInteger rawCount =
+                    new java.util.concurrent.atomic.AtomicInteger(0);
+            final AtomicReference<Long> firstChunkAt = new AtomicReference<>();
+            final AtomicReference<Long> firstRawAt = new AtomicReference<>();
+            return chatModel.stream(streamPrompt)
+                    .doOnNext(raw -> {
+                        rawCount.incrementAndGet();
+                        firstRawAt.compareAndSet(null, System.currentTimeMillis());
+                    })
+                    .map(resp -> {
+                        lastRaw.set(resp);
+                        String chunk = (resp.getResult() != null
+                                && resp.getResult().getOutput() != null
+                                && resp.getResult().getOutput().getText() != null)
+                                        ? resp.getResult().getOutput().getText()
+                                        : "";
+                        if (!chunk.isEmpty()) {
+                            accumulated.append(chunk);
+                        }
+                        return new ChatResponse("assistant", chunk);
+                    })
+                    .filter(r -> !r.content().isEmpty())
+                    .doOnNext(r -> {
+                        int n = chunkCount.incrementAndGet();
+                        if (n == 1) {
+                            firstChunkAt.compareAndSet(null, System.currentTimeMillis());
+                        }
+                    })
+                    .doOnComplete(() -> {
+                        long tLlmEnd = System.currentTimeMillis();
+                        long tTotal = tLlmEnd - tStart;
+                        Long firstAt = firstChunkAt.get();
+                        long firstTokenMs = firstAt == null ? -1 : (firstAt - tLlmStart);
+                        chatPipelineObservation.recordMillis(
+                                TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
+                        chatPipelineObservation.recordMillis(
+                                TurMeterNames.STAGE_CHAT_TOTAL, tTotal);
+                        var lastResp = lastRaw.get();
+                        if (lastResp != null) {
+                            tokenUsageService.recordUsage(llmInstance, lastResp, username);
+                        }
+                        recordTurnTelemetry(agent, conversationId, lastUserMessage,
+                                accumulated.toString(), lastResp);
+                        int chunks = chunkCount.get();
+                        int raws = rawCount.get();
+                        int avgChunkChars = chunks > 0 ? accumulated.length() / chunks : 0;
+                        Long firstRaw = firstRawAt.get();
+                        long firstRawMs = firstRaw == null ? -1 : (firstRaw - tLlmStart);
+                        log.info("[AgentExec][timing] STREAM total_ms={} setup_ms={} llm_ms={} "
+                                + "first_raw_ms={} first_token_ms={} raws={} chunks={} chars={} avg_chunk_chars={}",
+                                tTotal, tSetupEnd - tStart, tLlmEnd - tLlmStart,
+                                firstRawMs, firstTokenMs, raws, chunks, accumulated.length(), avgChunkChars);
+                    })
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .doOnError(err -> log.error(
+                            "[AgentExec] STREAM agent '{}' error: {}",
+                            agent.getTitle(), err.getMessage(), err));
+        }
         // Cold-start (first turn after restart) typically spends seconds in
         // tools (MCP handshake) or chat_model (TLS to OpenAI). Subsequent
         // turns hit caches and stay under ~100ms. Each delta is one phase:

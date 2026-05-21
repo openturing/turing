@@ -915,7 +915,13 @@
       "codeInterpreter": "Code Interpreter",
       "codeInterpreterDesc": "Configuração do sandbox Python específica deste agente. O que estiver declarado aqui é unido com o pythonRequirements global antes do pip install.",
       "pythonRequirements": "Dependências Python do Agente",
-      "pythonRequirementsDesc": "Pacotes no estilo requirements.txt específicos das Custom Tools DESTE agente (ex.: pandas para um agente de analytics). Um por linha, opcionalmente com versão fixa. O Code Interpreter instala a união de global + agente antes de cada script. Vazio/null = só o global. Viaja com o agente em export/import — promover um agente entre ambientes não exige sincronizar as Global Settings também."
+      "pythonRequirementsDesc": "Pacotes no estilo requirements.txt específicos das Custom Tools DESTE agente (ex.: pandas para um agente de analytics). Um por linha, opcionalmente com versão fixa. O Code Interpreter instala a união de global + agente antes de cada script. Vazio/null = só o global. Viaja com o agente em export/import — promover um agente entre ambientes não exige sincronizar as Global Settings também.",
+      "chatMode": "Modo do Chat",
+      "chatModeDesc": "Como o executor faz a chamada ao LLM. Vale para conversas sem fluxo; chats orientados por um chat flow voltam silenciosamente para Call para que o pipeline de advance/regen continue funcionando. Limitação conhecida: com o provider OpenAI no Spring AI 2.0.0-M6 o client upstream buferiza os deltas — os chunks ainda chegam num burst só no fim. Rastreado em docs/IMPROVEMENTS.md (IV.1).",
+      "chatModeCall": "Call (bloqueante)",
+      "chatModeCallDesc": "Espera a resposta inteira e envia como um único evento SSE.",
+      "chatModeStream": "Stream (token a token)",
+      "chatModeStreamDesc": "Encaminha cada chunk de token para o SSE conforme ele chega. As tools por turno (MCP / native / custom) NÃO são honradas nesse path — agentes que precisam de tool calling devem ficar em Call."
     },
     "agentTools": {
       "available": "Ferramentas Nativas Disponíveis",

@@ -27,7 +27,7 @@ import { TurEmbeddingModelService } from "@/services/embedding/embedding-model.s
 import { TurStoreInstanceService } from "@/services/store/store.service"
 import { TurFeaturesService, type LoggingEngine } from "@/services/system/features.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
-import { IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
+import { IconBolt, IconBrain, IconBrandPython, IconDatabase, IconDeviceFloppy, IconFileText, IconInfoCircle, IconPower, IconSettings, IconX } from "@tabler/icons-react"
 import { GradientButton } from "../ui/gradient-button"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -148,6 +148,9 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       chatMemoryFlushIntervalMinutes: value.chatMemoryFlushIntervalMinutes ?? 5,
       chatMemoryMaxMessages: value.chatMemoryMaxMessages ?? 100,
       pythonRequirements: value.pythonRequirements ?? "",
+      // CALL is the safe default — matches the backend enum default and
+      // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
+      chatMode: value.chatMode ?? "CALL",
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -603,6 +606,49 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                     </FormControl>
                     <FormMessage />
                   </FormItem>
+                )}
+              />
+            </SectionCard.Content>
+          </SectionCard>
+
+          <SectionCard variant="blue">
+            <SectionCard.Header
+              icon={IconBolt}
+              title={t("forms.agentSettings.chatMode")}
+              description={t("forms.agentSettings.chatModeDesc")}
+            />
+            <SectionCard.Content>
+              <FormField
+                control={form.control}
+                name="chatMode"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.chatMode")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {field.value === "STREAM"
+                          ? t("forms.agentSettings.chatModeStreamDesc")
+                          : t("forms.agentSettings.chatModeCallDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <Select
+                          onValueChange={(v) => field.onChange(v)}
+                          value={field.value ?? "CALL"}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CALL">{t("forms.agentSettings.chatModeCall")}</SelectItem>
+                            <SelectItem value="STREAM">{t("forms.agentSettings.chatModeStream")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
                 )}
               />
             </SectionCard.Content>

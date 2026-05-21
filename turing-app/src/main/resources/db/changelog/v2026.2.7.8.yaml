@@ -1,0 +1,39 @@
+databaseChangeLog:
+  # chatMode column on ai_agent. Per-agent toggle for how the executor
+  # issues the LLM round-trip:
+  #   CALL   — blocking chatModel.call(prompt) (default; assistant text
+  #            arrives as one SSE event after the LLM finishes).
+  #   STREAM — reactive chatModel.stream(prompt) (each token chunk
+  #            forwarded immediately to the SSE pipeline; the bubble
+  #            fills in token-by-token).
+  #
+  # Effective on the non-flow path. Flow-driven turns silently fall back
+  # to CALL because the post-LLM advance/regen pipeline needs the full
+  # text before deciding whether to rewrite the bubble.
+  #
+  # Existing agents get the safe default (CALL) so the rollout is
+  # transparent. Type = VARCHAR(16) so the @Enumerated(STRING) mapping
+  # comfortably fits CALL/STREAM and any future modes (e.g. BATCH).
+
+  - changeSet:
+      id: v2026.2.7.8-add-ai-agent-chat-mode
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: chatMode
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: chatMode
+                  type: VARCHAR(16)
+                  defaultValue: CALL
+                  constraints:
+                    nullable: false
+                  remarks: "How the executor issues the LLM round-trip: CALL (blocking) or STREAM (reactive token-by-token to SSE)."

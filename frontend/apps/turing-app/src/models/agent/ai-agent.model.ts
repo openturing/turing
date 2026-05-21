@@ -5,6 +5,19 @@ import type { TurMcpServer } from "../mcp/mcp-server.model.ts";
 import type { TurPersona } from "../persona/persona.model.ts";
 import type { TurStoreInstance } from "../store/store-instance.model.ts";
 
+/**
+ * Per-agent toggle for how the executor issues the LLM round-trip.
+ * - "CALL"   — blocking `chatModel.call(prompt)`; assistant text arrives
+ *              as a single SSE event after the LLM finishes (default).
+ * - "STREAM" — reactive `chatModel.stream(prompt)`; each token chunk is
+ *              forwarded immediately to the SSE pipeline so the bubble
+ *              fills in token-by-token. Effective on the non-flow path
+ *              only — flow-driven turns silently fall back to CALL so
+ *              the advance/regen pipeline still works.
+ * @since 2026.2.7
+ */
+export type TurAgentChatMode = "CALL" | "STREAM";
+
 export interface TurAIAgent {
   id: string;
   title: string;
@@ -21,6 +34,8 @@ export interface TurAIAgent {
   /** Hard cap on persisted messages per conversation. */
   chatMemoryMaxMessages: number;
   nativeTools?: string | null;
+  /** How the executor issues the LLM round-trip. @since 2026.2.7 */
+  chatMode?: TurAgentChatMode;
   /**
    * Optional agent-specific Python `requirements.txt` addendum. Unioned
    * with the global `pythonRequirements` setting before the Code

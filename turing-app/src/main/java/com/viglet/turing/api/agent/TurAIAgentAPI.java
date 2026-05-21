@@ -219,6 +219,14 @@ public class TurAIAgentAPI {
             // preserves pre-2026.2.7 behavior for agents that don't need
             // anything extra.
             agentEdit.setPythonRequirements(turAIAgent.getPythonRequirements());
+            // Chat mode (CALL / STREAM). Same field-by-field copy pattern as
+            // the rest of this update: if the assignment is missing, Hibernate
+            // silently keeps the previously-persisted value and the toggle in
+            // the form has no effect after save. NPE-safe — keep current value
+            // when the DTO omits the field (older clients).
+            if (turAIAgent.getChatMode() != null) {
+                agentEdit.setChatMode(turAIAgent.getChatMode());
+            }
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());

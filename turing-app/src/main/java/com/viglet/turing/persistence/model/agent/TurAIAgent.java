@@ -102,6 +102,23 @@ public class TurAIAgent implements Serializable {
     private String nativeTools;
 
     /**
+     * Whether the underlying LLM round-trip uses Spring AI's blocking
+     * {@code chatModel.call(prompt)} (default — the assistant text arrives
+     * as one SSE event) or the reactive {@code chatModel.stream(prompt)}
+     * (each token chunk is forwarded immediately to the SSE pipeline so
+     * the user sees the bubble fill in). Honored by
+     * {@link com.viglet.turing.genai.TurAgentChatExecutor} on the
+     * non-flow path; flow-driven turns always fall back to {@code call}
+     * because the post-LLM advance/regen pipeline needs the full text
+     * before deciding whether to rewrite the bubble.
+     *
+     * @since 2026.2.7
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "chatMode", length = 16, nullable = false)
+    private TurAgentChatMode chatMode = TurAgentChatMode.CALL;
+
+    /**
      * Optional agent-specific Python {@code requirements.txt} addendum.
      * The Code Interpreter sandbox installs the UNION of:
      * <ol>
