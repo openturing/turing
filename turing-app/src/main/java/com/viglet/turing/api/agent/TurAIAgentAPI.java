@@ -233,6 +233,11 @@ public class TurAIAgentAPI {
             // a non-null value here. Same field-by-field copy pattern as
             // the rest of this update.
             agentEdit.setRagBm25Fallback(turAIAgent.isRagBm25Fallback());
+            // T24 / §III.2 — hybrid retrieval toggle. Only meaningful when
+            // ragBm25Fallback is also true; the strategy in
+            // TurRagSearchToolService reads both flags to decide between
+            // VECTOR / FALLBACK / HYBRID modes. Same field-copy pattern.
+            agentEdit.setRagHybridSearch(turAIAgent.isRagHybridSearch());
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());

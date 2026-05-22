@@ -224,6 +224,77 @@ class TurLuceneVectorStoreTest {
         assertThat(hits.get(0).getId()).isEqualTo("d1");
     }
 
+    // ─────────────────────────── T24 / §III.2 hybrid + RRF ───────────────────────────
+
+    /**
+     * T24 — when a doc is matched by BOTH passes (vector AND BM25), the
+     * RRF score sums two reciprocals and the doc tops the fused list.
+     * Tag is stripped because vector confirmed it.
+     */
+    @Test
+    void hybridSearch_docInBothPasses_ranksFirstAndDropsKeywordTag() {
+        store.add(List.of(
+                new Document("d1", "apple", Map.of()),
+                new Document("d2", "banana", Map.of())));
+
+        // Query "apple" → vector picks d1 (cosine 1.0 vs orthogonal d2),
+        // BM25 picks d1 (literal token match). d1 fuses with sum of
+        // reciprocals; d2 contributes vector-only (cosine 0.0 but KNN
+        // returns top-K regardless of score with threshold 0).
+        List<Document> hits = store.hybridSearch("apple", 5, 0.0);
+
+        assertThat(hits).isNotEmpty();
+        assertThat(hits.get(0).getId()).isEqualTo("d1");
+        // d1 was in vector → tag stripped even though BM25 also matched.
+        assertThat(hits.get(0).getMetadata())
+                .doesNotContainKey(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK);
+    }
+
+    /**
+     * T24 — hybridSearch deduplicates docs that appear in both passes:
+     * the fused list contains each doc id at most once.
+     */
+    @Test
+    void hybridSearch_dedupesDocsAcrossPasses() {
+        store.add(List.of(
+                new Document("d1", "apple", Map.of()),
+                new Document("d2", "banana", Map.of())));
+
+        List<Document> hits = store.hybridSearch("apple", 5, 0.0);
+
+        long uniqueIds = hits.stream().map(Document::getId).distinct().count();
+        assertThat((long) hits.size())
+                .as("Hybrid output must not contain duplicate doc ids")
+                .isEqualTo(uniqueIds);
+    }
+
+    /**
+     * T24 — fused score must be strictly positive (RRF score is a sum of
+     * positive reciprocals) and the score on the returned doc reflects
+     * the fusion, not the original vector / BM25 score.
+     */
+    @Test
+    void hybridSearch_fusedScoreIsPositive() {
+        store.add(List.of(new Document("d1", "apple", Map.of())));
+
+        List<Document> hits = store.hybridSearch("apple", 5, 0.0);
+
+        assertThat(hits).isNotEmpty();
+        assertThat(hits.get(0).getScore()).isNotNull().isPositive();
+        // d1 is in BOTH passes (vector cosine 1.0 + BM25 token match), so
+        // its RRF score equals 1/(60+1) + 1/(60+1) ≈ 0.0328.
+        assertThat(hits.get(0).getScore()).isCloseTo(2.0 / 61.0, org.assertj.core.data.Offset.offset(1e-6));
+    }
+
+    @Test
+    void hybridSearch_blankOrInvalidInputs_returnEmpty() {
+        store.add(List.of(new Document("d1", "anything", Map.of())));
+
+        assertThat(store.hybridSearch(null, 5, 0.0)).isEmpty();
+        assertThat(store.hybridSearch("", 5, 0.0)).isEmpty();
+        assertThat(store.hybridSearch("apple", 0, 0.0)).isEmpty();
+    }
+
     private Map<String, Object> metaCategory(String category) {
         Map<String, Object> meta = new HashMap<>();
         meta.put("category", category);

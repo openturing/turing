@@ -139,6 +139,32 @@ public class TurAIAgent implements Serializable {
     private boolean ragBm25Fallback = true;
 
     /**
+     * T24 / §III.2 — when {@code true} (default) AND
+     * {@link #ragBm25Fallback} is also {@code true}, RAG retrieval runs
+     * BOTH vector KNN and BM25 over {@code FIELD_CONTENT} in parallel and
+     * fuses the two ranked lists via Reciprocal Rank Fusion ({@code k=60}).
+     * The fused list catches morphology/rare-term queries the embedding
+     * model misses AND semantic queries the keyword pass misses, with
+     * docs in both ranked highest.
+     *
+     * <p>When {@code false} (legacy T19 behavior), BM25 is only triggered
+     * as an emergency fallback when the vector top-1 score is below
+     * {@code MIN_VECTOR_CONFIDENCE} — quieter retrieval, but misses the
+     * complementarity hybrid offers.
+     *
+     * <p>When {@link #ragBm25Fallback} itself is {@code false}, this
+     * flag is ignored entirely (no BM25 anywhere — strict vector only).
+     *
+     * <p>Default {@code true} matches the post-T24 ship behavior; agents
+     * that want the quieter T19 fallback semantics flip the toggle in
+     * the settings form.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "ragHybridSearch", nullable = false)
+    private boolean ragHybridSearch = true;
+
+    /**
      * Optional agent-specific Python {@code requirements.txt} addendum.
      * The Code Interpreter sandbox installs the UNION of:
      * <ol>

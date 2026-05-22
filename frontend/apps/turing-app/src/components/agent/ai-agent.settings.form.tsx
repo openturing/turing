@@ -156,6 +156,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // undefined → coalesce to true so the toggle reflects the actual
       // runtime behavior the executor will exhibit.
       ragBm25Fallback: value.ragBm25Fallback ?? true,
+      // T24 / §III.2 — hybrid retrieval default TRUE (new default).
+      // Effective only when BM25 fallback is also TRUE; otherwise the
+      // strict-vector path runs and this flag is ignored.
+      ragHybridSearch: value.ragHybridSearch ?? true,
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -496,6 +500,32 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         <GradientSwitch
                           checked={field.value !== false}
                           disabled={!ragEnabled}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ragHybridSearch"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.ragHybridSearch")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.ragHybridSearchDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={field.value !== false}
+                          // Effective only when both RAG and BM25 fallback
+                          // are on. The runtime ignores the flag otherwise;
+                          // disable the toggle so the UI matches behavior.
+                          disabled={!ragEnabled || form.watch("ragBm25Fallback") === false}
                           onCheckedChange={(checked) => field.onChange(checked)}
                         />
                       </FormControl>

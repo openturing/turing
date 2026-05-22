@@ -84,60 +84,67 @@ public class TurRagSearchToolService {
 
         int topK = (maxResults != null && maxResults > 0) ? Math.min(maxResults, 20) : 5;
 
-        // T19 / §III.3 — per-agent opt-out for the BM25 fallback. The
-        // agentId arrives via TOOL_CONTEXT_AGENT_ID (published by
-        // TurAgentChatExecutor on every turn); missing or unknown → default
-        // TRUE (post-T19 behavior). Looked up here instead of injected at
-        // construction because this service is a singleton @Service called
-        // from many agents.
-        final boolean bm25FallbackEnabled = resolveBm25FallbackFlag(toolContext);
+        // T19 / §III.3 + T24 / §III.2 — per-agent retrieval mode flags.
+        // The agentId arrives via TOOL_CONTEXT_AGENT_ID (published by
+        // TurAgentChatExecutor on every turn); missing or unknown → both
+        // default TRUE (post-T24 behavior: hybrid retrieval). Looked up
+        // here instead of injected at construction because this service
+        // is a singleton @Service called from many agents.
+        AgentRagFlags flags = resolveAgentRagFlags(toolContext);
+        final boolean bm25Enabled = flags.bm25Enabled();
+        final boolean hybridEnabled = flags.hybridEnabled();
 
         try {
             VectorStore vectorStore = ragContextBuilder.buildFromGlobalSettings()
                     .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."))
                     .vectorStore();
 
-            // T19 / §III.3: drop the legacy SearchRequest similarityThreshold
-            // here so we receive ALL topK hits regardless of score. The
-            // confidence gate moves into application code below so we can
-            // distinguish "vector returned nothing" from "vector returned
-            // weak hits" and decide whether to fire the BM25 fallback.
-            SearchRequest searchRequest = SearchRequest.builder()
-                    .query(query)
-                    .topK(topK)
-                    .similarityThreshold(0.0)
-                    .build();
+            // Pick the retrieval mode based on the per-agent flags:
+            //   HYBRID    — bm25Enabled && hybridEnabled (T24 default):
+            //               always fuse vector + BM25 via RRF.
+            //   FALLBACK  — bm25Enabled && !hybridEnabled (legacy T19):
+            //               vector first, BM25 only if vector top-1 < MIN.
+            //   VECTOR    — !bm25Enabled: strict vector, BM25 never runs.
+            boolean useHybrid = bm25Enabled && hybridEnabled
+                    && vectorStore instanceof TurLuceneVectorStore;
+            List<Document> results;
+            boolean allKeywordOnly = false;
+            if (useHybrid) {
+                TurLuceneVectorStore lucene = (TurLuceneVectorStore) vectorStore;
+                results = lucene.hybridSearch(query, topK, 0.0);
+                allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
+                        Boolean.TRUE.equals(d.getMetadata()
+                                .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
+                log.debug("[RAG] Hybrid search '{}' returned {} fused result(s); allKeywordOnly={}",
+                        query, results.size(), allKeywordOnly);
+            } else {
+                // T19 / §III.3: vector pass first with similarityThreshold=0
+                // so we receive ALL topK hits regardless of score; the
+                // confidence gate moves into application code below.
+                SearchRequest searchRequest = SearchRequest.builder()
+                        .query(query)
+                        .topK(topK)
+                        .similarityThreshold(0.0)
+                        .build();
+                results = vectorStore.similaritySearch(searchRequest);
+                log.debug("[RAG] Vector search '{}' returned {} result(s)", query, results.size());
 
-            List<Document> results = vectorStore.similaritySearch(searchRequest);
-            log.debug("[RAG] Search '{}' returned {} results (topK={})", query, results.size(), topK);
-
-            // T19 / §III.3 — emergency BM25 fallback. Trigger when:
-            //   (a) the agent has the fallback enabled (per-agent toggle
-            //       on TurAIAgent.ragBm25Fallback, default TRUE),
-            //   (b) the vector pass yielded nothing useful (zero hits OR
-            //       top-1 score < MIN_VECTOR_CONFIDENCE — typical for
-            //       proper nouns / version strings / internal codes the
-            //       embedding model treats as out-of-distribution),
-            //   (c) the vector store is Lucene-backed (other VectorStore
-            //       implementations don't expose BM25 — they skip
-            //       silently and we stay with the vector results).
-            boolean fellBackToBm25 = false;
-            if (bm25FallbackEnabled
-                    && shouldFallbackToBm25(results)
-                    && vectorStore instanceof TurLuceneVectorStore lucene) {
-                List<Document> bm25Hits = lucene.bm25Fallback(query, topK);
-                if (!bm25Hits.isEmpty()) {
-                    log.info("[RAG] Vector top-1 confidence below {} for query '{}'; "
-                                    + "BM25 fallback returned {} hit(s)",
-                            MIN_VECTOR_CONFIDENCE, query, bm25Hits.size());
-                    results = bm25Hits;
-                    fellBackToBm25 = true;
+                if (bm25Enabled && shouldFallbackToBm25(results)
+                        && vectorStore instanceof TurLuceneVectorStore lucene) {
+                    List<Document> bm25Hits = lucene.bm25Fallback(query, topK);
+                    if (!bm25Hits.isEmpty()) {
+                        log.info("[RAG] Vector top-1 < {} for '{}'; BM25 fallback returned {} hit(s)",
+                                MIN_VECTOR_CONFIDENCE, query, bm25Hits.size());
+                        results = bm25Hits;
+                        allKeywordOnly = true;
+                    }
+                } else if (!bm25Enabled && shouldFallbackToBm25(results)) {
+                    log.info("[RAG] Vector top-1 < {} for '{}' but agent has ragBm25Fallback=false "
+                                    + "— returning vector hits as-is",
+                            MIN_VECTOR_CONFIDENCE, query);
                 }
-            } else if (!bm25FallbackEnabled && shouldFallbackToBm25(results)) {
-                log.info("[RAG] Vector top-1 confidence below {} for query '{}' "
-                                + "but agent has ragBm25Fallback=false — returning vector hits as-is",
-                        MIN_VECTOR_CONFIDENCE, query);
             }
+            boolean fellBackToBm25 = allKeywordOnly;
 
             if (results.isEmpty()) {
                 return "No relevant documents found in the knowledge base for: " + query;
@@ -210,12 +217,26 @@ public class TurRagSearchToolService {
     }
 
     /**
-     * T19 / §III.3 — reads the per-agent BM25 fallback flag from
-     * {@code TurAIAgent.ragBm25Fallback}. The agent id is published into
-     * {@link ToolContext} under
+     * T19 + T24 — per-agent RAG retrieval flags consumed by
+     * {@link #searchKnowledgeBase}. Encapsulates both {@code ragBm25Fallback}
+     * (whether BM25 runs at all) and {@code ragHybridSearch} (when it runs,
+     * fuse with vector via RRF vs. fall back only on low vector confidence).
+     */
+    private record AgentRagFlags(boolean bm25Enabled, boolean hybridEnabled) {
+        static AgentRagFlags defaults() {
+            // Post-T24 defaults: BM25 on + hybrid fusion on. New agents
+            // get the strictly-better retrieval out of the box.
+            return new AgentRagFlags(true, true);
+        }
+    }
+
+    /**
+     * T19 + T24 — resolves both per-agent RAG flags from
+     * {@code TurAIAgent.ragBm25Fallback} and {@code TurAIAgent.ragHybridSearch}.
+     * The agent id is published into {@link ToolContext} under
      * {@link com.viglet.turing.genai.tool.TurCustomToolCallbackService#TOOL_CONTEXT_AGENT_ID}
      * by {@code TurAgentChatExecutor} on every turn. Falls back to
-     * {@code true} (post-T19 default behavior) when:
+     * {@link AgentRagFlags#defaults()} when:
      *
      * <ul>
      *   <li>{@code toolContext} is null (legacy callers / unit tests),</li>
@@ -226,22 +247,22 @@ public class TurRagSearchToolService {
      *
      * @since 2026.2.7
      */
-    private boolean resolveBm25FallbackFlag(ToolContext toolContext) {
+    private AgentRagFlags resolveAgentRagFlags(ToolContext toolContext) {
         if (toolContext == null) {
-            return true;
+            return AgentRagFlags.defaults();
         }
         Object rawAgentId = toolContext.getContext().get(
                 com.viglet.turing.genai.tool.TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID);
         if (rawAgentId == null) {
-            return true;
+            return AgentRagFlags.defaults();
         }
         String agentId = rawAgentId.toString();
         if (agentId.isBlank()) {
-            return true;
+            return AgentRagFlags.defaults();
         }
         return agentRepository.findById(agentId)
-                .map(agent -> agent.isRagBm25Fallback())
-                .orElse(true);
+                .map(agent -> new AgentRagFlags(agent.isRagBm25Fallback(), agent.isRagHybridSearch()))
+                .orElseGet(AgentRagFlags::defaults);
     }
 
     @Tool(name = "knowledge_base_stats", description = ".")

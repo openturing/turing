@@ -45,6 +45,13 @@ export interface TurAIAgent {
    */
   ragBm25Fallback?: boolean;
   /**
+   * T24 / §III.2 — opt-in for hybrid retrieval (vector + BM25 fused via
+   * RRF) instead of the T19 fallback-only behavior. Effective only when
+   * `ragBm25Fallback` is also `true`. Default `true` ships hybrid as the
+   * new default. @since 2026.2.7
+   */
+  ragHybridSearch?: boolean;
+  /**
    * Optional agent-specific Python `requirements.txt` addendum. Unioned
    * with the global `pythonRequirements` setting before the Code
    * Interpreter sandbox runs any Custom Tool that calls

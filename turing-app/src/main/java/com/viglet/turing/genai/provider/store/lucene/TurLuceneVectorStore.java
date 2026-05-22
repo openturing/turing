@@ -94,12 +94,29 @@ public class TurLuceneVectorStore implements VectorStore {
      * vector hits — the absence of the key is the "this came from vector"
      * signal.
      *
+     * <p>T24 / §III.2: same key is reused by the hybrid path
+     * ({@link #hybridSearch(String, int, double)}) to mark per-document
+     * which results came ONLY from BM25 (vector didn't agree). When EVERY
+     * hybrid result carries the tag, the prompt builder treats the entire
+     * response as keyword-only; when at least one came from vector, the
+     * prompt drops the global warning and just trusts the fusion ranking.
+     *
      * <p>Lives on {@code Document.metadata} (not stored in Lucene) — this is
      * a per-result tag, not part of the indexed schema.
      *
      * @since 2026.2.7
      */
     public static final String METADATA_KEYWORD_ONLY_FALLBACK = "_keyword_only_fallback";
+
+    /**
+     * T24 / §III.2 — Reciprocal Rank Fusion constant. {@code k=60} is the
+     * canonical default from the original RRF paper (Cormack et al.) and
+     * the value Elasticsearch / Solr ship in their native hybrid query
+     * implementations. Smaller {@code k} sharpens the contribution of
+     * top-ranked docs; larger {@code k} flattens the curve so docs
+     * further down the list still contribute.
+     */
+    private static final int RRF_K = 60;
     /**
      * Prefix for numeric {@link DoublePoint} fields built from numeric metadata values.
      * Used for {@code GT/GTE/LT/LTE} range filtering; the string form is still indexed under
@@ -237,6 +254,145 @@ public class TurLuceneVectorStore implements VectorStore {
             throw new IllegalStateException(
                     "Failed to run similarity search on Lucene vector store '" + collectionName + "'", e);
         }
+    }
+
+    /**
+     * T24 / §III.2 — hybrid retrieval combining vector KNN + BM25 over
+     * {@link #FIELD_CONTENT} via Reciprocal Rank Fusion. Strictly more
+     * recall than vector-only because rare/out-of-distribution terms
+     * (proper nouns, internal codes, SKUs, version strings) that the
+     * embedding model treats as {@code <UNK>} get matched by BM25
+     * instead, while semantically-aligned-but-different-wording docs the
+     * keyword path misses still get matched by vector.
+     *
+     * <h2>RRF math</h2>
+     *
+     * For each document {@code d} that appears in either the vector or
+     * BM25 result lists:
+     * <pre>
+     *   score(d) = Σ 1 / ({@link #RRF_K} + rank_i(d))
+     * </pre>
+     * where {@code rank_i(d)} is {@code d}'s 1-based rank in the i-th
+     * retrieval system. Docs in BOTH lists get the sum of two reciprocals
+     * (boost); docs in only one get one term. The final order is by
+     * descending RRF score.
+     *
+     * <p><b>Tagging</b>: returned documents carry
+     * {@link #METADATA_KEYWORD_ONLY_FALLBACK}{@code =true} only when they
+     * appeared in BM25 and NOT in the vector hits. Vector hits — even
+     * weak ones — never get the keyword-only flag because the embedding
+     * model gave them at least some signal. Downstream prompt builders
+     * use this per-doc tag to decide whether to globally warn the LLM
+     * ("all results are keyword matches; verify carefully") or just
+     * trust the fusion.
+     *
+     * <p><b>Over-fetch</b>: each underlying retriever is asked for
+     * {@code max(topK, 10)} candidates so the fusion has enough material
+     * to do real ranking instead of just emitting whichever list happens
+     * to have more entries. The function returns the top {@code topK}
+     * after fusion.
+     *
+     * @param query                       the natural-language query
+     * @param topK                        max documents to return after fusion
+     * @param vectorSimilarityThreshold   passed through to the vector pass
+     *                                    so super-cold vector matches can
+     *                                    still be filtered out; BM25 has
+     *                                    no equivalent threshold (its
+     *                                    score domain is unbounded)
+     * @return up to {@code topK} {@link Document}s ranked by RRF score
+     * @since 2026.2.7
+     */
+    public List<Document> hybridSearch(String query, int topK, double vectorSimilarityThreshold) {
+        if (query == null || query.isBlank() || topK < 1) {
+            return List.of();
+        }
+        int fetchK = Math.max(topK, 10);
+
+        // Vector pass — use the same similaritySearch entry point as
+        // existing callers so the embedding round-trip, filter handling,
+        // and threshold behavior stay identical.
+        SearchRequest vectorRequest = SearchRequest.builder()
+                .query(query)
+                .topK(fetchK)
+                .similarityThreshold(vectorSimilarityThreshold)
+                .build();
+        List<Document> vectorHits;
+        try {
+            vectorHits = similaritySearch(vectorRequest);
+        } catch (RuntimeException e) {
+            // Defensive: if the vector pass fails (e.g. embedding service
+            // outage), keep going with BM25 alone instead of failing the
+            // whole search. Logged at WARN so the failure is visible.
+            log.warn("[LuceneVectorStore] hybrid vector pass failed for '{}': {}", query, e.getMessage());
+            vectorHits = List.of();
+        }
+        List<Document> bm25Hits = bm25Fallback(query, fetchK);
+        return reciprocalRankFusion(vectorHits, bm25Hits, topK);
+    }
+
+    /**
+     * T24 / §III.2 — implements the Reciprocal Rank Fusion algorithm
+     * described on {@link #hybridSearch(String, int, double)}. Strips the
+     * {@link #METADATA_KEYWORD_ONLY_FALLBACK} tag from BM25 docs that
+     * ALSO appeared in {@code vectorHits} (vector confirmed → not
+     * keyword-only) and preserves it for docs only present in
+     * {@code bm25Hits}.
+     */
+    private static List<Document> reciprocalRankFusion(List<Document> vectorHits,
+            List<Document> bm25Hits, int topK) {
+        Map<String, Double> rrfScores = new LinkedHashMap<>();
+        Map<String, Document> sourceDocs = new LinkedHashMap<>();
+        java.util.Set<String> vectorIds = new java.util.HashSet<>(vectorHits.size());
+
+        for (int i = 0; i < vectorHits.size(); i++) {
+            Document d = vectorHits.get(i);
+            if (d == null || d.getId() == null) {
+                continue;
+            }
+            vectorIds.add(d.getId());
+            rrfScores.merge(d.getId(), 1.0 / (RRF_K + i + 1), (a, b) -> a + b);
+            sourceDocs.putIfAbsent(d.getId(), d);
+        }
+        for (int i = 0; i < bm25Hits.size(); i++) {
+            Document d = bm25Hits.get(i);
+            if (d == null || d.getId() == null) {
+                continue;
+            }
+            rrfScores.merge(d.getId(), 1.0 / (RRF_K + i + 1), (a, b) -> a + b);
+            sourceDocs.putIfAbsent(d.getId(), d);
+        }
+        if (rrfScores.isEmpty()) {
+            return List.of();
+        }
+        return rrfScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(topK)
+                .map(e -> rebuildWithFusedScore(sourceDocs.get(e.getKey()), e.getValue(),
+                        vectorIds.contains(e.getKey())))
+                .toList();
+    }
+
+    /**
+     * Copies {@code source} into a new {@link Document} with the supplied
+     * RRF score and a corrected {@link #METADATA_KEYWORD_ONLY_FALLBACK}
+     * tag: removed when {@code wasInVector} is true (vector confirmed the
+     * doc, regardless of whether BM25 also picked it), kept when only
+     * BM25 found it.
+     */
+    private static Document rebuildWithFusedScore(Document source, double rrfScore, boolean wasInVector) {
+        if (source == null) {
+            return null;
+        }
+        Map<String, Object> metadata = new LinkedHashMap<>(source.getMetadata());
+        if (wasInVector) {
+            metadata.remove(METADATA_KEYWORD_ONLY_FALLBACK);
+        }
+        return Document.builder()
+                .id(source.getId())
+                .text(source.getText())
+                .metadata(metadata)
+                .score(rrfScore)
+                .build();
     }
 
     /**

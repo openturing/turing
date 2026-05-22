@@ -1,0 +1,42 @@
+databaseChangeLog:
+  # ragHybridSearch column on ai_agent. T24 / §III.2 — per-agent control
+  # over whether RAG runs vector + BM25 with RRF fusion (hybrid) or just
+  # the emergency fallback semantics from T19.
+  #
+  # TRUE (default): when ragBm25Fallback is also true, every RAG query
+  #   fuses vector KNN + BM25 results via Reciprocal Rank Fusion (k=60).
+  #   Docs that appear in both lists rank highest; docs only in BM25 keep
+  #   their keyword-only tag so the prompt builder can warn the LLM.
+  # FALSE: when ragBm25Fallback is true, BM25 is only triggered when
+  #   vector top-1 score < MIN_VECTOR_CONFIDENCE — the original T19
+  #   behavior. Useful for corpora where vector retrieval is reliable
+  #   enough that the cost of always-running BM25 isn't justified.
+  #
+  # When ragBm25Fallback is false, this flag has no effect — BM25 is
+  # disabled entirely regardless of the hybrid setting.
+  #
+  # Existing agents get TRUE so the post-T24 hybrid behavior is the
+  # default; agents that want the quieter T19 semantics flip the toggle.
+
+  - changeSet:
+      id: v2026.2.7.10-add-ai-agent-rag-hybrid-search
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: ragHybridSearch
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: ragHybridSearch
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "T24/§III.2 per-agent hybrid retrieval toggle. TRUE = vector + BM25 fused via RRF; FALSE = T19 fallback-only semantics. Honored only when ragBm25Fallback=true."

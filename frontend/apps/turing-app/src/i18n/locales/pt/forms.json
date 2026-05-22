@@ -914,6 +914,8 @@
       "enableRagBlocked": "Configure um modelo de embedding e um vector store (ou defina-os em RAG Global) antes de ativar.",
       "ragBm25Fallback": "Fallback BM25 (palavra-chave)",
       "ragBm25FallbackDesc": "Quando a busca vetorial não encontra resultados confiáveis (top-1 < 0.5 de similaridade), tenta novamente uma busca BM25 por palavra-chave no conteúdo indexado. Os resultados são marcados como 'keyword-only' e o LLM é instruído a suavizar a resposta. Útil para queries com termos raros (nomes próprios, códigos internos, versões) que o modelo de embedding não viu durante o treino. Desligue para corpora bem delimitados onde o ruído da busca por palavra-chave atrapalha mais do que ajuda.",
+      "ragHybridSearch": "Busca Híbrida (Vector + BM25 com RRF)",
+      "ragHybridSearchDesc": "Quando ligado (padrão), TODA busca RAG roda vector + BM25 em paralelo e funde os resultados via Reciprocal Rank Fusion (k=60). Documentos que aparecem nos dois métodos sobem para o topo; só BM25 = mantém tag 'keyword-only'. Cobre os dois lados: queries semânticas que palavra-chave perderia + queries com termos raros que o embedding perderia. Desligue para voltar ao comportamento T19 (BM25 só dispara como fallback quando vector tem baixa confiança). Só funciona quando 'Fallback BM25' acima também está ligado.",
       "chatMemory": "Memória de Conversa",
       "chatMemoryDesc": "Persiste as interações de cada conversa indexadas pelo conversationId, permitindo que o agente retome o contexto entre sessões e auditar conversas passadas.",
       "chatMemoryEnable": "Ativar memória de conversa",
