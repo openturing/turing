@@ -107,6 +107,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   {@code personaResolver.resolve(...)} é chamado EXATAMENTE UMA VEZ
      *   (após advance), e que a persona resolvida é Lucas. A asserção #3
      *   inverte de ">= 2" para "== 1".
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#postWalkPersonaSwap_initialReplyComesInLucasVoiceNotMarina}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #1.")
@@ -278,6 +280,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   Sem regen, não há prompt diferente para combater anchoring — o teste
      *   deixa de fazer sentido após o refactor. Marcar como "tombstone teste
      *   #10 — bloco override removido por construção".
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#highestPriorityOverride_proventsRegressionToPreviousNodeQuestion}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #10.")
@@ -355,6 +359,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *
      * Nota refactor:
      *   Sem regen, não há override. Teste removido.
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#aiInstructionLiteralEcho_regenReplyContainsDistinctiveSpanFromAddendum}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #12.")
@@ -400,6 +406,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   mas o contrato "perguntas congruentes com chips do nó atual" vira
      *   parte do prompt builder único e merece um teste positivo nesse novo
      *   ponto.
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#chipCongruence_regenQuestionAdmitsAllChipLabelsAsNaturalAnswers}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #13.")
@@ -484,8 +492,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   2. {@code stateRepository.findById(state.getId())} foi chamado pelo
      *      menos UMA VEZ dentro do advance (linha 227-237) — evidência do refresh.
      *   3. (Negativo, sanity) — se o refresh for desabilitado (skipped),
-     *      o slot fica vazio/sobrescrito (este assert pode ficar como TODO
-     *      condicional para regression-witness).
+     *      o slot fica vazio/sobrescrito (este assert é opcional, como
+     *      witness condicional de regressão).
      *
      * Nota refactor:
      *   Na ordem invertida, advance roda ANTES do LLM call → não há tool
@@ -554,6 +562,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   Pós-inversão este teste é REMOVIDO (não há 2º call estrutural). Pode
      *   ressurgir como teste de "advance compõe o prompt do nó pós-advance",
      *   mas sem o callCount==2 invariante.
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#regenFullPath_replyIsQuestionForPostAdvanceNode_notReAskOfPreviousNode}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #7 (new in T3).")
@@ -735,6 +745,8 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   A heurística de substring matching some; o campo aparece. O teste
      *   continua válido com mudança trivial no setup da fixture (declarar
      *   o campo em vez de adicionar a frase ao aiInstruction).
+     *
+     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#toolFreeNode_llmDoesNotPreemptivelyInvokeCustomTool}
      */
     @Test
     @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #3.")

@@ -57,16 +57,25 @@ acting.
 
 ### Block A — Safety net (must land before §I.5 begins)
 
+> **Scaffolding shipped 2026-05-21; bodies pending.** T1-T8 below all
+> landed at the *file-and-skeleton* level: the mock harness, base class,
+> profile, fixtures and 28 `@Test` skeletons (15 Structural + 5 Contract +
+> 6 Behavioral + 3 smoke + 10 ParameterizedTest #5 invocations passing).
+> Each skeleton's Javadoc <b>is</b> the contract — the body is
+> {@code fail("Not implemented")} pending the actual structural assertions.
+> Implementing those bodies is the real work captured in §VI.6 Phase 1-5;
+> the table marks them ⏳ instead of ✅ to reflect this honestly.
+
 | #  | Status | Depends on | Task | Detail in |
 |----|--------|------------|------|-----------|
-| T1 | 📋 | — | Test infra: `TurAgentChatExecutorMockSupport` + `ChatModelHarness` + `AbstractAgentExecutorIT` + `llm-it` Maven profile (~0.5-1d) | §VI.4, §VI.6 Phase 0 |
-| T2 | 📋 | T1 | Migrate 15 existing skeletons from `…RaceIT` / `…DeclarativeIT` / `…MiddlewareIT` into the new package; delete the 3 old files (~0.5d) | §VI.6 Phase 0.5 |
-| T3 | 📋 | T2 | Structural skeletons reusing `programa-match-ee.chat-flow.json`: patches #10, #11, #9, #12, #14, #1, #7, #6 (~1d) | §VI.6 Phase 1 |
-| T4 | 📋 | T2 | Contract skeletons: #18, #20, #16, cascade ascent, BR-doc CPF (~0.5d) | §VI.6 Phase 2 |
-| T5 | 📋 | T2 | New IT fixtures under `harness-it/`: `tool-free-node`, `persona-switch-mid-flow`, `regen-with-chips` + smoke `@Test`s (~0.5d) | §VI.5, §VI.6 Phase 3 |
-| T6 | 📋 | T5 | Structural skeletons with new fixtures: #3, #4, #5, #2, #13, #8, #15, persona-tone import guard (~1d) | §VI.6 Phase 4 |
-| T7 | 📋 | T1 | `TurAgentChatExecutorBehavioralIT` (real LLM gated by `OPENAI_API_KEY`, profile `-Pllm-it`): pairs #1, #3, #7, #10, #12, #13 (~1-1.5d) | §VI.6 Phase 5 |
-| T8 | 📋 | T3..T7 | Cleanup: remove `TODO` markers, cross-ref pairing in Javadocs, verify done-criteria (~0.5d) | §VI.6 Phase 6, §VI.8 |
+| T1 | ✅ | — | Test infra: `TurAgentChatExecutorMockSupport` + `ChatModelHarness` + `AbstractAgentExecutorIT` + `llm-it` Maven profile | §VI.4, §VI.6 Phase 0 |
+| T2 | ✅ | T1 | Migrated 15 existing skeletons into Structural (12) + Contract (2) + Behavioral shell; 3 old files deleted | §VI.6 Phase 0.5 |
+| T3 | ⏳ | T2 | 8 Structural skeletons present (#10, #11, #9, #12, #14, #1, #7, #6); bodies pending | §VI.6 Phase 1 |
+| T4 | ⏳ | T2 | 5 Contract skeletons present (#18, #20, #16, cascade ascent, BR-doc CPF); bodies pending | §VI.6 Phase 2 |
+| T5 | ✅ | T2 | 3 harness fixtures + `HarnessFixtureSmokeIT` (3 real `@Test`s passing; substring/structural invariant guards) | §VI.5, §VI.6 Phase 3 |
+| T6 | ⏳ | T5 | Structural Javadocs updated to reference T5 fixtures (#3, #4, #2, #13) + persona-tone import guard skeleton added; bodies pending | §VI.6 Phase 4 |
+| T7 | ⏳ | T1 | 6 Behavioral skeletons present (#1, #3, #7, #10, #12, #13) with regex contracts + `@BeforeAll buildChatModel` recipe in class Javadoc; bodies pending | §VI.6 Phase 5 |
+| T8 | ⏳ | T3..T7 | Cross-link pairing done (Structural ↔ Behavioral via `@link` in both directions); §VI.8 done-criteria items that depend on body implementations (no `@Disabled`, no `fail()`) remain open | §VI.6 Phase 6, §VI.8 |
 
 ### Block B — Harness inversion (§I.5, strictly sequential)
 
@@ -910,6 +919,21 @@ breaks first*. Critical patches get **paired** Structural + Behavioral
 tests; the Javadocs reference each other so drift is visible.
 
 ### VI.3 Pairing matrix
+
+> **Pairing now exists in code** (shipped 2026-05-21 under T8 cleanup). Each
+> of the six critical patches has a Structural + Behavioral test method
+> cross-referenced by `@link` in both directions. Implementer for either
+> direction can navigate to the pair to check assertion symmetry — drift
+> on one side becomes immediately visible. Method-name pairs:
+>
+> | Patch | Structural (mocked) | Behavioral (real LLM) |
+> |---|---|---|
+> | #1  | `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` | `postWalkPersonaSwap_initialReplyComesInLucasVoiceNotMarina` |
+> | #3  | `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` | `toolFreeNode_llmDoesNotPreemptivelyInvokeCustomTool` |
+> | #7  | `firesSecondLlmCallAfterTransparentAdvanceToNewAiQuestion` | `regenFullPath_replyIsQuestionForPostAdvanceNode_notReAskOfPreviousNode` |
+> | #10 | `appendsBilingualHighestPriorityOverrideOnRegen` | `highestPriorityOverride_proventsRegressionToPreviousNodeQuestion` |
+> | #12 | `inlinesAiInstructionLiteralInsideOverrideBlock` | `aiInstructionLiteralEcho_regenReplyContainsDistinctiveSpanFromAddendum` |
+> | #13 | `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` | `chipCongruence_regenQuestionAdmitsAllChipLabelsAsNaturalAnswers` |
 
 | Patch | Cat | Structural IT (mock) | Behavioral IT (gpt-4o-mini real) | Fixture |
 |---|---|---|---|---|
