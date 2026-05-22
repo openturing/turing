@@ -1,0 +1,101 @@
+[
+  {
+    "id": "HARNESS_REGEN_WITH_CHIPS",
+    "name": "Harness — Regen With Chips Fixture",
+    "description": "Minimal fixture for patch #13 (chip-congruence enforcement on regen). Reproduces the in-company-match production bug verbatim: the regen post-walk lands on an aiQuestion with `inlineOptions` of decision-role chips ([RH/L&D, Gestor, C-level, Comprador]); without the override the LLM frequently asked num_pessoas with role chips below — incongruent. The test asserts the regen system text inlines the 4 chip labels + the imperative \"MUST be congruent / DEVE ser congruente\".",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": "Harness-only fixture — NEVER auto-triggered by the router. Tests must force this flow via flowId.",
+    "triggerMode": "ONCE",
+    "personas": [
+      {
+        "id": "HARNESS_PERSONA_COMPRADOR_B2B",
+        "name": "Comprador B2B — Harness Stub",
+        "description": "Slim B2B persona used for the regen-with-chips fixture. Tom executivo, frases curtas. Mandatory/forbidden terms vazios para não interferir nas asserções estruturais.",
+        "systemInstruction": "Você é uma especialista em treinamento corporativo. Tom executivo, frases curtas. NUNCA prometa preço fora do calculado pela tool.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "",
+        "forbiddenTerms": "",
+        "enabled": 1
+      }
+    ],
+    "slots": [
+      {
+        "name": "cargo",
+        "description": "Cargo / função informada pelo visitante no primeiro turno. Capturado por ai-cargo.",
+        "type": "STRING"
+      },
+      {
+        "name": "decision_role",
+        "description": "Papel no ciclo de decisão de compra. Captura via chips (RH/L&D, Gestor, C-level, Comprador) OU texto livre congruente.",
+        "type": "STRING"
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": { "x": 40, "y": 200 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "ai-cargo",
+          "type": "aiQuestion",
+          "position": { "x": 220, "y": 200 },
+          "data": {
+            "label": "CARGO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte o cargo atual do visitante em UMA frase profissional. Capture livre — não tem chips.",
+            "outputVariable": "cargo",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-area",
+          "type": "switch",
+          "position": { "x": 400, "y": 200 },
+          "data": {
+            "label": "ROUTE BY CARGO",
+            "type": "switch",
+            "switchVariable": "cargo",
+            "switchOptions": [
+              { "id": "opt-cargo-any", "label": "*" }
+            ]
+          }
+        },
+        {
+          "id": "ai-decision-role",
+          "type": "aiQuestion",
+          "position": { "x": 580, "y": 200 },
+          "data": {
+            "label": "PAPEL NA DECISÃO",
+            "type": "aiQuestion",
+            "aiInstruction": "Pergunte qual é o papel do visitante no ciclo de decisão de compra do treinamento. UMA frase, sem citar os chips literalmente — a UI renderiza os botões abaixo.",
+            "outputVariable": "decision_role",
+            "inlineOptions": [
+              "RH/L&D",
+              "Gestor",
+              "C-level",
+              "Comprador"
+            ],
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "position": { "x": 760, "y": 200 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "e-start-cargo",    "source": "start",            "target": "ai-cargo",         "sourceHandle": null,            "targetHandle": null, "label": null },
+        { "id": "e-cargo-switch",   "source": "ai-cargo",         "target": "switch-area",      "sourceHandle": null,            "targetHandle": null, "label": null },
+        { "id": "e-switch-role",    "source": "switch-area",      "target": "ai-decision-role", "sourceHandle": "opt-cargo-any", "targetHandle": null, "label": "*" },
+        { "id": "e-role-end",       "source": "ai-decision-role", "target": "end",              "sourceHandle": null,            "targetHandle": null, "label": null }
+      ]
+    }
+  }
+]

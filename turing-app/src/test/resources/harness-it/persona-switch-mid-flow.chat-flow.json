@@ -1,0 +1,136 @@
+[
+  {
+    "id": "HARNESS_PERSONA_SWITCH_MID_FLOW",
+    "name": "Harness — Persona Switch Mid-Flow Fixture",
+    "description": "Minimal fixture for patches #1 and #2 (re-resolve persona after the transparent walk crosses a `persona-*` node). Two personas (Marina, Lucas) and a switch driven by the `__force_route` variable so tests can deterministically pick which voice the post-walk regen sees. (programa-match-ee carries Marina/Lucas as A/B variants on SEPARATE flows; this fixture is what makes the walk cross a persona node WITHIN one flow.)",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": "Harness-only fixture — NEVER auto-triggered by the router. Tests must force this flow via flowId.",
+    "triggerMode": "ONCE",
+    "personas": [
+      {
+        "id": "HARNESS_PERSONA_MARINA",
+        "name": "Marina — Harness Stub (Consultora)",
+        "description": "Stub of Marina used by the persona-switch fixture. Formal consultor voice — DISTINCT from Lucas so structural tests can substring-assert which voice composed the prompt.",
+        "systemInstruction": "Você é a Marina, consultora de carreira. Tom executivo, formal, trate por 'você'. Frases curtas. Assine como Marina ao final de cada turno.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "",
+        "forbiddenTerms": "",
+        "enabled": 1
+      },
+      {
+        "id": "HARNESS_PERSONA_LUCAS",
+        "name": "Lucas — Harness Stub (Alumni)",
+        "description": "Stub of Lucas used by the persona-switch fixture. Peer alumni voice — DISTINCT from Marina so structural tests can substring-assert.",
+        "systemInstruction": "Você é o Lucas, alumni do programa. Tom de colega: 'Beleza', 'Conta aí'. Linguagem narrativa, descontraída. Assine como Lucas ao final.",
+        "tone": "CASUAL",
+        "verbosity": 2,
+        "languageStyle": "NARRATIVE",
+        "mandatoryTerms": "",
+        "forbiddenTerms": "",
+        "enabled": 1
+      }
+    ],
+    "slots": [
+      {
+        "name": "name",
+        "description": "Primeiro nome do visitante. Capturado pelo aiQuestion ai-name no início.",
+        "type": "STRING"
+      },
+      {
+        "name": "objetivo",
+        "description": "Objetivo de carreira do visitante. Capturado por ai-objetivo após o switch.",
+        "type": "STRING"
+      },
+      {
+        "name": "__force_route",
+        "description": "Test-only knob. Set by the test to 'lucas' or 'marina' BEFORE driving the turn to deterministically route through the switch. Production flows must never expose this — it's a fixture affordance.",
+        "type": "STRING"
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": { "x": 40, "y": 200 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "persona-marina",
+          "type": "persona",
+          "position": { "x": 200, "y": 200 },
+          "data": {
+            "label": "VOZ: Marina",
+            "type": "persona",
+            "personaId": "HARNESS_PERSONA_MARINA"
+          }
+        },
+        {
+          "id": "ai-name",
+          "type": "aiQuestion",
+          "position": { "x": 380, "y": 200 },
+          "data": {
+            "label": "NOME",
+            "type": "aiQuestion",
+            "aiInstruction": "Em UMA frase formal pergunte o primeiro nome do visitante. Apresente-se como Marina.",
+            "outputVariable": "name",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-route",
+          "type": "switch",
+          "position": { "x": 560, "y": 200 },
+          "data": {
+            "label": "ROTA (Marina | Lucas)",
+            "type": "switch",
+            "switchVariable": "__force_route",
+            "switchOptions": [
+              { "id": "opt-route-lucas",  "label": "lucas" },
+              { "id": "opt-route-marina", "label": "marina" }
+            ]
+          }
+        },
+        {
+          "id": "persona-lucas",
+          "type": "persona",
+          "position": { "x": 740, "y": 100 },
+          "data": {
+            "label": "VOZ: Lucas",
+            "type": "persona",
+            "personaId": "HARNESS_PERSONA_LUCAS"
+          }
+        },
+        {
+          "id": "ai-objetivo",
+          "type": "aiQuestion",
+          "position": { "x": 900, "y": 200 },
+          "data": {
+            "label": "OBJETIVO",
+            "type": "aiQuestion",
+            "aiInstruction": "Em UMA frase pergunte ao {{name}} qual é o objetivo de carreira pros próximos 3 anos. Use o tom da persona ativa (Marina formal OU Lucas peer — alternado pelo switch-route).",
+            "outputVariable": "objetivo",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "position": { "x": 1080, "y": 200 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "e-start-persona",       "source": "start",         "target": "persona-marina", "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-marina-name",         "source": "persona-marina","target": "ai-name",        "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-name-switch",         "source": "ai-name",       "target": "switch-route",   "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-switch-lucas-route",  "source": "switch-route",  "target": "persona-lucas",  "sourceHandle": "opt-route-lucas",  "targetHandle": null, "label": "lucas" },
+        { "id": "e-switch-marina-route", "source": "switch-route",  "target": "ai-objetivo",    "sourceHandle": "opt-route-marina", "targetHandle": null, "label": "marina" },
+        { "id": "e-lucas-objetivo",      "source": "persona-lucas", "target": "ai-objetivo",    "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-objetivo-end",        "source": "ai-objetivo",   "target": "end",            "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  }
+]

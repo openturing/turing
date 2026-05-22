@@ -1,0 +1,106 @@
+[
+  {
+    "id": "HARNESS_TOOL_FREE_NODE",
+    "name": "Harness — Tool-Free Node Fixture",
+    "description": "Minimal fixture for patches #3, #4, #5 (tool-strip on initial and regen when activeNode/postAdvanceNode forbids tool calls). Modeled after the in-company-match flow's coupon→deliver subchain. Camila persona is a slimmed copy of the in-company one; agent under test should attach a stub `compor_proposta_in_company` Custom Tool whose Mockito spy records invocations.",
+    "guardrailMethod": "HEURISTIC",
+    "triggerDescription": "Harness-only fixture — NEVER auto-triggered by the router. Tests must force this flow via flowId.",
+    "triggerMode": "ONCE",
+    "personas": [
+      {
+        "id": "HARNESS_PERSONA_CAMILA",
+        "name": "Camila — Harness Stub",
+        "description": "Slimmed Camila used by the harness tool-free fixture. Same voice as in-company-match's Camila but without the full mandatory/forbidden term lists so persona tone validation does not interfere with structural assertions.",
+        "systemInstruction": "Você é a Camila. Tom executivo, frases curtas, NUNCA prometa desconto fora do que a tool calcular.",
+        "tone": "EXECUTIVE",
+        "verbosity": 2,
+        "languageStyle": "NEUTRAL",
+        "mandatoryTerms": "",
+        "forbiddenTerms": "",
+        "enabled": 1
+      }
+    ],
+    "slots": [
+      {
+        "name": "coupon_code",
+        "description": "Cupom alfanumérico digitado pelo visitante. NÃO normalizado pelo flow — a tool aceita whitespace/case variantes.",
+        "type": "STRING"
+      },
+      {
+        "name": "deliver_status",
+        "description": "Status final do entregável da proposta (ok / error). Escrito pelo `compor_proposta_in_company` se ele for chamado — usado pelo teste para confirmar que a tool foi (ou NÃO foi) invocada.",
+        "type": "STRING"
+      }
+    ],
+    "graph": {
+      "nodes": [
+        {
+          "id": "start",
+          "type": "start",
+          "position": { "x": 40, "y": 200 },
+          "data": { "label": "INÍCIO", "type": "start" }
+        },
+        {
+          "id": "persona-camila",
+          "type": "persona",
+          "position": { "x": 200, "y": 200 },
+          "data": {
+            "label": "VOZ: Camila",
+            "type": "persona",
+            "personaId": "HARNESS_PERSONA_CAMILA"
+          }
+        },
+        {
+          "id": "ai-coupon-code",
+          "type": "aiQuestion",
+          "position": { "x": 380, "y": 200 },
+          "data": {
+            "label": "DIGITE O CUPOM (TOOL-FREE)",
+            "type": "aiQuestion",
+            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. NÃO CHAME NENHUMA TOOL nesse turno — apenas capture o que o visitante digitar. A tool de proposta roda no próximo nó com o cupom já no slot. Sem chips.",
+            "outputVariable": "coupon_code",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "switch-cupom-ok",
+          "type": "switch",
+          "position": { "x": 560, "y": 200 },
+          "data": {
+            "label": "CUPOM PREENCHIDO?",
+            "type": "switch",
+            "switchVariable": "coupon_code",
+            "switchOptions": [
+              { "id": "opt-cupom-any", "label": "*" }
+            ]
+          }
+        },
+        {
+          "id": "ai-deliver",
+          "type": "aiQuestion",
+          "position": { "x": 740, "y": 200 },
+          "data": {
+            "label": "ENTREGAR PROPOSTA",
+            "type": "aiQuestion",
+            "aiInstruction": "Confirme o cupom recebido em UMA frase e chame `compor_proposta_in_company` para gerar a proposta. Use o cupom já capturado no slot {{coupon_code}}.",
+            "outputVariable": "deliver_status",
+            "onJudgeReject": "advance_with_literal"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "position": { "x": 920, "y": 200 },
+          "data": { "label": "FIM", "type": "end" }
+        }
+      ],
+      "edges": [
+        { "id": "e-start-persona",   "source": "start",            "target": "persona-camila",   "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-persona-coupon",  "source": "persona-camila",   "target": "ai-coupon-code",   "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-coupon-switch",   "source": "ai-coupon-code",   "target": "switch-cupom-ok",  "sourceHandle": null, "targetHandle": null, "label": null },
+        { "id": "e-switch-deliver",  "source": "switch-cupom-ok",  "target": "ai-deliver",       "sourceHandle": "opt-cupom-any", "targetHandle": null, "label": "*" },
+        { "id": "e-deliver-end",     "source": "ai-deliver",       "target": "end",              "sourceHandle": null, "targetHandle": null, "label": null }
+      ]
+    }
+  }
+]

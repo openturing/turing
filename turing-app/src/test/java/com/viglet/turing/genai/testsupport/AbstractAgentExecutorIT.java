@@ -30,6 +30,8 @@ import com.viglet.turing.persistence.model.llm.TurLLMInstance;
 import com.viglet.turing.persistence.model.llm.TurLLMVendor;
 import com.viglet.turing.persistence.model.persona.TurPersona;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.agent.TurAIAgentSlotRepository;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMInstanceRepository;
 import com.viglet.turing.persistence.repository.llm.TurLLMVendorRepository;
 import com.viglet.turing.persistence.repository.persona.TurPersonaRepository;
@@ -111,6 +113,23 @@ public abstract class AbstractAgentExecutorIT extends AbstractTuringSpringIT {
 
     @Autowired
     protected TurSecretCryptoService cryptoService;
+
+    @Autowired
+    protected TurChatFlowRepository chatFlowRepository;
+
+    @Autowired
+    protected TurAIAgentSlotRepository slotRepository;
+
+    /**
+     * Bundle of repositories that {@link ChatFlowImportTestUtil} needs to
+     * upsert a flow + persona + slots into the test database. Centralised
+     * here so tests don't have to re-construct the record at every call
+     * site.
+     */
+    protected ChatFlowImportTestUtil.Repos importRepos() {
+        return new ChatFlowImportTestUtil.Repos(
+                agentRepository, chatFlowRepository, slotRepository, personaRepository);
+    }
 
     /**
      * Reset the mock harness before every test method. Without this, queued
