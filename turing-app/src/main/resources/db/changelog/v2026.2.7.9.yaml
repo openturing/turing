@@ -1,0 +1,38 @@
+databaseChangeLog:
+  # ragBm25Fallback column on ai_agent. T19 / §III.3 — per-agent opt-out
+  # for the BM25 emergency fallback in search_knowledge_base.
+  #
+  # TRUE (default): when vector top-1 cosine score < MIN_VECTOR_CONFIDENCE,
+  #   TurRagSearchToolService retries the query as BM25 over FIELD_CONTENT
+  #   and prepends a "keyword-only" warning to the tool result so the LLM
+  #   softens its answer.
+  # FALSE: vector misses return "no results" directly. Appropriate for
+  #   tightly domain-scoped corpora where keyword-match noise does more
+  #   harm than the recall it buys.
+  #
+  # Existing agents get TRUE so the post-T19 behavior is the default;
+  # agents that want strict semantic-only retrieval flip the toggle in
+  # the settings form.
+
+  - changeSet:
+      id: v2026.2.7.9-add-ai-agent-rag-bm25-fallback
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - not:
+            - columnExists:
+                tableName: ai_agent
+                columnName: ragBm25Fallback
+      changes:
+        - addColumn:
+            tableName: ai_agent
+            columns:
+              - column:
+                  name: ragBm25Fallback
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "T19/§III.3 per-agent opt-out for the BM25 emergency fallback in search_knowledge_base. TRUE = retry BM25 when vector top-1 < MIN_VECTOR_CONFIDENCE; FALSE = strict vector only."

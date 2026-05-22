@@ -902,6 +902,8 @@
       "enableRag": "Ativar RAG",
       "enableRagDesc": "Quando ativado, o agente usará o modelo de embedding e o vector store acima para fundamentar suas respostas em conteúdo indexado.",
       "enableRagBlocked": "Configure um modelo de embedding e um vector store (ou defina-os em RAG Global) antes de ativar.",
+      "ragBm25Fallback": "Fallback BM25 (palavra-chave)",
+      "ragBm25FallbackDesc": "Quando a busca vetorial não encontra resultados confiáveis (top-1 < 0.5 de similaridade), tenta novamente uma busca BM25 por palavra-chave no conteúdo indexado. Os resultados são marcados como 'keyword-only' e o LLM é instruído a suavizar a resposta. Útil para queries com termos raros (nomes próprios, códigos internos, versões) que o modelo de embedding não viu durante o treino. Desligue para corpora bem delimitados onde o ruído da busca por palavra-chave atrapalha mais do que ajuda.",
       "chatMemory": "Memória de Conversa",
       "chatMemoryDesc": "Persiste as interações de cada conversa indexadas pelo conversationId, permitindo que o agente retome o contexto entre sessões e auditar conversas passadas.",
       "chatMemoryEnable": "Ativar memória de conversa",

@@ -902,6 +902,8 @@
       "enableRag": "Enable RAG",
       "enableRagDesc": "When enabled, the agent will use the embedding model and store above to ground its answers in indexed content.",
       "enableRagBlocked": "Configure both an embedding model and an embedding store (or set them in Global RAG) before enabling.",
+      "ragBm25Fallback": "BM25 (keyword) fallback",
+      "ragBm25FallbackDesc": "When vector search returns no confident results (top-1 similarity < 0.5), retry as a keyword BM25 search over the indexed content. Matches are tagged 'keyword-only' and the LLM is instructed to soften its answer. Useful for queries with rare terms (proper nouns, internal codes, version strings) the embedding model never saw at training. Turn off for tightly-scoped corpora where keyword-search noise hurts more than the recall it buys.",
       "chatMemory": "Chat Memory",
       "chatMemoryDesc": "Persist conversation turns keyed by conversationId so the agent can recall context across sessions and audit past interactions.",
       "chatMemoryEnable": "Enable chat memory",

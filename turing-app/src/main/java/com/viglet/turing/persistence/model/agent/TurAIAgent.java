@@ -119,6 +119,26 @@ public class TurAIAgent implements Serializable {
     private TurAgentChatMode chatMode = TurAgentChatMode.CALL;
 
     /**
+     * T19 / §III.3 — per-agent opt-out for the BM25 emergency fallback in
+     * {@code search_knowledge_base}. When {@code true} (default), if the
+     * vector top-1 cosine score is below {@code MIN_VECTOR_CONFIDENCE},
+     * {@link com.viglet.turing.genai.tool.TurRagSearchToolService}
+     * retries the query as BM25 over {@code FIELD_CONTENT} and prepends a
+     * keyword-only warning header. When {@code false}, vector misses
+     * return "no results" directly — appropriate for agents whose corpora
+     * are tightly domain-scoped and where a keyword-match noise floor
+     * does more harm than the recall it buys.
+     *
+     * <p>Default {@code true} matches the post-T19 ship behavior; agents
+     * that prefer strict semantic-only retrieval flip this in the
+     * settings form.
+     *
+     * @since 2026.2.7
+     */
+    @Column(name = "ragBm25Fallback", nullable = false)
+    private boolean ragBm25Fallback = true;
+
+    /**
      * Optional agent-specific Python {@code requirements.txt} addendum.
      * The Code Interpreter sandbox installs the UNION of:
      * <ol>

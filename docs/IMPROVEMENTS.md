@@ -135,7 +135,7 @@ acting.
 |-----|--------|------------|------|-----------|
 | T17 | ✅ | — | Documented the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. | §IV.1.a |
 | T18 | ✅ | T17 | Hand-rolled `TurOpenAiStreamingChatModel` (`WebClient` → `/v1/chat/completions` with `stream:true` + SSE parser for `data: {...}` lines emitting one `ChatResponse` per `delta.content`). New `TurGenAiLlmProvider#createStreamingChatModel` default delegates to `createChatModel`; `TurOpenAiLlmProvider` overrides to return the streaming model. `TurLlmModelFactory#createStreamingChatModel` wraps in same resilience pipeline. `TurAgentChatExecutor` STREAM branch calls `createStreamingChatModel(...)` only — CALL keeps the SDK path. Validated by `TurOpenAiStreamingChatModelBehavioralIT`: **123 chunks** per turn vs ~1 on the SDK path (chunks count is the streaming witness; first-chunk latency is too variable for a stable bound). i18n + `TurAgentChatMode` Javadoc updated to drop the limitation warning. | §IV.1.b |
-| T19 | 📋 | — | Vector → BM25 emergency fallback in RAG: when vector top-1 < `MIN_VECTOR_CONFIDENCE`, retry on `FIELD_CONTENT` (BM25); mark result as keyword-only so the prompt warns the LLM. Cheaper to ship before full hybrid (§T24). | §III.3 |
+| T19 | ✅ | — | `FIELD_CONTENT` now indexed as `TextField` (was `StoredField` — invisible to BM25). New `TurLuceneVectorStore.bm25Fallback(query, topK)` parses via classic `QueryParser` on `StandardAnalyzer`, OR-default operator, escapes special chars; tags every hit with `_keyword_only_fallback=true`. `TurRagSearchToolService.searchKnowledgeBase` drops the legacy `similarityThreshold=0.5` request filter, fetches all topK, and falls back to BM25 when vector returned 0 hits OR top-1 cosine score < `MIN_VECTOR_CONFIDENCE=0.5`. Tool result prepends `⚠️ KEYWORD-ONLY MATCH` header; `prompts/tools/rag/search_knowledge_base.md` instructs the LLM to soften its answer when present. **Per-agent toggle**: new `TurAIAgent.ragBm25Fallback` boolean (default `true`, Liquibase `v2026.2.7.9.yaml`) exposed via the agent settings form (toggle inside the RAG SectionCard, EN/PT i18n) — flipped through to the tool via `ToolContext` lookup. **Limitation**: chunks indexed before T19 used `StoredField` (no inverted index) → invisible to fallback; vector still finds them. Re-index makes them keyword-searchable. 3 new unit tests pass (literal-term match, blank-query guard, special-char escaping). | §III.3 |
 | T20 | 📋 | — | Spotlights V1: replace `userQuery.toLowerCase().contains(term)` in `TurSNSpotlightProcess` with `PortugueseAnalyzer` stem-overlap (5-line change, immediate morphology fix). | §III.4 (V1) |
 | T21 | 📋 | T20 | Spotlights V2: per-query `MemoryIndex` + `QueryParser` so admins can write `"plano de carreira"~2` and load synonym files. Ship only when admins ask for phrase/fuzzy. | §III.4 (V2) |
 | T22 | 📋 | — | Persona tone validation via `PortugueseAnalyzer` stems in `TurPersonaToneValidator` — "competitivo" must catch "competitividade". Same morphology pattern as T20. | §IV.3 |
@@ -512,7 +512,7 @@ private SearcherManager indexFor(TurAIAgent agent) {
 |---|---|---|---|
 | Chat-flow router | `TurChatFlowEngineService` | Token overlap (Lucene PT analyzer) + LLM fallback | ✅ Shipped (§II) |
 | RAG retrieval | `TurRagSearchToolService`, `TurRagContextBuilder` | Vector cosine KNN only | **Hybrid BM25 + vector** (§III.2) |
-| Vector store | `TurLuceneVectorIndex`, `TurLuceneVectorStore` | Vector index only; `FIELD_CONTENT` stored but not indexed | **Full-text fallback** (§III.3) |
+| Vector store | `TurLuceneVectorIndex`, `TurLuceneVectorStore` | Vector index + BM25 fallback on `FIELD_CONTENT` (T19) | ✅ Shipped (§III.3); full hybrid pending (§III.2) |
 | Spotlights | `TurSNSpotlightProcess` | `userQuery.toLowerCase().contains(term)` | **QueryParser + stemming + synonyms** (§III.4) |
 | Chat analytics enricher | `TurChatAnalyticsEnricher`, `TurChatAnalyticsEngine` | Pluggable interface; default no-op | **TF-IDF intent classifier** (§III.5) |
 | Chat memory | `TurChatMemoryService` | Chronological FIFO of last N turns | Possible — **conversation-relevance retrieval** (§IV.4) |
@@ -564,7 +564,7 @@ tokenized + indexed). Query time roughly doubles (two passes) but stays
 that has my exact term/version/SKU". Complementarity is biggest on
 technical/SKU-heavy corpora.
 
-### III.3 📋 Vector → BM25 fallback — emergency exit
+### III.3 ✅ Vector → BM25 fallback (shipped 2026.2.7 as T19)
 
 **Problem**: low-confidence vector results == "no signal". Returning
 empty when keyword match exists is missed information.

@@ -151,6 +151,11 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
       chatMode: value.chatMode ?? "CALL",
+      // T19 / §III.3 — BM25 fallback default TRUE (post-T19 behavior).
+      // Existing agents loaded from a pre-T19 backend respond with
+      // undefined → coalesce to true so the toggle reflects the actual
+      // runtime behavior the executor will exhibit.
+      ragBm25Fallback: value.ragBm25Fallback ?? true,
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -468,6 +473,29 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                         <GradientSwitch
                           checked={!!field.value}
                           disabled={!canEnableRag}
+                          onCheckedChange={(checked) => field.onChange(checked)}
+                        />
+                      </FormControl>
+                    </FormItemTwoColumns.Right>
+                  </FormItemTwoColumns>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ragBm25Fallback"
+                render={({ field }) => (
+                  <FormItemTwoColumns>
+                    <FormItemTwoColumns.Left>
+                      <FormItemTwoColumns.Label>{t("forms.agentSettings.ragBm25Fallback")}</FormItemTwoColumns.Label>
+                      <FormItemTwoColumns.Description>
+                        {t("forms.agentSettings.ragBm25FallbackDesc")}
+                      </FormItemTwoColumns.Description>
+                    </FormItemTwoColumns.Left>
+                    <FormItemTwoColumns.Right>
+                      <FormControl>
+                        <GradientSwitch
+                          checked={field.value !== false}
+                          disabled={!ragEnabled}
                           onCheckedChange={(checked) => field.onChange(checked)}
                         />
                       </FormControl>

@@ -37,6 +37,14 @@ export interface TurAIAgent {
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
   /**
+   * T19 / §III.3 — opt-out for the BM25 emergency fallback in
+   * `search_knowledge_base`. When `true` (default), low-confidence vector
+   * misses retry as BM25 over the indexed content and the result is
+   * tagged "keyword-only" so the LLM softens its answer. When `false`,
+   * vector misses return "no results" directly. @since 2026.2.7
+   */
+  ragBm25Fallback?: boolean;
+  /**
    * Optional agent-specific Python `requirements.txt` addendum. Unioned
    * with the global `pythonRequirements` setting before the Code
    * Interpreter sandbox runs any Custom Tool that calls

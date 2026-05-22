@@ -25,13 +25,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -81,6 +85,21 @@ public class TurLuceneVectorStore implements VectorStore {
     public static final String FIELD_EMBEDDING = "embedding";
     public static final String FIELD_METADATA_JSON = "metadata_json";
     public static final String METADATA_FIELD_PREFIX = "meta_";
+
+    /**
+     * T19 / §III.3: metadata key the {@link #bm25Fallback(String, int)} path
+     * sets on every {@link Document} it emits so downstream prompt builders
+     * can warn the LLM that the match came from keyword search, not the
+     * embedding model. Callers should NOT set this themselves on regular
+     * vector hits — the absence of the key is the "this came from vector"
+     * signal.
+     *
+     * <p>Lives on {@code Document.metadata} (not stored in Lucene) — this is
+     * a per-result tag, not part of the indexed schema.
+     *
+     * @since 2026.2.7
+     */
+    public static final String METADATA_KEYWORD_ONLY_FALLBACK = "_keyword_only_fallback";
     /**
      * Prefix for numeric {@link DoublePoint} fields built from numeric metadata values.
      * Used for {@code GT/GTE/LT/LTE} range filtering; the string form is still indexed under
@@ -220,6 +239,90 @@ public class TurLuceneVectorStore implements VectorStore {
         }
     }
 
+    /**
+     * T19 / §III.3 — emergency BM25 search over {@link #FIELD_CONTENT} for
+     * when the vector path returns nothing useful. Caller decides whether
+     * to fire this (typically: vector top-1 score below
+     * {@code MIN_VECTOR_CONFIDENCE}, or vector returned zero hits despite a
+     * non-empty corpus). The returned documents carry
+     * {@link #METADATA_KEYWORD_ONLY_FALLBACK}{@code =true} so the prompt
+     * builder can warn the LLM that the match is lexical, not semantic.
+     *
+     * <p><b>Query parsing</b>: uses Lucene's classic {@link QueryParser}
+     * over a {@link StandardAnalyzer} (same analyzer the index writer used —
+     * see {@link TurLuceneVectorIndex#TurLuceneVectorIndex}). Special
+     * characters in the user's message are escaped so a query like
+     * {@code "What does (foo) mean?"} doesn't blow up the parser; this also
+     * means it falls back to plain term-OR matching, not the QueryParser
+     * boolean syntax — appropriate for end-user text.
+     *
+     * <p><b>Older chunks limitation</b>: chunks indexed before T19 used
+     * {@code StoredField} for {@link #FIELD_CONTENT} (no inverted index),
+     * so they are invisible to this fallback. Vector search still finds
+     * them. A full re-index is required to make them keyword-searchable.
+     *
+     * @param query   the natural-language query (already user-facing text)
+     * @param topK    maximum number of documents to return ({@code >= 1})
+     * @return up to {@code topK} {@link Document}s, ordered by BM25 score
+     *         descending. Empty when the corpus contains no matching terms.
+     * @since 2026.2.7
+     */
+    public List<Document> bm25Fallback(String query, int topK) {
+        if (query == null || query.isBlank() || topK < 1) {
+            return List.of();
+        }
+        String escaped = QueryParser.escape(query.trim());
+        try {
+            IndexSearcher searcher = index.getSearcher();
+            if (searcher.getIndexReader().numDocs() == 0) {
+                return List.of();
+            }
+            QueryParser parser = new QueryParser(FIELD_CONTENT, new StandardAnalyzer());
+            // OR is the right default for natural-language queries: each
+            // term contributes BM25 score, the best-overall doc wins. The
+            // alternative (AND) would silently return zero hits when one
+            // term doesn't appear, which is the exact failure mode we are
+            // trying to avoid.
+            parser.setDefaultOperator(QueryParser.Operator.OR);
+            Query parsedQuery;
+            try {
+                parsedQuery = parser.parse(escaped);
+            } catch (ParseException pe) {
+                log.warn("[LuceneVectorStore] BM25 fallback failed to parse query '{}' "
+                                + "(escaped='{}'): {}",
+                        query, escaped, pe.getMessage());
+                return List.of();
+            }
+            TopDocs topDocs = searcher.search(parsedQuery, topK);
+            List<Document> results = new ArrayList<>(topDocs.scoreDocs.length);
+            for (ScoreDoc hit : topDocs.scoreDocs) {
+                Document doc = toSpringAiDocument(searcher, hit);
+                if (doc == null) {
+                    continue;
+                }
+                // Tag the result so the prompt builder downstream knows
+                // this came from keyword search (the vector model never
+                // weighed in). Need a fresh metadata map because the
+                // Spring AI Document API returns an immutable view from
+                // the builder.
+                Map<String, Object> augmentedMetadata = new LinkedHashMap<>(doc.getMetadata());
+                augmentedMetadata.put(METADATA_KEYWORD_ONLY_FALLBACK, Boolean.TRUE);
+                results.add(Document.builder()
+                        .id(doc.getId())
+                        .text(doc.getText())
+                        .metadata(augmentedMetadata)
+                        .score(doc.getScore())
+                        .build());
+            }
+            log.info("[LuceneVectorStore] BM25 fallback for query '{}' returned {} hit(s)",
+                    query, results.size());
+            return results;
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to run BM25 fallback on Lucene vector store '" + collectionName + "'", e);
+        }
+    }
+
     private float[] embedDocument(Document document) {
         try {
             return embeddingModel.embed(document);
@@ -235,7 +338,14 @@ public class TurLuceneVectorStore implements VectorStore {
         luceneDoc.add(new StringField(FIELD_ID, document.getId(), Field.Store.YES));
         String text = document.getText();
         if (text != null) {
-            luceneDoc.add(new StoredField(FIELD_CONTENT, text));
+            // T19 / §III.3: TextField indexes the content for BM25 search AND
+            // stores the raw text for retrieval, replacing the legacy
+            // StoredField (storage-only). New chunks indexed after T19 ships
+            // are searchable by the BM25 fallback path; older chunks need a
+            // re-index before they can be matched by keyword queries
+            // (silently invisible to {@link #bm25Fallback}; vector search
+            // still works on them).
+            luceneDoc.add(new TextField(FIELD_CONTENT, text, Field.Store.YES));
         }
         luceneDoc.add(new KnnFloatVectorField(FIELD_EMBEDDING, vector,
                 org.apache.lucene.index.VectorSimilarityFunction.COSINE));

@@ -166,6 +166,64 @@ class TurLuceneVectorStoreTest {
         assertThat(results).isEmpty();
     }
 
+    /**
+     * T19 / §III.3 — pin the BM25 fallback contract. Adds a chunk whose
+     * content contains a distinctive proper noun ("LangChain") that the
+     * mocked embedding model treats as out-of-distribution (zero-ish
+     * vector). A vector query for the same string would score near 0.5
+     * after Lucene KNN normalization; the BM25 query matches deterministically
+     * on the literal term.
+     */
+    @Test
+    void bm25Fallback_matchesContentByLiteralTerm_andTagsKeywordOnly() {
+        store.add(List.of(
+                new Document("d1", "LangChain orchestrates LLM pipelines.", Map.of()),
+                new Document("d2", "Spring AI integrates Java apps with embeddings.", Map.of()),
+                new Document("d3", "The cat sat on the mat.", Map.of())));
+
+        List<Document> hits = store.bm25Fallback("LangChain", 5);
+
+        assertThat(hits).hasSize(1);
+        assertThat(hits.get(0).getId()).isEqualTo("d1");
+        // The fallback must tag every result so downstream prompt builders
+        // can warn the LLM that the match is lexical, not semantic.
+        assertThat(hits.get(0).getMetadata())
+                .containsEntry(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK, Boolean.TRUE);
+        // BM25 score is positive (non-zero) and exposed on the Document.
+        assertThat(hits.get(0).getScore()).isNotNull().isPositive();
+    }
+
+    /**
+     * Empty corpus + empty query are no-ops — proves the early-return
+     * guards don't NPE on degenerate input.
+     */
+    @Test
+    void bm25Fallback_emptyOrBlankQuery_returnsEmpty() {
+        store.add(List.of(new Document("d1", "anything", Map.of())));
+
+        assertThat(store.bm25Fallback(null, 5)).isEmpty();
+        assertThat(store.bm25Fallback("", 5)).isEmpty();
+        assertThat(store.bm25Fallback("   ", 5)).isEmpty();
+        assertThat(store.bm25Fallback("anything", 0)).isEmpty();
+    }
+
+    /**
+     * Special characters in the user query must NOT crash the parser —
+     * {@link TurLuceneVectorStore#bm25Fallback} escapes the input before
+     * parsing. Without escaping, a query like {@code "what (is) foo?"}
+     * trips {@code QueryParser.parse} with a ParseException.
+     */
+    @Test
+    void bm25Fallback_specialCharactersInQuery_doNotCrashParser() {
+        store.add(List.of(new Document("d1", "Pricing for LangChain agents.", Map.of())));
+
+        // Parentheses, question marks, brackets — all QueryParser meta-chars.
+        List<Document> hits = store.bm25Fallback("What does (LangChain) [really] mean?", 5);
+
+        assertThat(hits).hasSize(1);
+        assertThat(hits.get(0).getId()).isEqualTo("d1");
+    }
+
     private Map<String, Object> metaCategory(String category) {
         Map<String, Object> meta = new HashMap<>();
         meta.put("category", category);

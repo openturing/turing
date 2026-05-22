@@ -16,6 +16,14 @@ Do NOT use this tool for:
 After receiving results, synthesize the information into a clear answer.
 Always cite the source file name when quoting or referencing document content.
 
+KEYWORD-ONLY MATCHES — If the tool result starts with "⚠️ KEYWORD-ONLY MATCH",
+the embedding model did not recognize the query (typical for proper nouns,
+version strings, internal codes). The documents below were matched by literal
+keyword (BM25) instead of semantic similarity. Soften your answer:
+- Open with "Based on a keyword match in the knowledge base..." or similar.
+- Do NOT present the content as a confident semantic answer.
+- Encourage the user to verify against the cited source before acting.
+
 MANDATORY — At the end of the tool result there is a REFERENCES section with pre-built
 markdown links. You MUST copy those links EXACTLY as-is into a **References:** section
 at the end of your answer. Do NOT modify the URLs. Do NOT add a domain or https prefix.
