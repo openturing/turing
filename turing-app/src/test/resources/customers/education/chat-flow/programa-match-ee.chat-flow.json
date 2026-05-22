@@ -1621,7 +1621,7 @@
           "data": {
             "label": "PERGUNTAR NOME (Lucas)",
             "type": "aiQuestion",
-            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome. Abra como ex-aluno apresentando-se: 'Opa! Sou o Lucas, formei no MBA Executivo do Acme em 2024. Quando entrei aqui no site eu também tava perdido entre os programas, então deixa eu te ajudar a achar o seu. Como você se chama?' Tom: peer, casual, primeira pessoa.",
+            "aiInstruction": "Pergunte o PRIMEIRO NOME do visitante. Aceite qualquer resposta que pareça um nome (ex: 'Alexandre', 'Camila Souza', 'João Paulo', até apelidos como 'Xandão'). Antes da pergunta, abra com uma apresentação CURTA (UMA frase) como ex-aluno: 'Opa! Sou o Lucas, alumni do MBA Executivo do Acme (2024). Em 4 perguntas a gente acha o programa que faz sentido pro seu próximo passo. Como você se chama?' NÃO conte sua história longa nesse turno — a história entra mais tarde no fluxo. A pergunta 'Como você se chama?' DEVE ser a última frase. Tom: peer, casual, primeira pessoa.",
             "outputVariable": "name",
             "onJudgeReject": "advance_with_literal"
           }

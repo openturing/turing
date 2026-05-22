@@ -778,6 +778,78 @@ class ProgramaMatchEEFlowIT extends AbstractTuringSpringIT {
                 .containsExactly(fixture.expectedProgramNames);
     }
 
+    /**
+     * Regression test for the production drift reported on 2026-05-22:
+     * the LLM at {@code ai-name-lucas} <i>used to</i> render the long Lucas
+     * intro script ("Sou o Lucas, formei no MBA Executivo, quando entrei
+     * aqui no site eu também tava perdido...") and FORGET to ask the name
+     * at the end. The user then typed any reply expecting a name question,
+     * and the judge captured that reply into the {@code name} slot
+     * (HEURISTIC-style on the first turn).
+     *
+     * <p>The {@link #happyPathLucas_walksAllSlotsAndLandsOnConfirma} test
+     * feeds an idealized {@code assistantMessage} to {@code engine.advance(...)}
+     * — it never exercises what the LLM REALLY generates from the
+     * {@code aiInstruction}. This test does, asserting two invariants on
+     * the actual generation:
+     *
+     * <ol>
+     *   <li>Lucas identifies himself ("lucas" appears in the reply).</li>
+     *   <li>The reply ends with a name question (contains "chama" /
+     *       "nome" — substring-loose to absorb wording variance).</li>
+     * </ol>
+     *
+     * <p>If a future {@code aiInstruction} edit, persona drift, or
+     * gpt-4o-mini upgrade breaks either invariant, this test catches the
+     * UX regression immediately instead of waiting for a user report.
+     *
+     * @since 2026.2.7
+     */
+    @Test
+    void aiNameLucas_realLlmReplyMustIdentifyLucasAndAskTheName() throws IOException {
+        ExportEntry entry = loadExport(1);
+        assertThat(entry.name).as("Bundle entry 1 must be the Lucas variant")
+                .contains("Lucas");
+        Imported imp = importIntoAgent(entry);
+
+        String conv = "conv-" + UUID.randomUUID();
+        ChatFlowGraph graph = engine.parseGraph(imp.flow).orElseThrow();
+        TurChatFlowState state = engine.loadOrInitState(conv, imp.flow, graph).orElseThrow();
+        assertThat(state.getCurrentNodeId())
+                .as("Init walk must park on ai-name-lucas (the entry interactive node)")
+                .isEqualTo("ai-name-lucas");
+
+        // Compose the prompt the executor would build on turn 0 of a fresh
+        // conversation and call the real LLM. No prior history — the
+        // assertion targets the OPENING utterance, no anchoring carryover.
+        String addendum = engine.buildSystemPromptAddendum(imp.flow, state, graph);
+        String system = imp.persona.getSystemInstruction() + "\n\n" + addendum;
+        List<org.springframework.ai.chat.messages.Message> messages = new java.util.ArrayList<>();
+        messages.add(new org.springframework.ai.chat.messages.SystemMessage(system));
+        // Production turn 0: the user has only just opened the chat — no
+        // user message yet. But the OpenAI Chat Completions API rejects
+        // prompts with no user message; the production executor injects a
+        // sentinel empty user turn for this case. Mirror that here.
+        messages.add(new org.springframework.ai.chat.messages.UserMessage(""));
+        String reply = chatModel.call(new org.springframework.ai.chat.prompt.Prompt(messages))
+                .getResult().getOutput().getText();
+        System.out.println("=== ai-name-lucas turn 0 reply ===");
+        System.out.println(reply);
+        System.out.println("=== END ===");
+
+        // Invariant 1: Lucas identifies himself.
+        assertThat(reply.toLowerCase())
+                .as("Opening reply must identify Lucas. Got: %s", reply)
+                .contains("lucas");
+        // Invariant 2: the reply asks the visitor's name. Loose substring
+        // accepts: "Como você se chama?", "Qual é o seu nome?", "Qual
+        // seu nome?", "Como te chamo?", etc.
+        assertThat(reply.toLowerCase())
+                .as("Opening reply must ask for the visitor's name "
+                        + "(marker: 'chama' or 'nome'). Got: %s", reply)
+                .containsAnyOf("chama", "nome");
+    }
+
     static Stream<Arguments> areaFixturesLucas() {
         return areaFixtures().map(args -> {
             AreaFixture base = (AreaFixture) args.get()[0];
