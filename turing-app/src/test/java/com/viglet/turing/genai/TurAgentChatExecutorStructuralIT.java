@@ -125,17 +125,22 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   resolve a persona de novo e o segundo prompt sai com a persona
      *   recém-ativa, não com a do início do turno.
      *
-     * Cenário:
-     *   Flow:    Nova fixture: um aiQuestion N1 → switch que decide rota →
-     *            persona-X (transparente) → aiQuestion N2 (target do regen).
-     *            programa-match-ee.chat-flow.json não tem persona switch
-     *            no meio do flow; fica como fixture nova OU "programa-match
-     *            + nó persona-lucas inserido entre switch e ai-confirma-*".
-     *   Estado:  conversação em progresso, parked em N1.
-     *   Entrada: user msg = "Tecnologia & Dados" (ou input que dispare o switch).
-     *   Mocks:   ChatModel-1 (initial, persona inicial) retorna "ok-1".
-     *            ChatModel-2 (regen, persona pós-walk) retorna "ok-2".
-     *            personaResolver pode ser spy do bean real para contar invocações.
+     * Cenário (fixture firme — criada em T5):
+     *   Flow:    {@code harness-it/persona-switch-mid-flow.chat-flow.json}.
+     *            Cadeia: {@code start → persona-marina → ai-name →
+     *            switch-route → persona-lucas → ai-objetivo → end}. O switch
+     *            usa o slot {@code __force_route} (test-only knob) — o teste
+     *            seed-a {@code __force_route = "lucas"} para garantir que o
+     *            walk transparente CRUZA o nó {@code persona-lucas}.
+     *   Estado:  parked em {@code ai-name}; user já capturou nome no turno
+     *            anterior; {@code __force_route} seedado como "lucas".
+     *   Entrada: user msg = "Pode prosseguir."
+     *   Mocks:   {@code harness().queueResponse("ok-1")} para initial (cuja
+     *            persona ainda é Marina, pre-walk), {@code queueResponse("ok-2")}
+     *            para regen (post-walk em persona Lucas). {@code @SpyBean}
+     *            em {@link com.viglet.turing.genai.persona.TurAgentPersonaResolver}
+     *            para contar {@code resolve(...)} invocations — patch #1 tem
+     *            que mostrar ≥2.
      *
      * Asserts:
      *   1. {@code personaResolver.resolve(...)} foi invocado 3 vezes
@@ -369,14 +374,17 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   gpt-4o-mini gera perguntas incongruentes com os chips renderizados
      *   na UI (ex.: pergunta sobre num_pessoas com chips de role).
      *
-     * Cenário:
-     *   Flow:    Nova fixture OU in-company-match.chat-flow.json — um
-     *            aiQuestion destino com inlineOptions=[RH/L&D, Gestor, C-level,
-     *            Comprador] (cenário literal do patch).
-     *   Estado:  parked em N pré-advance; user respondeu N.
-     *   Entrada: user msg = qualquer trigger que mova para o nó com chips.
-     *   Mocks:   ChatModel-1 retorna ack.
-     *            ChatModel-2 (regen) capturado via ArgumentCaptor.
+     * Cenário (fixture firme — criada em T5):
+     *   Flow:    {@code harness-it/regen-with-chips.chat-flow.json}. Cadeia:
+     *            {@code ai-cargo → switch-area → ai-decision-role} cujo
+     *            {@code inlineOptions = ["RH/L&D", "Gestor", "C-level",
+     *            "Comprador"]} reproduz o bug literal do patch. O smoke
+     *            (T5) já valida que esses 4 labels sobrevivem a renomes.
+     *   Estado:  parked em {@code ai-cargo}; user respondeu cargo.
+     *   Entrada: user msg = "Diretor de TI"
+     *   Mocks:   {@code harness().queueResponse("ack")} para initial,
+     *            {@code queueResponse("Qual seu papel na decisão?")} para regen.
+     *            Inspect via {@link AbstractAgentExecutorIT#regenPrompt}.
      *
      * Asserts:
      *   1. O SystemMessage do regen CONTÉM cada label de chip do nó destino
@@ -617,6 +625,62 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
     }
 
+    /**
+     * Persona-tone import guard (new skeleton — Phase 4 / T6)
+     * Categoria: structural — pre-execution contract guard
+     *
+     * Comportamento a travar:
+     *   Toda fixture {@code harness-it/*.chat-flow.json} importada via
+     *   {@link com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil}
+     *   produz {@link com.viglet.turing.persistence.model.persona.TurPersona}
+     *   rows cujos {@code mandatoryTerms}/{@code forbiddenTerms} são EXATAMENTE
+     *   o que a fixture declarou. Isso protege contra duas regressões:
+     *
+     *   <ol>
+     *     <li><b>Drift de schema</b> — alguém adiciona um campo persona novo
+     *         com NOT NULL default e esquece de backfillar nas fixtures →
+     *         import quebra silenciosamente OU upsert sobrescreve com defaults
+     *         que invalidam as asserções dos testes downstream.</li>
+     *     <li><b>Drift de upsertPersonaFromExport</b> — alguém muda
+     *         {@link com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil#upsertPersonaFromExport}
+     *         (por exemplo: tipa mandatoryTerms como List em vez de String) →
+     *         as personas das fixtures podem persistir com lista vazia,
+     *         desabilitando a {@code TurPersonaToneValidator} sem aviso.
+     *         O Structural test #14 (que valida o tone) passaria a verde
+     *         falsamente.</li>
+     *   </ol>
+     *
+     * Cenário:
+     *   Roda contra TODAS as 3 fixtures de T5 (parametrizado por path):
+     *   <ul>
+     *     <li>{@code harness-it/tool-free-node.chat-flow.json} — Camila (1 persona)</li>
+     *     <li>{@code harness-it/persona-switch-mid-flow.chat-flow.json} — Marina + Lucas (2 personas)</li>
+     *     <li>{@code harness-it/regen-with-chips.chat-flow.json} — Comprador B2B (1 persona)</li>
+     *   </ul>
+     *
+     * Asserts:
+     *   1. Para CADA persona declarada na fixture, a row persistida tem
+     *      {@code mandatoryTerms == fixture.mandatoryTerms} (string-equal,
+     *      não substring). Mesmo quando ambos são "" — o vazio é também
+     *      uma escolha contratual.
+     *   2. Mesmo para {@code forbiddenTerms}.
+     *   3. {@code systemInstruction} sobrevive ao round-trip sem truncate
+     *      (length-equal).
+     *   4. {@code tone} e {@code languageStyle} mapeiam para os enums
+     *      corretos sem queda pra null.
+     *
+     * Nota refactor:
+     *   Este teste NÃO depende do executor — só de
+     *   {@code ChatFlowImportTestUtil} + JPA. Sobrevive intacto a qualquer
+     *   reforma do §I.5. É puro guard de "as fixtures do harness continuam
+     *   chegando inteiras no DB".
+     */
+    @Test
+    @Disabled("Skeleton — pendente implementação. Inventário §8.4, persona-tone import guard (new in T6).")
+    void personaToneFixtures_roundTripExactMandatoryAndForbiddenTermLists() {
+        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    }
+
     /* ─────────────────────────── Declarative patches (B) ───────────────────────────
      * Migrated from TurAgentChatExecutorDeclarativeIT (deleted under T2).
      * Coverage: #3, #4. Patch #5 lives below as a @Nested unit-test class
@@ -637,26 +701,31 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   pode invocar tools nesse turno mesmo que o agent tenha tools
      *   habilitadas.
      *
-     * Cenário:
-     *   Flow:    in-company-match.chat-flow.json (já existe como fixture
-     *            mas não tem IT). Nó alvo: aiQuestion de captura de coupon
-     *            code com aiInstruction "NÃO CHAME NENHUMA TOOL". Custom
-     *            tool {@code compor_proposta_in_company} configurado no agent.
-     *   Estado:  parked no nó tool-free de captura de coupon.
+     * Cenário (fixture firme — criada em T5):
+     *   Flow:    {@code harness-it/tool-free-node.chat-flow.json} (importada
+     *            via {@link com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil}).
+     *            Nó alvo: {@code ai-coupon-code} ({@code aiInstruction} contém
+     *            "NÃO CHAME NENHUMA TOOL"). O harness smoke (T5) já garante
+     *            que esse sentinel sobrevive a renomes — drift dispara
+     *            falha do {@code toolFreeNodeFixture_importsAndParsesCleanly}
+     *            ANTES desse teste rodar.
+     *   Estado:  parked em {@code ai-coupon-code}; agent com Custom Tool
+     *            stub {@code compor_proposta_in_company} attached.
      *   Entrada: user msg = "MEU-CUPOM-123"
-     *   Mocks:   ChatModel mockado retorna texto qualquer; ArgumentCaptor<Prompt>
-     *            captura o initial call.
-     *            Tool {@code compor_proposta_in_company} mockado (spy/mock) para
-     *            registrar invocações.
+     *   Mocks:   {@link com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport.ChatModelHarness#queueResponse}
+     *            ("ack qualquer") para o initial call.
+     *            Tool stub registra invocações via Mockito spy (criar o agent
+     *            com um Custom Tool real cujo Groovy script faz nada, ou
+     *            substituir o lookup do tool via {@code @MockBean}).
      *
      * Asserts:
-     *   1. {@code Prompt.getOptions()} cast para ToolCallingChatOptions —
-     *      {@code getToolCallbacks()} retorna lista VAZIA (callbacks
-     *      stripped).
+     *   1. {@code firstPrompt().getOptions()} cast para ToolCallingChatOptions —
+     *      {@code getToolCallbacks()} retorna lista VAZIA (callbacks stripped).
      *   2. O tool {@code compor_proposta_in_company} foi invocado ZERO vezes
      *      no turn: {@code verify(tool, never()).invoke(any())}.
-     *   3. (Sanity inverso) — em um nó SEM "NÃO CHAME NENHUMA TOOL" no
-     *      aiInstruction, o mesmo cenário invoca o tool normalmente.
+     *   3. (Sanity inverso) — alterar o fixture in-memory pra remover o
+     *      sentinel "NÃO CHAME NENHUMA TOOL" e re-rodar; o teste de
+     *      controle confirma que SEM o sentinel as tools fluem normais.
      *
      * Nota refactor:
      *   Vira o campo declarativo {@code ChatFlowNode.toolsEnabled: boolean}
@@ -683,15 +752,24 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   marcando "NÃO CHAME NENHUMA TOOL", o regen prompt é montado SEM
      *   tool callbacks — mesma blindagem do #3 mas no segundo call.
      *
-     * Cenário:
-     *   Flow:    in-company-match. Cadeia: aiQuestion captura-coupon
-     *            (tool-free, dispara regen ao avançar) → aiQuestion
-     *            ai-deliver-proposta (também tool-free, é onde queremos
-     *            que regen rode SEM tools).
-     *   Estado:  parked em N1, user manda coupon.
+     * Cenário (fixture firme — criada em T5):
+     *   Flow:    {@code harness-it/tool-free-node.chat-flow.json}. Cadeia:
+     *            {@code ai-coupon-code} (tool-free, dispara regen ao avançar
+     *            via {@code switch-cupom-ok}) → {@code ai-deliver}. O nó
+     *            {@code ai-deliver} pede a tool {@code compor_proposta_in_company}
+     *            mas o teste deve assertir que a stripping continua valendo
+     *            quando a aiInstruction do POST-advance node está marcada
+     *            como tool-free (cenário do bug: regen ainda chamava o tool
+     *            por inércia, gerando proposta sem cupom). Para esse teste,
+     *            altere a aiInstruction de {@code ai-deliver} em runtime
+     *            (graph editar antes do save) pra adicionar "ZERO TOOL CALLS"
+     *            — assim o regen post-advance também ativa o strip.
+     *   Estado:  parked em ai-coupon-code, user manda coupon.
      *   Entrada: user msg = "CUPOM-XYZ"
-     *   Mocks:   ChatModel-1 (initial) retorna ack qualquer; ChatModel-2
-     *            (regen) capturado via ArgumentCaptor.
+     *   Mocks:   {@code harness().queueResponse("ack")} para initial,
+     *            {@code harness().queueResponse("Vou processar")} para regen.
+     *            {@link AbstractAgentExecutorIT#firstPrompt} e
+     *            {@link AbstractAgentExecutorIT#regenPrompt} dão acesso direto.
      *            Tool {@code compor_proposta_in_company} mockado.
      *
      * Asserts:
