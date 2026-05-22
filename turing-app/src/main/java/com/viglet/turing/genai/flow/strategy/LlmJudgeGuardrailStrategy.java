@@ -206,6 +206,17 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         if (hasCollected) {
             collected = ChatFlowOps.normalizeYesNo(collected);
         }
+        // T23 / §IV.6 — when the node carries inlineOptions, canonicalize
+        // the captured value against them via Lucene LevenshteinAutomata
+        // (exact → substring → edit distance 1 → edit distance 2). The
+        // judge already canonicalizes most of the time, but diacritic
+        // variants ("Gerente Senior" vs "Gerente Sênior") and prefix
+        // noise ("Sr Comprador" vs "Comprador") slip through. Storing
+        // the canonical label means downstream switch nodes / SpEL
+        // conditions see the EXACT chip text the admin configured.
+        if (hasCollected) {
+            collected = ChatFlowOps.canonicalizeAgainstInlineOptions(collected, node.inlineOptions());
+        }
         if (hasCollected && hasOutputVar) {
             variables.put(node.outputVariable().trim(), collected);
             log.info("[LlmJudge] Captured '{}' = '{}'", node.outputVariable(), collected);

@@ -9,12 +9,16 @@
  */
 package com.viglet.turing.genai.flow.strategy;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import org.apache.lucene.util.automaton.ByteRunAutomaton;
+import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -1305,6 +1309,153 @@ public final class ChatFlowOps {
             case "no", "nope" -> "no";
             default -> trimmed;
         };
+    }
+
+    /**
+     * T23 / §IV.6 — maximum Levenshtein edit distance accepted when
+     * canonicalizing a slot value against a node's {@code inlineOptions}.
+     * Tries 0 (exact) → 1 (single-char typo / diacritic) → 2 (multi-char
+     * typo) in order, stopping at the first option that matches.
+     *
+     * <p>Edit distance 2 catches the most common typos and diacritic
+     * issues ("Senior" ↔ "Sênior", "Gestor" ↔ "Geestor") without
+     * over-triggering on genuinely different options ("Gestor" vs
+     * "C-level" stays a non-match even at 2 edits because the character
+     * sets diverge after the first few positions).
+     */
+    private static final int MAX_FUZZY_EDIT_DISTANCE = 2;
+
+    /**
+     * T23 / §IV.6 — canonicalize a slot value against the node's
+     * {@code inlineOptions}. Slot values get captured loosely by the LLM
+     * judge (or as a literal user reply on the heuristic path) and then
+     * stored into {@code variables} — downstream consumers (switch nodes,
+     * conditions, telemetry dashboards) expect canonical option labels.
+     * Variants like "Gerente Senior" / "Gerente Sênior" or "Sr Comprador"
+     * / "Comprador" used to silently miss switch matching; this helper
+     * normalises them.
+     *
+     * <h2>Match cascade</h2>
+     *
+     * <ol>
+     *   <li><b>Exact match</b> (case-insensitive, trimmed) — when the
+     *       value already equals an option, return that option's canonical
+     *       casing.</li>
+     *   <li><b>Substring containment</b> in either direction — handles
+     *       "Sr Comprador" ↔ "Comprador" (prefix/suffix noise) where the
+     *       extra tokens push Levenshtein distance past 2. Prefers the
+     *       LONGEST matching option so "Gerente Senior" prefers "Gerente
+     *       Senior" over "Senior" when both are options.</li>
+     *   <li><b>Lucene {@link LevenshteinAutomata}</b> edit-distance 1
+     *       — catches diacritics ("Sênior"/"Senior") and single-char
+     *       typos ("Compradoor"/"Comprador").</li>
+     *   <li><b>Lucene {@link LevenshteinAutomata}</b> edit-distance 2
+     *       — catches transpositions and double-typos
+     *       ("Gerente Senir"/"Gerente Sênior").</li>
+     * </ol>
+     *
+     * <p>Returns the original {@code value} unchanged when no option
+     * matches at any tier OR when the node has no {@code inlineOptions}
+     * configured. Never returns null for a non-null input — the contract
+     * is "canonicalize or pass through".
+     *
+     * @param value    extracted slot value (may be null/blank → passed through)
+     * @param options  the node's {@code inlineOptions} list (may be empty)
+     * @return canonical option label when a match is found, otherwise
+     *         {@code value} verbatim
+     * @since 2026.2.7
+     */
+    public static String canonicalizeAgainstInlineOptions(String value, List<String> options) {
+        if (value == null || value.isBlank() || options == null || options.isEmpty()) {
+            return value;
+        }
+        String valueTrimmed = value.trim();
+        String valueLower = valueTrimmed.toLowerCase(Locale.ROOT);
+
+        String exactMatch = matchExact(valueLower, options);
+        if (exactMatch != null) {
+            return exactMatch;
+        }
+        String substringMatch = matchBySubstring(valueLower, options);
+        if (substringMatch != null) {
+            return substringMatch;
+        }
+        for (int edits = 1; edits <= MAX_FUZZY_EDIT_DISTANCE; edits++) {
+            String fuzzyMatch = matchByFuzzy(valueLower, options, edits);
+            if (fuzzyMatch != null) {
+                log.info("[FlowOps] inlineOption canonicalize: '{}' → '{}' (edit distance ≤ {})",
+                        valueTrimmed, fuzzyMatch, edits);
+                return fuzzyMatch;
+            }
+        }
+        return value;
+    }
+
+    private static String matchExact(String valueLower, List<String> options) {
+        for (String option : options) {
+            if (option != null && option.trim().toLowerCase(Locale.ROOT).equals(valueLower)) {
+                return option.trim();
+            }
+        }
+        return null;
+    }
+
+    private static String matchBySubstring(String valueLower, List<String> options) {
+        // When multiple options match by substring, prefer the LONGER option
+        // (more specific label) — "Gerente Senior" beats "Senior" even though
+        // both technically substring-match the same value. Using the option
+        // length (not max of value and option) makes the ranking specific to
+        // the label catalog instead of accidentally favoring options whose
+        // length happens to be close to the user input.
+        String best = null;
+        int bestLen = 0;
+        for (String option : options) {
+            if (option == null || option.isBlank()) {
+                continue;
+            }
+            String optionLower = option.trim().toLowerCase(Locale.ROOT);
+            if (valueLower.contains(optionLower) || optionLower.contains(valueLower)) {
+                int len = optionLower.length();
+                if (len > bestLen) {
+                    best = option.trim();
+                    bestLen = len;
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Searches {@code options} for an entry that's within {@code maxEdits}
+     * Levenshtein edits of {@code valueLower}. Builds a fresh
+     * {@link LevenshteinAutomata} per option (cheap — these strings are
+     * short admin-configured labels, not full documents) and runs the
+     * value against the byte automaton. When multiple options match at
+     * the same edit budget, the LONGER one wins (more specific label
+     * over a short prefix).
+     */
+    private static String matchByFuzzy(String valueLower, List<String> options, int maxEdits) {
+        byte[] valueBytes = valueLower.getBytes(StandardCharsets.UTF_8);
+        String best = null;
+        int bestLen = 0;
+        for (String option : options) {
+            if (option == null || option.isBlank()) {
+                continue;
+            }
+            String optionLower = option.trim().toLowerCase(Locale.ROOT);
+            // LevenshteinAutomata(targetString, allowTranspositions) — true
+            // makes "Sênior"/"Sêinor" count as 1 edit (single transposition)
+            // instead of 2. Admin-friendly default.
+            LevenshteinAutomata la = new LevenshteinAutomata(optionLower, true);
+            ByteRunAutomaton matcher = new ByteRunAutomaton(la.toAutomaton(maxEdits));
+            if (matcher.run(valueBytes, 0, valueBytes.length)) {
+                if (optionLower.length() > bestLen) {
+                    best = option.trim();
+                    bestLen = optionLower.length();
+                }
+            }
+        }
+        return best;
     }
 
     /**

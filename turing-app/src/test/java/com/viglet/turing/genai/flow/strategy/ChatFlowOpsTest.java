@@ -189,6 +189,91 @@ class ChatFlowOpsTest {
         assertThat(ChatFlowOps.extractValue("cpf", "1234")).isNull();
     }
 
+    // ─────────────────────────── T23 canonicalizeAgainstInlineOptions ───────────────────────────
+
+    @Test
+    void canonicalize_exactMatch_returnsCanonicalCasing() {
+        List<String> options = List.of("RH/L&D", "Gestor", "C-level", "Comprador");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("gestor", options))
+                .isEqualTo("Gestor");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("COMPRADOR", options))
+                .isEqualTo("Comprador");
+    }
+
+    @Test
+    void canonicalize_diacriticTypo_matchesViaEditDistance1() {
+        // The §IV.6 headline case: user typed "Senior" (no circumflex),
+        // option is "Sênior" — 1 edit (ê → e). Must canonicalize.
+        List<String> options = List.of("Gerente Sênior", "Diretor", "Estagiário");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("Gerente Senior", options))
+                .isEqualTo("Gerente Sênior");
+    }
+
+    @Test
+    void canonicalize_singleCharTypo_matchesViaEditDistance1() {
+        List<String> options = List.of("Comprador", "Gestor", "C-level");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("Compradoor", options))
+                .isEqualTo("Comprador");
+    }
+
+    @Test
+    void canonicalize_doubleTypo_matchesViaEditDistance2() {
+        // Two char errors but Levenshtein 2 still catches it. Beyond that,
+        // we'd risk false positives so canonicalization stops.
+        List<String> options = List.of("Gerente Sênior", "Diretor");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("Gerente Senir", options))
+                .isEqualTo("Gerente Sênior");
+    }
+
+    @Test
+    void canonicalize_prefixNoise_matchesViaSubstring() {
+        // The "Sr Comprador" → "Comprador" case — Levenshtein 2 isn't
+        // enough (3 chars to delete: "S", "r", " "), but substring
+        // containment catches it deterministically.
+        List<String> options = List.of("Comprador", "Gestor", "C-level");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("Sr Comprador", options))
+                .isEqualTo("Comprador");
+    }
+
+    @Test
+    void canonicalize_substringMatch_prefersLongerOption() {
+        // "Gerente Senior" contains both "Gerente Senior" itself AND
+        // "Senior" — prefer the longer, more specific label.
+        List<String> options = List.of("Senior", "Gerente Senior", "Junior");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("sou um Gerente Senior aqui", options))
+                .isEqualTo("Gerente Senior");
+    }
+
+    @Test
+    void canonicalize_noMatch_returnsOriginalValue() {
+        List<String> options = List.of("Sim", "Não", "Talvez");
+        // Three-edit gap that's also not a substring — passes through.
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("computador", options))
+                .isEqualTo("computador");
+    }
+
+    @Test
+    void canonicalize_emptyOrNullInputs_passThrough() {
+        List<String> options = List.of("A", "B");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions(null, options)).isNull();
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("", options)).isEmpty();
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("  ", options)).isEqualTo("  ");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("any", null)).isEqualTo("any");
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("any", List.of())).isEqualTo("any");
+    }
+
+    @Test
+    void canonicalize_caseInsensitiveExact_doesNotEscalateToFuzzy() {
+        // Sanity check on the cascade order: an exact case-insensitive
+        // match takes precedence over fuzzy matches against other options
+        // that share characters. Validates the early return in matchExact.
+        List<String> options = List.of("Sim", "Sin", "Sí");
+        // "sim" exactly matches "Sim" (case-fold). Don't bounce to "Sin"
+        // or "Sí" via fuzzy — return "Sim" verbatim.
+        assertThat(ChatFlowOps.canonicalizeAgainstInlineOptions("sim", options))
+                .isEqualTo("Sim");
+    }
+
     // ─────────────────────────── helpers ───────────────────────────
 
     private static ChatFlowNode nodeOfType(String type) {

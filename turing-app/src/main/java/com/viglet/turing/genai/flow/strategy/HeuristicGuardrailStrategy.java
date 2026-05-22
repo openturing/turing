@@ -72,6 +72,11 @@ public class HeuristicGuardrailStrategy implements TurChatFlowGuardrailStrategy 
         if (node.outputVariable() != null && !node.outputVariable().isBlank()) {
             String collected = ChatFlowOps.extractValue(node.validationRule(), ctx.userMessage());
             if (collected != null) {
+                // T23 / §IV.6 — canonicalize against inlineOptions so the
+                // stored value matches the chip label downstream consumers
+                // (switch nodes, SpEL conditions, analytics) expect. Same
+                // helper used by the LLM judge path.
+                collected = ChatFlowOps.canonicalizeAgainstInlineOptions(collected, node.inlineOptions());
                 variables.put(node.outputVariable().trim(), collected);
                 shouldAdvance = true;
             } else {
