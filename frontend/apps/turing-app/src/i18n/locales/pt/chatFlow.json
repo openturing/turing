@@ -125,6 +125,8 @@
         "advance_with_literal": "Avança com literal — captura forçada da mensagem do usuário",
         "block": "Bloquear — nunca captura forçada, sempre repergunta"
       },
+      "toolsEnabled": "Permitir chamadas de tool nesse nó",
+      "toolsEnabledHint": "Quando desligado, as tool callbacks do agente (MCP / native / custom) são removidas nesse nó. Use para impedir que o LLM chame uma tool preemptivamente antes do slot ser capturado. Substitui o sentinel legado \"NÃO CHAME NENHUMA TOOL\" no aiInstruction.",
       "functionName": "Função",
       "toolSource": "Origem da Ferramenta",
       "toolSourceOptions": {

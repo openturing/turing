@@ -125,6 +125,8 @@
         "advance_with_literal": "Advance with literal — force-capture user message",
         "block": "Block — never force-capture, always reprompt"
       },
+      "toolsEnabled": "Allow tool calls on this node",
+      "toolsEnabledHint": "When off, the agent's tool callbacks (MCP / native / custom) are stripped on this node. Use to gate the LLM from preemptively calling a tool before a slot is captured. Replaces the legacy \"NÃO CHAME NENHUMA TOOL\" sentinel in aiInstruction.",
       "functionName": "Function Call",
       "toolSource": "Tool Source",
       "toolSourceOptions": {

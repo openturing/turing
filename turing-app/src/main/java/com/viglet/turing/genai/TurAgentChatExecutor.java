@@ -251,10 +251,66 @@ public class TurAgentChatExecutor {
         ChatModel chatModel = llmModelFactory.createChatModel(llmInstance, decryptedApiKey);
         final long tAfterChatModel = System.currentTimeMillis();
 
-        // Resolve the active persona ONCE per turn — flow overrides may
-        // already be in the conversation's flow state. Passed to every
-        // downstream consumer (tool callbacks, prompt composer, tone
-        // validator, analytics) so the same voice governs the whole turn.
+        // Note (§I.5 step 2 / T10): persona, tool callbacks, and chat
+        // options are NOT resolved here — they are deferred to AFTER the
+        // flow context (and possible early advance) is established. This
+        // lets a single {@code personaResolver.resolve(...)} call see the
+        // post-walk {@code __activePersonaId} the engine wrote during
+        // {@code loadOrInitState}'s transparent walk (legacy path) or the
+        // T9 early advance (inverted path) — collapsing the previous 2-3
+        // resolutions per turn down to ONE. Tool callbacks built off that
+        // single persona are correctly aligned with the voice that will
+        // compose the prompt and the regen.
+
+        String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
+        String lastUserMessageEarly = lastMessageOfRole(history, "user");
+        FlowContext initialFlowContext = resolveFlowContext(agent, conversationId, flowId,
+                lastUserMessageEarly, chatModel);
+        // §I.5 step 1 inversion: when the inverted-harness flag is on AND a
+        // flow is governing this turn (and the turn is NOT the freshly-
+        // triggered activation turn — that one needs the legacy skip path
+        // because the user msg is the trigger, not data the strategy can
+        // force-capture as the first slot value), run advance(...) NOW —
+        // before the LLM call — passing assistantMessage=null. The strategy
+        // decides the cursor purely from the user message; the LLM then
+        // composes ONE reply with the post-advance node already baked into
+        // the system prompt. No regen, no anchoring patches.
+        //
+        // {@code flowContext} is single-assignment because the downstream
+        // {@code Mono.fromCallable(...)} captures it — Java requires
+        // effective-finalness for lambda-captured locals. The helper packs
+        // the conditional advance + graph re-resolve so the assignment fits
+        // a ternary.
+        //
+        // Post-T16: invert-or-not is no longer a runtime knob. The ONLY
+        // condition under which we skip the early advance is the
+        // freshly-triggered activation turn — the user msg is the trigger,
+        // not data; advance() would force-capture it as the first slot.
+        final boolean runEarlyAdvance = initialFlowContext != null
+                && !initialFlowContext.freshlyTriggered();
+        final FlowContext flowContext = runEarlyAdvance
+                ? earlyAdvanceBeforeLlm(initialFlowContext, lastUserMessageEarly, chatModel)
+                : initialFlowContext;
+        final long tAfterFlow = System.currentTimeMillis();
+
+        // §I.5 step 2 / T10: SINGLE persona resolution per turn — runs
+        // AFTER flow context resolution (and after early advance on the
+        // inverted path). By the time this fires:
+        //   • Legacy path: loadOrInitState's transparent walk has parked
+        //     the cursor on the entry interactive node, possibly setting
+        //     {@code __activePersonaId} via a persona-* node along the way.
+        //   • Inverted path: earlyAdvanceForInvertedHarness has additionally
+        //     run the strategy's advance, walking through any post-cursor
+        //     persona-* nodes. The cursor is FINAL pre-LLM.
+        // Either way, a single {@code personaResolver.resolve(...)} now
+        // returns the post-walk persona — collapsing the historic 2-3
+        // resolutions down to 1. Patches #1 and #2 of the §I.5 inventory
+        // disappear by construction.
+        //
+        // Both the legacy 2nd-resolution conditional ({@code flowContext != null
+        // ? resolve : activePersona}) and the {@code activePersona} pre-flow
+        // variable are gone — only the regen block's 3rd resolution remains,
+        // and that itself disappears in T12 along with regen.
         final TurPersona activePersona = personaResolver.resolve(agent, conversationId);
         final long tAfterPersona = System.currentTimeMillis();
 
@@ -303,23 +359,9 @@ public class TurAgentChatExecutor {
         }
         var chatOptions = chatOptionsBuilder.build();
 
-        String baseSystemPrompt = resolveSystemPrompt(agent, systemPromptOverride);
-        String lastUserMessageEarly = lastMessageOfRole(history, "user");
-        FlowContext flowContext = resolveFlowContext(agent, conversationId, flowId,
-                lastUserMessageEarly, chatModel);
-        final long tAfterFlow = System.currentTimeMillis();
-        // Re-resolve the persona AFTER flow selection. The first call at line
-        // ~240 happened before any flow ran — on a freshly-triggered flow the
-        // engine's transparent walk traversed a `persona-*` node that wrote
-        // {@code __activePersonaId} onto the flow state, switching the active
-        // voice (e.g. in-company router lands on the Camila node). Without
-        // this re-resolve the regen below still uses the agent's default
-        // persona (Marina), so the visitor sees "Sou a Marina" intro on the
-        // first turn of an in-company conversation while every subsequent
-        // turn correctly speaks as Camila.
-        final TurPersona effectivePersona = flowContext != null
-                ? personaResolver.resolve(agent, conversationId)
-                : activePersona;
+        // The single persona resolution above is the canonical voice for
+        // the whole turn — alias for downstream readability.
+        final TurPersona effectivePersona = activePersona;
         String flowAugmented = flowContext == null
                 ? baseSystemPrompt
                 : baseSystemPrompt + chatFlowEngineService.buildSystemPromptAddendum(
@@ -363,8 +405,10 @@ public class TurAgentChatExecutor {
         // first time.
         ChatFlowNode activeNode = flowContext == null ? null
                 : flowContext.graph().nodeById(flowContext.state().getCurrentNodeId()).orElse(null);
-        boolean activeNodeForbidsTools = activeNode != null
-                && forbidsToolCalls(activeNode.aiInstruction());
+        // §I.5 step 3 / T11: use the node-aware overload so the declarative
+        // ChatFlowNode.toolsEnabled field wins when set; otherwise falls
+        // back to the legacy bilingual substring scan on aiInstruction.
+        boolean activeNodeForbidsTools = forbidsToolCalls(activeNode);
         org.springframework.ai.chat.prompt.ChatOptions initialOptions = activeNodeForbidsTools
                 ? DefaultToolCallingChatOptions.builder()
                         .toolCallbacks(List.<ToolCallback>of())
@@ -517,20 +561,23 @@ public class TurAgentChatExecutor {
         // turns hit caches and stay under ~100ms. Each delta is one phase:
         //   decrypt    — TurSecretCryptoService.decrypt (AES, ~ms)
         //   chatModel  — llmModelFactory.createChatModel (HTTP client init)
-        //   persona1   — personaResolver.resolve (first pass, pre-flow)
+        //   flow       — resolveFlowContext (chat flow load + state init,
+        //                plus T9's earlyAdvanceForInvertedHarness on the
+        //                inverted path)
+        //   persona    — personaResolver.resolve (SINGLE resolution per turn
+        //                post §I.5 step 2; reads post-walk __activePersonaId)
         //   tools      — resolveToolCallbacks (MCP handshake, custom tools)
-        //   flow       — resolveFlowContext (chat flow load + state init)
         //   compose    — personaPromptComposer.compose (RAG prefix, prompts)
         //   session    — recordSessionStartSafely (analytics upsert)
         log.info("[AgentExec][timing] setup_ms={} "
-                + "(decrypt={} chatModel={} persona1={} tools={} flow={} compose={} session={})",
+                + "(decrypt={} chatModel={} flow={} persona={} tools={} compose={} session={})",
                 tSetupEnd - tStart,
                 tAfterDecrypt - tStart,
                 tAfterChatModel - tAfterDecrypt,
-                tAfterPersona - tAfterChatModel,
+                tAfterFlow - tAfterChatModel,
+                tAfterPersona - tAfterFlow,
                 tAfterTools - tAfterPersona,
-                tAfterFlow - tAfterTools,
-                tAfterCompose - tAfterFlow,
+                tAfterCompose - tAfterTools,
                 tSetupEnd - tAfterCompose);
 
         return Mono.fromCallable(() -> {
@@ -539,152 +586,49 @@ public class TurAgentChatExecutor {
             // call's output is unconditionally discarded. Skip it entirely to
             // save the ~1.5-2s of that wasted round-trip. Same reasoning the
             // original comment block on the freshlyTriggered branch laid out
-            // ("Force regen so the user sees the first node's question this
-            // very turn, instead of the initial LLM reply that was generated
-            // WITHOUT the new flow's addendum in context") — we just stop
-            // making the call we knew we were going to throw away.
-            boolean skipInitialLlmCall = flowContext != null && flowContext.freshlyTriggered();
-
+            // Post-T16: single LLM call per turn. The system prompt was
+            // composed in setup with the post-advance node already in
+            // context — no need to skip the call on freshly-triggered
+            // turns (the engine's loadOrInitState parked the cursor on
+            // the entry interactive node, and the prompt reflects it).
             String text = "";
-            // Held across the if/else so recordTurnTelemetry below can read
-            // usage metadata. Null when the initial call was skipped — the
-            // telemetry helper already null-checks (token counts stay at 0
-            // when the response object is absent).
-            org.springframework.ai.chat.model.ChatResponse response = null;
             long tLlmStart = System.currentTimeMillis();
-            long tLlmEnd;
-            if (skipInitialLlmCall) {
-                log.info("[AgentExec] Skipping initial LLM call — flow freshly triggered, regen owns the response");
-                tLlmEnd = tLlmStart;
-            } else {
-                log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
-                        agent.getTitle(), llmInstance.getTitle());
-                response = chatModel.call(prompt);
-                tLlmEnd = System.currentTimeMillis();
-
-                tokenUsageService.recordUsage(llmInstance, response, username);
-
-                if (response.getResult() != null
-                        && response.getResult().getOutput() != null
-                        && response.getResult().getOutput().getText() != null) {
-                    text = response.getResult().getOutput().getText();
-                }
-                log.info("[AgentExec] Agent '{}' response: {} chars",
-                        agent.getTitle(), text.length());
+            log.info("[AgentExec] Calling LLM for agent '{}', LLM '{}'",
+                    agent.getTitle(), llmInstance.getTitle());
+            org.springframework.ai.chat.model.ChatResponse response = chatModel.call(prompt);
+            long tLlmEnd = System.currentTimeMillis();
+            tokenUsageService.recordUsage(llmInstance, response, username);
+            if (response.getResult() != null
+                    && response.getResult().getOutput() != null
+                    && response.getResult().getOutput().getText() != null) {
+                text = response.getResult().getOutput().getText();
             }
+            log.info("[AgentExec] Agent '{}' response: {} chars",
+                    agent.getTitle(), text.length());
             chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_LLM_CALL, tLlmEnd - tLlmStart);
             log.info("[AgentExec][timing] llm_ms={}", tLlmEnd - tLlmStart);
 
-            TurChatFlowState newState = flowContext == null ? null : flowContext.state();
-            // Tracks whether the final `text` was authored for the CURRENT
-            // node (post-advance) or is stale (authored for the OLD node).
-            // Drives chip suppression at the end of this turn — chips for a
-            // node the user hasn't seen the question for create the demo
-            // bug where the "objetivo" question shows up with area chips.
+            // §I.5 step 1 invariant (post-T16): advance() already ran in
+            // the setup phase BEFORE the LLM call (see
+            // {@link #earlyAdvanceForInvertedHarness}), so {@code flowContext}
+            // already reflects the post-advance cursor and the LLM has
+            // composed {@code text} with the correct node in its system
+            // prompt. Nothing to do at the post-LLM phase — no second
+            // advance, no regen. Patches #6, #7, #8, #11, #14, #15 are
+            // gone by construction.
             //
-            // Truth table:
-            //   • No flow context → trivially aligned (no chips anyway)
-            //   • Engine didn't advance → text is for original=current node ✓
-            //   • Engine advanced + LlmJudge override → text is for OLD node
-            //     (a redirect_message to the user); chips would mismatch.
-            //   • Engine advanced + regen succeeded → text rewritten for new
-            //     node by {@link #regenerateReplyForNewNode}; chips align ✓
-            //   • Engine advanced + regen returned null → text still from
-            //     the initial LLM call (for old node); chips would mismatch.
+            // textAlignedWithCurrentNode is unconditionally true: the
+            // initial LLM call composed text with the post-advance node,
+            // so chip suggestions pulled from the same node match.
+            TurChatFlowState newState = flowContext == null ? null : flowContext.state();
             boolean textAlignedWithCurrentNode = true;
-            // Granular timing of the two heavy post-LLM substages: advance
-            // (which may itself fire an LlmJudge LLM round-trip) and regen
-            // (which always fires a second LLM round-trip when the engine
-            // advanced to a new aiQuestion). Both default to 0 so the log
-            // line reads sensibly when neither ran (e.g. no flow attached).
+            // Kept at 0 — advance() ran in the setup phase, no post-LLM
+            // advance / regen substages exist in the inverted harness.
+            // Preserved as variables so the existing timing log line in
+            // [AgentExec][timing] keeps its shape (advance_ms / regen_ms
+            // columns are still emitted but always 0 after T16).
             long tAdvanceMs = 0;
             long tRegenMs = 0;
-            if (flowContext != null) {
-                if (flowContext.freshlyTriggered()) {
-                    // Trigger turn: user's msg is the activation signal, NOT
-                    // input for the first interactive node. Skip the LlmJudge
-                    // advance entirely (would force-capture the trigger text
-                    // as the first slot value — e.g. name = "Plano de
-                    // carreira pessoal"). Force regen so the user sees the
-                    // first node's question this very turn, instead of the
-                    // initial LLM reply that was generated WITHOUT the new
-                    // flow's addendum in context.
-                    log.info("[AgentExec] Flow freshly triggered for conversation '{}' — skipping advance, regenerating for entry node",
-                            conversationId);
-                    long tRegenStart = System.currentTimeMillis();
-                    String regenerated = regenerateReplyForNewNode(
-                            agent, llmInstance, chatModel, chatOptions,
-                            effectivePersona, baseSystemPrompt, history,
-                            lastUserMessage, flowContext.state(), flowContext, username);
-                    tRegenMs = System.currentTimeMillis() - tRegenStart;
-                    if (regenerated != null) {
-                        text = regenerated;
-                    }
-                    // newState stays as flowContext.state() (initialized).
-                    // textAlignedWithCurrentNode stays true (regen targeted
-                    // the current/entry node).
-                } else {
-                    String originalNodeId = flowContext.state().getCurrentNodeId();
-                    long tAdvanceStart = System.currentTimeMillis();
-                    var advance = chatFlowEngineService.advance(flowContext.flow(),
-                            flowContext.state(), flowContext.graph(),
-                            lastUserMessage, text, chatModel);
-                    tAdvanceMs = System.currentTimeMillis() - tAdvanceStart;
-                    // LLM_JUDGE may rewrite the assistant text when it judges the
-                    // reply off-topic; HEURISTIC always leaves the override null.
-                    if (advance.assistantOverride() != null) {
-                        text = advance.assistantOverride();
-                    }
-                    newState = advance.state();
-                    boolean advanced = originalNodeId != null
-                            && newState != null
-                            && !originalNodeId.equals(newState.getCurrentNodeId());
-
-                    // When advance walked transparently from the current aiQuestion
-                    // through switch/condition/slot/persona nodes and parked the
-                    // conversation on a NEW aiQuestion, the reply we just got from
-                    // the LLM was generated with the OLD node's Goal — so the user
-                    // sees an acknowledgment of their last input but never the new
-                    // node's content (the "vou montar um plano… um momento" demo
-                    // bug). Regenerate the reply with the new node's Goal as the
-                    // active step so the user sees the proper response on this
-                    // very turn. Skipped when:
-                    //   • the strategy already produced an override (LLM_JUDGE
-                    //     redirect — that's already targeted at the user);
-                    //   • the state did not transition;
-                    //   • the new node is not an aiQuestion (start/end/persona/
-                    //     slot/switch/condition are transparent or terminal, no
-                    //     fresh user-facing prompt to compose).
-                    if (advance.assistantOverride() == null && advanced) {
-                        // Re-resolve the persona one more time. The transparent
-                        // walk inside {@code advance()} may have crossed a
-                        // {@code persona-*} node that swapped the active voice
-                        // (some flows do this — e.g. a router flow that owns
-                        // the front door but hands off to a specialist sub-
-                        // persona at the first switch). Using the same lookup
-                        // as the initial post-flow resolve keeps both paths
-                        // (fresh-trigger and mid-flow advance) consistent.
-                        TurPersona regenPersona = personaResolver.resolve(agent, conversationId);
-                        if (regenPersona == null) regenPersona = effectivePersona;
-                        long tRegenStart = System.currentTimeMillis();
-                        String regenerated = regenerateReplyForNewNode(
-                                agent, llmInstance, chatModel, chatOptions,
-                                regenPersona, baseSystemPrompt, history,
-                                lastUserMessage, newState, flowContext, username);
-                        tRegenMs = System.currentTimeMillis() - tRegenStart;
-                        if (regenerated != null) {
-                            text = regenerated;
-                        }
-                        // Aligned only when regen actually produced new text.
-                        textAlignedWithCurrentNode = regenerated != null;
-                    } else if (advanced) {
-                        // Override path: LlmJudge sent a redirect for the OLD node
-                        // while the engine advanced — text and current-node chips
-                        // would describe different things.
-                        textAlignedWithCurrentNode = false;
-                    }
-                }
-            }
 
             // Persona's negative-constraint check runs LAST so it also
             // catches forbidden terms reintroduced by the flow override.
@@ -774,168 +718,22 @@ public class TurAgentChatExecutor {
     }
 
     /**
-     * Second LLM call for the new leaf node after the flow engine's transparent
-     * walk moved the conversation past the original aiQuestion. Composes the
-     * same prompt shape the first call used (base prompt + flow addendum for
-     * the NEW node + persona wrap + full history) and returns the new text.
+     * §I.5 step 3 / T11 — declarative tool-strip check. The node author
+     * sets {@link ChatFlowNode#toolsEnabled()} to {@code Boolean.FALSE} to
+     * strip tool callbacks on the LLM call against this node. {@code null}
+     * or {@code TRUE} = tools allowed (default).
      *
-     * <p>Returns {@code null} when the new leaf node has no aiInstruction (no
-     * Goal to address — e.g. an end node a strategy mis-resolved into), when
-     * its type is not {@code aiQuestion}, or when the LLM call yields no text.
-     * Caller treats {@code null} as "keep the original reply".
+     * <p>The legacy {@code forbidsToolCalls(String)} substring matcher
+     * (patches #3/#4/#5 — bilingual sentinels in {@code aiInstruction})
+     * was deleted in T16 along with {@code regenerateReplyForNewNode},
+     * {@code buildRegenOverride}, {@code trimToRecentTurns}, and
+     * {@code REGEN_HISTORY_TURN_BUDGET}. Authors of pre-T16 flows that
+     * still rely on the sentinel must migrate to the declarative field.
      *
      * @since 2026.2.7
      */
-    private String regenerateReplyForNewNode(TurAIAgent agent,
-            TurLLMInstance llmInstance,
-            ChatModel chatModel,
-            org.springframework.ai.model.tool.ToolCallingChatOptions chatOptions,
-            TurPersona activePersona,
-            String baseSystemPrompt,
-            List<ChatMessageItem> history,
-            String lastUserMessage,
-            TurChatFlowState newState,
-            FlowContext originalContext,
-            String username) {
-        // Resolve the graph for the new state's flow — may differ from the
-        // original when the walk descended into a sub-flow.
-        ChatFlowGraph newGraph = newState.getFlow() != null
-                && newState.getFlow().getId() != null
-                && newState.getFlow().getId().equals(originalContext.flow().getId())
-                        ? originalContext.graph()
-                        : chatFlowEngineService.parseGraph(newState.getFlow())
-                                .orElse(originalContext.graph());
-        ChatFlowNode newNode = newGraph.nodeById(newState.getCurrentNodeId()).orElse(null);
-        if (newNode == null || !"aiQuestion".equals(newNode.type())) {
-            return null;
-        }
-        if (newNode.aiInstruction() == null || newNode.aiInstruction().isBlank()) {
-            return null;
-        }
-
-        // Regen-specific addendum: NO "Next step preview" hint. The hint is
-        // designed for the pre-LLM call where the bot can capture + chain
-        // into the next question in one reply. In the regen path, the user's
-        // last message has already been captured by the judge and the flow
-        // is parked on the NEW current node — exposing the next node's
-        // instruction here makes the LLM ask one step ahead, producing the
-        // chip-vs-question mismatch we kept seeing in the in-company flow
-        // ("bot asks setor question, chips are num-pessoas", etc.).
-        String newAddendum = ChatFlowOps.buildBaseAddendum(
-                newNode, newState, newGraph, /* includeNextStepHint */ false);
-        // Highest-priority override appended AFTER the persona-composed
-        // prompt. Empirically the regen LLM tends to anchor on the
-        // conversational pattern in history ("we've been asking about
-        // cargo/objetivo, let's keep doing that") and quietly ignore the
-        // new node's aiInstruction baked into newAddendum. Explicit
-        // directive — placed last so it's the freshest tokens before the
-        // user message — flips compliance in the cases we've seen fail.
-        // Bilingual on purpose: persona may run in PT or EN; either way
-        // the directive is unambiguous.
-        String regenOverride = buildRegenOverride(newNode);
-        // Deliberately drop `baseSystemPrompt` from the regen call. That
-        // prompt contains the agent's orchestration rules ("show 3 caminhos
-        // welcome on first turn", "ROUTER LLM decides flow", etc.) which
-        // are correct for the INITIAL LLM call (routing + persona-free
-        // greeting) but FIGHT the regen's narrow purpose: produce the
-        // current node's question. Observed in production with gpt-4o-mini:
-        // even with the regenOverride explicitly forbidding the welcome,
-        // the LLM kept emitting it on freshly-triggered flows because the
-        // welcome example sits earlier in the prompt and anchors stronger.
-        // Persona prompts already carry the role context (e.g. "Você é a
-        // Marina, consultora de carreira do Insper EE") and the security
-        // rules (NUNCA peça CPF, NUNCA cite concorrentes), so dropping the
-        // agent prompt loses no critical guardrail. The flow addendum
-        // (`newAddendum`) carries the active node's Goal + Collect — that's
-        // all the regen needs.
-        String regenSystemPrompt = personaPromptComposer.compose(
-                activePersona,
-                agent.getTurEmbeddingModelInstance(),
-                lastUserMessage,
-                newAddendum) + regenOverride;
-
-        // Trim history to the last few turns. Sending the full conversation
-        // gave the LLM too many examples of the old-pattern Q&A and it kept
-        // re-asking the previous step's question despite the system prompt
-        // change. Recent context (3 turns = 6 messages) is enough for the
-        // model to know who the visitor is + what they just said, without
-        // anchoring on stale patterns.
-        List<ChatMessageItem> regenHistory = trimToRecentTurns(history, REGEN_HISTORY_TURN_BUDGET);
-        List<Message> regenMessages = new ArrayList<>();
-        regenMessages.add(new SystemMessage(regenSystemPrompt));
-        for (ChatMessageItem item : regenHistory) {
-            String content = item.content() == null ? "" : item.content();
-            if ("assistant".equals(item.role())) {
-                regenMessages.add(new AssistantMessage(content));
-            } else {
-                regenMessages.add(new UserMessage(content));
-            }
-        }
-
-        log.info("[AgentExec] Regenerating reply for new node '{}' (type={}) after transparent walk — history trimmed from {} to {} messages",
-                newNode.id(), newNode.type(), history.size(), regenHistory.size());
-        // Most regen calls just need to produce text (one acknowledgment +
-        // the next question). When the node's aiInstruction explicitly
-        // forbids tool calls — e.g. {@code ai-coupon-code} which only asks
-        // "qual é o código?" — we strip the toolset so an over-eager LLM
-        // can't preemptively call {@code compor_proposta_in_company} or
-        // {@code gerar_proposta_pdf} (which would generate the proposal
-        // before the slot is captured, then cache by hash and ignore the
-        // user's actual coupon code on the next turn). Detection is a
-        // substring scan of the aiInstruction — authors mark the node by
-        // writing "NÃO CHAME NENHUMA TOOL" / "do not call any tool" /
-        // "no tool" anywhere in the instruction.
-        //
-        // For proposal-delivery nodes ({@code ai-deliver-proposta},
-        // {@code ai-deliver-b2b-pdf}) the aiInstruction says "chame DUAS
-        // tools" or "Chame `gerar_proposta_pdf`" — substring NOT present —
-        // so the regen keeps the full toolset and the proposal is composed
-        // with the freshest slot values (including the just-captured coupon).
-        boolean regenForbidsTools = forbidsToolCalls(newNode.aiInstruction());
-        org.springframework.ai.chat.prompt.ChatOptions regenOptions = regenForbidsTools
-                ? DefaultToolCallingChatOptions.builder()
-                        .toolCallbacks(List.<ToolCallback>of())
-                        .internalToolExecutionEnabled(false)
-                        .build()
-                : chatOptions;
-        if (regenForbidsTools) {
-            log.info("[AgentExec] Regen for node '{}' running tool-free (aiInstruction forbids tools)",
-                    newNode.id());
-        }
-        Prompt regenPrompt = new Prompt(regenMessages, regenOptions);
-        var regenResponse = chatModel.call(regenPrompt);
-        tokenUsageService.recordUsage(llmInstance, regenResponse, username);
-        if (regenResponse.getResult() == null
-                || regenResponse.getResult().getOutput() == null
-                || regenResponse.getResult().getOutput().getText() == null) {
-            return null;
-        }
-        String regenText = regenResponse.getResult().getOutput().getText();
-        log.info("[AgentExec] Regenerated reply: {} chars", regenText.length());
-        return regenText;
-    }
-
-    /**
-     * Substring-based detector for nodes whose {@code aiInstruction}
-     * tells the LLM to NOT make any tool calls during regeneration.
-     * Authors mark a node by writing one of the trigger phrases anywhere
-     * in the instruction; the regen path strips the toolset on a match
-     * so an over-eager LLM (gpt-4o-mini being notorious for this) can't
-     * preempt the flow by calling a downstream tool before the next slot
-     * is captured.
-     *
-     * <p>Bilingual on purpose: PT-BR flows use the upper-cased Portuguese
-     * directive; EN flows can use the literal English equivalent. The
-     * match is case-insensitive so authors don't have to remember a
-     * specific spelling.
-     */
-    static boolean forbidsToolCalls(String aiInstruction) {
-        if (aiInstruction == null || aiInstruction.isBlank()) return false;
-        String lower = aiInstruction.toLowerCase();
-        return lower.contains("não chame nenhuma tool")
-                || lower.contains("nao chame nenhuma tool")
-                || lower.contains("do not call any tool")
-                || lower.contains("zero tool calls");
+    static boolean forbidsToolCalls(ChatFlowNode node) {
+        return node != null && Boolean.FALSE.equals(node.toolsEnabled());
     }
 
     /**
@@ -1048,6 +846,44 @@ public class TurAgentChatExecutor {
                 .orElse(null);
     }
 
+    /**
+     * §I.5 step 1 — runs the flow engine's {@code advance(...)} BEFORE the
+     * initial LLM call with {@code assistantMessage = null} and returns a
+     * fresh {@link FlowContext} pinned to the post-advance state. The
+     * graph is re-resolved when {@code advance} descended into a sub-flow
+     * so downstream composition reads the correct interactive node.
+     *
+     * <p>Defensive: when {@code advance} returns a null/empty state (no
+     * cursor change, no strategy override) the original context is
+     * returned unchanged.
+     *
+     * <p>Caller has already verified
+     * {@code initialFlowContext != null && !initialFlowContext.freshlyTriggered()};
+     * this helper does not re-check those preconditions.
+     *
+     * @since 2026.2.7
+     */
+    private FlowContext earlyAdvanceBeforeLlm(FlowContext initial,
+            String userMessage,
+            ChatModel auxiliaryModel) {
+        log.info("[AgentExec] Running advance(flow={}, userMsg) BEFORE LLM",
+                initial.flow().getId());
+        var earlyAdvance = chatFlowEngineService.advance(initial.flow(),
+                initial.state(), initial.graph(),
+                userMessage, /* assistantMessage = */ null, auxiliaryModel);
+        TurChatFlowState newState = earlyAdvance.state();
+        if (newState == null || newState.getFlow() == null) {
+            return initial;
+        }
+        ChatFlowGraph newGraph = newState.getFlow().getId() != null
+                && newState.getFlow().getId().equals(initial.flow().getId())
+                        ? initial.graph()
+                        : chatFlowEngineService.parseGraph(newState.getFlow())
+                                .orElse(initial.graph());
+        return new FlowContext(newState.getFlow(), newGraph, newState,
+                initial.freshlyTriggered());
+    }
+
     private FlowContext resolveForcedFlow(TurAIAgent agent, String conversationId, String flowId) {
         Optional<TurChatFlow> flowOpt = chatFlowRepository.findById(flowId);
         if (flowOpt.isEmpty()) {
@@ -1102,104 +938,11 @@ public class TurAgentChatExecutor {
         return "";
     }
 
-    /**
-     * Number of trailing user turns kept when regenerating the reply for a
-     * newly-advanced node. A "turn" here = one user message + its (potentially
-     * stale) assistant response. Sending the FULL history during regen gave
-     * the LLM too many examples of the old pattern and it kept asking the
-     * previous step's question; trimming to the recent slice fixes
-     * compliance while preserving "who the visitor is + what they just said".
-     */
-    private static final int REGEN_HISTORY_TURN_BUDGET = 3;
-
-    /**
-     * Bilingual highest-priority override appended after the persona prompt
-     * during regen. When the destination node renders chip buttons in the UI,
-     * those choices are listed inline so the LLM cannot produce a question
-     * incongruent with them (observed gpt-4o-mini failure: a decision-role
-     * node with chips [RH/L&D, Gestor, C-level, Comprador] regenerated as
-     * "Quantas pessoas participarão?" — the chips render separately, so the
-     * visitor saw a num_pessoas question with role chips below it).
-     */
-    private static String buildRegenOverride(ChatFlowNode newNode) {
-        StringBuilder sb = new StringBuilder("""
-
-
-                === HIGHEST-PRIORITY OVERRIDE / INSTRUÇÃO DE PRIORIDADE MÁXIMA ===
-                The conversation has advanced to a NEW step in the flow.
-                Your next reply MUST address the CURRENT step's goal. Do NOT repeat
-                or rephrase earlier questions. Do NOT continue the conversational
-                pattern of older turns. Do NOT skip ahead to a later step. The
-                user's last message has ALREADY been captured as the answer to the
-                previous step — acknowledge briefly (one short sentence at most)
-                and ask the CURRENT step's question.
-
-                A conversa avançou para uma NOVA etapa do flow. Sua próxima resposta
-                DEVE abordar a pergunta da etapa atual. NÃO repita nem reformule
-                perguntas anteriores. NÃO continue o padrão das mensagens antigas.
-                NÃO pule pra uma etapa futura. A mensagem do usuário JÁ FOI capturada
-                como resposta da etapa anterior — faça um acknowledge curto (uma
-                frase, opcional) e em seguida a pergunta da etapa atual.""");
-        // Inline the node's aiInstruction directly in the override. Without
-        // this the override only POINTED to a "FLOW STATE / aiInstruction
-        // section above" — empirically gpt-4o-mini frequently ignored that
-        // pointer and recycled an instruction from a later step it had
-        // already seen via the conversational pattern (in-company flow:
-        // visitor reported the bot asking the `tema` question while the
-        // engine was parked on `ai-num-pessoas`). Re-stating the literal
-        // instruction next to the imperative wording flips compliance.
-        if (newNode.aiInstruction() != null && !newNode.aiInstruction().isBlank()) {
-            sb.append("\n\nCURRENT STEP'S INSTRUCTION (literal — follow this, not any earlier step's):\n")
-              .append(newNode.aiInstruction().trim());
-        }
-        List<String> chips = newNode.inlineOptions();
-        if (chips != null && !chips.isEmpty()) {
-            String joined = String.join(" · ", chips);
-            sb.append("\n\nThe UI will render these chip buttons below your reply: ")
-              .append(joined)
-              .append("\nYour question MUST be congruent with these choices — "
-                    + "i.e. a question whose set of natural answers includes all of them. "
-                    + "Do NOT mention the chips literally; just ask the question they answer.")
-              .append("\n\nA interface vai mostrar estes botões abaixo da sua resposta: ")
-              .append(joined)
-              .append("\nSua pergunta DEVE ser congruente com essas escolhas — "
-                    + "uma pergunta cujas respostas naturais incluam todas elas. "
-                    + "NÃO cite os chips literalmente; apenas formule a pergunta que eles respondem.");
-        }
-        sb.append("\n=== END OVERRIDE / FIM ===");
-        return sb.toString();
-    }
-
-    /**
-     * Returns the trailing portion of {@code history} containing at most
-     * {@code maxUserTurns} user messages (plus any assistant messages
-     * interleaved with or after them). Preserves chronological order.
-     * Defensive vs. malformed history (null items, blank role) — those are
-     * passed through; the regen prompt isn't the place to assert message
-     * shape, just to limit volume.
-     */
-    static List<ChatMessageItem> trimToRecentTurns(List<ChatMessageItem> history, int maxUserTurns) {
-        if (history == null || history.isEmpty() || maxUserTurns <= 0) {
-            return history == null ? List.of() : history;
-        }
-        int userTurnsSeen = 0;
-        int startIdx = history.size();
-        // Walk backwards counting user turns; stop at the boundary just
-        // before crossing the budget so we keep `maxUserTurns` user messages
-        // plus whatever assistant/system items sit between them.
-        for (int i = history.size() - 1; i >= 0; i--) {
-            ChatMessageItem item = history.get(i);
-            if (item != null && "user".equals(item.role())) {
-                userTurnsSeen++;
-                if (userTurnsSeen > maxUserTurns) {
-                    break;
-                }
-            }
-            startIdx = i;
-        }
-        if (startIdx == 0) return history;
-        return history.subList(startIdx, history.size());
-    }
+    // §I.5 step 4 / T16 — deleted: REGEN_HISTORY_TURN_BUDGET (patch #14),
+    // buildRegenOverride(ChatFlowNode) (patches #10/#12/#13), and
+    // trimToRecentTurns(List, int) (patch #14). All three existed only to
+    // support regenerateReplyForNewNode, which itself was deleted earlier
+    // in T16. Recoverable from git log on pre-T16 commits.
 
     /**
      * Resolved per-turn flow runtime — group of values that always travel

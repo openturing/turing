@@ -11,16 +11,15 @@ package com.viglet.turing.genai;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.mockito.Mockito;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
 import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
 
@@ -111,402 +110,131 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#postWalkPersonaSwap_initialReplyComesInLucasVoiceNotMarina}
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #1.")
-    void resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall() throws java.io.IOException {
+        // Post-T16 contract for patch #1: persona resolution happens EXACTLY
+        // ONCE per turn, AFTER earlyAdvance has run the strategy + walked
+        // any transparent persona-* nodes. The single resolve(...) call
+        // therefore sees the POST-walk {@code __activePersonaId} and returns
+        // the post-walk persona — never the pre-walk one.
+        //
+        // The persona-switch fixture has a switch-route driven by
+        // {@code __force_route}: when set to "lucas", the post-cursor walk
+        // is ai-name → switch-route → persona-lucas → ai-objetivo. The
+        // persona-lucas node sets {@code __activePersonaId=lucas} in the
+        // engine variables. The test pre-seeds state at ai-name with
+        // __force_route=lucas + __activePersonaId=<marina-id> (the walk
+        // landed on Marina first via persona-marina at start). After
+        // earlyAdvance, the persisted state has __activePersonaId=<lucas-id>
+        // and the SINGLE resolve() returns Lucas.
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.loadFromClasspath(
+                        "/harness-it/persona-switch-mid-flow.chat-flow.json");
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent = createAgent("patch1", null);
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llm = createMockableLlmInstance();
+        agent.getLlmInstances().add(llm);
+        agent = agentRepository.save(agent);
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.Imported imp =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(
+                        agent, entry, importRepos());
+
+        com.viglet.turing.persistence.model.agent.TurAIAgent reloaded =
+                agentRepository.findById(agent.getId()).orElseThrow();
+        com.viglet.turing.persistence.model.persona.TurPersona marina = reloaded.getPersonas().stream()
+                .filter(p -> p.getName().contains("Marina"))
+                .findFirst().orElseThrow(() -> new AssertionError("Marina must be linked to the agent"));
+        com.viglet.turing.persistence.model.persona.TurPersona lucas = reloaded.getPersonas().stream()
+                .filter(p -> p.getName().contains("Lucas"))
+                .findFirst().orElseThrow(() -> new AssertionError("Lucas must be linked to the agent"));
+
+        // Pre-seed: park the cursor on ai-name with __force_route=lucas so
+        // the strategy captures the user message into the `name` slot, then
+        // the walk routes through persona-lucas. __activePersonaId is set
+        // to Marina (post-walk would have been Marina, since the start →
+        // persona-marina → ai-name walk landed there).
+        String conv = "conv-patch1-" + java.util.UUID.randomUUID();
+        com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository stateRepo =
+                org.springframework.beans.factory.BeanFactoryUtils.beanOfTypeIncludingAncestors(
+                        applicationContext,
+                        com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository.class);
+        com.viglet.turing.persistence.model.agent.TurChatFlowState seeded =
+                new com.viglet.turing.persistence.model.agent.TurChatFlowState();
+        seeded.setConversationId(conv);
+        seeded.setFlow(imp.flow());
+        seeded.setCurrentNodeId("ai-name");
+        seeded.setVariablesJson("{\"__force_route\":\"lucas\",\"__activePersonaId\":\""
+                + marina.getId() + "\"}");
+        stateRepo.save(seeded);
+
+        // Clear any spy invocations from the @BeforeEach harness reset
+        // (which itself doesn't touch personaResolver, but other tests
+        // sharing the context may have).
+        Mockito.clearInvocations(personaResolverSpy);
+        harness().queueResponse("Qual é o seu objetivo de carreira?");
+
+        runTurn(agent, llm,
+                java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
+                null, conv, imp.flow().getId());
+
+        // 1. EXACTLY ONE resolve(...) call per turn — patches #1+#2 of the
+        //    §I.3 inventory collapse to this single contract post-T10.
+        Mockito.verify(personaResolverSpy, Mockito.times(1))
+                .resolve(Mockito.any(), Mockito.eq(conv));
+
+        // 2. Cursor walked through persona-lucas and landed on ai-objetivo
+        com.viglet.turing.persistence.model.agent.TurChatFlowState finalState =
+                stateRepo.findByConversationIdAndFlow_Id(conv, imp.flow().getId()).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(finalState.getCurrentNodeId())
+                .as("Post-advance: walk through switch-route → persona-lucas → ai-objetivo")
+                .isEqualTo("ai-objetivo");
+        // The persona-lucas node must have re-written __activePersonaId.
+        org.assertj.core.api.Assertions.assertThat(finalState.getVariablesJson())
+                .as("persona-lucas walk must overwrite __activePersonaId from Marina → Lucas")
+                .contains(lucas.getId());
+
+        // 3. The captured prompt's SystemMessage must carry LUCAS's voice
+        //    (the post-walk persona) — NOT Marina's. Distinctive substrings:
+        //      Lucas:  "alumni" / "Beleza" / "narrativa"
+        //      Marina: "consultora" / "Assine como Marina"
+        String systemText = systemTextOf(firstPrompt());
+        org.assertj.core.api.Assertions.assertThat(systemText)
+                .as("Initial-call SystemMessage must reflect the post-walk Lucas persona "
+                        + "(distinctive: 'alumni'). Got: %s", systemText)
+                .contains("alumni");
+        org.assertj.core.api.Assertions.assertThat(systemText)
+                .as("SystemMessage must NOT carry Marina's voice — the post-walk resolve "
+                        + "wrote Lucas. Pre-T10 regressions show 'consultora' here.")
+                .doesNotContain("consultora");
     }
 
-    /**
-     * Patch #2 — re-resolve persona a TERCEIRA vez para o regen
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:451-461
-     *
-     * Comportamento a travar:
-     *   Quando o {@code advance()} pós-initial-call atravessa um nó
-     *   {@code persona-*} que troca {@code __activePersonaId}, o regen
-     *   resolve a persona de novo e o segundo prompt sai com a persona
-     *   recém-ativa, não com a do início do turno.
-     *
-     * Cenário (fixture firme — criada em T5):
-     *   Flow:    {@code harness-it/persona-switch-mid-flow.chat-flow.json}.
-     *            Cadeia: {@code start → persona-marina → ai-name →
-     *            switch-route → persona-lucas → ai-objetivo → end}. O switch
-     *            usa o slot {@code __force_route} (test-only knob) — o teste
-     *            seed-a {@code __force_route = "lucas"} para garantir que o
-     *            walk transparente CRUZA o nó {@code persona-lucas}.
-     *   Estado:  parked em {@code ai-name}; user já capturou nome no turno
-     *            anterior; {@code __force_route} seedado como "lucas".
-     *   Entrada: user msg = "Pode prosseguir."
-     *   Mocks:   {@code harness().queueResponse("ok-1")} para initial (cuja
-     *            persona ainda é Marina, pre-walk), {@code queueResponse("ok-2")}
-     *            para regen (post-walk em persona Lucas). {@code @SpyBean}
-     *            em {@link com.viglet.turing.genai.persona.TurAgentPersonaResolver}
-     *            para contar {@code resolve(...)} invocations — patch #1 tem
-     *            que mostrar ≥2.
-     *
-     * Asserts:
-     *   1. {@code personaResolver.resolve(...)} foi invocado 3 vezes
-     *      (linha ~240 inicial + pós-flow + dentro do regen).
-     *   2. O SystemMessage do 2º Prompt capturado contém o systemInstruction
-     *      da persona X (ativada pelo walk), NÃO da persona inicial.
-     *   3. O reply final que o SSE publica == "ok-2".
-     *
-     * Nota refactor:
-     *   No modelo invertido NÃO há regen — o teste passa a NÃO existir como
-     *   asserção sobre regen; deve ser substituído por uma versão que valida
-     *   uma única resolução de persona pós-advance. Marcar como
-     *   {@code @Deprecated/remove-on-refactor} no Javadoc da implementação.
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #2.")
-    void reResolvesPersonaInsideRegen_whenAdvanceCrossedPersonaNode() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    @MockitoSpyBean
+    private TurAgentPersonaResolver personaResolverSpy;
+
+    @BeforeEach
+    void resetPersonaResolverSpy() {
+        Mockito.clearInvocations(personaResolverSpy);
     }
 
-    /**
-     * Patch #8 — textAlignedWithCurrentNode flag + supressão de chips
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:382-398, 469-476, 504-512
-     *
-     * Comportamento a travar:
-     *   Quando o initial LLM call respondeu para o nó N (pré-advance), depois
-     *   o advance cruzou nós transparentes e a strategy emitiu um
-     *   {@code assistantOverride} (texto fixo, sem regen), o executor zera
-     *   {@code textAlignedWithCurrentNode=false} e SUPRIME os chips do nó
-     *   atual no payload SSE — porque os chips do nó N+1 não casam com o
-     *   texto do nó N que será exibido.
-     *
-     * Cenário:
-     *   Flow:    Nova fixture OU programa-match adaptado: aiQuestion N1 →
-     *            switch → aiQuestion N2 com {@code inlineOptions} (chips).
-     *            Strategy precisa retornar AdvanceResult com assistantOverride
-     *            não-nulo para evitar o regen (que zeraria a flag de volta).
-     *   Estado:  parked em N1; usuário acabou de mandar input válido.
-     *   Entrada: user msg = "Tecnologia & Dados"
-     *   Mocks:   ChatModel retorna texto para N1.
-     *            Strategy mockada para retornar assistantOverride="literal text"
-     *            (sem regen path).
-     *
-     * Asserts:
-     *   1. O reply final SSE = "literal text" (assistantOverride venceu).
-     *   2. O payload SSE NÃO contém o array de chips do N2
-     *      (chips são suprimidos quando textAlignedWithCurrentNode=false).
-     *   3. No turno SEGUINTE (sem advance), a flag volta a true e os chips
-     *      do nó parked aparecem normalmente.
-     *
-     * Nota refactor:
-     *   Esta flag deixa de existir na ordem invertida. O refactor remove o
-     *   teste — texto e chips são sempre compostos para o nó atual pós-advance,
-     *   por construção. Marcar a substituição: "no novo design, chips e texto
-     *   estão SEMPRE alinhados, não há cenário onde precisem ser dessincronizados".
+    /* Patches #2 (re-resolve persona inside regen) and #8 (textAlignedWithCurrentNode
+     * flag + chip suppression) — DELETED in T16: persona resolves exactly
+     * once per turn now (T10), and text + chips are composed for the same
+     * post-advance node so the alignment flag is true by construction.
      */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #8.")
-    void suppressesChipsWhenAssistantOverrideDoesNotMatchPostAdvanceNode() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
 
-    /**
-     * Patch #9 — regen omite "Next step preview" hint
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:593-602
-     *                       + ChatFlowOps.java:125-167
-     *
-     * Comportamento a travar:
-     *   No regen, o executor chama
-     *   {@code buildBaseAddendum(node, state, graph, includeNextStepHint=false)}
-     *   — diferentemente do initial call onde o flag é {@code true}. O resultado
-     *   é que o system prompt do regen NÃO descreve o nó N+1 (próximo step),
-     *   evitando que o LLM pergunte uma etapa adiante.
-     *
-     * Cenário:
-     *   Flow:    programa-match-ee — qualquer cadeia aiQuestion N → aiQuestion N+1
-     *            onde N+1 tem aiInstruction distintiva.
-     *   Estado:  parked em N pré-advance; user acabou de responder N.
-     *   Entrada: user msg = resposta válida para N.
-     *   Mocks:   ChatModel-1 (initial) retorna texto qualquer.
-     *            ChatModel-2 (regen) capturado via ArgumentCaptor para
-     *            inspecionar o SystemMessage.
-     *
-     * Asserts:
-     *   1. O system prompt do PRIMEIRO Prompt capturado CONTÉM o
-     *      aiInstruction de N+1 (next-step-hint=true).
-     *   2. O system prompt do SEGUNDO Prompt capturado NÃO contém o
-     *      aiInstruction do nó depois do destino do regen (i.e., não
-     *      vaza N+2). Pode usar o marcador textual do hint
-     *      ("Próximo passo" / "Next step" / "Coming up") como assertion.
-     *
-     * Nota refactor:
-     *   Sem regen, há apenas um {@code buildBaseAddendum} por turno, sempre
-     *   com o flag adequado ao nó atual pós-advance — a bifurcação
-     *   true/false desaparece. Teste vira: "system prompt do único call
-     *   contém o hint do nó atual e NÃO do nó futuro".
+    /* Patches #9 (next-step hint), #10 (HIGHEST-PRIORITY OVERRIDE block),
+     * #11 (drop baseSystemPrompt in regen), #12 (inline aiInstruction in
+     * override), #13 (inline chip labels + congruency imperative), and #14
+     * (trim history to recent turns in regen) — DELETED in T16: all six
+     * fought anchoring in the regen call. With regen gone (T12 → T16) the
+     * single LLM call composes against the post-advance node directly,
+     * the OVERRIDE block is gone, and full history flows unmodified.
      */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #9.")
-    void omitsNextStepPreviewHintInRegenAddendum() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
 
-    /**
-     * Patch #10 — HIGHEST-PRIORITY OVERRIDE bloco apendado depois do persona prompt
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:604-632, 893-948
-     *
-     * Comportamento a travar:
-     *   O system prompt do regen recebe, APÓS o persona prompt, um bloco
-     *   bilíngue "INSTRUÇÃO DE PRIORIDADE MÁXIMA / HIGHEST-PRIORITY OVERRIDE"
-     *   colocado como os tokens MAIS RECENTES antes da user message — para
-     *   combater o anchoring do regen no padrão da conversa anterior.
-     *
-     * Cenário:
-     *   Flow:    programa-match-ee, transição ai-cargo → ai-objetivo (regen path).
-     *   Estado:  parked em ai-cargo; user acabou de responder "Gerente sênior".
-     *   Entrada: user msg = "Gerente sênior numa fintech, há 4 anos"
-     *   Mocks:   ChatModel-1 retorna ack qualquer.
-     *            ChatModel-2 (regen) capturado via ArgumentCaptor para
-     *            inspecionar o último SystemMessage do Prompt.
-     *
-     * Asserts:
-     *   1. O SystemMessage do PRIMEIRO Prompt NÃO contém
-     *      "INSTRUÇÃO DE PRIORIDADE MÁXIMA" nem "HIGHEST-PRIORITY OVERRIDE".
-     *   2. O SystemMessage do SEGUNDO Prompt (regen) CONTÉM
-     *      "INSTRUÇÃO DE PRIORIDADE MÁXIMA" E "HIGHEST-PRIORITY OVERRIDE"
-     *      (bloco bilíngue obrigatório).
-     *   3. O bloco override aparece DEPOIS do persona prompt — i.e., o
-     *      offset de "INSTRUÇÃO" é > offset do nome da persona ("Marina").
-     *
-     * Nota refactor:
-     *   Sem regen, não há prompt diferente para combater anchoring — o teste
-     *   deixa de fazer sentido após o refactor. Marcar como "tombstone teste
-     *   #10 — bloco override removido por construção".
-     *
-     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#highestPriorityOverride_proventsRegressionToPreviousNodeQuestion}
+    /* Patch #15 (refresh state from DB before strategy advance) —
+     * DELETED in T16: advance() is now @Transactional (T13) and runs
+     * BEFORE the LLM call (T9), so there is no concurrent tool-callback
+     * slot write to refresh from. The state mutation is atomic within
+     * the @Transactional boundary.
      */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #10.")
-    void appendsBilingualHighestPriorityOverrideOnRegen() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * Patch #11 — drop deliberado do baseSystemPrompt no regen
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:615-632
-     *
-     * Comportamento a travar:
-     *   No regen, o system prompt é montado SEM o {@code baseSystemPrompt}
-     *   (regras de orquestração do agent: "ROUTER LLM decides flow",
-     *   "show 3 caminhos welcome on first turn", etc.) — porque esse prompt
-     *   contradiz o objetivo estreito do regen (responder a UMA pergunta
-     *   do nó atual).
-     *
-     * Cenário:
-     *   Flow:    programa-match-ee, qualquer transição que dispare regen.
-     *            O agent precisa ter um baseSystemPrompt distintivo configurado
-     *            (frases tipo "ROUTER LLM" ou "3 caminhos") para podermos
-     *            assertar ausência.
-     *   Estado:  parked em N pré-advance.
-     *   Entrada: user msg = resposta válida.
-     *   Mocks:   ChatModel-1 retorna ack.
-     *            ChatModel-2 (regen) capturado via ArgumentCaptor.
-     *
-     * Asserts:
-     *   1. O SystemMessage do PRIMEIRO Prompt CONTÉM marcadores distintivos
-     *      do baseSystemPrompt (ex.: "ROUTER LLM", "3 caminhos", "welcome on first turn").
-     *   2. O SystemMessage do SEGUNDO Prompt (regen) NÃO contém NENHUM desses
-     *      marcadores — o baseSystemPrompt foi totalmente removido.
-     *   3. O 2º prompt ainda contém o persona prompt (não é nulo) e o
-     *      newAddendum do nó destino.
-     *
-     * Nota refactor:
-     *   Sem regen, não há "system prompt diferente do initial". O teste
-     *   é removido — o prompt único monta-se uma vez com o conjunto certo
-     *   de partes para o nó pós-advance.
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #11.")
-    void dropsBaseSystemPromptInRegenToAvoidOrchestrationConflict() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * Patch #12 — inline do aiInstruction literal dentro do override
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:920-931
-     *
-     * Comportamento a travar:
-     *   O override bloco do regen RE-INCLUI o {@code aiInstruction.trim()}
-     *   literal do nó destino — mesmo que ele já apareça no {@code newAddendum}
-     *   acima. Sem esse re-inline o LLM ignora o "pointer" ao aiInstruction
-     *   e recicla uma instrução antiga de outro step.
-     *
-     * Cenário:
-     *   Flow:    programa-match-ee, transição com aiInstruction distintiva no
-     *            nó destino — ex.: ai-objetivo cujo aiInstruction começa com
-     *            "Pergunte onde o visitante quer estar daqui a 3 anos".
-     *   Estado:  parked em ai-cargo.
-     *   Entrada: user msg = "Gerente sênior, há 4 anos"
-     *   Mocks:   ChatModel-1 retorna ack.
-     *            ChatModel-2 capturado.
-     *
-     * Asserts:
-     *   1. O aiInstruction literal do nó destino aparece EXATAMENTE 2 vezes
-     *      no SystemMessage do regen — uma no newAddendum (FLOW STATE) e
-     *      uma no bloco override (linha 920-931).
-     *   2. Ambas ocorrências contêm a mesma substring distintiva
-     *      (ex.: "daqui a 3 anos") — confirma que é literal, não paráfrase.
-     *
-     * Nota refactor:
-     *   Sem regen, não há override. Teste removido.
-     *
-     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#aiInstructionLiteralEcho_regenReplyContainsDistinctiveSpanFromAddendum}
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #12.")
-    void inlinesAiInstructionLiteralInsideOverrideBlock() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * Patch #13 — inline das chip-labels no override + "MUST be congruent"
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:932-945
-     *
-     * Comportamento a travar:
-     *   Quando o nó destino do regen tem {@code inlineOptions} (chips),
-     *   o override lista os labels delas inline + a frase imperativa
-     *   "Your question MUST be congruent with these choices". Sem isso,
-     *   gpt-4o-mini gera perguntas incongruentes com os chips renderizados
-     *   na UI (ex.: pergunta sobre num_pessoas com chips de role).
-     *
-     * Cenário (fixture firme — criada em T5):
-     *   Flow:    {@code harness-it/regen-with-chips.chat-flow.json}. Cadeia:
-     *            {@code ai-cargo → switch-area → ai-decision-role} cujo
-     *            {@code inlineOptions = ["RH/L&D", "Gestor", "C-level",
-     *            "Comprador"]} reproduz o bug literal do patch. O smoke
-     *            (T5) já valida que esses 4 labels sobrevivem a renomes.
-     *   Estado:  parked em {@code ai-cargo}; user respondeu cargo.
-     *   Entrada: user msg = "Diretor de TI"
-     *   Mocks:   {@code harness().queueResponse("ack")} para initial,
-     *            {@code queueResponse("Qual seu papel na decisão?")} para regen.
-     *            Inspect via {@link AbstractAgentExecutorIT#regenPrompt}.
-     *
-     * Asserts:
-     *   1. O SystemMessage do regen CONTÉM cada label de chip do nó destino
-     *      como substring (todos os 4 labels do exemplo).
-     *   2. O SystemMessage do regen CONTÉM a frase
-     *      "MUST be congruent" (ou tradução equivalente).
-     *   3. Quando o nó destino NÃO tem inlineOptions, o bloco de chips
-     *      NÃO aparece no override (asserção de variante negativa).
-     *
-     * Nota refactor:
-     *   Sem regen, o initial call já compõe com chips do nó atual no contexto.
-     *   Não há "regen tem que lembrar dos chips do destino". Teste removido,
-     *   mas o contrato "perguntas congruentes com chips do nó atual" vira
-     *   parte do prompt builder único e merece um teste positivo nesse novo
-     *   ponto.
-     *
-     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#chipCongruence_regenQuestionAdmitsAllChipLabelsAsNaturalAnswers}
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #13.")
-    void inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * Patch #14 — trimToRecentTurns: history truncado a 3 turnos no regen
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:633-640, 882-979
-     *
-     * Comportamento a travar:
-     *   O regen recebe history truncado para os últimos 3 user-turns
-     *   ({@code REGEN_HISTORY_TURN_BUDGET=3}) em vez da história completa,
-     *   porque conversation completa dá ao LLM exemplos demais do padrão
-     *   antigo (que o regen está tentando contradizer), gerando re-asking
-     *   da pergunta anterior.
-     *
-     * Cenário:
-     *   Flow:    programa-match-ee. Forçar uma conversação com >= 5 user-turns
-     *            anteriores (ex.: trigger + ai-name + ai-cargo + ai-objetivo
-     *            + ai-area = 5 turns) antes da transição que dispara regen.
-     *   Estado:  parked em ai-area; histórico completo carregado.
-     *   Entrada: user msg = "Finanças & Investimentos"
-     *   Mocks:   ChatModel-1 retorna ack.
-     *            ChatModel-2 (regen) capturado via ArgumentCaptor; conta
-     *            quantos UserMessage existem no Prompt capturado.
-     *
-     * Asserts:
-     *   1. O PRIMEIRO Prompt capturado contém TODAS as UserMessage da história
-     *      (>= 5 user turns + a atual = >= 6).
-     *   2. O SEGUNDO Prompt (regen) contém NO MÁXIMO 3 UserMessage
-     *      (REGEN_HISTORY_TURN_BUDGET) — i.e., 3 user-turns × 2 mensagens
-     *      (user + assistant) = 6 mensagens não-system no máximo.
-     *   3. A última UserMessage do regen é a atual (não foi descartada na trim).
-     *
-     * Nota refactor:
-     *   Sem regen, anchoring é não-issue — não há resposta antiga a contradizer.
-     *   History completa vai como única call. Teste removido. Pode renascer
-     *   como cap geral de history (ex.: budget de tokens), mas não como
-     *   "trim só no regen".
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #14.")
-    void trimsHistoryToBudgetedRecentTurnsInRegenCall() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * Patch #15 — refresh de state do DB antes de strategy advance
-     * Categoria: A
-     * Localização do patch: TurChatFlowEngineService.java:227-237
-     *
-     * Comportamento a travar:
-     *   No início do {@code advance(...)}, o engine recarrega o state do banco
-     *   ({@code stateRepository.findById(state.getId()).orElse(state)}) para
-     *   capturar slot writes feitos por Custom Tool callbacks durante o initial
-     *   LLM call. Sem isso, a strategy.writeVariables ao final do advance
-     *   sobrescreveria os slots que o tool acabou de escrever.
-     *
-     * Cenário:
-     *   Flow:    Nova fixture: aiQuestion → Custom Tool callback que escreve
-     *            slot {@code programas_match} via
-     *            {@code TurCustomToolSlotHelper.save(...)} →
-     *            advance que normalmente também escreveria slots.
-     *            programa-match-ee tem o tool search_ee_programs disponível, mas
-     *            o cenário precisa forçar tool-call dentro do initial call ANTES
-     *            do advance — verificar se já existe nó adequado.
-     *   Estado:  parked num aiQuestion que dispara tool no LLM call.
-     *   Entrada: user msg = qualquer trigger que faça o LLM chamar o tool.
-     *   Mocks:   ChatModel real OU mock que simula tool-call lifecycle do Spring AI.
-     *            Pode-se usar Spring AI {@code ToolCallback} mockado que escreve
-     *            no DB diretamente via TurCustomToolSlotHelper para simular
-     *            o efeito lateral.
-     *            stateRepository spy para contar findById invocations.
-     *
-     * Asserts:
-     *   1. Após o turn completo, o slot {@code programas_match} contém o
-     *      valor que o tool escreveu — NÃO foi sobrescrito/zerado pelo
-     *      writeVariables da strategy.
-     *   2. {@code stateRepository.findById(state.getId())} foi chamado pelo
-     *      menos UMA VEZ dentro do advance (linha 227-237) — evidência do refresh.
-     *   3. (Negativo, sanity) — se o refresh for desabilitado (skipped),
-     *      o slot fica vazio/sobrescrito (este assert é opcional, como
-     *      witness condicional de regressão).
-     *
-     * Nota refactor:
-     *   Na ordem invertida, advance roda ANTES do LLM call → não há tool
-     *   write durante o advance. A LLM call posterior pode chamar tools que
-     *   escrevem slots, mas como o advance já terminou, não há writeVariables
-     *   pendente para sobrescrever. Teste removido; o write-by-tool sobrevive
-     *   sem necessidade de refresh defensivo.
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #15.")
-    void refreshesStateFromDbBeforeStrategyAdvance_preservingSlotWritesFromToolCallbacks() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
 
     /* ─────────────────────────── New skeletons added in T3 (Phase 1) ──────────────
      * Per docs/IMPROVEMENTS.md §VI.6 Phase 1, the existing-fixture skeleton set
@@ -521,55 +249,11 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      * that implements it gets deleted.
      */
 
-    /**
-     * Patch #7 — regen FULL PATH: second LLM call after transparent advance
-     * Categoria: A
-     * Localização do patch: TurAgentChatExecutor.java:421-477, 566-693
-     *
-     * Comportamento a travar:
-     *   Quando o initial LLM call termina, o engine.advance(...) move o cursor
-     *   de N para N+K (transparent walk through switch/condition/slot/persona
-     *   nodes), e N+K é um aiQuestion novo — o executor dispara um SEGUNDO
-     *   chatModel.call(prompt) (regen) com o newAddendum do N+K já presente
-     *   no system prompt. O texto final emitido via SSE é o do REGEN, não o
-     *   do initial. Skip da regen quando: advance.assistantOverride() != null
-     *   OR cursor não mudou OR N+K não é aiQuestion.
-     *
-     * Cenário (programa-match-ee, fixture existente):
-     *   Flow:    programa-match-ee.chat-flow.json — cadeia ai-cargo → switch
-     *            → ai-objetivo (ambos aiQuestion).
-     *   Estado:  parked em ai-cargo (conversa em progresso, name capturado).
-     *   Entrada: user msg = "Gerente sênior numa fintech, há 4 anos"
-     *   Mocks:   ChatModel-1 (initial) retorna "ack temporário".
-     *            ChatModel-2 (regen) retorna "Onde você quer estar daqui a 3 anos?".
-     *            (Para evitar que o LLM_JUDGE adicione um terceiro call, ajustar
-     *            o guardrailMethod do flow importado para HEURISTIC.)
-     *
-     * Asserts:
-     *   1. {@code chatModel.call(...)} foi invocado EXATAMENTE 2 vezes
-     *      (initial + regen). Disponível via {@link harness#callCount()}.
-     *   2. O system prompt do SEGUNDO Prompt capturado CONTÉM substring
-     *      distintiva do aiInstruction de ai-objetivo (ex.: "daqui a 3 anos")
-     *      — confirma que o regen system prompt usa o nó pós-advance.
-     *   3. O reply final SSE == resposta enfileirada para o REGEN, não
-     *      "ack temporário" — confirma que o regen sobrescreveu.
-     *   4. (Sanity inverso) — quando o flow está parked em um nó terminal
-     *      (end) ou em um aiQuestion cujo successor não é aiQuestion, o
-     *      regen NÃO dispara: {@code callCount() == 1}.
-     *
-     * Nota refactor:
-     *   Esse é o coração do §I.5 step 1 — o regen DESAPARECE na ordem invertida.
-     *   Pós-inversão este teste é REMOVIDO (não há 2º call estrutural). Pode
-     *   ressurgir como teste de "advance compõe o prompt do nó pós-advance",
-     *   mas sem o callCount==2 invariante.
-     *
-     * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#regenFullPath_replyIsQuestionForPostAdvanceNode_notReAskOfPreviousNode}
+    /* Patch #7 (regen full path) — DELETED in T16: the executor no longer
+     * makes a second LLM call. The post-T16 contract is "ONE call, prompt
+     * composed against the post-advance node", covered by the redesigned
+     * #1 test (single persona resolution + post-walk addendum in prompt).
      */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #7 (new in T3).")
-    void firesSecondLlmCallAfterTransparentAdvanceToNewAiQuestion() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
 
     /**
      * Patch #6 — freshlyTriggered: skip advance + skip initial LLM call no turno de ativação
@@ -630,10 +314,136 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   responsabilidade de um teste novo no design invertido.
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #6 (new in T3).")
-    void skipsInitialCallAndAdvanceOnFreshlyTriggeredFlow_emitsEntryNodeQuestionImmediately() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void freshlyTriggeredTurn_skipsEarlyAdvance_preservesEntryNodeCursor() throws java.io.IOException {
+        // Post-T16 contract for patch #6: when the router has just
+        // selected the flow for this conversation (freshlyTriggered=true),
+        // the executor must SKIP the earlyAdvanceBeforeLlm step — the user
+        // message is the activation signal, not data for the entry node.
+        // Without this skip, the strategy would force-capture the trigger
+        // text into the entry node's outputVariable.
+        //
+        // The legacy "skip initial LLM call" behavior was DELETED in T16:
+        // the LLM always fires, composing the entry-node question from the
+        // current cursor (which loadOrInitState already parked on the
+        // entry node). No regen, no skip-and-substitute.
+        //
+        // Routing strategy: drive the procedural Tier-1 router (Lucene
+        // token-overlap in {@code TurChatFlowEngineService#tryProceduralRoute}
+        // — see PROCEDURAL_MIN_OVERLAP=2 / PROCEDURAL_DOMINANCE_RATIO=1.5).
+        // The triggerDescription deliberately stems to 2+ tokens that also
+        // appear in the user message. The procedural pick bypasses the LLM
+        // router entirely, so the SINGLE queued response is consumed by the
+        // actual chat call — keeping {@code callCount() == 1} stable.
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.loadFromClasspath(
+                        "/harness-it/regen-with-chips.chat-flow.json");
+        // Replace the harness fixture's "never auto-trigger" description
+        // with one whose stems overlap the user message "Quero discutir
+        // cargo, carreira e fintech" by ≥2 tokens. Words "cargo",
+        // "carreira", "fintech" all survive the Portuguese analyzer and
+        // overlap deterministically.
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry triggerable =
+                new com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry(
+                        entry.id(), entry.name(), entry.description(),
+                        "Ative quando o visitante mencionar cargo, carreira ou fintech",
+                        // ONCE is fine: fresh conversation has no prior
+                        // completed state for this flow.
+                        "ONCE",
+                        entry.guardrailMethod(), entry.experimentKey(),
+                        entry.variantLabel(), entry.trafficWeight(),
+                        entry.personas(), entry.slots(), entry.graph());
+
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent = createAgent("patch6", null);
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llm = createMockableLlmInstance();
+        agent.getLlmInstances().add(llm);
+        agent = agentRepository.save(agent);
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.Imported imp =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(
+                        agent, triggerable, importRepos());
+
+        // Fresh conversation: NO pre-existing state. Procedural router
+        // will match the triggerDescription, select the flow, and the
+        // engine returns FlowSelection.freshlyTriggered=true.
+        harness().queueResponse("Qual é o seu cargo atual?");
+
+        String conv = "conv-patch6-" + java.util.UUID.randomUUID();
+        // Count advance() invocations via a logback appender pinned to the
+        // engine's own "[FlowEngine] advance:" INFO line — fires once per
+        // advance(...) call. Lighter than @SpyBean and survives @Transactional
+        // proxying without AopTestUtils unwrapping at every site.
+        java.util.concurrent.atomic.AtomicInteger advanceInvocations =
+                new java.util.concurrent.atomic.AtomicInteger();
+        ch.qos.logback.classic.Logger engineLogger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(com.viglet.turing.genai.flow.TurChatFlowEngineService.class);
+        ch.qos.logback.core.AppenderBase<ch.qos.logback.classic.spi.ILoggingEvent> counter =
+                new ch.qos.logback.core.AppenderBase<>() {
+                    @Override
+                    protected void append(ch.qos.logback.classic.spi.ILoggingEvent event) {
+                        if (event.getLevel() == ch.qos.logback.classic.Level.INFO
+                                && event.getFormattedMessage().contains("[FlowEngine] advance:")) {
+                            advanceInvocations.incrementAndGet();
+                        }
+                    }
+                };
+        counter.start();
+        engineLogger.addAppender(counter);
+        try {
+            runTurn(agent, llm,
+                    java.util.List.of(new TurAgentChatExecutor.ChatMessageItem(
+                            "user", "Quero discutir cargo, carreira e fintech")),
+                    null, conv, null);  // flowId=null → router picks via triggerDescription
+        } finally {
+            engineLogger.detachAppender(counter);
+        }
+
+        // 0. Sanity: the procedural router actually picked the flow (state
+        //    row exists). If absent, the freshlyTriggered branch never ran
+        //    and the rest of the assertions would be deceptively passing.
+        com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository stateRepo =
+                org.springframework.beans.factory.BeanFactoryUtils.beanOfTypeIncludingAncestors(
+                        applicationContext,
+                        com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository.class);
+        com.viglet.turing.persistence.model.agent.TurChatFlowState finalState =
+                stateRepo.findByConversationIdAndFlow_Id(conv, imp.flow().getId())
+                        .orElseThrow(() -> new AssertionError(
+                                "Flow state should exist post-turn — procedural router likely "
+                                        + "didn't pick this flow. Check triggerDescription overlap."));
+
+        // 1. earlyAdvance must NOT have run on the freshly-triggered turn
+        org.assertj.core.api.Assertions.assertThat(advanceInvocations.get())
+                .as("On a freshly-triggered turn, engine.advance(...) must NOT be called by the executor "
+                        + "(the user msg is the trigger, not data for the entry node)")
+                .isZero();
+
+        // 2. State cursor parks on the entry interactive node (ai-cargo).
+        //    The transparent walk in loadOrInitState walks start → ai-cargo
+        //    and stops at the first aiQuestion node.
+        org.assertj.core.api.Assertions.assertThat(finalState.getCurrentNodeId())
+                .as("Cursor must stay on entry interactive node after a freshly-triggered turn")
+                .isEqualTo("ai-cargo");
+
+        // 3. The trigger text must NOT have been force-captured into the
+        //    "cargo" slot. If advance ran on this turn, the HEURISTIC
+        //    strategy would extract "Quero discutir cargo, carreira e
+        //    fintech" (or some derivation) into the cargo variable. We
+        //    inspect the raw JSON string — bringing in an ObjectMapper
+        //    just to assert "cargo" isn't a key is overkill.
+        String variablesJson = finalState.getVariablesJson();
+        org.assertj.core.api.Assertions.assertThat(variablesJson == null ? "" : variablesJson)
+                .as("No slot variables should be populated by a freshly-triggered activation turn — "
+                        + "variablesJson must be null/empty/{} (got: %s)", variablesJson)
+                .doesNotContain("\"cargo\"");
+
+        // 4. LLM was called exactly once (no skip-initial behavior anymore;
+        //    procedural router skips the LLM router as well).
+        org.assertj.core.api.Assertions.assertThat(harness().callCount())
+                .as("Post-T16: the LLM fires exactly once per turn (initial). "
+                        + "Procedural Tier-1 router skips the LLM router; no regen, no skip-initial.")
+                .isEqualTo(1);
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.context.ApplicationContext applicationContext;
 
     /**
      * Persona-tone import guard (new skeleton — Phase 4 / T6)
@@ -686,9 +496,73 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   chegando inteiras no DB".
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, persona-tone import guard (new in T6).")
-    void personaToneFixtures_roundTripExactMandatoryAndForbiddenTermLists() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void personaToneFixtures_roundTripExactMandatoryAndForbiddenTermLists() throws java.io.IOException {
+        // Import each harness-it fixture into a fresh agent and assert
+        // the persisted persona rows match the JSON exactly. Catches
+        // drift in the upsertPersonaFromExport path that would silently
+        // disable the tone validator.
+        String[] fixtures = {
+                "/harness-it/tool-free-node.chat-flow.json",
+                "/harness-it/persona-switch-mid-flow.chat-flow.json",
+                "/harness-it/regen-with-chips.chat-flow.json",
+        };
+
+        for (String fixtureResource : fixtures) {
+            com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =
+                    com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.loadFromClasspath(fixtureResource);
+            com.viglet.turing.persistence.model.agent.TurAIAgent agent =
+                    createAgent("persona-tone-guard-" + java.util.UUID.randomUUID().toString().substring(0, 8), null);
+            com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(agent, entry, importRepos());
+
+            org.assertj.core.api.Assertions.assertThat(entry.personas())
+                    .as("Fixture %s must declare at least one persona", fixtureResource)
+                    .isNotEmpty();
+
+            for (java.util.Map<String, Object> declared : entry.personas()) {
+                String name = (String) declared.get("name");
+                com.viglet.turing.persistence.model.persona.TurPersona persisted =
+                        personaRepository.findByNameIgnoreCase(name).orElseThrow(() ->
+                                new AssertionError("Persona '" + name + "' was not persisted by import "
+                                        + "of " + fixtureResource));
+
+                String expectedSystemInstruction = (String) declared.get("systemInstruction");
+                String expectedMandatory = (String) declared.get("mandatoryTerms");
+                String expectedForbidden = (String) declared.get("forbiddenTerms");
+                String expectedTone = (String) declared.get("tone");
+                String expectedStyle = (String) declared.get("languageStyle");
+
+                org.assertj.core.api.Assertions.assertThat(persisted.getSystemInstruction())
+                        .as("systemInstruction round-trip for persona '%s' from %s", name, fixtureResource)
+                        .isEqualTo(expectedSystemInstruction);
+
+                // Empty string and null are BOTH valid declarations in the
+                // fixture JSON, and they must round-trip with the same
+                // distinction the author wrote — converting empty → null
+                // (or vice-versa) silently disables the tone validator.
+                org.assertj.core.api.Assertions.assertThat(nullableTrim(persisted.getMandatoryTerms()))
+                        .as("mandatoryTerms round-trip for persona '%s' from %s", name, fixtureResource)
+                        .isEqualTo(nullableTrim(expectedMandatory));
+                org.assertj.core.api.Assertions.assertThat(nullableTrim(persisted.getForbiddenTerms()))
+                        .as("forbiddenTerms round-trip for persona '%s' from %s", name, fixtureResource)
+                        .isEqualTo(nullableTrim(expectedForbidden));
+
+                if (expectedTone != null && !expectedTone.isBlank()) {
+                    org.assertj.core.api.Assertions.assertThat(persisted.getTone())
+                            .as("tone enum for persona '%s' from %s", name, fixtureResource)
+                            .isEqualTo(com.viglet.turing.persistence.model.persona.TurPersonaTone.valueOf(expectedTone));
+                }
+                if (expectedStyle != null && !expectedStyle.isBlank()) {
+                    org.assertj.core.api.Assertions.assertThat(persisted.getLanguageStyle())
+                            .as("languageStyle enum for persona '%s' from %s", name, fixtureResource)
+                            .isEqualTo(com.viglet.turing.persistence.model.persona.TurPersonaLanguageStyle.valueOf(expectedStyle));
+                }
+            }
+        }
+    }
+
+    /** Empty / null collapse helper so JSON "" and null both compare equal. */
+    private static String nullableTrim(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
     }
 
     /* ─────────────────────────── Declarative patches (B) ───────────────────────────
@@ -749,59 +623,123 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      * Pareado com (Behavioral): {@link TurAgentChatExecutorBehavioralIT#toolFreeNode_llmDoesNotPreemptivelyInvokeCustomTool}
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #3.")
-    void stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls() throws java.io.IOException {
+        // §I.5 step 3 / T16 contract: when the active node's
+        // ChatFlowNode.toolsEnabled == FALSE, the executor builds the
+        // initial (and only) LLM call with ChatOptions whose toolCallbacks
+        // is EMPTY. Verified by capturing the prompt via the mock harness.
+        //
+        // Setup uses the tool-free-node fixture and rewrites the
+        // ai-coupon-code node's data to set toolsEnabled=false at import
+        // time. The fixture's aiInstruction still carries the legacy
+        // "NÃO CHAME NENHUMA TOOL" sentinel — that's a no-op post-T16
+        // (substring matcher deleted) but harmless.
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.loadFromClasspath(
+                        "/harness-it/tool-free-node.chat-flow.json");
+        // The fixture already declares toolsEnabled=false on ai-coupon-code
+        // — no in-memory patching needed.
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent = createAgent("patch3", null);
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llm = createMockableLlmInstance();
+        agent.getLlmInstances().add(llm);
+        agent = agentRepository.save(agent);
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.Imported imp =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(
+                        agent, entry, importRepos());
+
+        // Park the conversation on ai-coupon-code so it's the ACTIVE node
+        // when execute(...) runs. Without seeding, the engine would init
+        // the cursor at the entry node — also fine for this fixture since
+        // the entry chain (start → persona-camila → ai-coupon-code) walks
+        // through to ai-coupon-code transparently. We seed explicitly for
+        // determinism.
+        com.viglet.turing.genai.flow.ChatFlowGraph graph =
+                chatFlowEngineService.parseGraph(imp.flow()).orElseThrow();
+        String conv = "conv-patch3-" + java.util.UUID.randomUUID();
+        com.viglet.turing.persistence.model.agent.TurChatFlowState state =
+                chatFlowEngineService.loadOrInitState(conv, imp.flow(), graph).orElseThrow();
+        // loadOrInitState's walk lands the cursor on ai-coupon-code (first
+        // interactive node after start + persona-* transparent hops).
+        org.assertj.core.api.Assertions.assertThat(state.getCurrentNodeId())
+                .as("Init walk must park the cursor on ai-coupon-code so it's the active node for the test")
+                .isEqualTo("ai-coupon-code");
+
+        // Sanity check: the JSON round-trip preserved the toolsEnabled
+        // patch we applied above. If this fails the executor will never
+        // take the tool-strip branch and the real assertion below would
+        // be deceptively passing.
+        com.viglet.turing.genai.flow.ChatFlowNode couponNode =
+                graph.nodeById("ai-coupon-code").orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(couponNode.toolsEnabled())
+                .as("In-memory mutation of node.data.toolsEnabled=false must survive JSON round-trip")
+                .isEqualTo(Boolean.FALSE);
+
+        harness().queueResponse("Qual é o código do cupom?");
+
+        runTurn(agent, llm,
+                java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "tenho um cupom")),
+                null, conv, imp.flow().getId());
+
+        // The Mockito mock captures every prompt the executor sends to the
+        // ChatModel. With a HEURISTIC flow and an agent that has no real
+        // tools registered, only the initial call should hit the mock.
+        // Even so, we use the EMPTY-callbacks shape to pick it out
+        // deterministically — that shape is the tool-strip branch's
+        // signature.
+        java.util.List<org.springframework.ai.chat.prompt.Prompt> all = harness().capturedPrompts();
+        java.util.List<org.springframework.ai.chat.prompt.Prompt> matching = all.stream()
+                .filter(p -> p.getOptions() instanceof org.springframework.ai.model.tool.ToolCallingChatOptions tc
+                        && tc.getToolCallbacks() != null
+                        && tc.getToolCallbacks().isEmpty())
+                .toList();
+        org.assertj.core.api.Assertions.assertThat(matching)
+                .as("Expected the executor's initial call to carry an empty toolCallbacks list "
+                        + "(captured %d total prompts)", all.size())
+                .hasSize(1);
+        org.springframework.ai.chat.prompt.Prompt initial = matching.get(0);
+
+        // Tool-strip contract: when node.toolsEnabled == FALSE, the
+        // executor builds a fresh DefaultToolCallingChatOptions with an
+        // empty callback list and internalToolExecutionEnabled=false.
+        org.springframework.ai.chat.prompt.ChatOptions opts = initial.getOptions();
+        org.assertj.core.api.Assertions.assertThat(opts)
+                .as("Prompt options must be ToolCallingChatOptions so the tool list can be inspected")
+                .isInstanceOf(org.springframework.ai.model.tool.ToolCallingChatOptions.class);
+        org.springframework.ai.model.tool.ToolCallingChatOptions tco =
+                (org.springframework.ai.model.tool.ToolCallingChatOptions) opts;
+        // The CRITICAL invariant: when node.toolsEnabled == FALSE, the
+        // executor builds ChatOptions with an EMPTY toolCallbacks list.
+        // No callbacks means no tools to execute — regardless of what
+        // internalToolExecutionEnabled says.
+        //
+        // Quirk observed in Spring AI 2.0.0-M6: even though the executor
+        // builds the stripped options with `.internalToolExecutionEnabled(false)`,
+        // the captured ChatOptions reads back `getInternalToolExecutionEnabled()
+        // == TRUE`. The exact mechanism (clone? copy via downstream
+        // resilience wrapper? default in ChatModel.call?) is unclear,
+        // but pragmatically harmless — an empty callbacks list yields a
+        // tool-free turn regardless of the flag.
+        //
+        // If a future Spring AI version preserves the flag, the executor's
+        // intent will be visible and we can tighten the assertion. For
+        // now, asserting on the OBSERVABLE outcome (empty callbacks) is
+        // what the patch #3 contract actually buys the runtime.
+        org.assertj.core.api.Assertions.assertThat(tco.getToolCallbacks())
+                .as("toolsEnabled=false on the active node MUST yield an empty toolCallbacks list — "
+                        + "opts class=%s, internalExec=%s",
+                        opts.getClass().getSimpleName(),
+                        tco.getInternalToolExecutionEnabled())
+                .isEmpty();
     }
 
-    /**
-     * Patch #4 — tool-stripping no REGEN call (mesma heurística)
-     * Categoria: B
-     * Localização do patch: TurAgentChatExecutor.java:654-681
-     *
-     * Comportamento a travar:
-     *   No regen, quando o NOVO nó (destino do advance) tem aiInstruction
-     *   marcando "NÃO CHAME NENHUMA TOOL", o regen prompt é montado SEM
-     *   tool callbacks — mesma blindagem do #3 mas no segundo call.
-     *
-     * Cenário (fixture firme — criada em T5):
-     *   Flow:    {@code harness-it/tool-free-node.chat-flow.json}. Cadeia:
-     *            {@code ai-coupon-code} (tool-free, dispara regen ao avançar
-     *            via {@code switch-cupom-ok}) → {@code ai-deliver}. O nó
-     *            {@code ai-deliver} pede a tool {@code compor_proposta_in_company}
-     *            mas o teste deve assertir que a stripping continua valendo
-     *            quando a aiInstruction do POST-advance node está marcada
-     *            como tool-free (cenário do bug: regen ainda chamava o tool
-     *            por inércia, gerando proposta sem cupom). Para esse teste,
-     *            altere a aiInstruction de {@code ai-deliver} em runtime
-     *            (graph editar antes do save) pra adicionar "ZERO TOOL CALLS"
-     *            — assim o regen post-advance também ativa o strip.
-     *   Estado:  parked em ai-coupon-code, user manda coupon.
-     *   Entrada: user msg = "CUPOM-XYZ"
-     *   Mocks:   {@code harness().queueResponse("ack")} para initial,
-     *            {@code harness().queueResponse("Vou processar")} para regen.
-     *            {@link AbstractAgentExecutorIT#firstPrompt} e
-     *            {@link AbstractAgentExecutorIT#regenPrompt} dão acesso direto.
-     *            Tool {@code compor_proposta_in_company} mockado.
-     *
-     * Asserts:
-     *   1. O 2º Prompt capturado tem {@code options.getToolCallbacks()}
-     *      VAZIO (stripped no regen).
-     *   2. O tool {@code compor_proposta_in_company} foi invocado ZERO vezes
-     *      durante o regen (não há card-flash com proposta sem coupon).
-     *   3. O reply final SSE corresponde à 2ª chamada (regen) — confirmando
-     *      que o caminho regen é o exercitado.
-     *
-     * Nota refactor:
-     *   Sem regen, este teste é redundante com o #3 — o initial call único
-     *   já cobre o invariante. Teste removido; o campo {@code toolsEnabled}
-     *   é consultado uma única vez no novo design.
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
+
+    /* Patch #4 (regen tool-strip) — DELETED in T16: no regen path exists
+     * anymore. Patch #3's structural test above covers the only remaining
+     * tool-strip site (initial call), and the declarative
+     * ChatFlowNode.toolsEnabled field collapses both cases into one check.
      */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #4.")
-    void stripsToolsOnRegenCallWhenPostAdvanceNodeForbidsToolCalls() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
 
     /**
      * Patch #5 — {@code forbidsToolCalls()} substring matching bilíngue.
@@ -828,42 +766,96 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
     @Nested
     class ForbidsToolCallsUnitTests {
 
-        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
-        @NullAndEmptySource
-        void returnsFalseForNullOrBlank(String aiInstruction) {
-            assertFalse(TurAgentChatExecutor.forbidsToolCalls(aiInstruction));
+        /* §I.5 step 3 / T16 — the bilingual-substring overload
+         * {@code forbidsToolCalls(String)} was DELETED along with the regen
+         * helpers. The original 10 parameterized cases that pinned the
+         * sentinel matcher are gone (history recoverable in git log
+         * pre-T16). Only the node-aware overload survives below — flow
+         * authors must use the declarative {@code ChatFlowNode.toolsEnabled}
+         * field.
+
+         * Node-aware overload (§I.5 step 3 / T11) ───
+         * The declarative ChatFlowNode.toolsEnabled field is the sole
+         * source of truth — when set to FALSE, tools are stripped on
+         * that node; otherwise, tools are allowed.
+         */
+
+        @org.junit.jupiter.api.Test
+        void nodeOverload_returnsFalseForNullNode() {
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls((com.viglet.turing.genai.flow.ChatFlowNode) null));
         }
 
-        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
-        @CsvSource(value = {
-                // Portuguese, upper case
-                "NÃO CHAME NENHUMA TOOL",
-                // Portuguese, lower case
-                "não chame nenhuma tool",
-                // Portuguese without diacritic
-                "nao chame nenhuma tool",
-                // English, mixed case
-                "Do Not Call Any Tool",
-                // English, short variant
-                "zero tool calls neste turno",
-                // Sentinel embedded mid-paragraph
-                "Pergunte o nome. ZERO TOOL CALLS. Aguarde.",
-        })
-        void detectsBilingualSentinelsCaseInsensitivelyInFreeText(String aiInstruction) {
-            assertTrue(TurAgentChatExecutor.forbidsToolCalls(aiInstruction),
-                    () -> "Expected forbidsToolCalls(\"" + aiInstruction + "\") to be true");
+        @org.junit.jupiter.api.Test
+        void nodeOverload_explicitToolsEnabledTrue_returnsFalseEvenWhenAiInstructionHasSentinel() {
+            // Declarative wins: TRUE overrides the legacy "NÃO CHAME NENHUMA TOOL" sentinel.
+            com.viglet.turing.genai.flow.ChatFlowNode node = new com.viglet.turing.genai.flow.ChatFlowNode(
+                    "test-node", "aiQuestion",
+                    nodeDataWithInstructionAndToolsEnabled("NÃO CHAME NENHUMA TOOL", Boolean.TRUE));
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls(node),
+                    "toolsEnabled=TRUE must override the legacy substring sentinel");
         }
 
-        @ParameterizedTest(name = "[{index}] aiInstruction={0}")
-        @CsvSource(value = {
-                // No sentinel at all
-                "Pergunte o nome ao usuário.",
-                // The word "tool" alone must NOT match
-                "Use the search tool freely.",
-        })
-        void returnsFalseWhenNoSentinelIsPresent(String aiInstruction) {
-            assertFalse(TurAgentChatExecutor.forbidsToolCalls(aiInstruction),
-                    () -> "Expected forbidsToolCalls(\"" + aiInstruction + "\") to be false");
+        @org.junit.jupiter.api.Test
+        void nodeOverload_explicitToolsEnabledFalse_returnsTrueEvenWhenAiInstructionIsBenign() {
+            // Declarative wins: FALSE strips tools even when aiInstruction has no sentinel.
+            com.viglet.turing.genai.flow.ChatFlowNode node = new com.viglet.turing.genai.flow.ChatFlowNode(
+                    "test-node", "aiQuestion",
+                    nodeDataWithInstructionAndToolsEnabled("Pergunte o nome ao usuário.", Boolean.FALSE));
+            assertTrue(TurAgentChatExecutor.forbidsToolCalls(node),
+                    "toolsEnabled=FALSE must strip tools regardless of aiInstruction content");
+        }
+
+        @org.junit.jupiter.api.Test
+        void nodeOverload_nullField_returnsFalse_T16NoSubstringFallback() {
+            // Post-T16: the bilingual substring fallback was deleted. Null
+            // toolsEnabled means "tools allowed" (the default), regardless
+            // of what {@code aiInstruction} contains. Authors of old flows
+            // that still carry "NÃO CHAME NENHUMA TOOL" in {@code aiInstruction}
+            // must migrate to the declarative field — the sentinel is
+            // ignored from T16 onwards.
+            com.viglet.turing.genai.flow.ChatFlowNode legacyWithSentinel = new com.viglet.turing.genai.flow.ChatFlowNode(
+                    "test-node", "aiQuestion",
+                    nodeDataWithInstructionAndToolsEnabled("NÃO CHAME NENHUMA TOOL", null));
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls(legacyWithSentinel),
+                    "T16 deleted the substring fallback — null toolsEnabled means tools allowed");
+
+            com.viglet.turing.genai.flow.ChatFlowNode benign = new com.viglet.turing.genai.flow.ChatFlowNode(
+                    "test-node", "aiQuestion",
+                    nodeDataWithInstructionAndToolsEnabled("Pergunte o nome.", null));
+            assertFalse(TurAgentChatExecutor.forbidsToolCalls(benign),
+                    "Null toolsEnabled + no sentinel must return false");
+        }
+
+        /**
+         * Builds a {@link com.viglet.turing.genai.flow.ChatFlowNode.NodeData}
+         * with the given {@code aiInstruction} + {@code toolsEnabled} field
+         * and {@code null} for every other slot. Keeps the test bodies
+         * focused on the field under test.
+         */
+        private com.viglet.turing.genai.flow.ChatFlowNode.NodeData nodeDataWithInstructionAndToolsEnabled(
+                String aiInstruction, Boolean toolsEnabled) {
+            return new com.viglet.turing.genai.flow.ChatFlowNode.NodeData(
+                    "label",     // label
+                    "aiQuestion", // type
+                    aiInstruction,
+                    null, // outputVariable
+                    null, // validationRule
+                    null, // functionName
+                    null, // conditionExpression
+                    null, // toolSource
+                    null, // mcpServerId
+                    null, // subFlowId
+                    null, // subFlowName
+                    null, // personaId
+                    null, // switchVariable
+                    null, // switchOptions
+                    null, // inlineOptions
+                    null, // overrideExistingValue
+                    null, // slotName
+                    null, // slotOperation
+                    null, // slotValue
+                    null, // onJudgeReject
+                    toolsEnabled);
         }
     }
 }

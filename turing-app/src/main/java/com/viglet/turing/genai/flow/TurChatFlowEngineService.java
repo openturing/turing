@@ -41,6 +41,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.viglet.turing.genai.flow.strategy.AdvanceContext;
 import com.viglet.turing.genai.flow.strategy.ChatFlowOps;
@@ -283,7 +284,26 @@ public class TurChatFlowEngineService {
      * (condition chains, Sub Flow descent / ascent), persists every touched
      * state, and — when the turn landed on the root flow's terminal node —
      * records an immutable submission row.
+     *
+     * <p><b>§I.5 step 5 / T13:</b> wrapped in {@code @Transactional} so the
+     * strategy mutation, the multiple intermediate persists across the
+     * transparent walk (slot SET / writeSlot / persona / switch landing —
+     * each does its own {@code stateRepository.save(...)} for crash
+     * survivability mid-walk), and the post-walk save coalesce into ONE
+     * commit. Without this, each {@code save} ran in its own implicit
+     * transaction — so a slot-heavy branch (e.g. the 5-slot transparent
+     * chain in {@code programa-match-ee}) triggered 6+ separate DB commits
+     * per turn, plus the caller-level save. Now they batch.
+     *
+     * <p>Patch #16 of the §I.3 inventory documents this "double-save"
+     * pattern; with the @Transactional boundary it becomes a single
+     * persistence point regardless of how many in-walk saves the strategy
+     * paths take. The intermediate {@code save()} calls are intentionally
+     * kept (not deleted) — they update the JPA persistence context so
+     * subsequent reads inside the same advance see the latest cursor /
+     * variables, but no longer cost separate DB round-trips.
      */
+    @Transactional
     public AdvanceResult advance(TurChatFlow flow,
             TurChatFlowState state,
             ChatFlowGraph graph,

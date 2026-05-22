@@ -66,6 +66,12 @@ turing:
       cookie-name: TUR_SESSION
       # Cookie lifetime in seconds. Default: 30 days (2592000).
       ttl-seconds: 2592000
+    # Note (post-T16): `turing.chat.inverted-harness.enabled` and
+    # `turing.chat.judge-retry.enabled` no longer exist. The inverted
+    # harness (advance before LLM, single LLM call, no regen) and the
+    # single-shot judge (onJudgeReject as sole reject driver) are the
+    # only paths. The flags were transitional during T9-T14 and were
+    # removed in T16 along with the legacy code they gated.
   # ---------------------------------------------------------------------------
   # Resilience for outbound calls (LLM providers + search engines)
   # ---------------------------------------------------------------------------

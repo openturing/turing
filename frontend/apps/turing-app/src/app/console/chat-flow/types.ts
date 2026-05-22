@@ -126,6 +126,22 @@ export interface FlowNodeData extends Record<string, unknown> {
    * @since 2026.2.31
    */
   onJudgeReject?: FlowOnJudgeReject;
+  /**
+   * Declarative tool-availability switch for an aiQuestion node
+   * (§I.5 step 3 of the harness inversion).
+   * - `true` (or `undefined`/`null`) — tools are available to the LLM.
+   *   Default — preserves pre-2026.2.7 behavior.
+   * - `false` — tools are STRIPPED. The backend builds the ChatOptions
+   *   with an empty toolCallbacks list and internalToolExecutionEnabled(false).
+   *   Replaces the legacy "NÃO CHAME NENHUMA TOOL" sentinel in
+   *   {@link aiInstruction}.
+   *
+   * Used by flows that need to gate the LLM from preemptively calling
+   * tools (canonical case: a coupon-capture node where the proposal tool
+   * MUST wait until the slot is populated).
+   * @since 2026.2.7
+   */
+  toolsEnabled?: boolean;
 }
 
 export const NODE_COLORS: Record<FlowNodeType, { bg: string; border: string; text: string }> = {

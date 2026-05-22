@@ -194,6 +194,6 @@ class ChatFlowOpsTest {
     private static ChatFlowNode nodeOfType(String type) {
         return new ChatFlowNode("test-id", type, new NodeData(
                 "label", type, null, null, null, null, null, null, null, null, null,
-                null, null, List.of(), List.of(), null, null, null, null, null));
+                null, null, List.of(), List.of(), null, null, null, null, null, null));
     }
 }

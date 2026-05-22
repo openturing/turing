@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.genai.flow.ChatFlowNode;
-import com.viglet.turing.genai.flow.strategy.LlmJudgeGuardrailStrategy.JudgeVerdict;
 
 /**
  * Pure-function tests for the LLM-judge guardrail heuristics that decide
@@ -38,99 +37,13 @@ import com.viglet.turing.genai.flow.strategy.LlmJudgeGuardrailStrategy.JudgeVerd
  */
 class LlmJudgeGuardrailStrategyTest {
 
-    // ─────────────────────────── isNonBlankRedirect ───────────────────────────
-
-    @Test
-    void isNonBlankRedirect_acceptsSubstantiveRedirect() {
-        JudgeVerdict v = verdictWithRedirect("Vamos falar sobre o seu nome primeiro?");
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(v)).isTrue();
-    }
-
-    @Test
-    void isNonBlankRedirect_rejectsNullMessage() {
-        JudgeVerdict v = verdictWithRedirect(null);
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(v)).isFalse();
-    }
-
-    @Test
-    void isNonBlankRedirect_rejectsEmptyString() {
-        JudgeVerdict v = verdictWithRedirect("");
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(v)).isFalse();
-    }
-
-    @Test
-    void isNonBlankRedirect_rejectsWhitespaceOnly() {
-        JudgeVerdict v = verdictWithRedirect("   \t  ");
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(v)).isFalse();
-    }
-
-    @Test
-    void isNonBlankRedirect_rejectsShortPlaceholders() {
-        // Threshold is 8 chars after trim — filters one-word fallbacks
-        // ("stay", "no", "skip") that some prompts emit when the model
-        // has no real reason to redirect. These shouldn't count as
-        // confidence signals; force-capture should still kick in.
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect("stay"))).isFalse();
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect("no"))).isFalse();
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect("skip"))).isFalse();
-    }
-
-    @Test
-    void isNonBlankRedirect_trimsBeforeMeasuringLength() {
-        // 7 chars surrounded by whitespace → effective length 7, below threshold.
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect("  abcdefg  "))).isFalse();
-        // 8 chars surrounded by whitespace → effective length 8, on threshold.
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect("  abcdefgh  "))).isTrue();
-    }
-
-    @Test
-    void isNonBlankRedirect_acceptsTypicalRedirects() {
-        // Real-world redirect_message strings emitted by the judge prompt.
-        // All should pass — they're the signal we want to trust.
-        String[] real = {
-                "Vamos falar sobre o seu nome primeiro?",
-                "Por favor, informe seu cargo atual.",
-                "Me conta qual é a sua área de interesse.",
-                "Qual é a razão social da empresa?",
-        };
-        for (String r : real) {
-            assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(verdictWithRedirect(r)))
-                    .as("redirect_message=%s", r)
-                    .isTrue();
-        }
-    }
-
-    // ─────────────────────────── Force-capture regression scenarios ───────────
-
-    @Test
-    void verdict_judgeFlakeWithBlankRedirect_qualifiesForForceCapture() {
-        // Mode (a): judge rejected without articulating WHY. This is the
-        // pattern we want force-capture to handle — gpt-4o-mini ~5%
-        // false-reject rate. Predicate must return false (= force-capture
-        // path is allowed downstream).
-        JudgeVerdict flake = new JudgeVerdict(
-                /* onTopic        */ false,
-                /* collectedValue */ null,
-                /* readyToAdvance */ false,
-                /* redirectMessage*/ null,
-                /* abandoned      */ false);
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(flake)).isFalse();
-    }
-
-    @Test
-    void verdict_userOffTopicWithSubstantiveRedirect_inhibitsForceCapture() {
-        // Mode (b): user actually off-topic — judge correctly produced a
-        // substantive redirect explaining the gap. Predicate must return
-        // true (= force-capture path is blocked downstream; engine stays
-        // on the node and shows the redirect to the visitor).
-        JudgeVerdict offTopic = new JudgeVerdict(
-                /* onTopic        */ false,
-                /* collectedValue */ null,
-                /* readyToAdvance */ false,
-                /* redirectMessage*/ "Vamos falar sobre o seu nome primeiro?",
-                /* abandoned      */ false);
-        assertThat(LlmJudgeGuardrailStrategy.isNonBlankRedirect(offTopic)).isTrue();
-    }
+    /* §I.5 step 6 / T16 — deleted: 9 tests for {@code isNonBlankRedirect}
+     * heuristic + 2 force-capture regression scenarios that exercised the
+     * same predicate. The heuristic was removed when the second-opinion
+     * retry block (patch #21) was deleted in T16 — {@code onJudgeReject}
+     * declarative policy (#22) is the only reject driver now. Tests
+     * recoverable from git log on commits before T16.
+     */
 
     // ─────────────────────────── resolveRejectPolicy ───────────────────────────
 
@@ -195,13 +108,6 @@ class LlmJudgeGuardrailStrategyTest {
 
     // ─────────────────────────── Helpers ───────────────────────────
 
-    private static JudgeVerdict verdictWithRedirect(String redirect) {
-        // Other fields don't matter for isNonBlankRedirect — set to the
-        // "rejected, no value, not abandoned" shape that's the only state
-        // where the predicate is consulted in production.
-        return new JudgeVerdict(false, null, false, redirect, false);
-    }
-
     /**
      * Build a minimal {@link ChatFlowNode} with only {@code id} and
      * {@code onJudgeReject} set — every other NodeData field is null. The
@@ -229,7 +135,8 @@ class LlmJudgeGuardrailStrategyTest {
                 /* slotName              */ null,
                 /* slotOperation         */ null,
                 /* slotValue             */ null,
-                /* onJudgeReject         */ policy);
+                /* onJudgeReject         */ policy,
+                /* toolsEnabled          */ null);
         return new ChatFlowNode("test-node", "aiQuestion", data);
     }
 }

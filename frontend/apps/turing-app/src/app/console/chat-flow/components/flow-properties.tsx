@@ -263,6 +263,40 @@ export function FlowProperties({ node, onChange, onClose, agentId, currentFlowId
                 </span>
               </div>
             )}
+
+            {type === "aiQuestion" && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="flow-node-tools-enabled">
+                    {t("chatFlow.properties.toolsEnabled", {
+                      defaultValue: "Allow tool calls on this node",
+                    })}
+                  </Label>
+                  {/*
+                    Tri-state mapped onto a boolean Switch:
+                      data.toolsEnabled === false → switch OFF (tools stripped)
+                      data.toolsEnabled === true / undefined → switch ON (tools allowed)
+                    Toggling ON clears the field to undefined so the export JSON
+                    stays compact for flows that keep the default behavior.
+                  */}
+                  <Checkbox
+                    id="flow-node-tools-enabled"
+                    checked={data.toolsEnabled !== false}
+                    onCheckedChange={(checked) =>
+                      update({
+                        toolsEnabled: checked === false ? false : undefined,
+                      })
+                    }
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("chatFlow.properties.toolsEnabledHint", {
+                    defaultValue:
+                      "When off, the agent's tool callbacks (MCP / native / custom) are stripped on this node. Use to gate the LLM from preemptively calling a tool before a slot is captured. Replaces the legacy \"NÃO CHAME NENHUMA TOOL\" sentinel in aiInstruction.",
+                  })}
+                </span>
+              </div>
+            )}
           </>
         )}
 

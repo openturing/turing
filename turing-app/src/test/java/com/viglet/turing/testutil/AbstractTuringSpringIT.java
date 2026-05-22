@@ -119,19 +119,45 @@ public abstract class AbstractTuringSpringIT {
 
     /**
      * Routes the embedded Artemis journal/bindings/paging/lock files to a
-     * per-JVM directory under {@link #DB_DIR}. The production default
+     * per-JVM directory under {@link #DB_DIR} AND disables persistence.
+     *
+     * <p><b>Why per-JVM dir matters</b>: the production default
      * ({@code store/queue}) is a CWD-relative path, so multiple JVMs
-     * (the running app + every forked Surefire IT) compete for the same
-     * {@code server.lock} file and serialize via {@code FileLockNodeManager}'s
-     * 60-second retry loop — observed in the wild as a 5+ minute IT hang on
-     * Spring context startup with no error logged. Per-JVM isolation makes
-     * concurrent ITs and a locally-running app coexist without contention
-     * and reuses the {@link #DB_DIR} shutdown hook for cleanup.
+     * (the running app + every forked Surefire IT) would compete for the
+     * same {@code server.lock} file and serialize via
+     * {@code FileLockNodeManager}'s 60-second retry loop — observed in the
+     * wild as a 5+ minute IT hang on Spring context startup with no error
+     * logged.
+     *
+     * <p><b>Why persistence is also disabled</b>: even with per-JVM dirs,
+     * Spring Test caches multiple {@code ApplicationContext}s within ONE
+     * Maven fork (IT classes with distinct {@code @Import}/{@code @MockitoSpyBean}
+     * configs each load their own context, AND Spring keeps prior contexts
+     * alive in the cache for reuse). Each cached context owns its own
+     * {@code EmbeddedActiveMQ} bean — and they all share {@link #DB_DIR}
+     * because it is computed once per JVM. Result: context B's Artemis
+     * blocks for ~minutes trying to acquire the journal lock that context A
+     * still holds. Stack trace pattern:
+     *
+     * <pre>
+     *   at o.a.a.a.core.server.impl.FileLockNodeManager.lock(FileLockNodeManager.java:433)
+     *   at o.a.a.a.core.server.impl.FileLockNodeManager.startPrimaryNode(...:253)
+     *   at o.a.a.a.core.server.embedded.EmbeddedActiveMQ.start(EmbeddedActiveMQ.java:124)
+     * </pre>
+     *
+     * <p>Setting {@code persistent=false} skips the {@code FileLockNodeManager}
+     * code path entirely — Artemis runs purely in-memory in test JVMs.
+     * Production behavior is untouched. The data-directory property is still
+     * pointed at the per-JVM path as defense-in-depth: if a future Artemis
+     * version writes ANY file regardless of the persistence flag (e.g. for
+     * paging temp files), it lands under {@link #DB_DIR} where the shutdown
+     * hook can clean it up.
      */
     @DynamicPropertySource
-    static void overrideArtemisDataDirectoryWithEphemeralPath(DynamicPropertyRegistry registry) {
+    static void overrideArtemisForTestIsolation(DynamicPropertyRegistry registry) {
         String artemisDir = DB_DIR.resolve("queue").toString().replace('\\', '/');
         registry.add("spring.artemis.embedded.data-directory", () -> artemisDir);
+        registry.add("spring.artemis.embedded.persistent", () -> "false");
     }
 
     /**

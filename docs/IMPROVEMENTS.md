@@ -50,53 +50,92 @@ acting.
 > **Legend** (same as the global one): ✅ shipped · 🛠 in-progress ·
 > 📋 designed, not started · 💭 idea, needs design · ⏳ partial.
 >
-> **Dependency rule of thumb**: tasks in the "Safety net" block must
-> land before any §I.5 step (they're the regression net for the harness
-> refactor); §I.5 steps must land in order (each builds on the prior
-> deletion); post-refactor tasks can mostly parallelize.
+> **Status snapshot (2026-05-22 end-of-day, post-deferred-skeletons sweep)**:
+> - **Block A** — infrastructure ✅; **9 tests now real**. Post-T16 audit
+>   deleted **11 obsolete skeletons**; then 2026-05-22 PM implemented all
+>   4 remaining deferred bodies: ✅ **#3** (tool-strip via declarative
+>   `toolsEnabled=false`), ✅ **#6** (freshlyTriggered skips earlyAdvance),
+>   ✅ **#1** (persona resolved exactly 1× post-advance), ✅ **#16**
+>   (saves coalesce into one commit via T13 `@Transactional`). Only
+>   **cascade ascent** remains deferred (needs new `nested-sub-flow`
+>   fixture + `subFlowId` remap in `ChatFlowImportTestUtil`).
+>   Verified: `mvn verify -Dit.test=…Structural…,…Contract…,Harness…` →
+>   **15 ran / 0 failed / 1 skipped** in 3:43.
+> - **Block B** — ✅ COMPLETE. Inverted harness shipped, all legacy code
+>   paths deleted, 17 of 22 patches from §I.3 are gone.
+> - **Block C** — ✅ T17; everything else 📋, fully unblocked since T16
+>   landed (no more dependency on Block B).
+> - **Test infra fix (2026-05-22)**: `AbstractTuringSpringIT` now sets
+>   `spring.artemis.embedded.persistent=false` to keep multiple Spring
+>   contexts in a single Maven fork from deadlocking on Artemis
+>   `FileLockNodeManager.lock` (each cached context spawned its own
+>   `EmbeddedActiveMQ` and they all targeted the same per-JVM `DB_DIR`).
+>   Before: running 2+ IT classes back-to-back hung indefinitely on
+>   Spring context startup with no error logged. After: 3 IT classes
+>   coexist cleanly.
+>
+> **Dependency rule of thumb** *(historical — kept for context):* "Safety
+> net" was supposed to land before §I.5 — in practice we shipped Block B
+> against the smoke ITs (T1+T5) and impacted unit tests, with the
+> structural/behavioral bodies (T3, T4, T6, T7) still open. The smoke
+> + impacted-unit coverage caught zero regressions through T9-T16, but
+> the structural bodies remain a useful investment for future refactors.
 
-### Block A — Safety net (must land before §I.5 begins)
+### Block A — Safety net (test scaffolding + fixtures)
 
-> **Scaffolding shipped 2026-05-21; bodies pending.** T1-T8 below all
-> landed at the *file-and-skeleton* level: the mock harness, base class,
-> profile, fixtures and 28 `@Test` skeletons (15 Structural + 5 Contract +
-> 6 Behavioral + 3 smoke + 10 ParameterizedTest #5 invocations passing).
-> Each skeleton's Javadoc <b>is</b> the contract — the body is
-> {@code fail("Not implemented")} pending the actual structural assertions.
-> Implementing those bodies is the real work captured in §VI.6 Phase 1-5;
-> the table marks them ⏳ instead of ✅ to reflect this honestly.
+> **Status (post-T16):** scaffolding is shipped and green; **test bodies
+> still pending.** T1+T2+T5+T8 are ✅ (infra, migration, fixtures, cross-link).
+> T3+T4+T6+T7 stay ⏳ — the skeletons exist with detailed Javadoc contracts
+> but their bodies are still `fail("Not implemented")`. The Block B harness
+> refactor (T9-T16) ran AHEAD of these bodies — Block B's success is
+> measured by smoke ITs + impacted unit tests staying green; the more
+> rigorous structural/behavioral assertions remain on the to-do list.
 
 | #  | Status | Depends on | Task | Detail in |
 |----|--------|------------|------|-----------|
 | T1 | ✅ | — | Test infra: `TurAgentChatExecutorMockSupport` + `ChatModelHarness` + `AbstractAgentExecutorIT` + `llm-it` Maven profile | §VI.4, §VI.6 Phase 0 |
 | T2 | ✅ | T1 | Migrated 15 existing skeletons into Structural (12) + Contract (2) + Behavioral shell; 3 old files deleted | §VI.6 Phase 0.5 |
-| T3 | ⏳ | T2 | 8 Structural skeletons present (#10, #11, #9, #12, #14, #1, #7, #6); bodies pending | §VI.6 Phase 1 |
-| T4 | ⏳ | T2 | 5 Contract skeletons present (#18, #20, #16, cascade ascent, BR-doc CPF); bodies pending | §VI.6 Phase 2 |
+| T3 | ✅ | T2 | Post-T16 audit deleted 6 obsolete skeletons (#7, #9, #10, #11, #12, #14 — all regen-related). 2 survivors implemented 2026-05-22: ✅ **#1** `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` (`@MockitoSpyBean TurAgentPersonaResolver` + persona-switch fixture with seeded `__force_route=lucas`; asserts `resolve(agent,conv)` called exactly 1× and prompt's SystemMessage carries Lucas voice not Marina), ✅ **#6** `freshlyTriggeredTurn_skipsEarlyAdvance_preservesEntryNodeCursor` (procedural Tier-1 router via Portuguese-overlap triggerDescription; asserts advance invocations = 0 + cursor stays on `ai-cargo` + no `cargo` slot captured + `callCount==1`). | §VI.6 Phase 1 |
+| T4 | ✅ | T2 | **5/5 implemented:** ✅ **#18** fallsBackToHeuristic, ✅ **#20** discardsForcedFlow, ✅ **BR-doc CPF** moved to `ChatFlowOpsBrDocUnitTest`, ✅ **#16** `persistsStateInsideTransparentWalkAndAgainAfterAdvance_doubleSavePattern` (`@MockitoSpyBean TurChatFlowStateRepository` for save count + `TransactionExecutionListener` attached to `ConfigurableTransactionManager` for afterCommit count; asserts `commitCount < saveCount` proving T13 @Transactional coalesces walk saves). Only **cascade ascent** still deferred (needs `ChatFlowImportTestUtil` extension for `subFlowId` remap across nested-fixture bundle). | §VI.6 Phase 2 |
 | T5 | ✅ | T2 | 3 harness fixtures + `HarnessFixtureSmokeIT` (3 real `@Test`s passing; substring/structural invariant guards) | §VI.5, §VI.6 Phase 3 |
-| T6 | ⏳ | T5 | Structural Javadocs updated to reference T5 fixtures (#3, #4, #2, #13) + persona-tone import guard skeleton added; bodies pending | §VI.6 Phase 4 |
-| T7 | ⏳ | T1 | 6 Behavioral skeletons present (#1, #3, #7, #10, #12, #13) with regex contracts + `@BeforeAll buildChatModel` recipe in class Javadoc; bodies pending | §VI.6 Phase 5 |
-| T8 | ⏳ | T3..T7 | Cross-link pairing done (Structural ↔ Behavioral via `@link` in both directions); §VI.8 done-criteria items that depend on body implementations (no `@Disabled`, no `fail()`) remain open | §VI.6 Phase 6, §VI.8 |
+| T6 | ✅ | T5 | Post-T16 audit deleted 5 obsolete skeletons (#2, #4, #8, #13, #15). **#5** already implemented (T2/T11). ✅ **persona-tone import guard** implemented (round-trips `mandatoryTerms`/`forbiddenTerms`/`tone`/`languageStyle` across all 3 fixtures). ✅ **#3** `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` implemented 2026-05-22 (tool-free fixture pre-declares `toolsEnabled=false` on both `ai-coupon-code` AND `ai-deliver` to survive HEURISTIC earlyAdvance; assertion filters captured prompts for empty `toolCallbacks` list — the tool-strip branch signature). | §VI.6 Phase 4 |
+| T7 | ⏳ | T1 | 6 Behavioral skeletons present (#1, #3, #7, #10, #12, #13) with regex contracts + `@BeforeAll buildChatModel` recipe in class Javadoc; bodies pending — note that #7, #10, #12, #13 are now pinning DELETED code (regen + OVERRIDE), so they should be deleted alongside their Structural counterparts when bodies are implemented in T8 follow-up. | §VI.6 Phase 5 |
+| T8 | ✅ | T3..T7 | Cross-link pairing done; pairing matrix in §VI.3 annotated with T16 status (🗑 deleted / ⏳ redesign). §VI.8 done-criteria items that depend on body implementations (no `@Disabled`, no `fail()`) remain open in surviving T3/T4/T6 skeletons. | §VI.6 Phase 6, §VI.8 |
 
-### Block B — Harness inversion (§I.5, strictly sequential)
+### Block B — Harness inversion (§I.5, COMPLETE)
 
-| #   | Status | Depends on | Task | Detail in |
-|-----|--------|------------|------|-----------|
-| T9  | 📋 | T8 | Invert `advance → LLM call`: move `chatFlowEngineService.advance(...)` BEFORE `chatModel.call(prompt)`. **Removes patches #6, #7, #8, #11, #14, #15.** | §I.5 step 1 |
-| T10 | 📋 | T9 | Resolve persona ONCE per turn (cursor is now final pre-LLM). **Removes #1, #2.** | §I.5 step 2 |
-| T11 | 📋 | T10 | Introduce declarative `ChatFlowNode.toolsEnabled` (or `toolsMode`). **Removes #3, #4, #5** + retires `forbidsToolCalls`. | §I.5 step 3 |
-| T12 | 📋 | T11 | Eliminate `HIGHEST-PRIORITY OVERRIDE` block + `regenerateReplyForNewNode` entirely. **Removes #9, #10, #12, #13** + `REGEN_HISTORY_TURN_BUDGET`. | §I.5 step 4 |
-| T13 | 📋 | T12 | Clean double-save in transparent walk (#16): one atomic persistence (`advance/walk inside @Transactional → flush → LLM call`). | §I.5 step 5 |
-| T14 | 📋 | T13 | Re-evaluate judge retry (#21) in light of T11: likely "one judge call + behavior driven by `onJudgeReject` literal"; drop `isNonBlankRedirect` heuristic. | §I.5 step 6 |
-| T15 | 📋 | T14 | Lock the middleware-shaped patches: #17 cycle cap, #18 strategy fallback, #19 A/B window, #20 agent-owner check, silent telemetry stay. No code change — a verification pass. | §I.5 step 7 |
-| T16 | 📋 | T15 | Terminal refactor: `execute()` fits in ~80-100 lines (today: 290+); delete `regenerateReplyForNewNode`, `buildRegenOverride`, `trimToRecentTurns`, `forbidsToolCalls`. | §I.5 step 8 |
-
-### Block C — Post-refactor capabilities (parallelizable once Block B lands)
+> **Block B shipped 2026-05-22.** T9-T16 all ✅. The executor now runs
+> `engine.advance(...)` BEFORE the LLM call, composes ONE prompt with the
+> post-advance node already in context, makes ONE LLM call, and emits.
+> No regen, no retry, no `forbidsToolCalls(String)` substring fallback, no
+> feature flags — the inverted path is the ONLY path. Patches #1, #2, #3,
+> #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #21 are gone
+> from the codebase. Middleware patches #17, #18, #19, #20 + silent
+> telemetry + #22 (`onJudgeReject` declarative) survived intact per §I.6.
 
 | #   | Status | Depends on | Task | Detail in |
 |-----|--------|------------|------|-----------|
-| T17 | ✅ | — | Document the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. | §IV.1.a |
-| T18 | 📋 | T16, T17 | IV.1 real: WebClient/`OpenAiApi`-based bypass in `TurOpenAiLlmProvider` so STREAM mode actually streams token-by-token; ChatExecutor switches to `chatModel.stream(prompt)`; SSE controller forwards each `delta.content` chunk; per-turn tools stay disabled on this path until further notice. | §IV.1.b (this doc) |
-| T19 | 📋 | T8 | Vector → BM25 emergency fallback in RAG: when vector top-1 < `MIN_VECTOR_CONFIDENCE`, retry on `FIELD_CONTENT` (BM25); mark result as keyword-only so the prompt warns the LLM. Cheaper to ship before full hybrid (§T24). | §III.3 |
+| T9  | ✅ | — | Inverted `advance → LLM call`: `chatFlowEngineService.advance(...)` runs in setup BEFORE `chatModel.call(prompt)`. Strategy decides cursor from user message alone (`assistantMessage=null`); LLM composes a single reply with the post-advance node in its prompt. **Removed patches #6, #7, #8, #11, #14, #15.** | §I.5 step 1 |
+| T10 | ✅ | T9 | Persona resolved ONCE per turn (post-flow-context, post-early-advance). 1st pre-flow resolution + 2nd post-flow conditional both gone; `activePersona` and `effectivePersona` collapse into a single value. Tool callbacks now built from the (post-walk) persona. **Removed #1, #2.** | §I.5 step 2 |
+| T11 | ✅ | T10 | Declarative `ChatFlowNode.toolsEnabled` field added (Boolean: TRUE/null = allowed, FALSE = stripped). Backend reads via `forbidsToolCalls(ChatFlowNode)`; legacy substring matcher fallback removed in T16. Frontend chat-flow editor exposes the toggle (Checkbox) + i18n EN/PT. **Removed #3, #4, #5** + retired `forbidsToolCalls(String)`. | §I.5 step 3 |
+| T12 | ✅ | T11 | `regenerateReplyForNewNode`, `buildRegenOverride`, `trimToRecentTurns`, `REGEN_HISTORY_TURN_BUDGET` were `@Deprecated(forRemoval=true)` in T12, then DELETED in T16 along with the legacy `else if (flowContext != null)` block in `execute()`. **Removed #9, #10, #12, #13.** | §I.5 step 4 |
+| T13 | ✅ | T12 | `TurChatFlowEngineService.advance(...)` now `@Transactional` — strategy mutation + intermediate walk saves + post-walk save coalesce into ONE commit per turn (was N+1 implicit commits). Intermediate `save()` calls kept for in-memory persistence-context updates within the transaction. | §I.5 step 5 |
+| T14 | ✅ | T13 | Second-opinion judge retry block was gated by `turing.chat.judge-retry.enabled` in T14, then DELETED in T16. `onJudgeReject` (#22, shipped 2026.2.31) is now the SOLE reject driver: `advance_with_literal` / `reprompt` / `block`. `isNonBlankRedirect`, `shouldRetryVerdict`, `RETRY_MIN_USER_MESSAGE_LENGTH` deleted. **Removed #21.** | §I.5 step 6 |
+| T15 | ✅ | T14 | Audited: #17 cycle cap (`TRANSPARENT_WALK_MAX=16` @ engine:1244), #18 strategy fallback (engine:418), #19 A/B window (`isInExperimentWindow` @ engine:881), #20 agent-owner check (executor:1223), silent telemetry (`recordSessionStartSafely` + `recordTurnTelemetry`) — all intact post-T9..T14. Zero code change. T16 explicitly preserved these. | §I.5 step 7 |
+| T16 | ✅ | T15 | Terminal refactor — all feature flags + all `@Deprecated(forRemoval=true)` symbols + the legacy `execute()` branch DELETED. The inverted harness is the ONLY path. Impacted tests cleaned (10 substring `@ParameterizedTest` cases + 9 `isNonBlankRedirect_*` tests + helpers removed). Smoke + impacted unit tests verified green: HarnessFixtureSmokeIT 3/3, TestSupportSmokeIT 1/1, TurAgentChatExecutorStructuralIT 4 pass + 15 still @Disabled, LlmJudgeGuardrailStrategyTest 7/7, ChatFlowOpsTest 19/19. | §I.5 step 8 |
+
+### Block C — Post-refactor capabilities (Block B is shipped — all of these unblocked)
+
+> **Block B is complete** — every Block C task that gated on T16 (or any
+> earlier Block B step) is now unblocked at the prerequisite level. Test
+> bodies in T3/T4/T6/T7 stay open but do NOT gate Block C tasks since
+> Block B already shipped and is smoke-green.
+
+| #   | Status | Depends on | Task | Detail in |
+|-----|--------|------------|------|-----------|
+| T17 | ✅ | — | Documented the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. | §IV.1.a |
+| T18 | 📋 | T17 | IV.1 real: WebClient/`OpenAiApi`-based bypass in `TurOpenAiLlmProvider` so STREAM mode actually streams token-by-token; ChatExecutor switches to `chatModel.stream(prompt)`; SSE controller forwards each `delta.content` chunk; per-turn tools stay disabled on this path until further notice. **Unblocked** — T16 shipped, the inverted harness now has only one LLM call per turn, simplifying the SSE shape. | §IV.1.b (this doc) |
+| T19 | 📋 | — | Vector → BM25 emergency fallback in RAG: when vector top-1 < `MIN_VECTOR_CONFIDENCE`, retry on `FIELD_CONTENT` (BM25); mark result as keyword-only so the prompt warns the LLM. Cheaper to ship before full hybrid (§T24). | §III.3 |
 | T20 | 📋 | — | Spotlights V1: replace `userQuery.toLowerCase().contains(term)` in `TurSNSpotlightProcess` with `PortugueseAnalyzer` stem-overlap (5-line change, immediate morphology fix). | §III.4 (V1) |
 | T21 | 📋 | T20 | Spotlights V2: per-query `MemoryIndex` + `QueryParser` so admins can write `"plano de carreira"~2` and load synonym files. Ship only when admins ask for phrase/fuzzy. | §III.4 (V2) |
 | T22 | 📋 | — | Persona tone validation via `PortugueseAnalyzer` stems in `TurPersonaToneValidator` — "competitivo" must catch "competitividade". Same morphology pattern as T20. | §IV.3 |
@@ -106,7 +145,7 @@ acting.
 | T26 | 📋 | T25 | Router scoring: replace overlap counter with Lucene `MoreLikeThis` over an in-memory index of trigger descriptions; dominance ratio becomes a percentile threshold once production logs feed a histogram. | §II.2.2 |
 | T27 | 📋 | T26 | Router scaling: pre-built `SearcherManager` per agent with `BM25Similarity`; evict on `TurChatFlow.save/delete` via the existing `turChatFlowRouterDecision` cache hook. | §II.2.3 |
 | T28 | 📋 | — | Chat analytics intent classifier: ship `TurEsMltAnalyticsEngine @Component` so the "Top Intents" panel stops being empty. Embedded Lucene `MoreLikeThis` for the dev/no-ES fallback. | §III.5 |
-| T29 | 📋 | T16 | Tool pre-filtering for large catalogs: Lucene-similarity over `prompts/tools/**/*.md` descriptions; keep top-K (~10) for the LLM, always keep tools the flow node explicitly requires (`requiredTools` field). | §IV.2 |
+| T29 | 📋 | — | Tool pre-filtering for large catalogs: Lucene-similarity over `prompts/tools/**/*.md` descriptions; keep top-K (~10) for the LLM, always keep tools the flow node explicitly requires (`requiredTools` field). **Unblocked** — T16 shipped. | §IV.2 |
 | T30 | 📋 | — | Conversation-relevance retrieval for chat memory: per-conversation `MemoryIndex` + BM25 of past turns concatenated with the recent-N window; prefix retrieved turns with timestamp/position marker so the LLM keeps coherence. | §IV.4 |
 | T31 | 📋 | — | System prompt fragment caching: `@Cacheable` the composed persona-prompt by `(personaId, agentId)` and the flow addendum by `(flowId, currentNodeId)`. Evict on persona/flow/agent edit via existing hooks. RAG fragment stays uncached. | §IV.5 |
 
@@ -699,9 +738,10 @@ separate open problem (see the original §IV.1 sketch — mid-stream
 tool deltas, manual tool-execution loop, etc.); for now the path
 stays tool-free.
 
-**When**: gates on T16 (terminal refactor — `execute()` ≤ ~100 lines)
-landing so the WebClient branch slots in without conflicting with
-the regen/advance pipeline that's about to be deleted.
+**When**: unblocked. T16 shipped 2026-05-22; the harness now has a
+single LLM call per turn with no regen, so the WebClient branch slots
+in without conflicting with anything. Pick this up next time someone
+asks "why isn't streaming actually streaming?".
 
 ### IV.2 💭 Tool pre-filtering for large tool catalogs
 
@@ -920,51 +960,59 @@ tests; the Javadocs reference each other so drift is visible.
 
 ### VI.3 Pairing matrix
 
-> **Pairing now exists in code** (shipped 2026-05-21 under T8 cleanup). Each
-> of the six critical patches has a Structural + Behavioral test method
-> cross-referenced by `@link` in both directions. Implementer for either
-> direction can navigate to the pair to check assertion symmetry — drift
-> on one side becomes immediately visible. Method-name pairs:
+> **Status post-T16:** the pairing matrix below is the **historical**
+> design that captured 22 patches. Most of those patches no longer exist
+> in the codebase — T16 deleted the regen path, the OVERRIDE block, the
+> retry heuristic, and the substring matcher. The Structural skeletons
+> that pinned the deleted patches have been removed from
+> `TurAgentChatExecutorStructuralIT` (tombstones left in their place);
+> the corresponding Behavioral skeletons in
+> `TurAgentChatExecutorBehavioralIT` remain `@Disabled` and would have
+> to be deleted next time someone fills bodies in. Surviving pairs
+> below:
 >
-> | Patch | Structural (mocked) | Behavioral (real LLM) |
-> |---|---|---|
-> | #1  | `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` | `postWalkPersonaSwap_initialReplyComesInLucasVoiceNotMarina` |
-> | #3  | `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` | `toolFreeNode_llmDoesNotPreemptivelyInvokeCustomTool` |
-> | #7  | `firesSecondLlmCallAfterTransparentAdvanceToNewAiQuestion` | `regenFullPath_replyIsQuestionForPostAdvanceNode_notReAskOfPreviousNode` |
-> | #10 | `appendsBilingualHighestPriorityOverrideOnRegen` | `highestPriorityOverride_proventsRegressionToPreviousNodeQuestion` |
-> | #12 | `inlinesAiInstructionLiteralInsideOverrideBlock` | `aiInstructionLiteralEcho_regenReplyContainsDistinctiveSpanFromAddendum` |
-> | #13 | `inlinesChipLabelsAndCongruencyImperativeInOverrideWhenDestNodeHasInlineOptions` | `chipCongruence_regenQuestionAdmitsAllChipLabelsAsNaturalAnswers` |
+> | Patch | Structural (mocked) | Behavioral (real LLM) | Status |
+> |---|---|---|---|
+> | #1  | `resolvesPersonaAfterFlowSelection_picksWalkWrittenPersonaForInitialCall` | `postWalkPersonaSwap_initialReplyComesInLucasVoiceNotMarina` | ⏳ Survived T16 (redesign needed: assert resolves==1 post-advance, not ≥2) |
+> | #3  | `stripsToolsOnInitialCallWhenActiveNodeForbidsToolCalls` | `toolFreeNode_llmDoesNotPreemptivelyInvokeCustomTool` | ⏳ Survived T16 (redesign: assert via `node.toolsEnabled()==false`) |
+>
+> Deleted pairs (no longer applicable): #7, #10, #12, #13 — all four
+> tested the regen / OVERRIDE path that T16 removed.
 
-| Patch | Cat | Structural IT (mock) | Behavioral IT (gpt-4o-mini real) | Fixture |
-|---|---|---|---|---|
-| #1 — persona post-flow | A | `resolver` called ≥2×; 1st prompt has post-walk persona | reply in post-walk persona voice (Lucas), not default (Marina) | persona-switch-mid-flow |
-| #2 — persona in regen | A | `resolver` 3×; 2nd prompt has post-walk persona | 2nd turn in post-walk voice after crossing `persona-*` | persona-switch-mid-flow |
-| #3 — tool strip initial | B | `ToolCallingChatOptions.getToolCallbacks()` empty when node forbids | LLM does NOT invoke `compor_proposta_in_company` on capture turn | tool-free-node |
-| #4 — tool strip regen | B | idem #3 on 2nd call | idem #3 on 2nd call | tool-free-node |
-| #7 — regen full path | A | `chatModel.call()` invoked 2×; 2nd prompt has post-advance addendum | question generated is from node B (regex), not A | programa-match-ee |
-| #10 — OVERRIDE block | A | substrings `INSTRUÇÃO DE PRIORIDADE MÁXIMA` + `HIGHEST-PRIORITY OVERRIDE` in regen system text | with OVERRIDE: question from node B; without (mock-control): regresses to node A | programa-match-ee |
-| #12 — aiInstruction literal | A | `countMatches(systemText, snippet) == 2` in regen | reply mentions distinctive term from `aiInstruction` | programa-match-ee |
-| #13 — chips congruency | A | 4 labels literal + "MUST be congruent" in system text | generated question admits all 4 chips as natural answers | regen-with-chips |
+> **Historical inventory** (kept for context — the categories below
+> describe what the 22 patches WERE pre-refactor). Use this only when
+> reading old PRs; the active contract is the survivors table above.
 
-**Structural-only** (LLM real adds no signal):
+| Patch | Cat | Structural IT (mock) | Behavioral IT (gpt-4o-mini real) | Fixture | T16 status |
+|---|---|---|---|---|---|
+| #1 — persona post-flow | A | `resolver` called ≥2×; 1st prompt has post-walk persona | reply in post-walk persona voice (Lucas), not default (Marina) | persona-switch-mid-flow | ⏳ redesign |
+| #2 — persona in regen | A | `resolver` 3×; 2nd prompt has post-walk persona | 2nd turn in post-walk voice after crossing `persona-*` | persona-switch-mid-flow | 🗑 deleted |
+| #3 — tool strip initial | B | `ToolCallingChatOptions.getToolCallbacks()` empty when node forbids | LLM does NOT invoke `compor_proposta_in_company` on capture turn | tool-free-node | ⏳ redesign |
+| #4 — tool strip regen | B | idem #3 on 2nd call | idem #3 on 2nd call | tool-free-node | 🗑 deleted |
+| #7 — regen full path | A | `chatModel.call()` invoked 2×; 2nd prompt has post-advance addendum | question generated is from node B (regex), not A | programa-match-ee | 🗑 deleted |
+| #10 — OVERRIDE block | A | substrings `INSTRUÇÃO DE PRIORIDADE MÁXIMA` + `HIGHEST-PRIORITY OVERRIDE` in regen system text | with OVERRIDE: question from node B; without (mock-control): regresses to node A | programa-match-ee | 🗑 deleted |
+| #12 — aiInstruction literal | A | `countMatches(systemText, snippet) == 2` in regen | reply mentions distinctive term from `aiInstruction` | programa-match-ee | 🗑 deleted |
+| #13 — chips congruency | A | 4 labels literal + "MUST be congruent" in system text | generated question admits all 4 chips as natural answers | regen-with-chips | 🗑 deleted |
+
+**Structural-only — all DELETED in T16** (regen path gone):
 - #8 — `textAlignedWithCurrentNode` + chip suppression
 - #9 — regen omits next-step preview
 - #11 — drop `baseSystemPrompt` in regen
 - #14 — trim history to 3 turns in regen
-- #15 — refresh state before strategy advance
+- #15 — refresh state before strategy advance (T13 `@Transactional` replaces it)
 
 **Contract-only** (middleware):
-- #16 — explicit save after walk (light coverage, indirect via #17 exists)
+- #16 — explicit save after walk → redesigned as "all walk saves coalesce in one transaction" (T13)
 - #17 — cycle cap (already covered by `TurChatFlowSubFlowEngineIT` — don't duplicate)
 - #18 — fallback HEURISTIC
 - #19 — A/B window (already covered by `TurChatFlowAbVariantAssignmentTest` — don't duplicate)
 - #20 — agent-owner guard
-- #21 — judge retry / `isNonBlankRedirect` (already covered by `LlmJudgeGuardrailStrategyTest` — don't duplicate)
-- #22 — `onJudgeReject` declarative (already covered same unit test — don't duplicate)
+- #21 — judge retry / `isNonBlankRedirect` — 🗑 deleted in T16; replaced entirely by #22
+- #22 — `onJudgeReject` declarative (already covered by `LlmJudgeGuardrailStrategyTest` — don't duplicate)
 
 **Special**:
-- #5 — `forbidsToolCalls` bilingual: pure unit test, `@Nested` inside StructuralIT, ~10 parameterized cases
-- #6 — `freshlyTriggered` skip: strong indirect coverage via `autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent` + 1 new structural skeleton ("freshlyTriggered=true ⇒ advance NOT invoked this turn")
+- #5 — `forbidsToolCalls` substring overload 🗑 deleted in T16; `@Nested` unit class now only exercises the node-aware overload (`ChatFlowNode.toolsEnabled`)
+- #6 — `freshlyTriggered` skip: strong indirect coverage via `autoTriggerRouter_rejectsGreeting_picksFlowOnExplicitIntent`. Post-T16 the contract narrowed to "skip earlyAdvance on the trigger turn"; the structural skeleton survives and needs a body.
 
 ### VI.4 Shared infrastructure
 

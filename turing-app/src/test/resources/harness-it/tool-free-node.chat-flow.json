@@ -57,9 +57,10 @@
           "data": {
             "label": "DIGITE O CUPOM (TOOL-FREE)",
             "type": "aiQuestion",
-            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. NÃO CHAME NENHUMA TOOL nesse turno — apenas capture o que o visitante digitar. A tool de proposta roda no próximo nó com o cupom já no slot. Sem chips.",
+            "aiInstruction": "Peça o código do cupom em UMA frase: 'Beleza — qual é o código?'. Apenas capture o que o visitante digitar. A tool de proposta roda no próximo nó com o cupom já no slot. Sem chips.",
             "outputVariable": "coupon_code",
-            "onJudgeReject": "advance_with_literal"
+            "onJudgeReject": "advance_with_literal",
+            "toolsEnabled": false
           }
         },
         {
@@ -82,9 +83,10 @@
           "data": {
             "label": "ENTREGAR PROPOSTA",
             "type": "aiQuestion",
-            "aiInstruction": "Confirme o cupom recebido em UMA frase e chame `compor_proposta_in_company` para gerar a proposta. Use o cupom já capturado no slot {{coupon_code}}.",
+            "aiInstruction": "Confirme o cupom recebido em UMA frase. Use o cupom já capturado no slot {{coupon_code}}.",
             "outputVariable": "deliver_status",
-            "onJudgeReject": "advance_with_literal"
+            "onJudgeReject": "advance_with_literal",
+            "toolsEnabled": false
           }
         },
         {

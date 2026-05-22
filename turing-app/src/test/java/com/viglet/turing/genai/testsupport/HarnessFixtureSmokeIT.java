@@ -85,13 +85,23 @@ class HarnessFixtureSmokeIT extends AbstractAgentExecutorIT {
                 .isPresent();
         assertThat(graph.nodeById("switch-cupom-ok")).isPresent();
         assertThat(graph.nodeById("ai-deliver")).isPresent();
-        // The aiInstruction MUST carry the bilingual sentinel (forbidsToolCalls
-        // matches case-insensitively on substring) — drift here breaks #3.
+        // Post-T16: the bilingual substring sentinel was deleted from
+        // forbidsToolCalls. The fixture now uses the declarative
+        // ChatFlowNode.toolsEnabled=false field (T11) — verify ALL
+        // aiQuestion nodes in the tool-free chain are marked as such, so
+        // earlyAdvance (T9) can't move the cursor onto a tool-enabled
+        // node mid-test and silently invalidate the patch #3 assertion.
         ChatFlowNode coupon = graph.nodeById("ai-coupon-code").orElseThrow();
-        assertThat(coupon.aiInstruction())
-                .as("ai-coupon-code MUST keep the 'NÃO CHAME NENHUMA TOOL' sentinel "
-                        + "or patch #3's structural assertion silently changes meaning")
-                .containsIgnoringCase("NÃO CHAME NENHUMA TOOL");
+        ChatFlowNode deliver = graph.nodeById("ai-deliver").orElseThrow();
+        assertThat(coupon.toolsEnabled())
+                .as("ai-coupon-code MUST declare toolsEnabled=false (drift here breaks patch #3)")
+                .isEqualTo(Boolean.FALSE);
+        assertThat(deliver.toolsEnabled())
+                .as("ai-deliver MUST also declare toolsEnabled=false — the tool-free fixture's "
+                        + "name implies the WHOLE chain. Without this, HEURISTIC's earlyAdvance "
+                        + "would move the cursor here and patch #3's structural assertion would "
+                        + "see toolsEnabled=null (true by default).")
+                .isEqualTo(Boolean.FALSE);
 
         summarize("tool-free-node", graph);
     }

@@ -59,14 +59,10 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     private static final String REJECT_REPROMPT = "reprompt";
     private static final String REJECT_BLOCK = "block";
 
-    /**
-     * Minimum user-message length (after trim) that qualifies a rejected verdict
-     * for a second-opinion retry. Set to defeat the cheap politeness-marker
-     * cases ({@code "ok"}, {@code "valeu"}) without ever costing more than one
-     * extra judge call per turn on a substantive answer that was wrongly
-     * rejected by a non-deterministic first verdict.
-     */
-    private static final int RETRY_MIN_USER_MESSAGE_LENGTH = 10;
+    // §I.5 step 6 / T16 — deleted: RETRY_MIN_USER_MESSAGE_LENGTH constant
+    // and the judgeRetryEnabled flag. The second-opinion retry block they
+    // gated was removed entirely; onJudgeReject (#22) is the sole driver
+    // of post-reject behavior. Recoverable from git log.
 
     private final HeuristicGuardrailStrategy fallback;
 
@@ -104,93 +100,14 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
             return fallback.advance(ctx);
         }
 
-        // Second opinion when the first verdict looks like a false reject: the
-        // judge said "stay, no value collected" against a substantive user
-        // message on a node that expects an output variable. The judge call
-        // is non-deterministic even at temperature 0 (~5% flake observed in
-        // production), so one cheap retry recovers the turn without forcing
-        // the user to re-type. See {@code shouldRetryVerdict} for the guard.
-        if (shouldRetryVerdict(verdict, node, ctx.userMessage())) {
-            log.info("[LlmJudge] First verdict rejected non-trivial reply on node '{}' — "
-                    + "requesting second opinion", node.id());
-            JudgeVerdict retry = askJudge(judgeModel, node,
-                    ctx.userMessage(), ctx.assistantMessage());
-            if (retry != null) {
-                log.info("[LlmJudge] Retry verdict on node '{}': onTopic={} ready={} collected='{}'",
-                        node.id(), retry.onTopic(), retry.readyToAdvance(), retry.collectedValue());
-                verdict = retry;
-            }
-            // If both verdicts still say "stay, no value" for a substantive
-            // user message on a slot-collecting node, we have two failure
-            // modes that look identical from the engine's side:
-            //
-            //   (a) The judge is being too strict — gpt-4o-mini occasionally
-            //       rejects a perfectly valid value (anecdotally ~5%). In
-            //       this case the judge typically returns a vague or blank
-            //       redirect because it has no real reason to reject.
-            //       Force-capture is the right escape.
-            //
-            //   (b) The user is genuinely off-topic — clicked a non-name
-            //       chip on a name-collecting node, pasted lorem-ipsum, etc.
-            //       In this case the judge returns a substantive
-            //       redirect_message ("Vamos falar sobre seu nome primeiro?")
-            //       because it correctly identified the gap. Force-capture
-            //       here would lock the wrong text into the slot.
-            //
-            // Heuristic to distinguish JUDGE FLAKE from intentional REJECT:
-            //
-            // - Both verdicts SUBSTANTIVE redirect (e.g. "Vamos voltar ao seu
-            //   nome? Como você se chama?") → judge clearly identified the
-            //   input as off-topic. Trust it and stay on the node, EVEN
-            //   when the per-node policy is {@code advance_with_literal}.
-            //   Without this carve-out, a chatty answer to "qual é o seu
-            //   nome?" like "Queria ser diretor de TI" got force-captured
-            //   into the {@code name} slot — the visitor's actual name
-            //   never made it in, and the welcome banner read
-            //   "Queria ser diretor de TI, prazer!".
-            //
-            // - Redirect blank/short → judge couldn't articulate WHY it
-            //   rejected (likely a flake). Fall through to the per-node
-            //   policy: {@code advance_with_literal} captures the message
-            //   as the slot value (escape hatch for valid inputs the judge
-            //   wrongly flagged); {@code block} stays on node; default
-            //   stays on node.
-            boolean stillFlaky = shouldRetryVerdict(verdict, node, ctx.userMessage());
-            String policy = resolveRejectPolicy(node);
-            // Stash policy for the short-message branch below (out of the
-            // retry scope). The retry scope only runs for messages ≥ 10
-            // chars; short alphanumeric values like coupon codes never
-            // enter here, so we resolve the policy a second time outside
-            // — see the block right after this if/else chain.
-            if (stillFlaky) {
-                if (REJECT_BLOCK.equals(policy)) {
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
-                            + "with onJudgeReject=block — staying on node, no force-capture",
-                            ctx.userMessage(), node.id());
-                } else if (isNonBlankRedirect(verdict)) {
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' "
-                            + "with substantive redirect='{}' — trusting judge over policy '{}', "
-                            + "staying on node (no force-capture)",
-                            ctx.userMessage(), node.id(),
-                            verdict.redirectMessage(), policy);
-                } else if (REJECT_ADVANCE_WITH_LITERAL.equals(policy)) {
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' with "
-                            + "blank/short redirect — onJudgeReject=advance_with_literal, "
-                            + "force-capturing user message as the slot value",
-                            ctx.userMessage(), node.id());
-                    verdict = new JudgeVerdict(verdict.onTopic(),
-                            ctx.userMessage().trim(),
-                            /* readyToAdvance */ true,
-                            verdict.redirectMessage(),
-                            /* abandoned */ false);
-                } else {
-                    log.info("[LlmJudge] Both verdicts rejected '{}' on node '{}' with "
-                            + "blank/short redirect — staying on node (policy '{}' does not "
-                            + "permit force-capture without a clear judge signal)",
-                            ctx.userMessage(), node.id(), policy);
-                }
-            }
-        }
+        // §I.5 step 6 / T16 — deleted: the second-opinion retry block
+        // (patch #21). The behavior on a rejected verdict is now decided
+        // SOLELY by ChatFlowNode.onJudgeReject (patch #22, shipped):
+        //   • REJECT_ADVANCE_WITH_LITERAL → force-capture below
+        //   • REJECT_BLOCK → stay on node
+        //   • REJECT_REPROMPT (default) → stay with redirect_message
+        // The isNonBlankRedirect heuristic is gone — author-declared
+        // policy is unambiguous, no need to guess from redirect length.
 
         // Short-message force-capture path for {@code advance_with_literal}.
         //
@@ -358,43 +275,6 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
     }
 
     /**
-     * Tight predicate for "this verdict looks like a flake, ask again". Only
-     * triggers when all four conditions hold:
-     * <ul>
-     *   <li>not {@code abandoned} — never spend an extra call to recover a
-     *       quit request;</li>
-     *   <li>not {@code readyToAdvance} — a positive verdict is final;</li>
-     *   <li>{@code collected_value} is null/blank — the judge admitted it
-     *       extracted nothing, the prime indicator of a false reject;</li>
-     *   <li>the node actually <em>expects</em> an output variable and the
-     *       user typed at least {@value #RETRY_MIN_USER_MESSAGE_LENGTH}
-     *       characters — short politeness markers ("ok", "valeu") are
-     *       legitimate stays and must NOT trigger a retry.</li>
-     * </ul>
-     */
-    /**
-     * Returns {@code true} when the verdict carries a substantive
-     * {@code redirect_message} the judge produced because it actively
-     * decided to keep the visitor on the current node — as opposed to a
-     * blank/missing field that signals the judge had no idea why it
-     * rejected. Used by the force-capture path to decide whether to
-     * trust the judge's "stay here" instinct or treat it as flake.
-     *
-     * <p>Threshold of 8 characters filters one-word placeholder strings
-     * (e.g. "stay", "no") that some prompts emit as a fallback when the
-     * model can't articulate a redirect — those shouldn't count as
-     * confidence signals.
-     */
-    // Package-private (not private) so LlmJudgeGuardrailStrategyTest can
-    // call directly without reflection. Behavioral contract pinned by the
-    // unit test — the force-capture-vs-trust-redirect heuristic is exactly
-    // the kind of subtle condition that regresses silently.
-    static boolean isNonBlankRedirect(JudgeVerdict verdict) {
-        String redirect = verdict.redirectMessage();
-        return redirect != null && redirect.trim().length() >= 8;
-    }
-
-    /**
      * Resolves the soft-fail policy declared on the node, defaulting to
      * {@link #REJECT_REPROMPT} when the field is null/blank or names an
      * unknown value. Lowercased so authors can write either
@@ -419,19 +299,9 @@ public class LlmJudgeGuardrailStrategy implements TurChatFlowGuardrailStrategy {
         };
     }
 
-    private static boolean shouldRetryVerdict(JudgeVerdict verdict, ChatFlowNode node, String userMessage) {
-        if (verdict.abandoned() || verdict.readyToAdvance()) {
-            return false;
-        }
-        if (verdict.collectedValue() != null && !verdict.collectedValue().isBlank()) {
-            return false;
-        }
-        if (node.outputVariable() == null || node.outputVariable().isBlank()) {
-            return false;
-        }
-        return userMessage != null
-                && userMessage.trim().length() >= RETRY_MIN_USER_MESSAGE_LENGTH;
-    }
+    // §I.5 step 6 / T16 — deleted: shouldRetryVerdict + isNonBlankRedirect.
+    // The retry block they served has been removed; reject policy is now
+    // entirely declarative via ChatFlowNode.onJudgeReject (#22).
 
     // ─────────────────────────── Judge call ───────────────────────────
 

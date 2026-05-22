@@ -26,7 +26,7 @@ public record ChatFlowNode(String id, String type, NodeData data) {
 
     public ChatFlowNode {
         data = data == null
-                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                ? new NodeData(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
                 : data;
     }
 
@@ -192,6 +192,33 @@ public record ChatFlowNode(String id, String type, NodeData data) {
         return data.onJudgeReject();
     }
 
+    /**
+     * Declarative tool-availability switch for an {@code aiQuestion} node
+     * (§I.5 step 3 of the harness inversion). Three meaningful values:
+     *
+     * <ul>
+     *   <li>{@code Boolean.TRUE} (or {@code null}) — tools are available
+     *       to the LLM. Default — preserves pre-T11 behavior.</li>
+     *   <li>{@code Boolean.FALSE} — tools are STRIPPED on this node. The
+     *       executor builds the {@code ChatOptions} with an empty
+     *       {@code toolCallbacks} list and {@code internalToolExecutionEnabled(false)}.
+     *       Replaces the bilingual substring matcher in
+     *       {@code TurAgentChatExecutor.forbidsToolCalls(...)}.</li>
+     * </ul>
+     *
+     * <p>Used by flows that need to gate the LLM from preemptively calling
+     * tools (canonical case: a coupon-capture node where the proposal tool
+     * MUST wait until the slot is populated). When this field is set,
+     * the legacy "NÃO CHAME NENHUMA TOOL" sentinel in
+     * {@link #aiInstruction()} is no longer required — but it remains as
+     * backwards-compat fallback in the executor until T16 deletes it.
+     *
+     * @since 2026.2.7
+     */
+    public Boolean toolsEnabled() {
+        return data.toolsEnabled();
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record NodeData(
             String label,
@@ -213,7 +240,8 @@ public record ChatFlowNode(String id, String type, NodeData data) {
             String slotName,
             String slotOperation,
             String slotValue,
-            String onJudgeReject) {
+            String onJudgeReject,
+            Boolean toolsEnabled) {
     }
 
     /**

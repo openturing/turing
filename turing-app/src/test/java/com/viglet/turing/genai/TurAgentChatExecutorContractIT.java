@@ -13,10 +13,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.ConfigurableTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionExecutionListener;
 
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
 import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
+import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 
 /**
  * Contract integration tests for {@link TurAgentChatExecutor}. Locks
@@ -50,6 +56,9 @@ import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
  */
 @Import(TurAgentChatExecutorMockSupport.class)
 class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.viglet.turing.genai.flow.TurChatFlowEngineService chatFlowEngineService;
 
     /**
      * Patch #18 — fallback HEURISTIC quando strategy bean missing
@@ -92,9 +101,120 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   switch-on-enum) mas o invariante observável é o mesmo.
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #18.")
-    void fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void fallsBackToHeuristicStrategyWhenGuardrailMethodHasNoRegisteredBean() throws Exception {
+        // Simulate "enum value added without a backing bean" by reflectively
+        // removing the LLM_JUDGE entry from the engine's strategy map. The
+        // production code path that resolves the strategy then returns null
+        // for that method and falls back to HEURISTIC (the defense-in-depth
+        // §I.6 contract). Restore the map after the assertion so the next
+        // test sees the full registry.
+        // advance(...) is @Transactional → Spring wraps the engine in a
+        // CGLIB proxy; reflection on the proxy's class returns null
+        // because the real field lives on the target. Unwrap first.
+        com.viglet.turing.genai.flow.TurChatFlowEngineService engineTarget =
+                org.springframework.test.util.AopTestUtils.getTargetObject(chatFlowEngineService);
+        java.lang.reflect.Field field = com.viglet.turing.genai.flow.TurChatFlowEngineService.class
+                .getDeclaredField("strategyByMethod");
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod,
+                com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy> original =
+                (java.util.Map<com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod,
+                        com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy>)
+                        field.get(engineTarget);
+        // Build a copy without LLM_JUDGE → resolveStrategy will hit the
+        // fallback log + return HEURISTIC.
+        java.util.Map<com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod,
+                com.viglet.turing.genai.flow.strategy.TurChatFlowGuardrailStrategy> trimmed =
+                new java.util.EnumMap<>(original);
+        trimmed.remove(com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.LLM_JUDGE);
+
+        ch.qos.logback.classic.Logger engineLogger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(com.viglet.turing.genai.flow.TurChatFlowEngineService.class);
+        TestLogAppender appender = new TestLogAppender();
+        appender.start();
+        engineLogger.addAppender(appender);
+
+        try {
+            // Replace strategy map for the duration of the assertion
+            field.set(engineTarget, trimmed);
+
+            // Drive a turn through advance() on a flow whose guardrailMethod
+            // is LLM_JUDGE (now bean-missing). HEURISTIC must run, no throw.
+            org.assertj.core.api.Assertions.assertThatCode(this::driveOneTurnOnLlmJudgeFlow)
+                    .as("Engine must NOT throw when the resolved strategy bean is missing — it must fall back to HEURISTIC")
+                    .doesNotThrowAnyException();
+
+            // The WARN log line is the observable signal that the fallback
+            // path fired (per the line at TurChatFlowEngineService:418).
+            org.assertj.core.api.Assertions.assertThat(appender.warnMessages())
+                    .as("Engine should warn about the missing strategy and the HEURISTIC fallback")
+                    .anySatisfy(msg -> {
+                        org.assertj.core.api.Assertions.assertThat(msg)
+                                .containsIgnoringCase("LLM_JUDGE")
+                                .containsIgnoringCase("HEURISTIC");
+                    });
+        } finally {
+            // Restore original map so subsequent tests in this class /
+            // suite still see the full strategy registry.
+            field.set(engineTarget, original);
+            engineLogger.detachAppender(appender);
+        }
+    }
+
+    /**
+     * Drives a single {@code advance(...)} turn against a fresh
+     * {@code LLM_JUDGE}-tagged flow + ephemeral state. Used by the patch #18
+     * test to exercise the fallback without going through the full executor
+     * (we just need to hit {@code resolveStrategy} once).
+     */
+    private void driveOneTurnOnLlmJudgeFlow() {
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent = createAgent("contract-18", null);
+        com.viglet.turing.persistence.model.agent.TurChatFlow flow =
+                new com.viglet.turing.persistence.model.agent.TurChatFlow();
+        flow.setName("Contract #18 — LLM_JUDGE without bean");
+        flow.setEnabled(1);
+        flow.setGuardrailMethod(com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.LLM_JUDGE);
+        flow.setTriggerMode(com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode.ONCE);
+        flow.setTriggerDescription("contract-18 — never auto-triggered");
+        // Minimal graph: start → end. The engine only needs to find the
+        // current node and call resolveStrategy once; no real interaction
+        // logic is exercised.
+        flow.setDefinitionJson("{\"nodes\":["
+                + "{\"id\":\"start\",\"type\":\"start\",\"data\":{\"label\":\"INÍCIO\",\"type\":\"start\"}},"
+                + "{\"id\":\"end\",\"type\":\"end\",\"data\":{\"label\":\"FIM\",\"type\":\"end\"}}"
+                + "],\"edges\":[{\"id\":\"e1\",\"source\":\"start\",\"target\":\"end\"}]}");
+        flow.setTurAIAgent(agent);
+        flow = chatFlowRepository.save(flow);
+        com.viglet.turing.genai.flow.ChatFlowGraph graph = chatFlowEngineService.parseGraph(flow).orElseThrow();
+        String conv = "conv-contract-18-" + java.util.UUID.randomUUID();
+        com.viglet.turing.persistence.model.agent.TurChatFlowState state =
+                chatFlowEngineService.loadOrInitState(conv, flow, graph).orElseThrow();
+        chatFlowEngineService.advance(flow, state, graph, "hello", null, harness().chatModel());
+    }
+
+    /**
+     * Tiny in-memory Logback appender. Collects WARN+ messages so the
+     * assertion above can match against them without using
+     * {@code OutputCaptureExtension} (which is provided by
+     * {@code spring-boot-test} but requires extra wiring on this IT class).
+     */
+    private static final class TestLogAppender
+            extends ch.qos.logback.core.AppenderBase<ch.qos.logback.classic.spi.ILoggingEvent> {
+
+        private final java.util.List<String> warnMessages =
+                java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+        @Override
+        protected void append(ch.qos.logback.classic.spi.ILoggingEvent event) {
+            if (event.getLevel().isGreaterOrEqual(ch.qos.logback.classic.Level.WARN)) {
+                warnMessages.add(event.getFormattedMessage());
+            }
+        }
+
+        java.util.List<String> warnMessages() {
+            return java.util.List.copyOf(warnMessages);
+        }
     }
 
     /**
@@ -137,9 +257,71 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   design.
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #20.")
     void discardsForcedFlowWhenItDoesNotBelongToCallingAgent() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+        // Two distinct agents. Agent A owns the flow; Agent B is the one
+        // we'll drive. Sending B a forced flowId pointing at A's flow must
+        // log a WARN and silently drop the flow override.
+        com.viglet.turing.persistence.model.agent.TurAIAgent agentA = createAgent("contract-20-owner-A", null);
+        com.viglet.turing.persistence.model.agent.TurAIAgent agentB = createAgent("contract-20-caller-B", null);
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llm = createMockableLlmInstance();
+        agentB.getLlmInstances().add(llm);
+        agentB = agentRepository.save(agentB);
+
+        com.viglet.turing.persistence.model.agent.TurChatFlow flowOfA =
+                new com.viglet.turing.persistence.model.agent.TurChatFlow();
+        flowOfA.setName("Contract #20 — owned by agent A only");
+        flowOfA.setEnabled(1);
+        flowOfA.setGuardrailMethod(com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod.HEURISTIC);
+        flowOfA.setTriggerMode(com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode.ONCE);
+        flowOfA.setTriggerDescription("contract-20 — owned by A");
+        flowOfA.setDefinitionJson("{\"nodes\":["
+                + "{\"id\":\"start\",\"type\":\"start\",\"data\":{\"label\":\"INÍCIO\",\"type\":\"start\"}},"
+                + "{\"id\":\"end\",\"type\":\"end\",\"data\":{\"label\":\"FIM\",\"type\":\"end\"}}"
+                + "],\"edges\":[{\"id\":\"e1\",\"source\":\"start\",\"target\":\"end\"}]}");
+        flowOfA.setTurAIAgent(agentA);
+        flowOfA = chatFlowRepository.save(flowOfA);
+
+        // Mock chat reply so the executor has SOMETHING to publish after
+        // the (now-null) flow context.
+        harness().queueResponse("hi from mock");
+
+        ch.qos.logback.classic.Logger executorLogger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(TurAgentChatExecutor.class);
+        TestLogAppender appender = new TestLogAppender();
+        appender.start();
+        executorLogger.addAppender(appender);
+
+        java.util.List<TurAgentChatExecutor.ChatResponse> events;
+        try {
+            // Drive agent B with agent A's forced flowId. Expected: flow
+            // is rejected, conversation proceeds without flow context.
+            String conv = "conv-contract-20-" + java.util.UUID.randomUUID();
+            events = runTurn(agentB, llm,
+                    java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "hi")),
+                    null, conv, flowOfA.getId());
+        } finally {
+            executorLogger.detachAppender(appender);
+        }
+
+        // 1) The executor must have completed the turn (no exception, reply emitted).
+        org.assertj.core.api.Assertions.assertThat(events)
+                .as("Cross-tenant forced flow must be dropped, not crash the turn")
+                .isNotEmpty();
+        org.assertj.core.api.Assertions.assertThat(events.get(0).content())
+                .as("Reply is the LLM mock output (flow-less path) — confirms flow was rejected")
+                .isEqualTo("hi from mock");
+
+        // 2) The WARN log message must mention the rejected flow id and
+        //    the caller agent — same observable signal as line 896 of
+        //    TurAgentChatExecutor.
+        String flowId = flowOfA.getId();
+        String agentBId = agentB.getId();
+        org.assertj.core.api.Assertions.assertThat(appender.warnMessages())
+                .as("Executor should warn that the forced flow does not belong to the calling agent")
+                .anySatisfy(msg -> org.assertj.core.api.Assertions.assertThat(msg)
+                        .contains(flowId)
+                        .contains(agentBId)
+                        .containsIgnoringCase("does not belong"));
     }
 
     /* ─────────────────────────── New skeletons added in T4 (Phase 2) ──────────────
@@ -211,10 +393,132 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   persistidos ao final do turno" sobrevive como um teste mais simples.
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, patch #16 (new in T4).")
-    void persistsStateInsideTransparentWalkAndAgainAfterAdvance_doubleSavePattern() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+    void persistsStateInsideTransparentWalkAndAgainAfterAdvance_doubleSavePattern() throws java.io.IOException {
+        // Post-T13 contract for patch #16: the in-walk save() calls
+        // (slot SET / persona / switch landing inside walkTransparentNodes)
+        // are RETAINED for in-memory persistence-context coherence and
+        // crash-survivability mid-walk, but they MUST coalesce into a
+        // SINGLE commit at the @Transactional advance(...) boundary.
+        // Without batching, each save would commit separately — e.g. the
+        // 3-hop walk on persona-switch-mid-flow (Maria → switch-route →
+        // persona-lucas → ai-objetivo) would fire ≥3 commits instead of 1.
+        //
+        // The persona-switch fixture is the smallest harness flow that
+        // exercises the multi-save walk path (switch resolution + persona
+        // landing both call stateRepository.save() inside the loop).
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.loadFromClasspath(
+                        "/harness-it/persona-switch-mid-flow.chat-flow.json");
+        com.viglet.turing.persistence.model.agent.TurAIAgent agent = createAgent("patch16", null);
+        com.viglet.turing.persistence.model.llm.TurLLMInstance llm = createMockableLlmInstance();
+        agent.getLlmInstances().add(llm);
+        agent = agentRepository.save(agent);
+        com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.Imported imp =
+                com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.importIntoAgent(
+                        agent, entry, importRepos());
+
+        // Pre-seed cursor at ai-name with __force_route=lucas so the
+        // strategy captures "Maria" into the name slot AND the post-walk
+        // routes through persona-lucas — multi-hop walk that triggers
+        // multiple in-walk save() calls.
+        String conv = "conv-patch16-" + java.util.UUID.randomUUID();
+        com.viglet.turing.persistence.model.agent.TurChatFlowState seeded =
+                new com.viglet.turing.persistence.model.agent.TurChatFlowState();
+        seeded.setConversationId(conv);
+        seeded.setFlow(imp.flow());
+        seeded.setCurrentNodeId("ai-name");
+        seeded.setVariablesJson("{\"__force_route\":\"lucas\"}");
+        stateRepoSpy.save(seeded);
+
+        // Register a TransactionExecutionListener on the production
+        // transaction manager to count afterCommit events. Removed in
+        // finally so it doesn't leak across tests sharing this context.
+        if (!(txManager instanceof ConfigurableTransactionManager configurable)) {
+            org.junit.jupiter.api.Assertions.fail(
+                    "Expected the production PlatformTransactionManager to implement "
+                            + "ConfigurableTransactionManager (Spring 6.2+) so the test can attach a "
+                            + "TransactionExecutionListener. Got: " + txManager.getClass().getName());
+            return;
+        }
+        java.util.concurrent.atomic.AtomicInteger commitCount =
+                new java.util.concurrent.atomic.AtomicInteger();
+        TransactionExecutionListener listener = new TransactionExecutionListener() {
+            @Override
+            public void afterCommit(org.springframework.transaction.TransactionExecution tx, Throwable error) {
+                if (error == null) {
+                    commitCount.incrementAndGet();
+                }
+            }
+        };
+        java.util.Collection<TransactionExecutionListener> originalListeners =
+                new java.util.ArrayList<>(configurable.getTransactionExecutionListeners());
+
+        // Reset spy counter AFTER the seed save and BEFORE the runTurn so
+        // counts reflect just the executor turn. The afterCommit counter
+        // starts at zero by construction; nothing in the test reset path
+        // commits between here and runTurn.
+        org.mockito.Mockito.clearInvocations(stateRepoSpy);
+        configurable.addListener(listener);
+        harness().queueResponse("Qual é o seu objetivo de carreira?");
+
+        try {
+            runTurn(agent, llm,
+                    java.util.List.of(new TurAgentChatExecutor.ChatMessageItem("user", "Maria")),
+                    null, conv, imp.flow().getId());
+        } finally {
+            // Detach: TransactionExecutionListener has no removeListener,
+            // so we restore the original list to leave the manager clean
+            // for sibling tests.
+            configurable.setTransactionExecutionListeners(originalListeners);
+        }
+
+        // 1. The strategy save + the in-walk saves (persona-lucas landing
+        //    + switch-route landing) must each have hit stateRepository.save —
+        //    at least TWO calls to prove the walk wasn't short-circuited.
+        org.mockito.ArgumentCaptor<com.viglet.turing.persistence.model.agent.TurChatFlowState> captor =
+                org.mockito.ArgumentCaptor.forClass(
+                        com.viglet.turing.persistence.model.agent.TurChatFlowState.class);
+        org.mockito.Mockito.verify(stateRepoSpy, org.mockito.Mockito.atLeast(2)).save(captor.capture());
+        int saveCount = captor.getAllValues().size();
+
+        // 2. The COALESCE invariant: total afterCommit count during the
+        //    turn must be STRICTLY LESS than save count. If T13 reverted,
+        //    each save would commit standalone and commitCount == saveCount.
+        org.assertj.core.api.Assertions.assertThat(commitCount.get())
+                .as("Post-T13 @Transactional advance(...) must coalesce in-walk saves into "
+                        + "fewer commits than saves. Got %d saves but %d commits — if these are "
+                        + "equal, the advance() @Transactional boundary regressed.",
+                        saveCount, commitCount.get())
+                .isLessThan(saveCount);
+
+        // 3. The final persisted state must reflect the FULL walk — cursor
+        //    landed on ai-objetivo (the post-walk interactive node) and
+        //    the name slot was captured. Proves the transaction committed
+        //    successfully (not rolled back) AND the in-walk saves persisted.
+        com.viglet.turing.persistence.model.agent.TurChatFlowState finalState =
+                ((com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository)
+                        org.springframework.beans.factory.BeanFactoryUtils.beanOfTypeIncludingAncestors(
+                                applicationContext,
+                                com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository.class))
+                        .findByConversationIdAndFlow_Id(conv, imp.flow().getId())
+                        .orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(finalState.getCurrentNodeId())
+                .as("Final cursor after the multi-hop walk: ai-name → switch-route → persona-lucas → ai-objetivo")
+                .isEqualTo("ai-objetivo");
+        org.assertj.core.api.Assertions.assertThat(finalState.getVariablesJson())
+                .as("name slot must be persisted from the captured user msg")
+                .contains("\"name\"")
+                .contains("Maria");
     }
+
+    @MockitoSpyBean
+    private TurChatFlowStateRepository stateRepoSpy;
+
+    @Autowired
+    private PlatformTransactionManager txManager;
+
+    @Autowired
+    private org.springframework.context.ApplicationContext applicationContext;
 
     /**
      * Cascade ascent — `end` nodes in nested sub-flows pop the chain
@@ -268,73 +572,12 @@ class TurAgentChatExecutorContractIT extends AbstractAgentExecutorIT {
      *   navegação, não race condition.
      */
     @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, cascade ascent (new in T4).")
+    @Disabled("Skeleton — body deferred. Requires harness-it/nested-sub-flow.chat-flow.json "
+            + "(3 nested flows A→B→C) + extending ChatFlowImportTestUtil to remap subFlowId "
+            + "across the bundle the same way personaId is already remapped. ~2h infra + ~1h body. "
+            + "Indirect coverage exists in TurChatFlowSubFlowEngineIT (single-level ascent) — "
+            + "the multi-level chain case here is the gap.")
     void cascadesAscentThroughChainOfTerminatedSubFlows_landsOnTopLevelNextNode() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
-    }
-
-    /**
-     * BR-doc CPF/CNPJ checksum validation — {@code ChatFlowOps.isValidCpfChecksum} /
-     * {@code isValidCnpjChecksum}
-     * Categoria: C (middleware — input validation primitive)
-     * Localização: ChatFlowOps.java:1217-1251 (CPF + CNPJ mod-11 checks)
-     *
-     * Comportamento a travar:
-     *   {@code isValidCpfChecksum(String cpf)} returns true ⇔ the 11-digit
-     *   normalized string passes the Receita Federal mod-11 algorithm AND
-     *   is NOT a repeated-digit sequence (111.111.111-11, 000.000.000-00,
-     *   etc.). {@code isValidCnpjChecksum(String cnpj)} idem for 14-digit
-     *   CNPJ with the cycle {6,5,4,3,2,9,8,7,6,5,4,3,2}.
-     *
-     *   These methods sit on the hot path: the LLM_JUDGE strategy extracts
-     *   a candidate CPF/CNPJ string via regex, then routes it through these
-     *   checksums BEFORE force-capturing the slot. A buggy checksum either
-     *   accepts malformed docs (breaks downstream API calls) or rejects
-     *   valid ones (the visitor types it again and again — UX nightmare).
-     *
-     * Cenário:
-     *   Pure unit-style tests, no Spring context. The static methods are
-     *   PACKAGE-PRIVATE on {@code ChatFlowOps} in
-     *   {@code com.viglet.turing.genai.flow.strategy} — this skeleton lives
-     *   in the wrong package to call them directly.
-     *
-     *   Implementer should EITHER:
-     *   <ul>
-     *     <li>Move the {@code @Nested} class into a new file at
-     *         {@code com/viglet/turing/genai/flow/strategy/ChatFlowOpsBrDocUnitTest.java}
-     *         (preferred — keeps tests next to the implementation), OR</li>
-     *     <li>Escalate {@code isValidCpfChecksum} / {@code isValidCnpjChecksum}
-     *         visibility to {@code public} and keep the test here (only do
-     *         this if a real caller outside {@code strategy/} ever needs
-     *         the primitives — currently nobody does).</li>
-     *   </ul>
-     *
-     * Asserts (parameterized recommended, ~10-15 cases):
-     *   CPF valid:
-     *     - 11144477735 (canonical valid CPF used by Receita Federal docs)
-     *     - 390.533.447-05 (real, formatted — strip dots/dash before check)
-     *   CPF invalid:
-     *     - 11111111111 (repeated digits — rejected by isAllSameDigit)
-     *     - 00000000000, 99999999999 (same)
-     *     - 12345678900 (mod-11 fails)
-     *     - "12345" (wrong length)
-     *     - null, "" (defensive)
-     *   CNPJ valid:
-     *     - 11.222.333/0001-81 (canonical real CNPJ)
-     *     - 12.345.678/0001-95 (real, formatted)
-     *   CNPJ invalid:
-     *     - 11111111111111 (repeated)
-     *     - 12345678901234 (mod-11 fails)
-     *     - wrong length, null, ""
-     *
-     * Nota refactor:
-     *   Primitives de validação não mudam com o §I.5 refactor — sobrevive
-     *   inalterado. Pode até virar parte de uma biblioteca shared de
-     *   validation futura sem afetar nada do executor.
-     */
-    @Test
-    @Disabled("Skeleton — pendente implementação. Inventário §8.4, BR-doc CPF (new in T4); see Javadoc — methods are package-private, this skeleton needs to move to ChatFlowOpsBrDocUnitTest.java in com.viglet.turing.genai.flow.strategy.")
-    void brDocCpfCnpjChecksumValidation_acceptsValidRejectsInvalidRejectsRepeatedDigits() {
-        fail("Not implemented — skeleton from IMPROVEMENTS.md §I.3");
+        fail("Not implemented — see @Disabled message for the deferred-work scope.");
     }
 }
