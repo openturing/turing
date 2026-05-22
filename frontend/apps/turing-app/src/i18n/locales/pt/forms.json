@@ -917,7 +917,7 @@
       "pythonRequirements": "Dependências Python do Agente",
       "pythonRequirementsDesc": "Pacotes no estilo requirements.txt específicos das Custom Tools DESTE agente (ex.: pandas para um agente de analytics). Um por linha, opcionalmente com versão fixa. O Code Interpreter instala a união de global + agente antes de cada script. Vazio/null = só o global. Viaja com o agente em export/import — promover um agente entre ambientes não exige sincronizar as Global Settings também.",
       "chatMode": "Modo do Chat",
-      "chatModeDesc": "Como o executor faz a chamada ao LLM. Vale para conversas sem fluxo; chats orientados por um chat flow voltam silenciosamente para Call para que o pipeline de advance/regen continue funcionando. Limitação conhecida: com o provider OpenAI no Spring AI 2.0.0-M6 o client upstream buferiza os deltas — os chunks ainda chegam num burst só no fim. Rastreado em docs/IMPROVEMENTS.md (IV.1).",
+      "chatModeDesc": "Como o executor faz a chamada ao LLM. Vale para conversas sem fluxo; chats orientados por um chat flow voltam silenciosamente para Call para que o pipeline de advance funcione. No provider OpenAI, o Stream usa um transporte WebClient dedicado que entrega os deltas chunk-a-chunk em tempo real (T18), contornando o buffering do SDK do Spring AI 2.0.0-M6.",
       "chatModeCall": "Call (bloqueante)",
       "chatModeCallDesc": "Espera a resposta inteira e envia como um único evento SSE.",
       "chatModeStream": "Stream (token a token)",

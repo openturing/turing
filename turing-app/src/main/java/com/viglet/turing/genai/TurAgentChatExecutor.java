@@ -450,6 +450,18 @@ public class TurAgentChatExecutor {
         if (useStreaming) {
             log.info("[AgentExec] STREAM mode for agent '{}' (no flow) — forwarding token chunks to SSE",
                     agent.getTitle());
+            // T18 / §IV.1.b: swap to the provider's streaming-optimized
+            // ChatModel for this path. On OpenAI agents (Spring AI 2.0.0-M6)
+            // this is the WebClient-based TurOpenAiStreamingChatModel which
+            // publishes SSE deltas per chunk instead of buffering them
+            // through the SDK's drain-iterator-then-publish pattern. Other
+            // providers inherit the default (same instance as `chatModel`).
+            //
+            // The streaming-only model is built per-turn (cheap — same
+            // WebClient construction cost as the SDK path) so the resilience
+            // wrap and provider lookup stay uniform.
+            final ChatModel streamingChatModel = llmModelFactory.createStreamingChatModel(
+                    llmInstance, decryptedApiKey);
             // Build the streaming prompt with NO ChatOptions at all.
             //
             // Why: even with toolCallbacks=empty + internalToolExecutionEnabled(false),
@@ -502,7 +514,7 @@ public class TurAgentChatExecutor {
                     new java.util.concurrent.atomic.AtomicInteger(0);
             final AtomicReference<Long> firstChunkAt = new AtomicReference<>();
             final AtomicReference<Long> firstRawAt = new AtomicReference<>();
-            return chatModel.stream(streamPrompt)
+            return streamingChatModel.stream(streamPrompt)
                     .doOnNext(raw -> {
                         rawCount.incrementAndGet();
                         firstRawAt.compareAndSet(null, System.currentTimeMillis());

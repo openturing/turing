@@ -64,6 +64,25 @@ public class TurLlmModelFactory {
         return new TurResilientChatModel(raw, executor, registry, observation, provider.getPluginType());
     }
 
+    /**
+     * T18 / §IV.1.b — companion to {@link #createChatModel} for the STREAM
+     * code path. Delegates to {@link TurGenAiLlmProvider#createStreamingChatModel}
+     * which lets the OpenAI provider swap to a WebClient-based transport that
+     * publishes SSE deltas per chunk instead of buffering them through the
+     * SDK iterator. Wrapped in the same resilience pipeline so retry /
+     * circuit breaker / time limiter apply uniformly across both shapes.
+     *
+     * <p>Non-OpenAI providers inherit the default and return the same
+     * model as {@link #createChatModel}; the resilience wrap is identical.
+     *
+     * @since 2026.2.7
+     */
+    public ChatModel createStreamingChatModel(TurLLMInstance llmInstance, String decryptedApiKey) {
+        TurGenAiLlmProvider provider = providerFactory.getProvider(llmInstance);
+        ChatModel raw = provider.createStreamingChatModel(llmInstance, decryptedApiKey);
+        return new TurResilientChatModel(raw, executor, registry, observation, provider.getPluginType());
+    }
+
     public EmbeddingModel createEmbeddingModel(TurLLMInstance llmInstance, String decryptedApiKey) {
         TurGenAiLlmProvider provider = providerFactory.getProvider(llmInstance);
         EmbeddingModel raw = provider.createEmbeddingModel(llmInstance, decryptedApiKey);

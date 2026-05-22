@@ -79,6 +79,41 @@ public class TurOpenAiLlmProvider implements TurGenAiLlmProvider {
     }
 
     @Override
+    public ChatModel createStreamingChatModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
+        // T18 / §IV.1.b: Spring AI 2.0.0-M6's SDK-based OpenAiChatModel
+        // buffers the streaming response (it wraps the SDK iterator in
+        // Flux.fromStream, which drains the iterator before publishing).
+        // Bypass it with a hand-rolled WebClient that POSTs stream:true
+        // and parses SSE data: lines so tokens reach the SSE pipeline as
+        // they arrive from OpenAI — bubble fills in incrementally.
+        Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
+        String baseUrl = resolveBaseUrl(firstNonBlank(
+                optionsParser.stringValue(options, "baseUrl"),
+                turLLMInstance.getUrl()));
+        String apiKey = requireApiKey(decryptedApiKey, turLLMInstance);
+        String modelName = resolveChatModelName(firstNonBlank(
+                optionsParser.stringValue(options, "chatModel"),
+                optionsParser.stringValue(options, "model"),
+                turLLMInstance.getModelName()));
+
+        OpenAiChatOptions.Builder optionsBuilder = OpenAiChatOptions.builder().model(modelName);
+        Double temperature = firstNonNull(optionsParser.doubleValue(options, "temperature"),
+                turLLMInstance.getTemperature());
+        if (temperature != null) {
+            optionsBuilder.temperature(temperature);
+        }
+        Double topP = firstNonNull(optionsParser.doubleValue(options, "topP"), turLLMInstance.getTopP());
+        if (topP != null) {
+            optionsBuilder.topP(topP);
+        }
+        Integer maxTokens = optionsParser.intValue(options, "maxTokens");
+        if (maxTokens != null) {
+            optionsBuilder.maxTokens(maxTokens);
+        }
+        return new TurOpenAiStreamingChatModel(baseUrl, apiKey, modelName, optionsBuilder.build());
+    }
+
+    @Override
     public EmbeddingModel createEmbeddingModel(TurLLMInstance turLLMInstance, String decryptedApiKey) {
         Map<String, Object> options = optionsParser.parse(turLLMInstance.getProviderOptionsJson());
         OpenAIClient openAiClient = OpenAIOkHttpClient.builder()

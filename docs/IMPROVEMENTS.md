@@ -134,7 +134,7 @@ acting.
 | #   | Status | Depends on | Task | Detail in |
 |-----|--------|------------|------|-----------|
 | T17 | ✅ | — | Documented the Spring AI 2.0.0-M6 OpenAI streaming-buffer limitation on `TurAgentChatMode` Javadoc + i18n on the agent settings form. | §IV.1.a |
-| T18 | 📋 | T17 | IV.1 real: WebClient/`OpenAiApi`-based bypass in `TurOpenAiLlmProvider` so STREAM mode actually streams token-by-token; ChatExecutor switches to `chatModel.stream(prompt)`; SSE controller forwards each `delta.content` chunk; per-turn tools stay disabled on this path until further notice. **Unblocked** — T16 shipped, the inverted harness now has only one LLM call per turn, simplifying the SSE shape. | §IV.1.b (this doc) |
+| T18 | ✅ | T17 | Hand-rolled `TurOpenAiStreamingChatModel` (`WebClient` → `/v1/chat/completions` with `stream:true` + SSE parser for `data: {...}` lines emitting one `ChatResponse` per `delta.content`). New `TurGenAiLlmProvider#createStreamingChatModel` default delegates to `createChatModel`; `TurOpenAiLlmProvider` overrides to return the streaming model. `TurLlmModelFactory#createStreamingChatModel` wraps in same resilience pipeline. `TurAgentChatExecutor` STREAM branch calls `createStreamingChatModel(...)` only — CALL keeps the SDK path. Validated by `TurOpenAiStreamingChatModelBehavioralIT`: **123 chunks** per turn vs ~1 on the SDK path (chunks count is the streaming witness; first-chunk latency is too variable for a stable bound). i18n + `TurAgentChatMode` Javadoc updated to drop the limitation warning. | §IV.1.b |
 | T19 | 📋 | — | Vector → BM25 emergency fallback in RAG: when vector top-1 < `MIN_VECTOR_CONFIDENCE`, retry on `FIELD_CONTENT` (BM25); mark result as keyword-only so the prompt warns the LLM. Cheaper to ship before full hybrid (§T24). | §III.3 |
 | T20 | 📋 | — | Spotlights V1: replace `userQuery.toLowerCase().contains(term)` in `TurSNSpotlightProcess` with `PortugueseAnalyzer` stem-overlap (5-line change, immediate morphology fix). | §III.4 (V1) |
 | T21 | 📋 | T20 | Spotlights V2: per-query `MemoryIndex` + `QueryParser` so admins can write `"plano de carreira"~2` and load synonym files. Ship only when admins ask for phrase/fuzzy. | §III.4 (V2) |
@@ -672,7 +672,7 @@ no budget for batch LLM enrichment.
 Emerged from connecting the chat-flow timing data, the Lucene survey,
 and the harness refactor. None designed in depth yet — sketches only.
 
-### IV.1 ⏳ Streaming initial LLM + late regen patch
+### IV.1 ✅ Streaming initial LLM (shipped 2026.2.7)
 
 **Context**: even with the inversion (§I.5 step 1), individual turns
 take ~2s because the LLM round-trip dominates. Until streaming reaches
@@ -711,7 +711,7 @@ takes the STREAM branch, but on OpenAI-backed agents the bubble still
 fills in one burst. Documented on the enum Javadoc and i18n form copy
 so operators understand the trade-off before flipping the toggle.
 
-#### IV.1.b 📋 Real streaming via WebClient/`OpenAiApi` bypass
+#### IV.1.b ✅ Real streaming via WebClient bypass (shipped 2026.2.7 as T18)
 
 **Plan** (executes as task T18 after T17 + T16):
 - In [`TurOpenAiLlmProvider`](../turing-app/src/main/java/com/viglet/turing/genai/provider/llm/TurOpenAiLlmProvider.java),

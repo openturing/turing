@@ -917,7 +917,7 @@
       "pythonRequirements": "Agent Python Requirements",
       "pythonRequirementsDesc": "requirements.txt-style packages specific to THIS agent's Custom Tools (e.g. pandas for an analytics agent). One per line, optionally version-pinned. The Code Interpreter installs the union of global + agent before each script runs. Empty/null = global-only. Travels with the agent on export/import — promoting an agent between environments doesn't require also syncing Global Settings.",
       "chatMode": "Chat Mode",
-      "chatModeDesc": "How the executor issues the LLM round-trip. Effective on the non-flow path; chats driven by a flow silently fall back to Call so the advance/regen pipeline still works. Known limitation: with the OpenAI provider on Spring AI 2.0.0-M6, the upstream client buffers the delta stream — chunks still arrive in one burst at the end. Tracked in docs/IMPROVEMENTS.md (IV.1).",
+      "chatModeDesc": "How the executor issues the LLM round-trip. Effective on the non-flow path; chats driven by a flow silently fall back to Call so the advance pipeline still works. On the OpenAI provider, Stream uses a dedicated WebClient transport that delivers deltas chunk-by-chunk in real time (T18), bypassing the Spring AI 2.0.0-M6 SDK buffering.",
       "chatModeCall": "Call (blocking)",
       "chatModeCallDesc": "Wait for the full reply and send it as a single SSE event.",
       "chatModeStream": "Stream (token-by-token)",

@@ -18,39 +18,34 @@ package com.viglet.turing.persistence.model.agent;
  *       (MCP / native / custom) are NOT honored on this path.</li>
  * </ul>
  *
- * <h2>Known limitation in Spring AI 2.0.0-M6 (OpenAI provider)</h2>
+ * <h2>OpenAI streaming transport (T18, §IV.1.b)</h2>
  *
- * <p>The {@code chatModel.stream(prompt)} returned by
- * {@link org.springframework.ai.openai.OpenAiChatModel} in Spring AI
- * 2.0.0-M6 buffers the entire upstream delta stream before publishing the
- * first {@code onNext}. Empirically (see {@code TurAgentChatLatencyIT}
- * stream variant): {@code first_raw_ms ≈ llm_ms} — all 500+ deltas drain
- * in the last ~150 ms of the round-trip, defeating token-by-token UX. The
- * agent-chat pipeline ({@link com.viglet.turing.genai.TurAgentChatExecutor})
- * cannot fix this — the buffering happens inside the Spring AI client,
- * above our reactive operators.
+ * <p>Spring AI 2.0.0-M6's SDK-based {@code OpenAiChatModel.stream(prompt)}
+ * buffers the entire upstream delta stream before publishing the first
+ * {@code onNext} — root cause: M6 migrated from the WebClient-based
+ * {@code OpenAiApi} to the official OpenAI Java SDK ({@code OpenAIOkHttpClientAsync}),
+ * whose {@code StreamResponse<ChatCompletionChunk>} is iterator-based and
+ * wrapped via {@code Flux.fromStream(...)}, which drains the iterator
+ * before publishing.
  *
- * <p>Root cause: M6 migrated from the WebClient-based {@code OpenAiApi} to
- * the official OpenAI Java SDK ({@code com.openai.client.okhttp.OpenAIOkHttpClientAsync}),
- * whose {@code StreamResponse<ChatCompletionChunk>} is iterator-based on top
- * of OkHttp's body buffering. Spring AI wraps it via
- * {@code Flux.fromStream(...)} which drains the iterator before publishing.
+ * <p>To restore real token-by-token streaming on the OpenAI provider,
+ * {@link com.viglet.turing.genai.provider.llm.TurOpenAiLlmProvider#createStreamingChatModel}
+ * returns a hand-rolled {@link com.viglet.turing.genai.provider.llm.TurOpenAiStreamingChatModel}
+ * that POSTs directly to {@code /v1/chat/completions} with {@code stream:true}
+ * via {@link org.springframework.web.reactive.function.client.WebClient}
+ * and emits one Spring AI {@code ChatResponse} per SSE {@code delta.content}
+ * line. The {@link com.viglet.turing.genai.TurAgentChatExecutor} STREAM
+ * branch calls {@code llmModelFactory.createStreamingChatModel(...)} so the
+ * SSE pipeline receives chunks as they arrive (validated empirically by
+ * {@code TurOpenAiStreamingChatModelBehavioralIT}: 100-300 chunks per turn
+ * vs. ~1 chunk on the SDK path).
  *
- * <p>What this means for users today: setting an agent to {@code STREAM} on
- * an OpenAI-backed LLM persists the choice but UX-wise behaves identical to
- * {@code CALL} — chunks arrive in one final burst. The setting is kept for:
+ * <p>Other providers (Ollama, Anthropic, Gemini) inherit the default
+ * {@link com.viglet.turing.genai.provider.llm.TurGenAiLlmProvider#createStreamingChatModel}
+ * implementation that just returns the same model {@code createChatModel}
+ * would — their Spring AI 2.0.0-M6 adapters are already Reactor-friendly.
  *
- * <ol>
- *   <li>Forward-compatibility with future Spring AI versions that fix the
- *       transport (or with the planned IV.1 WebClient-based bypass for
- *       OpenAI in {@link com.viglet.turing.genai.provider.llm.TurOpenAiLlmProvider}).</li>
- *   <li>Providers whose Spring AI streaming implementation does NOT exhibit
- *       this buffering — Ollama and Anthropic have historically been more
- *       Reactor-friendly; behavior should be verified per-provider before
- *       relying on it.</li>
- * </ol>
- *
- * <p>Tracked in {@code docs/IMPROVEMENTS.md} (task IV.1).
+ * <p>Tracked in {@code docs/IMPROVEMENTS.md} (task T18 / §IV.1.b).
  *
  * @author Alexandre Oliveira
  * @since 2026.2.7
