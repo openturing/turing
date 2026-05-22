@@ -38,7 +38,7 @@ import { TurSNSiteLocaleService } from "@/services/sn/sn.site.locale.service"
 import { TurSNSiteSpotlightService } from "@/services/sn/sn.site.spotlight.service"
 import { fetchSearch, type TurDocument, type TurSearchResponse } from "@viglet/turing-react-sdk"
 import { toast } from "@viglet/viglet-design-system"
-import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconSearch, IconSpeakerphone, IconTags, IconTrash, IconX } from "@tabler/icons-react"
+import { IconCirclePlus, IconDeviceFloppy, IconFileText, IconHelp, IconSearch, IconSpeakerphone, IconTags, IconTrash, IconX } from "@tabler/icons-react"
 import { DialogDelete } from "@/components/dialog.delete"
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -193,6 +193,7 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
     const terms = form.watch("turSNSiteSpotlightTerms") || [];
     const documents = form.watch("turSNSiteSpotlightDocuments") || [];
     const selectedLanguage = form.watch("language");
+    const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
 
     function handleFormSubmit(e: React.BaseSyntheticEvent) {
         const currentTerms = form.getValues("turSNSiteSpotlightTerms") || [];
@@ -324,8 +325,62 @@ export const SNSiteSpotlightForm: React.FC<Props> = ({ snSiteId, value, isNew, o
                     <SectionCard.Content>
                         <div>
                             <div className="mb-2 font-medium">{t("forms.snSpotlight.whenSearched")}</div>
-                            <div className="text-sm text-muted-foreground mb-4">
+                            <div className="text-sm text-muted-foreground mb-2">
                                 {t("forms.snSpotlight.addKeywords")}
+                            </div>
+                            {/* T21 / §III.4 V2 — collapsible Lucene syntax help.
+                                Opt-in (closed by default) so simple-term admins
+                                aren't overwhelmed; the link reveals examples
+                                for power users who want phrase / fuzzy / boolean. */}
+                            <div className="mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setSyntaxHelpOpen((open) => !open)}
+                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                                    aria-expanded={syntaxHelpOpen ? "true" : "false"}
+                                >
+                                    <IconHelp className="h-3.5 w-3.5" />
+                                    {t("forms.snSpotlight.syntaxHelp")}
+                                </button>
+                                {syntaxHelpOpen && (
+                                    <div className="mt-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-2">
+                                        <p>{t("forms.snSpotlight.syntaxHelpDesc")}</p>
+                                        <ul className="space-y-1.5 ml-1">
+                                            <li>
+                                                <span className="font-medium text-foreground">
+                                                    {t("forms.snSpotlight.syntaxPhrase")}:
+                                                </span>{" "}
+                                                <code className="bg-background px-1.5 py-0.5 rounded text-[11px]">
+                                                    {t("forms.snSpotlight.syntaxPhraseDesc")}
+                                                </code>
+                                            </li>
+                                            <li>
+                                                <span className="font-medium text-foreground">
+                                                    {t("forms.snSpotlight.syntaxPhraseSlop")}:
+                                                </span>{" "}
+                                                <code className="bg-background px-1.5 py-0.5 rounded text-[11px]">
+                                                    {t("forms.snSpotlight.syntaxPhraseSlopDesc")}
+                                                </code>
+                                            </li>
+                                            <li>
+                                                <span className="font-medium text-foreground">
+                                                    {t("forms.snSpotlight.syntaxFuzzy")}:
+                                                </span>{" "}
+                                                <code className="bg-background px-1.5 py-0.5 rounded text-[11px]">
+                                                    {t("forms.snSpotlight.syntaxFuzzyDesc")}
+                                                </code>
+                                            </li>
+                                            <li>
+                                                <span className="font-medium text-foreground">
+                                                    {t("forms.snSpotlight.syntaxBoolean")}:
+                                                </span>{" "}
+                                                <code className="bg-background px-1.5 py-0.5 rounded text-[11px]">
+                                                    {t("forms.snSpotlight.syntaxBooleanDesc")}
+                                                </code>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 {terms.map((term, index) => (

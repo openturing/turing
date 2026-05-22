@@ -33,12 +33,15 @@ class TurRagSearchToolServiceTest {
     private TurRagContextBuilder ragContextBuilder;
     @Mock
     private TurAssetTrainingRecordRepository trainingRecordRepository;
+    @Mock
+    private com.viglet.turing.persistence.repository.agent.TurAIAgentRepository agentRepository;
 
     private TurRagSearchToolService service;
 
     @BeforeEach
     void setUp() {
-        service = new TurRagSearchToolService(globalSettingsService, ragContextBuilder, trainingRecordRepository);
+        service = new TurRagSearchToolService(globalSettingsService, ragContextBuilder, trainingRecordRepository,
+                agentRepository);
     }
 
     @Test
@@ -73,7 +76,7 @@ class TurRagSearchToolServiceTest {
     @Test
     void searchKnowledgeBaseShouldReturnDisabledMessageWhenNotAvailable() {
         when(globalSettingsService.isRagEnabled()).thenReturn(false);
-        String result = service.searchKnowledgeBase("test query", 5);
+        String result = service.searchKnowledgeBase("test query", 5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result).contains("RAG is not enabled");
     }
 
@@ -297,7 +300,7 @@ class TurRagSearchToolServiceTest {
         when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
         when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.empty());
 
-        String result = service.searchKnowledgeBase("test", 5);
+        String result = service.searchKnowledgeBase("test", 5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result).contains("Error searching knowledge base");
     }
 
@@ -321,19 +324,19 @@ class TurRagSearchToolServiceTest {
         when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.empty());
 
         // Tests with null maxResults
-        String result1 = service.searchKnowledgeBase("test", null);
+        String result1 = service.searchKnowledgeBase("test", null, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result1).contains("Error searching knowledge base");
 
         // Tests with 0 maxResults
-        String result2 = service.searchKnowledgeBase("test", 0);
+        String result2 = service.searchKnowledgeBase("test", 0, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result2).contains("Error searching knowledge base");
 
         // Tests with negative maxResults
-        String result3 = service.searchKnowledgeBase("test", -5);
+        String result3 = service.searchKnowledgeBase("test", -5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result3).contains("Error searching knowledge base");
 
         // Tests with large maxResults
-        String result4 = service.searchKnowledgeBase("test", 100);
+        String result4 = service.searchKnowledgeBase("test", 100, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result4).contains("Error searching knowledge base");
     }
 
@@ -379,7 +382,7 @@ class TurRagSearchToolServiceTest {
         when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
                 org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(Collections.emptyList());
 
-        String result = service.searchKnowledgeBase("non-existent query", 5);
+        String result = service.searchKnowledgeBase("non-existent query", 5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result).contains("No relevant documents found");
     }
 
@@ -410,7 +413,7 @@ class TurRagSearchToolServiceTest {
         when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
                 org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(doc));
 
-        String result = service.searchKnowledgeBase("report", 5);
+        String result = service.searchKnowledgeBase("report", 5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result)
                 .contains("Found 1 relevant document")
                 .contains("docs/report.pdf")
@@ -446,7 +449,7 @@ class TurRagSearchToolServiceTest {
         when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
                 org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(doc));
 
-        String result = service.searchKnowledgeBase("text", 5);
+        String result = service.searchKnowledgeBase("text", 5, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result)
                 .contains("Found 1 relevant document")
                 .doesNotContain("Type:");
@@ -553,7 +556,7 @@ class TurRagSearchToolServiceTest {
         when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
                 org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(doc1, doc2));
 
-        String result = service.searchKnowledgeBase("report", 10);
+        String result = service.searchKnowledgeBase("report", 10, (org.springframework.ai.chat.model.ToolContext) null);
         assertThat(result)
                 .contains("Found 2 relevant document")
                 .contains("REFERENCES");
