@@ -1,6 +1,7 @@
 import type { TurSNSiteListItem } from "@/models/sn/sn-site-list-item.model.ts";
 import type { TurSNSiteStatus } from "@/models/sn/sn-site-monitoring.model.ts";
 import type { TurSNSite } from "@/models/sn/sn-site.model.ts";
+import type { TurRagBm25CoreStatus } from "@/models/sn/sn-site-genai.model.ts";
 import axios from "axios";
 
 export class TurSNSiteService {
@@ -118,6 +119,57 @@ export class TurSNSiteService {
     } catch (error) {
       console.error("Failed to fetch active reindex status", error);
       return null;
+    }
+  }
+
+  /**
+   * T24b / §III.2 — fetches per-locale BM25 core status for an SN site
+   * (one row per `TurSNSiteLocale`). Used by the "Hybrid Retrieval" card
+   * to render the status table when `ragBm25Source = SE_INSTANCE`.
+   * Returns an empty array when the default embedding store isn't
+   * configured (admin must finish RAG global settings first).
+   */
+  async getRagCores(siteId: string): Promise<TurRagBm25CoreStatus[]> {
+    try {
+      const response = await axios.get<TurRagBm25CoreStatus[]>(
+        `/sn/${siteId}/rag/cores`,
+      );
+      return response.data ?? [];
+    } catch (error) {
+      console.error("Failed to fetch RAG cores", error);
+      return [];
+    }
+  }
+
+  /**
+   * T24b — provisions every missing BM25 core for the SN site's locales.
+   * Idempotent: already-PROVISIONED cores skip the create call, ERROR
+   * rows are retried. Returns the refreshed status table so the UI can
+   * update in one round-trip.
+   */
+  async provisionRagCores(siteId: string): Promise<TurRagBm25CoreStatus[]> {
+    try {
+      const response = await axios.post<TurRagBm25CoreStatus[]>(
+        `/sn/${siteId}/rag/cores/provision`,
+      );
+      return response.data ?? [];
+    } catch (error) {
+      console.error("Failed to provision RAG cores", error);
+      return [];
+    }
+  }
+
+  /**
+   * T24b — deprovisions every BM25 core registered for the SN site's
+   * store. Invoked when admin reverts `ragBm25Source` back to EMBEDDED.
+   */
+  async deprovisionRagCores(siteId: string): Promise<boolean> {
+    try {
+      const response = await axios.delete(`/sn/${siteId}/rag/cores`);
+      return response.status === 204 || response.status === 200;
+    } catch (error) {
+      console.error("Failed to deprovision RAG cores", error);
+      return false;
     }
   }
 

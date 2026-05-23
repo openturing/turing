@@ -60,6 +60,7 @@ import com.viglet.turing.persistence.model.sn.field.TurSNSiteFacetFieldEnum;
 import com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi;
 import com.viglet.turing.persistence.model.sn.locale.TurSNSiteLocale;
 import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.repository.se.TurSEInstanceRepository;
 import com.viglet.turing.persistence.repository.sn.TurSNSiteRepository;
 import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
 import com.viglet.turing.persistence.repository.sn.locale.TurSNSiteLocaleRepository;
@@ -86,6 +87,7 @@ public class TurSNSiteAPI {
     private final TurSNSiteLocaleRepository turSNSiteLocaleRepository;
     private final TurSNSiteGenAiRepository turSNSiteGenAiRepository;
     private final TurAIAgentRepository turAIAgentRepository;
+    private final TurSEInstanceRepository turSEInstanceRepository;
     private final TurSNSiteExport turSNSiteExport;
     private final TurSNSiteContentExchangeService contentExchangeService;
     private final TurSNTemplate turSNTemplate;
@@ -181,6 +183,24 @@ public class TurSNSiteAPI {
                                         : null)
                                 .orElse(null));
                 turSNSiteGenAi.setSitePrompt(genAi.getSitePrompt());
+                // T19 / T24 / T24b — RAG retrieval flags. Previously dropped
+                // on update because the controller only copied agent +
+                // sitePrompt; the form was sending these all along but the
+                // toggles silently lost their value on save. Persist all
+                // four together: BM25 fallback gate, hybrid fusion gate,
+                // BM25 backing source (EMBEDDED/SE_INSTANCE), and the bound
+                // SE instance (resolved by id when source=SE_INSTANCE).
+                turSNSiteGenAi.setRagBm25Fallback(genAi.isRagBm25Fallback());
+                turSNSiteGenAi.setRagHybridSearch(genAi.isRagHybridSearch());
+                turSNSiteGenAi.setRagBm25Source(
+                        Optional.ofNullable(genAi.getRagBm25Source())
+                                .orElse(com.viglet.turing.persistence.model.rag.TurRagBm25Source.EMBEDDED));
+                turSNSiteGenAi.setRagSeInstance(
+                        Optional.ofNullable(genAi.getRagSeInstance())
+                                .map(se -> se.getId() != null
+                                        ? turSEInstanceRepository.findById(se.getId()).orElse(null)
+                                        : null)
+                                .orElse(null));
                 turSNSiteGenAiRepository.save(turSNSiteGenAi);
                 turSNSiteEdit.setTurSNSiteGenAi(turSNSiteGenAi);
             });

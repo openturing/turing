@@ -2,9 +2,17 @@ package com.viglet.turing.genai.tool;
 
 import com.viglet.turing.genai.TurRagContextBuilder;
 import com.viglet.turing.genai.provider.store.lucene.TurLuceneVectorStore;
+import com.viglet.turing.genai.rag.TurRagRrf;
 import com.viglet.turing.persistence.model.asset.TurAssetTrainingRecord;
-import com.viglet.turing.persistence.repository.agent.TurAIAgentRepository;
+import com.viglet.turing.persistence.model.rag.TurRagBm25Core;
+import com.viglet.turing.persistence.model.rag.TurRagBm25Source;
+import com.viglet.turing.persistence.model.se.TurSEInstance;
 import com.viglet.turing.persistence.repository.asset.TurAssetTrainingRecordRepository;
+import com.viglet.turing.persistence.repository.rag.TurRagBm25CoreRepository;
+import com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository;
+import com.viglet.turing.plugins.se.TurSEStandaloneHit;
+import com.viglet.turing.plugins.se.TurSearchEnginePlugin;
+import com.viglet.turing.plugins.se.TurSearchEnginePluginFactory;
 import com.viglet.turing.system.TurGlobalSettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +26,12 @@ import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -55,16 +67,22 @@ public class TurRagSearchToolService {
     private final TurGlobalSettingsService globalSettingsService;
     private final TurRagContextBuilder ragContextBuilder;
     private final TurAssetTrainingRecordRepository trainingRecordRepository;
-    private final TurAIAgentRepository agentRepository;
+    private final TurSNSiteGenAiRepository snSiteGenAiRepository;
+    private final TurRagBm25CoreRepository ragBm25CoreRepository;
+    private final TurSearchEnginePluginFactory searchEnginePluginFactory;
 
     public TurRagSearchToolService(TurGlobalSettingsService globalSettingsService,
                                     TurRagContextBuilder ragContextBuilder,
                                     TurAssetTrainingRecordRepository trainingRecordRepository,
-                                    TurAIAgentRepository agentRepository) {
+                                    TurSNSiteGenAiRepository snSiteGenAiRepository,
+                                    TurRagBm25CoreRepository ragBm25CoreRepository,
+                                    TurSearchEnginePluginFactory searchEnginePluginFactory) {
         this.globalSettingsService = globalSettingsService;
         this.ragContextBuilder = ragContextBuilder;
         this.trainingRecordRepository = trainingRecordRepository;
-        this.agentRepository = agentRepository;
+        this.snSiteGenAiRepository = snSiteGenAiRepository;
+        this.ragBm25CoreRepository = ragBm25CoreRepository;
+        this.searchEnginePluginFactory = searchEnginePluginFactory;
     }
 
     public boolean isAvailable() {
@@ -95,27 +113,46 @@ public class TurRagSearchToolService {
         final boolean hybridEnabled = flags.hybridEnabled();
 
         try {
-            VectorStore vectorStore = ragContextBuilder.buildFromGlobalSettings()
-                    .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."))
-                    .vectorStore();
+            TurRagContextBuilder.RagInfrastructure infra = ragContextBuilder.buildFromGlobalSettings()
+                    .orElseThrow(() -> new IllegalStateException("RAG infrastructure not configured."));
+            VectorStore vectorStore = infra.vectorStore();
 
             // Pick the retrieval mode based on the per-agent flags:
-            //   HYBRID    — bm25Enabled && hybridEnabled (T24 default):
-            //               always fuse vector + BM25 via RRF.
-            //   FALLBACK  — bm25Enabled && !hybridEnabled (legacy T19):
-            //               vector first, BM25 only if vector top-1 < MIN.
-            //   VECTOR    — !bm25Enabled: strict vector, BM25 never runs.
-            boolean useHybrid = bm25Enabled && hybridEnabled
+            //   HYBRID (SE)   — bm25Enabled && hybridEnabled && source=SE_INSTANCE
+            //                   && seInstance bound: vector + per-locale Solr/ES
+            //                   core, fused via RRF (T24b production path).
+            //   HYBRID (EMB.) — bm25Enabled && hybridEnabled, embedded Lucene:
+            //                   single in-process index hybrid (T24 base).
+            //   FALLBACK      — bm25Enabled && !hybridEnabled (legacy T19):
+            //                   vector first, BM25 only if vector top-1 < MIN.
+            //   VECTOR        — !bm25Enabled: strict vector, BM25 never runs.
+            boolean useHybrid = bm25Enabled && hybridEnabled;
+            boolean useSeHybrid = useHybrid
+                    && flags.source() == TurRagBm25Source.SE_INSTANCE
+                    && flags.seInstance() != null
+                    && infra.storeInstance() != null;
+            boolean useEmbeddedHybrid = useHybrid
+                    && !useSeHybrid
                     && vectorStore instanceof TurLuceneVectorStore;
             List<Document> results;
             boolean allKeywordOnly = false;
-            if (useHybrid) {
+            if (useSeHybrid) {
+                Locale locale = resolveLocale(toolContext);
+                results = seHybridSearch(query, topK, vectorStore,
+                        infra.storeInstance().getId(), flags.seInstance(), locale);
+                allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
+                        Boolean.TRUE.equals(d.getMetadata()
+                                .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
+                log.debug("[RAG] SE hybrid search '{}' (locale={}, seInstance={}) returned {} fused result(s); allKeywordOnly={}",
+                        query, locale.toLanguageTag(), flags.seInstance().getId(),
+                        results.size(), allKeywordOnly);
+            } else if (useEmbeddedHybrid) {
                 TurLuceneVectorStore lucene = (TurLuceneVectorStore) vectorStore;
                 results = lucene.hybridSearch(query, topK, 0.0);
                 allKeywordOnly = !results.isEmpty() && results.stream().allMatch(d ->
                         Boolean.TRUE.equals(d.getMetadata()
                                 .get(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK)));
-                log.debug("[RAG] Hybrid search '{}' returned {} fused result(s); allKeywordOnly={}",
+                log.debug("[RAG] Embedded hybrid search '{}' returned {} fused result(s); allKeywordOnly={}",
                         query, results.size(), allKeywordOnly);
             } else {
                 // T19 / §III.3: vector pass first with similarityThreshold=0
@@ -217,32 +254,57 @@ public class TurRagSearchToolService {
     }
 
     /**
-     * T19 + T24 — per-agent RAG retrieval flags consumed by
-     * {@link #searchKnowledgeBase}. Encapsulates both {@code ragBm25Fallback}
-     * (whether BM25 runs at all) and {@code ragHybridSearch} (when it runs,
-     * fuse with vector via RRF vs. fall back only on low vector confidence).
+     * T19 + T24 + T24b — per-agent RAG retrieval flags consumed by
+     * {@link #searchKnowledgeBase}. Encapsulates:
+     *
+     * <ul>
+     *   <li>{@code bm25Enabled} — whether BM25 runs at all
+     *       ({@code ragBm25Fallback}).</li>
+     *   <li>{@code hybridEnabled} — when BM25 runs, fuse with vector via
+     *       RRF ({@code ragHybridSearch}). Otherwise BM25 is only used as
+     *       an emergency fallback on low vector confidence.</li>
+     *   <li>{@code source} — picks the BM25 backing: {@code EMBEDDED}
+     *       (single in-process Lucene index, T24 base) or {@code SE_INSTANCE}
+     *       (per-locale Solr / ES cores, T24b production).</li>
+     *   <li>{@code seInstance} — the configured search engine instance
+     *       when {@code source == SE_INSTANCE}, otherwise {@code null}.</li>
+     * </ul>
      */
-    private record AgentRagFlags(boolean bm25Enabled, boolean hybridEnabled) {
+    private record AgentRagFlags(boolean bm25Enabled, boolean hybridEnabled,
+            TurRagBm25Source source, TurSEInstance seInstance) {
         static AgentRagFlags defaults() {
-            // Post-T24 defaults: BM25 on + hybrid fusion on. New agents
-            // get the strictly-better retrieval out of the box.
-            return new AgentRagFlags(true, true);
+            // Post-T24 defaults: BM25 on + hybrid fusion on + embedded
+            // single-collection Lucene. New agents get the strictly-better
+            // retrieval out of the box without admin intervention.
+            return new AgentRagFlags(true, true, TurRagBm25Source.EMBEDDED, null);
         }
     }
 
     /**
-     * T19 + T24 — resolves both per-agent RAG flags from
-     * {@code TurAIAgent.ragBm25Fallback} and {@code TurAIAgent.ragHybridSearch}.
-     * The agent id is published into {@link ToolContext} under
+     * T19 + T24 (repositioned 2026.2.7) — resolves both RAG retrieval
+     * flags from {@code TurSNSiteGenAi.ragBm25Fallback} and
+     * {@code TurSNSiteGenAi.ragHybridSearch}. The flags now live on the
+     * SN site GenAi binding (not the agent itself), because RAG is only
+     * invoked through the SN site chat API and locale-aware retrieval
+     * needs the SN site's {@code TurSNSiteLocale} mappings.
+     *
+     * <p>The agent id is published into {@link ToolContext} under
      * {@link com.viglet.turing.genai.tool.TurCustomToolCallbackService#TOOL_CONTEXT_AGENT_ID}
-     * by {@code TurAgentChatExecutor} on every turn. Falls back to
-     * {@link AgentRagFlags#defaults()} when:
+     * by {@code TurAgentChatExecutor} on every turn. We look up the
+     * SN site GenAi binding(s) that point at this agent and read the
+     * flags from the first one (typically there's a 1:1 mapping; if an
+     * agent is shared across sites with conflicting flags, the first
+     * binding wins — flag the corner case in T24b when the SN site id
+     * also flows through the tool context).
+     *
+     * <p>Falls back to {@link AgentRagFlags#defaults()} (both TRUE) when:
      *
      * <ul>
      *   <li>{@code toolContext} is null (legacy callers / unit tests),</li>
      *   <li>the agent id is missing from the context,</li>
-     *   <li>the agent row is gone (deleted between the turn starting
-     *       and the tool firing — rare but possible).</li>
+     *   <li>no SN site GenAi binding references this agent (agent used
+     *       standalone — RAG shouldn't run at all in that case per the
+     *       architectural contract, but defaults keep the code total).</li>
      * </ul>
      *
      * @since 2026.2.7
@@ -260,9 +322,164 @@ public class TurRagSearchToolService {
         if (agentId.isBlank()) {
             return AgentRagFlags.defaults();
         }
-        return agentRepository.findById(agentId)
-                .map(agent -> new AgentRagFlags(agent.isRagBm25Fallback(), agent.isRagHybridSearch()))
-                .orElseGet(AgentRagFlags::defaults);
+        List<com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi> bindings =
+                snSiteGenAiRepository.findByTurAIAgent_Id(agentId);
+        if (bindings.isEmpty()) {
+            return AgentRagFlags.defaults();
+        }
+        var binding = bindings.get(0);
+        TurRagBm25Source source = binding.getRagBm25Source() == null
+                ? TurRagBm25Source.EMBEDDED
+                : binding.getRagBm25Source();
+        // Touch the lazy SE instance inside the open Hibernate session. The
+        // chat flow runs inside @Transactional (TurAgentChatExecutor) so the
+        // session is available; outside it, hibernate.enable_lazy_load_no_trans
+        // opens a temp session.
+        TurSEInstance seInstance = source == TurRagBm25Source.SE_INSTANCE
+                ? binding.getRagSeInstance()
+                : null;
+        return new AgentRagFlags(binding.isRagBm25Fallback(), binding.isRagHybridSearch(),
+                source, seInstance);
+    }
+
+    /**
+     * T24b / §III.2 — resolves the active query locale from
+     * {@link TurCustomToolCallbackService#TOOL_CONTEXT_LOCALE}.
+     * The SN site chat API publishes the IETF BCP 47 tag (e.g.
+     * {@code "pt-BR"}) on every turn; absent or blank falls back to
+     * {@link Locale#ROOT} so the caller can still route to a SE core
+     * (it will use the default-language fallback path documented in
+     * Phase 4: missing per-locale core → log warn + degrade to EMBEDDED).
+     *
+     * @since 2026.2.7
+     */
+    private static Locale resolveLocale(ToolContext toolContext) {
+        if (toolContext == null) {
+            return Locale.ROOT;
+        }
+        Map<String, Object> ctx = toolContext.getContext();
+        if (ctx == null) {
+            return Locale.ROOT;
+        }
+        Object raw = ctx.get(TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE);
+        if (raw == null) {
+            return Locale.ROOT;
+        }
+        String tag = raw.toString();
+        if (tag.isBlank()) {
+            return Locale.ROOT;
+        }
+        return Locale.forLanguageTag(tag);
+    }
+
+    /**
+     * T24b / §III.2 — production hybrid retrieval path: vector pass against
+     * the configured vector store + BM25 pass against the per-locale RAG
+     * core on the configured search engine instance. Fuses both via
+     * {@link TurRagRrf#fuse} so the same RRF semantics ship in EMBEDDED
+     * and SE_INSTANCE modes.
+     *
+     * <h2>Degradation contract</h2>
+     *
+     * The method NEVER throws on a missing/un-provisioned core — instead
+     * it falls back to vector-only with a WARN log. The reasoning: a
+     * partial deployment (e.g. core not yet provisioned for a new locale)
+     * shouldn't take RAG offline for that locale, just narrow it to
+     * vector-only. Admins notice via the status panel.
+     *
+     * <h2>Result tagging</h2>
+     *
+     * BM25 hits that didn't also appear in the vector pass get tagged
+     * with {@link TurLuceneVectorStore#METADATA_KEYWORD_ONLY_FALLBACK}
+     * {@code =true} before fusion, so the prompt builder knows which
+     * results to soft-warn the LLM about. RRF then strips the tag from
+     * vector-confirmed docs (see {@link TurRagRrf#fuse}).
+     *
+     * @param query           raw user query (passed through to BM25
+     *                        without QueryParser syntax exposure)
+     * @param topK            max results to return after fusion
+     * @param vectorStore     the configured vector store (any provider)
+     * @param storeInstanceId vector store binding — used to lookup the
+     *                        matching {@link TurRagBm25Core} row
+     * @param seInstance      the search engine hosting the per-locale core
+     * @param locale          the active query locale (BCP 47-parsed)
+     */
+    private List<Document> seHybridSearch(String query, int topK, VectorStore vectorStore,
+            String storeInstanceId, TurSEInstance seInstance, Locale locale) {
+        Optional<TurRagBm25Core> coreOpt = ragBm25CoreRepository
+                .findByTurStoreInstance_IdAndLocale(storeInstanceId, locale);
+        if (coreOpt.isEmpty() || coreOpt.get().getStatus() != TurRagBm25Core.Status.PROVISIONED) {
+            log.warn("[RAG] No PROVISIONED BM25 core for store={} locale={}; degrading to vector-only",
+                    storeInstanceId, locale.toLanguageTag());
+            return vectorOnly(query, topK, vectorStore);
+        }
+        TurRagBm25Core core = coreOpt.get();
+
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .similarityThreshold(0.0)
+                .build();
+        List<Document> vectorHits = vectorStore.similaritySearch(searchRequest);
+        if (vectorHits == null) {
+            vectorHits = List.of();
+        }
+
+        List<Document> bm25Hits;
+        try {
+            TurSearchEnginePlugin plugin = searchEnginePluginFactory.getPluginForInstance(seInstance);
+            List<TurSEStandaloneHit> seHits = plugin.retrieveStandalone(seInstance,
+                    core.getCoreName(), query, topK);
+            bm25Hits = new ArrayList<>(seHits.size());
+            for (TurSEStandaloneHit hit : seHits) {
+                bm25Hits.add(toBm25Document(hit));
+            }
+        } catch (RuntimeException e) {
+            // SE-side failure (network, unavailable core) shouldn't fail
+            // the whole RAG call — degrade to vector-only with a WARN.
+            log.warn("[RAG] SE BM25 query failed for core '{}': {} — degrading to vector-only",
+                    core.getCoreName(), e.getMessage());
+            bm25Hits = List.of();
+        }
+
+        return TurRagRrf.fuse(vectorHits, bm25Hits, topK);
+    }
+
+    /**
+     * Converts a {@link TurSEStandaloneHit} into a Spring AI {@link Document}
+     * carrying the keyword-only-fallback tag. The tag is later stripped by
+     * {@link TurRagRrf#fuse} for docs that also appeared in the vector pass
+     * — only docs that exclusively appear via BM25 retain it through to
+     * the prompt builder.
+     */
+    private static Document toBm25Document(TurSEStandaloneHit hit) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        if (hit.metadata() != null) {
+            metadata.putAll(hit.metadata());
+        }
+        metadata.put(TurLuceneVectorStore.METADATA_KEYWORD_ONLY_FALLBACK, Boolean.TRUE);
+        return Document.builder()
+                .id(hit.id())
+                .text(hit.content() == null ? "" : hit.content())
+                .metadata(metadata)
+                .score(hit.score())
+                .build();
+    }
+
+    /**
+     * Strict-vector fallback used when the SE_INSTANCE path can't run
+     * (no provisioned core for the locale, or SE call failed). Returns
+     * raw vector results without any RRF fusion — same shape as the
+     * legacy vector-only path so downstream rendering is unchanged.
+     */
+    private static List<Document> vectorOnly(String query, int topK, VectorStore vectorStore) {
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query(query)
+                .topK(topK)
+                .similarityThreshold(0.0)
+                .build();
+        List<Document> results = vectorStore.similaritySearch(searchRequest);
+        return results == null ? List.of() : results;
     }
 
     @Tool(name = "knowledge_base_stats", description = ".")

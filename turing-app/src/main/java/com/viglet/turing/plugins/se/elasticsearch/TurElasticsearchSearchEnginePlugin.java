@@ -188,6 +188,205 @@ public class TurElasticsearchSearchEnginePlugin implements TurSearchEnginePlugin
         return true;
     }
 
+    // ---- T24b / §III.2 standalone (RAG BM25 cores) -----------------------
+
+    @Override
+    public boolean indexStandaloneDocument(TurSEInstance seInstance, String indexName,
+            Map<String, Object> attributes) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    String docId = java.util.Optional.ofNullable(attributes.get("id"))
+                            .map(Object::toString).orElse(null);
+                    if (docId == null) {
+                        log.warn("[ES] standalone index '{}' missing id — dropping doc", indexName);
+                        return false;
+                    }
+                    try {
+                        co.elastic.clients.elasticsearch.core.IndexRequest<Map<String, Object>> req =
+                                co.elastic.clients.elasticsearch.core.IndexRequest.of(r -> r
+                                        .index(indexName)
+                                        .id(docId)
+                                        .document(attributes));
+                        instance.getClient().index(req);
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[ES] standalone index '{}' id='{}' failed: {}",
+                                indexName, docId, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public int indexStandaloneDocuments(TurSEInstance seInstance, String indexName,
+            List<Map<String, Object>> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    co.elastic.clients.elasticsearch.core.BulkRequest.Builder bulk =
+                            new co.elastic.clients.elasticsearch.core.BulkRequest.Builder();
+                    int queued = 0;
+                    for (Map<String, Object> attrs : documents) {
+                        String docId = java.util.Optional.ofNullable(attrs.get("id"))
+                                .map(Object::toString).orElse(null);
+                        if (docId == null) {
+                            log.warn("[ES] bulk standalone '{}': skipping doc with no id", indexName);
+                            continue;
+                        }
+                        final String id = docId;
+                        bulk.operations(op -> op.index(idx -> idx
+                                .index(indexName).id(id).document(attrs)));
+                        queued++;
+                    }
+                    if (queued == 0) {
+                        return 0;
+                    }
+                    try {
+                        co.elastic.clients.elasticsearch.core.BulkResponse resp =
+                                instance.getClient().bulk(bulk.build());
+                        // The bulk API may partially succeed — only count
+                        // items without an errors flag. resp.errors() is
+                        // the global flag; per-item check is more precise.
+                        if (resp.errors()) {
+                            int ok = 0;
+                            for (var item : resp.items()) {
+                                co.elastic.clients.elasticsearch._types.ErrorCause itemError = item.error();
+                                if (itemError == null) {
+                                    ok++;
+                                } else {
+                                    log.warn("[ES] bulk standalone '{}': item id='{}' failed: {}",
+                                            indexName, item.id(), itemError.reason());
+                                }
+                            }
+                            return ok;
+                        }
+                        return queued;
+                    } catch (Exception e) {
+                        log.warn("[ES] bulk standalone '{}' failed: {}", indexName, e.getMessage());
+                        return 0;
+                    }
+                }).orElse(0);
+    }
+
+    @Override
+    public boolean deIndexStandalone(TurSEInstance seInstance, String indexName, String id) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    try {
+                        instance.getClient().delete(d -> d.index(indexName).id(id));
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[ES] standalone delete id='{}' from '{}' failed: {}",
+                                id, indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean deIndexStandaloneByField(TurSEInstance seInstance, String indexName,
+            String fieldName, String fieldValue) {
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    try {
+                        instance.getClient().deleteByQuery(d -> d
+                                .index(indexName)
+                                .query(q -> q.term(t -> t
+                                        .field(fieldName)
+                                        .value(co.elastic.clients.elasticsearch._types.FieldValue.of(fieldValue)))));
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[ES] standalone delete-by-field {}='{}' on '{}' failed: {}",
+                                fieldName, fieldValue, indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean commitStandalone(TurSEInstance seInstance, String indexName) {
+        // Elasticsearch refresh policy handles visibility automatically;
+        // explicit commit-equivalent is _refresh — request it for the
+        // index so RAG queries fired immediately after indexing see the
+        // new docs (vs the 1-second default refresh window).
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    try {
+                        instance.getClient().indices().refresh(r -> r.index(indexName));
+                        return true;
+                    } catch (Exception e) {
+                        log.debug("[ES] standalone refresh '{}' failed (non-fatal): {}",
+                                indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(true);
+    }
+
+    @Override
+    public List<com.viglet.turing.plugins.se.TurSEStandaloneHit> retrieveStandalone(
+            TurSEInstance seInstance, String indexName, String query, int topK) {
+        if (query == null || query.isBlank() || topK < 1) {
+            return List.of();
+        }
+        return turElasticsearchInstanceProcess.initElasticsearchInstance(seInstance, indexName)
+                .map(instance -> {
+                    try {
+                        // match query on the canonical content field —
+                        // ES applies the per-locale analyzer set up at
+                        // provisioning. No need to escape: match parser
+                        // doesn't interpret Lucene syntax. Map type token
+                        // arrives via an unchecked cast because the ES SDK
+                        // takes a runtime Class<T> and generic erasure
+                        // makes Map<String, Object>.class unwritable.
+                        @SuppressWarnings({ "unchecked", "rawtypes" })
+                        Class<Map<String, Object>> mapType = (Class) Map.class;
+                        var resp = instance.getClient().search(s -> s
+                                .index(indexName)
+                                .size(topK)
+                                .source(src -> src
+                                        .filter(f -> f.includes("id", "content",
+                                                "assetId", "chunkIndex", "sourceFile")))
+                                .query(q -> q
+                                        .match(m -> m.field("content").query(query))),
+                                mapType);
+                        java.util.List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits =
+                                new java.util.ArrayList<>(resp.hits().hits().size());
+                        for (var hit : resp.hits().hits()) {
+                            Map<String, Object> source = hit.source();
+                            if (source == null) {
+                                continue;
+                            }
+                            String id = hit.id();
+                            String content = source.get("content") == null
+                                    ? "" : source.get("content").toString();
+                            // Extract once into a local so the IDE can prove
+                            // the unbox below is null-safe.
+                            Double rawScore = hit.score();
+                            double score = rawScore == null ? 0.0 : rawScore.doubleValue();
+                            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+                            putIfPresent(metadata, "assetId", source.get("assetId"));
+                            putIfPresent(metadata, "chunkIndex", source.get("chunkIndex"));
+                            putIfPresent(metadata, "sourceFile", source.get("sourceFile"));
+                            hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
+                                    id, content, metadata, score));
+                        }
+                        return hits;
+                    } catch (Exception e) {
+                        log.warn("[ES] standalone retrieve '{}' query='{}' failed: {}",
+                                indexName, query, e.getMessage());
+                        return java.util.List.<com.viglet.turing.plugins.se.TurSEStandaloneHit>of();
+                    }
+                }).orElse(List.of());
+    }
+
+    private static void putIfPresent(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
+    }
+
     // ---- Content export ---------------------------------------------------
 
     @Override

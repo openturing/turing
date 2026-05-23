@@ -253,6 +253,170 @@ public class TurSolrSearchEnginePlugin implements TurSearchEnginePlugin {
                 .map(turSolr::commit).orElse(false);
     }
 
+    // ---- T24b / §III.2 standalone (RAG BM25 cores) -----------------------
+
+    /**
+     * T24b — pushes a single {@link Map} body into the named Solr core
+     * via {@link org.apache.solr.client.solrj.SolrClient#add}. Bypasses
+     * the SN-site-driven {@link TurSolr#indexing} path because RAG cores
+     * have a simple, fixed schema (id + content + locale + assetId +
+     * chunkIndex + sourceFile) and don't need field-type / multi-value
+     * normalization.
+     */
+    @Override
+    public boolean indexStandaloneDocument(TurSEInstance seInstance, String indexName,
+            Map<String, Object> attributes) {
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    try {
+                        org.apache.solr.common.SolrInputDocument doc =
+                                new org.apache.solr.common.SolrInputDocument();
+                        attributes.forEach(doc::addField);
+                        instance.getSolrClient().add(doc);
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[Solr] standalone index '{}' failed: {}", indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public int indexStandaloneDocuments(TurSEInstance seInstance, String indexName,
+            List<Map<String, Object>> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        // Solr accepts a Collection<SolrInputDocument> in a single add call
+        // — one HTTP round-trip for the whole batch instead of N.
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    java.util.List<org.apache.solr.common.SolrInputDocument> batch =
+                            new java.util.ArrayList<>(documents.size());
+                    for (Map<String, Object> attrs : documents) {
+                        org.apache.solr.common.SolrInputDocument doc =
+                                new org.apache.solr.common.SolrInputDocument();
+                        attrs.forEach(doc::addField);
+                        batch.add(doc);
+                    }
+                    try {
+                        instance.getSolrClient().add(batch);
+                        return batch.size();
+                    } catch (Exception e) {
+                        log.warn("[Solr] standalone batch index '{}' failed: {}",
+                                indexName, e.getMessage());
+                        return 0;
+                    }
+                }).orElse(0);
+    }
+
+    @Override
+    public boolean deIndexStandalone(TurSEInstance seInstance, String indexName, String id) {
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    try {
+                        instance.getSolrClient().deleteById(id);
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[Solr] standalone delete id='{}' from '{}' failed: {}",
+                                id, indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean deIndexStandaloneByField(TurSEInstance seInstance, String indexName,
+            String fieldName, String fieldValue) {
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    try {
+                        // Field value is quoted so multi-token values
+                        // (e.g. file paths with spaces) get matched as
+                        // a phrase, not OR'd across tokens.
+                        instance.getSolrClient().deleteByQuery(
+                                fieldName + ":\"" + fieldValue + "\"");
+                        return true;
+                    } catch (Exception e) {
+                        log.warn("[Solr] standalone delete-by-field {}='{}' on '{}' failed: {}",
+                                fieldName, fieldValue, indexName, e.getMessage());
+                        return false;
+                    }
+                }).orElse(false);
+    }
+
+    @Override
+    public boolean commitStandalone(TurSEInstance seInstance, String indexName) {
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(turSolr::commit).orElse(false);
+    }
+
+    @Override
+    public List<com.viglet.turing.plugins.se.TurSEStandaloneHit> retrieveStandalone(
+            TurSEInstance seInstance, String indexName, String query, int topK) {
+        if (query == null || query.isBlank() || topK < 1) {
+            return List.of();
+        }
+        return turSolrInstanceProcess.initSolrInstance(effective(seInstance), indexName)
+                .map(instance -> {
+                    try {
+                        SolrQuery solrQuery = new SolrQuery();
+                        // edismax on the canonical text field. Escaping
+                        // the raw user input so a stray colon / paren
+                        // doesn't blow up the parser — admins of the
+                        // ingest side never get to inject syntax here.
+                        solrQuery.setQuery("content:(" + escapeSolr(query) + ")");
+                        solrQuery.setRows(topK);
+                        // Asking for the chunk fields explicitly avoids
+                        // shipping the embedding vector (if anyone ever
+                        // adds one to the BM25 core by mistake) and keeps
+                        // the response small.
+                        solrQuery.setFields("id", "content", "assetId", "chunkIndex",
+                                "sourceFile", "score");
+
+                        var response = instance.getSolrClient().query(solrQuery);
+                        org.apache.solr.common.SolrDocumentList docs = response.getResults();
+                        if (docs == null || docs.isEmpty()) {
+                            return java.util.List.<com.viglet.turing.plugins.se.TurSEStandaloneHit>of();
+                        }
+                        java.util.List<com.viglet.turing.plugins.se.TurSEStandaloneHit> hits =
+                                new java.util.ArrayList<>(docs.size());
+                        for (org.apache.solr.common.SolrDocument doc : docs) {
+                            String id = String.valueOf(doc.getFirstValue("id"));
+                            Object contentVal = doc.getFirstValue("content");
+                            String content = contentVal == null ? "" : contentVal.toString();
+                            Object scoreVal = doc.getFirstValue("score");
+                            double score = scoreVal instanceof Number n ? n.doubleValue() : 0.0;
+                            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+                            putIfPresent(metadata, "assetId", doc.getFirstValue("assetId"));
+                            putIfPresent(metadata, "chunkIndex", doc.getFirstValue("chunkIndex"));
+                            putIfPresent(metadata, "sourceFile", doc.getFirstValue("sourceFile"));
+                            hits.add(new com.viglet.turing.plugins.se.TurSEStandaloneHit(
+                                    id, content, metadata, score));
+                        }
+                        return hits;
+                    } catch (Exception e) {
+                        log.warn("[Solr] standalone retrieve '{}' query='{}' failed: {}",
+                                indexName, query, e.getMessage());
+                        return java.util.List.<com.viglet.turing.plugins.se.TurSEStandaloneHit>of();
+                    }
+                }).orElse(List.of());
+    }
+
+    /**
+     * Escapes Solr's classic-parser special characters in a free-text
+     * query so admin input doesn't have to know Lucene syntax.
+     */
+    private static String escapeSolr(String query) {
+        return query.replaceAll("([\\\\+\\-!\\(\\)\\{\\}\\[\\]\\^\"~\\*\\?:/])", "\\\\$1");
+    }
+
+    private static void putIfPresent(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
+    }
+
     // ---- Content retrieval ------------------------------------------------
 
     private static final java.util.Set<String> ALWAYS_EXPORT_FIELDS = java.util.Set.of("id", "type");

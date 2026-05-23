@@ -24,13 +24,18 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import type { TurAIAgent } from "@/models/agent/ai-agent.model"
-import type { TurSNSiteGenAi } from "@/models/sn/sn-site-genai.model"
+import type { TurSEInstance } from "@/models/se/se-instance.model"
+import type {
+    TurRagBm25CoreStatus,
+    TurSNSiteGenAi,
+} from "@/models/sn/sn-site-genai.model"
 import { useUpdateSnSite } from "@/api/queries/sn-site.queries"
 import type { TurSNSite } from "@/models/sn/sn-site.model"
 import { useSmoothedEta } from "@/hooks/use-smoothed-eta"
 import { formatTime } from "@/lib/format-time"
 import { TurAIAgentService } from "@/services/agent/ai-agent.service"
 import { TurChatService } from "@/services/chat/chat.service"
+import { TurSEInstanceService } from "@/services/se/se.service"
 import { TurSNSiteService } from "@/services/sn/sn.service"
 import { TurGlobalSettingsService } from "@/services/system/global-settings.service"
 import { IconBrain, IconCpu2, IconDeviceFloppy, IconFileDescription, IconLoader2, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react"
@@ -46,6 +51,7 @@ import { Textarea } from "../../ui/textarea"
 
 const turSNSiteService = new TurSNSiteService();
 const turAIAgentService = new TurAIAgentService();
+const turSEInstanceService = new TurSEInstanceService();
 const turGlobalSettingsService = new TurGlobalSettingsService();
 const turChatService = new TurChatService();
 
@@ -64,6 +70,9 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         },
     });
     const [aiAgents, setAiAgents] = useState<TurAIAgent[]>([]);
+    const [seInstances, setSeInstances] = useState<TurSEInstance[]>([]);
+    const [ragCores, setRagCores] = useState<TurRagBm25CoreStatus[]>([]);
+    const [isProvisioning, setIsProvisioning] = useState(false);
     const [defaultLlmId, setDefaultLlmId] = useState<string>("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
@@ -85,6 +94,10 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         turAIAgentService.query().then((all) =>
             setAiAgents(all.filter((a) => a.enabled === 1)),
         );
+        turSEInstanceService
+            .query()
+            .then((all) => setSeInstances(all.filter((i) => i.enabled === 1)))
+            .catch((err) => console.error("Failed to load SE instances", err));
         turGlobalSettingsService.query().then((settings) => {
             setDefaultLlmId(settings.defaultLlmId ?? "");
         });
@@ -94,8 +107,32 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
         form.reset({
             ...snSite.turSNSiteGenAi,
             sitePrompt: snSite.turSNSiteGenAi?.sitePrompt ?? "",
+            // T19/T24 reposition (2026.2.7) — flags moved here from
+            // TurAIAgent. Defaults match the new column defaults so an
+            // existing GenAi binding loaded from a pre-T19 backend
+            // (undefined) still renders the toggles in the ON state.
+            ragBm25Fallback: snSite.turSNSiteGenAi?.ragBm25Fallback ?? true,
+            ragHybridSearch: snSite.turSNSiteGenAi?.ragHybridSearch ?? true,
+            // T24b — BM25 source defaults to EMBEDDED so a pre-T24b
+            // binding renders the radio in the safe "no SE selected" state.
+            ragBm25Source: snSite.turSNSiteGenAi?.ragBm25Source ?? "EMBEDDED",
+            ragSeInstance: snSite.turSNSiteGenAi?.ragSeInstance ?? null,
         });
     }, [snSite]);
+
+    // T24b — load the per-locale core status table whenever the site id
+    // changes, plus on focus (admin may provision in another tab). The
+    // status panel only renders when source=SE_INSTANCE, but we cache the
+    // payload eagerly so the table doesn't flash empty on radio flip.
+    const loadRagCores = useCallback(async () => {
+        if (!snSite.id) return;
+        const rows = await turSNSiteService.getRagCores(snSite.id);
+        setRagCores(rows);
+    }, [snSite.id]);
+
+    useEffect(() => {
+        loadRagCores();
+    }, [loadRagCores]);
 
     const selectedAgent = form.watch("turAIAgent");
     const ragEnabled = !!selectedAgent && selectedAgent.ragEnabled === true;
@@ -432,6 +469,303 @@ export const SNSiteGenAiForm: React.FC<Props> = ({ snSite }) => {
                                                 : t("forms.snGenai.reindexHint")}
                                         </span>
                                     </div>
+                                )}
+                            </SectionCard.Content>
+                        </SectionCard>
+
+                        {/* T19/T24 — Hybrid Retrieval card.
+                            Only meaningful when the bound agent has RAG enabled;
+                            disabled state when ragEnabled is false makes the
+                            UI track the runtime gating exactly. */}
+                        <SectionCard variant="blue">
+                            <SectionCard.Header
+                                icon={IconSparkles}
+                                title={t("forms.snGenai.hybridTitle")}
+                                description={t("forms.snGenai.hybridDesc")}
+                            />
+                            <SectionCard.Content>
+                                <FormField
+                                    control={form.control}
+                                    name="ragBm25Fallback"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.bm25Fallback")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.bm25FallbackDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value !== false ? "default" : "outline"}
+                                                        disabled={!ragEnabled}
+                                                        onClick={() => field.onChange(field.value === false)}
+                                                    >
+                                                        {field.value !== false
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ragHybridSearch"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.hybridSearch")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.hybridSearchDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <FormControl>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value !== false ? "default" : "outline"}
+                                                        // Hybrid is only meaningful when BM25 fallback
+                                                        // is on; runtime ignores it otherwise, so the
+                                                        // UI mirrors that gating.
+                                                        disabled={!ragEnabled || form.watch("ragBm25Fallback") === false}
+                                                        onClick={() => field.onChange(field.value === false)}
+                                                    >
+                                                        {field.value !== false
+                                                            ? t("forms.common.enabled")
+                                                            : t("forms.common.disabled")}
+                                                    </GradientButton>
+                                                </FormControl>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {/* T24b — BM25 source. EMBEDDED (default)
+                                    keeps the T24 in-process Lucene path;
+                                    SE_INSTANCE routes BM25 to per-locale
+                                    cores on a Solr/ES instance. Only
+                                    meaningful when both BM25 fallback +
+                                    hybrid fusion are on. */}
+                                <FormField
+                                    control={form.control}
+                                    name="ragBm25Source"
+                                    render={({ field }) => (
+                                        <FormItemTwoColumns>
+                                            <FormItemTwoColumns.Left>
+                                                <FormItemTwoColumns.Label>
+                                                    {t("forms.snGenai.bm25Source")}
+                                                </FormItemTwoColumns.Label>
+                                                <FormItemTwoColumns.Description>
+                                                    {t("forms.snGenai.bm25SourceDesc")}
+                                                </FormItemTwoColumns.Description>
+                                            </FormItemTwoColumns.Left>
+                                            <FormItemTwoColumns.Right>
+                                                <div className="flex gap-2">
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={
+                                                            (field.value ?? "EMBEDDED") === "EMBEDDED"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        disabled={
+                                                            !ragEnabled
+                                                            || form.watch("ragBm25Fallback") === false
+                                                            || form.watch("ragHybridSearch") === false
+                                                        }
+                                                        onClick={() => {
+                                                            field.onChange("EMBEDDED");
+                                                            form.setValue("ragSeInstance", null);
+                                                        }}
+                                                    >
+                                                        {t("forms.snGenai.bm25SourceEmbedded")}
+                                                    </GradientButton>
+                                                    <GradientButton
+                                                        type="button"
+                                                        variant={field.value === "SE_INSTANCE" ? "default" : "outline"}
+                                                        disabled={
+                                                            !ragEnabled
+                                                            || form.watch("ragBm25Fallback") === false
+                                                            || form.watch("ragHybridSearch") === false
+                                                        }
+                                                        onClick={() => field.onChange("SE_INSTANCE")}
+                                                    >
+                                                        {t("forms.snGenai.bm25SourceSeInstance")}
+                                                    </GradientButton>
+                                                </div>
+                                            </FormItemTwoColumns.Right>
+                                        </FormItemTwoColumns>
+                                    )}
+                                />
+
+                                {form.watch("ragBm25Source") === "SE_INSTANCE" && (
+                                    <>
+                                        <FormField
+                                            control={form.control}
+                                            name="ragSeInstance"
+                                            render={({ field }) => (
+                                                <FormItemTwoColumns>
+                                                    <FormItemTwoColumns.Left>
+                                                        <FormItemTwoColumns.Label>
+                                                            {t("forms.snGenai.seInstance")}
+                                                        </FormItemTwoColumns.Label>
+                                                        <FormItemTwoColumns.Description>
+                                                            {t("forms.snGenai.seInstanceDesc")}
+                                                        </FormItemTwoColumns.Description>
+                                                    </FormItemTwoColumns.Left>
+                                                    <FormItemTwoColumns.Right>
+                                                        <Select
+                                                            value={field.value?.id ?? NONE_VALUE}
+                                                            onValueChange={(val) => {
+                                                                if (val === NONE_VALUE) {
+                                                                    field.onChange(null);
+                                                                    return;
+                                                                }
+                                                                const inst = seInstances.find((i) => i.id === val);
+                                                                field.onChange(inst ?? null);
+                                                            }}
+                                                            disabled={!ragEnabled}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder={t("forms.snGenai.seInstancePlaceholder")} />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value={NONE_VALUE}>
+                                                                    {t("forms.snGenai.seInstanceNone")}
+                                                                </SelectItem>
+                                                                {seInstances.map((inst) => (
+                                                                    <SelectItem key={inst.id} value={inst.id}>
+                                                                        {inst.title} ({inst.turSEVendor?.title ?? "?"})
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormItemTwoColumns.Right>
+                                                </FormItemTwoColumns>
+                                            )}
+                                        />
+
+                                        {/* Per-locale BM25 core status table.
+                                            One row per TurSNSiteLocale; status
+                                            color signals lifecycle. Provision
+                                            button is gated on a saved binding
+                                            (form not dirty) and a non-null SE. */}
+                                        <div className="mt-2 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <div className="text-sm font-medium">
+                                                        {t("forms.snGenai.coresTitle")}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {t("forms.snGenai.coresDesc")}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={loadRagCores}
+                                                        disabled={isProvisioning}
+                                                    >
+                                                        <IconRefresh className="size-4" />
+                                                        {t("forms.snGenai.coresRefresh")}
+                                                    </Button>
+                                                    <GradientButton
+                                                        type="button"
+                                                        disabled={
+                                                            isProvisioning
+                                                            || form.formState.isDirty
+                                                            || !snSite.turSNSiteGenAi?.ragSeInstance
+                                                        }
+                                                        title={
+                                                            form.formState.isDirty
+                                                                ? t("forms.snGenai.coresSaveFirst")
+                                                                : !snSite.turSNSiteGenAi?.ragSeInstance
+                                                                    ? t("forms.snGenai.coresPickSe")
+                                                                    : undefined
+                                                        }
+                                                        onClick={async () => {
+                                                            setIsProvisioning(true);
+                                                            try {
+                                                                const rows = await turSNSiteService
+                                                                    .provisionRagCores(snSite.id);
+                                                                setRagCores(rows);
+                                                                toast.success(t("forms.snGenai.coresProvisionDone"));
+                                                            } finally {
+                                                                setIsProvisioning(false);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isProvisioning && (
+                                                            <IconLoader2 className="size-4 animate-spin" />
+                                                        )}
+                                                        {t("forms.snGenai.coresProvisionAll")}
+                                                    </GradientButton>
+                                                </div>
+                                            </div>
+                                            <div className="rounded-md border">
+                                                <table className="w-full text-sm">
+                                                    <thead className="bg-muted/50 text-left">
+                                                        <tr>
+                                                            <th className="px-3 py-2 font-medium">
+                                                                {t("forms.snGenai.coresColLocale")}
+                                                            </th>
+                                                            <th className="px-3 py-2 font-medium">
+                                                                {t("forms.snGenai.coresColName")}
+                                                            </th>
+                                                            <th className="px-3 py-2 font-medium">
+                                                                {t("forms.snGenai.coresColStatus")}
+                                                            </th>
+                                                            <th className="px-3 py-2 font-medium text-right">
+                                                                {t("forms.snGenai.coresColDocs")}
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {ragCores.length === 0 && (
+                                                            <tr>
+                                                                <td colSpan={4} className="px-3 py-4 text-center text-xs text-muted-foreground">
+                                                                    {t("forms.snGenai.coresEmpty")}
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                        {ragCores.map((row) => (
+                                                            <tr key={row.locale} className="border-t">
+                                                                <td className="px-3 py-2 font-mono text-xs">{row.locale}</td>
+                                                                <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{row.coreName}</td>
+                                                                <td className="px-3 py-2">
+                                                                    <span
+                                                                        className={
+                                                                            row.status === "PROVISIONED"
+                                                                                ? "text-emerald-600 dark:text-emerald-400"
+                                                                                : row.status === "ERROR"
+                                                                                    ? "text-red-600 dark:text-red-400"
+                                                                                    : row.status === "PROVISIONING" || row.status === "DELETING"
+                                                                                        ? "text-blue-600 dark:text-blue-400"
+                                                                                        : "text-muted-foreground"
+                                                                        }
+                                                                        title={row.lastError ?? undefined}
+                                                                    >
+                                                                        {row.status}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right font-mono text-xs">{row.docCount}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
                             </SectionCard.Content>
                         </SectionCard>

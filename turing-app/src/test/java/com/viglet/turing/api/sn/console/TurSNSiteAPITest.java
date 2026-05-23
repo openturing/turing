@@ -90,6 +90,7 @@ class TurSNSiteAPITest {
                         TurSNSiteMapper siteMapper) {
                 return new TurSNSiteAPI(siteRepository, localeRepository, genAiRepository,
                                 mock(com.viglet.turing.persistence.repository.agent.TurAIAgentRepository.class),
+                                mock(com.viglet.turing.persistence.repository.se.TurSEInstanceRepository.class),
                                 export, mock(TurSNSiteContentExchangeService.class),
                                 template, queue, pluginFactory, configProperties, siteMapper,
                                 mock(org.springframework.context.ApplicationEventPublisher.class));
@@ -174,6 +175,64 @@ class TurSNSiteAPITest {
                 assertThat(result.getDescription()).isEqualTo("Desc");
                 verify(siteRepository).save(existing);
                 verify(genAiRepository).save(any(TurSNSiteGenAi.class));
+        }
+
+        @Test
+        void testSiteUpdatePersistsRagFlags() {
+                // T19/T24/T24b — the update path was previously dropping
+                // ragBm25Fallback/ragHybridSearch and never knew about
+                // ragBm25Source/ragSeInstance. Lock down that all four
+                // round-trip through the controller now.
+                TurSNSiteRepository siteRepository = mock(TurSNSiteRepository.class);
+                TurSNSiteGenAiRepository genAiRepository = mock(TurSNSiteGenAiRepository.class);
+                com.viglet.turing.persistence.repository.se.TurSEInstanceRepository seRepo =
+                                mock(com.viglet.turing.persistence.repository.se.TurSEInstanceRepository.class);
+                TurSNSiteMapper siteMapper = Mappers.getMapper(TurSNSiteMapper.class);
+                TurSNSiteAPI api = new TurSNSiteAPI(siteRepository,
+                                mock(TurSNSiteLocaleRepository.class), genAiRepository,
+                                mock(com.viglet.turing.persistence.repository.agent.TurAIAgentRepository.class),
+                                seRepo,
+                                mock(TurSNSiteExport.class),
+                                mock(TurSNSiteContentExchangeService.class),
+                                mock(TurSNTemplate.class), mock(TurSNQueue.class),
+                                mock(TurSearchEnginePluginFactory.class), mock(TurConfigProperties.class), siteMapper,
+                                mock(org.springframework.context.ApplicationEventPublisher.class));
+
+                TurSNSite existing = new TurSNSite();
+                TurSNSiteGenAi existingGenAi = new TurSNSiteGenAi();
+                existingGenAi.setRagBm25Fallback(true);
+                existingGenAi.setRagHybridSearch(true);
+                existingGenAi.setRagBm25Source(
+                                com.viglet.turing.persistence.model.rag.TurRagBm25Source.EMBEDDED);
+                existing.setTurSNSiteGenAi(existingGenAi);
+
+                TurSEInstance seInstance = new TurSEInstance();
+                seInstance.setId("se-1");
+
+                TurSNSiteDto payload = new TurSNSiteDto();
+                payload.setName("X");
+                TurSNSiteGenAi payloadGenAi = new TurSNSiteGenAi();
+                payloadGenAi.setRagBm25Fallback(false);
+                payloadGenAi.setRagHybridSearch(false);
+                payloadGenAi.setRagBm25Source(
+                                com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+                TurSEInstance payloadSe = new TurSEInstance();
+                payloadSe.setId("se-1");
+                payloadGenAi.setRagSeInstance(payloadSe);
+                payload.setTurSNSiteGenAi(payloadGenAi);
+
+                when(siteRepository.findByIdNoCache("site")).thenReturn(Optional.of(existing));
+                when(siteRepository.findByNameIgnoreCase("X")).thenReturn(Optional.empty());
+                when(seRepo.findById("se-1")).thenReturn(Optional.of(seInstance));
+
+                api.turSNSiteUpdate("site", payload);
+
+                assertThat(existingGenAi.isRagBm25Fallback()).isFalse();
+                assertThat(existingGenAi.isRagHybridSearch()).isFalse();
+                assertThat(existingGenAi.getRagBm25Source())
+                                .isEqualTo(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+                assertThat(existingGenAi.getRagSeInstance()).isSameAs(seInstance);
+                verify(genAiRepository).save(existingGenAi);
         }
 
         @Test

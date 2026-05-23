@@ -1,0 +1,89 @@
+databaseChangeLog:
+  # T19/T24 architectural reposition (2026.2.7) — move ragBm25Fallback and
+  # ragHybridSearch from ai_agent to sn_site_genai. Rationale: RAG only
+  # runs through the SN site chat API; locale-aware BM25 routing depends
+  # on TurSNSiteLocale which is owned by the SN site. The agent has no
+  # native notion of locales, so per-agent flags were architecturally
+  # misplaced. See TurSNSiteGenAi javadoc for the new ownership.
+  #
+  # The columns were just shipped in v2026.2.7.9 / v2026.2.7.10 so any
+  # existing data is at the default values (both TRUE). No data
+  # preservation needed beyond the defaults — the new columns on
+  # sn_site_genai also default to TRUE, so every existing GenAi binding
+  # gets post-T24 hybrid behavior automatically.
+
+  - changeSet:
+      id: v2026.2.7.11-add-sn-site-genai-rag-bm25-fallback
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: ragBm25Fallback
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: ragBm25Fallback
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "T19/§III.3 (repositioned) per-SN-site-genai BM25 fallback toggle. TRUE = retry BM25 when vector top-1 < MIN_VECTOR_CONFIDENCE; FALSE = strict vector only."
+
+  - changeSet:
+      id: v2026.2.7.11-add-sn-site-genai-rag-hybrid-search
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: ragHybridSearch
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: ragHybridSearch
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+                  remarks: "T24/§III.2 (repositioned) per-SN-site-genai hybrid retrieval toggle. TRUE = vector + BM25 fused via RRF; FALSE = T19 fallback-only semantics. Honored only when ragBm25Fallback=true."
+
+  - changeSet:
+      id: v2026.2.7.11-drop-ai-agent-rag-bm25-fallback
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - columnExists:
+            tableName: ai_agent
+            columnName: ragBm25Fallback
+      changes:
+        - dropColumn:
+            tableName: ai_agent
+            columnName: ragBm25Fallback
+
+  - changeSet:
+      id: v2026.2.7.11-drop-ai-agent-rag-hybrid-search
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: ai_agent
+        - columnExists:
+            tableName: ai_agent
+            columnName: ragHybridSearch
+      changes:
+        - dropColumn:
+            tableName: ai_agent
+            columnName: ragHybridSearch

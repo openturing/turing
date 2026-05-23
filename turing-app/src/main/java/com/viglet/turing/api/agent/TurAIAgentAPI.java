@@ -227,17 +227,11 @@ public class TurAIAgentAPI {
             if (turAIAgent.getChatMode() != null) {
                 agentEdit.setChatMode(turAIAgent.getChatMode());
             }
-            // T19 / §III.3 — per-agent BM25 fallback opt-out. Boolean
-            // primitive on the entity, so React's checkbox payload (true
-            // / false / missing) round-trips through Jackson and lands as
-            // a non-null value here. Same field-by-field copy pattern as
-            // the rest of this update.
-            agentEdit.setRagBm25Fallback(turAIAgent.isRagBm25Fallback());
-            // T24 / §III.2 — hybrid retrieval toggle. Only meaningful when
-            // ragBm25Fallback is also true; the strategy in
-            // TurRagSearchToolService reads both flags to decide between
-            // VECTOR / FALLBACK / HYBRID modes. Same field-copy pattern.
-            agentEdit.setRagHybridSearch(turAIAgent.isRagHybridSearch());
+            // T19/T24 reposition (2026.2.7) — ragBm25Fallback and
+            // ragHybridSearch moved to TurSNSiteGenAi; no longer copied
+            // here. See TurSNSiteGenAi field javadoc + TurSNSiteAPI for
+            // the persistence side, and the SN site GenAI settings form
+            // for the UI.
             this.turAIAgentRepository.save(agentEdit);
             return turAIAgentMapper.toDto(agentEdit);
         }).orElse(new TurAIAgentDto());

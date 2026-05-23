@@ -36,21 +36,8 @@ export interface TurAIAgent {
   nativeTools?: string | null;
   /** How the executor issues the LLM round-trip. @since 2026.2.7 */
   chatMode?: TurAgentChatMode;
-  /**
-   * T19 / §III.3 — opt-out for the BM25 emergency fallback in
-   * `search_knowledge_base`. When `true` (default), low-confidence vector
-   * misses retry as BM25 over the indexed content and the result is
-   * tagged "keyword-only" so the LLM softens its answer. When `false`,
-   * vector misses return "no results" directly. @since 2026.2.7
-   */
-  ragBm25Fallback?: boolean;
-  /**
-   * T24 / §III.2 — opt-in for hybrid retrieval (vector + BM25 fused via
-   * RRF) instead of the T19 fallback-only behavior. Effective only when
-   * `ragBm25Fallback` is also `true`. Default `true` ships hybrid as the
-   * new default. @since 2026.2.7
-   */
-  ragHybridSearch?: boolean;
+  // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
+  // moved from TurAIAgent to TurSNSiteGenAi — see sn-site-genai.model.ts.
   /**
    * Optional agent-specific Python `requirements.txt` addendum. Unioned
    * with the global `pythonRequirements` setting before the Code

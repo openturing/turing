@@ -151,15 +151,10 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
       // CALL is the safe default — matches the backend enum default and
       // the pre-2026.2.7 behavior (single SSE event after the LLM finishes).
       chatMode: value.chatMode ?? "CALL",
-      // T19 / §III.3 — BM25 fallback default TRUE (post-T19 behavior).
-      // Existing agents loaded from a pre-T19 backend respond with
-      // undefined → coalesce to true so the toggle reflects the actual
-      // runtime behavior the executor will exhibit.
-      ragBm25Fallback: value.ragBm25Fallback ?? true,
-      // T24 / §III.2 — hybrid retrieval default TRUE (new default).
-      // Effective only when BM25 fallback is also TRUE; otherwise the
-      // strict-vector path runs and this flag is ignored.
-      ragHybridSearch: value.ragHybridSearch ?? true,
+      // T19/T24 reposition (2026.2.7): ragBm25Fallback and ragHybridSearch
+      // moved from agent to TurSNSiteGenAi (RAG only runs in SN site
+      // context; locale-aware retrieval needs SN site's locale config).
+      // The toggles now live in sn.site.genai.form.tsx.
       turEmbeddingModelInstance: value.turEmbeddingModelInstance,
       turStoreInstance: value.turStoreInstance,
     });
@@ -484,55 +479,12 @@ export const AIAgentSettingsForm: React.FC<Props> = ({ value, isNew }) => {
                   </FormItemTwoColumns>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="ragBm25Fallback"
-                render={({ field }) => (
-                  <FormItemTwoColumns>
-                    <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>{t("forms.agentSettings.ragBm25Fallback")}</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description>
-                        {t("forms.agentSettings.ragBm25FallbackDesc")}
-                      </FormItemTwoColumns.Description>
-                    </FormItemTwoColumns.Left>
-                    <FormItemTwoColumns.Right>
-                      <FormControl>
-                        <GradientSwitch
-                          checked={field.value !== false}
-                          disabled={!ragEnabled}
-                          onCheckedChange={(checked) => field.onChange(checked)}
-                        />
-                      </FormControl>
-                    </FormItemTwoColumns.Right>
-                  </FormItemTwoColumns>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="ragHybridSearch"
-                render={({ field }) => (
-                  <FormItemTwoColumns>
-                    <FormItemTwoColumns.Left>
-                      <FormItemTwoColumns.Label>{t("forms.agentSettings.ragHybridSearch")}</FormItemTwoColumns.Label>
-                      <FormItemTwoColumns.Description>
-                        {t("forms.agentSettings.ragHybridSearchDesc")}
-                      </FormItemTwoColumns.Description>
-                    </FormItemTwoColumns.Left>
-                    <FormItemTwoColumns.Right>
-                      <FormControl>
-                        <GradientSwitch
-                          checked={field.value !== false}
-                          // Effective only when both RAG and BM25 fallback
-                          // are on. The runtime ignores the flag otherwise;
-                          // disable the toggle so the UI matches behavior.
-                          disabled={!ragEnabled || form.watch("ragBm25Fallback") === false}
-                          onCheckedChange={(checked) => field.onChange(checked)}
-                        />
-                      </FormControl>
-                    </FormItemTwoColumns.Right>
-                  </FormItemTwoColumns>
-                )}
-              />
+              {/* T19/T24 reposition (2026.2.7): ragBm25Fallback and
+                  ragHybridSearch toggles moved to the SN site GenAi form
+                  because RAG only runs in SN site context (the SN site
+                  chat API is the only invocation path that exercises
+                  RAG) and locale-aware retrieval depends on
+                  TurSNSiteLocale, which the SN site owns. */}
             </SectionCard.Content>
           </SectionCard>
 

@@ -91,6 +91,25 @@ public class TurCustomToolCallbackService {
      */
     public static final String TOOL_CONTEXT_AGENT_ID = "turing.agentId";
 
+    /**
+     * T24b / §III.2 — key under which the SN site chat API publishes the
+     * active query locale (as a {@link java.util.Locale#toLanguageTag}
+     * IETF BCP 47 tag, e.g. {@code "pt-BR"}). Consumed by
+     * {@code TurRagSearchToolService} when the agent's
+     * {@code ragBm25Source} is {@code SE_INSTANCE}: the per-locale RAG
+     * BM25 core for this tag is the one the tool routes the keyword
+     * pass to. Empty / missing → falls back to the EMBEDDED path so the
+     * tool still returns something (degraded — no per-locale tokenization).
+     *
+     * <p>Only populated on the SN site chat API path. The standalone
+     * agent-chat endpoint doesn't set it, by design — RAG isn't a
+     * supported tool outside SN site context (see the T19/T24
+     * architectural-reposition note in IMPROVEMENTS.md).
+     *
+     * @since 2026.2.7
+     */
+    public static final String TOOL_CONTEXT_LOCALE = "turing.locale";
+
     private final TurCustomToolRepositoryPort repositoryPort;
     private final TurCustomToolSearchHelper searchHelper;
     private final TurChatFlowStateRepository stateRepository;

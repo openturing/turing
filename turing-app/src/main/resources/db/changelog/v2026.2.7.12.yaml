@@ -1,0 +1,100 @@
+databaseChangeLog:
+  # T24b / §III.2 — rag_bm25_core table.
+  #
+  # Tracks the per-(store, locale) BM25 cores that complement the vector
+  # store for hybrid retrieval. Each row points at a dedicated core/index
+  # in the configured TurSEInstance (Solr, Elasticsearch, or Lucene). The
+  # core holds the SAME chunk IDs as the vector store referenced by
+  # store_instance_id but tokenized through the locale-appropriate
+  # analyzer chain and scored via BM25.
+  #
+  # Lifecycle:
+  #   NOT_PROVISIONED → PROVISIONING → PROVISIONED
+  #                                  ↘ ERROR (transient — admin can retry)
+  #   PROVISIONED → DELETING → row removed
+  #
+  # Naming convention: core_name = "rag_<storeShortId>_<localeTag>"
+  # (e.g. "rag_a3b2c1d4_pt-BR"). The "rag_" prefix is load-bearing —
+  # TurSNSiteSearchAPI filters these cores out so RAG content stays
+  # private (not indexed in public SN site search results).
+
+  - changeSet:
+      id: v2026.2.7.12-create-rag-bm25-core
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: rag_bm25_core
+      changes:
+        - createTable:
+            tableName: rag_bm25_core
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: store_instance_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rag_bm25_core_store_instance
+                    references: store_instance(id)
+              - column:
+                  name: se_instance_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rag_bm25_core_se_instance
+                    references: se_instance(id)
+              - column:
+                  name: locale
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: core_name
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: NOT_PROVISIONED
+                  constraints:
+                    nullable: false
+              - column:
+                  name: doc_count
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_error
+                  type: VARCHAR(2000)
+              - column:
+                  name: createdAt
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updatedAt
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: v2026.2.7.12-add-unique-store-locale
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: rag_bm25_core
+      changes:
+        - addUniqueConstraint:
+            tableName: rag_bm25_core
+            columnNames: store_instance_id, locale
+            constraintName: uq_rag_bm25_core_store_locale

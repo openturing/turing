@@ -128,6 +128,129 @@ public interface TurSearchEnginePlugin {
 
     boolean commit(TurSNSite turSNSite, Locale locale);
 
+    // ---- Standalone index ops (T24b / §III.2 — RAG BM25 cores not tied to a TurSNSite) ----
+
+    /**
+     * T24b — index a document into a standalone index/core that doesn't
+     * belong to any {@link TurSNSite}. Used by the RAG hybrid path to push
+     * chunks into per-locale BM25 cores created via
+     * {@link #createStandaloneIndex(TurSEInstance, Locale, String)}.
+     *
+     * <p>The default throws {@link UnsupportedOperationException} so a
+     * plugin that hasn't implemented standalone indexing fails loudly at
+     * runtime instead of silently dropping documents. Each plugin that
+     * supports it (Solr, ES, embedded Lucene) overrides.
+     *
+     * @param seInstance the search engine instance hosting the core
+     * @param indexName  the core/index name (e.g. {@code rag_a3b2c1d4_pt-BR})
+     * @param attributes the document body, including a non-null {@code id}
+     *                   field used for upsert/dedup
+     * @return {@code true} when the document was accepted by the SE
+     * @since 2026.2.7
+     */
+    default boolean indexStandaloneDocument(TurSEInstance seInstance, String indexName,
+            Map<String, Object> attributes) {
+        throw new UnsupportedOperationException(
+                "indexStandaloneDocument not supported by " + getPluginType());
+    }
+
+    /**
+     * T24b — batch version of {@link #indexStandaloneDocument} for the
+     * RAG indexer's per-locale chunk push. Default implementation loops
+     * over the single-doc method; plugins that benefit from a multi-doc
+     * round-trip (Solr's update endpoint, ES's _bulk) should override.
+     *
+     * @return number of documents successfully indexed
+     * @since 2026.2.7
+     */
+    default int indexStandaloneDocuments(TurSEInstance seInstance, String indexName,
+            List<Map<String, Object>> documents) {
+        int indexed = 0;
+        for (Map<String, Object> doc : documents) {
+            if (indexStandaloneDocument(seInstance, indexName, doc)) {
+                indexed++;
+            }
+        }
+        return indexed;
+    }
+
+    /**
+     * T24b — delete a single document by id from a standalone index/core.
+     * Used when an asset is unindexed (its chunks need to be removed from
+     * every per-locale BM25 core that mirrors the vector store).
+     *
+     * @since 2026.2.7
+     */
+    default boolean deIndexStandalone(TurSEInstance seInstance, String indexName, String id) {
+        throw new UnsupportedOperationException(
+                "deIndexStandalone not supported by " + getPluginType());
+    }
+
+    /**
+     * T24b — delete all documents in a standalone index/core matching a
+     * field value. Used by the indexer's "reindex an asset" path: delete
+     * all chunks with {@code assetId=<id>} before pushing the new ones,
+     * so partial deletions / re-chunkings don't leave orphans.
+     *
+     * @since 2026.2.7
+     */
+    default boolean deIndexStandaloneByField(TurSEInstance seInstance, String indexName,
+            String fieldName, String fieldValue) {
+        throw new UnsupportedOperationException(
+                "deIndexStandaloneByField not supported by " + getPluginType());
+    }
+
+    /**
+     * T24b — flush pending writes to a standalone index/core. The standard
+     * (SN site) {@link #commit(TurSNSite, Locale)} path inherits per-locale
+     * routing from the site; standalone cores don't have that wrapper, so
+     * we expose a sibling commit by index name. Plugins that auto-commit
+     * (ES with refresh policy, Solr in soft-commit mode) can no-op.
+     *
+     * @return {@code true} on successful commit (or no-op for auto-commit)
+     * @since 2026.2.7
+     */
+    default boolean commitStandalone(TurSEInstance seInstance, String indexName) {
+        // No-op default — Solr explicit-commit and Lucene embedded
+        // override; ES near-real-time refresh makes the commit step
+        // unnecessary at this layer.
+        return true;
+    }
+
+    /**
+     * T24b — BM25 search over a standalone index/core. Returns the top
+     * {@code topK} hits, sorted by descending relevance score (each
+     * plugin's native BM25 — Lucene under Solr/ES uses
+     * {@code k1=1.2, b=0.75} by default; admins can tune via the SE's
+     * own config, see {@code docs/RAG_HYBRID_CONFIG.md} in Phase 5).
+     *
+     * <p>Used by {@code TurRagSearchToolService} on the SE-backed
+     * production hybrid path: the tool dispatches to the per-locale core
+     * (resolved via {@link com.viglet.turing.persistence.model.rag.TurRagBm25Core}),
+     * gets a ranked list, and feeds it to the RRF fuser together with
+     * the vector-store list.
+     *
+     * <p>{@code query} is a raw user query (Lucene QueryParser syntax NOT
+     * exposed at this layer — plugins should escape special chars and
+     * parse as a default-text-field BM25 search). Empty / null queries
+     * return an empty list, not throw.
+     *
+     * <p>Default throws {@link UnsupportedOperationException} so a
+     * plugin that hasn't implemented standalone search fails loudly at
+     * runtime. Solr and Elasticsearch override; Lucene-embedded SE
+     * doesn't (admins on that engine use the T24 base embedded path
+     * via {@code TurLuceneVectorStore.hybridSearch}).
+     *
+     * @return up to {@code topK} hits, sorted by relevance descending;
+     *         empty list when the query is blank or returns no matches
+     * @since 2026.2.7
+     */
+    default List<TurSEStandaloneHit> retrieveStandalone(TurSEInstance seInstance, String indexName,
+            String query, int topK) {
+        throw new UnsupportedOperationException(
+                "retrieveStandalone not supported by " + getPluginType());
+    }
+
     // ---- Copy field (Solr-specific; no-op for schema-less engines) -------
 
     /**

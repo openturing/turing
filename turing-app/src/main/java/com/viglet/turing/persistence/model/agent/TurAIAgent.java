@@ -118,51 +118,14 @@ public class TurAIAgent implements Serializable {
     @Column(name = "chatMode", length = 16, nullable = false)
     private TurAgentChatMode chatMode = TurAgentChatMode.CALL;
 
-    /**
-     * T19 / §III.3 — per-agent opt-out for the BM25 emergency fallback in
-     * {@code search_knowledge_base}. When {@code true} (default), if the
-     * vector top-1 cosine score is below {@code MIN_VECTOR_CONFIDENCE},
-     * {@link com.viglet.turing.genai.tool.TurRagSearchToolService}
-     * retries the query as BM25 over {@code FIELD_CONTENT} and prepends a
-     * keyword-only warning header. When {@code false}, vector misses
-     * return "no results" directly — appropriate for agents whose corpora
-     * are tightly domain-scoped and where a keyword-match noise floor
-     * does more harm than the recall it buys.
-     *
-     * <p>Default {@code true} matches the post-T19 ship behavior; agents
-     * that prefer strict semantic-only retrieval flip this in the
-     * settings form.
-     *
-     * @since 2026.2.7
-     */
-    @Column(name = "ragBm25Fallback", nullable = false)
-    private boolean ragBm25Fallback = true;
-
-    /**
-     * T24 / §III.2 — when {@code true} (default) AND
-     * {@link #ragBm25Fallback} is also {@code true}, RAG retrieval runs
-     * BOTH vector KNN and BM25 over {@code FIELD_CONTENT} in parallel and
-     * fuses the two ranked lists via Reciprocal Rank Fusion ({@code k=60}).
-     * The fused list catches morphology/rare-term queries the embedding
-     * model misses AND semantic queries the keyword pass misses, with
-     * docs in both ranked highest.
-     *
-     * <p>When {@code false} (legacy T19 behavior), BM25 is only triggered
-     * as an emergency fallback when the vector top-1 score is below
-     * {@code MIN_VECTOR_CONFIDENCE} — quieter retrieval, but misses the
-     * complementarity hybrid offers.
-     *
-     * <p>When {@link #ragBm25Fallback} itself is {@code false}, this
-     * flag is ignored entirely (no BM25 anywhere — strict vector only).
-     *
-     * <p>Default {@code true} matches the post-T24 ship behavior; agents
-     * that want the quieter T19 fallback semantics flip the toggle in
-     * the settings form.
-     *
-     * @since 2026.2.7
-     */
-    @Column(name = "ragHybridSearch", nullable = false)
-    private boolean ragHybridSearch = true;
+    // T19/T24 reposition (2026.2.7) — `ragBm25Fallback` and `ragHybridSearch`
+    // moved from TurAIAgent to TurSNSiteGenAi. Rationale: RAG only runs in
+    // SN site context (the SN site chat API is the only invocation path
+    // that exercises RAG), and locale-aware BM25 routing depends on
+    // TurSNSiteLocale which is owned by the SN site. The agent itself
+    // doesn't know what locales it supports, so per-agent flags here were
+    // a category error. See Liquibase v2026.2.7.11.yaml for the column
+    // drop and v2026.2.7.11.yaml for the new fields on sn_site_genai.
 
     /**
      * Optional agent-specific Python {@code requirements.txt} addendum.

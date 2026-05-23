@@ -34,14 +34,18 @@ class TurRagSearchToolServiceTest {
     @Mock
     private TurAssetTrainingRecordRepository trainingRecordRepository;
     @Mock
-    private com.viglet.turing.persistence.repository.agent.TurAIAgentRepository agentRepository;
+    private com.viglet.turing.persistence.repository.sn.genai.TurSNSiteGenAiRepository snSiteGenAiRepository;
+    @Mock
+    private com.viglet.turing.persistence.repository.rag.TurRagBm25CoreRepository ragBm25CoreRepository;
+    @Mock
+    private com.viglet.turing.plugins.se.TurSearchEnginePluginFactory searchEnginePluginFactory;
 
     private TurRagSearchToolService service;
 
     @BeforeEach
     void setUp() {
         service = new TurRagSearchToolService(globalSettingsService, ragContextBuilder, trainingRecordRepository,
-                agentRepository);
+                snSiteGenAiRepository, ragBm25CoreRepository, searchEnginePluginFactory);
     }
 
     @Test
@@ -575,5 +579,313 @@ class TurRagSearchToolServiceTest {
 
         String result = service.listKnowledgeBaseFiles("fail", null);
         assertThat(result).contains("Error listing knowledge base files");
+    }
+
+    // --- T24b §III.2: SE_INSTANCE hybrid retrieval path ---
+    //
+    // The flag combo {ragBm25Fallback=true, ragHybridSearch=true,
+    // ragBm25Source=SE_INSTANCE, ragSeInstance!=null} must:
+    //   (a) lookup TurRagBm25Core by (storeInstanceId, locale from ToolContext)
+    //   (b) run vector + plugin.retrieveStandalone in parallel
+    //   (c) fuse via RRF (verified via TurRagRrfTest; here we assert
+    //       the routing + degradation contract).
+
+    @Test
+    void seHybridShouldDegradeToVectorOnlyWhenNoProvisionedCore() {
+        // Setup: agent flags say SE_INSTANCE, but the (store, locale) core
+        // is missing from the repository → vector-only fallback path.
+        when(globalSettingsService.isRagEnabled()).thenReturn(true);
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+
+        var mockVectorStore = org.mockito.Mockito.mock(org.springframework.ai.vectorstore.VectorStore.class);
+        var mockStoreInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+        when(mockStoreInstance.getId()).thenReturn("store-1");
+        TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                mockVectorStore,
+                org.mockito.Mockito.mock(org.springframework.ai.embedding.EmbeddingModel.class),
+                org.mockito.Mockito.mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class),
+                mockStoreInstance, "cred", "collection");
+        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.of(infra));
+
+        // Binding with SE_INSTANCE source pointing at an SE instance, no core
+        // provisioned yet for the requested locale.
+        var binding = new com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi();
+        binding.setRagBm25Fallback(true);
+        binding.setRagHybridSearch(true);
+        binding.setRagBm25Source(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+        var seInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.se.TurSEInstance.class);
+        binding.setRagSeInstance(seInstance);
+        when(snSiteGenAiRepository.findByTurAIAgent_Id("agent-1")).thenReturn(List.of(binding));
+
+        when(ragBm25CoreRepository.findByTurStoreInstance_IdAndLocale(
+                "store-1", java.util.Locale.forLanguageTag("pt-BR")))
+                .thenReturn(java.util.Optional.empty());
+
+        // Vector-only fallback returns one doc.
+        var doc = new org.springframework.ai.document.Document("Some text",
+                java.util.Map.of("objectName", "doc.pdf", "contentType", "application/pdf"));
+        when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
+                org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(doc));
+
+        var toolContext = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID, "agent-1",
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "pt-BR"));
+
+        String result = service.searchKnowledgeBase("query", 5, toolContext);
+
+        assertThat(result)
+                .contains("Found 1 relevant document")
+                .contains("doc.pdf");
+        // No SE plugin lookup should be attempted because the core was missing.
+        org.mockito.Mockito.verifyNoInteractions(searchEnginePluginFactory);
+    }
+
+    @Test
+    void seHybridShouldDegradeWhenCoreIsNotProvisioned() {
+        // Core row exists but its lifecycle status is not PROVISIONED yet
+        // (provisioning in progress, errored, or pending cleanup) — same
+        // degradation contract as missing-row.
+        when(globalSettingsService.isRagEnabled()).thenReturn(true);
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+
+        var mockVectorStore = org.mockito.Mockito.mock(org.springframework.ai.vectorstore.VectorStore.class);
+        var mockStoreInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+        when(mockStoreInstance.getId()).thenReturn("store-1");
+        TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                mockVectorStore,
+                org.mockito.Mockito.mock(org.springframework.ai.embedding.EmbeddingModel.class),
+                org.mockito.Mockito.mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class),
+                mockStoreInstance, "cred", "collection");
+        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.of(infra));
+
+        var binding = new com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi();
+        binding.setRagBm25Fallback(true);
+        binding.setRagHybridSearch(true);
+        binding.setRagBm25Source(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+        binding.setRagSeInstance(org.mockito.Mockito.mock(com.viglet.turing.persistence.model.se.TurSEInstance.class));
+        when(snSiteGenAiRepository.findByTurAIAgent_Id("agent-1")).thenReturn(List.of(binding));
+
+        var core = new com.viglet.turing.persistence.model.rag.TurRagBm25Core();
+        core.setStatus(com.viglet.turing.persistence.model.rag.TurRagBm25Core.Status.PROVISIONING);
+        when(ragBm25CoreRepository.findByTurStoreInstance_IdAndLocale(
+                "store-1", java.util.Locale.forLanguageTag("en-US")))
+                .thenReturn(java.util.Optional.of(core));
+
+        when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
+                org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(Collections.emptyList());
+
+        var toolContext = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID, "agent-1",
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "en-US"));
+
+        String result = service.searchKnowledgeBase("query", 5, toolContext);
+
+        assertThat(result).contains("No relevant documents found");
+        org.mockito.Mockito.verifyNoInteractions(searchEnginePluginFactory);
+    }
+
+    @Test
+    void seHybridShouldFuseVectorAndBm25HitsViaRrf() {
+        // Happy path: PROVISIONED core, plugin returns BM25 hits, RRF
+        // fuses both lists. We assert the BM25-only doc gets the
+        // keyword-only tag and the response includes both docs.
+        when(globalSettingsService.isRagEnabled()).thenReturn(true);
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+
+        var mockVectorStore = org.mockito.Mockito.mock(org.springframework.ai.vectorstore.VectorStore.class);
+        var mockStoreInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+        when(mockStoreInstance.getId()).thenReturn("store-1");
+        TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                mockVectorStore,
+                org.mockito.Mockito.mock(org.springframework.ai.embedding.EmbeddingModel.class),
+                org.mockito.Mockito.mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class),
+                mockStoreInstance, "cred", "collection");
+        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.of(infra));
+
+        var seInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.se.TurSEInstance.class);
+        var binding = new com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi();
+        binding.setRagBm25Fallback(true);
+        binding.setRagHybridSearch(true);
+        binding.setRagBm25Source(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+        binding.setRagSeInstance(seInstance);
+        when(snSiteGenAiRepository.findByTurAIAgent_Id("agent-1")).thenReturn(List.of(binding));
+
+        var core = new com.viglet.turing.persistence.model.rag.TurRagBm25Core();
+        core.setStatus(com.viglet.turing.persistence.model.rag.TurRagBm25Core.Status.PROVISIONED);
+        core.setCoreName("rag_store_pt-BR");
+        core.setTurSEInstance(seInstance);
+        when(ragBm25CoreRepository.findByTurStoreInstance_IdAndLocale(
+                "store-1", java.util.Locale.forLanguageTag("pt-BR")))
+                .thenReturn(java.util.Optional.of(core));
+
+        // Vector hits: one doc that ALSO appears in BM25 (id=vec-shared).
+        var vecDoc = org.springframework.ai.document.Document.builder()
+                .id("vec-shared")
+                .text("Vector text")
+                .metadata(java.util.Map.of("objectName", "shared.pdf", "contentType", "application/pdf"))
+                .score(0.8)
+                .build();
+        when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
+                org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(vecDoc));
+
+        // BM25 hits: the shared doc + one BM25-exclusive doc.
+        var plugin = org.mockito.Mockito.mock(com.viglet.turing.plugins.se.TurSearchEnginePlugin.class);
+        when(searchEnginePluginFactory.getPluginForInstance(seInstance)).thenReturn(plugin);
+        when(plugin.retrieveStandalone(seInstance, "rag_store_pt-BR", "query", 5)).thenReturn(List.of(
+                new com.viglet.turing.plugins.se.TurSEStandaloneHit("vec-shared", "BM25 text",
+                        java.util.Map.of("objectName", "shared.pdf", "contentType", "application/pdf"), 5.0),
+                new com.viglet.turing.plugins.se.TurSEStandaloneHit("bm-only", "Keyword-only text",
+                        java.util.Map.of("objectName", "kw.txt", "contentType", "text/plain"), 3.0)));
+
+        var toolContext = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID, "agent-1",
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "pt-BR"));
+
+        String result = service.searchKnowledgeBase("query", 5, toolContext);
+
+        // Both files appear in the output; only the BM25-exclusive one
+        // triggers the keyword-only warning header (since the shared doc
+        // was vector-confirmed → tag stripped by RRF).
+        assertThat(result)
+                .contains("shared.pdf")
+                .contains("kw.txt")
+                .doesNotContain("KEYWORD-ONLY MATCH"); // not allKeywordOnly — vector confirmed shared
+    }
+
+    @Test
+    void seHybridShouldDegradeWhenPluginThrows() {
+        // SE plugin raises (network down, core gone) — degrade to vector-only.
+        // The contract: tool MUST NOT bubble the exception to the LLM.
+        when(globalSettingsService.isRagEnabled()).thenReturn(true);
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+
+        var mockVectorStore = org.mockito.Mockito.mock(org.springframework.ai.vectorstore.VectorStore.class);
+        var mockStoreInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+        when(mockStoreInstance.getId()).thenReturn("store-1");
+        TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                mockVectorStore,
+                org.mockito.Mockito.mock(org.springframework.ai.embedding.EmbeddingModel.class),
+                org.mockito.Mockito.mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class),
+                mockStoreInstance, "cred", "collection");
+        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.of(infra));
+
+        var seInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.se.TurSEInstance.class);
+        var binding = new com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi();
+        binding.setRagBm25Fallback(true);
+        binding.setRagHybridSearch(true);
+        binding.setRagBm25Source(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+        binding.setRagSeInstance(seInstance);
+        when(snSiteGenAiRepository.findByTurAIAgent_Id("agent-1")).thenReturn(List.of(binding));
+
+        var core = new com.viglet.turing.persistence.model.rag.TurRagBm25Core();
+        core.setStatus(com.viglet.turing.persistence.model.rag.TurRagBm25Core.Status.PROVISIONED);
+        core.setCoreName("rag_store_pt-BR");
+        core.setTurSEInstance(seInstance);
+        when(ragBm25CoreRepository.findByTurStoreInstance_IdAndLocale(
+                "store-1", java.util.Locale.forLanguageTag("pt-BR")))
+                .thenReturn(java.util.Optional.of(core));
+
+        var doc = org.springframework.ai.document.Document.builder()
+                .id("vec-1")
+                .text("Vector text")
+                .metadata(java.util.Map.of("objectName", "vec.pdf", "contentType", "application/pdf"))
+                .score(0.9)
+                .build();
+        when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
+                org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(List.of(doc));
+
+        var plugin = org.mockito.Mockito.mock(com.viglet.turing.plugins.se.TurSearchEnginePlugin.class);
+        when(searchEnginePluginFactory.getPluginForInstance(seInstance)).thenReturn(plugin);
+        when(plugin.retrieveStandalone(seInstance, "rag_store_pt-BR", "query", 5))
+                .thenThrow(new RuntimeException("Connection refused"));
+
+        var toolContext = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID, "agent-1",
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "pt-BR"));
+
+        String result = service.searchKnowledgeBase("query", 5, toolContext);
+
+        // Vector-only fallback fused via RRF with empty BM25 list — the
+        // vector doc still surfaces.
+        assertThat(result)
+                .contains("vec.pdf");
+    }
+
+    @Test
+    void seInstanceFlagButNoSeInstanceShouldFallToEmbeddedPath() {
+        // Defensive: source=SE_INSTANCE but ragSeInstance is null (admin
+        // toggled the flag without binding an SE). The tool MUST NOT
+        // attempt the SE path — it falls through to the embedded /
+        // vector-only path. We assert no plugin factory call happens.
+        when(globalSettingsService.isRagEnabled()).thenReturn(true);
+        when(globalSettingsService.getDefaultEmbeddingModelId()).thenReturn("emb-1");
+        when(globalSettingsService.getDefaultEmbeddingStoreId()).thenReturn("store-1");
+
+        var mockVectorStore = org.mockito.Mockito.mock(org.springframework.ai.vectorstore.VectorStore.class);
+        var mockStoreInstance = org.mockito.Mockito.mock(com.viglet.turing.persistence.model.store.TurStoreInstance.class);
+        // Note: mockStoreInstance.getId() is NOT stubbed — the defensive
+        // check (seInstance == null) short-circuits before any storeId
+        // resolution, so the call shouldn't happen at all.
+        TurRagContextBuilder.RagInfrastructure infra = new TurRagContextBuilder.RagInfrastructure(
+                mockVectorStore,
+                org.mockito.Mockito.mock(org.springframework.ai.embedding.EmbeddingModel.class),
+                org.mockito.Mockito.mock(com.viglet.turing.genai.provider.store.TurGenAiStoreProvider.class),
+                mockStoreInstance, "cred", "collection");
+        when(ragContextBuilder.buildFromGlobalSettings()).thenReturn(java.util.Optional.of(infra));
+
+        var binding = new com.viglet.turing.persistence.model.sn.genai.TurSNSiteGenAi();
+        binding.setRagBm25Fallback(true);
+        binding.setRagHybridSearch(true);
+        binding.setRagBm25Source(com.viglet.turing.persistence.model.rag.TurRagBm25Source.SE_INSTANCE);
+        binding.setRagSeInstance(null); // <- the misconfiguration
+        when(snSiteGenAiRepository.findByTurAIAgent_Id("agent-1")).thenReturn(List.of(binding));
+
+        // Vector pass returns one doc; tool falls back through the legacy
+        // vector path (vectorStore is not a TurLuceneVectorStore mock so
+        // useEmbeddedHybrid is also false).
+        when(mockVectorStore.similaritySearch(org.mockito.ArgumentMatchers.any(
+                org.springframework.ai.vectorstore.SearchRequest.class))).thenReturn(Collections.emptyList());
+
+        var toolContext = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_AGENT_ID, "agent-1",
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "pt-BR"));
+
+        service.searchKnowledgeBase("query", 5, toolContext);
+
+        // The defensive flag check means we never even look up the core
+        // for this misconfigured binding.
+        org.mockito.Mockito.verifyNoInteractions(searchEnginePluginFactory, ragBm25CoreRepository);
+    }
+
+    @Test
+    void resolveLocaleShouldFallBackToRootWhenContextIsNull() throws Exception {
+        java.lang.reflect.Method m = TurRagSearchToolService.class.getDeclaredMethod(
+                "resolveLocale", org.springframework.ai.chat.model.ToolContext.class);
+        m.setAccessible(true);
+        assertThat(m.invoke(null, (Object) null)).isEqualTo(java.util.Locale.ROOT);
+    }
+
+    @Test
+    void resolveLocaleShouldFallBackToRootWhenTagIsBlank() throws Exception {
+        java.lang.reflect.Method m = TurRagSearchToolService.class.getDeclaredMethod(
+                "resolveLocale", org.springframework.ai.chat.model.ToolContext.class);
+        m.setAccessible(true);
+        var ctx = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, ""));
+        assertThat(m.invoke(null, ctx)).isEqualTo(java.util.Locale.ROOT);
+    }
+
+    @Test
+    void resolveLocaleShouldParseBcp47Tag() throws Exception {
+        java.lang.reflect.Method m = TurRagSearchToolService.class.getDeclaredMethod(
+                "resolveLocale", org.springframework.ai.chat.model.ToolContext.class);
+        m.setAccessible(true);
+        var ctx = new org.springframework.ai.chat.model.ToolContext(java.util.Map.of(
+                TurCustomToolCallbackService.TOOL_CONTEXT_LOCALE, "pt-BR"));
+        assertThat(m.invoke(null, ctx)).isEqualTo(java.util.Locale.forLanguageTag("pt-BR"));
     }
 }

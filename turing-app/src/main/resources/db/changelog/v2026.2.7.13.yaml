@@ -1,0 +1,60 @@
+databaseChangeLog:
+  # T24b / §III.2 — ragBm25Source + rag_se_instance_id on sn_site_genai.
+  #
+  # ragBm25Source picks where the BM25 half of hybrid retrieval lives:
+  #   EMBEDDED    — single in-process Lucene index (T24 base, default).
+  #   SE_INSTANCE — per-locale cores in the configured TurSEInstance
+  #                 (T24b production multi-language path).
+  #
+  # rag_se_instance_id points at the TurSEInstance hosting those cores
+  # when source = SE_INSTANCE; null on EMBEDDED. The FK uses ON DELETE
+  # SET NULL so deleting a search engine instance demotes any RAG
+  # bindings to EMBEDDED automatically rather than cascading the
+  # delete into sn_site_genai.
+
+  - changeSet:
+      id: v2026.2.7.13-add-sn-site-genai-rag-bm25-source
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: ragBm25Source
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: ragBm25Source
+                  type: VARCHAR(16)
+                  defaultValue: EMBEDDED
+                  constraints:
+                    nullable: false
+                  remarks: "T24b/§III.2 selects BM25 backing for hybrid: EMBEDDED (default, in-process Lucene) or SE_INSTANCE (per-locale Solr/ES cores)."
+
+  - changeSet:
+      id: v2026.2.7.13-add-sn-site-genai-rag-se-instance
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: sn_site_genai
+        - not:
+            - columnExists:
+                tableName: sn_site_genai
+                columnName: rag_se_instance_id
+      changes:
+        - addColumn:
+            tableName: sn_site_genai
+            columns:
+              - column:
+                  name: rag_se_instance_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_sn_site_genai_rag_se_instance
+                    references: se_instance(id)
+                    deleteCascade: false
