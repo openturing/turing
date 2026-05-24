@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
+import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 import com.viglet.turing.persistence.model.llm.TurLLMInstance;

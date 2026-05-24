@@ -21,7 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionExecutionListener;
 
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
-import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
+import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
 
 /**

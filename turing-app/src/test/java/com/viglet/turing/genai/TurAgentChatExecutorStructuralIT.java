@@ -21,7 +21,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import com.viglet.turing.genai.persona.TurAgentPersonaResolver;
 import com.viglet.turing.genai.testsupport.AbstractAgentExecutorIT;
-import com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport;
+import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
 
 /**
  * Structural integration tests for {@link TurAgentChatExecutor}. Locks
@@ -596,7 +596,7 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
      *   Estado:  parked em {@code ai-coupon-code}; agent com Custom Tool
      *            stub {@code compor_proposta_in_company} attached.
      *   Entrada: user msg = "MEU-CUPOM-123"
-     *   Mocks:   {@link com.viglet.turing.genai.testsupport.TurAgentChatExecutorMockSupport.ChatModelHarness#queueResponse}
+     *   Mocks:   {@link com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport.ChatModelHarness#queueResponse}
      *            ("ack qualquer") para o initial call.
      *            Tool stub registra invocações via Mockito spy (criar o agent
      *            com um Custom Tool real cujo Groovy script faz nada, ou

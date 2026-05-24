@@ -52,7 +52,7 @@ import lombok.Setter;
  *   rag_{storeInstanceShortId}_{localeTag}
  * </pre>
  * where {@code storeInstanceShortId} is the first 8 characters of the
- * {@link TurStoreInstance#getId()} UUID (enough for uniqueness inside
+ * {@link TurStoreInstance} id UUID (enough for uniqueness inside
  * a single Turing deployment), and {@code localeTag} is the IETF BCP 47
  * tag (e.g. {@code pt-BR}, {@code en-US}). The {@code rag_} prefix is
  * load-bearing: it lets {@code TurSNSiteSearchAPI} filter these cores

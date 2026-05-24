@@ -7,7 +7,7 @@
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  */
-package com.viglet.turing.genai.testsupport;
+package com.viglet.testsupport.genai.executor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -40,6 +40,25 @@ import reactor.core.publisher.Flux;
  * tests of {@link com.viglet.turing.genai.TurAgentChatExecutor}. Replaces the
  * production {@link TurLlmModelFactory} with a {@code @Primary} mock factory
  * that returns a Mockito {@link ChatModel} controlled by {@link ChatModelHarness}.
+ *
+ * <h2>Why this class lives under {@code com.viglet.testsupport.*}</h2>
+ *
+ * {@code @TestConfiguration} (meta-annotated with {@code @TestComponent}) is
+ * <b>auto-discovered</b> by every {@code @SpringBootTest} whose
+ * {@code @SpringBootApplication} root scans this class's package. When this
+ * class previously lived under {@code com.viglet.turing.genai.testsupport} —
+ * inside the {@code com.viglet.turing} scan owned by {@code TuringES} — it
+ * silently registered its {@code @Primary} mock factory in EVERY
+ * {@code @SpringBootTest} context, including ITs that wanted the real
+ * {@code TurLlmModelFactory} (e.g. {@code TurAgentChatLatencyIT}). The
+ * result: empty chat responses with no exception, ~10ms LLM "round trips",
+ * and hours of head-scratching.
+ *
+ * <p>Moving the class out of the {@code com.viglet.turing.*} subtree keeps
+ * it OFF the production scan path so it can only enter a test context via
+ * an explicit {@code @Import(TurAgentChatExecutorMockSupport.class)}. The
+ * {@link Bean @Bean} contract is unchanged — tests that want the mock keep
+ * working unchanged; tests that don't (now) get the real factory.
  *
  * <h2>What this enables</h2>
  *

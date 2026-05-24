@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import com.viglet.testsupport.genai.executor.TurAgentChatExecutorMockSupport;
 import com.viglet.turing.genai.TurAgentChatExecutor;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatResponse;

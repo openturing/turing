@@ -61,9 +61,9 @@ import lombok.extern.slf4j.Slf4j;
  * merged before the substitution — the user sees one {@code [***]}, not
  * three concatenated masks.
  *
- * <p>Forbidden terms are pipe-separated in
- * {@link TurPersona#getForbiddenTerms()} because individual terms may
- * legitimately contain commas.
+ * <p>Forbidden terms are pipe-separated in {@link TurPersona}'s
+ * {@code forbiddenTerms} field (Lombok-generated {@code getForbiddenTerms()})
+ * because individual terms may legitimately contain commas.
  *
  * @author Alexandre Oliveira
  * @since 2026.2.6

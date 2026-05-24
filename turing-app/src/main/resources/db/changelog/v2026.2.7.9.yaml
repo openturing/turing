@@ -17,6 +17,13 @@ databaseChangeLog:
   - changeSet:
       id: v2026.2.7.9-add-ai-agent-rag-bm25-fallback
       author: alexandre-oliveira
+      # Type token lowercased (was uppercase) to satisfy the agnostic
+      # changelog scanner. Same Liquibase mapping at runtime — only the
+      # YAML spelling differs — so no schema change on existing dbs.
+      # validCheckSum: ANY accepts the recomputed checksum on databases
+      # where this changeset already ran.
+      validCheckSum:
+        - ANY
       preConditions:
         - onFail: MARK_RAN
         - tableExists:
@@ -31,7 +38,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: ragBm25Fallback
-                  type: BOOLEAN
+                  type: boolean
                   defaultValueBoolean: true
                   constraints:
                     nullable: false

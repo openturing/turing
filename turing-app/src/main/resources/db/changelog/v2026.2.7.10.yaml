@@ -21,6 +21,10 @@ databaseChangeLog:
   - changeSet:
       id: v2026.2.7.10-add-ai-agent-rag-hybrid-search
       author: alexandre-oliveira
+      # See v2026.2.7.9.yaml for the type-lowercase rationale and
+      # validCheckSum: ANY usage.
+      validCheckSum:
+        - ANY
       preConditions:
         - onFail: MARK_RAN
         - tableExists:
@@ -35,7 +39,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: ragHybridSearch
-                  type: BOOLEAN
+                  type: boolean
                   defaultValueBoolean: true
                   constraints:
                     nullable: false
