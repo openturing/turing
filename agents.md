@@ -85,6 +85,10 @@ mvn clean install
 
 ### Liquibase Conventions
 
+- The user may run the app between turns; editing a changeset that may already
+  have run breaks Liquibase checksums. Fix follow-ups with a new changelog file
+  instead of changing the prior one.
+
 - **Always create a new file** — never modify existing changelog files
 - Naming: `v{currentVersion}.{subversion}.yaml` with incremental subversion (e.g., if current version is `2026.1.14` and `v2026.1.14.0.yaml` exists, the next file is `v2026.1.14.1.yaml`)
 - Include in `db.changelog-master.yaml`
@@ -92,6 +96,9 @@ mvn clean install
 - Column size changes: use `modifyDataType`; new data: use `insert`
 - **Column names must match the JPA field name exactly** (camelCase) — see "JPA & Database Column Naming" above
 - **Large text columns**: use `longtext` instead of `clob` — `longtext` is compatible with H2, MySQL, and PostgreSQL, while `clob` may not map correctly on MySQL
+
+- Use lowercase portable Liquibase types (`boolean`, `longtext`), not uppercase
+  `BOOLEAN`/`CLOB`; `TurLiquibaseChangelogAgnosticTest` checks this.
 
 ### Visual Identity & Brand Colors
 
@@ -119,6 +126,15 @@ mvn clean install
 - Services: class-based in `src/services/`, use `axios` for REST, native `fetch` for SSE streaming
 - Models: TypeScript interfaces in `src/models/`
 - CSRF: For non-axios requests, read `XSRF-TOKEN` cookie or fetch from `/csrf` endpoint
+- Place `useCallback`/`useMemo` after the hooks and values they depend on.
+  Destructured hook values are bound at their line, not hoisted; using them
+  earlier can create a runtime TDZ that TypeScript may not catch.
+- Do not assign to an outer variable inside a `setState` updater and read it on
+  the next line. React queues the updater for commit; use a `useRef` mirror when
+  synchronous access is needed.
+- Avoid `import * as Icons` plus dynamic property access in Vite/Rolldown. That
+  pattern disables tree-shaking and keeps every export. Use static imports or
+  Iconify for runtime icon lookup.
 
 #### Data fetching with React Query (since 2026.2.6)
 
@@ -189,6 +205,16 @@ Every new IT that boots the full Spring context **must** either:
 
 **Why per-JVM Artemis data dir matters**: the production default is `spring.artemis.embedded.data-directory=store/queue` — a CWD-relative path. With embedded Artemis + `persistent: true`, two JVMs sharing that path (e.g. a running app + a forked Surefire IT, or two parallel ITs) compete for `server.lock` and serialize through `FileLockNodeManager`'s sleep-retry loop. Symptom: the IT hangs on Spring context startup with no error logged, until you `Stop-Process` the other JVM. `AbstractTuringSpringIT` redirects this to a unique per-JVM temp dir, eliminating the class of bug entirely.
 
+`AbstractTuringSpringIT` also sets
+`spring.artemis.embedded.persistent=false`. Keep it that way: multiple cached
+Spring contexts in the same Maven fork can otherwise share the per-JVM Artemis
+directory and block for minutes on `FileLockNodeManager`.
+
+`@TestConfiguration` classes with `@Primary` mocks must live outside the main
+component scan (`com.viglet.turing.*`). Put reusable test config under
+`com.viglet.testsupport.*`; otherwise a mock can leak into every
+`@SpringBootTest`.
+
 #### JPA fetch strategy: LAZY by default
 
 **Always use `FetchType.LAZY` for associations.** This is a project-wide rule, not a per-case decision.
@@ -219,6 +245,24 @@ Every new IT that boots the full Spring context **must** either:
 - Spring AI 1.1.2: `AzureOpenAiEmbeddingModel` has no builder — use constructor
 - Anthropic and Gemini providers don't support embedding — throw `UnsupportedOperationException`
 - Frontend npm builds may fail with EBUSY on Windows if IDE locks files — use `-Dskip.npm=true` for backend-only testing
+
+### Search Engine & Lucene Notes
+
+- `TurSearchEnginePlugin` is the search-engine plugin lifecycle interface;
+  resolve plugins through `TurSearchEnginePluginFactory` (`getPluginForSite`,
+  `getPluginForInstance`, `getPlugin(String type)`). Plugin type strings come
+  from `getPluginType()` and are lowercased.
+- The Lucene search-engine plugin lives under
+  `turing-app/src/main/java/com/viglet/turing/lucene/` and uses Lucene 10.
+  Lucene 10 removed `FacetsCollector.search()`; do not use it.
+- `TopScoreDocCollector.create(int, int)` does not exist in Lucene 10. Use
+  separate `searcher.search()` calls where needed.
+- `TurSNSiteFieldExt.getFacet()`, `getEnabled()`, and `getMultiValued()` are
+  primitive `int` flags; compare with `== 1`, not null checks. Only
+  `getFacetPosition()` is nullable.
+- The embedded Lucene vector store is separate from the search-engine Lucene
+  plugin. It is exposed through `TurLuceneStoreProvider` with plugin type
+  `lucene`.
 
 ### Pluggable Storage Architecture
 
@@ -298,6 +342,26 @@ The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `ove
 - `react-resizable-panels` injects an internal wrapper `div` with `style="overflow: auto"` that cannot be controlled via props
 - `overflowHidden` prop applies `overflow: hidden` on the Panel element and `[&>div]:overflow-hidden!` (with `!important`) to override the inline style on the internal wrapper
 - Use `<ResizablePanel overflowHidden>` when the panel content manages its own scroll (e.g., a Card with `overflow-auto` on its body)
+- In `react-resizable-panels` v4, numeric sizes are pixels. Use strings for
+  percentages (`defaultSize="60"`), otherwise panels can render tiny/squeezed.
+
+### Cache, Scheduling & Serialization Notes
+
+- This project uses Jackson 3 in `turing-app`: imports are `tools.jackson.*`,
+  not `com.fasterxml.jackson.*`.
+- For Keycloak admin REST URL derivation, preserve the `issuer-uri` base path
+  (for example `/kc`); do not rebuild URLs from only scheme/host/realm.
+- Spring Boot 4 clustered cache requires `com.hazelcast:hazelcast-spring` for a
+  Hazelcast-backed `CacheManager`; without it Boot may silently fall back to
+  `ConcurrentMapCacheManager`.
+- Cluster-wide-once `@Scheduled` jobs should use ShedLock via
+  `@SchedulerLock`; `TurSchedulerLockConfig` provides the Hazelcast-backed
+  `LockProvider`.
+- New queries on `TurSNSiteRepository` should follow the repository cache
+  convention: add `@Cacheable` and include the cache name in save/delete
+  `@CacheEvict` lists.
+- Write endpoints that load, mutate, save, and map `TurSNSite` should use
+  `findByIdNoCache`; cached entities can trigger lazy-init issues in mappers.
 
 ### Agent Operational Memory (Repository)
 
@@ -311,6 +375,25 @@ The `ResizablePanel` component (`components/ui/resizable.tsx`) has a custom `ove
 - In JUnit `@CsvSource`, quote regex values containing commas (for example `'1[.,]5B'`) and use `nullValues = "null"` when a true `null` is required.
 - In this Windows workspace, `py` may be unavailable; prefer `python` (for example `python -m py_compile ...`).
 - If `rg` is unavailable in PowerShell, use `Get-ChildItem` + `Select-String` for scripted searches.
+- Always route `ToolCallback[]` through `TurToolCallbackPipeline.decorate(...)`
+  before passing callbacks to a `ChatModel`. `@Tool` annotations may carry
+  placeholder descriptions; real tool descriptions live under
+  `prompts/tools/**/*.md`.
+- Avoid structured-output guardrails with `gpt-4o-mini`; it has historically
+  truncated JSON, dropped commas, or mixed fences even with schema guidance.
+  Prefer provider tool calling with schema, or the bilingual `LlmJudge` path.
+- When executing the multi-phase test plan in `docs/IMPROVEMENTS.md`, do not
+  mark a task done for skeleton-only tests that still contain `fail()` or only
+  `@Disabled`. Implement real assertions first.
+
+### Frontend Authoring & Design System Notes
+
+- AI authoring side-by-side mode uses one global `ResizablePanelGroup` in
+  `ConsoleRootPage`; pages portal authoring content into the slot through
+  `useGlobalSidePanel`.
+- Viglet Design System source lives at
+  `d:/git/viglet/viglet-design-system`; inspect `src/components/ui/` there
+  when debugging design-system component behavior.
 
 ### Frontend TypeScript Check (Windows EBUSY workaround)
 

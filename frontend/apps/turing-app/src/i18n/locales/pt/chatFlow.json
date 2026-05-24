@@ -41,7 +41,8 @@
       "helpWriteTriggerPlaceholder": "ex.: Ativar quando o usuário quiser pedir pizza, mencionar sabores, tamanhos, entrega ou retirada. NÃO disparar para perguntas gerais sobre o cardápio ou reclamações.",
       "helpWriteTriggerHint": "Dica: descreva também o que NÃO deve ativar este fluxo, não só o que deve.",
       "helpWriteTriggerGenerate": "Gerar condição",
-      "triggerMode": "Modo de Disparo"
+      "triggerMode": "Modo de Disparo",
+      "triggerLanguage": "Idioma da condição"
     },
     "triggerModes": {
       "ONCE": {
@@ -51,6 +52,20 @@
       "ALWAYS": {
         "label": "Sempre re-disparar",
         "description": "Sempre que a mensagem do usuário casar com a condição, o fluxo reinicia desde o primeiro passo."
+      }
+    },
+    "triggerLanguages": {
+      "AUTO": {
+        "label": "Detectar automaticamente",
+        "description": "O roteador detecta o idioma da condição em cada turno. Bom default — só mude se notar que fluxos em inglês estão sendo perdidos."
+      },
+      "PT": {
+        "label": "Português",
+        "description": "Tokeniza com analisador português (light stemming, stopwords PT). Use quando a condição está escrita em português."
+      },
+      "EN": {
+        "label": "Inglês",
+        "description": "Tokeniza com analisador inglês (Porter stemming, stopwords EN). Use quando a condição está escrita em inglês."
       }
     },
     "guardrailMethods": {

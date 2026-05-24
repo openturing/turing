@@ -1,9 +1,11 @@
 import type { TurAIAgentSlot } from "@/models/agent/ai-agent-slot.model";
 import {
   CHAT_FLOW_GUARDRAIL_METHODS,
+  CHAT_FLOW_TRIGGER_LANGUAGES,
   CHAT_FLOW_TRIGGER_MODES,
   type TurChatFlow,
   type TurChatFlowGuardrailMethod,
+  type TurChatFlowTriggerLanguage,
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 import type { TurPersona } from "@/models/persona/persona.model";
@@ -27,6 +29,7 @@ export interface ChatFlowExportEntry {
   guardrailMethod?: TurChatFlowGuardrailMethod;
   triggerDescription?: string | null;
   triggerMode?: TurChatFlowTriggerMode;
+  triggerLanguage?: TurChatFlowTriggerLanguage;
   personas?: TurPersona[];
   /**
    * Typed slots referenced by the flow's {@code outputVariable} fields. The
@@ -69,6 +72,10 @@ export function buildImportPayloadFromExport(
       entry.triggerMode && CHAT_FLOW_TRIGGER_MODES.includes(entry.triggerMode)
         ? entry.triggerMode
         : "ONCE",
+    triggerLanguage:
+      entry.triggerLanguage && CHAT_FLOW_TRIGGER_LANGUAGES.includes(entry.triggerLanguage)
+        ? entry.triggerLanguage
+        : "AUTO",
   };
   return { chatFlow, personas: entry.personas, slots: entry.slots };
 }

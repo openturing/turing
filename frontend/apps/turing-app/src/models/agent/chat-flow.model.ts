@@ -36,6 +36,19 @@ export type TurChatFlowTriggerMode = "ONCE" | "ALWAYS";
 
 export const CHAT_FLOW_TRIGGER_MODES: TurChatFlowTriggerMode[] = ["ONCE", "ALWAYS"];
 
+/**
+ * T25 / §II.2.1 — natural language of the flow's {@code triggerDescription}.
+ * Drives the per-field analyzer selection in the procedural pre-route on the
+ * backend: PT → {@code PortugueseAnalyzer}, EN → {@code EnglishAnalyzer},
+ * AUTO → static stopword heuristic per route. Default AUTO so existing flows
+ * keep working without admin intervention.
+ *
+ * @since 2026.3.1
+ */
+export type TurChatFlowTriggerLanguage = "AUTO" | "PT" | "EN";
+
+export const CHAT_FLOW_TRIGGER_LANGUAGES: TurChatFlowTriggerLanguage[] = ["AUTO", "PT", "EN"];
+
 export interface TurChatFlow {
   /** Empty / undefined when the flow is being created — the backend assigns a UUID. */
   id?: string;
@@ -47,6 +60,15 @@ export interface TurChatFlow {
   /** Natural-language description used by the LLM router. Empty disables auto-trigger. */
   triggerDescription?: string | null;
   triggerMode: TurChatFlowTriggerMode;
+  /**
+   * T25 / §II.2.1 — language of {@link triggerDescription}. Picks the
+   * matching Lucene analyzer in the procedural pre-route (PT light stemming
+   * for {@code "PT"}, Porter for {@code "EN"}, runtime detection for
+   * {@code "AUTO"}). Defaults to {@code "AUTO"} server-side.
+   *
+   * @since 2026.3.1
+   */
+  triggerLanguage?: TurChatFlowTriggerLanguage;
   /**
    * Optional experiment id. Flows sharing the same {@code experimentKey}
    * are treated as A/B variants — when the router picks any of them, the

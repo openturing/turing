@@ -328,10 +328,10 @@ class TurAgentChatExecutorStructuralIT extends AbstractAgentExecutorIT {
         // entry node). No regen, no skip-and-substitute.
         //
         // Routing strategy: drive the procedural Tier-1 router (Lucene
-        // token-overlap in {@code TurChatFlowEngineService#tryProceduralRoute}
-        // — see PROCEDURAL_MIN_OVERLAP=2 / PROCEDURAL_DOMINANCE_RATIO=1.5).
-        // The triggerDescription deliberately stems to 2+ tokens that also
-        // appear in the user message. The procedural pick bypasses the LLM
+        // MoreLikeThis in {@code TurChatFlowEngineService#tryProceduralRoute}
+        // — gated by PROCEDURAL_DOMINANCE_RATIO=1.5).
+        // The triggerDescription deliberately shares strong terms with the
+        // user message. The procedural pick bypasses the LLM
         // router entirely, so the SINGLE queued response is consumed by the
         // actual chat call — keeping {@code callCount() == 1} stable.
         com.viglet.turing.genai.testsupport.ChatFlowImportTestUtil.ExportEntry entry =

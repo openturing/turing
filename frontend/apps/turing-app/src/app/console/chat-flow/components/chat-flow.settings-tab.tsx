@@ -14,8 +14,10 @@ import { useTranslation } from "react-i18next";
 
 import {
   CHAT_FLOW_GUARDRAIL_METHODS,
+  CHAT_FLOW_TRIGGER_LANGUAGES,
   CHAT_FLOW_TRIGGER_MODES,
   type TurChatFlowGuardrailMethod,
+  type TurChatFlowTriggerLanguage,
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 
@@ -67,6 +69,8 @@ interface SettingsTabProps {
   setTriggerDescription: (value: string) => void;
   triggerMode: TurChatFlowTriggerMode;
   setTriggerMode: (value: TurChatFlowTriggerMode) => void;
+  triggerLanguage: TurChatFlowTriggerLanguage;
+  setTriggerLanguage: (value: TurChatFlowTriggerLanguage) => void;
   experimentKey: string;
   setExperimentKey: (value: string) => void;
   variantLabel: string;
@@ -86,6 +90,8 @@ export function ChatFlowSettingsTab({
   setTriggerDescription,
   triggerMode,
   setTriggerMode,
+  triggerLanguage,
+  setTriggerLanguage,
   experimentKey,
   setExperimentKey,
   variantLabel,
@@ -208,6 +214,33 @@ export function ChatFlowSettingsTab({
                     {CHAT_FLOW_TRIGGER_MODES.map((mode) => (
                       <SelectItem key={mode} value={mode}>
                         {t(`chatFlow.triggerModes.${mode}.label`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormRow>
+
+              {/* T25 / §II.2.1 — language of triggerDescription. Picks the
+                  matching Lucene analyzer for the procedural router so PT
+                  stems collapse correctly for PT flows and Porter does the
+                  same job for EN flows. AUTO (default) lets the backend
+                  detect from the description content. */}
+              <FormRow
+                htmlFor="chat-flow-trigger-language"
+                label={t("chatFlow.fields.triggerLanguage")}
+                description={t(`chatFlow.triggerLanguages.${triggerLanguage}.description`)}
+              >
+                <Select
+                  value={triggerLanguage}
+                  onValueChange={(value) => setTriggerLanguage(value as TurChatFlowTriggerLanguage)}
+                >
+                  <SelectTrigger id="chat-flow-trigger-language" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CHAT_FLOW_TRIGGER_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang} value={lang}>
+                        {t(`chatFlow.triggerLanguages.${lang}.label`)}
                       </SelectItem>
                     ))}
                   </SelectContent>

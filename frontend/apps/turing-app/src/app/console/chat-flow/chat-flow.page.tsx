@@ -33,6 +33,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type TurChatFlow,
   type TurChatFlowGuardrailMethod,
+  type TurChatFlowTriggerLanguage,
   type TurChatFlowTriggerMode,
 } from "@/models/agent/chat-flow.model";
 import { useAIAgentSlots } from "@/api/queries/ai-agent-slot.queries";
@@ -115,6 +116,9 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
   const [triggerMode, setTriggerMode] = useState<TurChatFlowTriggerMode>(
     flow.triggerMode ?? "ONCE",
   );
+  const [triggerLanguage, setTriggerLanguage] = useState<TurChatFlowTriggerLanguage>(
+    flow.triggerLanguage ?? "AUTO",
+  );
   const [experimentKey, setExperimentKey] = useState(flow.experimentKey ?? "");
   const [variantLabel, setVariantLabel] = useState(flow.variantLabel ?? "");
   const [trafficWeight, setTrafficWeight] = useState<number | null>(flow.trafficWeight ?? null);
@@ -189,6 +193,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
       guardrailMethod,
       triggerDescription: triggerDescription.trim() || null,
       triggerMode,
+      triggerLanguage,
       // A/B experiment fields stay coupled: clearing the key wipes
       // label + weight so the backend sees a clean opt-out instead of
       // dangling metadata.
@@ -211,7 +216,7 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
     } finally {
       setSaving(false);
     }
-  }, [name, description, guardrailMethod, triggerDescription, triggerMode,
+  }, [name, description, guardrailMethod, triggerDescription, triggerMode, triggerLanguage,
       experimentKey, variantLabel, trafficWeight,
       nodes, edges, flow, isNew, agentId, listUrl, navigate, t, createMutation, updateMutation]);
 
@@ -387,6 +392,8 @@ function ChatFlowInner({ agentId, flow, isNew }: InnerProps) {
           setTriggerDescription={setTriggerDescription}
           triggerMode={triggerMode}
           setTriggerMode={setTriggerMode}
+          triggerLanguage={triggerLanguage}
+          setTriggerLanguage={setTriggerLanguage}
           experimentKey={experimentKey}
           setExperimentKey={setExperimentKey}
           variantLabel={variantLabel}

@@ -101,6 +101,24 @@ public class TurChatFlow implements Serializable {
     private TurChatFlowTriggerMode triggerMode = TurChatFlowTriggerMode.ONCE;
 
     /**
+     * T25 / §II.2.1 — natural language of {@link #triggerDescription}. Drives
+     * the per-field analyzer routing in the procedural pre-route: PT flows
+     * tokenize with {@code PortugueseAnalyzer}, EN with {@code EnglishAnalyzer},
+     * {@code AUTO} (default) lets the router detect from description content.
+     *
+     * <p>Mismatched analyzer collapses morphological variants the wrong way —
+     * EN Porter applied to PT mangles {@code "carreira" → "carreir"}, PT light
+     * stem applied to EN leaves {@code "running"} as-is so it doesn't share a
+     * stem with {@code "runs"}. Tagging the flow lets the overlap scorer find
+     * the right matches without log inspection.
+     *
+     * @since 2026.3.1
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "triggerLanguage", nullable = false, length = 8)
+    private TurChatFlowTriggerLanguage triggerLanguage = TurChatFlowTriggerLanguage.AUTO;
+
+    /**
      * Optional experiment grouping key. Flows that share an
      * {@code experimentKey} are treated as variants of the same A/B
      * (or A/B/C/…) test: when the LLM router picks any one of them, the

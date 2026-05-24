@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -30,8 +31,23 @@ import java.util.stream.Collectors;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.pt.PortugueseAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.StoredFields;
+import org.apache.lucene.queries.mlt.MoreLikeThis;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -53,6 +69,7 @@ import com.viglet.turing.persistence.model.agent.TurChatFlow;
 import com.viglet.turing.persistence.model.agent.TurChatFlowGuardrailMethod;
 import com.viglet.turing.persistence.model.agent.TurChatFlowState;
 import com.viglet.turing.persistence.model.agent.TurChatFlowSubmission;
+import com.viglet.turing.persistence.model.agent.TurChatFlowTriggerLanguage;
 import com.viglet.turing.persistence.model.agent.TurChatFlowTriggerMode;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowRepository;
 import com.viglet.turing.persistence.repository.agent.TurChatFlowStateRepository;
@@ -97,48 +114,69 @@ public class TurChatFlowEngineService {
     public static final String CACHE_ROUTER_DECISION = "turChatFlowRouterDecision";
 
     /**
-     * Minimum number of overlapping content words between user message and a
-     * flow's {@code triggerDescription} required for the procedural pre-route
-     * to commit. Below this threshold, the decision falls back to the LLM
-     * router. Two tokens is enough signal in practice (e.g. "plano" +
-     * "carreira" overlapping the trigger description's keywords) without
-     * tripping on accidental single-word matches.
-     */
-    private static final int PROCEDURAL_MIN_OVERLAP = 2;
-
-    /**
      * Minimum ratio by which the top-scoring flow must beat the runner-up to
-     * commit procedurally. When 1.5×, an ambiguous tie (best=3, second=2)
-     * still falls back to the LLM — only confident wins (best=3, second≤2)
-     * bypass it. Higher ratio = less procedural usage = more correctness;
-     * lower ratio = more speed.
+     * commit procedurally. Scores come from Lucene MoreLikeThis/BM25 over
+     * trigger descriptions. Higher ratio = less procedural usage = more
+     * correctness; lower ratio = more speed.
      */
     private static final double PROCEDURAL_DOMINANCE_RATIO = 1.5;
 
     /**
-     * Lucene analyzer used to tokenize the user message and each flow's
-     * {@code triggerDescription} for the procedural pre-route. Picked
-     * {@link PortugueseAnalyzer} because the platform's primary audience is
-     * PT-BR and it ships with:
+     * Per-language Lucene analyzers for the procedural pre-route. Each flow's
+     * {@code triggerDescription} (and the user message, scored against that
+     * flow) tokenizes through the matching analyzer:
+     *
      * <ul>
-     *   <li>Lowercase + diacritic-aware normalization out of the box;</li>
-     *   <li>~120 Portuguese stopwords (que, com, para, …) — wider than the
-     *       hand-rolled list we used before;</li>
-     *   <li>Portuguese light stemming so {@code "planos"}, {@code "plano"}
-     *       and {@code "planejar"} collapse to the same stem — overlap
-     *       scoring now matches morphological variants the previous string-
-     *       equality check missed.</li>
+     *   <li>{@link PortugueseAnalyzer} — PT-BR (default for legacy flows + the
+     *       AUTO fallback). Light stemming so {@code "planos" / "plano" /
+     *       "carreiras" / "carreira"} collapse, ~120 PT stopwords filtered.</li>
+     *   <li>{@link EnglishAnalyzer} — Porter stemming so {@code "running" /
+     *       "runs"} share a stem, EN stopwords filtered. Critical for
+     *       bilingual deployments where the PT analyzer would leave EN
+     *       triggers under-matched (no EN stopword filter and no EN
+     *       stemming).</li>
      * </ul>
-     * English trigger descriptions still tokenize cleanly (no EN stopword
-     * filtering, but the loss-bearing keywords pass through untouched, so
-     * overlap still works).
      *
-     * <p>Lucene {@link Analyzer}s are thread-safe — single instance shared
-     * across all routing calls.
+     * <p>Lucene {@link Analyzer}s are thread-safe — single instance per
+     * language shared across all routing calls.
      *
-     * @since 2026.2.8
+     * <p>T25 ({@link TurChatFlowTriggerLanguage}) widens this from the
+     * original single-analyzer setup. Existing flows default to {@code AUTO}
+     * — the router picks PT or EN per route based on
+     * {@link #detectLanguage(String)} until an admin explicitly tags the flow.
+     *
+     * @since 2026.3.1 (was a single {@code FLOW_ROUTER_ANALYZER} in 2026.2.8)
      */
-    private static final Analyzer FLOW_ROUTER_ANALYZER = new PortugueseAnalyzer();
+    private static final Analyzer ANALYZER_PT = new PortugueseAnalyzer();
+    private static final Analyzer ANALYZER_EN = new EnglishAnalyzer();
+
+    /**
+     * Lightweight EN stopword set for {@link #detectLanguage(String)} — the
+     * heuristic counts hits from this list against PT-equivalent hits. Kept
+     * tiny on purpose: the goal isn't accurate classification (Tika would do
+     * that better), it's separating "clearly EN" from "clearly PT" descriptions
+     * fast and zero-allocation. Common short function words that almost never
+     * appear in PT text and vice-versa give the highest signal-to-noise.
+     *
+     * @since 2026.3.1
+     */
+    private static final Set<String> EN_HINT_WORDS = Set.of(
+            "the", "and", "or", "for", "with", "to", "of", "in", "on", "is", "are",
+            "this", "that", "what", "how", "when", "where", "why", "you", "your",
+            "i", "me", "my", "do", "does", "want", "need", "would", "should", "can");
+
+    /**
+     * PT hint stopwords mirror — same role, opposite language. Avoided overlap
+     * with {@link #EN_HINT_WORDS} so neutral text (proper nouns only) returns
+     * an even score → defaults to PT (legacy behavior, primary audience).
+     *
+     * @since 2026.3.1
+     */
+    private static final Set<String> PT_HINT_WORDS = Set.of(
+            "o", "a", "os", "as", "um", "uma", "de", "do", "da", "dos", "das",
+            "para", "por", "com", "sem", "que", "como", "quando", "onde",
+            "eu", "você", "voce", "meu", "minha", "seu", "sua",
+            "quero", "preciso", "gostaria", "tenho", "estou", "está", "esta");
 
     private final TurChatFlowStateRepository stateRepository;
     private final TurChatFlowRepository chatFlowRepository;
@@ -976,56 +1014,67 @@ public class TurChatFlowEngineService {
         stateRepository.save(walked);
     }
 
-    private record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
+    record RouterCandidate(TurChatFlow flow, ChatFlowGraph graph) {
     }
 
     /**
-     * Procedural pre-route — token-overlap score between the user message and
-     * each candidate's {@code triggerDescription}. Returns the picked flow id
-     * when one candidate dominates clearly (≥{@link #PROCEDURAL_MIN_OVERLAP}
-     * overlapping tokens AND ≥{@link #PROCEDURAL_DOMINANCE_RATIO}× the next
-     * best); otherwise {@link Optional#empty()} so the caller can fall back
-     * to the LLM router.
+     * Procedural pre-route — Lucene {@link MoreLikeThis} score between the
+     * user message and each candidate's {@code triggerDescription}. Returns
+     * the picked flow id when one candidate dominates clearly
+     * (≥{@link #PROCEDURAL_DOMINANCE_RATIO}× the next best); otherwise
+     * {@link Optional#empty()} so the caller can fall back to the LLM router.
      *
-     * <p>Stopword set ({@link #STOPWORDS}) covers PT and EN connectives —
-     * works on bilingual deployments without configuration. Doesn't help for
-     * languages outside that set; add stopwords as needed.
+     * <p>T25 widened the original single Portuguese analyzer into per-flow
+     * language routing. T26 keeps that behavior by grouping candidates by the
+     * analyzer selected from each flow's {@code triggerLanguage}; each group
+     * gets a tiny in-memory Lucene index and an MLT query derived from the user
+     * message.
      *
-     * @since 2026.2.8
+     * @since 2026.3.1 (MLT scoring; was overlap counter in 2026.2.8)
      */
-    private Optional<String> tryProceduralRoute(List<RouterCandidate> candidates,
+    static Optional<String> tryProceduralRoute(List<RouterCandidate> candidates,
             String userMessage) {
         if (userMessage == null || userMessage.isBlank() || candidates.isEmpty()) {
             return Optional.empty();
         }
-        Set<String> userTokens = tokenize(userMessage);
-        if (userTokens.size() < PROCEDURAL_MIN_OVERLAP) {
+        Map<Analyzer, List<RouterCandidate>> byAnalyzer = new HashMap<>(2);
+        for (RouterCandidate c : candidates) {
+            String description = c.flow().getTriggerDescription();
+            if (description != null && !description.isBlank()) {
+                Analyzer analyzer = analyzerFor(c.flow().getTriggerLanguage(), description);
+                byAnalyzer.computeIfAbsent(analyzer, ignored -> new ArrayList<>()).add(c);
+            }
+        }
+        if (byAnalyzer.isEmpty()) {
             return Optional.empty();
         }
-        int bestScore = 0;
-        int secondScore = 0;
+        float bestScore = 0f;
+        float secondScore = 0f;
         String bestId = null;
-        for (RouterCandidate c : candidates) {
-            Set<String> flowTokens = tokenize(c.flow().getTriggerDescription());
-            if (flowTokens.isEmpty()) {
+        for (Map.Entry<Analyzer, List<RouterCandidate>> bucket : byAnalyzer.entrySet()) {
+            ScoredRoute scoredRoute = moreLikeThisRoute(bucket.getKey(), bucket.getValue(),
+                    userMessage);
+            if (scoredRoute == null) {
                 continue;
             }
-            Set<String> overlap = new HashSet<>(userTokens);
-            overlap.retainAll(flowTokens);
-            int score = overlap.size();
-            if (score > bestScore) {
-                secondScore = bestScore;
-                bestScore = score;
-                bestId = c.flow().getId();
-            } else if (score > secondScore) {
-                secondScore = score;
+            if (scoredRoute.bestScore() > bestScore) {
+                if (bestScore > secondScore) {
+                    secondScore = bestScore;
+                }
+                bestScore = scoredRoute.bestScore();
+                bestId = scoredRoute.bestId();
+            } else if (scoredRoute.bestScore() > secondScore) {
+                secondScore = scoredRoute.bestScore();
+            }
+            if (scoredRoute.secondScore() > secondScore) {
+                secondScore = scoredRoute.secondScore();
             }
         }
-        if (bestScore < PROCEDURAL_MIN_OVERLAP) {
+        if (bestId == null || bestScore <= 0f) {
             return Optional.empty();
         }
-        if (secondScore > 0
-                && (double) bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
+        if (secondScore > 0f
+                && bestScore < secondScore * PROCEDURAL_DOMINANCE_RATIO) {
             log.debug("[FlowEngine] Procedural router undecided "
                     + "(best={}, second={}, ratio<{}) — falling back to LLM",
                     bestScore, secondScore, PROCEDURAL_DOMINANCE_RATIO);
@@ -1034,23 +1083,120 @@ public class TurChatFlowEngineService {
         return Optional.ofNullable(bestId);
     }
 
+    private record ScoredRoute(String bestId, float bestScore, float secondScore) {
+    }
+
+    private static final String MLT_FIELD_TRIGGER = "trigger";
+    private static final String MLT_FIELD_ID = "flowId";
+
+    private static ScoredRoute moreLikeThisRoute(Analyzer analyzer,
+            List<RouterCandidate> candidates, String userMessage) {
+        try (Directory dir = new ByteBuffersDirectory();
+                IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(analyzer))) {
+            for (RouterCandidate candidate : candidates) {
+                Document doc = new Document();
+                doc.add(new StringField(MLT_FIELD_ID, candidate.flow().getId(), Field.Store.YES));
+                doc.add(new TextField(MLT_FIELD_TRIGGER,
+                        candidate.flow().getTriggerDescription(), Field.Store.NO));
+                writer.addDocument(doc);
+            }
+            writer.commit();
+            try (IndexReader reader = DirectoryReader.open(dir)) {
+                MoreLikeThis moreLikeThis = new MoreLikeThis(reader);
+                moreLikeThis.setAnalyzer(analyzer);
+                moreLikeThis.setFieldNames(new String[] { MLT_FIELD_TRIGGER });
+                moreLikeThis.setMinTermFreq(1);
+                moreLikeThis.setMinDocFreq(1);
+                moreLikeThis.setMinWordLen(2);
+                moreLikeThis.setMaxQueryTerms(25);
+                org.apache.lucene.search.Query query = moreLikeThis.like(MLT_FIELD_TRIGGER,
+                        new java.io.StringReader(userMessage));
+                IndexSearcher searcher = new IndexSearcher(reader);
+                TopDocs hits = searcher.search(query, 2);
+                if (hits.scoreDocs.length == 0) {
+                    return null;
+                }
+                StoredFields storedFields = searcher.storedFields();
+                String bestId = storedFields.document(hits.scoreDocs[0].doc).get(MLT_FIELD_ID);
+                float bestScore = hits.scoreDocs[0].score;
+                float secondScore = hits.scoreDocs.length > 1 ? hits.scoreDocs[1].score : 0f;
+                return new ScoredRoute(bestId, bestScore, secondScore);
+            }
+        } catch (IOException e) {
+            log.warn("[FlowEngine] MoreLikeThis procedural route failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
     /**
-     * Tokenize through Lucene's {@link #FLOW_ROUTER_ANALYZER} — applies
-     * lowercase, diacritic folding, Portuguese stopword filtering and light
-     * stemming in a single pipeline. Returns the deduplicated set of stems
-     * (e.g. "plano de carreira" → {@code {plan, carreir}}, "uns planos para
-     * carreiras" → same {@code {plan, carreir}}). Empty for blank/null
-     * input. The {@link IOException} declared by {@code TokenStream} is
-     * impossible in practice with the in-memory string source — the catch
-     * is for API compliance; we log and degrade to an empty set so the
-     * caller falls back to the LLM router rather than crashing.
+     * T25 / §II.2.1 — picks the analyzer for a flow's
+     * {@code triggerDescription} based on its declared
+     * {@link TurChatFlowTriggerLanguage}. {@code AUTO} (default) routes
+     * through {@link #detectLanguage(String)}; PT/EN are honored verbatim.
+     * Null lang (pre-T25 entities from a snapshot, defensive) treated as AUTO.
      */
-    private static Set<String> tokenize(String text) {
+    static Analyzer analyzerFor(TurChatFlowTriggerLanguage lang, String description) {
+        TurChatFlowTriggerLanguage effective = lang == null ? TurChatFlowTriggerLanguage.AUTO : lang;
+        return switch (effective) {
+            case PT -> ANALYZER_PT;
+            case EN -> ANALYZER_EN;
+            case AUTO -> detectLanguage(description) == TurChatFlowTriggerLanguage.EN
+                    ? ANALYZER_EN : ANALYZER_PT;
+        };
+    }
+
+    /**
+     * T25 / §II.2.1 — lightweight EN vs PT heuristic for AUTO-tagged flows.
+     * Counts EN hint stopwords vs PT hint stopwords in {@code text}; returns
+     * {@link TurChatFlowTriggerLanguage#EN} when EN dominates strictly,
+     * {@link TurChatFlowTriggerLanguage#PT} otherwise (PT is the platform's
+     * primary language so ties + zero-signal default to it). Case- and
+     * diacritic-insensitive via the lowercase + simple-letter regex split.
+     *
+     * <p>Cheap on purpose — designed to run on every routing pass without
+     * needing Tika's model-loaded {@code LanguageDetector} or an external
+     * service. For descriptions where the heuristic is wrong, admins can
+     * pin {@code triggerLanguage = PT/EN} explicitly.
+     *
+     * @return {@code EN} when EN hint count strictly exceeds PT hint count;
+     *         {@code PT} on tie or PT-leaning text or blank input
+     * @since 2026.3.1
+     */
+    static TurChatFlowTriggerLanguage detectLanguage(String text) {
+        if (text == null || text.isBlank()) {
+            return TurChatFlowTriggerLanguage.PT;
+        }
+        String lower = text.toLowerCase(java.util.Locale.ROOT);
+        // Split on any non-letter (including digits + punctuation). Keep
+        // accented chars so PT hints like "está" match without normalization.
+        String[] words = lower.split("[^\\p{L}]+");
+        int en = 0;
+        int pt = 0;
+        for (String w : words) {
+            if (EN_HINT_WORDS.contains(w)) en++;
+            else if (PT_HINT_WORDS.contains(w)) pt++;
+        }
+        return en > pt ? TurChatFlowTriggerLanguage.EN : TurChatFlowTriggerLanguage.PT;
+    }
+
+    /**
+     * Tokenize {@code text} through the supplied Lucene {@link Analyzer}.
+     * Applies that analyzer's pipeline (lowercase, stopword removal,
+     * stemming) and returns the deduplicated set of stems. Empty for
+     * blank/null input. The {@link IOException} declared by
+     * {@code TokenStream} is impossible in practice with the in-memory
+     * string source — the catch is for API compliance; we log and degrade
+     * to an empty set so the caller falls back to the LLM router rather
+     * than crashing.
+     *
+     * @since 2026.3.1 (took an analyzer parameter — was hard-coded to PT in 2026.2.8)
+     */
+    static Set<String> tokenize(String text, Analyzer analyzer) {
         if (text == null || text.isBlank()) {
             return Set.of();
         }
         Set<String> tokens = new HashSet<>();
-        try (TokenStream stream = FLOW_ROUTER_ANALYZER.tokenStream("text", text)) {
+        try (TokenStream stream = analyzer.tokenStream("text", text)) {
             CharTermAttribute term = stream.addAttribute(CharTermAttribute.class);
             stream.reset();
             while (stream.incrementToken()) {

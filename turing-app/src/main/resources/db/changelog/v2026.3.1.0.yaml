@@ -1,0 +1,35 @@
+databaseChangeLog:
+  # T25 / §II.2.1 — triggerLanguage on chat_flow.
+  #
+  # Routes each flow's triggerDescription (and the user message, when matched
+  # against this flow) through the matching language's Lucene analyzer in
+  # TurChatFlowEngineService.tryProceduralRoute. Values: AUTO / PT / EN.
+  # Default AUTO so existing rows keep working unchanged — the router falls
+  # back to per-route detection (light stopword heuristic) until an admin
+  # explicitly tags the flow.
+  #
+  # Length 8 accommodates the longest enum name ("AUTO" / "PT" / "EN") with
+  # headroom; @Enumerated(EnumType.STRING) on the JPA side.
+
+  - changeSet:
+      id: v2026.3.1.0-add-chat-flow-trigger-language
+      author: alexandre-oliveira
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: chat_flow
+        - not:
+            - columnExists:
+                tableName: chat_flow
+                columnName: triggerLanguage
+      changes:
+        - addColumn:
+            tableName: chat_flow
+            columns:
+              - column:
+                  name: triggerLanguage
+                  type: VARCHAR(8)
+                  defaultValue: AUTO
+                  constraints:
+                    nullable: false
+                  remarks: "T25/§II.2.1 — language of triggerDescription. AUTO = router detects per route. PT/EN tag the flow so the per-field analyzer wrapper picks the right Lucene chain."

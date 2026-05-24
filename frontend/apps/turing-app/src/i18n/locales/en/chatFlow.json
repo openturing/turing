@@ -41,7 +41,8 @@
       "helpWriteTriggerPlaceholder": "e.g. Activate when the user wants to order pizza, mentions toppings, sizes, delivery or pickup. Do NOT trigger on general menu questions or complaints.",
       "helpWriteTriggerHint": "Tip: also describe what should NOT trigger this flow, not only what should.",
       "helpWriteTriggerGenerate": "Generate description",
-      "triggerMode": "Trigger Mode"
+      "triggerMode": "Trigger Mode",
+      "triggerLanguage": "Trigger language"
     },
     "triggerModes": {
       "ONCE": {
@@ -51,6 +52,20 @@
       "ALWAYS": {
         "label": "Always re-trigger",
         "description": "Whenever the user message matches the trigger description, the flow restarts from its first step."
+      }
+    },
+    "triggerLanguages": {
+      "AUTO": {
+        "label": "Auto-detect",
+        "description": "Router detects the trigger language per route. Good default — only override if you notice EN flows under-matching."
+      },
+      "PT": {
+        "label": "Portuguese",
+        "description": "Tokenize with the Portuguese analyzer (light stemming, PT stopwords). Pick when the trigger is written in Portuguese."
+      },
+      "EN": {
+        "label": "English",
+        "description": "Tokenize with the English analyzer (Porter stemming, EN stopwords). Pick when the trigger is written in English."
       }
     },
     "guardrailMethods": {
