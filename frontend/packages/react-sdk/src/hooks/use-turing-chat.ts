@@ -140,6 +140,28 @@ function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * Pure update over an immutable message list: locates the message by id and
+ * replaces it with the result of {@code mutator}. Returns the same array
+ * reference when no match (so React's setState bails on the update).
+ *
+ * <p>Extracted out of the {@code send} callback so the streaming patch path
+ * doesn't nest functions past Sonar's 4-level threshold — inlining
+ * {@code findIndex} + the mutator inside a {@code setMessages} closure inside
+ * an {@code async} arrow inside {@code useCallback} crosses the line.
+ */
+function patchMessage(
+  messages: ChatMessage[],
+  id: string,
+  mutator: (msg: ChatMessage) => ChatMessage,
+): ChatMessage[] {
+  const idx = messages.findIndex((m) => m.id === id);
+  if (idx === -1) return messages;
+  const updated = [...messages];
+  updated[idx] = mutator(updated[idx]);
+  return updated;
+}
+
 function storageKey(site: string, suffix: string | true): string {
   const tag = typeof suffix === "string" ? suffix : "default";
   return `turing.chat.${site}.${tag}`;
@@ -338,33 +360,68 @@ export function useTuringChat(
           content: m.content,
         }));
 
+        // Token-by-token streaming. The backend (TurAgentChatExecutor STREAM
+        // mode, when the bound agent has chatMode=STREAM AND no flow context
+        // governs the turn) emits one SSE `token` event per LLM delta — the
+        // SDK's consumeAssistantStream forwards each to `onToken`. We
+        // pre-commit an empty assistant bubble so React can render the typing
+        // animation immediately, then patch it in place as tokens arrive.
+        //
+        // On flow-driven turns the backend silently downshifts to CALL mode
+        // (one big chunk at the end) — same code path here still works, the
+        // bubble just fills in one beat instead of streaming.
+        const assistantId = newId();
+        const assistantMsgInitial: ChatMessage = {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          timestamp: Date.now(),
+        };
+        const streamingHistory = [...messagesRef.current, assistantMsgInitial];
+        const initialWithReply =
+          streamingHistory.length > maxMessages
+            ? streamingHistory.slice(-maxMessages)
+            : streamingHistory;
+        messagesRef.current = initialWithReply;
+        setMessages(initialWithReply);
+        // status="success" right after the first token so callers gating on
+        // `isStreaming` (status==="loading") can render the typing UI until
+        // tokens start arriving — and a non-streaming backend keeps showing
+        // "loading" until the single final chunk lands.
+        const onToken = (token: string) => {
+          if (requestId !== requestRef.current || abortedRef.current) return;
+          // Functional update so we don't trip on stale closure capture of
+          // messages. The ref stays in sync via the useEffect on line 288.
+          setMessages((prev) => patchMessage(prev, assistantId,
+              (m) => ({ ...m, content: m.content + token })));
+        };
+
         const res = agentId && agentLlmInstanceId
           ? await postAgentChat(agentId, agentLlmInstanceId, wire, {
               conversationId: activeConversationId,
               flowId,
+              onToken,
             })
           : await postChatConversation(config.site, wire, effectiveLocale, {
               conversationId: activeConversationId,
               flowId,
+              onToken,
             });
 
         if (requestId !== requestRef.current || abortedRef.current) return;
 
-        const assistantMsg: ChatMessage = {
-          id: newId(),
-          role: "assistant",
-          content: res?.content ?? "",
-          timestamp: Date.now(),
-          options: res?.options && res.options.length > 0 ? res.options : undefined,
-        };
-
-        const allWithReply = [...messagesRef.current, assistantMsg];
-        const nextWithReply =
-          allWithReply.length > maxMessages
-            ? allWithReply.slice(-maxMessages)
-            : allWithReply;
-        messagesRef.current = nextWithReply;
-        setMessages(nextWithReply);
+        // Replace the streamed bubble with the authoritative server response.
+        // For STREAM mode this is functionally identical to what onToken
+        // already accumulated (`res.content === aggregated tokens`); for
+        // CALL mode this is the first time the bubble gets text. Either way
+        // we also attach `options` (chip suggestions) which onToken can't
+        // carry — they arrive on a separate SSE event.
+        const finalOptions = res?.options && res.options.length > 0 ? res.options : undefined;
+        setMessages((prev) => patchMessage(prev, assistantId, (m) => ({
+          ...m,
+          content: res?.content ?? m.content,
+          options: finalOptions,
+        })));
         setStatus("success");
       } catch (err) {
         if (requestId !== requestRef.current || abortedRef.current) return;
