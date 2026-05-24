@@ -61,14 +61,14 @@ mvn clean install
 ### File Header Convention
 
 - **Every new Java file** must include a `@since` tag in the class-level Javadoc with the current project version (check the `<version>` in the root `pom.xml`)
-- Current version: **2026.2.4**
+- Current version: **2026.3.1**
 - Example:
   ```java
   /**
    * Description of the class.
    *
    * @author Alexandre Oliveira
-   * @since 2026.2.4
+   * @since 2026.3.1
    */
   ```
 - When the project version changes, update the "Current version" line above so new files always reference the correct version
