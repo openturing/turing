@@ -41,6 +41,8 @@ import org.apache.lucene.store.Directory;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
+import com.viglet.turing.observability.TurChatPipelineObservation;
+import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurGenAiProperty.TurGenAiToolPreFilterProperty;
 
@@ -127,11 +129,14 @@ public class TurToolPreFilterService {
 
     private final TurToolDescriptionService toolDescriptionService;
     private final TurConfigProperties configProperties;
+    private final TurChatPipelineObservation pipelineObservation;
 
     public TurToolPreFilterService(TurToolDescriptionService toolDescriptionService,
-            TurConfigProperties configProperties) {
+            TurConfigProperties configProperties,
+            TurChatPipelineObservation pipelineObservation) {
         this.toolDescriptionService = toolDescriptionService;
         this.configProperties = configProperties;
+        this.pipelineObservation = pipelineObservation;
     }
 
     /**
@@ -154,24 +159,34 @@ public class TurToolPreFilterService {
      */
     public ToolCallback[] filter(ToolCallback[] callbacks, String userMessage,
             Set<String> alwaysKeep) {
+        long start = System.currentTimeMillis();
         if (callbacks == null || callbacks.length == 0) {
+            // Degenerate input — no observability sample (no work to dashboard).
             return callbacks == null ? new ToolCallback[0] : callbacks;
         }
         TurGenAiToolPreFilterProperty props = configProperties.getGenai().getToolPrefilter();
         if (props == null || !props.isEnabled()) {
+            recordObservation(callbacks.length, callbacks.length, start,
+                    TurMeterNames.REASON_DISABLED);
             return callbacks;
         }
         int topK = Math.max(1, props.getTopK());
         int minThreshold = Math.max(0, props.getMinToolsThreshold());
         if (callbacks.length <= minThreshold) {
+            recordObservation(callbacks.length, callbacks.length, start,
+                    TurMeterNames.REASON_BELOW_THRESHOLD);
             return callbacks;
         }
         if (userMessage == null || userMessage.isBlank()) {
+            recordObservation(callbacks.length, callbacks.length, start,
+                    TurMeterNames.REASON_BLANK_QUERY);
             return callbacks;
         }
         Set<String> protectedNames = alwaysKeep == null ? Collections.emptySet() : alwaysKeep;
         // alwaysKeep already covers the entire pool — nothing to filter.
         if (containsAll(callbacks, protectedNames)) {
+            recordObservation(callbacks.length, callbacks.length, start,
+                    TurMeterNames.REASON_ALREADY_COVERED);
             return callbacks;
         }
         // The protected set alone already meets or exceeds the cap; the
@@ -189,6 +204,8 @@ public class TurToolPreFilterService {
             byName.putIfAbsent(name, cb);
         }
         if (byName.size() <= topK) {
+            recordObservation(callbacks.length, callbacks.length, start,
+                    TurMeterNames.REASON_CAP_COVERS_POOL);
             return callbacks;
         }
 
@@ -219,7 +236,13 @@ public class TurToolPreFilterService {
             log.info("[ToolPreFilter] {} → {} tools (top-K={}, threshold={})",
                     callbacks.length, result.size(), topK, minThreshold);
         }
+        recordObservation(callbacks.length, result.size(), start, TurMeterNames.REASON_ENGAGED);
         return result.toArray(new ToolCallback[0]);
+    }
+
+    private void recordObservation(int input, int output, long startMillis, String reason) {
+        pipelineObservation.recordToolPrefilter(input, output,
+                System.currentTimeMillis() - startMillis, reason);
     }
 
     /**

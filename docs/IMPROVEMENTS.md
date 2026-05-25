@@ -63,12 +63,13 @@ acting.
 >   **15 ran / 0 failed / 1 skipped** in 3:43.
 > - **Block B** — ✅ COMPLETE. Inverted harness shipped, all legacy code
 >   paths deleted, 17 of 22 patches from §I.3 are gone.
-> - **Block C** — ✅ T17–T31 all shipped 2026.2.7 / 2026.3.1. Next pending
->   wave is T32 (observability) / T33 (executor decomposition) / T34
->   (cache conventions docs+lint), added after T31 — see §IV.7, §I.8,
->   §IV.8. No hard dependencies between the three; T32 is the highest-
->   leverage starting point (validates whether T28-T31's claimed wins
->   are real).
+> - **Block C** — ✅ T17–T32 all shipped 2026.2.7 / 2026.3.1. T32 closed
+>   the observability gap (Hazelcast cache gauges + T30/T29 per-turn
+>   timings + chat-setup sub-stage breakdown) so the wins claimed by
+>   T28-T31 are now measurable on `/actuator/prometheus`. Remaining
+>   pending: T33 💭 (executor decomposition — §I.8) and T34 📋 (cache
+>   conventions docs + lint test — §IV.8). No hard dependencies between
+>   them; T34 is the lower-risk follow-up.
 > - **Test infra fix (2026-05-22)**: `AbstractTuringSpringIT` now sets
 >   `spring.artemis.embedded.persistent=false` to keep multiple Spring
 >   contexts in a single Maven fork from deadlocking on Artemis
@@ -154,7 +155,7 @@ acting.
 | T29 | ✅ | 2026.3.1 | Tool pre-filtering for large catalogs: `TurToolPreFilterService` does BM25 / MoreLikeThis over `prompts/tools/**/*.md` descriptions in an in-memory `ByteBuffersDirectory`, keeps top-K configured via `turing.genai.tool-prefilter.{top-k,min-tools-threshold,enabled}`. Always-kept set covers agent `nativeTools` + the active node's new `ChatFlowNode.requiredTools` list. Bypasses for blank user message / pool below threshold / cap already covers the pool. | §IV.2 |
 | T30 | ✅ | 2026.3.1 | Conversation-relevance retrieval for chat memory: new `TurChatMemoryRelevanceRetriever` reads the persisted history, splits at the recent-N FIFO window, builds a per-call `ByteBuffersDirectory` + `BM25Similarity` index over the older pool, scores against the latest user message via `MoreLikeThis`, and prepends the top-K hits (chronologically re-sorted, prefixed with `[earlier turn #N at <ts>]` markers) to the history that flows into `TurAgentChatExecutor.execute()`. Three new opt-in fields on `TurAIAgent`: `chatMemoryRelevanceEnabled` (default false), `chatMemoryRelevanceTopK` (default 5, capped at 20 in code), `chatMemoryRecentN` (default 10) — Liquibase `v2026.3.1.3.yaml`. Exchange round-trip extended so import/export carries the new fields. 18 new unit tests pin: bypass when chat memory / relevance / store / convId / userMsg are off, bypass when persisted ≤ recent-N, no-overlap returns history unchanged, BM25 surfaces the matching older turn with position+ISO timestamp marker, multiple hits sorted by original position (not score), top-K cap honored + hard-capped at 20 on misconfig, role preserved on retrieved turns, null history → empty list, store I/O failure falls back to original history, malformed persisted rows (null/blank role/content) skipped, marker helpers (no-ts fallback, ISO normalization, epoch-millis path). | §IV.4 |
 | T31 | ✅ | 2026.3.1 | System-prompt fragment caching: new `TurPersonaStaticPromptCache` `@Cacheable("turPersonaStaticPrompt")` keyed by `personaId` for the deterministic persona block (instruction + style + mandatory/forbidden vocab + brand placeholder); few-shot block stays uncached because it depends on `userQuery`. New `TurChatFlowStaticPromptCache` exposes `staticHead` (`@Cacheable("turChatFlowStaticAddendumHead")` keyed by `flowId:nodeId`) + `staticTail` (`@Cacheable("turChatFlowStaticAddendumTail")` keyed by `flowId:nodeId:includeNextStepHint`); the dynamic "Already collected" line is built per turn. `ChatFlowOps.buildBaseAddendum` refactored into three pure helpers (`buildStaticAddendumHead` / `buildVariablesLine` / `buildStaticAddendumTail`) so the cache bean and any legacy static caller share one source of truth. Strategy interface gained a `TurChatFlow flow` parameter so the cache key can be derived from the live flow. Eviction extends the existing `@CacheEvict` chains: `TurPersonaRepository.save/delete` now also wipes `turPersonaStaticPrompt`; `TurChatFlowRepository.save/delete` adds `turChatFlowStaticAddendumHead` + `turChatFlowStaticAddendumTail` to the existing router-decision eviction set. Self-injection (`@Lazy` self ref) in `TurChatFlowStaticPromptCache` routes intra-class calls through the Spring proxy so the `@Cacheable` advice actually fires. 24 new unit tests across `TurPersonaStaticPromptCacheTest` (12: null/blank persona, instruction/style/vocab/brand block presence, verbosity clamping, determinism, output excludes few-shot + base-separator boundaries) and `TurChatFlowStaticPromptCacheTest` (12: orchestrator null/terminal short-circuit, head+vars+tail concatenation, dynamic line omission on blank state, null-flow fallback, head/tail content split, hint-toggle, `buildBaseAddendum` equals head+vars+tail invariant). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted strategy tests (`LlmJudgeGuardrailStrategyTest` 7/7, `ChatFlowOpsTest` + `ChatFlowOpsBrDocUnitTest`) green. | §IV.5 |
-| T32 | 📋 | T28, T29, T30, T31 | Observability for the cache + retrieval features shipped in 2026.3.1: extend `TurChatPipelineObservation` with cache-hit-rate metrics (`turPersonaStaticPrompt`, `turChatFlowStaticAddendumHead/Tail`, `turAIAgentfindById`, `turChatFlowFindById`, `turChatFlowRouterDecision`, `turAnalyticsIntentMLTIndex`) read from Hazelcast `IMap.getLocalMapStats()`, plus per-turn timings for the T30 BM25 retrieval (pool size, hits returned, search ms) and the T29 tool pre-filter (in/out counts, BM25 ms, bypass reason when not engaged). All metrics surface through the existing Micrometer `MeterRegistry`; no Hazelcast Management Center dependency. | §IV.7 |
+| T32 | ✅ | 2026.3.1 | Observability for the cache + retrieval features shipped in 2026.3.1: new `TurChatCacheStatsRegistrar` registers Micrometer gauges (`turing.chat.cache.{hits,misses,size}` tagged by `cache`) for the 9 Hazelcast `IMap`s the chat pipeline reads — gauges resolve via `ObjectProvider<HazelcastInstance>` so dev mode (no clustered cache) degrades silently instead of flat-zeroing. Misses derived as `getOperationCount − getHits` since `LocalMapStats` doesn't expose a direct miss counter, clamped at 0. `TurChatPipelineObservation` gains `recordMemoryRetrieval(poolSize, hits, ms, outcome)` and `recordToolPrefilter(in, out, ms, reason)` helpers; T30 retriever wires every branch (5 bypass paths → `outcome=bypass`, BM25 zero-match → `no-hits`, prepended turns → `hits`) and T29 pre-filter wires its 6 reasons (`disabled`, `below-threshold`, `blank-query`, `already-covered`, `cap-covers-pool`, `engaged`) on a bypass counter alongside the timer outcome (`filtered` / `passthrough`). 6 new sub-stage breakdowns of `chat.setup` (`decrypt`/`model`/`flow`/`persona`/`tools`/`compose`) recorded from the existing timing locals in `TurAgentChatExecutor.execute()` — backwards-compatible: the parent `chat.setup` aggregate stays. 12 new unit tests (`TurChatPipelineObservationT32Test` 7, `TurChatCacheStatsRegistrarTest` 5) pin: hits/no-hits/bypass outcomes register the right timer+distribution combinations, distributions skipped on bypass to avoid zero-pollution, all 6 prefilter reasons get independent counters; per-cache gauges resolve to the expected derived values (hits=100 / misses=50 / size=42 round-trip), miss gauge clamps at 0 on stat regression, gauge supplier swallows Hazelcast exceptions so a cluster failure can't take down the Prometheus scrape, no-Hazelcast mode registers zero gauges (not flat-zero ones). All smoke ITs (`HarnessFixtureSmokeIT` 3/3, `TestSupportSmokeIT` 1/1) + impacted existing tests green (`TurChatMemoryRelevanceRetrieverTest` 18/18, `TurToolPreFilterServiceTest` 9/9). Metrics exposed via the existing `/actuator/prometheus` endpoint — no new dependency. | §IV.7 |
 | T33 | 💭 | — | Decompose `TurAgentChatExecutor.execute()` (~1000 lines, 13 timing substages) into 3 collaborator beans: `TurChatPromptAssembler` (history enrichment + system-prompt composition + messages list build — owns the T30 retriever + T31 cache call sites), `TurChatToolResolver` (callbacks + pre-filter + tool-strip decision), `TurChatStreamingDispatcher` (CALL vs STREAM branch + post-LLM regen + tone validation). `execute()` shrinks to ~150 lines orchestrating the three. Same observability shape (each collaborator records its own substage timing). Keeps the `Flux<ChatResponse>` contract so callers (`TurAIAgentChatAPI`, `TurSNGenAi`, `TurLLMSemanticChatAPI`) don't change. | §I.8 |
 | T34 | 📋 | — | Codify the recurring caching conventions agents have been re-deriving: (a) add the self-injection / `@Cacheable` proxy rule to `agents.md` (existing convention block for SN repository cache) so future contributors don't bypass the proxy via `this.x(...)`; (b) add a `TurCacheAnnotationConventionsTest` static-analysis unit test that fails when a `@Cacheable` method's enclosing class has no matching `@CacheEvict` in any sibling repository, mirroring `TurLiquibaseChangelogAgnosticTest`'s grep-the-tree approach. Cheap insurance against the "added a @Cacheable but forgot the @CacheEvict" class of bug that already required a memory-system entry. | §IV.8 |
 
@@ -1000,56 +1001,74 @@ boolean matches = matcher.run(bytes, 0, bytes.length);
 **When**: customer flows show recurring "user typed almost-but-not-quite
 the chip label and the judge rejects it" reports.
 
-### IV.7 📋 Observability for the 2026.3.1 cache + retrieval features
+### IV.7 ✅ Observability for the 2026.3.1 cache + retrieval features (shipped 2026.3.1 as T32)
 
 **Context**: T28 (intent classifier), T29 (tool pre-filter), T30
-(relevance retrieval) and T31 (prompt cache) all claim per-turn
+(relevance retrieval) and T31 (prompt cache) all claimed per-turn
 performance wins — "shaves 10-30 ms", "skips ~50 tool descriptions",
-"prepends top-K older turns" — but the project has **zero
-instrumentation** on any of them in production. The only existing
-chat-pipeline observability is
-[`TurChatPipelineObservation`](../turing-app/src/main/java/com/viglet/turing/observability/TurChatPipelineObservation.java),
-which aggregates `setup_ms` / `llm_ms` / `post_ms` per turn — coarse,
-and silent on cache outcomes entirely. Any claim about whether the
-caches are actually winning is currently faith-based.
+"prepends top-K older turns" — but the project had **zero
+instrumentation** on any of them. The only existing chat-pipeline
+observability was
+[`TurChatPipelineObservation`](../turing-app/src/main/java/com/viglet/turing/observability/TurChatPipelineObservation.java)
+aggregating `setup_ms` / `llm_ms` / `post_ms` per turn — coarse,
+silent on cache outcomes. Any claim about whether the caches were
+actually winning was faith-based.
 
-**Idea**: extend `TurChatPipelineObservation` (or a new sibling
-`TurChatCacheObservation` bean) with three classes of metric:
+**Shipped — three classes of metric**:
 
-1. **Cache hit-rate gauges** — pulled from Hazelcast
-   `IMap.getLocalMapStats()` (`getHits()` / `getMisses()` / `size()`)
-   for every cache the chat pipeline reads: `turPersonaStaticPrompt`
-   and `turChatFlowStaticAddendumHead/Tail` (T31), `turAIAgentfindById`
-   / `turChatFlowFindById` / `turPersonafindById` (catalog reads),
-   `turChatFlowRouterDecision` (T26), `turAnalyticsIntentMLTIndex`
-   (T28). Surfaced as Micrometer `Gauge` so Prometheus / Grafana
-   dashboards can chart the trend.
-2. **Per-turn retrieval timings** — `TurChatMemoryRelevanceRetriever`
-   (T30) records pool size + hits returned + search ms; the metric is
-   silent when the bypass conditions fire so it doesn't pollute the
-   percentile bands with `0 ms` no-ops. `TurToolPreFilterService` (T29)
-   records callbacks in / out / BM25 ms / bypass reason.
-3. **Sub-stage timing** — break `setup_ms` into its 13 existing
-   timing markers (already captured locally in
-   `TurAgentChatExecutor.execute()` via `tAfterDecrypt`, `tAfterFlow`,
-   `tAfterPersona`, …) so we can tell apart "everything cached
-   ~100ms" from "cold-start MCP handshake / first-time flow load" at
-   the metric layer.
+1. **Cache hit-rate gauges** ([`TurChatCacheStatsRegistrar`](../turing-app/src/main/java/com/viglet/turing/observability/TurChatCacheStatsRegistrar.java))
+   pulled from Hazelcast `IMap.getLocalMapStats()` for every
+   `@Cacheable` the chat pipeline reads — 9 caches total covering
+   catalog reads (agent, flow, persona, analytics intent), the T26
+   router-decision cache, and T31's three prompt-fragment caches.
+   Surfaced as `turing.chat.cache.{hits,misses,size}` gauges tagged
+   by `cache`. Misses are derived as `getOperationCount − getHits`
+   because the Hazelcast 5.x `LocalMapStats` interface doesn't expose
+   a direct miss counter; clamped at 0 so a stat reset can't surface a
+   negative value. Bean degrades silently when no `HazelcastInstance`
+   is present (dev mode falls back to `ConcurrentMapCacheManager` —
+   logging an INFO is more honest than registering flat-zero gauges).
 
-**Risk**: cardinality explosion if labels are unbounded (e.g. tagging
-metrics with `agentId` × `flowId` × `nodeId` would blow up the
-Prometheus storage). Mitigation: emit aggregates only — per-cache,
-per-agent at most. Skip the per-node breakdown unless someone asks for
-it.
+2. **Per-turn retrieval timings** — `TurChatPipelineObservation`
+   gained `recordMemoryRetrieval(poolSize, hits, ms, outcome)` and
+   `recordToolPrefilter(in, out, ms, reason)`. T30 wires every branch:
+   5 bypass paths emit a fast timer sample tagged
+   `outcome=bypass` (no pool/hits distribution to avoid
+   zero-pollution); BM25 zero-match emits `no-hits` (the cost was
+   paid, signal value just was nil); successful retrieval emits
+   `hits` along with the pool size + hits count distributions. T29
+   wires its 6 reasons (`disabled`, `below-threshold`,
+   `blank-query`, `already-covered`, `cap-covers-pool`, `engaged`) on
+   the bypass counter, with the timer outcome split into `filtered`
+   vs `passthrough`.
 
-**Expected win**: the moment we have these dashboards, the next
-optimization decision is grounded in measurement instead of intuition.
-A second-order win: we'll learn which caches actually pay off (T31's
-flow tail might be unused in practice if regen rarely fires).
+3. **Sub-stage timing breakdown** — the 6 existing timing locals in
+   `TurAgentChatExecutor.execute()` (decrypt / model / flow /
+   persona / tools / compose) now push to
+   `TurChatPipelineObservation` as separate `stage` tag values on the
+   `turing.chat.pipeline` timer. The parent `chat.setup` aggregate
+   stays so existing dashboards keep working; new dashboards can drill
+   in to tell apart "everything cached ~100ms" from "cold-start MCP
+   handshake / first-time flow load".
 
-**When**: as soon as someone goes to investigate "why is chat
-slow today?" the first time post-T31. The dashboards pay for
-themselves on the first incident.
+**Tag cardinality discipline**: every new tag is from a bounded enum
+(cache name from the static catalog, T29 reason from 6 values, T30
+outcome from 3) — no `agentId` / `flowId` / `nodeId` tags that would
+explode the Prometheus storage. Per-feature aggregates only.
+
+**Tests**: [`TurChatPipelineObservationT32Test`](../turing-app/src/test/java/com/viglet/turing/observability/TurChatPipelineObservationT32Test.java)
+(7) covers all hit/no-hits/bypass + reason combinations, distribution
+skipping on bypass, and counter independence across all 6 reasons.
+[`TurChatCacheStatsRegistrarTest`](../turing-app/src/test/java/com/viglet/turing/observability/TurChatCacheStatsRegistrarTest.java)
+(5) pins gauge registration shape, miss-clamping at 0, exception
+swallowing on the supplier (so a Hazelcast outage can't crash the
+Prometheus scrape), no-Hazelcast mode skipping registration, and the
+cache-catalog inventory (any new cache added to the chat pipeline
+should also be added to the registrar list — the test fails when the
+catalog drifts).
+
+**Exposure**: metrics flow through the existing `/actuator/prometheus`
+endpoint — no new dependency, no Hazelcast Management Center required.
 
 ### IV.8 📋 Codify the caching conventions (docs + lint test)
 

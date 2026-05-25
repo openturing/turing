@@ -496,6 +496,27 @@ public class TurAgentChatExecutor {
         final long tSetupEnd = System.currentTimeMillis();
         chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP, tSetupEnd - tStart);
 
+        // T32 / §IV.7 — sub-stage breakdown of the setup phase. The parent
+        // {@link TurMeterNames#STAGE_CHAT_SETUP} timer (above) is the
+        // backwards-compatible aggregate; these six children let dashboards
+        // tell apart "everything cached ~100ms" from "cold-start MCP
+        // handshake / first-time flow load" without re-deriving from logs.
+        // Each substage is a separate {@code stage} tag value on the
+        // CHAT_PIPELINE timer so existing dashboards keep working and new
+        // ones can drill in.
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_DECRYPT,
+                tAfterDecrypt - tStart);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_MODEL,
+                tAfterChatModel - tAfterDecrypt);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_FLOW,
+                tAfterFlow - tAfterChatModel);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_PERSONA,
+                tAfterPersona - tAfterFlow);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_TOOLS,
+                tAfterTools - tAfterPersona);
+        chatPipelineObservation.recordMillis(TurMeterNames.STAGE_CHAT_SETUP_COMPOSE,
+                tAfterCompose - tAfterTools);
+
         // STREAM mode: forward each token chunk to the SSE pipeline as it
         // arrives so the bubble fills in token-by-token. We only take this
         // branch when there is NO flow context — flow-driven turns need

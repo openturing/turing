@@ -6,12 +6,81 @@
 # Docker Desktop host on Windows/macOS. On Linux, ensure docker-compose adds
 # `extra_hosts: ["host.docker.internal:host-gateway"]` to the prometheus service.
 #
-# Useful queries once metrics are flowing:
+# ─────────────────────────────────────────────────────────────────────────────
+# Useful queries once metrics are flowing
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# SN search pipeline (existing, since 2026.2.8):
+#
 #   histogram_quantile(0.95,
 #     sum by (le, stage) (rate(turing_search_pipeline_seconds_bucket[5m])))
+#
 #   rate(turing_search_snapshot_cache_total{outcome="hit"}[5m])
 #     / on() rate(turing_search_snapshot_cache_total{outcome=~"hit|miss"}[5m])
+#
 #   rate(turing_search_calls_seconds_count[5m]) by (engine, status)
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# T32 / §IV.7 — chat-pipeline observability (since 2026.3.1)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Hazelcast cache hit rate per cache (T26 / T28 / T31 caches + catalog reads):
+#
+#   turing_chat_cache_hits
+#     / clamp_min(turing_chat_cache_hits + turing_chat_cache_misses, 1)
+#
+# Cache size growth (alert when a per-conversation cache balloons unbounded):
+#
+#   turing_chat_cache_size
+#
+# T30 conversation-relevance retrieval — p95 latency by outcome
+# (hits / no-hits / bypass):
+#
+#   histogram_quantile(0.95,
+#     sum by (le, outcome)
+#       (rate(turing_chat_memory_retrieval_seconds_bucket[5m])))
+#
+# T30 — what fraction of turns engaged the BM25 retrieval vs bypassed it:
+#
+#   rate(turing_chat_memory_retrieval_seconds_count{outcome=~"hits|no-hits"}[5m])
+#     / on() rate(turing_chat_memory_retrieval_seconds_count[5m])
+#
+# T30 — average size of the older-turn candidate pool (the persisted-history
+# size minus the recent-N window):
+#
+#   rate(turing_chat_memory_retrieval_pool_sum[5m])
+#     / rate(turing_chat_memory_retrieval_pool_count[5m])
+#
+# T29 tool pre-filter — bypass breakdown (which short-circuit fires most):
+#
+#   sum by (reason) (rate(turing_chat_tool_prefilter_bypass_total[5m]))
+#
+# T29 — tool count reduction ratio (1 - output/input on engaged turns only):
+#
+#   1 - (
+#     rate(turing_chat_tool_prefilter_output_sum[5m])
+#     / rate(turing_chat_tool_prefilter_input_sum[5m])
+#   )
+#
+# Chat setup sub-stage p95 latency (T32 sub-stage breakdown of chat.setup —
+# decrypt / model / flow / persona / tools / compose):
+#
+#   histogram_quantile(0.95,
+#     sum by (le, stage)
+#       (rate(turing_chat_pipeline_seconds_bucket{stage=~"chat\\.setup\\..+"}[5m])))
+#
+# Parent chat-pipeline stages (existing aggregates that still work):
+#
+#   histogram_quantile(0.95,
+#     sum by (le, stage)
+#       (rate(turing_chat_pipeline_seconds_bucket{
+#         stage=~"chat\\.(total|setup|llm\\.call|post|advance|regen)"}[5m])))
+#
+# LLM provider round-trip latency (existing):
+#
+#   histogram_quantile(0.95,
+#     sum by (le, provider, operation)
+#       (rate(turing_llm_calls_seconds_bucket[5m])))
 
 global:
   scrape_interval: 5s

@@ -28,6 +28,7 @@ import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.metadata.DefaultToolMetadata;
 import org.springframework.ai.tool.metadata.ToolMetadata;
 
+import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.properties.TurConfigProperties;
 import com.viglet.turing.properties.TurGenAiProperty;
 import com.viglet.turing.properties.TurGenAiProperty.TurGenAiToolPreFilterProperty;
@@ -56,7 +57,11 @@ class TurToolPreFilterServiceTest {
         props = genai.getToolPrefilter();
         configProperties = new TurConfigProperties();
         configProperties.setGenai(genai);
-        service = new TurToolPreFilterService(descriptionService, configProperties);
+        // T32 observation — null MeterRegistry falls back to
+        // SimpleMeterRegistry inside TurChatPipelineObservation, so unit
+        // tests don't need the full Micrometer + Actuator wiring.
+        service = new TurToolPreFilterService(descriptionService, configProperties,
+                new TurChatPipelineObservation(null));
     }
 
     @Test

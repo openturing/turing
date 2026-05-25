@@ -335,6 +335,16 @@ management:
       percentiles-histogram:
         "[turing.llm.calls]": true
         "[turing.search.calls]": true
+        # T32 / §IV.7 — emit histogram buckets so Grafana can compute p95/p99
+        # via `histogram_quantile(...)` on the chat-pipeline timer (now
+        # tagged with stage=chat.setup.{decrypt,model,flow,persona,tools,compose}
+        # in addition to the parent chat.{total,setup,llm.call,post,advance,regen})
+        # and on the per-turn T30 / T29 retrieval timers. Without these,
+        # only `_count` + `_sum` are exposed and dashboards can chart
+        # averages but not percentiles.
+        "[turing.chat.pipeline]": true
+        "[turing.chat.memory.retrieval]": true
+        "[turing.chat.tool.prefilter]": true
   tracing:
     sampling:
       probability: 0.1

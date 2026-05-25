@@ -43,6 +43,8 @@ import org.apache.lucene.store.Directory;
 import org.springframework.stereotype.Service;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
+import com.viglet.turing.observability.TurChatPipelineObservation;
+import com.viglet.turing.observability.TurMeterNames;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 import lombok.extern.slf4j.Slf4j;
@@ -150,9 +152,12 @@ public class TurChatMemoryRelevanceRetriever {
     private static final Analyzer ANALYZER = new StandardAnalyzer();
 
     private final TurChatMemoryStore store;
+    private final TurChatPipelineObservation pipelineObservation;
 
-    public TurChatMemoryRelevanceRetriever(TurChatMemoryStore store) {
+    public TurChatMemoryRelevanceRetriever(TurChatMemoryStore store,
+            TurChatPipelineObservation pipelineObservation) {
         this.store = store;
+        this.pipelineObservation = pipelineObservation;
     }
 
     /**
@@ -175,19 +180,26 @@ public class TurChatMemoryRelevanceRetriever {
                                         String conversationId,
                                         String latestUserMessage,
                                         List<ChatMessageItem> history) {
+        long start = System.currentTimeMillis();
         if (history == null) {
+            // No timer sample on the null-history degenerate case — caller
+            // misuse, not a runtime path worth dashboarding.
             return Collections.emptyList();
         }
         if (agent == null || !agent.isChatMemoryEnabled() || !agent.isChatMemoryRelevanceEnabled()) {
+            recordBypass(start);
             return history;
         }
         if (!store.isEnabled()) {
+            recordBypass(start);
             return history;
         }
         if (conversationId == null || conversationId.isBlank()) {
+            recordBypass(start);
             return history;
         }
         if (latestUserMessage == null || latestUserMessage.isBlank()) {
+            recordBypass(start);
             return history;
         }
 
@@ -201,12 +213,14 @@ public class TurChatMemoryRelevanceRetriever {
         } catch (RuntimeException e) {
             log.warn("[ChatMemoryRelevance] store read failed for conv '{}': {}",
                     conversationId, e.getMessage());
+            recordBypass(start);
             return history;
         }
         if (persisted == null || persisted.size() <= recentN) {
             // Either nothing persisted yet (first turn after enablement) or
             // the recent-N window already covers the entire pool — no
             // "older" turns to rescue.
+            recordBypass(start);
             return history;
         }
 
@@ -223,11 +237,17 @@ public class TurChatMemoryRelevanceRetriever {
             older.add(new PersistedMessage(i, role, content, timestamp));
         }
         if (older.isEmpty()) {
+            recordBypass(start);
             return history;
         }
 
         List<PersistedMessage> retrieved = retrieveRelevant(older, latestUserMessage, topK);
         if (retrieved.isEmpty()) {
+            // BM25 ran but found nothing on-topic — distinct outcome from a
+            // pure bypass because dashboards want to see this case
+            // (the retrieval cost was paid but produced no signal).
+            pipelineObservation.recordMemoryRetrieval(older.size(), 0,
+                    System.currentTimeMillis() - start, TurMeterNames.OUTCOME_NO_HITS);
             return history;
         }
 
@@ -245,7 +265,14 @@ public class TurChatMemoryRelevanceRetriever {
             log.debug("[ChatMemoryRelevance] conv '{}': prepended {} older turn(s) from a pool of {} (recent-N={})",
                     conversationId, retrieved.size(), older.size(), recentN);
         }
+        pipelineObservation.recordMemoryRetrieval(older.size(), retrieved.size(),
+                System.currentTimeMillis() - start, TurMeterNames.OUTCOME_HITS);
         return augmented;
+    }
+
+    private void recordBypass(long startMillis) {
+        pipelineObservation.recordMemoryRetrieval(-1, -1,
+                System.currentTimeMillis() - startMillis, TurMeterNames.OUTCOME_BYPASS);
     }
 
     /**

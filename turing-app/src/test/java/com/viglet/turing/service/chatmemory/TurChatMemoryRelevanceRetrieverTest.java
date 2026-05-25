@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.viglet.turing.genai.TurAgentChatExecutor.ChatMessageItem;
+import com.viglet.turing.observability.TurChatPipelineObservation;
 import com.viglet.turing.persistence.model.agent.TurAIAgent;
 
 /**
@@ -51,7 +52,11 @@ class TurChatMemoryRelevanceRetrieverTest {
         store = mock(TurChatMemoryStore.class);
         when(store.isEnabled()).thenReturn(true);
         when(store.getEngine()).thenReturn(TurChatMemoryEngine.MONGODB);
-        retriever = new TurChatMemoryRelevanceRetriever(store);
+        // T32 observation wires through Micrometer; passing null to the
+        // constructor lets it fall back to SimpleMeterRegistry so unit
+        // tests don't need the full observability stack.
+        retriever = new TurChatMemoryRelevanceRetriever(store,
+                new TurChatPipelineObservation(null));
         agent = newAgentWithRelevanceOn();
     }
 
